@@ -87,6 +87,10 @@ def clamp(value: float, low: float, high: float) -> float:
     return max(low, min(high, value))
 
 
+def snap_to_pixel_center(point: Point) -> Point:
+    return Point(x=math.floor(point.x) + 0.5, y=math.floor(point.y) + 0.5)
+
+
 def nearest_endpoint(line: Line, point: Point) -> tuple[str, float]:
     start_distance = distance(line.start, point)
     end_distance = distance(line.end, point)

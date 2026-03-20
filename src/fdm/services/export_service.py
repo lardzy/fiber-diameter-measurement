@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import csv
@@ -8,7 +9,45 @@ import math
 import zipfile
 from xml.sax.saxutils import escape
 
-from fdm.models import FiberGroup, ImageDocument, Measurement, ProjectState
+from fdm.models import ImageDocument, ProjectState
+from fdm.services.sidecar_io import CalibrationSidecarIO
+
+
+class ExportScope:
+    CURRENT = "current"
+    ALL_OPEN = "all_open"
+
+
+@dataclass(slots=True)
+class ExportSelection:
+    include_measurement_overlay: bool = False
+    include_scale_overlay: bool = False
+    include_scale_json: bool = False
+    include_excel: bool = False
+    include_csv: bool = False
+    scope: str = ExportScope.CURRENT
+
+    @classmethod
+    def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
+        return cls(
+            include_measurement_overlay=True,
+            include_scale_overlay=True,
+            include_scale_json=True,
+            include_excel=True,
+            include_csv=True,
+            scope=scope,
+        )
+
+    def any_selected(self) -> bool:
+        return any(
+            [
+                self.include_measurement_overlay,
+                self.include_scale_overlay,
+                self.include_scale_json,
+                self.include_excel,
+                self.include_csv,
+            ]
+        )
 
 
 class ExportService:
@@ -17,60 +56,89 @@ class ExportService:
         project: ProjectState,
         output_dir: str | Path,
         *,
+        selection: ExportSelection | None = None,
+        documents: list[ImageDocument] | None = None,
         overlay_renderer=None,
-    ) -> dict[str, Path]:
+    ) -> dict[str, object]:
         output_path = Path(output_dir)
         output_path.mkdir(parents=True, exist_ok=True)
-        image_rows = self.build_image_summary_rows(project)
-        fiber_rows = self.build_fiber_rows(project)
-        measurement_rows = self.build_measurement_rows(project)
-        meta_rows = self.build_export_meta_rows(project)
+        selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
+        target_documents = list(documents or project.documents)
+        if not selection.any_selected() or not target_documents:
+            return {}
 
-        csv_outputs = {
-            "image_summary_csv": output_path / "image_summary.csv",
-            "fiber_details_csv": output_path / "fiber_details.csv",
-            "measurement_details_csv": output_path / "measurement_details.csv",
-        }
-        self._write_csv(csv_outputs["image_summary_csv"], image_rows)
-        self._write_csv(csv_outputs["fiber_details_csv"], fiber_rows)
-        self._write_csv(csv_outputs["measurement_details_csv"], measurement_rows)
+        outputs: dict[str, object] = {}
+        image_rows = self.build_image_summary_rows(target_documents)
+        fiber_rows = self.build_fiber_rows(target_documents)
+        measurement_rows = self.build_measurement_rows(target_documents)
+        meta_rows = self.build_export_meta_rows(project, target_documents)
 
-        xlsx_path = output_path / "measurement_export.xlsx"
-        self._write_xlsx(
-            xlsx_path,
-            {
-                "image_summary": image_rows,
-                "fiber_details": fiber_rows,
-                "measurement_details": measurement_rows,
-                "export_meta": meta_rows,
-            },
-        )
+        if selection.include_csv:
+            csv_outputs = {
+                "image_summary_csv": output_path / "image_summary.csv",
+                "fiber_details_csv": output_path / "fiber_details.csv",
+                "measurement_details_csv": output_path / "measurement_details.csv",
+            }
+            self._write_csv(csv_outputs["image_summary_csv"], image_rows)
+            self._write_csv(csv_outputs["fiber_details_csv"], fiber_rows)
+            self._write_csv(csv_outputs["measurement_details_csv"], measurement_rows)
+            outputs.update(csv_outputs)
 
-        if overlay_renderer is not None:
-            for document in project.documents:
-                base_name = Path(document.path).stem or document.id
+        if selection.include_excel:
+            xlsx_path = output_path / "measurement_export.xlsx"
+            self._write_xlsx(
+                xlsx_path,
+                {
+                    "image_summary": image_rows,
+                    "fiber_details": fiber_rows,
+                    "measurement_details": measurement_rows,
+                    "export_meta": meta_rows,
+                },
+            )
+            outputs["xlsx"] = xlsx_path
+
+        measurement_overlays: list[Path] = []
+        scale_overlays: list[Path] = []
+        scale_jsons: list[Path] = []
+        for document in target_documents:
+            base_name = Path(document.path).stem or document.id
+            if selection.include_measurement_overlay and overlay_renderer is not None:
+                output_file = output_path / f"{base_name}_measurements.png"
                 overlay_renderer(
                     document,
-                    output_path / f"{base_name}_measurements.png",
+                    output_file,
                     include_measurements=True,
                     include_scale=False,
                 )
+                measurement_overlays.append(output_file)
+            if selection.include_scale_overlay and overlay_renderer is not None and document.calibration is not None:
+                output_file = output_path / f"{base_name}_scale.png"
                 overlay_renderer(
                     document,
-                    output_path / f"{base_name}_scale.png",
+                    output_file,
                     include_measurements=False,
                     include_scale=True,
                 )
+                scale_overlays.append(output_file)
+            if selection.include_scale_json and document.calibration is not None:
+                output_file = output_path / f"{base_name}_scale.json"
+                exported = CalibrationSidecarIO.export_document(document, output_file)
+                if exported is not None:
+                    scale_jsons.append(exported)
 
-        return {
-            **csv_outputs,
-            "xlsx": xlsx_path,
-        }
+        if measurement_overlays:
+            outputs["measurement_overlays"] = measurement_overlays
+        if scale_overlays:
+            outputs["scale_overlays"] = scale_overlays
+        if scale_jsons:
+            outputs["scale_jsons"] = scale_jsons
+        return outputs
 
-    def build_image_summary_rows(self, project: ProjectState) -> list[dict[str, object]]:
+    def build_image_summary_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
-        for document in project.documents:
+        for document in documents:
             stats = document.stats()
+            active_group = document.get_group(document.active_group_id)
             rows.append(
                 OrderedDict(
                     image_id=document.id,
@@ -82,6 +150,8 @@ class ExportService:
                     unit=document.calibration.unit if document.calibration else "px",
                     measurement_count=len(document.measurements),
                     fiber_group_count=len(document.fiber_groups),
+                    active_group_number=active_group.number if active_group else None,
+                    active_group_label=active_group.label if active_group else "",
                     mean_diameter=stats["mean"],
                     min_diameter=stats["min"],
                     max_diameter=stats["max"],
@@ -90,11 +160,11 @@ class ExportService:
             )
         return rows
 
-    def build_fiber_rows(self, project: ProjectState) -> list[dict[str, object]]:
+    def build_fiber_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
-        for document in project.documents:
+        for document in documents:
             measurement_lookup = {measurement.id: measurement for measurement in document.measurements}
-            for group in document.fiber_groups:
+            for group in document.sorted_groups():
                 values = [
                     measurement_lookup[measurement_id].diameter_unit
                     for measurement_id in group.measurement_ids
@@ -105,7 +175,9 @@ class ExportService:
                         image_id=document.id,
                         image_path=document.path,
                         fiber_group_id=group.id,
-                        fiber_group_name=group.name,
+                        fiber_group_number=group.number,
+                        fiber_group_label=group.label,
+                        fiber_group_display=group.display_name(),
                         color=group.color,
                         measurement_count=len(group.measurement_ids),
                         mean_diameter=self._mean(values),
@@ -117,9 +189,9 @@ class ExportService:
                 )
         return rows
 
-    def build_measurement_rows(self, project: ProjectState) -> list[dict[str, object]]:
+    def build_measurement_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
-        for document in project.documents:
+        for document in documents:
             group_lookup = {group.id: group for group in document.fiber_groups}
             unit = document.calibration.unit if document.calibration else "px"
             for measurement in document.measurements:
@@ -131,7 +203,10 @@ class ExportService:
                         image_path=document.path,
                         measurement_id=measurement.id,
                         fiber_group_id=measurement.fiber_group_id or "",
-                        fiber_group_name=group.name if group else "",
+                        fiber_group_number=group.number if group else None,
+                        fiber_group_label=group.label if group else "",
+                        fiber_group_display=group.display_name() if group else "",
+                        fiber_group_color=group.color if group else "",
                         mode=measurement.mode,
                         status=measurement.status,
                         confidence=round(measurement.confidence, 4),
@@ -149,14 +224,14 @@ class ExportService:
                 )
         return rows
 
-    def build_export_meta_rows(self, project: ProjectState) -> list[dict[str, object]]:
+    def build_export_meta_rows(self, project: ProjectState, documents: list[ImageDocument]) -> list[dict[str, object]]:
         return [
             OrderedDict(
                 exported_at=datetime.now(tz=timezone.utc).isoformat(),
                 app_version=project.version,
-                document_count=len(project.documents),
-                measurement_count=sum(len(document.measurements) for document in project.documents),
-                fiber_group_count=sum(len(document.fiber_groups) for document in project.documents),
+                document_count=len(documents),
+                measurement_count=sum(len(document.measurements) for document in documents),
+                fiber_group_count=sum(len(document.fiber_groups) for document in documents),
             )
         ]
 
@@ -176,15 +251,11 @@ class ExportService:
             archive.writestr("xl/_rels/workbook.xml.rels", self._workbook_rels_xml(len(sheets)))
             archive.writestr("xl/styles.xml", self._styles_xml())
             for index, (sheet_name, rows) in enumerate(sheets.items(), start=1):
-                archive.writestr(
-                    f"xl/worksheets/sheet{index}.xml",
-                    self._sheet_xml(rows),
-                )
+                archive.writestr(f"xl/worksheets/sheet{index}.xml", self._sheet_xml(rows))
 
     def _sheet_xml(self, rows: list[dict[str, object]]) -> str:
         headers = self._collect_fieldnames(rows)
-        xml_rows = []
-        xml_rows.append(self._xml_row(1, headers, header=True))
+        xml_rows = [self._xml_row(1, headers, header=True)]
         for row_index, row in enumerate(rows, start=2):
             values = [row.get(header) for header in headers]
             xml_rows.append(self._xml_row(row_index, values, header=False))
@@ -211,9 +282,7 @@ class ExportService:
             if isinstance(value, (int, float)) and not isinstance(value, bool) and not math.isnan(float(value)):
                 cells.append(f'<c r="{coordinate}"{style}><v>{value}</v></c>')
             else:
-                cells.append(
-                    f'<c r="{coordinate}" t="inlineStr"{style}><is><t>{escape(str(value))}</t></is></c>'
-                )
+                cells.append(f'<c r="{coordinate}" t="inlineStr"{style}><is><t>{escape(str(value))}</t></is></c>')
         return f'<row r="{row_number}">{"".join(cells)}</row>'
 
     def _collect_fieldnames(self, rows: list[dict[str, object]]) -> list[str]:
@@ -256,9 +325,7 @@ class ExportService:
         sheet_entries = []
         for index, sheet_name in enumerate(sheets.keys(), start=1):
             safe_name = escape(sheet_name[:31])
-            sheet_entries.append(
-                f'<sheet name="{safe_name}" sheetId="{index}" r:id="rId{index}"/>'
-            )
+            sheet_entries.append(f'<sheet name="{safe_name}" sheetId="{index}" r:id="rId{index}"/>')
         return (
             '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
             '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
@@ -296,8 +363,8 @@ class ExportService:
             '<cellXfs count="2">'
             '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
             '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1"><alignment horizontal="center"/></xf>'
-            '</cellXfs>'
-            '</styleSheet>'
+            "</cellXfs>"
+            "</styleSheet>"
         )
 
     def _column_name(self, index: int) -> str:

@@ -4,7 +4,7 @@ from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QWheelEvent
 from PySide6.QtWidgets import QWidget
 
-from fdm.geometry import Line, Point, distance, line_length, nearest_endpoint
+from fdm.geometry import Line, Point, clamp, distance, line_length, nearest_endpoint, snap_to_pixel_center
 from fdm.models import ImageDocument, Measurement
 
 
@@ -22,6 +22,7 @@ class DocumentCanvas(QWidget):
         self._tool_mode = "select"
         self._zoom = 1.0
         self._pan = Point(20.0, 20.0)
+        self._drawing_anchor_raw: Point | None = None
         self._drawing_line: Line | None = None
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
@@ -123,6 +124,13 @@ class DocumentCanvas(QWidget):
             return
 
         image_point = self.widget_to_image(event.position())
+        selected_handle = self._hit_test_selected_endpoint(image_point)
+        if selected_handle is not None:
+            self._dragging_handle = selected_handle
+            self._drag_preview_line = self._measurement_line(selected_handle[0])
+            self.update()
+            return
+
         if self._tool_mode == "select":
             handle = self._hit_test_endpoint(image_point)
             if handle is not None:
@@ -133,14 +141,19 @@ class DocumentCanvas(QWidget):
                 self.update()
                 return
             measurement_id = self._hit_test_measurement(image_point)
+            self._document.view_state.selected_measurement_id = measurement_id
             if measurement_id is not None:
-                self._document.view_state.selected_measurement_id = measurement_id
                 self.measurementSelected.emit(self._document.id, measurement_id)
-                self.update()
+            self.update()
             return
 
         if self._point_in_image(image_point):
-            self._drawing_line = Line(start=image_point, end=image_point)
+            anchor = self._clamp_to_image(
+                snap_to_pixel_center(image_point) if event.modifiers() & Qt.KeyboardModifier.ControlModifier else image_point,
+                pixel_center=bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier),
+            )
+            self._drawing_anchor_raw = anchor
+            self._drawing_line = Line(start=anchor, end=anchor)
             self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -155,8 +168,14 @@ class DocumentCanvas(QWidget):
             return
 
         image_point = self.widget_to_image(event.position())
-        if self._drawing_line is not None:
-            self._drawing_line = Line(start=self._drawing_line.start, end=image_point)
+        if self._drawing_anchor_raw is not None:
+            start, end = self._apply_line_constraints(
+                self._drawing_anchor_raw,
+                image_point,
+                event.modifiers(),
+                snap_anchor=True,
+            )
+            self._drawing_line = Line(start=start, end=end)
             self.update()
             return
 
@@ -166,10 +185,17 @@ class DocumentCanvas(QWidget):
             if measurement is None:
                 return
             base_line = measurement.effective_line()
+            fixed_point = base_line.end if endpoint_name == "start" else base_line.start
+            fixed_point, moving_point = self._apply_line_constraints(
+                fixed_point,
+                image_point,
+                event.modifiers(),
+                snap_anchor=False,
+            )
             if endpoint_name == "start":
-                self._drag_preview_line = Line(start=image_point, end=base_line.end)
+                self._drag_preview_line = Line(start=moving_point, end=fixed_point)
             else:
-                self._drag_preview_line = Line(start=base_line.start, end=image_point)
+                self._drag_preview_line = Line(start=fixed_point, end=moving_point)
             self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
@@ -182,8 +208,9 @@ class DocumentCanvas(QWidget):
             return
         if self._drawing_line is not None:
             line = self._drawing_line
+            self._drawing_anchor_raw = None
             self._drawing_line = None
-            if line_length(line) >= 3.0:
+            if line_length(line) >= 1.0:
                 self.lineCommitted.emit(self._document.id, self._tool_mode, line)
             self.update()
             return
@@ -228,9 +255,7 @@ class DocumentCanvas(QWidget):
             line = measurement.effective_line()
             selected = measurement.id == self._document.view_state.selected_measurement_id
             color = QColor(self._measurement_color(measurement))
-            if measurement.mode == "snap":
-                color = QColor("#1DD3B0") if measurement.status == "snapped" else QColor("#FFB000")
-            pen = QPen(color, 3 if selected else 2)
+            pen = QPen(color, 4 if selected else 2)
             painter.setPen(pen)
             painter.drawLine(self.image_to_widget(line.start), self.image_to_widget(line.end))
             self._draw_endpoint(painter, line.start, color, selected)
@@ -243,10 +268,12 @@ class DocumentCanvas(QWidget):
         color = QColor("#FF7F50") if self._tool_mode == "calibration" else QColor("#F4D35E")
         painter.setPen(QPen(color, 2, Qt.PenStyle.DashLine))
         painter.drawLine(self.image_to_widget(preview.start), self.image_to_widget(preview.end))
+        self._draw_endpoint(painter, preview.start, color, True)
+        self._draw_endpoint(painter, preview.end, color, True)
 
     def _draw_endpoint(self, painter: QPainter, point: Point, color: QColor, selected: bool) -> None:
         widget_point = self.image_to_widget(point)
-        radius = 5 if selected else 4
+        radius = 7 if selected else 4
         painter.setBrush(color)
         painter.setPen(QPen(QColor("#0B0B0B"), 1))
         painter.drawEllipse(widget_point, radius, radius)
@@ -257,26 +284,41 @@ class DocumentCanvas(QWidget):
         group = self._document.get_group(measurement.fiber_group_id)
         return group.color if group else "#E0FBFC"
 
+    def _hit_test_selected_endpoint(self, image_point: Point) -> tuple[str, str] | None:
+        if self._document is None or self._document.view_state.selected_measurement_id is None:
+            return None
+        measurement_id = self._document.view_state.selected_measurement_id
+        measurement = self._document.get_measurement(measurement_id)
+        if measurement is None:
+            return None
+        line = measurement.effective_line()
+        endpoint_name, endpoint_distance = nearest_endpoint(line, image_point)
+        if endpoint_distance <= self._endpoint_tolerance():
+            return measurement.id, endpoint_name
+        return None
+
     def _hit_test_endpoint(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None:
             return None
-        tolerance = max(4.0, 10.0 / max(self._zoom, 0.001))
         for measurement in reversed(self._document.measurements):
             line = measurement.effective_line()
             endpoint_name, endpoint_distance = nearest_endpoint(line, image_point)
-            if endpoint_distance <= tolerance:
+            if endpoint_distance <= self._endpoint_tolerance():
                 return measurement.id, endpoint_name
         return None
 
     def _hit_test_measurement(self, image_point: Point) -> str | None:
         if self._document is None:
             return None
-        tolerance = max(4.0, 10.0 / max(self._zoom, 0.001))
+        tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
         for measurement in reversed(self._document.measurements):
             line = measurement.effective_line()
             if self._point_to_segment_distance(image_point, line) <= tolerance:
                 return measurement.id
         return None
+
+    def _endpoint_tolerance(self) -> float:
+        return max(6.0, 14.0 / max(self._zoom, 0.001))
 
     def _point_to_segment_distance(self, point: Point, line: Line) -> float:
         vx = line.end.x - line.start.x
@@ -291,6 +333,42 @@ class DocumentCanvas(QWidget):
             y=line.start.y + (projection * vy),
         )
         return distance(point, closest)
+
+    def _apply_line_constraints(
+        self,
+        anchor: Point,
+        candidate: Point,
+        modifiers: Qt.KeyboardModifiers,
+        *,
+        snap_anchor: bool,
+    ) -> tuple[Point, Point]:
+        use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
+        use_shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
+        fixed = snap_to_pixel_center(anchor) if use_ctrl and snap_anchor else anchor
+        moving = candidate
+        if use_shift:
+            dx = moving.x - fixed.x
+            dy = moving.y - fixed.y
+            if abs(dx) >= abs(dy):
+                moving = Point(moving.x, fixed.y)
+            else:
+                moving = Point(fixed.x, moving.y)
+        if use_ctrl:
+            moving = snap_to_pixel_center(moving)
+        fixed = self._clamp_to_image(fixed, pixel_center=use_ctrl and snap_anchor)
+        moving = self._clamp_to_image(moving, pixel_center=use_ctrl)
+        return fixed, moving
+
+    def _clamp_to_image(self, point: Point, *, pixel_center: bool) -> Point:
+        if self._image is None:
+            return point
+        minimum = 0.5 if pixel_center else 0.0
+        maximum_x = (self._image.width() - 0.5) if pixel_center else (self._image.width() - 1.0)
+        maximum_y = (self._image.height() - 0.5) if pixel_center else (self._image.height() - 1.0)
+        return Point(
+            x=clamp(point.x, minimum, max(minimum, maximum_x)),
+            y=clamp(point.y, minimum, max(minimum, maximum_y)),
+        )
 
     def _persist_view_state(self) -> None:
         if self._document is None:

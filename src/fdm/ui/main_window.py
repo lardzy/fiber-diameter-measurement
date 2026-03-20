@@ -3,18 +3,22 @@ from __future__ import annotations
 from pathlib import Path
 import math
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QAction, QActionGroup, QColor, QImage, QImageReader, QPainter, QPen
+from PySide6.QtCore import QSize, Qt
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
+    QAbstractItemView,
+    QComboBox,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
     QInputDialog,
     QLabel,
+    QListView,
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QSplitter,
@@ -23,46 +27,43 @@ from PySide6.QtWidgets import (
     QTableWidgetItem,
     QTabWidget,
     QToolBar,
+    QToolButton,
     QVBoxLayout,
     QWidget,
-    QComboBox,
 )
 
 from fdm import __version__
 from fdm.geometry import Line, line_length
-from fdm.models import (
-    Calibration,
-    CalibrationPreset,
-    FiberGroup,
-    ImageDocument,
-    Measurement,
-    ProjectState,
-    new_id,
-)
+from fdm.models import Calibration, CalibrationPreset, FiberGroup, ImageDocument, Measurement, ProjectState, new_id
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
-from fdm.services.export_service import ExportService
+from fdm.services.export_service import ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
+from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
-from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog
+from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog
 
 
 class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
+    SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
 
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("纤维直径测量")
-        self.resize(1480, 920)
+        self.resize(1520, 940)
 
         self.project = ProjectState.empty()
+        self._project_path: Path | None = None
         self._document_order: list[str] = []
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
+        self._group_list_rebuilding = False
+        self._table_rebuilding = False
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -70,10 +71,14 @@ class MainWindow(QMainWindow):
             "#3D405B",
             "#F2CC8F",
             "#6D597A",
+            "#227C9D",
+            "#FF7C43",
+            "#2A9D8F",
         ]
 
         self.export_service = ExportService()
         self.snap_service = SnapService(model_provider=NullModelProvider())
+
         self._build_ui()
         self._refresh_preset_combo()
         self._update_model_status()
@@ -81,6 +86,8 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._create_actions()
+        self._build_menus()
         self._build_toolbar()
 
         splitter = QSplitter(Qt.Orientation.Horizontal)
@@ -90,30 +97,68 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
-        splitter.setSizes([220, 900, 320])
+        splitter.setSizes([220, 930, 360])
         self.setCentralWidget(splitter)
 
-    def _build_toolbar(self) -> None:
-        toolbar = QToolBar("主工具栏")
-        toolbar.setMovable(False)
-        self.addToolBar(toolbar)
+    def _create_actions(self) -> None:
+        self.open_images_action = QAction("打开图片", self)
+        self.open_images_action.setShortcut("Ctrl+O")
+        self.open_images_action.triggered.connect(self.open_images)
 
-        open_action = QAction("打开图片", self)
-        open_action.triggered.connect(self.open_images)
-        toolbar.addAction(open_action)
+        self.open_folder_action = QAction("打开文件夹", self)
+        self.open_folder_action.triggered.connect(self.open_folder)
 
-        load_project_action = QAction("打开项目", self)
-        load_project_action.triggered.connect(self.load_project)
-        toolbar.addAction(load_project_action)
+        self.open_project_action = QAction("打开项目", self)
+        self.open_project_action.triggered.connect(self.load_project)
 
-        save_project_action = QAction("保存项目", self)
-        save_project_action.triggered.connect(self.save_project)
-        toolbar.addAction(save_project_action)
+        self.save_project_action = QAction("保存项目", self)
+        self.save_project_action.setShortcut("Ctrl+S")
+        self.save_project_action.triggered.connect(lambda: self.save_project())
 
-        export_action = QAction("导出结果", self)
-        export_action.triggered.connect(self.export_results)
-        toolbar.addAction(export_action)
-        toolbar.addSeparator()
+        self.close_current_action = QAction("关闭当前图片", self)
+        self.close_current_action.setShortcut("Ctrl+W")
+        self.close_current_action.triggered.connect(self.close_current_document)
+
+        self.close_all_action = QAction("关闭所有图片", self)
+        self.close_all_action.setShortcut("Ctrl+Shift+W")
+        self.close_all_action.triggered.connect(self.close_all_documents)
+
+        self.undo_action = QAction("撤回", self)
+        self.undo_action.setShortcut("Ctrl+Z")
+        self.undo_action.triggered.connect(self.undo_current_document)
+
+        self.redo_action = QAction("重做", self)
+        self.redo_action.setShortcut("Ctrl+Shift+Z")
+        self.redo_action.triggered.connect(self.redo_current_document)
+
+        self.delete_measurement_action = QAction("删除选中测量", self)
+        self.delete_measurement_action.setShortcut("Delete")
+        self.delete_measurement_action.triggered.connect(self.delete_selected_measurement)
+
+        self.add_group_action = QAction("新增类别", self)
+        self.add_group_action.triggered.connect(self.add_fiber_group)
+
+        self.rename_group_action = QAction("重命名当前类别", self)
+        self.rename_group_action.triggered.connect(self.rename_active_group)
+
+        self.fit_action = QAction("适应窗口", self)
+        self.fit_action.triggered.connect(self.fit_current_image)
+
+        self.actual_size_action = QAction("原始像素", self)
+        self.actual_size_action.triggered.connect(self.actual_size_current_image)
+
+        self.export_actions: list[QAction] = []
+        self.export_actions.append(self._make_export_action("导出测量叠加图", ExportSelection(include_measurement_overlay=True)))
+        self.export_actions.append(self._make_export_action("导出比例尺图", ExportSelection(include_scale_overlay=True)))
+        self.export_actions.append(self._make_export_action("导出比例尺 JSON", ExportSelection(include_scale_json=True)))
+        self.export_actions.append(self._make_export_action("导出 Excel", ExportSelection(include_excel=True)))
+        self.export_actions.append(self._make_export_action("导出 CSV", ExportSelection(include_csv=True)))
+        self.export_actions.append(
+            self._make_export_action(
+                "导出叠加图 + Excel",
+                ExportSelection(include_measurement_overlay=True, include_excel=True),
+            )
+        )
 
         mode_group = QActionGroup(self)
         mode_group.setExclusive(True)
@@ -127,27 +172,73 @@ class MainWindow(QMainWindow):
             action = QAction(label, self)
             action.setCheckable(True)
             action.triggered.connect(lambda checked=False, value=mode: self.set_tool_mode(value))
-            toolbar.addAction(action)
-            mode_group.addAction(action)
             self._mode_actions[mode] = action
+            mode_group.addAction(action)
         self._mode_actions["select"].setChecked(True)
 
-        toolbar.addSeparator()
-        fit_action = QAction("适应窗口", self)
-        fit_action.triggered.connect(self.fit_current_image)
-        toolbar.addAction(fit_action)
+    def _build_menus(self) -> None:
+        file_menu = self.menuBar().addMenu("文件")
+        file_menu.addAction(self.open_images_action)
+        file_menu.addAction(self.open_folder_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.open_project_action)
+        file_menu.addAction(self.save_project_action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.close_current_action)
+        file_menu.addAction(self.close_all_action)
+        export_menu = file_menu.addMenu("导出")
+        for action in self.export_actions:
+            export_menu.addAction(action)
 
-        actual_size_action = QAction("原始像素", self)
-        actual_size_action.triggered.connect(self.actual_size_current_image)
-        toolbar.addAction(actual_size_action)
+        edit_menu = self.menuBar().addMenu("编辑")
+        edit_menu.addAction(self.undo_action)
+        edit_menu.addAction(self.redo_action)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.delete_measurement_action)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.add_group_action)
+        edit_menu.addAction(self.rename_group_action)
+
+        view_menu = self.menuBar().addMenu("视图")
+        for action in self._mode_actions.values():
+            view_menu.addAction(action)
+        view_menu.addSeparator()
+        view_menu.addAction(self.fit_action)
+        view_menu.addAction(self.actual_size_action)
+
+    def _build_toolbar(self) -> None:
+        toolbar = QToolBar("主工具栏")
+        toolbar.setMovable(False)
+        self.addToolBar(toolbar)
+        toolbar.addAction(self.open_images_action)
+        toolbar.addAction(self.open_folder_action)
+        toolbar.addAction(self.open_project_action)
+        toolbar.addAction(self.save_project_action)
+        toolbar.addSeparator()
+
+        export_button = QToolButton(self)
+        export_button.setText("导出")
+        export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        export_menu = QMenu(export_button)
+        for action in self.export_actions:
+            export_menu.addAction(action)
+        export_button.setMenu(export_menu)
+        toolbar.addWidget(export_button)
+        toolbar.addSeparator()
+
+        for action in self._mode_actions.values():
+            toolbar.addAction(action)
+        toolbar.addSeparator()
+        toolbar.addAction(self.fit_action)
+        toolbar.addAction(self.actual_size_action)
+        toolbar.addSeparator()
+        toolbar.addAction(self.close_current_action)
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
-
-        label = QLabel("已打开图片")
-        layout.addWidget(label)
+        layout.addWidget(QLabel("已打开图片"))
 
         self.image_list = QListWidget()
         self.image_list.currentRowChanged.connect(self._on_image_list_changed)
@@ -183,42 +274,68 @@ class MainWindow(QMainWindow):
         calibration_layout.addWidget(self.calibration_label)
         self.preset_combo = QComboBox()
         calibration_layout.addWidget(self.preset_combo)
-        preset_button_row = QHBoxLayout()
+        preset_row = QHBoxLayout()
         add_preset_button = QPushButton("新增预设")
         add_preset_button.clicked.connect(self.add_calibration_preset)
         apply_preset_button = QPushButton("应用预设")
         apply_preset_button.clicked.connect(self.apply_selected_preset)
-        preset_button_row.addWidget(add_preset_button)
-        preset_button_row.addWidget(apply_preset_button)
-        calibration_layout.addLayout(preset_button_row)
+        preset_row.addWidget(add_preset_button)
+        preset_row.addWidget(apply_preset_button)
+        calibration_layout.addLayout(preset_row)
         layout.addWidget(calibration_box)
 
-        group_box = QGroupBox("纤维分组")
+        group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
-        self.group_combo = QComboBox()
-        self.group_combo.currentIndexChanged.connect(self._on_group_combo_changed)
-        group_layout.addWidget(self.group_combo)
-        add_group_button = QPushButton("新增分组")
+        self.group_list = QListWidget()
+        self.group_list.setViewMode(QListView.ViewMode.IconMode)
+        self.group_list.setFlow(QListView.Flow.LeftToRight)
+        self.group_list.setWrapping(True)
+        self.group_list.setResizeMode(QListView.ResizeMode.Adjust)
+        self.group_list.setMovement(QListView.Movement.Static)
+        self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.group_list.setSpacing(6)
+        self.group_list.setMaximumHeight(140)
+        self.group_list.itemSelectionChanged.connect(self._on_group_selection_changed)
+        group_layout.addWidget(self.group_list)
+        group_button_row = QHBoxLayout()
+        add_group_button = QPushButton("新增类别")
         add_group_button.clicked.connect(self.add_fiber_group)
-        group_layout.addWidget(add_group_button)
+        rename_group_button = QPushButton("重命名")
+        rename_group_button.clicked.connect(self.rename_active_group)
+        group_button_row.addWidget(add_group_button)
+        group_button_row.addWidget(rename_group_button)
+        group_layout.addLayout(group_button_row)
         layout.addWidget(group_box)
 
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
-        self.measurement_table = QTableWidget(0, 6)
-        self.measurement_table.setHorizontalHeaderLabels(["ID", "模式", "结果", "单位", "置信度", "状态"])
-        self.measurement_table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
+        self.measurement_table = QTableWidget(0, 7)
+        self.measurement_table.setHorizontalHeaderLabels(["ID", "种类", "模式", "结果", "单位", "置信度", "状态"])
+        header = self.measurement_table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        self.measurement_table.setColumnWidth(0, 110)
+        self.measurement_table.setColumnWidth(1, 180)
+        self.measurement_table.setColumnWidth(2, 90)
+        self.measurement_table.setColumnWidth(3, 120)
+        self.measurement_table.setColumnWidth(4, 70)
+        self.measurement_table.setColumnWidth(5, 80)
+        self.measurement_table.setColumnWidth(6, 110)
         self.measurement_table.verticalHeader().setVisible(False)
         self.measurement_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
-        delete_measurement_button = QPushButton("删除选中测量")
-        delete_measurement_button.clicked.connect(self.delete_selected_measurement)
-        measurement_layout.addWidget(delete_measurement_button)
+        delete_button = QPushButton("删除选中测量")
+        delete_button.clicked.connect(self.delete_selected_measurement)
+        measurement_layout.addWidget(delete_button)
         layout.addWidget(measurement_box, 1)
 
         return container
+
+    def _make_export_action(self, label: str, selection: ExportSelection) -> QAction:
+        action = QAction(label, self)
+        action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
+        return action
 
     def set_tool_mode(self, mode: str) -> None:
         self._tool_mode = mode
@@ -227,14 +344,13 @@ class MainWindow(QMainWindow):
             canvas.set_tool_mode(mode)
         if mode in self._mode_actions:
             self._mode_actions[mode].setChecked(True)
-        self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
+            self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
 
     def current_document(self) -> ImageDocument | None:
         index = self.tab_widget.currentIndex()
         if index < 0 or index >= len(self._document_order):
             return None
-        document_id = self._document_order[index]
-        return self.project.get_document(document_id)
+        return self.project.get_document(self._document_order[index])
 
     def current_canvas(self) -> DocumentCanvas | None:
         document = self.current_document()
@@ -246,6 +362,21 @@ class MainWindow(QMainWindow):
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
         for path in paths:
             self._open_image(path)
+
+    def open_folder(self) -> None:
+        folder = QFileDialog.getExistingDirectory(self, "选择图片文件夹")
+        if not folder:
+            return
+        image_paths = [
+            item
+            for item in sorted(Path(folder).iterdir(), key=lambda path: path.name.lower())
+            if item.is_file() and item.suffix.lower() in self.SUPPORTED_SUFFIXES
+        ]
+        if not image_paths:
+            QMessageBox.information(self, "打开文件夹", "该文件夹中没有支持的图片。")
+            return
+        for image_path in image_paths:
+            self._open_image(str(image_path))
 
     def _open_image(self, path: str, *, document: ImageDocument | None = None) -> None:
         absolute_path = str(Path(path).expanduser().resolve())
@@ -268,7 +399,13 @@ class MainWindow(QMainWindow):
         )
         target_document.path = absolute_path
         target_document.image_size = (image.width(), image.height())
-        target_document.ensure_default_group()
+        target_document.sidecar_path = target_document.default_sidecar_path()
+        target_document.initialize_runtime_state()
+        if target_document.calibration is None:
+            CalibrationSidecarIO.load_document(target_document)
+        else:
+            target_document.mark_calibration_saved()
+        target_document.mark_session_saved()
 
         raster = self._qimage_to_raster(image)
         canvas = DocumentCanvas()
@@ -292,29 +429,41 @@ class MainWindow(QMainWindow):
         self.image_list.setCurrentRow(tab_index)
         self._update_ui_for_current_document()
 
-    def save_project(self) -> None:
+    def save_project(self, path: str | None = None) -> bool:
         if not self.project.documents:
             QMessageBox.information(self, "保存项目", "请先打开图片。")
-            return
-        path, _ = QFileDialog.getSaveFileName(
-            self,
-            "保存项目",
-            "fiber_measurement.fdmproj",
-            self.PROJECT_FILTER,
-        )
-        if not path:
-            return
+            return False
+        target_path = Path(path) if path else self._project_path
+        if target_path is None:
+            selected_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "保存项目",
+                "fiber_measurement.fdmproj",
+                self.PROJECT_FILTER,
+            )
+            if not selected_path:
+                return False
+            target_path = Path(selected_path)
         self.project.version = __version__
-        ProjectIO.save(self.project, path)
-        self.statusBar().showMessage(f"项目已保存: {path}", 5000)
+        ProjectIO.save(self.project, target_path)
+        self._project_path = target_path
+        for document in self.project.documents:
+            document.mark_session_saved()
+            document.mark_calibration_saved()
+        self._update_ui_for_current_document()
+        self.statusBar().showMessage(f"项目已保存: {target_path}", 5000)
+        return True
 
     def load_project(self) -> None:
+        if not self._confirm_close_documents(self.project.documents):
+            return
         path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
         if not path:
             return
         project = ProjectIO.load(path)
         missing_paths = []
         self._reset_workspace()
+        self._project_path = Path(path)
         self.project = ProjectState(version=project.version, documents=[], calibration_presets=project.calibration_presets)
         for document in project.documents:
             if Path(document.path).exists():
@@ -322,29 +471,54 @@ class MainWindow(QMainWindow):
             else:
                 missing_paths.append(document.path)
         self.project.metadata = project.metadata
+        for document in self.project.documents:
+            if document.calibration is None:
+                CalibrationSidecarIO.load_document(document)
+            else:
+                document.mark_calibration_saved()
+            document.mark_session_saved()
         self._refresh_preset_combo()
         if missing_paths:
-            QMessageBox.warning(
-                self,
-                "部分图片缺失",
-                "以下图片未找到:\n" + "\n".join(missing_paths),
-            )
+            QMessageBox.warning(self, "部分图片缺失", "以下图片未找到:\n" + "\n".join(missing_paths))
         self.statusBar().showMessage(f"项目已加载: {path}", 5000)
 
-    def export_results(self) -> None:
+    def export_results(self, preset: ExportSelection | None = None) -> None:
         if not self.project.documents:
             QMessageBox.information(self, "导出结果", "当前没有可导出的图片。")
+            return
+        preset = preset or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
+        dialog = ExportOptionsDialog(
+            preset,
+            allow_all_scope=len(self.project.documents) > 1,
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        selection = dialog.selection()
+        if not selection.any_selected():
+            QMessageBox.information(self, "导出结果", "请至少选择一种导出内容。")
             return
         output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录")
         if not output_dir:
             return
+        target_documents = self.project.documents if selection.scope == ExportScope.ALL_OPEN else ([self.current_document()] if self.current_document() else [])
         outputs = self.export_service.export_project(
             self.project,
             output_dir,
+            selection=selection,
+            documents=[document for document in target_documents if document is not None],
             overlay_renderer=self._render_overlay_image,
         )
-        output_summary = "\n".join(f"{key}: {value}" for key, value in outputs.items())
-        QMessageBox.information(self, "导出完成", f"结果已导出到:\n{output_dir}\n\n{output_summary}")
+        if not outputs:
+            QMessageBox.information(self, "导出结果", "没有生成任何文件。")
+            return
+        summary_lines = []
+        for key, value in outputs.items():
+            if isinstance(value, list):
+                summary_lines.append(f"{key}: {len(value)} 个文件")
+            else:
+                summary_lines.append(f"{key}: {value}")
+        QMessageBox.information(self, "导出完成", f"结果已导出到:\n{output_dir}\n\n" + "\n".join(summary_lines))
 
     def fit_current_image(self) -> None:
         canvas = self.current_canvas()
@@ -364,9 +538,7 @@ class MainWindow(QMainWindow):
         if not name:
             QMessageBox.warning(self, "新增预设", "预设名称不能为空。")
             return
-        self.project.calibration_presets.append(
-            CalibrationPreset(name=name, pixels_per_unit=pixels_per_unit, unit=unit)
-        )
+        self.project.calibration_presets.append(CalibrationPreset(name=name, pixels_per_unit=pixels_per_unit, unit=unit))
         self._refresh_preset_combo()
         self.statusBar().showMessage(f"已新增标定预设: {name}", 4000)
 
@@ -376,50 +548,61 @@ class MainWindow(QMainWindow):
         if document is None or preset_index < 0 or preset_index >= len(self.project.calibration_presets):
             return
         preset = self.project.calibration_presets[preset_index]
-        document.calibration = preset.to_calibration()
-        document.recalculate_measurements()
-        self._update_ui_for_current_document()
+
+        def mutate() -> None:
+            document.calibration = preset.to_calibration()
+            document.recalculate_measurements()
+            document.metadata.pop("calibration_line", None)
+
+        self._apply_document_change(document, "应用标定预设", mutate, sync_sidecar=True)
         self.statusBar().showMessage(f"已应用标定预设: {preset.name}", 4000)
 
     def add_fiber_group(self) -> None:
         document = self.current_document()
         if document is None:
             return
-        name, ok = QInputDialog.getText(self, "新增纤维分组", "分组名称")
-        if not ok or not name.strip():
+        label, ok = QInputDialog.getText(self, "新增类别", "类别名称（可留空）")
+        if not ok:
             return
-        color = self._color_palette[len(document.fiber_groups) % len(self._color_palette)]
-        group = FiberGroup(
-            id=new_id("group"),
-            image_id=document.id,
-            name=name.strip(),
-            color=color,
-        )
-        document.fiber_groups.append(group)
-        self._refresh_group_combo(document)
-        self.statusBar().showMessage(f"已新增分组: {group.name}", 3000)
 
-    def delete_selected_measurement(self) -> None:
+        def mutate() -> None:
+            group = document.create_group(
+                color=self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)],
+                label=label.strip(),
+            )
+            document.set_active_group(group.id)
+
+        self._apply_document_change(document, "新增类别", mutate)
+        self.statusBar().showMessage("已新增类别", 3000)
+
+    def rename_active_group(self) -> None:
         document = self.current_document()
         if document is None:
             return
-        measurement_id = document.view_state.selected_measurement_id
-        if measurement_id is None:
+        group = document.get_group(document.active_group_id)
+        if group is None:
             return
-        document.measurements = [
-            measurement for measurement in document.measurements
-            if measurement.id != measurement_id
-        ]
-        for group in document.fiber_groups:
-            group.measurement_ids = [
-                item for item in group.measurement_ids
-                if item != measurement_id
-            ]
-        document.view_state.selected_measurement_id = None
-        canvas = self.current_canvas()
-        if canvas is not None:
-            canvas.set_selected_measurement(None)
-        self._update_ui_for_current_document()
+        label, ok = QInputDialog.getText(self, "重命名类别", "类别名称（可留空）", text=group.label)
+        if not ok:
+            return
+
+        def mutate() -> None:
+            target = document.get_group(group.id)
+            if target is not None:
+                target.label = label.strip()
+
+        self._apply_document_change(document, "重命名类别", mutate)
+
+    def delete_selected_measurement(self) -> None:
+        document = self.current_document()
+        if document is None or document.view_state.selected_measurement_id is None:
+            return
+        measurement_id = document.view_state.selected_measurement_id
+
+        def mutate() -> None:
+            document.remove_measurement(measurement_id)
+
+        self._apply_document_change(document, "删除测量", mutate)
 
     def load_model(self) -> None:
         path, _ = QFileDialog.getOpenFileName(self, "选择 ONNX 模型", "", "ONNX 文件 (*.onnx)")
@@ -428,21 +611,108 @@ class MainWindow(QMainWindow):
         provider = OnnxModelProvider()
         try:
             provider.load(path)
-        except Exception as exc:  # noqa: BLE001 - surface exact runtime failure to the user
+        except Exception as exc:  # noqa: BLE001
             QMessageBox.warning(self, "模型加载失败", str(exc))
             return
         self.snap_service.set_model_provider(provider)
         self._update_model_status()
         self.statusBar().showMessage(f"已加载模型: {path}", 5000)
 
+    def close_current_document(self) -> None:
+        document = self.current_document()
+        if document is None:
+            return
+        if not self._confirm_close_documents([document]):
+            return
+        self._remove_document(document.id)
+
+    def close_all_documents(self) -> None:
+        if not self.project.documents:
+            return
+        if not self._confirm_close_documents(self.project.documents):
+            return
+        self._reset_workspace()
+        self._update_ui_for_current_document()
+
+    def undo_current_document(self) -> None:
+        document = self.current_document()
+        if document is None or document.history is None or not document.history.undo(document):
+            return
+        CalibrationSidecarIO.save_document(document)
+        self._update_ui_for_current_document()
+
+    def redo_current_document(self) -> None:
+        document = self.current_document()
+        if document is None or document.history is None or not document.history.redo(document):
+            return
+        CalibrationSidecarIO.save_document(document)
+        self._update_ui_for_current_document()
+
+    def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
+        dirty_documents = [document for document in documents if document.dirty_flags.session_dirty]
+        if not dirty_documents:
+            return True
+        if len(dirty_documents) == 1 and len(documents) == 1:
+            message = f"{Path(dirty_documents[0].path).name} 有未保存的会话改动。"
+        else:
+            message = f"共有 {len(dirty_documents)} 张图片存在未保存的会话改动。"
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle("未保存的改动")
+        box.setText(message)
+        save_button = box.addButton("保存", QMessageBox.ButtonRole.AcceptRole)
+        discard_button = box.addButton("放弃", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked == cancel_button:
+            return False
+        if clicked == save_button:
+            return self.save_project()
+        return clicked == discard_button
+
     def _reset_workspace(self) -> None:
         self.project = ProjectState.empty()
+        self._project_path = None
         self._document_order.clear()
         self._images.clear()
         self._rasters.clear()
         self._canvases.clear()
         self.image_list.clear()
         self.tab_widget.clear()
+
+    def _remove_document(self, document_id: str) -> None:
+        if document_id not in self._document_order:
+            return
+        index = self._document_order.index(document_id)
+        self._document_order.pop(index)
+        self.project.documents = [document for document in self.project.documents if document.id != document_id]
+        self._images.pop(document_id, None)
+        self._rasters.pop(document_id, None)
+        self._canvases.pop(document_id, None)
+        self.tab_widget.removeTab(index)
+        item = self.image_list.takeItem(index)
+        del item
+        self._update_ui_for_current_document()
+
+    def _apply_document_change(
+        self,
+        document: ImageDocument,
+        label: str,
+        mutator,
+        *,
+        sync_sidecar: bool = False,
+    ) -> None:
+        before = document.snapshot_state()
+        mutator()
+        document.rebuild_group_memberships()
+        document.refresh_dirty_flags()
+        after = document.snapshot_state()
+        if document.history is not None:
+            document.history.push(label, before, after)
+        if sync_sidecar:
+            CalibrationSidecarIO.save_document(document)
+        self._update_ui_for_current_document()
 
     def _on_tab_changed(self, index: int) -> None:
         if index < 0:
@@ -471,35 +741,36 @@ class MainWindow(QMainWindow):
             self._apply_calibration_line(document, line)
             return
 
-        group = document.get_group(self.group_combo.currentData()) or document.ensure_default_group()
-        if mode == "manual":
-            measurement = Measurement(
-                id=new_id("meas"),
-                image_id=document.id,
-                fiber_group_id=group.id,
-                mode="manual",
-                line_px=line,
-                confidence=1.0,
-                status="manual",
-            )
-        else:
-            snap_result = self.snap_service.snap_measurement(self._rasters[document.id], line)
-            measurement = Measurement(
-                id=new_id("meas"),
-                image_id=document.id,
-                fiber_group_id=group.id,
-                mode="snap",
-                line_px=line,
-                snapped_line_px=snap_result.snapped_line or line,
-                confidence=snap_result.confidence,
-                status=snap_result.status if snap_result.snapped_line is not None else "manual_review",
-                debug_payload=snap_result.debug_payload,
-            )
-        document.add_measurement(measurement)
-        canvas = self._canvases.get(document.id)
-        if canvas is not None:
-            canvas.set_selected_measurement(measurement.id)
-        self._update_ui_for_current_document()
+        group = document.get_group(document.active_group_id) or document.ensure_default_group()
+
+        def mutate() -> None:
+            if mode == "manual":
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=line,
+                    confidence=1.0,
+                    status="manual",
+                )
+            else:
+                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], line)
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="snap",
+                    line_px=line,
+                    snapped_line_px=snap_result.snapped_line or line,
+                    confidence=snap_result.confidence,
+                    status=snap_result.status if snap_result.snapped_line is not None else "manual_review",
+                    debug_payload=snap_result.debug_payload,
+                )
+            document.add_measurement(measurement)
+
+        self._apply_document_change(document, "新增测量", mutate)
+        self.statusBar().showMessage("已新增测量", 2500)
 
     def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str) -> None:
         document = self.project.get_document(document_id)
@@ -507,19 +778,23 @@ class MainWindow(QMainWindow):
             return
         document.view_state.selected_measurement_id = measurement_id
         self._sync_measurement_table_selection(document)
+        self._update_action_states()
 
     def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, line: Line) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
-        measurement = document.get_measurement(measurement_id)
-        if measurement is None:
-            return
-        measurement.snapped_line_px = line
-        measurement.status = "edited"
-        measurement.recalculate(document.calibration)
-        document.view_state.selected_measurement_id = measurement.id
-        self._update_ui_for_current_document()
+
+        def mutate() -> None:
+            measurement = document.get_measurement(measurement_id)
+            if measurement is None:
+                return
+            measurement.snapped_line_px = line
+            measurement.status = "edited"
+            measurement.recalculate(document.calibration)
+            document.view_state.selected_measurement_id = measurement.id
+
+        self._apply_document_change(document, "编辑测量线", mutate)
 
     def _apply_calibration_line(self, document: ImageDocument, line: Line) -> None:
         dialog = CalibrationInputDialog(self)
@@ -527,15 +802,18 @@ class MainWindow(QMainWindow):
             return
         actual_length, unit = dialog.values()
         pixels_per_unit = line_length(line) / actual_length
-        document.calibration = Calibration(
-            mode="image_scale",
-            pixels_per_unit=pixels_per_unit,
-            unit=unit,
-            source_label=f"图内标定 {actual_length:g}{unit}",
-        )
-        document.metadata["calibration_line"] = line.to_dict()
-        document.recalculate_measurements()
-        self._update_ui_for_current_document()
+
+        def mutate() -> None:
+            document.calibration = Calibration(
+                mode="image_scale",
+                pixels_per_unit=pixels_per_unit,
+                unit=unit,
+                source_label=f"图内标定 {actual_length:g}{unit}",
+            )
+            document.metadata["calibration_line"] = line.to_dict()
+            document.recalculate_measurements()
+
+        self._apply_document_change(document, "图内标定", mutate, sync_sidecar=True)
         self.statusBar().showMessage("图内标尺标定已更新", 4000)
 
     def _refresh_preset_combo(self) -> None:
@@ -543,63 +821,71 @@ class MainWindow(QMainWindow):
         for preset in self.project.calibration_presets:
             self.preset_combo.addItem(f"{preset.name} ({preset.pixels_per_unit:g} px/{preset.unit})")
 
-    def _refresh_group_combo(self, document: ImageDocument | None) -> None:
-        self.group_combo.blockSignals(True)
-        self.group_combo.clear()
-        if document is None:
-            self.group_combo.blockSignals(False)
-            return
-        for group in document.fiber_groups:
-            self.group_combo.addItem(group.name, group.id)
-        current_measurement = document.get_measurement(document.view_state.selected_measurement_id)
-        if current_measurement and current_measurement.fiber_group_id:
-            index = self.group_combo.findData(current_measurement.fiber_group_id)
-            if index >= 0:
-                self.group_combo.setCurrentIndex(index)
-        elif self.group_combo.count() > 0:
-            self.group_combo.setCurrentIndex(0)
-        self.group_combo.blockSignals(False)
+    def _populate_group_list(self, document: ImageDocument | None) -> None:
+        self._group_list_rebuilding = True
+        self.group_list.clear()
+        if document is not None:
+            for group in document.sorted_groups():
+                item = QListWidgetItem(group.display_name())
+                item.setData(Qt.ItemDataRole.UserRole, group.id)
+                item.setBackground(QColor(group.color))
+                item.setForeground(QColor(self._contrast_color(group.color)))
+                item.setSizeHint(QSize(120, 32))
+                self.group_list.addItem(item)
+                if document.active_group_id == group.id:
+                    item.setSelected(True)
+        self._group_list_rebuilding = False
 
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
-        self._refresh_group_combo(document)
+        self._populate_group_list(document)
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode)
+        self._update_action_states()
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         if document is None or document.calibration is None:
             self.calibration_label.setText("当前图片未标定")
             return
         calibration = document.calibration
+        sidecar_info = f"\n侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}"
         self.calibration_label.setText(
-            f"{calibration.source_label}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}"
+            f"{calibration.source_label}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}{sidecar_info}"
         )
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
+        self._table_rebuilding = True
         self.measurement_table.setRowCount(0)
-        if document is None:
-            return
-        unit = document.calibration.unit if document.calibration else "px"
-        for row, measurement in enumerate(document.measurements):
-            self.measurement_table.insertRow(row)
-            display_id = measurement.id.split("_")[-1]
-            values = [
-                display_id,
-                "半自动" if measurement.mode == "snap" else "手动",
-                f"{(measurement.diameter_unit or 0.0):.4f}",
-                unit,
-                f"{measurement.confidence:.2f}",
-                measurement.status,
-            ]
-            for column, value in enumerate(values):
-                item = QTableWidgetItem(value)
-                if column == 0:
-                    item.setData(Qt.ItemDataRole.UserRole, measurement.id)
-                self.measurement_table.setItem(row, column, item)
-        self._sync_measurement_table_selection(document)
+        if document is not None:
+            unit = document.calibration.unit if document.calibration else "px"
+            for row, measurement in enumerate(document.measurements):
+                self.measurement_table.insertRow(row)
+                display_id = measurement.id.split("_")[-1]
+                id_item = QTableWidgetItem(display_id)
+                id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
+                self.measurement_table.setItem(row, 0, id_item)
+                self.measurement_table.setCellWidget(row, 1, self._create_group_combo(document, measurement))
+                self.measurement_table.setItem(row, 2, QTableWidgetItem("半自动" if measurement.mode == "snap" else "手动"))
+                self.measurement_table.setItem(row, 3, QTableWidgetItem(f"{(measurement.diameter_unit or 0.0):.4f}"))
+                self.measurement_table.setItem(row, 4, QTableWidgetItem(unit))
+                self.measurement_table.setItem(row, 5, QTableWidgetItem(f"{measurement.confidence:.2f}"))
+                self.measurement_table.setItem(row, 6, QTableWidgetItem(measurement.status))
+        self._table_rebuilding = False
+        if document is not None:
+            self._sync_measurement_table_selection(document)
+
+    def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
+        combo = QComboBox()
+        combo.setProperty("measurement_id", measurement.id)
+        for group in document.sorted_groups():
+            combo.addItem(self._color_icon(group.color), group.display_name(), group.id)
+        current_index = combo.findData(measurement.fiber_group_id)
+        combo.setCurrentIndex(max(0, current_index))
+        combo.currentIndexChanged.connect(lambda index, widget=combo: self._on_measurement_group_combo_changed(widget))
+        return combo
 
     def _sync_measurement_table_selection(self, document: ImageDocument) -> None:
         target_id = document.view_state.selected_measurement_id
@@ -612,9 +898,10 @@ class MainWindow(QMainWindow):
                     self.measurement_table.selectRow(row)
                     break
         self.measurement_table.blockSignals(False)
-        self._refresh_group_combo(document)
 
     def _on_measurement_selection_changed(self) -> None:
+        if self._table_rebuilding:
+            return
         document = self.current_document()
         canvas = self.current_canvas()
         if document is None or canvas is None:
@@ -629,35 +916,39 @@ class MainWindow(QMainWindow):
         measurement_id = item.data(Qt.ItemDataRole.UserRole)
         document.view_state.selected_measurement_id = measurement_id
         canvas.set_selected_measurement(measurement_id)
-        measurement = document.get_measurement(measurement_id)
-        if measurement and measurement.fiber_group_id:
-            combo_index = self.group_combo.findData(measurement.fiber_group_id)
-            if combo_index >= 0:
-                self.group_combo.setCurrentIndex(combo_index)
+        self._update_action_states()
 
-    def _on_group_combo_changed(self, index: int) -> None:
-        if index < 0:
+    def _on_measurement_group_combo_changed(self, combo: QComboBox) -> None:
+        if self._table_rebuilding:
             return
         document = self.current_document()
         if document is None:
             return
-        measurement = document.get_measurement(document.view_state.selected_measurement_id)
-        if measurement is None:
+        measurement_id = combo.property("measurement_id")
+        if not measurement_id:
             return
-        new_group_id = self.group_combo.itemData(index)
-        if measurement.fiber_group_id == new_group_id:
+        target_group_id = combo.currentData()
+        measurement = document.get_measurement(measurement_id)
+        if measurement is None or measurement.fiber_group_id == target_group_id:
             return
-        old_group = document.get_group(measurement.fiber_group_id)
-        if old_group is not None:
-            old_group.measurement_ids = [
-                item for item in old_group.measurement_ids
-                if item != measurement.id
-            ]
-        measurement.fiber_group_id = new_group_id
-        new_group = document.get_group(new_group_id)
-        if new_group is not None and measurement.id not in new_group.measurement_ids:
-            new_group.measurement_ids.append(measurement.id)
-        self._update_ui_for_current_document()
+        document.view_state.selected_measurement_id = measurement_id
+
+        def mutate() -> None:
+            document.set_measurement_group(measurement_id, target_group_id)
+
+        self._apply_document_change(document, "修改测量分类", mutate)
+
+    def _on_group_selection_changed(self) -> None:
+        if self._group_list_rebuilding:
+            return
+        document = self.current_document()
+        if document is None:
+            return
+        selected_items = self.group_list.selectedItems()
+        if not selected_items:
+            return
+        document.set_active_group(selected_items[0].data(Qt.ItemDataRole.UserRole))
+        self._update_action_states()
 
     def _update_model_status(self) -> None:
         health = self.snap_service.model_provider.healthcheck()
@@ -665,6 +956,19 @@ class MainWindow(QMainWindow):
             self.model_status_label.setText(f"已加载\n{health.get('model_path', '')}")
         else:
             self.model_status_label.setText(f"未就绪\n{health.get('reason', '') or '将使用传统算法兜底'}")
+
+    def _update_action_states(self) -> None:
+        document = self.current_document()
+        history = document.history if document is not None else None
+        has_document = document is not None
+        has_selected_measurement = has_document and document.view_state.selected_measurement_id is not None
+        self.close_current_action.setEnabled(has_document)
+        self.close_all_action.setEnabled(bool(self.project.documents))
+        self.delete_measurement_action.setEnabled(bool(has_selected_measurement))
+        self.add_group_action.setEnabled(has_document)
+        self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
+        self.undo_action.setEnabled(bool(history and history.can_undo()))
+        self.redo_action.setEnabled(bool(history and history.can_redo()))
 
     def _qimage_to_raster(self, image: QImage) -> RasterImage:
         grayscale = image.convertToFormat(QImage.Format.Format_Grayscale8)
@@ -692,8 +996,6 @@ class MainWindow(QMainWindow):
             for measurement in document.measurements:
                 group = document.get_group(measurement.fiber_group_id)
                 color = QColor(group.color if group else "#1F7A8C")
-                if measurement.mode == "snap":
-                    color = QColor("#1DD3B0") if measurement.status == "snapped" else QColor("#FFB000")
                 painter.setPen(QPen(color, 3))
                 line = measurement.effective_line()
                 painter.drawLine(
@@ -703,8 +1005,8 @@ class MainWindow(QMainWindow):
                     int(round(line.end.y)),
                 )
                 painter.setBrush(color)
-                painter.drawEllipse(int(line.start.x) - 4, int(line.start.y) - 4, 8, 8)
-                painter.drawEllipse(int(line.end.x) - 4, int(line.end.y) - 4, 8, 8)
+                painter.drawEllipse(int(round(line.start.x)) - 4, int(round(line.start.y)) - 4, 8, 8)
+                painter.drawEllipse(int(round(line.end.x)) - 4, int(round(line.end.y)) - 4, 8, 8)
 
         if include_scale and document.calibration is not None:
             scale_value = self._nice_scale_value(document)
@@ -716,6 +1018,7 @@ class MainWindow(QMainWindow):
                 painter.drawLine(start_x, start_y, int(start_x + bar_px), start_y)
                 painter.setPen(QPen(QColor("#FFFFFF"), 4))
                 painter.drawLine(start_x, start_y, int(start_x + bar_px), start_y)
+                painter.setPen(QPen(QColor("#FFFFFF"), 1))
                 painter.drawText(start_x, start_y - 10, f"{value:g} {document.calibration.unit}")
 
         painter.end()
@@ -739,3 +1042,35 @@ class MainWindow(QMainWindow):
             nice_base = 5
         nice_value = nice_base * (10 ** exponent)
         return nice_value, calibration.unit_to_px(nice_value)
+
+    def _color_icon(self, color_value: str) -> QIcon:
+        pixmap = QPixmap(12, 12)
+        pixmap.fill(QColor(color_value))
+        return QIcon(pixmap)
+
+    def _contrast_color(self, color_value: str) -> str:
+        color = QColor(color_value)
+        luminance = (0.299 * color.red()) + (0.587 * color.green()) + (0.114 * color.blue())
+        return "#111111" if luminance > 186 else "#FFFFFF"
+
+    def keyPressEvent(self, event) -> None:
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9:
+            number = event.key() - Qt.Key.Key_0
+            document = self.current_document()
+            if document is not None:
+                group = document.get_group_by_number(number)
+                if group is not None:
+                    document.set_active_group(group.id)
+                    self._populate_group_list(document)
+                    self._update_action_states()
+                    return
+        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+            self.delete_selected_measurement()
+            return
+        super().keyPressEvent(event)
+
+    def closeEvent(self, event: QCloseEvent) -> None:
+        if not self._confirm_close_documents(self.project.documents):
+            event.ignore()
+            return
+        event.accept()

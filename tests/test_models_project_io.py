@@ -30,6 +30,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             image_size=(640, 480),
         )
         group = document.ensure_default_group()
+        document.initialize_runtime_state()
         document.calibration = Calibration(
             mode="preset",
             pixels_per_unit=4.0,
@@ -58,6 +59,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         loaded_document = loaded.documents[0]
         self.assertEqual(loaded_document.path, "/tmp/fiber.png")
         self.assertEqual(len(loaded_document.measurements), 1)
+        self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
 
