@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 import math
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QComboBox,
@@ -34,10 +34,20 @@ from PySide6.QtWidgets import (
 
 from fdm import __version__
 from fdm.geometry import Line, line_length
-from fdm.models import Calibration, CalibrationPreset, FiberGroup, ImageDocument, Measurement, ProjectState, new_id
+from fdm.models import (
+    Calibration,
+    CalibrationPreset,
+    FiberGroup,
+    ImageDocument,
+    Measurement,
+    ProjectState,
+    UNCATEGORIZED_COLOR,
+    UNCATEGORIZED_LABEL,
+    new_id,
+)
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
-from fdm.services.export_service import ExportScope, ExportSelection, ExportService
+from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
@@ -148,15 +158,35 @@ class MainWindow(QMainWindow):
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
 
         self.export_actions: list[QAction] = []
-        self.export_actions.append(self._make_export_action("导出测量叠加图", ExportSelection(include_measurement_overlay=True)))
-        self.export_actions.append(self._make_export_action("导出比例尺图", ExportSelection(include_scale_overlay=True)))
+        self.export_actions.append(
+            self._make_export_action(
+                "导出测量叠加图",
+                ExportSelection(
+                    include_measurement_overlay=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                ),
+            )
+        )
+        self.export_actions.append(
+            self._make_export_action(
+                "导出比例尺图",
+                ExportSelection(
+                    include_scale_overlay=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                ),
+            )
+        )
         self.export_actions.append(self._make_export_action("导出比例尺 JSON", ExportSelection(include_scale_json=True)))
         self.export_actions.append(self._make_export_action("导出 Excel", ExportSelection(include_excel=True)))
         self.export_actions.append(self._make_export_action("导出 CSV", ExportSelection(include_csv=True)))
         self.export_actions.append(
             self._make_export_action(
                 "导出叠加图 + Excel",
-                ExportSelection(include_measurement_overlay=True, include_excel=True),
+                ExportSelection(
+                    include_measurement_overlay=True,
+                    include_excel=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                ),
             )
         )
 
@@ -295,6 +325,23 @@ class MainWindow(QMainWindow):
         self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.group_list.setSpacing(6)
         self.group_list.setMaximumHeight(140)
+        self.group_list.setStyleSheet(
+            """
+            QListWidget {
+                background: transparent;
+                border: none;
+            }
+            QListWidget::item {
+                border: 2px solid transparent;
+                border-radius: 10px;
+                padding: 6px 10px;
+            }
+            QListWidget::item:selected {
+                border: 3px solid #F7F4EA;
+                outline: 0;
+            }
+            """
+        )
         self.group_list.itemSelectionChanged.connect(self._on_group_selection_changed)
         group_layout.addWidget(self.group_list)
         group_button_row = QHBoxLayout()
@@ -325,9 +372,9 @@ class MainWindow(QMainWindow):
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
-        delete_button = QPushButton("删除选中测量")
-        delete_button.clicked.connect(self.delete_selected_measurement)
-        measurement_layout.addWidget(delete_button)
+        self.delete_measurement_button = QPushButton("删除选中测量")
+        self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
+        measurement_layout.addWidget(self.delete_measurement_button)
         layout.addWidget(measurement_box, 1)
 
         return container
@@ -534,11 +581,20 @@ class MainWindow(QMainWindow):
         dialog = CalibrationPresetDialog(self)
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        name, pixels_per_unit, unit = dialog.values()
+        name, pixel_distance, actual_distance, pixels_per_unit, unit = dialog.values()
         if not name:
             QMessageBox.warning(self, "新增预设", "预设名称不能为空。")
             return
-        self.project.calibration_presets.append(CalibrationPreset(name=name, pixels_per_unit=pixels_per_unit, unit=unit))
+        self.project.calibration_presets.append(
+            CalibrationPreset(
+                name=name,
+                pixels_per_unit=pixels_per_unit,
+                unit=unit,
+                pixel_distance=pixel_distance,
+                actual_distance=actual_distance,
+                computed_pixels_per_unit=pixels_per_unit,
+            )
+        )
         self._refresh_preset_combo()
         self.statusBar().showMessage(f"已新增标定预设: {name}", 4000)
 
@@ -595,7 +651,7 @@ class MainWindow(QMainWindow):
 
     def delete_selected_measurement(self) -> None:
         document = self.current_document()
-        if document is None or document.view_state.selected_measurement_id is None:
+        if self._tool_mode == "calibration" or document is None or document.view_state.selected_measurement_id is None:
             return
         measurement_id = document.view_state.selected_measurement_id
 
@@ -741,14 +797,14 @@ class MainWindow(QMainWindow):
             self._apply_calibration_line(document, line)
             return
 
-        group = document.get_group(document.active_group_id) or document.ensure_default_group()
+        group = document.get_group(document.active_group_id)
 
         def mutate() -> None:
             if mode == "manual":
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
-                    fiber_group_id=group.id,
+                    fiber_group_id=group.id if group else None,
                     mode="manual",
                     line_px=line,
                     confidence=1.0,
@@ -759,7 +815,7 @@ class MainWindow(QMainWindow):
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
-                    fiber_group_id=group.id,
+                    fiber_group_id=group.id if group else None,
                     mode="snap",
                     line_px=line,
                     snapped_line_px=snap_result.snapped_line or line,
@@ -819,20 +875,35 @@ class MainWindow(QMainWindow):
     def _refresh_preset_combo(self) -> None:
         self.preset_combo.clear()
         for preset in self.project.calibration_presets:
-            self.preset_combo.addItem(f"{preset.name} ({preset.pixels_per_unit:g} px/{preset.unit})")
+            self.preset_combo.addItem(f"{preset.name} ({preset.resolved_pixels_per_unit():g} px/{preset.unit})")
 
     def _populate_group_list(self, document: ImageDocument | None) -> None:
         self._group_list_rebuilding = True
         self.group_list.clear()
         if document is not None:
+            ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
+            ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
+            ungrouped_item.setBackground(QColor(UNCATEGORIZED_COLOR))
+            ungrouped_item.setForeground(QColor(self._contrast_color(UNCATEGORIZED_COLOR)))
+            ungrouped_item.setSizeHint(QSize(128, 36))
+            font = ungrouped_item.font()
+            font.setBold(document.active_group_id is None)
+            ungrouped_item.setFont(font)
+            self.group_list.addItem(ungrouped_item)
+            if document.active_group_id is None:
+                ungrouped_item.setSelected(True)
             for group in document.sorted_groups():
-                item = QListWidgetItem(group.display_name())
+                selected = document.active_group_id == group.id
+                item = QListWidgetItem(self._group_chip_label(group.display_name(), selected=selected))
                 item.setData(Qt.ItemDataRole.UserRole, group.id)
                 item.setBackground(QColor(group.color))
                 item.setForeground(QColor(self._contrast_color(group.color)))
-                item.setSizeHint(QSize(120, 32))
+                item.setSizeHint(QSize(132, 36))
+                font = item.font()
+                font.setBold(selected)
+                item.setFont(font)
                 self.group_list.addItem(item)
-                if document.active_group_id == group.id:
+                if selected:
                     item.setSelected(True)
         self._group_list_rebuilding = False
 
@@ -880,10 +951,11 @@ class MainWindow(QMainWindow):
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
         combo = QComboBox()
         combo.setProperty("measurement_id", measurement.id)
+        combo.addItem(self._color_icon(UNCATEGORIZED_COLOR), UNCATEGORIZED_LABEL, None)
         for group in document.sorted_groups():
             combo.addItem(self._color_icon(group.color), group.display_name(), group.id)
         current_index = combo.findData(measurement.fiber_group_id)
-        combo.setCurrentIndex(max(0, current_index))
+        combo.setCurrentIndex(0 if current_index < 0 else current_index)
         combo.currentIndexChanged.connect(lambda index, widget=combo: self._on_measurement_group_combo_changed(widget))
         return combo
 
@@ -946,8 +1018,11 @@ class MainWindow(QMainWindow):
             return
         selected_items = self.group_list.selectedItems()
         if not selected_items:
+            document.set_active_group(None)
+            self._update_action_states()
             return
         document.set_active_group(selected_items[0].data(Qt.ItemDataRole.UserRole))
+        self._populate_group_list(document)
         self._update_action_states()
 
     def _update_model_status(self) -> None:
@@ -961,10 +1036,11 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
-        has_selected_measurement = has_document and document.view_state.selected_measurement_id is not None
+        has_selected_measurement = has_document and document.view_state.selected_measurement_id is not None and self._tool_mode != "calibration"
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(bool(has_selected_measurement))
+        self.delete_measurement_button.setEnabled(bool(has_selected_measurement))
         self.add_group_action.setEnabled(has_document)
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
         self.undo_action.setEnabled(bool(history and history.can_undo()))
@@ -978,6 +1054,9 @@ class MainWindow(QMainWindow):
                 raster.set(x, y, QColor(grayscale.pixel(x, y)).red())
         return raster
 
+    def _group_chip_label(self, text: str, *, selected: bool) -> str:
+        return f"✓ {text}" if selected else text
+
     def _render_overlay_image(
         self,
         document: ImageDocument,
@@ -985,51 +1064,121 @@ class MainWindow(QMainWindow):
         *,
         include_measurements: bool,
         include_scale: bool,
+        render_mode: str,
     ) -> None:
         if document.id not in self._images:
             return
-        image = self._images[document.id].copy()
+        source_image = self._images[document.id]
+        screen_scale = max(0.05, document.view_state.zoom or 1.0)
+
+        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
+            image = source_image.copy()
+            image_to_output_scale = 1.0
+
+            def image_to_output(point) -> QPointF:
+                return QPointF(point.x, point.y)
+        elif render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+            canvas = self._canvases.get(document.id)
+            viewport_width = max(200, canvas.width()) if canvas is not None else max(400, min(1400, source_image.width()))
+            viewport_height = max(160, canvas.height()) if canvas is not None else max(300, min(900, source_image.height()))
+            image = QImage(viewport_width, viewport_height, QImage.Format.Format_ARGB32)
+            image.fill(QColor("#101820"))
+            image_to_output_scale = screen_scale
+
+            def image_to_output(point) -> QPointF:
+                return QPointF(
+                    document.view_state.pan.x + (point.x * screen_scale),
+                    document.view_state.pan.y + (point.y * screen_scale),
+                )
+        else:
+            output_width = max(1, int(round(source_image.width() * screen_scale)))
+            output_height = max(1, int(round(source_image.height() * screen_scale)))
+            image = source_image.scaled(
+                output_width,
+                output_height,
+                Qt.AspectRatioMode.IgnoreAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+            image_to_output_scale = screen_scale
+
+            def image_to_output(point) -> QPointF:
+                return QPointF(point.x * screen_scale, point.y * screen_scale)
+
         painter = QPainter(image)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+
+        if render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+            target_rect = QRectF(
+                document.view_state.pan.x,
+                document.view_state.pan.y,
+                source_image.width() * screen_scale,
+                source_image.height() * screen_scale,
+            )
+            painter.drawImage(target_rect, source_image)
+
+        long_edge = max(image.width(), image.height())
+        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
+            line_width = max(3.0, min(18.0, long_edge * 0.0025))
+            endpoint_radius = max(5.0, line_width * 1.5)
+            scale_bg_width = max(8.0, line_width * 2.1)
+            scale_fg_width = max(4.0, line_width * 1.1)
+            font_px = max(14.0, long_edge * 0.018)
+        else:
+            line_width = max(2.0, min(6.0, long_edge * 0.003))
+            endpoint_radius = max(4.0, line_width * 1.6)
+            scale_bg_width = max(6.0, line_width * 2.2)
+            scale_fg_width = max(3.0, line_width * 1.1)
+            font_px = max(12.0, long_edge * 0.022)
 
         if include_measurements:
             for measurement in document.measurements:
                 group = document.get_group(measurement.fiber_group_id)
-                color = QColor(group.color if group else "#1F7A8C")
-                painter.setPen(QPen(color, 3))
+                color = QColor(group.color if group else UNCATEGORIZED_COLOR)
+                painter.setPen(QPen(color, line_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
                 line = measurement.effective_line()
-                painter.drawLine(
-                    int(round(line.start.x)),
-                    int(round(line.start.y)),
-                    int(round(line.end.x)),
-                    int(round(line.end.y)),
-                )
+                painter.drawLine(image_to_output(line.start), image_to_output(line.end))
                 painter.setBrush(color)
-                painter.drawEllipse(int(round(line.start.x)) - 4, int(round(line.start.y)) - 4, 8, 8)
-                painter.drawEllipse(int(round(line.end.x)) - 4, int(round(line.end.y)) - 4, 8, 8)
+                painter.drawEllipse(image_to_output(line.start), endpoint_radius, endpoint_radius)
+                painter.drawEllipse(image_to_output(line.end), endpoint_radius, endpoint_radius)
 
         if include_scale and document.calibration is not None:
-            scale_value = self._nice_scale_value(document)
+            scale_value = self._nice_scale_value(
+                document,
+                target_output_px=max(80.0, image.width() * 0.18),
+                image_to_output_scale=image_to_output_scale,
+            )
             if scale_value is not None:
                 value, bar_px = scale_value
-                start_x = 24
-                start_y = image.height() - 28
-                painter.setPen(QPen(QColor("#111111"), 8))
-                painter.drawLine(start_x, start_y, int(start_x + bar_px), start_y)
-                painter.setPen(QPen(QColor("#FFFFFF"), 4))
-                painter.drawLine(start_x, start_y, int(start_x + bar_px), start_y)
+                margin = max(24, int(round(min(image.width(), image.height()) * 0.04)))
+                start_x = float(margin)
+                start_y = float(image.height() - margin)
+                painter.setPen(QPen(QColor("#111111"), scale_bg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+                painter.drawLine(QPointF(start_x, start_y), QPointF(start_x + bar_px, start_y))
+                painter.setPen(QPen(QColor("#FFFFFF"), scale_fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+                painter.drawLine(QPointF(start_x, start_y), QPointF(start_x + bar_px, start_y))
+                font = QFont(painter.font())
+                font.setPixelSize(int(round(font_px)))
+                font.setBold(True)
+                painter.setFont(font)
                 painter.setPen(QPen(QColor("#FFFFFF"), 1))
-                painter.drawText(start_x, start_y - 10, f"{value:g} {document.calibration.unit}")
+                painter.drawText(QPointF(start_x, start_y - max(12.0, font_px * 0.55)), f"{value:g} {document.calibration.unit}")
 
         painter.end()
         image.save(str(output_path))
 
-    def _nice_scale_value(self, document: ImageDocument) -> tuple[float, float] | None:
+    def _nice_scale_value(
+        self,
+        document: ImageDocument,
+        *,
+        target_output_px: float,
+        image_to_output_scale: float,
+    ) -> tuple[float, float] | None:
         calibration = document.calibration
         if calibration is None:
             return None
-        target_px = max(60.0, document.image_size[0] * 0.18)
-        raw_value = target_px / calibration.pixels_per_unit
+        scaled_pixels_per_unit = calibration.pixels_per_unit * max(image_to_output_scale, 1e-9)
+        raw_value = target_output_px / scaled_pixels_per_unit
         if raw_value <= 0:
             return None
         exponent = math.floor(math.log10(raw_value))
@@ -1041,7 +1190,7 @@ class MainWindow(QMainWindow):
         else:
             nice_base = 5
         nice_value = nice_base * (10 ** exponent)
-        return nice_value, calibration.unit_to_px(nice_value)
+        return nice_value, calibration.unit_to_px(nice_value) * image_to_output_scale
 
     def _color_icon(self, color_value: str) -> QIcon:
         pixmap = QPixmap(12, 12)
@@ -1064,7 +1213,7 @@ class MainWindow(QMainWindow):
                     self._populate_group_list(document)
                     self._update_action_states()
                     return
-        if event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
+        if self._tool_mode != "calibration" and event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             self.delete_selected_measurement()
             return
         super().keyPressEvent(event)

@@ -10,8 +10,8 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, new_id
-from fdm.services.export_service import ExportSelection, ExportService
+from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL, new_id
+from fdm.services.export_service import ExportImageRenderMode, ExportSelection, ExportService
 
 
 class ExportServiceTests(unittest.TestCase):
@@ -68,6 +68,35 @@ class ExportServiceTests(unittest.TestCase):
             self.assertIn("xl/workbook.xml", names)
             self.assertIn("xl/worksheets/sheet1.xml", names)
             self.assertIn("xl/worksheets/sheet4.xml", names)
+
+    def test_measurement_rows_include_uncategorized_metadata(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_uncategorized.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(0, 0), Point(20, 0)),
+            confidence=0.75,
+            status="manual",
+        )
+        document.add_measurement(measurement)
+
+        rows = ExportService().build_measurement_rows([document])
+
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["fiber_group_display"], UNCATEGORIZED_LABEL)
+        self.assertEqual(rows[0]["fiber_group_label"], UNCATEGORIZED_LABEL)
+        self.assertEqual(rows[0]["fiber_group_color"], UNCATEGORIZED_COLOR)
+
+    def test_all_enabled_export_selection_uses_screen_render_mode(self) -> None:
+        selection = ExportSelection.all_enabled()
+        self.assertEqual(selection.render_mode, ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE)
 
 
 if __name__ == "__main__":

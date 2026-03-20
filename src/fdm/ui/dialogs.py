@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -9,12 +10,13 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
+    QLabel,
     QLineEdit,
     QRadioButton,
     QVBoxLayout,
 )
 
-from fdm.services.export_service import ExportScope, ExportSelection
+from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 
 
 class CalibrationInputDialog(QDialog):
@@ -50,17 +52,29 @@ class CalibrationPresetDialog(QDialog):
         self.setWindowTitle("新增标定预设")
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("例如 40x 显微镜")
-        self._pixels_spin = QDoubleSpinBox()
-        self._pixels_spin.setDecimals(6)
-        self._pixels_spin.setRange(0.000001, 1_000_000.0)
-        self._pixels_spin.setValue(10.0)
+        self._pixel_distance_spin = QDoubleSpinBox()
+        self._pixel_distance_spin.setDecimals(6)
+        self._pixel_distance_spin.setRange(0.000001, 1_000_000.0)
+        self._pixel_distance_spin.setValue(100.0)
+        self._actual_distance_spin = QDoubleSpinBox()
+        self._actual_distance_spin.setDecimals(6)
+        self._actual_distance_spin.setRange(0.000001, 1_000_000.0)
+        self._actual_distance_spin.setValue(10.0)
         self._unit_combo = QComboBox()
         self._unit_combo.addItems(["um", "mm"])
+        self._computed_label = QLabel()
+        self._computed_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+
+        self._pixel_distance_spin.valueChanged.connect(self._refresh_computed_value)
+        self._actual_distance_spin.valueChanged.connect(self._refresh_computed_value)
+        self._unit_combo.currentIndexChanged.connect(self._refresh_computed_value)
 
         form = QFormLayout()
         form.addRow("预设名称", self._name_edit)
-        form.addRow("像素/单位", self._pixels_spin)
+        form.addRow("像素距离", self._pixel_distance_spin)
+        form.addRow("实际距离", self._actual_distance_spin)
         form.addRow("单位", self._unit_combo)
+        form.addRow("自动计算", self._computed_label)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -69,9 +83,21 @@ class CalibrationPresetDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addLayout(form)
         layout.addWidget(buttons)
+        self._refresh_computed_value()
 
-    def values(self) -> tuple[str, float, str]:
-        return self._name_edit.text().strip(), self._pixels_spin.value(), self._unit_combo.currentText()
+    def _refresh_computed_value(self) -> None:
+        pixels_per_unit = self._pixel_distance_spin.value() / self._actual_distance_spin.value()
+        self._computed_label.setText(f"{pixels_per_unit:.6f} px/{self._unit_combo.currentText()}")
+
+    def values(self) -> tuple[str, float, float, float, str]:
+        pixels_per_unit = self._pixel_distance_spin.value() / self._actual_distance_spin.value()
+        return (
+            self._name_edit.text().strip(),
+            self._pixel_distance_spin.value(),
+            self._actual_distance_spin.value(),
+            pixels_per_unit,
+            self._unit_combo.currentText(),
+        )
 
 
 class ExportOptionsDialog(QDialog):
@@ -114,6 +140,22 @@ class ExportOptionsDialog(QDialog):
         scope_layout.addWidget(self._scope_current)
         scope_layout.addWidget(self._scope_all)
 
+        render_group = QGroupBox("图片导出模式")
+        render_layout = QFormLayout(render_group)
+        self._render_mode_combo = QComboBox()
+        self._render_mode_combo.addItem("整图按屏显比例导出", ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE)
+        self._render_mode_combo.addItem("完整分辨率", ExportImageRenderMode.FULL_RESOLUTION)
+        self._render_mode_combo.addItem("当前视窗截图", ExportImageRenderMode.CURRENT_VIEWPORT)
+        render_index = self._render_mode_combo.findData(selection.render_mode)
+        self._render_mode_combo.setCurrentIndex(max(0, render_index))
+        self._render_mode_hint = QLabel("图片类导出会使用这里的渲染模式；表格和 JSON 不受影响。")
+        self._render_mode_hint.setWordWrap(True)
+        render_layout.addRow("渲染方式", self._render_mode_combo)
+        render_layout.addRow("", self._render_mode_hint)
+
+        self._measurement_overlay.toggled.connect(self._update_render_mode_state)
+        self._scale_overlay.toggled.connect(self._update_render_mode_state)
+
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
@@ -121,7 +163,14 @@ class ExportOptionsDialog(QDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(export_group)
         layout.addWidget(scope_group)
+        layout.addWidget(render_group)
         layout.addWidget(buttons)
+        self._update_render_mode_state()
+
+    def _update_render_mode_state(self) -> None:
+        enabled = self._measurement_overlay.isChecked() or self._scale_overlay.isChecked()
+        self._render_mode_combo.setEnabled(enabled)
+        self._render_mode_hint.setEnabled(enabled)
 
     def selection(self) -> ExportSelection:
         return ExportSelection(
@@ -131,4 +180,5 @@ class ExportOptionsDialog(QDialog):
             include_excel=self._excel.isChecked(),
             include_csv=self._csv.isChecked(),
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
+            render_mode=self._render_mode_combo.currentData(),
         )

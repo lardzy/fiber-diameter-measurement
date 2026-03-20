@@ -9,6 +9,9 @@ import uuid
 
 from fdm.geometry import Line, Point, line_length
 
+UNCATEGORIZED_LABEL = "未分类"
+UNCATEGORIZED_COLOR = "#98A2B3"
+
 
 def utc_now_iso() -> str:
     return datetime.now(tz=timezone.utc).isoformat()
@@ -56,11 +59,17 @@ class CalibrationPreset:
     name: str
     pixels_per_unit: float
     unit: str
+    pixel_distance: float | None = None
+    actual_distance: float | None = None
+    computed_pixels_per_unit: float | None = None
+
+    def resolved_pixels_per_unit(self) -> float:
+        return self.computed_pixels_per_unit or self.pixels_per_unit
 
     def to_calibration(self) -> Calibration:
         return Calibration(
             mode="preset",
-            pixels_per_unit=self.pixels_per_unit,
+            pixels_per_unit=self.resolved_pixels_per_unit(),
             unit=self.unit,
             source_label=self.name,
         )
@@ -68,16 +77,24 @@ class CalibrationPreset:
     def to_dict(self) -> dict[str, Any]:
         return {
             "name": self.name,
-            "pixels_per_unit": self.pixels_per_unit,
+            "pixels_per_unit": self.resolved_pixels_per_unit(),
             "unit": self.unit,
+            "pixel_distance": self.pixel_distance,
+            "actual_distance": self.actual_distance,
+            "computed_pixels_per_unit": self.resolved_pixels_per_unit(),
         }
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "CalibrationPreset":
+        computed_pixels_per_unit = payload.get("computed_pixels_per_unit")
+        pixels_per_unit = float(computed_pixels_per_unit or payload["pixels_per_unit"])
         return cls(
             name=str(payload["name"]),
-            pixels_per_unit=float(payload["pixels_per_unit"]),
+            pixels_per_unit=pixels_per_unit,
             unit=str(payload["unit"]),
+            pixel_distance=float(payload["pixel_distance"]) if payload.get("pixel_distance") is not None else None,
+            actual_distance=float(payload["actual_distance"]) if payload.get("actual_distance") is not None else None,
+            computed_pixels_per_unit=pixels_per_unit,
         )
 
 
@@ -260,10 +277,7 @@ class ImageDocument:
             self.history = DocumentHistory()
         if self.sidecar_path is None and self.path:
             self.sidecar_path = self.default_sidecar_path()
-        if not self.fiber_groups:
-            self.ensure_default_group()
-        else:
-            self.fiber_groups.sort(key=lambda group: group.number)
+        self.fiber_groups.sort(key=lambda group: group.number)
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
@@ -318,7 +332,10 @@ class ImageDocument:
         return None
 
     def set_active_group(self, group_id: str | None) -> None:
-        if group_id is None or self.get_group(group_id) is None:
+        if group_id is None:
+            self.active_group_id = None
+            return
+        if self.get_group(group_id) is None:
             return
         self.active_group_id = group_id
 
@@ -332,7 +349,7 @@ class ImageDocument:
 
     def add_measurement(self, measurement: Measurement) -> None:
         if measurement.fiber_group_id is None:
-            measurement.fiber_group_id = self.active_group_id or self.ensure_default_group().id
+            measurement.fiber_group_id = self.active_group_id
         measurement.recalculate(self.calibration)
         self.measurements.append(measurement)
         self.rebuild_group_memberships()
@@ -349,9 +366,11 @@ class ImageDocument:
         self.rebuild_group_memberships()
         self.refresh_dirty_flags()
 
-    def set_measurement_group(self, measurement_id: str, group_id: str) -> None:
+    def set_measurement_group(self, measurement_id: str, group_id: str | None) -> None:
         measurement = self.get_measurement(measurement_id)
-        if measurement is None or self.get_group(group_id) is None:
+        if measurement is None:
+            return
+        if group_id is not None and self.get_group(group_id) is None:
             return
         measurement.fiber_group_id = group_id
         self.rebuild_group_memberships()
@@ -431,8 +450,6 @@ class ImageDocument:
         self.metadata = dict(snapshot.get("metadata", {}))
         self.active_group_id = snapshot.get("active_group_id")
         self.view_state.selected_measurement_id = snapshot.get("selected_measurement_id")
-        if not self.fiber_groups:
-            self.ensure_default_group()
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None

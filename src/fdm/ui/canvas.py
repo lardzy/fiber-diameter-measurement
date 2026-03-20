@@ -102,9 +102,14 @@ class DocumentCanvas(QWidget):
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self._image is None:
             return
+        delta_y = event.angleDelta().y()
+        delta_x = event.angleDelta().x()
+        effective_delta = delta_y if delta_y != 0 else delta_x
+        if effective_delta == 0:
+            return
         cursor_position = event.position()
         image_before = self.widget_to_image(cursor_position)
-        zoom_factor = 1.15 if event.angleDelta().y() > 0 else 1 / 1.15
+        zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
         self._zoom = max(0.05, min(40.0, self._zoom * zoom_factor))
         self._pan = Point(
             cursor_position.x() - (image_before.x * self._zoom),
@@ -124,6 +129,17 @@ class DocumentCanvas(QWidget):
             return
 
         image_point = self.widget_to_image(event.position())
+        if self._tool_mode == "calibration":
+            if self._point_in_image(image_point):
+                anchor = self._clamp_to_image(
+                    snap_to_pixel_center(image_point) if event.modifiers() & Qt.KeyboardModifier.ControlModifier else image_point,
+                    pixel_center=bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier),
+                )
+                self._drawing_anchor_raw = anchor
+                self._drawing_line = Line(start=anchor, end=anchor)
+                self.update()
+            return
+
         selected_handle = self._hit_test_selected_endpoint(image_point)
         if selected_handle is not None:
             self._dragging_handle = selected_handle

@@ -8,7 +8,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, new_id
 from fdm.project_io import ProjectIO
 
 
@@ -62,6 +62,44 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
+
+    def test_calibration_preset_roundtrip_keeps_source_distances(self) -> None:
+        preset = CalibrationPreset(
+            name="40x",
+            pixels_per_unit=12.5,
+            unit="um",
+            pixel_distance=250.0,
+            actual_distance=20.0,
+            computed_pixels_per_unit=12.5,
+        )
+        payload = preset.to_dict()
+        loaded = CalibrationPreset.from_dict(payload)
+
+        self.assertEqual(loaded.name, "40x")
+        self.assertAlmostEqual(loaded.resolved_pixels_per_unit(), 12.5)
+        self.assertAlmostEqual(loaded.pixel_distance or 0.0, 250.0)
+        self.assertAlmostEqual(loaded.actual_distance or 0.0, 20.0)
+
+    def test_document_allows_uncategorized_measurement_by_default(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_uncategorized.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(10, 10), Point(30, 10)),
+        )
+        document.add_measurement(measurement)
+
+        self.assertEqual(len(document.fiber_groups), 0)
+        self.assertIsNone(document.active_group_id)
+        self.assertIsNone(document.measurements[0].fiber_group_id)
 
 
 if __name__ == "__main__":

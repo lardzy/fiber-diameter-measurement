@@ -9,13 +9,19 @@ import math
 import zipfile
 from xml.sax.saxutils import escape
 
-from fdm.models import ImageDocument, ProjectState
+from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.services.sidecar_io import CalibrationSidecarIO
 
 
 class ExportScope:
     CURRENT = "current"
     ALL_OPEN = "all_open"
+
+
+class ExportImageRenderMode:
+    FULL_RESOLUTION = "full_resolution"
+    SCREEN_SCALE_FULL_IMAGE = "screen_scale_full_image"
+    CURRENT_VIEWPORT = "current_viewport"
 
 
 @dataclass(slots=True)
@@ -26,6 +32,7 @@ class ExportSelection:
     include_excel: bool = False
     include_csv: bool = False
     scope: str = ExportScope.CURRENT
+    render_mode: str = ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -36,6 +43,7 @@ class ExportSelection:
             include_excel=True,
             include_csv=True,
             scope=scope,
+            render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
         )
 
     def any_selected(self) -> bool:
@@ -103,21 +111,23 @@ class ExportService:
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
             if selection.include_measurement_overlay and overlay_renderer is not None:
-                output_file = output_path / f"{base_name}_measurements.png"
+                output_file = output_path / f"{base_name}_measurements_{self._render_mode_suffix(selection.render_mode)}.png"
                 overlay_renderer(
                     document,
                     output_file,
                     include_measurements=True,
                     include_scale=False,
+                    render_mode=selection.render_mode,
                 )
                 measurement_overlays.append(output_file)
             if selection.include_scale_overlay and overlay_renderer is not None and document.calibration is not None:
-                output_file = output_path / f"{base_name}_scale.png"
+                output_file = output_path / f"{base_name}_scale_{self._render_mode_suffix(selection.render_mode)}.png"
                 overlay_renderer(
                     document,
                     output_file,
                     include_measurements=False,
                     include_scale=True,
+                    render_mode=selection.render_mode,
                 )
                 scale_overlays.append(output_file)
             if selection.include_scale_json and document.calibration is not None:
@@ -204,9 +214,9 @@ class ExportService:
                         measurement_id=measurement.id,
                         fiber_group_id=measurement.fiber_group_id or "",
                         fiber_group_number=group.number if group else None,
-                        fiber_group_label=group.label if group else "",
-                        fiber_group_display=group.display_name() if group else "",
-                        fiber_group_color=group.color if group else "",
+                        fiber_group_label=group.label if group else UNCATEGORIZED_LABEL,
+                        fiber_group_display=group.display_name() if group else UNCATEGORIZED_LABEL,
+                        fiber_group_color=group.color if group else UNCATEGORIZED_COLOR,
                         mode=measurement.mode,
                         status=measurement.status,
                         confidence=round(measurement.confidence, 4),
@@ -242,6 +252,13 @@ class ExportService:
             writer.writeheader()
             for row in rows:
                 writer.writerow(row)
+
+    def _render_mode_suffix(self, render_mode: str) -> str:
+        return {
+            ExportImageRenderMode.FULL_RESOLUTION: "fullres",
+            ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE: "screen",
+            ExportImageRenderMode.CURRENT_VIEWPORT: "viewport",
+        }.get(render_mode, "screen")
 
     def _write_xlsx(self, path: Path, sheets: dict[str, list[dict[str, object]]]) -> None:
         with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
