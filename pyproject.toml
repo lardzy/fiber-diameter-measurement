@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "fiber-diameter-measurement"
+version = "0.1.0"
+description = "Offline desktop software for fiber diameter measurement."
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "PySide6>=6.7",
+  "opencv-python>=4.10",
+  "numpy>=1.26",
+  "pandas>=2.2",
+  "openpyxl>=3.1",
+  "onnxruntime>=1.18",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.2",
+]
+
+[project.scripts]
+fdm = "fdm.app:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
