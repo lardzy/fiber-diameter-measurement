@@ -27,7 +27,10 @@ class DocumentCanvas(QWidget):
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
         self._panning = False
+        self._pan_button: Qt.MouseButton | None = None
         self._last_mouse_pos = QPointF()
+        self._space_pressed = False
+        self._temporary_grab_active = False
 
     @property
     def document_id(self) -> str | None:
@@ -44,6 +47,7 @@ class DocumentCanvas(QWidget):
 
     def set_tool_mode(self, mode: str) -> None:
         self._tool_mode = mode
+        self._update_cursor()
         self.update()
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
@@ -74,6 +78,28 @@ class DocumentCanvas(QWidget):
         self._pan = Point(20.0, 20.0)
         self._persist_view_state()
         self.update()
+
+    def set_temporary_grab_pressed(self, pressed: bool) -> None:
+        self._space_pressed = pressed
+        if not pressed and not self._panning:
+            self._temporary_grab_active = False
+        elif pressed and not self._has_pointer_edit_operation():
+            self._temporary_grab_active = True
+        self._update_cursor()
+
+    def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
+            self.set_temporary_grab_pressed(True)
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
+            self.set_temporary_grab_pressed(False)
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
@@ -121,11 +147,19 @@ class DocumentCanvas(QWidget):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
             return
+        self.setFocus(Qt.FocusReason.MouseFocusReason)
         self._last_mouse_pos = event.position()
         if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._panning = True
+            self._pan_button = event.button()
+            self._update_cursor()
             return
         if event.button() != Qt.MouseButton.LeftButton:
+            return
+        if self._temporary_grab_active:
+            self._panning = True
+            self._pan_button = event.button()
+            self._update_cursor()
             return
 
         image_point = self.widget_to_image(event.position())
@@ -217,8 +251,14 @@ class DocumentCanvas(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._document is None:
             return
-        if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
+        if self._panning and self._pan_button == event.button():
             self._panning = False
+            self._pan_button = None
+            if self._space_pressed and not self._has_pointer_edit_operation():
+                self._temporary_grab_active = True
+            elif not self._space_pressed:
+                self._temporary_grab_active = False
+            self._update_cursor()
             return
         if event.button() != Qt.MouseButton.LeftButton:
             return
@@ -228,6 +268,9 @@ class DocumentCanvas(QWidget):
             self._drawing_line = None
             if line_length(line) >= 1.0:
                 self.lineCommitted.emit(self._document.id, self._tool_mode, line)
+            if self._space_pressed:
+                self._temporary_grab_active = True
+                self._update_cursor()
             self.update()
             return
         if self._dragging_handle is not None and self._drag_preview_line is not None:
@@ -236,10 +279,14 @@ class DocumentCanvas(QWidget):
             self._dragging_handle = None
             self._drag_preview_line = None
             self.measurementEdited.emit(self._document.id, measurement_id, preview)
+            if self._space_pressed:
+                self._temporary_grab_active = True
+                self._update_cursor()
             self.update()
             return
         self._dragging_handle = None
         self._drag_preview_line = None
+        self._update_cursor()
 
     def widget_to_image(self, position: QPointF) -> Point:
         return Point(
@@ -391,3 +438,14 @@ class DocumentCanvas(QWidget):
             return
         self._document.view_state.zoom = self._zoom
         self._document.view_state.pan = Point(self._pan.x, self._pan.y)
+
+    def _has_pointer_edit_operation(self) -> bool:
+        return self._drawing_anchor_raw is not None or self._dragging_handle is not None
+
+    def _update_cursor(self) -> None:
+        if self._panning:
+            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        elif self._temporary_grab_active:
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+        else:
+            self.unsetCursor()

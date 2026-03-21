@@ -25,9 +25,12 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    ImageBatchLoaderWorker = object  # type: ignore[assignment]
+    ImageLoadRequest = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
 
 
@@ -57,6 +60,21 @@ class FakeMouseEvent:
 
     def modifiers(self):
         return self._modifiers
+
+
+class FakeKeyEvent:
+    def __init__(self, key) -> None:
+        self._key = key
+        self.accepted = False
+
+    def key(self):
+        return self._key
+
+    def isAutoRepeat(self) -> bool:
+        return False
+
+    def accept(self) -> None:
+        self.accepted = True
 
 
 @unittest.skipUnless(PYSIDE_AVAILABLE, "requires PySide6")
@@ -152,6 +170,24 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
 
+    def test_space_drag_temporarily_pans_in_manual_mode(self) -> None:
+        _, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("manual")
+        start_pan = Point(canvas._pan.x, canvas._pan.y)
+
+        canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Space))
+        canvas.mousePressEvent(FakeMouseEvent(QPointF(120.0, 80.0), button=Qt.MouseButton.LeftButton))
+        canvas.mouseMoveEvent(FakeMouseEvent(QPointF(160.0, 110.0), button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(QPointF(160.0, 110.0), button=Qt.MouseButton.LeftButton))
+
+        self.assertNotEqual((canvas._pan.x, canvas._pan.y), (start_pan.x, start_pan.y))
+        self.assertIsNone(canvas._drawing_line)
+
+        canvas.keyReleaseEvent(FakeKeyEvent(Qt.Key.Key_Space))
+        canvas.mousePressEvent(FakeMouseEvent(QPointF(120.0, 80.0), button=Qt.MouseButton.LeftButton))
+
+        self.assertIsNotNone(canvas._drawing_line)
+
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
         window, document = self._create_main_window_fixture()
 
@@ -224,6 +260,104 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(item.icon().isNull())
         finally:
             window.close()
+
+    def test_measurement_table_prioritizes_group_and_result_columns(self) -> None:
+        window = MainWindow()
+        try:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/measurement_table.png",
+                image_size=(240, 160),
+            )
+            document.initialize_runtime_state()
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
+
+            window._populate_measurement_table(document)
+            headers = [window.measurement_table.horizontalHeaderItem(index).text() for index in range(window.measurement_table.columnCount())]
+
+            self.assertEqual(headers, ["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
+            self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
+        finally:
+            window.close()
+
+    def test_measure_toolbar_is_separate_and_exposes_primary_modes(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._file_toolbar)
+            self.assertIsNotNone(window._measure_toolbar)
+            action_texts = [action.text() for action in window._measure_toolbar.actions()]
+            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定"])
+        finally:
+            window.close()
+
+    def test_prepare_image_load_requests_skips_duplicates(self) -> None:
+        window = MainWindow()
+        try:
+            existing_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/already_open.png",
+                image_size=(100, 60),
+            )
+            existing_document.initialize_runtime_state()
+            window.project.documents.append(existing_document)
+
+            requests, skipped_count, focus_document_id = window._prepare_image_load_requests(
+                [
+                    (existing_document.path, None),
+                    ("/tmp/new_image.png", None),
+                    ("/tmp/new_image.png", None),
+                ]
+            )
+
+            self.assertEqual(len(requests), 1)
+            self.assertEqual(skipped_count, 2)
+            self.assertEqual(focus_document_id, existing_document.id)
+        finally:
+            window.close()
+
+    def test_batch_loader_worker_reports_progress_and_failures(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            image_path = Path(tmp_dir) / "worker_image.png"
+            second_image_path = Path(tmp_dir) / "worker_image_2.png"
+            missing_path = Path(tmp_dir) / "missing.png"
+
+            image = QImage(40, 20, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            image.save(str(image_path))
+            image.save(str(second_image_path))
+
+            worker = ImageBatchLoaderWorker(
+                [
+                    ImageLoadRequest(path=str(image_path)),
+                    ImageLoadRequest(path=str(missing_path)),
+                    ImageLoadRequest(path=str(second_image_path)),
+                ],
+                skipped_count=1,
+            )
+            progress_calls: list[tuple[int, int, str]] = []
+            loaded_paths: list[str] = []
+            failed_paths: list[str] = []
+            finished_payloads: list[tuple[bool, int, int, int]] = []
+
+            worker.progress.connect(lambda index, total, path: progress_calls.append((index, total, path)))
+            worker.loaded.connect(lambda request, *_: loaded_paths.append(request.path))
+            worker.failed.connect(lambda path, _reason: failed_paths.append(path))
+            worker.finished.connect(lambda cancelled, loaded_count, skipped_count, failed_count: finished_payloads.append((cancelled, loaded_count, skipped_count, failed_count)))
+
+            worker.run()
+
+            self.assertEqual(len(progress_calls), 3)
+            self.assertEqual(len(loaded_paths), 2)
+            self.assertEqual(failed_paths, [str(missing_path)])
+            self.assertEqual(finished_payloads, [(False, 2, 1, 1)])
 
     def test_full_resolution_metrics_scale_above_old_cap_for_large_images(self) -> None:
         window = MainWindow()

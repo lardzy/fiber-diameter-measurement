@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 import math
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -20,6 +21,7 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
+    QProgressDialog,
     QPushButton,
     QSplitter,
     QStatusBar,
@@ -53,12 +55,33 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog
+from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+
+
+@dataclass(slots=True)
+class BatchLoadState:
+    context_label: str
+    total: int
+    skipped_count: int = 0
+    completed_count: int = 0
+    loaded_count: int = 0
+    failed_count: int = 0
+    cancelled: bool = False
+    failures: list[str] | None = None
+    missing_paths: list[str] | None = None
 
 
 class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+    TABLE_COL_GROUP = 0
+    TABLE_COL_RESULT = 1
+    TABLE_COL_UNIT = 2
+    TABLE_COL_MODE = 3
+    TABLE_COL_CONFIDENCE = 4
+    TABLE_COL_STATUS = 5
+    TABLE_COL_ID = 6
 
     def __init__(self) -> None:
         super().__init__()
@@ -74,6 +97,12 @@ class MainWindow(QMainWindow):
         self._tool_mode = "select"
         self._group_list_rebuilding = False
         self._table_rebuilding = False
+        self._file_toolbar: QToolBar | None = None
+        self._measure_toolbar: QToolBar | None = None
+        self._load_thread: QThread | None = None
+        self._load_worker: ImageBatchLoaderWorker | None = None
+        self._load_progress_dialog: QProgressDialog | None = None
+        self._load_state: BatchLoadState | None = None
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -208,6 +237,10 @@ class MainWindow(QMainWindow):
             self._mode_actions[mode] = action
             mode_group.addAction(action)
         self._mode_actions["select"].setChecked(True)
+        self._mode_actions["select"].setIcon(self._color_icon("#6B7280", size=14))
+        self._mode_actions["manual"].setIcon(self._color_icon("#F4D35E", size=14))
+        self._mode_actions["snap"].setIcon(self._color_icon("#2A9D8F", size=14))
+        self._mode_actions["calibration"].setIcon(self._color_icon("#FF7F50", size=14))
 
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("文件")
@@ -241,14 +274,16 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.actual_size_action)
 
     def _build_toolbar(self) -> None:
-        toolbar = QToolBar("主工具栏")
-        toolbar.setMovable(False)
-        self.addToolBar(toolbar)
-        toolbar.addAction(self.open_images_action)
-        toolbar.addAction(self.open_folder_action)
-        toolbar.addAction(self.open_project_action)
-        toolbar.addAction(self.save_project_action)
-        toolbar.addSeparator()
+        file_toolbar = QToolBar("文件工具栏")
+        file_toolbar.setMovable(False)
+        file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.addToolBar(file_toolbar)
+        self._file_toolbar = file_toolbar
+        file_toolbar.addAction(self.open_images_action)
+        file_toolbar.addAction(self.open_folder_action)
+        file_toolbar.addAction(self.open_project_action)
+        file_toolbar.addAction(self.save_project_action)
+        file_toolbar.addSeparator()
 
         export_button = QToolButton(self)
         export_button.setText("导出")
@@ -257,16 +292,44 @@ class MainWindow(QMainWindow):
         for action in self.export_actions:
             export_menu.addAction(action)
         export_button.setMenu(export_menu)
-        toolbar.addWidget(export_button)
-        toolbar.addSeparator()
+        file_toolbar.addWidget(export_button)
+        file_toolbar.addSeparator()
+        file_toolbar.addAction(self.fit_action)
+        file_toolbar.addAction(self.actual_size_action)
+        file_toolbar.addSeparator()
+        file_toolbar.addAction(self.close_current_action)
+        file_toolbar.addAction(self.close_all_action)
 
-        for action in self._mode_actions.values():
-            toolbar.addAction(action)
-        toolbar.addSeparator()
-        toolbar.addAction(self.fit_action)
-        toolbar.addAction(self.actual_size_action)
-        toolbar.addSeparator()
-        toolbar.addAction(self.close_current_action)
+        self.addToolBarBreak()
+        measure_toolbar = QToolBar("测量工具")
+        measure_toolbar.setMovable(False)
+        measure_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        measure_toolbar.setIconSize(QSize(16, 16))
+        measure_toolbar.setStyleSheet(
+            """
+            QToolBar {
+                spacing: 8px;
+                padding: 4px 0;
+            }
+            QToolButton {
+                min-height: 38px;
+                padding: 6px 14px;
+                border-radius: 8px;
+                font-weight: 600;
+            }
+            QToolButton:checked {
+                background: #12343B;
+                color: #F7F4EA;
+                border: 1px solid #2A9D8F;
+            }
+            """
+        )
+        self.addToolBar(measure_toolbar)
+        self._measure_toolbar = measure_toolbar
+        measure_toolbar.addAction(self._mode_actions["select"])
+        measure_toolbar.addAction(self._mode_actions["manual"])
+        measure_toolbar.addAction(self._mode_actions["snap"])
+        measure_toolbar.addAction(self._mode_actions["calibration"])
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
@@ -365,16 +428,16 @@ class MainWindow(QMainWindow):
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
         self.measurement_table = QTableWidget(0, 7)
-        self.measurement_table.setHorizontalHeaderLabels(["ID", "种类", "模式", "结果", "单位", "置信度", "状态"])
+        self.measurement_table.setHorizontalHeaderLabels(["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.measurement_table.setColumnWidth(0, 110)
-        self.measurement_table.setColumnWidth(1, 180)
-        self.measurement_table.setColumnWidth(2, 90)
-        self.measurement_table.setColumnWidth(3, 120)
-        self.measurement_table.setColumnWidth(4, 70)
-        self.measurement_table.setColumnWidth(5, 80)
-        self.measurement_table.setColumnWidth(6, 110)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 180)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 90)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_CONFIDENCE, 80)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_STATUS, 110)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_ID, 110)
         self.measurement_table.verticalHeader().setVisible(False)
         self.measurement_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
@@ -415,8 +478,12 @@ class MainWindow(QMainWindow):
 
     def open_images(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
-        for path in paths:
-            self._open_image(path)
+        if not paths:
+            return
+        self._open_image_requests(
+            [(path, None) for path in paths],
+            context_label="打开图片",
+        )
 
     def open_folder(self) -> None:
         folder = QFileDialog.getExistingDirectory(self, "选择图片文件夹")
@@ -430,24 +497,223 @@ class MainWindow(QMainWindow):
         if not image_paths:
             QMessageBox.information(self, "打开文件夹", "该文件夹中没有支持的图片。")
             return
-        for image_path in image_paths:
-            self._open_image(str(image_path))
+        self._open_image_requests(
+            [(str(image_path), None) for image_path in image_paths],
+            context_label="打开文件夹",
+        )
 
-    def _open_image(self, path: str, *, document: ImageDocument | None = None) -> None:
-        absolute_path = str(Path(path).expanduser().resolve())
-        for existing_document in self.project.documents:
-            if Path(existing_document.path) == Path(absolute_path):
-                self._set_current_document(existing_document.id)
-                return
+    def _normalize_image_path(self, path: str | Path) -> str:
+        return str(Path(path).expanduser().resolve())
 
-        reader = QImageReader(absolute_path)
+    def _prepare_image_load_requests(
+        self,
+        items: list[tuple[str, ImageDocument | None]],
+    ) -> tuple[list[ImageLoadRequest], int, str | None]:
+        open_documents = {
+            self._normalize_image_path(document.path): document
+            for document in self.project.documents
+        }
+        seen_paths: set[str] = set()
+        requests: list[ImageLoadRequest] = []
+        skipped_count = 0
+        focus_document_id: str | None = None
+        for raw_path, document in items:
+            absolute_path = self._normalize_image_path(raw_path)
+            existing_document = open_documents.get(absolute_path)
+            if existing_document is not None:
+                skipped_count += 1
+                focus_document_id = existing_document.id
+                continue
+            if absolute_path in seen_paths:
+                skipped_count += 1
+                continue
+            seen_paths.add(absolute_path)
+            requests.append(ImageLoadRequest(path=absolute_path, document=document))
+        return requests, skipped_count, focus_document_id
+
+    def _open_image_requests(
+        self,
+        items: list[tuple[str, ImageDocument | None]],
+        *,
+        context_label: str,
+        missing_paths: list[str] | None = None,
+    ) -> None:
+        if self._load_thread is not None:
+            QMessageBox.information(self, context_label, "当前仍有图片在加载，请稍候。")
+            return
+        requests, skipped_count, focus_document_id = self._prepare_image_load_requests(items)
+        if not requests:
+            if focus_document_id is not None:
+                self._set_current_document(focus_document_id)
+            self._show_batch_load_summary(
+                BatchLoadState(
+                    context_label=context_label,
+                    total=0,
+                    skipped_count=skipped_count,
+                    loaded_count=0,
+                    failed_count=0,
+                    cancelled=False,
+                    failures=[],
+                    missing_paths=list(missing_paths or []),
+                )
+            )
+            return
+        if len(requests) == 1:
+            state = BatchLoadState(
+                context_label=context_label,
+                total=1,
+                skipped_count=skipped_count,
+                failures=[],
+                missing_paths=list(missing_paths or []),
+            )
+            self._load_single_request_sync(requests[0], state)
+            self._show_batch_load_summary(state)
+            return
+        self._start_batch_image_load(
+            requests,
+            context_label=context_label,
+            skipped_count=skipped_count,
+            missing_paths=missing_paths,
+        )
+
+    def _load_single_request_sync(self, request: ImageLoadRequest, state: BatchLoadState) -> None:
+        reader = QImageReader(request.path)
         reader.setAutoTransform(True)
         image = reader.read()
         if image.isNull():
-            QMessageBox.warning(self, "打开失败", f"无法读取图片:\n{absolute_path}")
+            reason = reader.errorString() or "无法读取图片"
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(f"{Path(request.path).name}: {reason}")
             return
+        raster = qimage_to_raster(image)
+        self._add_loaded_document(request, image, raster)
+        state.completed_count += 1
+        state.loaded_count += 1
 
-        target_document = document or ImageDocument(
+    def _start_batch_image_load(
+        self,
+        requests: list[ImageLoadRequest],
+        *,
+        context_label: str,
+        skipped_count: int,
+        missing_paths: list[str] | None = None,
+    ) -> None:
+        self._load_state = BatchLoadState(
+            context_label=context_label,
+            total=len(requests),
+            skipped_count=skipped_count,
+            failures=[],
+            missing_paths=list(missing_paths or []),
+        )
+        progress = QProgressDialog("准备加载图片...", "取消", 0, len(requests), self)
+        progress.setWindowTitle(context_label)
+        progress.setWindowModality(Qt.WindowModality.ApplicationModal)
+        progress.setMinimumDuration(0)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+        progress.setValue(0)
+        progress.setMinimumWidth(420)
+        self._load_progress_dialog = progress
+
+        thread = QThread(self)
+        worker = ImageBatchLoaderWorker(requests, skipped_count=skipped_count)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_batch_load_progress)
+        worker.loaded.connect(self._on_batch_load_loaded)
+        worker.failed.connect(self._on_batch_load_failed)
+        worker.finished.connect(self._on_batch_load_finished)
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        progress.canceled.connect(worker.cancel)
+
+        self._load_thread = thread
+        self._load_worker = worker
+        thread.start()
+        progress.show()
+
+    def _on_batch_load_progress(self, index: int, total: int, path: str) -> None:
+        if self._load_progress_dialog is None:
+            return
+        completed = self._load_state.completed_count if self._load_state is not None else 0
+        self._load_progress_dialog.setMaximum(total)
+        self._load_progress_dialog.setValue(completed)
+        self._load_progress_dialog.setLabelText(f"正在加载 ({index}/{total})\n{Path(path).name}")
+
+    def _on_batch_load_loaded(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
+        state = self._load_state
+        if state is not None:
+            state.completed_count += 1
+            state.loaded_count += 1
+        self._add_loaded_document(request, image, raster)
+        if self._load_progress_dialog is not None and state is not None:
+            self._load_progress_dialog.setValue(state.completed_count)
+
+    def _on_batch_load_failed(self, path: str, reason: str) -> None:
+        state = self._load_state
+        if state is not None:
+            state.completed_count += 1
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(f"{Path(path).name}: {reason}")
+        if self._load_progress_dialog is not None and state is not None:
+            self._load_progress_dialog.setValue(state.completed_count)
+
+    def _on_batch_load_finished(self, cancelled: bool, loaded_count: int, skipped_count: int, failed_count: int) -> None:
+        state = self._load_state
+        if state is None:
+            return
+        state.cancelled = cancelled
+        state.loaded_count = loaded_count
+        state.skipped_count = skipped_count
+        state.failed_count = failed_count
+        state.completed_count = state.total
+        if self._load_progress_dialog is not None:
+            self._load_progress_dialog.setValue(state.total)
+            self._load_progress_dialog.close()
+            self._load_progress_dialog.deleteLater()
+            self._load_progress_dialog = None
+        self._show_batch_load_summary(state)
+        self._load_thread = None
+        self._load_worker = None
+        self._load_state = None
+
+    def _show_batch_load_summary(self, state: BatchLoadState) -> None:
+        summary_lines: list[str] = []
+        if state.loaded_count:
+            summary_lines.append(f"成功加载 {state.loaded_count} 张图片")
+        if state.skipped_count:
+            summary_lines.append(f"跳过重复图片 {state.skipped_count} 张")
+        if state.failed_count:
+            summary_lines.append(f"读取失败 {state.failed_count} 张")
+        if state.missing_paths:
+            summary_lines.append(f"未找到项目中的图片 {len(state.missing_paths)} 张")
+        if state.cancelled:
+            summary_lines.insert(0, "加载已取消，已保留已成功打开的图片。")
+        if summary_lines:
+            self.statusBar().showMessage("；".join(summary_lines), 6000)
+
+        detail_lines = list(summary_lines)
+        if state.failures:
+            detail_lines.append("")
+            detail_lines.append("失败明细:")
+            detail_lines.extend(state.failures[:8])
+        if state.missing_paths:
+            detail_lines.append("")
+            detail_lines.append("缺失图片:")
+            detail_lines.extend(str(Path(path)) for path in state.missing_paths[:8])
+
+        has_warning = bool(state.failed_count or state.missing_paths)
+        if has_warning:
+            QMessageBox.warning(self, state.context_label, "\n".join(detail_lines))
+        elif state.cancelled or state.skipped_count:
+            QMessageBox.information(self, state.context_label, "\n".join(detail_lines))
+
+    def _add_loaded_document(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
+        absolute_path = request.path
+        target_document = request.document or ImageDocument(
             id=new_id("image"),
             path=absolute_path,
             image_size=(image.width(), image.height()),
@@ -462,7 +728,6 @@ class MainWindow(QMainWindow):
             target_document.mark_calibration_saved()
         target_document.mark_session_saved()
 
-        raster = self._qimage_to_raster(image)
         canvas = DocumentCanvas()
         canvas.set_document(target_document, image)
         canvas.set_tool_mode(self._tool_mode)
@@ -510,6 +775,9 @@ class MainWindow(QMainWindow):
         return True
 
     def load_project(self) -> None:
+        if self._load_thread is not None:
+            QMessageBox.information(self, "打开项目", "当前仍有图片在加载，请稍候。")
+            return
         if not self._confirm_close_documents(self.project.documents):
             return
         path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
@@ -520,21 +788,15 @@ class MainWindow(QMainWindow):
         self._reset_workspace()
         self._project_path = Path(path)
         self.project = ProjectState(version=project.version, documents=[], calibration_presets=project.calibration_presets)
+        self.project.metadata = project.metadata
+        self._refresh_preset_combo()
+        load_items: list[tuple[str, ImageDocument | None]] = []
         for document in project.documents:
             if Path(document.path).exists():
-                self._open_image(document.path, document=document)
+                load_items.append((document.path, document))
             else:
                 missing_paths.append(document.path)
-        self.project.metadata = project.metadata
-        for document in self.project.documents:
-            if document.calibration is None:
-                CalibrationSidecarIO.load_document(document)
-            else:
-                document.mark_calibration_saved()
-            document.mark_session_saved()
-        self._refresh_preset_combo()
-        if missing_paths:
-            QMessageBox.warning(self, "部分图片缺失", "以下图片未找到:\n" + "\n".join(missing_paths))
+        self._open_image_requests(load_items, context_label="打开项目", missing_paths=missing_paths)
         self.statusBar().showMessage(f"项目已加载: {path}", 5000)
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
@@ -1005,13 +1267,13 @@ class MainWindow(QMainWindow):
                 display_id = measurement.id.split("_")[-1]
                 id_item = QTableWidgetItem(display_id)
                 id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
-                self.measurement_table.setItem(row, 0, id_item)
-                self.measurement_table.setCellWidget(row, 1, self._create_group_combo(document, measurement))
-                self.measurement_table.setItem(row, 2, QTableWidgetItem("半自动" if measurement.mode == "snap" else "手动"))
-                self.measurement_table.setItem(row, 3, QTableWidgetItem(f"{(measurement.diameter_unit or 0.0):.4f}"))
-                self.measurement_table.setItem(row, 4, QTableWidgetItem(unit))
-                self.measurement_table.setItem(row, 5, QTableWidgetItem(f"{measurement.confidence:.2f}"))
-                self.measurement_table.setItem(row, 6, QTableWidgetItem(measurement.status))
+                self.measurement_table.setCellWidget(row, self.TABLE_COL_GROUP, self._create_group_combo(document, measurement))
+                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{(measurement.diameter_unit or 0.0):.4f}"))
+                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(unit))
+                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem("半自动" if measurement.mode == "snap" else "手动"))
+                self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(f"{measurement.confidence:.2f}"))
+                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(measurement.status))
+                self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
         self._table_rebuilding = False
         if document is not None:
             self._sync_measurement_table_selection(document)
@@ -1033,7 +1295,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.clearSelection()
         if target_id is not None:
             for row in range(self.measurement_table.rowCount()):
-                item = self.measurement_table.item(row, 0)
+                item = self._measurement_id_item(row)
                 if item and item.data(Qt.ItemDataRole.UserRole) == target_id:
                     self.measurement_table.selectRow(row)
                     break
@@ -1050,13 +1312,16 @@ class MainWindow(QMainWindow):
         if not selected_rows:
             return
         row = selected_rows[0].row()
-        item = self.measurement_table.item(row, 0)
+        item = self._measurement_id_item(row)
         if item is None:
             return
         measurement_id = item.data(Qt.ItemDataRole.UserRole)
         document.view_state.selected_measurement_id = measurement_id
         canvas.set_selected_measurement(measurement_id)
         self._update_action_states()
+
+    def _measurement_id_item(self, row: int) -> QTableWidgetItem | None:
+        return self.measurement_table.item(row, self.TABLE_COL_ID)
 
     def _on_measurement_group_combo_changed(self, combo: QComboBox) -> None:
         if self._table_rebuilding:
@@ -1121,14 +1386,6 @@ class MainWindow(QMainWindow):
         self.delete_group_button.setEnabled(has_deletable_group_target)
         self.undo_action.setEnabled(bool(history and history.can_undo()))
         self.redo_action.setEnabled(bool(history and history.can_redo()))
-
-    def _qimage_to_raster(self, image: QImage) -> RasterImage:
-        grayscale = image.convertToFormat(QImage.Format.Format_Grayscale8)
-        raster = RasterImage.blank(grayscale.width(), grayscale.height(), fill=255)
-        for y in range(grayscale.height()):
-            for x in range(grayscale.width()):
-                raster.set(x, y, QColor(grayscale.pixel(x, y)).red())
-        return raster
 
     def _group_chip_label(self, text: str, *, selected: bool) -> str:
         return f"✓ {text}" if selected else text
@@ -1314,6 +1571,12 @@ class MainWindow(QMainWindow):
         return "#111111" if luminance > 186 else "#FFFFFF"
 
     def keyPressEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Space:
+            canvas = self.current_canvas()
+            if canvas is not None:
+                canvas.set_temporary_grab_pressed(True)
+            event.accept()
+            return
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9:
             number = event.key() - Qt.Key.Key_0
             document = self.current_document()
@@ -1328,6 +1591,15 @@ class MainWindow(QMainWindow):
             self.delete_selected_measurement()
             return
         super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event) -> None:
+        if event.key() == Qt.Key.Key_Space:
+            canvas = self.current_canvas()
+            if canvas is not None:
+                canvas.set_temporary_grab_pressed(False)
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if not self._confirm_close_documents(self.project.documents):
