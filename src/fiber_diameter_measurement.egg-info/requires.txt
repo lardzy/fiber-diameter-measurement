@@ -1,4 +1,5 @@
 PySide6>=6.7
+qtawesome>=1.4
 opencv-python>=4.10
 numpy>=1.26
 pandas>=2.2
@@ -7,3 +8,6 @@ onnxruntime>=1.18
 
 [dev]
 pytest>=8.2
+
+[packaging]
+pyinstaller>=6.0

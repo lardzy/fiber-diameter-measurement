@@ -119,7 +119,7 @@ python -m unittest discover -s tests
 
 ## Windows 打包
 
-当前仓库已包含一套适合 `PyInstaller` 非单文件目录打包的脚本，产物可以直接交给 `Inno Setup` 继续制作安装包。
+当前仓库已包含一套适合 `PyInstaller` 非单文件目录打包的脚本，产物可以直接交给 `Inno Setup` 继续制作安装包。界面图标优先使用 `qtawesome`，若当前环境未安装则会自动回退到内置线性图标。
 
 ### 1. 安装打包依赖
 

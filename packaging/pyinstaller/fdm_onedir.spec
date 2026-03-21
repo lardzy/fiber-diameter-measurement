@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 
 from PyInstaller.utils.hooks import (
+    collect_data_files,
     collect_dynamic_libs,
 )
 
@@ -24,6 +25,12 @@ hiddenimports = [
     "onnxruntime.capi.onnxruntime_inference_collection",
     "onnxruntime.capi.onnxruntime_pybind11_state",
 ]
+
+try:
+    datas += collect_data_files("qtawesome", include_py_files=False)
+    hiddenimports.append("qtawesome")
+except Exception:
+    pass
 
 a = Analysis(
     [str(entry_script)],

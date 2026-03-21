@@ -55,6 +55,7 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog
+from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
 
 
@@ -141,52 +142,66 @@ class MainWindow(QMainWindow):
 
     def _create_actions(self) -> None:
         self.open_images_action = QAction("打开图片", self)
+        self.open_images_action.setIcon(themed_icon("open_images", color="#D7E3FC"))
         self.open_images_action.setShortcut("Ctrl+O")
         self.open_images_action.triggered.connect(self.open_images)
 
         self.open_folder_action = QAction("打开文件夹", self)
+        self.open_folder_action.setIcon(themed_icon("open_folder", color="#D7E3FC"))
         self.open_folder_action.triggered.connect(self.open_folder)
 
         self.open_project_action = QAction("打开项目", self)
+        self.open_project_action.setIcon(themed_icon("open_project", color="#D7E3FC"))
         self.open_project_action.triggered.connect(self.load_project)
 
         self.save_project_action = QAction("保存项目", self)
+        self.save_project_action.setIcon(themed_icon("save_project", color="#D7E3FC"))
         self.save_project_action.setShortcut("Ctrl+S")
         self.save_project_action.triggered.connect(lambda: self.save_project())
 
         self.close_current_action = QAction("关闭当前图片", self)
+        self.close_current_action.setIcon(themed_icon("close_current", color="#F2B5A7"))
         self.close_current_action.setShortcut("Ctrl+W")
         self.close_current_action.triggered.connect(self.close_current_document)
 
         self.close_all_action = QAction("关闭所有图片", self)
+        self.close_all_action.setIcon(themed_icon("close_all", color="#F2B5A7"))
         self.close_all_action.setShortcut("Ctrl+Shift+W")
         self.close_all_action.triggered.connect(self.close_all_documents)
 
         self.undo_action = QAction("撤回", self)
+        self.undo_action.setIcon(themed_icon("undo", color="#E7ECEF"))
         self.undo_action.setShortcut("Ctrl+Z")
         self.undo_action.triggered.connect(self.undo_current_document)
 
         self.redo_action = QAction("重做", self)
+        self.redo_action.setIcon(themed_icon("redo", color="#E7ECEF"))
         self.redo_action.setShortcut("Ctrl+Shift+Z")
         self.redo_action.triggered.connect(self.redo_current_document)
 
         self.delete_measurement_action = QAction("删除选中测量", self)
+        self.delete_measurement_action.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_action.setShortcut("Delete")
         self.delete_measurement_action.triggered.connect(self.delete_selected_measurement)
 
         self.add_group_action = QAction("新增类别", self)
+        self.add_group_action.setIcon(themed_icon("add", color="#7BD389"))
         self.add_group_action.triggered.connect(self.add_fiber_group)
 
         self.rename_group_action = QAction("重命名当前类别", self)
+        self.rename_group_action.setIcon(themed_icon("rename", color="#D7E3FC"))
         self.rename_group_action.triggered.connect(self.rename_active_group)
 
         self.delete_group_action = QAction("删除当前类别", self)
+        self.delete_group_action.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_group_action.triggered.connect(self.delete_active_group)
 
         self.fit_action = QAction("适应窗口", self)
+        self.fit_action.setIcon(themed_icon("fit", color="#E7ECEF"))
         self.fit_action.triggered.connect(self.fit_current_image)
 
         self.actual_size_action = QAction("原始像素", self)
+        self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
 
         self.export_actions: list[QAction] = []
@@ -237,10 +252,10 @@ class MainWindow(QMainWindow):
             self._mode_actions[mode] = action
             mode_group.addAction(action)
         self._mode_actions["select"].setChecked(True)
-        self._mode_actions["select"].setIcon(self._color_icon("#6B7280", size=14))
-        self._mode_actions["manual"].setIcon(self._color_icon("#F4D35E", size=14))
-        self._mode_actions["snap"].setIcon(self._color_icon("#2A9D8F", size=14))
-        self._mode_actions["calibration"].setIcon(self._color_icon("#FF7F50", size=14))
+        self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
+        self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
+        self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
+        self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
 
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("文件")
@@ -277,6 +292,7 @@ class MainWindow(QMainWindow):
         file_toolbar = QToolBar("文件工具栏")
         file_toolbar.setMovable(False)
         file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        file_toolbar.setIconSize(QSize(18, 18))
         self.addToolBar(file_toolbar)
         self._file_toolbar = file_toolbar
         file_toolbar.addAction(self.open_images_action)
@@ -287,6 +303,8 @@ class MainWindow(QMainWindow):
 
         export_button = QToolButton(self)
         export_button.setText("导出")
+        export_button.setIcon(themed_icon("export", color="#D7E3FC"))
+        export_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         export_menu = QMenu(export_button)
         for action in self.export_actions:
@@ -361,6 +379,7 @@ class MainWindow(QMainWindow):
         self.model_status_label = QLabel("未加载")
         model_layout.addWidget(self.model_status_label)
         load_model_button = QPushButton("加载 ONNX 模型")
+        load_model_button.setIcon(themed_icon("model", color="#9AD1D4"))
         load_model_button.clicked.connect(self.load_model)
         model_layout.addWidget(load_model_button)
         layout.addWidget(model_box)
@@ -373,8 +392,10 @@ class MainWindow(QMainWindow):
         calibration_layout.addWidget(self.preset_combo)
         preset_row = QHBoxLayout()
         add_preset_button = QPushButton("新增预设")
+        add_preset_button.setIcon(themed_icon("preset_add", color="#7BD389"))
         add_preset_button.clicked.connect(self.add_calibration_preset)
         apply_preset_button = QPushButton("应用预设")
+        apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
         apply_preset_button.clicked.connect(self.apply_selected_preset)
         preset_row.addWidget(add_preset_button)
         preset_row.addWidget(apply_preset_button)
@@ -414,10 +435,13 @@ class MainWindow(QMainWindow):
         group_layout.addWidget(self.group_list)
         group_button_row = QHBoxLayout()
         add_group_button = QPushButton("新增类别")
+        add_group_button.setIcon(themed_icon("add", color="#7BD389"))
         add_group_button.clicked.connect(self.add_fiber_group)
         rename_group_button = QPushButton("重命名")
+        rename_group_button.setIcon(themed_icon("rename", color="#D7E3FC"))
         rename_group_button.clicked.connect(self.rename_active_group)
         self.delete_group_button = QPushButton("删除")
+        self.delete_group_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_group_button.clicked.connect(self.delete_active_group)
         group_button_row.addWidget(add_group_button)
         group_button_row.addWidget(rename_group_button)
@@ -444,6 +468,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
         self.delete_measurement_button = QPushButton("删除选中测量")
+        self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
         measurement_layout.addWidget(self.delete_measurement_button)
         layout.addWidget(measurement_box, 1)

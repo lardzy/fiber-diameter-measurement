@@ -295,6 +295,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._measure_toolbar)
             action_texts = [action.text() for action in window._measure_toolbar.actions()]
             self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定"])
+            self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
+            self.assertFalse(window.open_images_action.icon().isNull())
+            self.assertFalse(window.save_project_action.icon().isNull())
         finally:
             window.close()
 
