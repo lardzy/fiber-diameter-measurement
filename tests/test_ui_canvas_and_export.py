@@ -11,7 +11,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QListView
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -210,6 +210,7 @@ class CanvasAndExportTests(unittest.TestCase):
             document.initialize_runtime_state()
 
             window._populate_group_list(document)
+            self.assertEqual(window.group_list.viewMode(), QListView.ViewMode.ListMode)
             self.assertEqual(window.group_list.count(), 1)
             self.assertFalse(window.group_list.item(0).icon().isNull())
 
@@ -228,9 +229,109 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             metrics = window._overlay_metrics(12000, 8000, ExportImageRenderMode.FULL_RESOLUTION)
-            self.assertGreater(metrics["line_width"], 18.0)
+            self.assertGreater(metrics["line_width"], 40.0)
             self.assertGreater(metrics["font_px"], 72.0)
             self.assertGreater(metrics["endpoint_radius"], metrics["line_width"])
+        finally:
+            window.close()
+
+    def test_full_resolution_export_remains_visible_after_preview_downscale(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(6000, 4000, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fullres_preview.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#E07A5F", label="棉")
+            document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(500, 800), Point(5200, 3200)),
+                )
+            )
+            window._images[document.id] = image
+
+            with TemporaryDirectory() as tmp_dir:
+                baseline_path = Path(tmp_dir) / "fullres_baseline.png"
+                measurement_path = Path(tmp_dir) / "fullres_measurement.png"
+                window._render_overlay_image(
+                    document,
+                    baseline_path,
+                    include_measurements=False,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                )
+                window._render_overlay_image(
+                    document,
+                    measurement_path,
+                    include_measurements=True,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                )
+
+                baseline_preview = QImage(str(baseline_path)).scaledToWidth(1400)
+                measurement_preview = QImage(str(measurement_path)).scaledToWidth(1400)
+                self.assertGreater(self._count_diff_pixels(baseline_preview, measurement_preview), 5000)
+        finally:
+            window.close()
+
+    def test_full_resolution_export_works_for_non_paintable_source_format(self) -> None:
+        if not hasattr(QImage.Format, "Format_CMYK8888"):
+            self.skipTest("current Qt build does not expose CMYK8888")
+
+        window = MainWindow()
+        try:
+            image = QImage(800, 600, getattr(QImage.Format, "Format_CMYK8888"))
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fullres_cmyk.jpg",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#E07A5F", label="棉")
+            document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(100, 100), Point(700, 500)),
+                )
+            )
+            window._images[document.id] = image
+
+            with TemporaryDirectory() as tmp_dir:
+                baseline_path = Path(tmp_dir) / "cmyk_baseline.png"
+                measurement_path = Path(tmp_dir) / "cmyk_measurement.png"
+                window._render_overlay_image(
+                    document,
+                    baseline_path,
+                    include_measurements=False,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                )
+                window._render_overlay_image(
+                    document,
+                    measurement_path,
+                    include_measurements=True,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                )
+
+                baseline_image = QImage(str(baseline_path))
+                measurement_image = QImage(str(measurement_path))
+                self.assertFalse(measurement_image.isNull())
+                self.assertGreater(self._count_diff_pixels(baseline_image, measurement_image), 0)
         finally:
             window.close()
 

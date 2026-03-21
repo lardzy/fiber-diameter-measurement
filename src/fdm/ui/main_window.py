@@ -321,12 +321,13 @@ class MainWindow(QMainWindow):
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
         self.group_list = QListWidget()
-        self.group_list.setViewMode(QListView.ViewMode.IconMode)
+        self.group_list.setViewMode(QListView.ViewMode.ListMode)
         self.group_list.setFlow(QListView.Flow.LeftToRight)
         self.group_list.setWrapping(True)
         self.group_list.setResizeMode(QListView.ResizeMode.Adjust)
         self.group_list.setMovement(QListView.Movement.Static)
         self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.group_list.setIconSize(QSize(14, 14))
         self.group_list.setSpacing(6)
         self.group_list.setMaximumHeight(140)
         self.group_list.setStyleSheet(
@@ -1137,11 +1138,12 @@ class MainWindow(QMainWindow):
         if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
             preview_long_edge = 1400.0
             preview_scale = min(1.0, preview_long_edge / max(long_edge, 1.0))
-            line_width = max(3.0, 4.0 / max(preview_scale, 1e-6))
-            endpoint_radius = max(line_width * 1.6, 8.0 / max(preview_scale, 1e-6))
-            scale_bg_width = max(line_width * 1.9, 10.0 / max(preview_scale, 1e-6))
-            scale_fg_width = max(line_width, 5.0 / max(preview_scale, 1e-6))
-            font_px = max(line_width * 4.2, 18.0 / max(preview_scale, 1e-6))
+            visibility_scale = max(preview_scale, 1e-6)
+            line_width = max(4.0, 6.0 / visibility_scale)
+            endpoint_radius = max(line_width * 1.7, 12.0 / visibility_scale)
+            scale_bg_width = max(line_width * 2.0, 12.0 / visibility_scale)
+            scale_fg_width = max(line_width * 1.1, 6.0 / visibility_scale)
+            font_px = max(line_width * 4.5, 22.0 / visibility_scale)
         else:
             line_width = max(2.0, min(6.0, long_edge * 0.003))
             endpoint_radius = max(4.0, line_width * 1.6)
@@ -1155,6 +1157,11 @@ class MainWindow(QMainWindow):
             "scale_fg_width": scale_fg_width,
             "font_px": font_px,
         }
+
+    def _create_export_surface(self, width: int, height: int) -> QImage:
+        image = QImage(max(1, width), max(1, height), QImage.Format.Format_ARGB32_Premultiplied)
+        image.fill(QColor("#00000000"))
+        return image
 
     def _render_overlay_image(
         self,
@@ -1171,7 +1178,7 @@ class MainWindow(QMainWindow):
         screen_scale = max(0.05, document.view_state.zoom or 1.0)
 
         if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
-            image = source_image.copy()
+            image = self._create_export_surface(source_image.width(), source_image.height())
             image_to_output_scale = 1.0
 
             def image_to_output(point) -> QPointF:
@@ -1180,8 +1187,7 @@ class MainWindow(QMainWindow):
             canvas = self._canvases.get(document.id)
             viewport_width = max(200, canvas.width()) if canvas is not None else max(400, min(1400, source_image.width()))
             viewport_height = max(160, canvas.height()) if canvas is not None else max(300, min(900, source_image.height()))
-            image = QImage(viewport_width, viewport_height, QImage.Format.Format_ARGB32)
-            image.fill(QColor("#101820"))
+            image = self._create_export_surface(viewport_width, viewport_height)
             image_to_output_scale = screen_scale
 
             def image_to_output(point) -> QPointF:
@@ -1192,22 +1198,22 @@ class MainWindow(QMainWindow):
         else:
             output_width = max(1, int(round(source_image.width() * screen_scale)))
             output_height = max(1, int(round(source_image.height() * screen_scale)))
-            image = source_image.scaled(
-                output_width,
-                output_height,
-                Qt.AspectRatioMode.IgnoreAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
+            image = self._create_export_surface(output_width, output_height)
             image_to_output_scale = screen_scale
 
             def image_to_output(point) -> QPointF:
                 return QPointF(point.x * screen_scale, point.y * screen_scale)
 
         painter = QPainter(image)
+        if not painter.isActive():
+            raise RuntimeError("无法创建可绘制的导出画布。")
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
 
-        if render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
+            painter.drawImage(QPointF(0.0, 0.0), source_image)
+        elif render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
+            painter.fillRect(image.rect(), QColor("#101820"))
             target_rect = QRectF(
                 document.view_state.pan.x,
                 document.view_state.pan.y,
@@ -1215,6 +1221,12 @@ class MainWindow(QMainWindow):
                 source_image.height() * screen_scale,
             )
             painter.drawImage(target_rect, source_image)
+        else:
+            painter.drawImage(
+                QRectF(0.0, 0.0, image.width(), image.height()),
+                source_image,
+                QRectF(0.0, 0.0, source_image.width(), source_image.height()),
+            )
 
         metrics = self._overlay_metrics(image.width(), image.height(), render_mode)
         line_width = metrics["line_width"]
@@ -1227,12 +1239,21 @@ class MainWindow(QMainWindow):
             for measurement in document.measurements:
                 group = document.get_group(measurement.fiber_group_id)
                 color = QColor(group.color if group else UNCATEGORIZED_COLOR)
-                painter.setPen(QPen(color, line_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
                 line = measurement.effective_line()
-                painter.drawLine(image_to_output(line.start), image_to_output(line.end))
+                start_point = image_to_output(line.start)
+                end_point = image_to_output(line.end)
+                outline_width = line_width * 1.8
+                painter.setPen(QPen(QColor("#0B0B0B"), outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                painter.drawLine(start_point, end_point)
+                painter.setPen(QPen(color, line_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                painter.drawLine(start_point, end_point)
+                painter.setBrush(QColor("#0B0B0B"))
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.drawEllipse(start_point, endpoint_radius * 1.15, endpoint_radius * 1.15)
+                painter.drawEllipse(end_point, endpoint_radius * 1.15, endpoint_radius * 1.15)
                 painter.setBrush(color)
-                painter.drawEllipse(image_to_output(line.start), endpoint_radius, endpoint_radius)
-                painter.drawEllipse(image_to_output(line.end), endpoint_radius, endpoint_radius)
+                painter.drawEllipse(start_point, endpoint_radius * 0.72, endpoint_radius * 0.72)
+                painter.drawEllipse(end_point, endpoint_radius * 0.72, endpoint_radius * 0.72)
 
         if include_scale and document.calibration is not None:
             scale_value = self._nice_scale_value(
