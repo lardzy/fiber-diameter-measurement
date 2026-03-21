@@ -6,7 +6,7 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fdm.geometry import Line, Point
+from fdm.geometry import Line, Point, direction
 from fdm.raster import RasterImage, extract_rotated_roi
 from fdm.services.snap_service import SnapService
 
@@ -46,6 +46,21 @@ class RasterAndSnapTests(unittest.TestCase):
         result = SnapService().snap_measurement(image, line)
         self.assertEqual(result.status, "line_too_short")
         self.assertIsNone(result.snapped_line)
+
+    def test_snap_service_preserves_user_line_angle(self) -> None:
+        image = make_vertical_fiber_image()
+        line = Line(Point(32, 30), Point(88, 50))
+        result = SnapService().snap_measurement(image, line)
+
+        self.assertEqual(result.status, "snapped")
+        self.assertIsNotNone(result.snapped_line)
+
+        input_direction = direction(line)
+        snapped_direction = direction(result.snapped_line)
+        alignment = abs((input_direction[0] * snapped_direction[0]) + (input_direction[1] * snapped_direction[1]))
+
+        self.assertGreater(alignment, 0.995)
+        self.assertTrue(result.debug_payload.get("angle_preserved"))
 
 
 if __name__ == "__main__":

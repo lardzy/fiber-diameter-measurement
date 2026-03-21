@@ -72,11 +72,11 @@ class SnapService:
                 debug_payload={"source": source},
             )
 
-        axis = self._estimate_primary_axis(component, fallback=direction(line))
-        normal = (-axis[1], axis[0])
-        center = self._closest_component_point(component, roi.midpoint)
-        start_roi = self._walk_to_boundary(component, center, (-normal[0], -normal[1]))
-        end_roi = self._walk_to_boundary(component, center, normal)
+        # Keep the user-defined measurement angle. We only shift the line in the
+        # perpendicular direction to find the nearest valid parallel scan line.
+        center = self._closest_parallel_anchor(component, roi.midpoint)
+        start_roi = self._walk_to_boundary(component, center, (-1.0, 0.0))
+        end_roi = self._walk_to_boundary(component, center, (1.0, 0.0))
         if start_roi is None or end_roi is None:
             return SnapResult(
                 status="boundary_not_found",
@@ -114,6 +114,7 @@ class SnapService:
                 "center_roi": center.to_dict(),
                 "start_roi": start_roi.to_dict(),
                 "end_roi": end_roi.to_dict(),
+                "angle_preserved": True,
             },
         )
 
@@ -253,14 +254,23 @@ class SnapService:
         angle = 0.5 * math.atan2(2.0 * cov_xy, cov_xx - cov_yy)
         return normalize((math.cos(angle), math.sin(angle)))
 
-    def _closest_component_point(self, component: set[tuple[int, int]], point: Point) -> Point:
+    def _closest_parallel_anchor(self, component: set[tuple[int, int]], point: Point) -> Point:
         best = None
-        best_distance = float("inf")
+        best_offset = float("inf")
+        best_along_line = float("inf")
         for x, y in component:
             pixel_center = Point(x=float(x), y=float(y))
-            pixel_distance = math.hypot(pixel_center.x - point.x, pixel_center.y - point.y)
-            if pixel_distance < best_distance:
-                best_distance = pixel_distance
+            perpendicular_offset = abs(pixel_center.y - point.y)
+            along_line_offset = abs(pixel_center.x - point.x)
+            if (
+                perpendicular_offset < best_offset
+                or (
+                    math.isclose(perpendicular_offset, best_offset, abs_tol=1e-6)
+                    and along_line_offset < best_along_line
+                )
+            ):
+                best_offset = perpendicular_offset
+                best_along_line = along_line_offset
                 best = pixel_center
         return best or point
 
