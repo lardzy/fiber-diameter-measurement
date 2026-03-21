@@ -117,6 +117,52 @@ python -m unittest discover -s tests
 - 半自动吸附算法在合成纤维图上的边界定位
 - CSV / XLSX / 比例尺 JSON 导出结构
 
+## Windows 打包
+
+当前仓库已包含一套适合 `PyInstaller` 非单文件目录打包的脚本，产物可以直接交给 `Inno Setup` 继续制作安装包。
+
+### 1. 安装打包依赖
+
+```bash
+pip install -e .[packaging]
+```
+
+### 2. 生成 `onedir` 打包目录
+
+Windows PowerShell:
+
+```powershell
+python .\scripts\build_windows_onedir.py
+```
+
+或直接双击 / 命令行执行：
+
+```bat
+scripts\build_windows_onedir.bat
+```
+
+### 3. 打包输出位置
+
+脚本会生成：
+
+```text
+dist/windows/FiberDiameterMeasurement/
+```
+
+这个目录就是后续 `Inno Setup` 的安装源目录。默认会清理旧的 `dist/windows` 和 `build/pyinstaller`；如果你想保留旧构建缓存，可以使用：
+
+```bash
+python scripts/build_windows_onedir.py --no-clean
+```
+
+### 4. 相关文件
+
+- `packaging/pyinstaller/fdm_onedir.spec`
+- `scripts/build_windows_onedir.py`
+- `scripts/build_windows_onedir.bat`
+
+这套配置默认使用窗口模式、非单文件目录输出，并额外收集了 `onnxruntime`、`opencv-python`、`openpyxl`、`pandas` 相关依赖，便于后续在 Windows 10 上离线分发。
+
 ## 目录结构
 
 ```text
