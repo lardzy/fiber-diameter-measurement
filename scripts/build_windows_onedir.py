@@ -1,13 +1,14 @@
 from __future__ import annotations
 
 import argparse
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 
-def build(clean: bool) -> int:
+def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     root = Path(__file__).resolve().parents[1]
     spec_path = root / "packaging" / "pyinstaller" / "fdm_onedir.spec"
     dist_path = root / "dist" / "windows"
@@ -49,11 +50,16 @@ def build(clean: bool) -> int:
 
     print("Running PyInstaller:")
     print(" ".join(command))
-    subprocess.run(command, cwd=root, check=True)
+    env = os.environ.copy()
+    env["FDM_PYINSTALLER_CONSOLE"] = "1" if console else "0"
+    env["FDM_PYINSTALLER_BOOTLOADER_DEBUG"] = "1" if bootloader_debug else "0"
+    subprocess.run(command, cwd=root, check=True, env=env)
 
     app_dir = dist_path / "FiberDiameterMeasurement"
     print("\nBuild completed.")
     print(f"Output directory: {app_dir}")
+    print(f"Console mode: {'on' if console else 'off'}")
+    print(f"Bootloader debug: {'on' if bootloader_debug else 'off'}")
     print("Use this directory as the source folder for your Inno Setup installer.")
     return 0
 
@@ -65,8 +71,22 @@ def main() -> int:
         action="store_true",
         help="Keep the existing dist/windows and build/pyinstaller contents before building.",
     )
+    parser.add_argument(
+        "--console",
+        action="store_true",
+        help="Build a console-enabled executable for troubleshooting startup issues.",
+    )
+    parser.add_argument(
+        "--bootloader-debug",
+        action="store_true",
+        help="Enable PyInstaller bootloader debug output in the built executable.",
+    )
     args = parser.parse_args()
-    return build(clean=not args.no_clean)
+    return build(
+        clean=not args.no_clean,
+        console=args.console,
+        bootloader_debug=args.bootloader_debug,
+    )
 
 
 if __name__ == "__main__":

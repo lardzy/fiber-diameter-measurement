@@ -155,6 +155,24 @@ dist/windows/FiberDiameterMeasurement/
 python scripts/build_windows_onedir.py --no-clean
 ```
 
+如果 Windows 上的已打包程序双击后没有任何反应，可以先构建一个带控制台的诊断版本：
+
+```powershell
+python .\scripts\build_windows_onedir.py --console --bootloader-debug
+```
+
+然后在终端中启动：
+
+```powershell
+.\dist\windows\FiberDiameterMeasurement\FiberDiameterMeasurement.exe
+```
+
+若应用在启动早期抛出异常，程序还会把日志写到：
+
+```text
+%LOCALAPPDATA%\FiberDiameterMeasurement\logs\startup.log
+```
+
 ### 4. 相关文件
 
 - `packaging/pyinstaller/fdm_onedir.spec`

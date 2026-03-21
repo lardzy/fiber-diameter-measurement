@@ -1,5 +1,6 @@
 # -*- mode: python ; coding: utf-8 -*-
 
+import os
 from pathlib import Path
 
 from PyInstaller.utils.hooks import (
@@ -10,6 +11,8 @@ from PyInstaller.utils.hooks import (
 project_root = Path(SPECPATH).resolve().parents[1]
 src_root = project_root / "src"
 entry_script = project_root / "src" / "fdm" / "app.py"
+console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
+bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
 
 datas = [
     (str(project_root / "README.md"), "."),
@@ -44,13 +47,13 @@ exe = EXE(
     a.datas,
     [],
     name="FiberDiameterMeasurement",
-    debug=False,
+    debug=bootloader_debug,
     bootloader_ignore_signals=False,
     strip=False,
     upx=False,
     upx_exclude=[],
     runtime_tmpdir=None,
-    console=False,
+    console=console_mode,
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,
