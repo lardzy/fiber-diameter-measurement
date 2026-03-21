@@ -2,8 +2,9 @@
 #define MyAppVersion "0.1.0"
 #define MyAppPublisher "Codex"
 #define MyAppExeName "FiberDiameterMeasurement.exe"
-#define MyAppSourceDir "..\..\dist\windows\FiberDiameterMeasurement"
-#define MyAppOutputDir "..\..\dist\installer"
+#define ProjectRoot AddBackslash(SourcePath) + "..\.."
+#define MyAppSourceDir ProjectRoot + "\dist\windows\FiberDiameterMeasurement"
+#define MyAppOutputDir ProjectRoot + "\dist\installer"
 #define MyAppOutputBaseFilename "fiber-diameter-measurement-setup-" + MyAppVersion
 
 #ifnexist "{#MyAppSourceDir}\{#MyAppExeName}"

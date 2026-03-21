@@ -3,31 +3,27 @@
 from pathlib import Path
 
 from PyInstaller.utils.hooks import (
-    collect_data_files,
     collect_dynamic_libs,
-    collect_submodules,
 )
 
 
 project_root = Path(SPECPATH).resolve().parents[1]
 src_root = project_root / "src"
+entry_script = project_root / "src" / "fdm" / "app.py"
 
 datas = [
     (str(project_root / "README.md"), "."),
 ]
-binaries = []
-hiddenimports = []
-
-for package_name in ("onnxruntime", "openpyxl", "pandas"):
-    datas += collect_data_files(package_name, include_py_files=False)
-    hiddenimports += collect_submodules(package_name)
-
-for package_name in ("onnxruntime", "cv2"):
-    binaries += collect_dynamic_libs(package_name)
-    hiddenimports += collect_submodules(package_name)
+binaries = collect_dynamic_libs("onnxruntime")
+hiddenimports = [
+    "onnxruntime",
+    "onnxruntime.capi",
+    "onnxruntime.capi.onnxruntime_inference_collection",
+    "onnxruntime.capi.onnxruntime_pybind11_state",
+]
 
 a = Analysis(
-    ["src/fdm/app.py"],
+    [str(entry_script)],
     pathex=[str(src_root)],
     binaries=binaries,
     datas=datas,

@@ -160,8 +160,24 @@ python scripts/build_windows_onedir.py --no-clean
 - `packaging/pyinstaller/fdm_onedir.spec`
 - `scripts/build_windows_onedir.py`
 - `scripts/build_windows_onedir.bat`
+- `packaging/inno-setup/fdm_installer.iss`
 
-这套配置默认使用窗口模式、非单文件目录输出，并额外收集了 `onnxruntime`、`opencv-python`、`openpyxl`、`pandas` 相关依赖，便于后续在 Windows 10 上离线分发。
+这套配置默认使用窗口模式、非单文件目录输出，并显式收集 `onnxruntime` 的运行时二进制与必要模块，避免 `collect_submodules()` 把可选依赖一起扫入后产生无关警告。
+
+### 5. 使用 Inno Setup 生成安装包
+
+仓库中已包含一份安装脚本模板：
+
+```text
+packaging/inno-setup/fdm_installer.iss
+```
+
+推荐流程：
+
+1. 先运行 `python .\scripts\build_windows_onedir.py`
+2. 用 Inno Setup 打开 `packaging\inno-setup\fdm_installer.iss`
+3. 按需修改顶部宏，例如 `MyAppVersion`、`MyAppPublisher`
+4. 编译后会在 `dist\installer\` 下生成安装包
 
 ## 目录结构
 
