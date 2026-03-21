@@ -151,6 +151,9 @@ class MainWindow(QMainWindow):
         self.rename_group_action = QAction("重命名当前类别", self)
         self.rename_group_action.triggered.connect(self.rename_active_group)
 
+        self.delete_group_action = QAction("删除当前类别", self)
+        self.delete_group_action.triggered.connect(self.delete_active_group)
+
         self.fit_action = QAction("适应窗口", self)
         self.fit_action.triggered.connect(self.fit_current_image)
 
@@ -228,6 +231,7 @@ class MainWindow(QMainWindow):
         edit_menu.addSeparator()
         edit_menu.addAction(self.add_group_action)
         edit_menu.addAction(self.rename_group_action)
+        edit_menu.addAction(self.delete_group_action)
 
         view_menu = self.menuBar().addMenu("视图")
         for action in self._mode_actions.values():
@@ -349,8 +353,11 @@ class MainWindow(QMainWindow):
         add_group_button.clicked.connect(self.add_fiber_group)
         rename_group_button = QPushButton("重命名")
         rename_group_button.clicked.connect(self.rename_active_group)
+        self.delete_group_button = QPushButton("删除")
+        self.delete_group_button.clicked.connect(self.delete_active_group)
         group_button_row.addWidget(add_group_button)
         group_button_row.addWidget(rename_group_button)
+        group_button_row.addWidget(self.delete_group_button)
         group_layout.addLayout(group_button_row)
         layout.addWidget(group_box)
 
@@ -649,6 +656,63 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "重命名类别", mutate)
 
+    def delete_active_group(self) -> None:
+        document = self.current_document()
+        if document is None:
+            return
+        group = document.get_group(document.active_group_id)
+        if group is not None:
+            measurement_count = len(group.measurement_ids)
+            message = f"确定删除类别“{group.display_name()}”吗？"
+            if measurement_count:
+                message += f"\n\n该类别下的 {measurement_count} 条测量会合并到未分类。"
+            response = QMessageBox.question(
+                self,
+                "删除类别",
+                message,
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+
+            def mutate() -> None:
+                document.remove_group_to_uncategorized(group.id)
+
+            self._apply_document_change(document, "删除类别", mutate)
+            self.statusBar().showMessage("类别已删除", 3000)
+            return
+
+        if document.uncategorized_measurement_count() > 0:
+            QMessageBox.information(
+                self,
+                "删除未分类",
+                "未分类中仍有测量记录，请先将这些记录改到其它类别后再删除。",
+            )
+            return
+        if not document.fiber_groups:
+            QMessageBox.information(
+                self,
+                "删除未分类",
+                "当前没有其它类别，未分类会作为默认入口保留。",
+            )
+            return
+        response = QMessageBox.question(
+            self,
+            "删除未分类",
+            "确定删除未分类入口吗？后续若再次出现未分类测量，它会自动恢复。",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+
+        def mutate() -> None:
+            document.hide_uncategorized_entry()
+
+        self._apply_document_change(document, "删除未分类", mutate)
+        self.statusBar().showMessage("未分类入口已隐藏", 3000)
+
     def delete_selected_measurement(self) -> None:
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None or document.view_state.selected_measurement_id is None:
@@ -881,21 +945,24 @@ class MainWindow(QMainWindow):
         self._group_list_rebuilding = True
         self.group_list.clear()
         if document is not None:
-            ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
-            ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
-            ungrouped_item.setBackground(QColor(UNCATEGORIZED_COLOR))
-            ungrouped_item.setForeground(QColor(self._contrast_color(UNCATEGORIZED_COLOR)))
-            ungrouped_item.setSizeHint(QSize(128, 36))
-            font = ungrouped_item.font()
-            font.setBold(document.active_group_id is None)
-            ungrouped_item.setFont(font)
-            self.group_list.addItem(ungrouped_item)
-            if document.active_group_id is None:
-                ungrouped_item.setSelected(True)
+            if document.should_show_uncategorized_entry():
+                ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
+                ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
+                ungrouped_item.setIcon(self._color_icon(UNCATEGORIZED_COLOR, size=14))
+                ungrouped_item.setBackground(QColor(UNCATEGORIZED_COLOR))
+                ungrouped_item.setForeground(QColor(self._contrast_color(UNCATEGORIZED_COLOR)))
+                ungrouped_item.setSizeHint(QSize(136, 36))
+                font = ungrouped_item.font()
+                font.setBold(document.active_group_id is None)
+                ungrouped_item.setFont(font)
+                self.group_list.addItem(ungrouped_item)
+                if document.active_group_id is None:
+                    ungrouped_item.setSelected(True)
             for group in document.sorted_groups():
                 selected = document.active_group_id == group.id
                 item = QListWidgetItem(self._group_chip_label(group.display_name(), selected=selected))
                 item.setData(Qt.ItemDataRole.UserRole, group.id)
+                item.setIcon(self._color_icon(group.color, size=14))
                 item.setBackground(QColor(group.color))
                 item.setForeground(QColor(self._contrast_color(group.color)))
                 item.setSizeHint(QSize(132, 36))
@@ -1037,12 +1104,20 @@ class MainWindow(QMainWindow):
         history = document.history if document is not None else None
         has_document = document is not None
         has_selected_measurement = has_document and document.view_state.selected_measurement_id is not None and self._tool_mode != "calibration"
+        has_deletable_group_target = bool(
+            document and (
+                document.get_group(document.active_group_id) is not None
+                or document.should_show_uncategorized_entry()
+            )
+        )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(bool(has_selected_measurement))
         self.delete_measurement_button.setEnabled(bool(has_selected_measurement))
         self.add_group_action.setEnabled(has_document)
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
+        self.delete_group_action.setEnabled(has_deletable_group_target)
+        self.delete_group_button.setEnabled(has_deletable_group_target)
         self.undo_action.setEnabled(bool(history and history.can_undo()))
         self.redo_action.setEnabled(bool(history and history.can_redo()))
 
@@ -1056,6 +1131,30 @@ class MainWindow(QMainWindow):
 
     def _group_chip_label(self, text: str, *, selected: bool) -> str:
         return f"✓ {text}" if selected else text
+
+    def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
+        long_edge = float(max(width, height))
+        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
+            preview_long_edge = 1400.0
+            preview_scale = min(1.0, preview_long_edge / max(long_edge, 1.0))
+            line_width = max(3.0, 4.0 / max(preview_scale, 1e-6))
+            endpoint_radius = max(line_width * 1.6, 8.0 / max(preview_scale, 1e-6))
+            scale_bg_width = max(line_width * 1.9, 10.0 / max(preview_scale, 1e-6))
+            scale_fg_width = max(line_width, 5.0 / max(preview_scale, 1e-6))
+            font_px = max(line_width * 4.2, 18.0 / max(preview_scale, 1e-6))
+        else:
+            line_width = max(2.0, min(6.0, long_edge * 0.003))
+            endpoint_radius = max(4.0, line_width * 1.6)
+            scale_bg_width = max(6.0, line_width * 2.2)
+            scale_fg_width = max(3.0, line_width * 1.1)
+            font_px = max(12.0, long_edge * 0.022)
+        return {
+            "line_width": line_width,
+            "endpoint_radius": endpoint_radius,
+            "scale_bg_width": scale_bg_width,
+            "scale_fg_width": scale_fg_width,
+            "font_px": font_px,
+        }
 
     def _render_overlay_image(
         self,
@@ -1117,19 +1216,12 @@ class MainWindow(QMainWindow):
             )
             painter.drawImage(target_rect, source_image)
 
-        long_edge = max(image.width(), image.height())
-        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
-            line_width = max(3.0, min(18.0, long_edge * 0.0025))
-            endpoint_radius = max(5.0, line_width * 1.5)
-            scale_bg_width = max(8.0, line_width * 2.1)
-            scale_fg_width = max(4.0, line_width * 1.1)
-            font_px = max(14.0, long_edge * 0.018)
-        else:
-            line_width = max(2.0, min(6.0, long_edge * 0.003))
-            endpoint_radius = max(4.0, line_width * 1.6)
-            scale_bg_width = max(6.0, line_width * 2.2)
-            scale_fg_width = max(3.0, line_width * 1.1)
-            font_px = max(12.0, long_edge * 0.022)
+        metrics = self._overlay_metrics(image.width(), image.height(), render_mode)
+        line_width = metrics["line_width"]
+        endpoint_radius = metrics["endpoint_radius"]
+        scale_bg_width = metrics["scale_bg_width"]
+        scale_fg_width = metrics["scale_fg_width"]
+        font_px = metrics["font_px"]
 
         if include_measurements:
             for measurement in document.measurements:
@@ -1192,8 +1284,8 @@ class MainWindow(QMainWindow):
         nice_value = nice_base * (10 ** exponent)
         return nice_value, calibration.unit_to_px(nice_value) * image_to_output_scale
 
-    def _color_icon(self, color_value: str) -> QIcon:
-        pixmap = QPixmap(12, 12)
+    def _color_icon(self, color_value: str, *, size: int = 12) -> QIcon:
+        pixmap = QPixmap(size, size)
         pixmap.fill(QColor(color_value))
         return QIcon(pixmap)
 

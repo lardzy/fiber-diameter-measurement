@@ -293,6 +293,22 @@ class ImageDocument:
     def sorted_groups(self) -> list[FiberGroup]:
         return sorted(self.fiber_groups, key=lambda group: group.number)
 
+    def uncategorized_measurements(self) -> list[Measurement]:
+        return [measurement for measurement in self.measurements if measurement.fiber_group_id is None]
+
+    def uncategorized_measurement_count(self) -> int:
+        return len(self.uncategorized_measurements())
+
+    def should_show_uncategorized_entry(self) -> bool:
+        return (
+            not self.fiber_groups
+            or self.uncategorized_measurement_count() > 0
+            or self.active_group_id is None
+        )
+
+    def can_delete_uncategorized_entry(self) -> bool:
+        return self.uncategorized_measurement_count() == 0 and bool(self.fiber_groups)
+
     def next_group_number(self) -> int:
         if not self.fiber_groups:
             return 1
@@ -385,6 +401,36 @@ class ImageDocument:
             if group is not None and measurement.id not in group.measurement_ids:
                 group.measurement_ids.append(measurement.id)
         self.fiber_groups.sort(key=lambda group: group.number)
+
+    def renumber_groups(self) -> None:
+        for index, group in enumerate(self.sorted_groups(), start=1):
+            group.number = index
+        self.fiber_groups.sort(key=lambda group: group.number)
+
+    def remove_group_to_uncategorized(self, group_id: str) -> bool:
+        group = self.get_group(group_id)
+        if group is None:
+            return False
+        moved_measurements = False
+        for measurement in self.measurements:
+            if measurement.fiber_group_id == group_id:
+                measurement.fiber_group_id = None
+                moved_measurements = True
+        self.fiber_groups = [item for item in self.fiber_groups if item.id != group_id]
+        if self.active_group_id == group_id:
+            self.active_group_id = None if moved_measurements else (self.sorted_groups()[0].id if self.fiber_groups else None)
+        self.rebuild_group_memberships()
+        self.renumber_groups()
+        self.refresh_dirty_flags()
+        return True
+
+    def hide_uncategorized_entry(self) -> bool:
+        if not self.can_delete_uncategorized_entry():
+            return False
+        if self.active_group_id is None:
+            self.active_group_id = self.sorted_groups()[0].id
+        self.refresh_dirty_flags()
+        return True
 
     def measurement_values(self) -> list[float]:
         return [

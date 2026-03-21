@@ -101,6 +101,75 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertIsNone(document.active_group_id)
         self.assertIsNone(document.measurements[0].fiber_group_id)
 
+    def test_uncategorized_entry_hides_after_first_group_when_document_is_empty(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_empty.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+        self.assertTrue(document.should_show_uncategorized_entry())
+
+        group = document.create_group(color="#1F7A8C", label="棉")
+        document.set_active_group(group.id)
+
+        self.assertFalse(document.should_show_uncategorized_entry())
+
+    def test_remove_group_moves_measurements_to_uncategorized_and_renumbers(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_groups.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+        first = document.create_group(color="#1F7A8C", label="棉")
+        second = document.create_group(color="#E07A5F", label="麻")
+        document.set_active_group(first.id)
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=first.id,
+            mode="manual",
+            line_px=Line(Point(0, 0), Point(20, 0)),
+        )
+        document.add_measurement(measurement)
+
+        removed = document.remove_group_to_uncategorized(first.id)
+
+        self.assertTrue(removed)
+        self.assertIsNone(document.measurements[0].fiber_group_id)
+        self.assertEqual(len(document.fiber_groups), 1)
+        self.assertEqual(document.fiber_groups[0].id, second.id)
+        self.assertEqual(document.fiber_groups[0].number, 1)
+        self.assertTrue(document.should_show_uncategorized_entry())
+
+    def test_hide_uncategorized_entry_only_when_empty_and_other_groups_exist(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_hide_uncategorized.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+        group = document.create_group(color="#1F7A8C", label="棉")
+        document.set_active_group(None)
+
+        self.assertTrue(document.hide_uncategorized_entry())
+        self.assertEqual(document.active_group_id, group.id)
+        self.assertFalse(document.should_show_uncategorized_entry())
+
+        document.set_active_group(None)
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(40, 10)),
+            )
+        )
+
+        self.assertFalse(document.hide_uncategorized_entry())
+
 
 if __name__ == "__main__":
     unittest.main()

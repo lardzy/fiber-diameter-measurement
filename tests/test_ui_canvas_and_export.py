@@ -199,6 +199,41 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_group_list_keeps_color_icon_and_hides_uncategorized_after_first_group(self) -> None:
+        window = MainWindow()
+        try:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_list.png",
+                image_size=(300, 200),
+            )
+            document.initialize_runtime_state()
+
+            window._populate_group_list(document)
+            self.assertEqual(window.group_list.count(), 1)
+            self.assertFalse(window.group_list.item(0).icon().isNull())
+
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            window._populate_group_list(document)
+
+            self.assertEqual(window.group_list.count(), 1)
+            item = window.group_list.item(0)
+            self.assertIn("棉", item.text())
+            self.assertFalse(item.icon().isNull())
+        finally:
+            window.close()
+
+    def test_full_resolution_metrics_scale_above_old_cap_for_large_images(self) -> None:
+        window = MainWindow()
+        try:
+            metrics = window._overlay_metrics(12000, 8000, ExportImageRenderMode.FULL_RESOLUTION)
+            self.assertGreater(metrics["line_width"], 18.0)
+            self.assertGreater(metrics["font_px"], 72.0)
+            self.assertGreater(metrics["endpoint_radius"], metrics["line_width"])
+        finally:
+            window.close()
+
 
 if __name__ == "__main__":
     unittest.main()
