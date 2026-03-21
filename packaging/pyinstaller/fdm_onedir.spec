@@ -43,10 +43,9 @@ pyz = PYZ(a.pure)
 exe = EXE(
     pyz,
     a.scripts,
-    a.binaries,
-    a.datas,
     [],
     name="FiberDiameterMeasurement",
+    exclude_binaries=True,
     debug=bootloader_debug,
     bootloader_ignore_signals=False,
     strip=False,
@@ -64,6 +63,7 @@ exe = EXE(
 coll = COLLECT(
     exe,
     a.binaries,
+    a.zipfiles,
     a.datas,
     strip=False,
     upx=False,

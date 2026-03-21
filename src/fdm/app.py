@@ -105,3 +105,7 @@ def main(argv: list[str] | None = None) -> int:
         return app.exec()
     except Exception as exc:  # noqa: BLE001
         return _report_startup_exception("应用启动失败", exc)
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
