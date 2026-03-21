@@ -229,8 +229,9 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             metrics = window._overlay_metrics(12000, 8000, ExportImageRenderMode.FULL_RESOLUTION)
-            self.assertGreater(metrics["line_width"], 40.0)
-            self.assertGreater(metrics["font_px"], 72.0)
+            self.assertLessEqual(metrics["line_width"], 2.5)
+            self.assertLessEqual(metrics["font_px"], 20.0)
+            self.assertGreater(metrics["line_width"], 1.0)
             self.assertGreater(metrics["endpoint_radius"], metrics["line_width"])
         finally:
             window.close()
@@ -279,7 +280,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
                 baseline_preview = QImage(str(baseline_path)).scaledToWidth(1400)
                 measurement_preview = QImage(str(measurement_path)).scaledToWidth(1400)
-                self.assertGreater(self._count_diff_pixels(baseline_preview, measurement_preview), 5000)
+                self.assertGreater(self._count_diff_pixels(baseline_preview, measurement_preview), 500)
         finally:
             window.close()
 

@@ -1136,14 +1136,12 @@ class MainWindow(QMainWindow):
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
         long_edge = float(max(width, height))
         if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
-            preview_long_edge = 1400.0
-            preview_scale = min(1.0, preview_long_edge / max(long_edge, 1.0))
-            visibility_scale = max(preview_scale, 1e-6)
-            line_width = max(4.0, 6.0 / visibility_scale)
-            endpoint_radius = max(line_width * 1.7, 12.0 / visibility_scale)
-            scale_bg_width = max(line_width * 2.0, 12.0 / visibility_scale)
-            scale_fg_width = max(line_width * 1.1, 6.0 / visibility_scale)
-            font_px = max(line_width * 4.5, 22.0 / visibility_scale)
+            # Full-resolution export should stay precise in native pixel space.
+            line_width = 2.0
+            endpoint_radius = 3.6
+            scale_bg_width = 5.0
+            scale_fg_width = 2.5
+            font_px = 18.0
         else:
             line_width = max(2.0, min(6.0, long_edge * 0.003))
             endpoint_radius = max(4.0, line_width * 1.6)
