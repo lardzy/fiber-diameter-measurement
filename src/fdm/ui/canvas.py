@@ -56,6 +56,9 @@ class DocumentCanvas(QWidget):
         self._document.view_state.selected_measurement_id = measurement_id
         self.update()
 
+    def focus_canvas(self) -> None:
+        self.setFocus(Qt.FocusReason.OtherFocusReason)
+
     def fit_to_view(self) -> None:
         if self._image is None:
             return
@@ -356,7 +359,7 @@ class DocumentCanvas(QWidget):
             return None
         line = measurement.effective_line()
         endpoint_name, endpoint_distance = nearest_endpoint(line, image_point)
-        if endpoint_distance <= self._endpoint_tolerance():
+        if endpoint_distance <= self._selected_endpoint_tolerance():
             return measurement.id, endpoint_name
         return None
 
@@ -380,8 +383,11 @@ class DocumentCanvas(QWidget):
                 return measurement.id
         return None
 
+    def _selected_endpoint_tolerance(self) -> float:
+        return max(4.0, 9.0 / max(self._zoom, 0.001))
+
     def _endpoint_tolerance(self) -> float:
-        return max(6.0, 14.0 / max(self._zoom, 0.001))
+        return max(3.0, 6.0 / max(self._zoom, 0.001))
 
     def _point_to_segment_distance(self, point: Point, line: Line) -> float:
         vx = line.end.x - line.start.x

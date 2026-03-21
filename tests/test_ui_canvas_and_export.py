@@ -25,12 +25,13 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
+    qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
 
 
@@ -63,18 +64,30 @@ class FakeMouseEvent:
 
 
 class FakeKeyEvent:
-    def __init__(self, key) -> None:
+    def __init__(self, key, *, modifiers=None) -> None:
         self._key = key
+        self._modifiers = modifiers if modifiers is not None else Qt.KeyboardModifier.NoModifier
         self.accepted = False
 
     def key(self):
         return self._key
+
+    def modifiers(self):
+        return self._modifiers
 
     def isAutoRepeat(self) -> bool:
         return False
 
     def accept(self) -> None:
         self.accepted = True
+
+
+class FakeIgnoredWheelEvent:
+    def __init__(self) -> None:
+        self.ignored = False
+
+    def ignore(self) -> None:
+        self.ignored = True
 
 
 @unittest.skipUnless(PYSIDE_AVAILABLE, "requires PySide6")
@@ -133,6 +146,13 @@ class CanvasAndExportTests(unittest.TestCase):
         window._canvases[document.id] = canvas
         return window, document
 
+    def _load_document_into_window(self, window: MainWindow, document: ImageDocument, image: QImage) -> None:
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+            qimage_to_raster(image),
+        )
+
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
         self.assertEqual(left.size(), right.size())
         diff = 0
@@ -186,6 +206,26 @@ class CanvasAndExportTests(unittest.TestCase):
         canvas.keyReleaseEvent(FakeKeyEvent(Qt.Key.Key_Space))
         canvas.mousePressEvent(FakeMouseEvent(QPointF(120.0, 80.0), button=Qt.MouseButton.LeftButton))
 
+        self.assertIsNotNone(canvas._drawing_line)
+
+    def test_selected_endpoint_tolerance_allows_new_line_near_existing_measurement(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        document.add_measurement(measurement)
+        document.view_state.selected_measurement_id = measurement.id
+        canvas.set_selected_measurement(measurement.id)
+        canvas.set_tool_mode("manual")
+
+        nearby_position = canvas.image_to_widget(Point(30, 20))
+        canvas.mousePressEvent(FakeMouseEvent(nearby_position, button=Qt.MouseButton.LeftButton))
+
+        self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
 
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
@@ -258,6 +298,8 @@ class CanvasAndExportTests(unittest.TestCase):
             item = window.group_list.item(0)
             self.assertIn("棉", item.text())
             self.assertFalse(item.icon().isNull())
+            self.assertIn("background: #FFFDF8", window.group_list.styleSheet())
+            self.assertIn("color: #182430", window.group_list.styleSheet())
         finally:
             window.close()
 
@@ -298,6 +340,73 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+        finally:
+            window.close()
+
+    def test_number_hotkey_switches_active_group_without_changing_measurement_group(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_hotkey.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            first_group = document.create_group(color="#1F7A8C", label="棉")
+            second_group = document.create_group(color="#E07A5F", label="麻")
+            document.set_active_group(first_group.id)
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=first_group.id,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(120, 20)),
+            )
+            document.add_measurement(measurement)
+
+            self._load_document_into_window(window, document, image)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_2))
+
+            self.assertEqual(document.active_group_id, second_group.id)
+            self.assertEqual(measurement.fiber_group_id, first_group.id)
+        finally:
+            window.close()
+
+    def test_measurement_group_combo_ignores_wheel_without_popup(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_combo.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(20, 20), Point(100, 20)),
+                )
+            )
+
+            self._load_document_into_window(window, document, image)
+            combo = window.measurement_table.cellWidget(0, window.TABLE_COL_GROUP)
+            event = FakeIgnoredWheelEvent()
+            current_index = combo.currentIndex()
+
+            combo.wheelEvent(event)
+
+            self.assertEqual(combo.focusPolicy(), Qt.FocusPolicy.NoFocus)
+            self.assertEqual(combo.currentIndex(), current_index)
+            self.assertTrue(event.ignored)
         finally:
             window.close()
 

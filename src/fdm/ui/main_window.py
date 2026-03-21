@@ -8,6 +8,7 @@ from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QApplication,
     QComboBox,
     QFileDialog,
     QGroupBox,
@@ -27,6 +28,9 @@ from PySide6.QtWidgets import (
     QStatusBar,
     QTableWidget,
     QTableWidgetItem,
+    QLineEdit,
+    QPlainTextEdit,
+    QTextEdit,
     QTabWidget,
     QToolBar,
     QToolButton,
@@ -57,6 +61,7 @@ from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.widgets import MeasurementGroupComboBox
 
 
 @dataclass(slots=True)
@@ -411,6 +416,7 @@ class MainWindow(QMainWindow):
         self.group_list.setResizeMode(QListView.ResizeMode.Adjust)
         self.group_list.setMovement(QListView.Movement.Static)
         self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.group_list.setIconSize(QSize(14, 14))
         self.group_list.setSpacing(6)
         self.group_list.setMaximumHeight(140)
@@ -421,12 +427,16 @@ class MainWindow(QMainWindow):
                 border: none;
             }
             QListWidget::item {
-                border: 2px solid transparent;
+                background: #F6F1E8;
+                color: #182430;
+                border: 1px solid #D7CEC0;
                 border-radius: 10px;
                 padding: 6px 10px;
             }
             QListWidget::item:selected {
-                border: 3px solid #F7F4EA;
+                background: #FFFDF8;
+                color: #182430;
+                border: 2px solid #12343B;
                 outline: 0;
             }
             """
@@ -463,6 +473,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.setColumnWidth(self.TABLE_COL_STATUS, 110)
         self.measurement_table.setColumnWidth(self.TABLE_COL_ID, 110)
         self.measurement_table.verticalHeader().setVisible(False)
+        self.measurement_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.measurement_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
@@ -1147,6 +1158,7 @@ class MainWindow(QMainWindow):
             return
         if mode == "calibration":
             self._apply_calibration_line(document, line)
+            self._focus_current_canvas()
             return
 
         group = document.get_group(document.active_group_id)
@@ -1179,6 +1191,7 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "新增测量", mutate)
         self.statusBar().showMessage("已新增测量", 2500)
+        self._focus_current_canvas()
 
     def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str) -> None:
         document = self.project.get_document(document_id)
@@ -1187,6 +1200,7 @@ class MainWindow(QMainWindow):
         document.view_state.selected_measurement_id = measurement_id
         self._sync_measurement_table_selection(document)
         self._update_action_states()
+        self._focus_current_canvas()
 
     def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, line: Line) -> None:
         document = self.project.get_document(document_id)
@@ -1203,6 +1217,7 @@ class MainWindow(QMainWindow):
             document.view_state.selected_measurement_id = measurement.id
 
         self._apply_document_change(document, "编辑测量线", mutate)
+        self._focus_current_canvas()
 
     def _apply_calibration_line(self, document: ImageDocument, line: Line) -> None:
         dialog = CalibrationInputDialog(self)
@@ -1237,8 +1252,6 @@ class MainWindow(QMainWindow):
                 ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
                 ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
                 ungrouped_item.setIcon(self._color_icon(UNCATEGORIZED_COLOR, size=14))
-                ungrouped_item.setBackground(QColor(UNCATEGORIZED_COLOR))
-                ungrouped_item.setForeground(QColor(self._contrast_color(UNCATEGORIZED_COLOR)))
                 ungrouped_item.setSizeHint(QSize(136, 36))
                 font = ungrouped_item.font()
                 font.setBold(document.active_group_id is None)
@@ -1251,8 +1264,6 @@ class MainWindow(QMainWindow):
                 item = QListWidgetItem(self._group_chip_label(group.display_name(), selected=selected))
                 item.setData(Qt.ItemDataRole.UserRole, group.id)
                 item.setIcon(self._color_icon(group.color, size=14))
-                item.setBackground(QColor(group.color))
-                item.setForeground(QColor(self._contrast_color(group.color)))
                 item.setSizeHint(QSize(132, 36))
                 font = item.font()
                 font.setBold(selected)
@@ -1304,7 +1315,7 @@ class MainWindow(QMainWindow):
             self._sync_measurement_table_selection(document)
 
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
-        combo = QComboBox()
+        combo = MeasurementGroupComboBox()
         combo.setProperty("measurement_id", measurement.id)
         combo.addItem(self._color_icon(UNCATEGORIZED_COLOR), UNCATEGORIZED_LABEL, None)
         for group in document.sorted_groups():
@@ -1382,6 +1393,36 @@ class MainWindow(QMainWindow):
         document.set_active_group(selected_items[0].data(Qt.ItemDataRole.UserRole))
         self._populate_group_list(document)
         self._update_action_states()
+
+    def _focus_current_canvas(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None:
+            canvas.focus_canvas()
+
+    def _should_handle_group_hotkeys(self) -> bool:
+        if QApplication.activeModalWidget() is not None:
+            return False
+        focus_widget = QApplication.focusWidget()
+        if focus_widget is None:
+            return True
+        if isinstance(focus_widget, (QLineEdit, QTextEdit, QPlainTextEdit)):
+            return False
+        if isinstance(focus_widget, QComboBox) and focus_widget.isEditable():
+            return False
+        return True
+
+    def _switch_active_group_by_number(self, number: int) -> bool:
+        document = self.current_document()
+        if document is None:
+            return False
+        group = document.get_group_by_number(number)
+        if group is None:
+            return False
+        document.set_active_group(group.id)
+        self._populate_group_list(document)
+        self._update_action_states()
+        self._focus_current_canvas()
+        return True
 
     def _update_model_status(self) -> None:
         health = self.snap_service.model_provider.healthcheck()
@@ -1602,16 +1643,15 @@ class MainWindow(QMainWindow):
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
             return
-        if event.modifiers() == Qt.KeyboardModifier.NoModifier and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9:
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9
+            and self._should_handle_group_hotkeys()
+        ):
             number = event.key() - Qt.Key.Key_0
-            document = self.current_document()
-            if document is not None:
-                group = document.get_group_by_number(number)
-                if group is not None:
-                    document.set_active_group(group.id)
-                    self._populate_group_list(document)
-                    self._update_action_states()
-                    return
+            if self._switch_active_group_by_number(number):
+                event.accept()
+                return
         if self._tool_mode != "calibration" and event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             self.delete_selected_measurement()
             return
