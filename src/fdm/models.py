@@ -21,6 +21,16 @@ def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
+def format_measurement_label_value(value: float, unit: str, decimals: int) -> str:
+    decimals = max(0, min(8, int(decimals)))
+    formatted = f"{value:.{decimals}f}"
+    if decimals > 0:
+        formatted = formatted.rstrip("0").rstrip(".")
+    if not formatted:
+        formatted = "0"
+    return f"{formatted} {unit}"
+
+
 @dataclass(slots=True)
 class Calibration:
     mode: str

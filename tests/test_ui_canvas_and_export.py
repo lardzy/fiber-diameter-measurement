@@ -22,15 +22,17 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, ImageDocument, Measurement, TextAnnotation, new_id
-from fdm.settings import OpenImageViewMode
+from fdm.settings import AppSettings, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
+    from fdm.ui.dialogs import SettingsDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    SettingsDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -440,6 +442,69 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertGreater(self._count_diff_pixels(baseline_image, scale_image), 0)
         finally:
             window.close()
+
+    def test_combined_overlay_export_renders_measurements_and_scale_together(self) -> None:
+        window, document = self._create_main_window_fixture()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                baseline_path = Path(tmp_dir) / "baseline.png"
+                combined_path = Path(tmp_dir) / "combined.png"
+                window._render_overlay_image(
+                    document,
+                    baseline_path,
+                    include_measurements=False,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+                window._render_overlay_image(
+                    document,
+                    combined_path,
+                    include_measurements=True,
+                    include_scale=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+
+                baseline_image = QImage(str(baseline_path))
+                combined_image = QImage(str(combined_path))
+                self.assertGreater(self._count_diff_pixels(baseline_image, combined_image), 0)
+        finally:
+            window.close()
+
+    def test_settings_dialog_does_not_auto_request_scale_anchor_for_unrelated_changes(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/manual_scale_settings.png",
+            image_size=(240, 160),
+        )
+        document.initialize_runtime_state()
+        settings = AppSettings(
+            scale_overlay_placement_mode="manual",
+        )
+
+        dialog = SettingsDialog(settings, document=document)
+        try:
+            dialog._measurement_label_size.setValue(dialog._measurement_label_size.value() + 1)
+            self.assertFalse(dialog.wants_scale_anchor_pick())
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_requests_scale_anchor_only_after_explicit_pick_button(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/manual_scale_explicit.png",
+            image_size=(240, 160),
+        )
+        document.initialize_runtime_state()
+        settings = AppSettings(
+            scale_overlay_placement_mode="manual",
+        )
+
+        dialog = SettingsDialog(settings, document=document)
+        try:
+            dialog._trigger_scale_anchor_pick()
+            self.assertTrue(dialog.wants_scale_anchor_pick())
+        finally:
+            dialog.close()
 
     def test_number_hotkey_switches_active_group_without_changing_measurement_group(self) -> None:
         window = MainWindow()

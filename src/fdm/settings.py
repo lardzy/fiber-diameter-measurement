@@ -35,6 +35,9 @@ class AppSettings:
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
     measurement_label_color: str = "#FFFFFF"
+    measurement_label_decimals: int = 4
+    measurement_label_parallel_to_line: bool = False
+    measurement_label_background_enabled: bool = True
     measurement_endpoint_style: str = MeasurementEndpointStyle.CIRCLE
     default_measurement_color: str = "#E0FBFC"
     open_image_view_mode: str = OpenImageViewMode.DEFAULT
@@ -50,6 +53,9 @@ class AppSettings:
             "measurement_label_font_family": self.measurement_label_font_family,
             "measurement_label_font_size": self.measurement_label_font_size,
             "measurement_label_color": self.measurement_label_color,
+            "measurement_label_decimals": self.measurement_label_decimals,
+            "measurement_label_parallel_to_line": self.measurement_label_parallel_to_line,
+            "measurement_label_background_enabled": self.measurement_label_background_enabled,
             "measurement_endpoint_style": self.measurement_endpoint_style,
             "default_measurement_color": self.default_measurement_color,
             "open_image_view_mode": self.open_image_view_mode,
@@ -66,6 +72,9 @@ class AppSettings:
         settings.measurement_label_font_family = str(payload.get("measurement_label_font_family", settings.measurement_label_font_family))
         settings.measurement_label_font_size = int(payload.get("measurement_label_font_size", settings.measurement_label_font_size))
         settings.measurement_label_color = str(payload.get("measurement_label_color", settings.measurement_label_color))
+        settings.measurement_label_decimals = int(payload.get("measurement_label_decimals", settings.measurement_label_decimals))
+        settings.measurement_label_parallel_to_line = bool(payload.get("measurement_label_parallel_to_line", settings.measurement_label_parallel_to_line))
+        settings.measurement_label_background_enabled = bool(payload.get("measurement_label_background_enabled", settings.measurement_label_background_enabled))
         settings.measurement_endpoint_style = str(payload.get("measurement_endpoint_style", settings.measurement_endpoint_style))
         settings.default_measurement_color = str(payload.get("default_measurement_color", settings.default_measurement_color))
         settings.open_image_view_mode = str(payload.get("open_image_view_mode", settings.open_image_view_mode))

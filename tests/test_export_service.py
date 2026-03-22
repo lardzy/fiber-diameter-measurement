@@ -10,8 +10,9 @@ import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL, new_id
+from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL, format_measurement_label_value, new_id
 from fdm.services.export_service import ExportImageRenderMode, ExportSelection, ExportService
+from fdm.settings import AppSettings
 
 
 class ExportServiceTests(unittest.TestCase):
@@ -97,6 +98,33 @@ class ExportServiceTests(unittest.TestCase):
     def test_all_enabled_export_selection_uses_screen_render_mode(self) -> None:
         selection = ExportSelection.all_enabled()
         self.assertEqual(selection.render_mode, ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE)
+
+    def test_measurement_label_text_uses_configured_decimals_only_for_display(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/measurement_label.png",
+            image_size=(100, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=2.0,
+            unit="um",
+            source_label="demo",
+        )
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(0, 0), Point(10.246, 0)),
+        )
+        measurement.recalculate(document.calibration)
+
+        settings = AppSettings(measurement_label_decimals=2)
+
+        self.assertEqual(format_measurement_label_value(measurement.diameter_unit or 0.0, "um", settings.measurement_label_decimals), "5.12 um")
+        self.assertAlmostEqual(measurement.diameter_unit or 0.0, 5.123)
 
 
 if __name__ == "__main__":

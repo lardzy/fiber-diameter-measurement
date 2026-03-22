@@ -188,6 +188,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings(
             show_measurement_labels=False,
             measurement_label_font_size=22,
+            measurement_label_decimals=2,
+            measurement_label_parallel_to_line=True,
+            measurement_label_background_enabled=False,
             measurement_endpoint_style="bar",
             text_font_size=26,
             text_color="#123456",
@@ -201,6 +204,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(saved_path, path)
         self.assertFalse(loaded.show_measurement_labels)
         self.assertEqual(loaded.measurement_label_font_size, 22)
+        self.assertEqual(loaded.measurement_label_decimals, 2)
+        self.assertTrue(loaded.measurement_label_parallel_to_line)
+        self.assertFalse(loaded.measurement_label_background_enabled)
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")

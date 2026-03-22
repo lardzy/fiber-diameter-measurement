@@ -28,6 +28,7 @@ class ExportImageRenderMode:
 class ExportSelection:
     include_measurement_overlay: bool = False
     include_scale_overlay: bool = False
+    include_combined_overlay: bool = False
     include_scale_json: bool = False
     include_excel: bool = False
     include_csv: bool = False
@@ -39,6 +40,7 @@ class ExportSelection:
         return cls(
             include_measurement_overlay=True,
             include_scale_overlay=True,
+            include_combined_overlay=True,
             include_scale_json=True,
             include_excel=True,
             include_csv=True,
@@ -51,6 +53,7 @@ class ExportSelection:
             [
                 self.include_measurement_overlay,
                 self.include_scale_overlay,
+                self.include_combined_overlay,
                 self.include_scale_json,
                 self.include_excel,
                 self.include_csv,
@@ -107,6 +110,7 @@ class ExportService:
 
         measurement_overlays: list[Path] = []
         scale_overlays: list[Path] = []
+        combined_overlays: list[Path] = []
         scale_jsons: list[Path] = []
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
@@ -130,6 +134,16 @@ class ExportService:
                     render_mode=selection.render_mode,
                 )
                 scale_overlays.append(output_file)
+            if selection.include_combined_overlay and overlay_renderer is not None:
+                output_file = output_path / f"{base_name}_measurements_scale_{self._render_mode_suffix(selection.render_mode)}.png"
+                overlay_renderer(
+                    document,
+                    output_file,
+                    include_measurements=True,
+                    include_scale=True,
+                    render_mode=selection.render_mode,
+                )
+                combined_overlays.append(output_file)
             if selection.include_scale_json and document.calibration is not None:
                 output_file = output_path / f"{base_name}_scale.json"
                 exported = CalibrationSidecarIO.export_document(document, output_file)
@@ -140,6 +154,8 @@ class ExportService:
             outputs["measurement_overlays"] = measurement_overlays
         if scale_overlays:
             outputs["scale_overlays"] = scale_overlays
+        if combined_overlays:
+            outputs["combined_overlays"] = combined_overlays
         if scale_jsons:
             outputs["scale_jsons"] = scale_jsons
         return outputs

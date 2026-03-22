@@ -234,6 +234,15 @@ class MainWindow(QMainWindow):
                 ),
             )
         )
+        self.export_actions.append(
+            self._make_export_action(
+                "导出测量 + 比例尺叠加图",
+                ExportSelection(
+                    include_combined_overlay=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                ),
+            )
+        )
         self.export_actions.append(self._make_export_action("导出比例尺 JSON", ExportSelection(include_scale_json=True)))
         self.export_actions.append(self._make_export_action("导出 Excel", ExportSelection(include_excel=True)))
         self.export_actions.append(self._make_export_action("导出 CSV", ExportSelection(include_csv=True)))

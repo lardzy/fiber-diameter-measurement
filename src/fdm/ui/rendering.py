@@ -6,8 +6,8 @@ import math
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen
 
-from fdm.geometry import Line, Point, direction, midpoint, normal
-from fdm.models import ImageDocument, Measurement, TextAnnotation
+from fdm.geometry import Line, Point, direction, normal
+from fdm.models import ImageDocument, Measurement, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode
 
 
@@ -47,14 +47,20 @@ def measurement_color(document: ImageDocument, measurement: Measurement, setting
 
 
 def measurement_display_text(measurement: Measurement, document: ImageDocument) -> str:
+    return measurement_display_text_with_settings(measurement, document, None)
+
+
+def measurement_display_text_with_settings(
+    measurement: Measurement,
+    document: ImageDocument,
+    settings: AppSettings | None,
+) -> str:
     value = measurement.diameter_unit
     if value is None:
         value = measurement.diameter_px or 0.0
     unit = document.calibration.unit if document.calibration else "px"
-    formatted = f"{value:.4f}".rstrip("0").rstrip(".")
-    if not formatted:
-        formatted = "0"
-    return f"{formatted} {unit}"
+    decimals = settings.measurement_label_decimals if settings is not None else 4
+    return format_measurement_label_value(value, unit, decimals)
 
 
 def measurement_label_font(settings: AppSettings) -> QFont:
@@ -187,10 +193,9 @@ def draw_measurement_label(
     font = measurement_label_font(settings)
     painter.setFont(font)
     metrics = QFontMetricsF(font)
-    text = measurement_display_text(measurement, document)
+    text = measurement_display_text_with_settings(measurement, document, settings)
     text_width = metrics.horizontalAdvance(text)
     text_height = metrics.height()
-    mid = midpoint(measurement.effective_line())
     axis = direction(measurement.effective_line())
     normal_axis = normal(axis)
     offset = max(12.0, text_height * 0.75)
@@ -204,7 +209,31 @@ def draw_measurement_label(
         text_width + 12.0,
         text_height + 6.0,
     )
-    painter.fillRect(rect, QColor(16, 24, 32, 168))
+    if settings.measurement_label_parallel_to_line:
+        angle = math.degrees(math.atan2(end_point.y() - start_point.y(), end_point.x() - start_point.x()))
+        if angle > 90.0:
+            angle -= 180.0
+        elif angle < -90.0:
+            angle += 180.0
+        painter.save()
+        painter.translate(center)
+        painter.rotate(angle)
+        parallel_rect = QRectF(
+            -(text_width / 2.0) - 6.0,
+            -(text_height / 2.0) - 3.0,
+            text_width + 12.0,
+            text_height + 6.0,
+        )
+        if settings.measurement_label_background_enabled:
+            painter.fillRect(parallel_rect, QColor(16, 24, 32, 168))
+        painter.setPen(QPen(QColor("#101820"), 3))
+        painter.drawText(parallel_rect, Qt.AlignmentFlag.AlignCenter, text)
+        painter.setPen(QPen(QColor(settings.measurement_label_color), 1))
+        painter.drawText(parallel_rect, Qt.AlignmentFlag.AlignCenter, text)
+        painter.restore()
+        return
+    if settings.measurement_label_background_enabled:
+        painter.fillRect(rect, QColor(16, 24, 32, 168))
     painter.setPen(QPen(QColor("#101820"), 3))
     painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
     painter.setPen(QPen(QColor(settings.measurement_label_color), 1))

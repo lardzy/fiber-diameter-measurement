@@ -131,6 +131,8 @@ class ExportOptionsDialog(QDialog):
         self._measurement_overlay.setChecked(selection.include_measurement_overlay)
         self._scale_overlay = QCheckBox("比例尺图 PNG")
         self._scale_overlay.setChecked(selection.include_scale_overlay)
+        self._combined_overlay = QCheckBox("测量 + 比例尺叠加图 PNG")
+        self._combined_overlay.setChecked(selection.include_combined_overlay)
         self._scale_json = QCheckBox("比例尺 JSON")
         self._scale_json.setChecked(selection.include_scale_json)
         self._excel = QCheckBox("Excel 文档")
@@ -142,6 +144,7 @@ class ExportOptionsDialog(QDialog):
         export_layout = QVBoxLayout(export_group)
         export_layout.addWidget(self._measurement_overlay)
         export_layout.addWidget(self._scale_overlay)
+        export_layout.addWidget(self._combined_overlay)
         export_layout.addWidget(self._scale_json)
         export_layout.addWidget(self._excel)
         export_layout.addWidget(self._csv)
@@ -171,6 +174,7 @@ class ExportOptionsDialog(QDialog):
 
         self._measurement_overlay.toggled.connect(self._update_render_mode_state)
         self._scale_overlay.toggled.connect(self._update_render_mode_state)
+        self._combined_overlay.toggled.connect(self._update_render_mode_state)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -184,7 +188,11 @@ class ExportOptionsDialog(QDialog):
         self._update_render_mode_state()
 
     def _update_render_mode_state(self) -> None:
-        enabled = self._measurement_overlay.isChecked() or self._scale_overlay.isChecked()
+        enabled = (
+            self._measurement_overlay.isChecked()
+            or self._scale_overlay.isChecked()
+            or self._combined_overlay.isChecked()
+        )
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
 
@@ -192,6 +200,7 @@ class ExportOptionsDialog(QDialog):
         return ExportSelection(
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
+            include_combined_overlay=self._combined_overlay.isChecked(),
             include_scale_json=self._scale_json.isChecked(),
             include_excel=self._excel.isChecked(),
             include_csv=self._csv.isChecked(),
@@ -242,6 +251,9 @@ class SettingsDialog(QDialog):
             measurement_label_font_family=self._measurement_label_font.currentFont().family(),
             measurement_label_font_size=self._measurement_label_size.value(),
             measurement_label_color=self._measurement_label_color.property("color_value") or self._initial_settings.measurement_label_color,
+            measurement_label_decimals=self._measurement_label_decimals.value(),
+            measurement_label_parallel_to_line=self._measurement_label_parallel.isChecked(),
+            measurement_label_background_enabled=self._measurement_label_background.isChecked(),
             measurement_endpoint_style=self._endpoint_style_combo.currentData(),
             default_measurement_color=self._default_measurement_color.property("color_value") or self._initial_settings.default_measurement_color,
             open_image_view_mode=self._open_view_mode_combo.currentData(),
@@ -262,17 +274,7 @@ class SettingsDialog(QDialog):
         return colors
 
     def wants_scale_anchor_pick(self) -> bool:
-        if self._document is None:
-            return False
-        if self._request_scale_anchor_pick:
-            return True
-        settings = self.app_settings()
-        if settings.scale_overlay_placement_mode != ScaleOverlayPlacementMode.MANUAL:
-            return False
-        initial_mode = self._initial_settings.scale_overlay_placement_mode
-        if initial_mode != ScaleOverlayPlacementMode.MANUAL:
-            return True
-        return self._document.scale_overlay_anchor is None
+        return self._document is not None and self._request_scale_anchor_pick
 
     def _build_app_settings_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
@@ -288,6 +290,13 @@ class SettingsDialog(QDialog):
         self._measurement_label_size.setRange(8, 96)
         self._measurement_label_size.setValue(settings.measurement_label_font_size)
         self._measurement_label_color = self._create_color_button(settings.measurement_label_color)
+        self._measurement_label_decimals = QSpinBox()
+        self._measurement_label_decimals.setRange(0, 8)
+        self._measurement_label_decimals.setValue(settings.measurement_label_decimals)
+        self._measurement_label_parallel = QCheckBox("结果文字与测量线平行")
+        self._measurement_label_parallel.setChecked(settings.measurement_label_parallel_to_line)
+        self._measurement_label_background = QCheckBox("显示结果文字浅黑底")
+        self._measurement_label_background.setChecked(settings.measurement_label_background_enabled)
         self._endpoint_style_combo = QComboBox()
         self._endpoint_style_combo.addItem("圆点", MeasurementEndpointStyle.CIRCLE)
         self._endpoint_style_combo.addItem("内侧箭头", MeasurementEndpointStyle.ARROW_INSIDE)
@@ -300,6 +309,9 @@ class SettingsDialog(QDialog):
         measurement_form.addRow("结果文字字体", self._measurement_label_font)
         measurement_form.addRow("结果文字字号", self._measurement_label_size)
         measurement_form.addRow("结果文字颜色", self._measurement_label_color)
+        measurement_form.addRow("结果文字小数位", self._measurement_label_decimals)
+        measurement_form.addRow("", self._measurement_label_parallel)
+        measurement_form.addRow("", self._measurement_label_background)
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
@@ -362,7 +374,7 @@ class SettingsDialog(QDialog):
         if anchor is not None:
             status_text = f"当前锚点: ({anchor.x:.1f}, {anchor.y:.1f})"
         scale_layout.addWidget(QLabel(status_text))
-        hint = QLabel("当比例尺位置为“手动选定”时，可点击下方按钮并在画布中重新指定位置。")
+        hint = QLabel("手动比例尺位置只会在你显式点击“重新选择位置”后进入画布选点；单独修改其它设置不会触发选点。")
         hint.setWordWrap(True)
         scale_layout.addWidget(hint)
         pick_button = QPushButton("重新选择位置")
