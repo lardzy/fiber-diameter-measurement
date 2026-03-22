@@ -1,4 +1,4 @@
-# Fiber Diameter Measurement
+# Fiber Diameter Measurement / 纤维直径测量软件
 
 ![演示图片](sample_data/readme-demo/演示图片.jpg)
 
