@@ -1,5 +1,7 @@
 # Fiber Diameter Measurement
 
+![演示图片](sample_data/readme-demo/演示图片.jpg)
+
 离线纤维直径测量桌面软件，面向 Windows 10 / Windows 11 无独显电脑。当前版本聚焦完整测量闭环：多图打开、比例尺标定、手动测量、半自动吸附、纤维分类、项目保存，以及叠加图和表格数据导出。
 
 ## 功能概览
