@@ -5,13 +5,19 @@ from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QWheelEve
 from PySide6.QtWidgets import QWidget
 
 from fdm.geometry import Line, Point, clamp, distance, line_length, nearest_endpoint, snap_to_pixel_center
-from fdm.models import ImageDocument, Measurement
+from fdm.models import ImageDocument
+from fdm.settings import AppSettings
+from fdm.ui.rendering import annotation_rect, draw_measurements, draw_preview_scale_anchor, draw_text_annotations
 
 
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
-    measurementSelected = Signal(str, str)
+    measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
+    textPlacementRequested = Signal(str, object)
+    textSelected = Signal(str, object)
+    textMoved = Signal(str, str, object)
+    scaleAnchorPicked = Signal(str, object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -31,6 +37,12 @@ class DocumentCanvas(QWidget):
         self._last_mouse_pos = QPointF()
         self._space_pressed = False
         self._temporary_grab_active = False
+        self._settings = AppSettings()
+        self._dragging_text_id: str | None = None
+        self._drag_text_offset = Point(0.0, 0.0)
+        self._drag_text_preview_anchor: Point | None = None
+        self._scale_anchor_pick_active = False
+        self._scale_anchor_preview_point: Point | None = None
 
     @property
     def document_id(self) -> str | None:
@@ -50,10 +62,33 @@ class DocumentCanvas(QWidget):
         self._update_cursor()
         self.update()
 
+    def set_settings(self, settings: AppSettings) -> None:
+        self._settings = settings
+        self.update()
+
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
             return
-        self._document.view_state.selected_measurement_id = measurement_id
+        self._document.select_measurement(measurement_id)
+        self.update()
+
+    def set_selected_text_annotation(self, text_id: str | None) -> None:
+        if self._document is None:
+            return
+        self._document.select_text_annotation(text_id)
+        self.update()
+
+    def begin_scale_anchor_pick(self) -> None:
+        self._scale_anchor_pick_active = True
+        self._scale_anchor_preview_point = None
+        self._update_cursor()
+        self.focus_canvas()
+        self.update()
+
+    def end_scale_anchor_pick(self) -> None:
+        self._scale_anchor_pick_active = False
+        self._scale_anchor_preview_point = None
+        self._update_cursor()
         self.update()
 
     def focus_canvas(self) -> None:
@@ -120,7 +155,7 @@ class DocumentCanvas(QWidget):
         )
         painter.drawImage(target, self._image)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        self._draw_measurements(painter)
+        self._draw_annotations(painter)
         self._draw_preview(painter)
 
     def resizeEvent(self, event) -> None:
@@ -164,8 +199,20 @@ class DocumentCanvas(QWidget):
             self._pan_button = event.button()
             self._update_cursor()
             return
-
         image_point = self.widget_to_image(event.position())
+
+        if self._scale_anchor_pick_active:
+            if self._point_in_image(image_point):
+                self._scale_anchor_preview_point = self._clamp_to_image(image_point, pixel_center=False)
+                self.scaleAnchorPicked.emit(self._document.id, self._scale_anchor_preview_point)
+            return
+
+        if self._tool_mode == "text":
+            if self._point_in_image(image_point):
+                anchor = self._clamp_to_image(image_point, pixel_center=False)
+                self.textPlacementRequested.emit(self._document.id, anchor)
+            return
+
         if self._tool_mode == "calibration":
             if self._point_in_image(image_point):
                 anchor = self._clamp_to_image(
@@ -176,6 +223,19 @@ class DocumentCanvas(QWidget):
                 self._drawing_line = Line(start=anchor, end=anchor)
                 self.update()
             return
+
+        if self._tool_mode == "select":
+            text_hit = self._hit_test_text_annotation(event.position())
+            if text_hit is not None:
+                annotation = self._document.get_text_annotation(text_hit)
+                if annotation is not None:
+                    self._document.select_text_annotation(text_hit)
+                    self.textSelected.emit(self._document.id, text_hit)
+                    self._dragging_text_id = text_hit
+                    self._drag_text_offset = Point(image_point.x - annotation.anchor_px.x, image_point.y - annotation.anchor_px.y)
+                    self._drag_text_preview_anchor = annotation.anchor_px
+                    self.update()
+                    return
 
         selected_handle = self._hit_test_selected_endpoint(image_point)
         if selected_handle is not None:
@@ -189,14 +249,15 @@ class DocumentCanvas(QWidget):
             if handle is not None:
                 self._dragging_handle = handle
                 self._drag_preview_line = self._measurement_line(handle[0])
-                self._document.view_state.selected_measurement_id = handle[0]
+                self._document.select_measurement(handle[0])
                 self.measurementSelected.emit(self._document.id, handle[0])
                 self.update()
                 return
             measurement_id = self._hit_test_measurement(image_point)
-            self._document.view_state.selected_measurement_id = measurement_id
-            if measurement_id is not None:
-                self.measurementSelected.emit(self._document.id, measurement_id)
+            self._document.select_measurement(measurement_id)
+            self.measurementSelected.emit(self._document.id, measurement_id or "")
+            if measurement_id is None:
+                self.textSelected.emit(self._document.id, "")
             self.update()
             return
 
@@ -220,6 +281,11 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
+        if self._scale_anchor_pick_active:
+            self._scale_anchor_preview_point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
+            self.update()
+            return
+
         image_point = self.widget_to_image(event.position())
         if self._drawing_anchor_raw is not None:
             start, end = self._apply_line_constraints(
@@ -229,6 +295,15 @@ class DocumentCanvas(QWidget):
                 snap_anchor=True,
             )
             self._drawing_line = Line(start=start, end=end)
+            self.update()
+            return
+
+        if self._dragging_text_id is not None:
+            anchor = self._clamp_to_image(
+                Point(image_point.x - self._drag_text_offset.x, image_point.y - self._drag_text_offset.y),
+                pixel_center=False,
+            )
+            self._drag_text_preview_anchor = anchor
             self.update()
             return
 
@@ -276,6 +351,17 @@ class DocumentCanvas(QWidget):
                 self._update_cursor()
             self.update()
             return
+        if self._dragging_text_id is not None and self._drag_text_preview_anchor is not None:
+            text_id = self._dragging_text_id
+            preview_anchor = self._drag_text_preview_anchor
+            self._dragging_text_id = None
+            self._drag_text_preview_anchor = None
+            self.textMoved.emit(self._document.id, text_id, preview_anchor)
+            if self._space_pressed:
+                self._temporary_grab_active = True
+                self._update_cursor()
+            self.update()
+            return
         if self._dragging_handle is not None and self._drag_preview_line is not None:
             measurement_id, _ = self._dragging_handle
             preview = self._drag_preview_line
@@ -314,41 +400,60 @@ class DocumentCanvas(QWidget):
         measurement = self._document.get_measurement(measurement_id)
         return measurement.effective_line() if measurement else None
 
-    def _draw_measurements(self, painter: QPainter) -> None:
+    def _draw_annotations(self, painter: QPainter) -> None:
         if self._document is None:
             return
-        for measurement in self._document.measurements:
-            line = measurement.effective_line()
-            selected = measurement.id == self._document.view_state.selected_measurement_id
-            color = QColor(self._measurement_color(measurement))
-            pen = QPen(color, 4 if selected else 2)
-            painter.setPen(pen)
-            painter.drawLine(self.image_to_widget(line.start), self.image_to_widget(line.end))
-            self._draw_endpoint(painter, line.start, color, selected)
-            self._draw_endpoint(painter, line.end, color, selected)
+        draw_measurements(
+            painter,
+            self._document,
+            self.image_to_widget,
+            self._settings,
+            line_width=2.0,
+            endpoint_radius=4.0,
+            selected_measurement_id=self._document.view_state.selected_measurement_id,
+        )
+        draw_text_annotations(
+            painter,
+            self._document,
+            self.image_to_widget,
+            self._settings,
+            selected_text_id=self._document.selected_text_id,
+        )
 
     def _draw_preview(self, painter: QPainter) -> None:
         preview = self._drag_preview_line or self._drawing_line
-        if preview is None:
-            return
-        color = QColor("#FF7F50") if self._tool_mode == "calibration" else QColor("#F4D35E")
-        painter.setPen(QPen(color, 2, Qt.PenStyle.DashLine))
-        painter.drawLine(self.image_to_widget(preview.start), self.image_to_widget(preview.end))
-        self._draw_endpoint(painter, preview.start, color, True)
-        self._draw_endpoint(painter, preview.end, color, True)
-
-    def _draw_endpoint(self, painter: QPainter, point: Point, color: QColor, selected: bool) -> None:
-        widget_point = self.image_to_widget(point)
-        radius = 7 if selected else 4
-        painter.setBrush(color)
-        painter.setPen(QPen(QColor("#0B0B0B"), 1))
-        painter.drawEllipse(widget_point, radius, radius)
-
-    def _measurement_color(self, measurement: Measurement) -> str:
-        if self._document is None:
-            return "#E0FBFC"
-        group = self._document.get_group(measurement.fiber_group_id)
-        return group.color if group else "#E0FBFC"
+        if preview is not None:
+            color = QColor("#FF7F50") if self._tool_mode == "calibration" else QColor("#F4D35E")
+            painter.setPen(QPen(color, 2, Qt.PenStyle.DashLine))
+            painter.drawLine(self.image_to_widget(preview.start), self.image_to_widget(preview.end))
+            start_color = color
+            painter.setBrush(start_color)
+            painter.setPen(QPen(QColor("#0B0B0B"), 1))
+            painter.drawEllipse(self.image_to_widget(preview.start), 6, 6)
+            painter.drawEllipse(self.image_to_widget(preview.end), 6, 6)
+        if self._dragging_text_id is not None and self._drag_text_preview_anchor is not None:
+            annotation = self._document.get_text_annotation(self._dragging_text_id) if self._document else None
+            if annotation is not None:
+                preview_annotation = type(annotation)(
+                    id=annotation.id,
+                    image_id=annotation.image_id,
+                    content=annotation.content,
+                    anchor_px=self._drag_text_preview_anchor,
+                    created_at=annotation.created_at,
+                )
+                draw_text_annotations(
+                    painter,
+                    type("PreviewDoc", (), {
+                        "text_annotations": [preview_annotation],
+                        "selected_text_id": annotation.id,
+                    })(),
+                    self.image_to_widget,
+                    self._settings,
+                    selected_text_id=annotation.id,
+                )
+        if self._scale_anchor_pick_active:
+            preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
+            draw_preview_scale_anchor(painter, self.image_to_widget(preview_point))
 
     def _hit_test_selected_endpoint(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
@@ -388,6 +493,15 @@ class DocumentCanvas(QWidget):
 
     def _endpoint_tolerance(self) -> float:
         return max(3.0, 6.0 / max(self._zoom, 0.001))
+
+    def _hit_test_text_annotation(self, widget_point: QPointF) -> str | None:
+        if self._document is None:
+            return None
+        for annotation in reversed(self._document.text_annotations):
+            rect = annotation_rect(annotation, self._settings, self.image_to_widget)
+            if rect.contains(widget_point):
+                return annotation.id
+        return None
 
     def _point_to_segment_distance(self, point: Point, line: Line) -> float:
         vx = line.end.x - line.start.x
@@ -446,11 +560,18 @@ class DocumentCanvas(QWidget):
         self._document.view_state.pan = Point(self._pan.x, self._pan.y)
 
     def _has_pointer_edit_operation(self) -> bool:
-        return self._drawing_anchor_raw is not None or self._dragging_handle is not None
+        return (
+            self._drawing_anchor_raw is not None
+            or self._dragging_handle is not None
+            or self._dragging_text_id is not None
+            or self._scale_anchor_pick_active
+        )
 
     def _update_cursor(self) -> None:
         if self._panning:
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        elif self._scale_anchor_pick_active:
+            self.setCursor(Qt.CursorShape.CrossCursor)
         elif self._temporary_grab_active:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
         else:

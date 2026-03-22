@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
@@ -20,7 +21,8 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, new_id
+from fdm.models import Calibration, ImageDocument, Measurement, TextAnnotation, new_id
+from fdm.settings import OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
@@ -336,10 +338,106 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._file_toolbar)
             self.assertIsNotNone(window._measure_toolbar)
             action_texts = [action.text() for action in window._measure_toolbar.actions()]
-            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定"])
+            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定", "文字"])
             self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+        finally:
+            window.close()
+
+    def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_tool.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            with patch("fdm.ui.main_window.QInputDialog.getMultiLineText", return_value=("说明文本", True)):
+                window._on_canvas_text_placement_requested(document.id, Point(24, 32))
+
+            self.assertEqual(len(document.text_annotations), 1)
+            self.assertEqual(document.text_annotations[0].content, "说明文本")
+            self.assertEqual(document.selected_text_id, document.text_annotations[0].id)
+
+            window.delete_selected_measurement()
+            self.assertEqual(len(document.text_annotations), 0)
+        finally:
+            window.close()
+
+    def test_open_image_view_mode_actual_is_applied_to_new_canvas(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.open_image_view_mode = OpenImageViewMode.ACTUAL
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/view_mode_actual.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+
+            self.assertIsNotNone(canvas)
+            self.assertAlmostEqual(canvas._zoom, 1.0)
+            self.assertAlmostEqual(canvas._pan.x, 20.0)
+            self.assertAlmostEqual(canvas._pan.y, 20.0)
+        finally:
+            window.close()
+
+    def test_manual_scale_anchor_and_text_are_visible_in_exports(self) -> None:
+        window, document = self._create_main_window_fixture()
+        try:
+            document.scale_overlay_anchor = Point(36, 48)
+            document.add_text_annotation(
+                TextAnnotation(
+                    id=new_id("text"),
+                    image_id=document.id,
+                    content="样品A",
+                    anchor_px=Point(40, 44),
+                )
+            )
+            window._app_settings.scale_overlay_placement_mode = "manual"
+
+            with TemporaryDirectory() as tmp_dir:
+                baseline_path = Path(tmp_dir) / "baseline.png"
+                measurement_path = Path(tmp_dir) / "measurement.png"
+                scale_path = Path(tmp_dir) / "scale.png"
+                window._render_overlay_image(
+                    document,
+                    baseline_path,
+                    include_measurements=False,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+                window._render_overlay_image(
+                    document,
+                    measurement_path,
+                    include_measurements=True,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+                window._render_overlay_image(
+                    document,
+                    scale_path,
+                    include_measurements=False,
+                    include_scale=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+
+                baseline_image = QImage(str(baseline_path))
+                measurement_image = QImage(str(measurement_path))
+                scale_image = QImage(str(scale_path))
+                self.assertGreater(self._count_diff_pixels(baseline_image, measurement_image), 0)
+                self.assertGreater(self._count_diff_pixels(baseline_image, scale_image), 0)
         finally:
             window.close()
 

@@ -205,6 +205,34 @@ class Measurement:
 
 
 @dataclass(slots=True)
+class TextAnnotation:
+    id: str
+    image_id: str
+    content: str
+    anchor_px: Point
+    created_at: str = field(default_factory=utc_now_iso)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "id": self.id,
+            "image_id": self.image_id,
+            "content": self.content,
+            "anchor_px": self.anchor_px.to_dict(),
+            "created_at": self.created_at,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "TextAnnotation":
+        return cls(
+            id=str(payload["id"]),
+            image_id=str(payload["image_id"]),
+            content=str(payload.get("content", "")),
+            anchor_px=Point.from_dict(payload.get("anchor_px", {"x": 0.0, "y": 0.0})),
+            created_at=str(payload.get("created_at", utc_now_iso())),
+        )
+
+
+@dataclass(slots=True)
 class ImageViewState:
     zoom: float = 1.0
     pan: Point = field(default_factory=lambda: Point(0.0, 0.0))
@@ -261,9 +289,12 @@ class ImageDocument:
     calibration: Calibration | None = None
     fiber_groups: list[FiberGroup] = field(default_factory=list)
     measurements: list[Measurement] = field(default_factory=list)
+    text_annotations: list[TextAnnotation] = field(default_factory=list)
     view_state: ImageViewState = field(default_factory=ImageViewState)
     metadata: dict[str, Any] = field(default_factory=dict)
     active_group_id: str | None = None
+    selected_text_id: str | None = None
+    scale_overlay_anchor: Point | None = None
     sidecar_path: str | None = None
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
@@ -281,6 +312,8 @@ class ImageDocument:
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
+        if self.selected_text_id and self.get_text_annotation(self.selected_text_id) is None:
+            self.selected_text_id = None
         if self._session_clean_snapshot is None:
             self.mark_session_saved()
         if self._calibration_clean_snapshot is None:
@@ -363,13 +396,31 @@ class ImageDocument:
                 return measurement
         return None
 
+    def get_text_annotation(self, text_id: str | None) -> TextAnnotation | None:
+        if text_id is None:
+            return None
+        for annotation in self.text_annotations:
+            if annotation.id == text_id:
+                return annotation
+        return None
+
+    def select_measurement(self, measurement_id: str | None) -> None:
+        self.view_state.selected_measurement_id = measurement_id
+        if measurement_id is not None:
+            self.selected_text_id = None
+
+    def select_text_annotation(self, text_id: str | None) -> None:
+        self.selected_text_id = text_id
+        if text_id is not None:
+            self.view_state.selected_measurement_id = None
+
     def add_measurement(self, measurement: Measurement) -> None:
         if measurement.fiber_group_id is None:
             measurement.fiber_group_id = self.active_group_id
         measurement.recalculate(self.calibration)
         self.measurements.append(measurement)
         self.rebuild_group_memberships()
-        self.view_state.selected_measurement_id = measurement.id
+        self.select_measurement(measurement.id)
         self.refresh_dirty_flags()
 
     def remove_measurement(self, measurement_id: str) -> None:
@@ -378,7 +429,7 @@ class ImageDocument:
             if measurement.id != measurement_id
         ]
         if self.view_state.selected_measurement_id == measurement_id:
-            self.view_state.selected_measurement_id = None
+            self.select_measurement(None)
         self.rebuild_group_memberships()
         self.refresh_dirty_flags()
 
@@ -406,6 +457,28 @@ class ImageDocument:
         for index, group in enumerate(self.sorted_groups(), start=1):
             group.number = index
         self.fiber_groups.sort(key=lambda group: group.number)
+
+    def add_text_annotation(self, annotation: TextAnnotation) -> None:
+        self.text_annotations.append(annotation)
+        self.select_text_annotation(annotation.id)
+        self.refresh_dirty_flags()
+
+    def move_text_annotation(self, text_id: str, anchor_px: Point) -> None:
+        annotation = self.get_text_annotation(text_id)
+        if annotation is None:
+            return
+        annotation.anchor_px = anchor_px
+        self.select_text_annotation(text_id)
+        self.refresh_dirty_flags()
+
+    def remove_text_annotation(self, text_id: str) -> None:
+        self.text_annotations = [
+            annotation for annotation in self.text_annotations
+            if annotation.id != text_id
+        ]
+        if self.selected_text_id == text_id:
+            self.select_text_annotation(None)
+        self.refresh_dirty_flags()
 
     def remove_group_to_uncategorized(self, group_id: str) -> bool:
         group = self.get_group(group_id)
@@ -464,6 +537,8 @@ class ImageDocument:
         return {
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
+            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
+            "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
         }
 
     def calibration_snapshot(self) -> dict[str, Any]:
@@ -478,9 +553,12 @@ class ImageDocument:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
+            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
             "metadata": dict(self.metadata),
             "active_group_id": self.active_group_id,
             "selected_measurement_id": self.view_state.selected_measurement_id,
+            "selected_text_id": self.selected_text_id,
+            "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
         }
 
     def restore_snapshot(self, snapshot: dict[str, Any]) -> None:
@@ -493,14 +571,23 @@ class ImageDocument:
             Measurement.from_dict(item)
             for item in snapshot.get("measurements", [])
         ]
+        self.text_annotations = [
+            TextAnnotation.from_dict(item)
+            for item in snapshot.get("text_annotations", [])
+        ]
         self.metadata = dict(snapshot.get("metadata", {}))
         self.active_group_id = snapshot.get("active_group_id")
         self.view_state.selected_measurement_id = snapshot.get("selected_measurement_id")
+        self.selected_text_id = snapshot.get("selected_text_id")
+        scale_overlay_anchor = snapshot.get("scale_overlay_anchor")
+        self.scale_overlay_anchor = Point.from_dict(scale_overlay_anchor) if scale_overlay_anchor else None
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
         if self.view_state.selected_measurement_id and self.get_measurement(self.view_state.selected_measurement_id) is None:
             self.view_state.selected_measurement_id = None
+        if self.selected_text_id and self.get_text_annotation(self.selected_text_id) is None:
+            self.selected_text_id = None
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -527,9 +614,12 @@ class ImageDocument:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
+            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
             "view_state": self.view_state.to_dict(),
             "metadata": self.metadata,
             "active_group_id": self.active_group_id,
+            "selected_text_id": self.selected_text_id,
+            "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
         }
 
     @classmethod
@@ -544,9 +634,12 @@ class ImageDocument:
                 for index, item in enumerate(payload.get("fiber_groups", []))
             ],
             measurements=[Measurement.from_dict(item) for item in payload.get("measurements", [])],
+            text_annotations=[TextAnnotation.from_dict(item) for item in payload.get("text_annotations", [])],
             view_state=ImageViewState.from_dict(payload.get("view_state", {})),
             metadata=dict(payload.get("metadata", {})),
             active_group_id=payload.get("active_group_id"),
+            selected_text_id=payload.get("selected_text_id"),
+            scale_overlay_anchor=Point.from_dict(payload["scale_overlay_anchor"]) if payload.get("scale_overlay_anchor") else None,
         )
         image_document.initialize_runtime_state()
         return image_document

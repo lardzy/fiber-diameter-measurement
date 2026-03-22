@@ -8,8 +8,9 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
 from fdm.project_io import ProjectIO
+from fdm.settings import AppSettings, AppSettingsIO
 
 
 class ModelsProjectIOTests(unittest.TestCase):
@@ -47,6 +48,15 @@ class ModelsProjectIOTests(unittest.TestCase):
             status="manual",
         )
         document.add_measurement(measurement)
+        document.add_text_annotation(
+            TextAnnotation(
+                id=new_id("text"),
+                image_id=document.id,
+                content="纤维A",
+                anchor_px=Point(30, 40),
+            )
+        )
+        document.scale_overlay_anchor = Point(80, 90)
         project = ProjectState(version="0.1.0", documents=[document])
 
         with TemporaryDirectory() as tmp_dir:
@@ -59,6 +69,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         loaded_document = loaded.documents[0]
         self.assertEqual(loaded_document.path, "/tmp/fiber.png")
         self.assertEqual(len(loaded_document.measurements), 1)
+        self.assertEqual(len(loaded_document.text_annotations), 1)
+        self.assertEqual(loaded_document.text_annotations[0].content, "纤维A")
+        self.assertIsNotNone(loaded_document.scale_overlay_anchor)
+        self.assertAlmostEqual(loaded_document.scale_overlay_anchor.x, 80.0)
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
@@ -169,6 +183,27 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
 
         self.assertFalse(document.hide_uncategorized_entry())
+
+    def test_app_settings_roundtrip_uses_user_writable_path(self) -> None:
+        settings = AppSettings(
+            show_measurement_labels=False,
+            measurement_label_font_size=22,
+            measurement_endpoint_style="bar",
+            text_font_size=26,
+            text_color="#123456",
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            saved_path = AppSettingsIO.save(settings, path)
+            loaded = AppSettingsIO.load(saved_path)
+
+        self.assertEqual(saved_path, path)
+        self.assertFalse(loaded.show_measurement_labels)
+        self.assertEqual(loaded.measurement_label_font_size, 22)
+        self.assertEqual(loaded.measurement_endpoint_style, "bar")
+        self.assertEqual(loaded.text_font_size, 26)
+        self.assertEqual(loaded.text_color, "#123456")
 
 
 if __name__ == "__main__":

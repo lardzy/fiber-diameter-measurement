@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-import math
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QIcon, QImage, QImageReader, QPainter, QPen, QPixmap
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
+    QDialogButtonBox,
     QFileDialog,
     QGroupBox,
     QHBoxLayout,
@@ -43,24 +43,25 @@ from fdm.geometry import Line, line_length
 from fdm.models import (
     Calibration,
     CalibrationPreset,
-    FiberGroup,
     ImageDocument,
     Measurement,
     ProjectState,
-    UNCATEGORIZED_COLOR,
+    TextAnnotation,
     UNCATEGORIZED_LABEL,
     new_id,
 )
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
+from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
-from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog
+from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog, SettingsDialog
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
 
 
@@ -96,6 +97,7 @@ class MainWindow(QMainWindow):
 
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
+        self._app_settings = AppSettingsIO.load()
         self._document_order: list[str] = []
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterImage] = {}
@@ -184,7 +186,7 @@ class MainWindow(QMainWindow):
         self.redo_action.setShortcut("Ctrl+Shift+Z")
         self.redo_action.triggered.connect(self.redo_current_document)
 
-        self.delete_measurement_action = QAction("删除选中测量", self)
+        self.delete_measurement_action = QAction("删除选中对象", self)
         self.delete_measurement_action.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_action.setShortcut("Delete")
         self.delete_measurement_action.triggered.connect(self.delete_selected_measurement)
@@ -208,6 +210,10 @@ class MainWindow(QMainWindow):
         self.actual_size_action = QAction("原始像素", self)
         self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
+
+        self.settings_action = QAction("设置", self)
+        self.settings_action.setIcon(themed_icon("rename", color="#D7E3FC"))
+        self.settings_action.triggered.connect(self.open_settings_dialog)
 
         self.export_actions: list[QAction] = []
         self.export_actions.append(
@@ -250,6 +256,7 @@ class MainWindow(QMainWindow):
             ("manual", "手动测量"),
             ("snap", "半自动吸附"),
             ("calibration", "比例尺标定"),
+            ("text", "文字"),
         ]:
             action = QAction(label, self)
             action.setCheckable(True)
@@ -261,6 +268,7 @@ class MainWindow(QMainWindow):
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
         self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
+        self._mode_actions["text"].setIcon(themed_icon("rename", color="#9C89B8"))
 
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("文件")
@@ -285,6 +293,8 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.add_group_action)
         edit_menu.addAction(self.rename_group_action)
         edit_menu.addAction(self.delete_group_action)
+        edit_menu.addSeparator()
+        edit_menu.addAction(self.settings_action)
 
         view_menu = self.menuBar().addMenu("视图")
         for action in self._mode_actions.values():
@@ -353,6 +363,7 @@ class MainWindow(QMainWindow):
         measure_toolbar.addAction(self._mode_actions["manual"])
         measure_toolbar.addAction(self._mode_actions["snap"])
         measure_toolbar.addAction(self._mode_actions["calibration"])
+        measure_toolbar.addAction(self._mode_actions["text"])
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
@@ -478,7 +489,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
-        self.delete_measurement_button = QPushButton("删除选中测量")
+        self.delete_measurement_button = QPushButton("删除选中对象")
         self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
         measurement_layout.addWidget(self.delete_measurement_button)
@@ -511,6 +522,15 @@ class MainWindow(QMainWindow):
         if document is None:
             return None
         return self._canvases.get(document.id)
+
+    def _apply_open_view_mode(self, canvas: DocumentCanvas | None) -> None:
+        if canvas is None:
+            return
+        mode = self._app_settings.open_image_view_mode
+        if mode == OpenImageViewMode.FIT:
+            canvas.fit_to_view()
+        elif mode == OpenImageViewMode.ACTUAL:
+            canvas.actual_size()
 
     def open_images(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
@@ -766,10 +786,15 @@ class MainWindow(QMainWindow):
 
         canvas = DocumentCanvas()
         canvas.set_document(target_document, image)
+        canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(self._tool_mode)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
+        canvas.textPlacementRequested.connect(self._on_canvas_text_placement_requested)
+        canvas.textSelected.connect(self._on_canvas_text_selected)
+        canvas.textMoved.connect(self._on_canvas_text_moved)
+        canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
 
         self.project.documents.append(target_document)
         self._document_order.append(target_document.id)
@@ -783,6 +808,7 @@ class MainWindow(QMainWindow):
         self.image_list.addItem(list_item)
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
+        self._apply_open_view_mode(canvas)
         self._update_ui_for_current_document()
 
     def save_project(self, path: str | None = None) -> bool:
@@ -882,6 +908,63 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.actual_size()
+
+    def open_settings_dialog(self) -> None:
+        dialog = SettingsDialog(
+            self._app_settings,
+            document=self.current_document(),
+            parent=self,
+        )
+        apply_button = dialog.button_box.button(QDialogButtonBox.StandardButton.Apply)
+        if apply_button is not None:
+            apply_button.clicked.connect(lambda: self._apply_settings_dialog(dialog, close_after=False))
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        self._apply_settings_dialog(dialog, close_after=True)
+
+    def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
+        previous_settings = self._app_settings
+        new_settings = dialog.app_settings()
+        self._app_settings = new_settings
+        AppSettingsIO.save(new_settings)
+        self._refresh_canvases_for_settings()
+
+        document = self.current_document()
+        if document is not None:
+            group_colors = dialog.group_colors()
+            if group_colors:
+                def mutate_group_colors() -> None:
+                    for group in document.sorted_groups():
+                        if group.id in group_colors:
+                            group.color = group_colors[group.id]
+
+                self._apply_document_change(document, "更新类别颜色", mutate_group_colors)
+
+        should_pick_scale_anchor = dialog.wants_scale_anchor_pick()
+        if should_pick_scale_anchor and self.current_document() is not None:
+            if not close_after:
+                dialog.accept()
+                return
+            self._begin_scale_anchor_pick(self.current_document())
+        elif close_after:
+            self.statusBar().showMessage("设置已更新", 3000)
+
+    def _refresh_canvases_for_settings(self) -> None:
+        for canvas in self._canvases.values():
+            canvas.set_settings(self._app_settings)
+        self._populate_group_list(self.current_document())
+        self._populate_measurement_table(self.current_document())
+        self._update_action_states()
+
+    def _begin_scale_anchor_pick(self, document: ImageDocument | None) -> None:
+        if document is None:
+            return
+        self._set_current_document(document.id)
+        canvas = self._canvases.get(document.id)
+        if canvas is None:
+            return
+        self.statusBar().showMessage("请在画布中单击比例尺起点位置。", 5000)
+        canvas.begin_scale_anchor_pick()
 
     def add_calibration_preset(self) -> None:
         dialog = CalibrationPresetDialog(self)
@@ -1014,7 +1097,18 @@ class MainWindow(QMainWindow):
 
     def delete_selected_measurement(self) -> None:
         document = self.current_document()
-        if self._tool_mode == "calibration" or document is None or document.view_state.selected_measurement_id is None:
+        if self._tool_mode == "calibration" or document is None:
+            return
+        if document.selected_text_id is not None:
+            text_id = document.selected_text_id
+
+            def mutate_text() -> None:
+                document.remove_text_annotation(text_id)
+
+            self._apply_document_change(document, "删除文字", mutate_text)
+            self._focus_current_canvas()
+            return
+        if document.view_state.selected_measurement_id is None:
             return
         measurement_id = document.view_state.selected_measurement_id
 
@@ -1140,6 +1234,7 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode)
+            self._apply_open_view_mode(canvas)
         self._update_ui_for_current_document()
 
     def _on_image_list_changed(self, row: int) -> None:
@@ -1188,16 +1283,17 @@ class MainWindow(QMainWindow):
                     debug_payload=snap_result.debug_payload,
                 )
             document.add_measurement(measurement)
+            document.select_text_annotation(None)
 
         self._apply_document_change(document, "新增测量", mutate)
         self.statusBar().showMessage("已新增测量", 2500)
         self._focus_current_canvas()
 
-    def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str) -> None:
+    def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str | None) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
-        document.view_state.selected_measurement_id = measurement_id
+        document.select_measurement(measurement_id or None)
         self._sync_measurement_table_selection(document)
         self._update_action_states()
         self._focus_current_canvas()
@@ -1214,9 +1310,72 @@ class MainWindow(QMainWindow):
             measurement.snapped_line_px = line
             measurement.status = "edited"
             measurement.recalculate(document.calibration)
-            document.view_state.selected_measurement_id = measurement.id
+            document.select_measurement(measurement.id)
 
         self._apply_document_change(document, "编辑测量线", mutate)
+        self._focus_current_canvas()
+
+    def _on_canvas_text_placement_requested(self, document_id: str, anchor: Point) -> None:
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+        content, ok = QInputDialog.getMultiLineText(self, "新增文字", "文字内容")
+        if not ok:
+            self._focus_current_canvas()
+            return
+        content = content.strip()
+        if not content:
+            self._focus_current_canvas()
+            return
+
+        def mutate() -> None:
+            document.add_text_annotation(
+                TextAnnotation(
+                    id=new_id("text"),
+                    image_id=document.id,
+                    content=content,
+                    anchor_px=anchor,
+                )
+            )
+
+        self._apply_document_change(document, "新增文字", mutate)
+        self.statusBar().showMessage("已新增文字", 2500)
+        self._focus_current_canvas()
+
+    def _on_canvas_text_selected(self, document_id: str, text_id: str | None) -> None:
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+        document.select_text_annotation(text_id or None)
+        if text_id:
+            document.select_measurement(None)
+        self._sync_measurement_table_selection(document)
+        self._update_action_states()
+        self._focus_current_canvas()
+
+    def _on_canvas_text_moved(self, document_id: str, text_id: str, anchor: Point) -> None:
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+
+        def mutate() -> None:
+            document.move_text_annotation(text_id, anchor)
+
+        self._apply_document_change(document, "移动文字", mutate)
+        self._focus_current_canvas()
+
+    def _on_canvas_scale_anchor_picked(self, document_id: str, anchor: Point) -> None:
+        document = self.project.get_document(document_id)
+        canvas = self._canvases.get(document_id)
+        if document is None or canvas is None:
+            return
+        canvas.end_scale_anchor_pick()
+
+        def mutate() -> None:
+            document.scale_overlay_anchor = anchor
+
+        self._apply_document_change(document, "设置比例尺位置", mutate)
+        self.statusBar().showMessage("已更新当前图片的比例尺位置", 3000)
         self._focus_current_canvas()
 
     def _apply_calibration_line(self, document: ImageDocument, line: Line) -> None:
@@ -1251,7 +1410,7 @@ class MainWindow(QMainWindow):
             if document.should_show_uncategorized_entry():
                 ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
                 ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
-                ungrouped_item.setIcon(self._color_icon(UNCATEGORIZED_COLOR, size=14))
+                ungrouped_item.setIcon(self._color_icon(self._app_settings.default_measurement_color, size=14))
                 ungrouped_item.setSizeHint(QSize(136, 36))
                 font = ungrouped_item.font()
                 font.setBold(document.active_group_id is None)
@@ -1280,6 +1439,7 @@ class MainWindow(QMainWindow):
         self._populate_measurement_table(document)
         canvas = self.current_canvas()
         if canvas is not None:
+            canvas.set_settings(self._app_settings)
             canvas.set_tool_mode(self._tool_mode)
         self._update_action_states()
 
@@ -1317,7 +1477,7 @@ class MainWindow(QMainWindow):
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
         combo = MeasurementGroupComboBox()
         combo.setProperty("measurement_id", measurement.id)
-        combo.addItem(self._color_icon(UNCATEGORIZED_COLOR), UNCATEGORIZED_LABEL, None)
+        combo.addItem(self._color_icon(self._app_settings.default_measurement_color), UNCATEGORIZED_LABEL, None)
         for group in document.sorted_groups():
             combo.addItem(self._color_icon(group.color), group.display_name(), group.id)
         current_index = combo.findData(measurement.fiber_group_id)
@@ -1352,7 +1512,7 @@ class MainWindow(QMainWindow):
         if item is None:
             return
         measurement_id = item.data(Qt.ItemDataRole.UserRole)
-        document.view_state.selected_measurement_id = measurement_id
+        document.select_measurement(measurement_id)
         canvas.set_selected_measurement(measurement_id)
         self._update_action_states()
 
@@ -1372,7 +1532,7 @@ class MainWindow(QMainWindow):
         measurement = document.get_measurement(measurement_id)
         if measurement is None or measurement.fiber_group_id == target_group_id:
             return
-        document.view_state.selected_measurement_id = measurement_id
+        document.select_measurement(measurement_id)
 
         def mutate() -> None:
             document.set_measurement_group(measurement_id, target_group_id)
@@ -1435,7 +1595,14 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
-        has_selected_measurement = has_document and document.view_state.selected_measurement_id is not None and self._tool_mode != "calibration"
+        has_selected_object = bool(
+            has_document
+            and self._tool_mode != "calibration"
+            and (
+                document.view_state.selected_measurement_id is not None
+                or document.selected_text_id is not None
+            )
+        )
         has_deletable_group_target = bool(
             document and (
                 document.get_group(document.active_group_id) is not None
@@ -1444,8 +1611,8 @@ class MainWindow(QMainWindow):
         )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
-        self.delete_measurement_action.setEnabled(bool(has_selected_measurement))
-        self.delete_measurement_button.setEnabled(bool(has_selected_measurement))
+        self.delete_measurement_action.setEnabled(has_selected_object)
+        self.delete_measurement_button.setEnabled(has_selected_object)
         self.add_group_action.setEnabled(has_document)
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
         self.delete_group_action.setEnabled(has_deletable_group_target)
@@ -1457,26 +1624,13 @@ class MainWindow(QMainWindow):
         return f"✓ {text}" if selected else text
 
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
-        long_edge = float(max(width, height))
-        if render_mode == ExportImageRenderMode.FULL_RESOLUTION:
-            # Full-resolution export should stay precise in native pixel space.
-            line_width = 2.0
-            endpoint_radius = 3.6
-            scale_bg_width = 5.0
-            scale_fg_width = 2.5
-            font_px = 18.0
-        else:
-            line_width = max(2.0, min(6.0, long_edge * 0.003))
-            endpoint_radius = max(4.0, line_width * 1.6)
-            scale_bg_width = max(6.0, line_width * 2.2)
-            scale_fg_width = max(3.0, line_width * 1.1)
-            font_px = max(12.0, long_edge * 0.022)
+        metrics = overlay_metrics(width, height, render_mode)
         return {
-            "line_width": line_width,
-            "endpoint_radius": endpoint_radius,
-            "scale_bg_width": scale_bg_width,
-            "scale_fg_width": scale_fg_width,
-            "font_px": font_px,
+            "line_width": metrics.line_width,
+            "endpoint_radius": metrics.endpoint_radius,
+            "scale_bg_width": metrics.scale_bg_width,
+            "scale_fg_width": metrics.scale_fg_width,
+            "font_px": metrics.font_px,
         }
 
     def _create_export_surface(self, width: int, height: int) -> QImage:
@@ -1557,74 +1711,48 @@ class MainWindow(QMainWindow):
         font_px = metrics["font_px"]
 
         if include_measurements:
-            for measurement in document.measurements:
-                group = document.get_group(measurement.fiber_group_id)
-                color = QColor(group.color if group else UNCATEGORIZED_COLOR)
-                line = measurement.effective_line()
-                start_point = image_to_output(line.start)
-                end_point = image_to_output(line.end)
-                outline_width = line_width * 1.8
-                painter.setPen(QPen(QColor("#0B0B0B"), outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                painter.drawLine(start_point, end_point)
-                painter.setPen(QPen(color, line_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                painter.drawLine(start_point, end_point)
-                painter.setBrush(QColor("#0B0B0B"))
-                painter.setPen(Qt.PenStyle.NoPen)
-                painter.drawEllipse(start_point, endpoint_radius * 1.15, endpoint_radius * 1.15)
-                painter.drawEllipse(end_point, endpoint_radius * 1.15, endpoint_radius * 1.15)
-                painter.setBrush(color)
-                painter.drawEllipse(start_point, endpoint_radius * 0.72, endpoint_radius * 0.72)
-                painter.drawEllipse(end_point, endpoint_radius * 0.72, endpoint_radius * 0.72)
+            draw_measurements(
+                painter,
+                document,
+                image_to_output,
+                self._app_settings,
+                line_width=line_width,
+                endpoint_radius=endpoint_radius,
+            )
+
+        if include_measurements or include_scale:
+            draw_text_annotations(
+                painter,
+                document,
+                image_to_output,
+                self._app_settings,
+                selected_text_id=None,
+            )
 
         if include_scale and document.calibration is not None:
-            scale_value = self._nice_scale_value(
+            if (
+                self._app_settings.scale_overlay_placement_mode == ScaleOverlayPlacementMode.MANUAL
+                and document.scale_overlay_anchor is None
+            ):
+                self.statusBar().showMessage(
+                    f"{Path(document.path).name} 尚未指定手动比例尺位置，已回退到左下角导出。",
+                    5000,
+                )
+            draw_scale_overlay(
+                painter,
                 document,
-                target_output_px=max(80.0, image.width() * 0.18),
+                self._app_settings,
+                image_width=image.width(),
+                image_height=image.height(),
                 image_to_output_scale=image_to_output_scale,
+                scale_bg_width=scale_bg_width,
+                scale_fg_width=scale_fg_width,
+                font_px=font_px,
+                target_output_px=max(80.0, image.width() * 0.18),
             )
-            if scale_value is not None:
-                value, bar_px = scale_value
-                margin = max(24, int(round(min(image.width(), image.height()) * 0.04)))
-                start_x = float(margin)
-                start_y = float(image.height() - margin)
-                painter.setPen(QPen(QColor("#111111"), scale_bg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-                painter.drawLine(QPointF(start_x, start_y), QPointF(start_x + bar_px, start_y))
-                painter.setPen(QPen(QColor("#FFFFFF"), scale_fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-                painter.drawLine(QPointF(start_x, start_y), QPointF(start_x + bar_px, start_y))
-                font = QFont(painter.font())
-                font.setPixelSize(int(round(font_px)))
-                font.setBold(True)
-                painter.setFont(font)
-                painter.setPen(QPen(QColor("#FFFFFF"), 1))
-                painter.drawText(QPointF(start_x, start_y - max(12.0, font_px * 0.55)), f"{value:g} {document.calibration.unit}")
 
         painter.end()
         image.save(str(output_path))
-
-    def _nice_scale_value(
-        self,
-        document: ImageDocument,
-        *,
-        target_output_px: float,
-        image_to_output_scale: float,
-    ) -> tuple[float, float] | None:
-        calibration = document.calibration
-        if calibration is None:
-            return None
-        scaled_pixels_per_unit = calibration.pixels_per_unit * max(image_to_output_scale, 1e-9)
-        raw_value = target_output_px / scaled_pixels_per_unit
-        if raw_value <= 0:
-            return None
-        exponent = math.floor(math.log10(raw_value))
-        base = raw_value / (10 ** exponent)
-        if base < 2:
-            nice_base = 1
-        elif base < 5:
-            nice_base = 2
-        else:
-            nice_base = 5
-        nice_value = nice_base * (10 ** exponent)
-        return nice_value, calibration.unit_to_px(nice_value) * image_to_output_scale
 
     def _color_icon(self, color_value: str, *, size: int = 12) -> QIcon:
         pixmap = QPixmap(size, size)
