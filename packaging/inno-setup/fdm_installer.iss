@@ -7,9 +7,14 @@
 #define MyAppSourceDir ProjectRoot + "\dist\windows\FiberDiameterMeasurement"
 #define MyAppOutputDir ProjectRoot + "\dist\installer"
 #define MyAppOutputBaseFilename "fiber-diameter-measurement-setup-" + MyAppVersion
+#define MyAppIconFile ProjectRoot + "\packaging\assets\icons\app-icon.ico"
 
 #ifnexist MyAppSourceDir + "\" + MyAppExeName
   #error "PyInstaller output not found. Build dist/windows/FiberDiameterMeasurement first."
+#endif
+
+#ifnexist MyAppIconFile
+  #error "Application icon not found. Expected packaging/assets/icons/app-icon.ico."
 #endif
 
 [Setup]
@@ -18,6 +23,7 @@ AppName={#MyAppName}
 AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
+SetupIconFile={#MyAppIconFile}
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
@@ -45,9 +51,9 @@ Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{
 Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"
+Name: "{group}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
 Name: "{group}\卸载 {#MyAppShortcutName}"; Filename: "{uninstallexe}"
-Name: "{autodesktop}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
+Name: "{autodesktop}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\{#MyAppExeName}"; Description: "启动 {#MyAppName}"; Flags: nowait postinstall skipifsilent

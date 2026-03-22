@@ -12,6 +12,7 @@ from PyInstaller.utils.hooks import (
 project_root = Path(SPECPATH).resolve().parents[1]
 src_root = project_root / "src"
 entry_script = project_root / "src" / "fdm" / "app.py"
+app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
 console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
 
@@ -60,6 +61,7 @@ exe = EXE(
     upx_exclude=[],
     runtime_tmpdir=None,
     console=console_mode,
+    icon=str(app_icon),
     disable_windowed_traceback=False,
     argv_emulation=False,
     target_arch=None,

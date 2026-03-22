@@ -36,10 +36,10 @@
   - 测量叠加图 PNG
   - 比例尺叠加图 PNG
   - 比例尺 JSON
-  - `image_summary.csv`
-  - `fiber_details.csv`
-  - `measurement_details.csv`
-  - `measurement_export.xlsx`
+  - `图片汇总.csv`
+  - `纤维种类汇总.csv`
+  - `测量明细.csv`
+  - `纤维测量结果.xlsx`
   - 支持“叠加图 + Excel”快捷导出
 - 图片导出渲染模式
   - `完整分辨率`：按原图分辨率导出精确标注

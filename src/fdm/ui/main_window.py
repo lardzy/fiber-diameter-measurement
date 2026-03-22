@@ -900,12 +900,23 @@ class MainWindow(QMainWindow):
         if not outputs:
             QMessageBox.information(self, "导出结果", "没有生成任何文件。")
             return
+        output_labels = {
+            "measurement_overlays": "测量叠加图",
+            "scale_overlays": "比例尺叠加图",
+            "combined_overlays": "测量+比例尺叠加图",
+            "scale_jsons": "比例尺 JSON",
+            "image_summary_csv": "图片汇总 CSV",
+            "fiber_details_csv": "纤维种类汇总 CSV",
+            "measurement_details_csv": "测量明细 CSV",
+            "xlsx": "Excel 工作簿",
+        }
         summary_lines = []
         for key, value in outputs.items():
+            label = output_labels.get(key, key)
             if isinstance(value, list):
-                summary_lines.append(f"{key}: {len(value)} 个文件")
+                summary_lines.append(f"{label}: {len(value)} 个文件")
             else:
-                summary_lines.append(f"{key}: {value}")
+                summary_lines.append(f"{label}: {value}")
         QMessageBox.information(self, "导出完成", f"结果已导出到:\n{output_dir}\n\n" + "\n".join(summary_lines))
 
     def fit_current_image(self) -> None:

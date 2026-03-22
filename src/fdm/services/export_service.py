@@ -12,6 +12,16 @@ from xml.sax.saxutils import escape
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.services.sidecar_io import CalibrationSidecarIO
 
+CSV_IMAGE_SUMMARY_FILENAME = "图片汇总.csv"
+CSV_FIBER_DETAILS_FILENAME = "纤维种类汇总.csv"
+CSV_MEASUREMENT_DETAILS_FILENAME = "测量明细.csv"
+XLSX_EXPORT_FILENAME = "纤维测量结果.xlsx"
+
+SHEET_MEASUREMENT_DETAILS = "测量明细"
+SHEET_IMAGE_SUMMARY = "图片汇总"
+SHEET_FIBER_DETAILS = "纤维种类汇总"
+SHEET_EXPORT_META = "导出信息"
+
 
 class ExportScope:
     CURRENT = "current"
@@ -86,9 +96,9 @@ class ExportService:
 
         if selection.include_csv:
             csv_outputs = {
-                "image_summary_csv": output_path / "image_summary.csv",
-                "fiber_details_csv": output_path / "fiber_details.csv",
-                "measurement_details_csv": output_path / "measurement_details.csv",
+                "image_summary_csv": output_path / CSV_IMAGE_SUMMARY_FILENAME,
+                "fiber_details_csv": output_path / CSV_FIBER_DETAILS_FILENAME,
+                "measurement_details_csv": output_path / CSV_MEASUREMENT_DETAILS_FILENAME,
             }
             self._write_csv(csv_outputs["image_summary_csv"], image_rows)
             self._write_csv(csv_outputs["fiber_details_csv"], fiber_rows)
@@ -96,14 +106,14 @@ class ExportService:
             outputs.update(csv_outputs)
 
         if selection.include_excel:
-            xlsx_path = output_path / "measurement_export.xlsx"
+            xlsx_path = output_path / XLSX_EXPORT_FILENAME
             self._write_xlsx(
                 xlsx_path,
                 {
-                    "image_summary": image_rows,
-                    "fiber_details": fiber_rows,
-                    "measurement_details": measurement_rows,
-                    "export_meta": meta_rows,
+                    SHEET_MEASUREMENT_DETAILS: measurement_rows,
+                    SHEET_IMAGE_SUMMARY: image_rows,
+                    SHEET_FIBER_DETAILS: fiber_rows,
+                    SHEET_EXPORT_META: meta_rows,
                 },
             )
             outputs["xlsx"] = xlsx_path
@@ -167,21 +177,23 @@ class ExportService:
             active_group = document.get_group(document.active_group_id)
             rows.append(
                 OrderedDict(
-                    image_id=document.id,
-                    image_path=document.path,
-                    width_px=document.image_size[0],
-                    height_px=document.image_size[1],
-                    calibration_mode=document.calibration.mode if document.calibration else "none",
-                    calibration_source=document.calibration.source_label if document.calibration else "",
-                    unit=document.calibration.unit if document.calibration else "px",
-                    measurement_count=len(document.measurements),
-                    fiber_group_count=len(document.fiber_groups),
-                    active_group_number=active_group.number if active_group else None,
-                    active_group_label=active_group.label if active_group else "",
-                    mean_diameter=stats["mean"],
-                    min_diameter=stats["min"],
-                    max_diameter=stats["max"],
-                    stddev_diameter=stats["stddev"],
+                    [
+                        ("图片编号", document.id),
+                        ("图片路径", document.path),
+                        ("宽度(px)", document.image_size[0]),
+                        ("高度(px)", document.image_size[1]),
+                        ("标尺模式", self._format_calibration_mode(document.calibration.mode) if document.calibration else "未标定"),
+                        ("标尺来源", document.calibration.source_label if document.calibration else ""),
+                        ("单位", document.calibration.unit if document.calibration else "px"),
+                        ("测量数量", len(document.measurements)),
+                        ("纤维种类数量", len(document.fiber_groups)),
+                        ("当前激活种类编号", active_group.number if active_group else None),
+                        ("当前激活种类名称", active_group.label if active_group else ""),
+                        ("平均直径", stats["mean"]),
+                        ("最小直径", stats["min"]),
+                        ("最大直径", stats["max"]),
+                        ("标准差", stats["stddev"]),
+                    ]
                 )
             )
         return rows
@@ -198,19 +210,19 @@ class ExportService:
                 ]
                 rows.append(
                     OrderedDict(
-                        image_id=document.id,
-                        image_path=document.path,
-                        fiber_group_id=group.id,
-                        fiber_group_number=group.number,
-                        fiber_group_label=group.label,
-                        fiber_group_display=group.display_name(),
-                        color=group.color,
-                        measurement_count=len(group.measurement_ids),
-                        mean_diameter=self._mean(values),
-                        min_diameter=min(values) if values else None,
-                        max_diameter=max(values) if values else None,
-                        stddev_diameter=self._stddev(values),
-                        unit=document.calibration.unit if document.calibration else "px",
+                        图片编号=document.id,
+                        图片路径=document.path,
+                        纤维种类ID=group.id,
+                        纤维种类编号=group.number,
+                        纤维种类名称=group.label,
+                        纤维种类=group.display_name(),
+                        颜色=group.color,
+                        测量数量=len(group.measurement_ids),
+                        平均直径=self._mean(values),
+                        最小直径=min(values) if values else None,
+                        最大直径=max(values) if values else None,
+                        标准差=self._stddev(values),
+                        单位=document.calibration.unit if document.calibration else "px",
                     )
                 )
         return rows
@@ -225,27 +237,28 @@ class ExportService:
                 group = group_lookup.get(measurement.fiber_group_id or "")
                 rows.append(
                     OrderedDict(
-                        image_id=document.id,
-                        image_path=document.path,
-                        measurement_id=measurement.id,
-                        fiber_group_id=measurement.fiber_group_id or "",
-                        fiber_group_number=group.number if group else None,
-                        fiber_group_label=group.label if group else UNCATEGORIZED_LABEL,
-                        fiber_group_display=group.display_name() if group else UNCATEGORIZED_LABEL,
-                        fiber_group_color=group.color if group else UNCATEGORIZED_COLOR,
-                        mode=measurement.mode,
-                        status=measurement.status,
-                        confidence=round(measurement.confidence, 4),
-                        created_at=measurement.created_at,
-                        start_x_px=round(effective_line.start.x, 3),
-                        start_y_px=round(effective_line.start.y, 3),
-                        end_x_px=round(effective_line.end.x, 3),
-                        end_y_px=round(effective_line.end.y, 3),
-                        diameter_px=round(measurement.diameter_px or 0.0, 6),
-                        diameter_value=round(measurement.diameter_unit or 0.0, 6),
-                        unit=unit,
-                        calibration_mode=document.calibration.mode if document.calibration else "none",
-                        calibration_source=document.calibration.source_label if document.calibration else "",
+                        [
+                            ("纤维种类", group.display_name() if group else UNCATEGORIZED_LABEL),
+                            ("测量直径", round(measurement.diameter_unit or 0.0, 6)),
+                            ("单位", unit),
+                            ("标尺信息", self._format_calibration_info(document)),
+                            ("测量方式", self._format_measurement_mode(measurement.mode)),
+                            ("状态", self._format_measurement_status(measurement.status)),
+                            ("置信度", round(measurement.confidence, 4)),
+                            ("起点X(px)", round(effective_line.start.x, 3)),
+                            ("起点Y(px)", round(effective_line.start.y, 3)),
+                            ("终点X(px)", round(effective_line.end.x, 3)),
+                            ("终点Y(px)", round(effective_line.end.y, 3)),
+                            ("像素直径(px)", round(measurement.diameter_px or 0.0, 6)),
+                            ("创建时间", measurement.created_at),
+                            ("图片路径", document.path),
+                            ("图片编号", document.id),
+                            ("测量记录ID", measurement.id),
+                            ("纤维种类ID", measurement.fiber_group_id or ""),
+                            ("纤维种类编号", group.number if group else None),
+                            ("纤维种类名称", group.label if group else UNCATEGORIZED_LABEL),
+                            ("纤维种类颜色", group.color if group else UNCATEGORIZED_COLOR),
+                        ]
                     )
                 )
         return rows
@@ -253,11 +266,11 @@ class ExportService:
     def build_export_meta_rows(self, project: ProjectState, documents: list[ImageDocument]) -> list[dict[str, object]]:
         return [
             OrderedDict(
-                exported_at=datetime.now(tz=timezone.utc).isoformat(),
-                app_version=project.version,
-                document_count=len(documents),
-                measurement_count=sum(len(document.measurements) for document in documents),
-                fiber_group_count=sum(len(document.fiber_groups) for document in documents),
+                导出时间=datetime.now(tz=timezone.utc).isoformat(),
+                软件版本=project.version,
+                图片数量=len(documents),
+                测量数量=sum(len(document.measurements) for document in documents),
+                纤维种类数量=sum(len(document.fiber_groups) for document in documents),
             )
         ]
 
@@ -423,3 +436,36 @@ class ExportService:
         mean_value = sum(usable_values) / len(usable_values)
         variance = sum((value - mean_value) ** 2 for value in usable_values) / len(usable_values)
         return math.sqrt(variance)
+
+    def _format_calibration_mode(self, mode: str) -> str:
+        return {
+            "preset": "标定预设",
+            "image_scale": "图内标定",
+            "none": "未标定",
+        }.get(mode, mode or "未标定")
+
+    def _format_calibration_info(self, document: ImageDocument) -> str:
+        if document.calibration is None:
+            return "未标定"
+        mode = self._format_calibration_mode(document.calibration.mode)
+        source = (document.calibration.source_label or "").strip()
+        if source:
+            return f"{mode} / {source}"
+        return mode
+
+    def _format_measurement_mode(self, mode: str) -> str:
+        return {
+            "manual": "手动测量",
+            "snap": "半自动吸附",
+        }.get(mode, mode)
+
+    def _format_measurement_status(self, status: str) -> str:
+        return {
+            "manual": "手动测量",
+            "manual_review": "需人工复核",
+            "snapped": "吸附成功",
+            "edited": "已编辑",
+            "line_too_short": "测量线过短",
+            "component_not_found": "未找到目标区域",
+            "boundary_not_found": "未找到边界",
+        }.get(status, status)
