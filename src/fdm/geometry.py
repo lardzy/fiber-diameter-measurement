@@ -97,3 +97,85 @@ def nearest_endpoint(line: Line, point: Point) -> tuple[str, float]:
     if start_distance <= end_distance:
         return "start", start_distance
     return "end", end_distance
+
+
+def polygon_area(points: list[Point]) -> float:
+    if len(points) < 3:
+        return 0.0
+    area = 0.0
+    for index, point in enumerate(points):
+        next_point = points[(index + 1) % len(points)]
+        area += (point.x * next_point.y) - (next_point.x * point.y)
+    return abs(area) / 2.0
+
+
+def polygon_centroid(points: list[Point]) -> Point:
+    if not points:
+        return Point(0.0, 0.0)
+    area_factor = 0.0
+    cx = 0.0
+    cy = 0.0
+    for index, point in enumerate(points):
+        next_point = points[(index + 1) % len(points)]
+        cross = (point.x * next_point.y) - (next_point.x * point.y)
+        area_factor += cross
+        cx += (point.x + next_point.x) * cross
+        cy += (point.y + next_point.y) * cross
+    if abs(area_factor) < 1e-9:
+        return polygon_bounds_center(points)
+    return Point(cx / (3.0 * area_factor), cy / (3.0 * area_factor))
+
+
+def polygon_bounds(points: list[Point]) -> tuple[float, float, float, float]:
+    if not points:
+        return 0.0, 0.0, 0.0, 0.0
+    xs = [point.x for point in points]
+    ys = [point.y for point in points]
+    return min(xs), min(ys), max(xs), max(ys)
+
+
+def polygon_bounds_center(points: list[Point]) -> Point:
+    min_x, min_y, max_x, max_y = polygon_bounds(points)
+    return Point((min_x + max_x) / 2.0, (min_y + max_y) / 2.0)
+
+
+def polygon_translate(points: list[Point], dx: float, dy: float) -> list[Point]:
+    return [Point(point.x + dx, point.y + dy) for point in points]
+
+
+def point_in_polygon(point: Point, polygon: list[Point]) -> bool:
+    if len(polygon) < 3:
+        return False
+    inside = False
+    for index, current in enumerate(polygon):
+        nxt = polygon[(index + 1) % len(polygon)]
+        intersects = ((current.y > point.y) != (nxt.y > point.y)) and (
+            point.x < ((nxt.x - current.x) * (point.y - current.y) / ((nxt.y - current.y) or 1e-9)) + current.x
+        )
+        if intersects:
+            inside = not inside
+    return inside
+
+
+def point_to_segment_distance(point: Point, start: Point, end: Point) -> float:
+    vx = end.x - start.x
+    vy = end.y - start.y
+    length_sq = (vx * vx) + (vy * vy)
+    if length_sq == 0:
+        return distance(point, start)
+    projection = ((point.x - start.x) * vx + (point.y - start.y) * vy) / length_sq
+    projection = max(0.0, min(1.0, projection))
+    closest = Point(
+        x=start.x + (projection * vx),
+        y=start.y + (projection * vy),
+    )
+    return distance(point, closest)
+
+
+def point_to_polygon_edge_distance(point: Point, polygon: list[Point]) -> float:
+    if len(polygon) < 2:
+        return float("inf")
+    return min(
+        point_to_segment_distance(point, polygon[index], polygon[(index + 1) % len(polygon)])
+        for index in range(len(polygon))
+    )

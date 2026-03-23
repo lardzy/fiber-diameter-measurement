@@ -11,15 +11,20 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QDoubleSpinBox,
+    QFileDialog,
     QFontComboBox,
     QFormLayout,
     QGroupBox,
+    QAbstractItemView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QRadioButton,
     QSpinBox,
+    QHeaderView,
+    QTableWidget,
+    QTableWidgetItem,
     QTabWidget,
     QVBoxLayout,
     QWidget,
@@ -27,6 +32,7 @@ from PySide6.QtWidgets import (
 
 from fdm.models import ImageDocument
 from fdm.settings import (
+    AreaModelMapping,
     AppSettings,
     MeasurementEndpointStyle,
     OpenImageViewMode,
@@ -219,7 +225,7 @@ class SettingsDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("设置")
-        self.resize(620, 520)
+        self.resize(760, 680)
         self._initial_settings = replace(settings)
         self._document = document
         self._group_color_buttons: dict[str | None, QPushButton] = {}
@@ -261,7 +267,23 @@ class SettingsDialog(QDialog):
             text_font_family=self._text_font.currentFont().family(),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
+            area_model_mappings=self.area_model_mappings(),
+            area_weights_dir=self._area_weights_dir_edit.text().strip(),
+            area_vendor_root=self._area_vendor_root_edit.text().strip(),
+            area_worker_python=self._area_worker_python_edit.text().strip(),
         )
+
+    def area_model_mappings(self) -> list[AreaModelMapping]:
+        mappings: list[AreaModelMapping] = []
+        for row in range(self._area_mapping_table.rowCount()):
+            model_item = self._area_mapping_table.item(row, 0)
+            file_item = self._area_mapping_table.item(row, 1)
+            model_name = (model_item.text().strip() if model_item is not None else "")
+            model_file = (file_item.text().strip() if file_item is not None else "")
+            if not model_name and not model_file:
+                continue
+            mappings.append(AreaModelMapping(model_name=model_name, model_file=model_file))
+        return mappings
 
     def group_colors(self) -> dict[str, str]:
         if self._document is None:
@@ -344,9 +366,45 @@ class SettingsDialog(QDialog):
         text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
 
+        area_group = QGroupBox("面积自动识别")
+        area_layout = QVBoxLayout(area_group)
+        area_hint = QLabel("模型名称会用于解析识别标签，权重文件名用于定位本地权重文件。")
+        area_hint.setWordWrap(True)
+        area_layout.addWidget(area_hint)
+        self._area_mapping_table = QTableWidget(0, 2)
+        self._area_mapping_table.setHorizontalHeaderLabels(["模型名称", "权重文件名"])
+        self._area_mapping_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.Stretch)
+        self._area_mapping_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._area_mapping_table.verticalHeader().setVisible(False)
+        self._area_mapping_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._area_mapping_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        for mapping in settings.area_model_mappings:
+            self._append_area_mapping_row(mapping)
+        if self._area_mapping_table.rowCount() == 0:
+            self._append_area_mapping_row(AreaModelMapping(model_name="", model_file=""))
+        area_layout.addWidget(self._area_mapping_table)
+        area_mapping_buttons = QHBoxLayout()
+        add_mapping_button = QPushButton("新增映射")
+        add_mapping_button.clicked.connect(lambda: self._append_area_mapping_row(AreaModelMapping(model_name="", model_file="")))
+        remove_mapping_button = QPushButton("删除选中映射")
+        remove_mapping_button.clicked.connect(self._remove_selected_area_mapping_row)
+        area_mapping_buttons.addWidget(add_mapping_button)
+        area_mapping_buttons.addWidget(remove_mapping_button)
+        area_mapping_buttons.addStretch(1)
+        area_layout.addLayout(area_mapping_buttons)
+        self._area_weights_dir_edit = QLineEdit(settings.area_weights_dir)
+        self._area_vendor_root_edit = QLineEdit(settings.area_vendor_root)
+        self._area_worker_python_edit = QLineEdit(settings.area_worker_python)
+        area_form = QFormLayout()
+        area_form.addRow("权重目录", self._with_browse_button(self._area_weights_dir_edit, directory=True))
+        area_form.addRow("YOLACT vendor 目录", self._with_browse_button(self._area_vendor_root_edit, directory=True))
+        area_form.addRow("Worker Python", self._with_browse_button(self._area_worker_python_edit, directory=False))
+        area_layout.addLayout(area_form)
+
         layout.addWidget(measurement_group)
         layout.addWidget(behavior_group)
         layout.addWidget(text_group)
+        layout.addWidget(area_group)
         layout.addStretch(1)
         return page
 
@@ -416,3 +474,81 @@ class SettingsDialog(QDialog):
             self._scale_overlay_mode_combo.setCurrentIndex(manual_index)
         self._request_scale_anchor_pick = True
         self.accept()
+
+    def _append_area_mapping_row(self, mapping: AreaModelMapping) -> None:
+        row = self._area_mapping_table.rowCount()
+        self._area_mapping_table.insertRow(row)
+        self._area_mapping_table.setItem(row, 0, QTableWidgetItem(mapping.model_name))
+        self._area_mapping_table.setItem(row, 1, QTableWidgetItem(mapping.model_file))
+
+    def _remove_selected_area_mapping_row(self) -> None:
+        selected_rows = self._area_mapping_table.selectionModel().selectedRows()
+        if not selected_rows:
+            return
+        self._area_mapping_table.removeRow(selected_rows[0].row())
+        if self._area_mapping_table.rowCount() == 0:
+            self._append_area_mapping_row(AreaModelMapping(model_name="", model_file=""))
+
+    def _browse_path(self, line_edit: QLineEdit, *, directory: bool) -> None:
+        if directory:
+            path = QFileDialog.getExistingDirectory(self, "选择目录", line_edit.text().strip() or "")
+        else:
+            path, _ = QFileDialog.getOpenFileName(self, "选择文件", line_edit.text().strip() or "")
+        if path:
+            line_edit.setText(path)
+
+    def _with_browse_button(self, line_edit: QLineEdit, *, directory: bool) -> QWidget:
+        row = QWidget()
+        layout = QHBoxLayout(row)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(line_edit, 1)
+        button = QPushButton("浏览...")
+        button.clicked.connect(lambda checked=False, target=line_edit, is_dir=directory: self._browse_path(target, directory=is_dir))
+        layout.addWidget(button)
+        return row
+
+
+class AreaAutoRecognitionDialog(QDialog):
+    def __init__(
+        self,
+        model_mappings: list[AreaModelMapping],
+        *,
+        allow_all_scope: bool,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("面积自动识别")
+        self.resize(420, 220)
+        self._model_combo = QComboBox()
+        for mapping in model_mappings:
+            self._model_combo.addItem(mapping.model_name, mapping.model_file)
+        self._scope_all = QCheckBox("处理全部已打开图片")
+        self._scope_all.setEnabled(allow_all_scope)
+        self._weight_hint = QLabel("权重文件: -")
+        self._weight_hint.setWordWrap(True)
+        self._model_combo.currentIndexChanged.connect(self._refresh_weight_hint)
+
+        form = QFormLayout()
+        form.addRow("模型", self._model_combo)
+        form.addRow("权重文件", self._weight_hint)
+        form.addRow("", self._scope_all)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(buttons)
+        self._refresh_weight_hint()
+
+    def _refresh_weight_hint(self) -> None:
+        model_file = self._model_combo.currentData() or ""
+        self._weight_hint.setText(str(model_file or "-"))
+
+    def values(self) -> tuple[str, str, bool]:
+        return (
+            self._model_combo.currentText().strip(),
+            str(self._model_combo.currentData() or "").strip(),
+            self._scope_all.isChecked() and self._scope_all.isEnabled(),
+        )

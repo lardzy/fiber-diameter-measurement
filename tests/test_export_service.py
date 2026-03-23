@@ -109,7 +109,35 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["纤维种类"], UNCATEGORIZED_LABEL)
         self.assertEqual(rows[0]["纤维种类名称"], UNCATEGORIZED_LABEL)
         self.assertEqual(rows[0]["纤维种类颜色"], UNCATEGORIZED_COLOR)
-        self.assertEqual(list(rows[0].keys())[:4], ["纤维种类", "测量直径", "单位", "标尺信息"])
+        self.assertEqual(list(rows[0].keys())[:6], ["纤维种类", "类型", "结果", "单位", "标尺信息", "模式"])
+
+    def test_area_measurement_rows_include_polygon_fields(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_area.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="polygon_area",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(10, 0), Point(10, 10), Point(0, 10)],
+                confidence=0.9,
+                status="manual",
+            )
+        )
+
+        rows = ExportService().build_measurement_rows([document])
+
+        self.assertEqual(rows[0]["类型"], "面积")
+        self.assertEqual(rows[0]["模式"], "多边形面积")
+        self.assertEqual(rows[0]["单位"], "px²")
+        self.assertEqual(rows[0]["多边形点数"], 4)
+        self.assertIn('"x": 10', rows[0]["多边形顶点JSON"])
 
     def test_all_enabled_export_selection_uses_screen_render_mode(self) -> None:
         selection = ExportSelection.all_enabled()

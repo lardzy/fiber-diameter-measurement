@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 import json
 import os
@@ -30,6 +30,49 @@ class ScaleOverlayPlacementMode:
 
 
 @dataclass(slots=True)
+class AreaModelMapping:
+    model_name: str
+    model_file: str
+
+    def to_dict(self) -> dict[str, str]:
+        return {
+            "model_name": self.model_name,
+            "model_file": self.model_file,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "AreaModelMapping":
+        return cls(
+            model_name=str(payload.get("model_name", "")).strip(),
+            model_file=str(payload.get("model_file", "")).strip(),
+        )
+
+
+def project_runtime_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def default_area_reference_root() -> Path:
+    return project_runtime_root() / ".tmp" / "textile-device-monitor-ref" / "textile-device-monitor" / "area-infer"
+
+
+def default_area_vendor_root() -> str:
+    candidate = default_area_reference_root() / "vendor" / "yolact"
+    return str(candidate) if candidate.exists() else ""
+
+
+def default_area_weights_directory() -> str:
+    project_candidate = project_runtime_root() / ".tmp" / "area-models"
+    if project_candidate.exists():
+        return str(project_candidate)
+    return str(settings_directory() / "area-models")
+
+
+def default_area_worker_python() -> str:
+    return sys.executable
+
+
+@dataclass(slots=True)
 class AppSettings:
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
@@ -45,6 +88,10 @@ class AppSettings:
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
+    area_model_mappings: list[AreaModelMapping] = field(default_factory=list)
+    area_weights_dir: str = field(default_factory=default_area_weights_directory)
+    area_vendor_root: str = field(default_factory=default_area_vendor_root)
+    area_worker_python: str = field(default_factory=default_area_worker_python)
 
     def to_dict(self) -> dict[str, object]:
         return {
@@ -63,6 +110,10 @@ class AppSettings:
             "text_font_family": self.text_font_family,
             "text_font_size": self.text_font_size,
             "text_color": self.text_color,
+            "area_model_mappings": [item.to_dict() for item in self.area_model_mappings],
+            "area_weights_dir": self.area_weights_dir,
+            "area_vendor_root": self.area_vendor_root,
+            "area_worker_python": self.area_worker_python,
         }
 
     @classmethod
@@ -82,6 +133,17 @@ class AppSettings:
         settings.text_font_family = str(payload.get("text_font_family", settings.text_font_family))
         settings.text_font_size = int(payload.get("text_font_size", settings.text_font_size))
         settings.text_color = str(payload.get("text_color", settings.text_color))
+        mappings = payload.get("area_model_mappings", [])
+        if isinstance(mappings, list):
+            settings.area_model_mappings = [
+                AreaModelMapping.from_dict(item)
+                for item in mappings
+                if isinstance(item, dict)
+                and (str(item.get("model_name", "")).strip() or str(item.get("model_file", "")).strip())
+            ]
+        settings.area_weights_dir = str(payload.get("area_weights_dir", settings.area_weights_dir))
+        settings.area_vendor_root = str(payload.get("area_vendor_root", settings.area_vendor_root))
+        settings.area_worker_python = str(payload.get("area_worker_python", settings.area_worker_python))
         return settings
 
 

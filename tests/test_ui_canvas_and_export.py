@@ -329,7 +329,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._populate_measurement_table(document)
             headers = [window.measurement_table.horizontalHeaderItem(index).text() for index in range(window.measurement_table.columnCount())]
 
-            self.assertEqual(headers, ["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
+            self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
             self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
         finally:
             window.close()
@@ -340,12 +340,47 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._file_toolbar)
             self.assertIsNotNone(window._measure_toolbar)
             action_texts = [action.text() for action in window._measure_toolbar.actions()]
-            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定", "文字"])
+            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "比例尺标定", "文字"])
             self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
         finally:
             window.close()
+
+    def test_polygon_area_tool_commits_when_clicking_first_point(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("polygon_area")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        points = [Point(20, 20), Point(100, 20), Point(90, 90)]
+        for point in points:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(points[0]), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "polygon_area")
+        self.assertEqual(commits[0][2]["measurement_kind"], "area")
+        self.assertEqual(len(commits[0][2]["polygon_px"]), 3)
+
+    def test_freehand_area_tool_commits_on_release(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("freehand_area")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(100, 20)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(100, 80)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(25, 85)), button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(Point(25, 85)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "freehand_area")
+        self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()

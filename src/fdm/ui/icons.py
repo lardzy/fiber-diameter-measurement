@@ -33,7 +33,10 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "select": "fa5s.mouse-pointer",
     "manual": "mdi6.vector-line",
     "snap": "mdi6.magnet",
+    "polygon_area": "mdi6.draw-polygon",
+    "freehand_area": "mdi6.draw",
     "calibration": "mdi6.ruler",
+    "area_auto": "mdi6.image-filter-center-focus-strong",
 }
 
 
@@ -121,6 +124,47 @@ def _draw_calibration(painter: QPainter, color: QColor, rect: QRectF) -> None:
         x = ruler.left() + ruler.width() * factor
         tick_height = rect.height() * height_factor
         painter.drawLine(QPointF(x, ruler.top()), QPointF(x, ruler.top() + tick_height))
+
+
+def _draw_polygon_area(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.5))
+    painter.setBrush(QColor(color.red(), color.green(), color.blue(), 70))
+    polygon = QPolygonF(
+        [
+            QPointF(rect.left() + rect.width() * 0.18, rect.bottom() - rect.height() * 0.18),
+            QPointF(rect.left() + rect.width() * 0.33, rect.top() + rect.height() * 0.24),
+            QPointF(rect.right() - rect.width() * 0.18, rect.top() + rect.height() * 0.34),
+            QPointF(rect.right() - rect.width() * 0.28, rect.bottom() - rect.height() * 0.2),
+        ]
+    )
+    painter.drawPolygon(polygon)
+    painter.setBrush(color)
+    for point in polygon:
+        painter.drawEllipse(point, 1.7, 1.7)
+
+
+def _draw_freehand_area(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.7))
+    painter.setBrush(QColor(color.red(), color.green(), color.blue(), 52))
+    path = QPainterPath(QPointF(rect.left() + rect.width() * 0.15, rect.center().y()))
+    path.cubicTo(
+        QPointF(rect.left() + rect.width() * 0.28, rect.top() + rect.height() * 0.12),
+        QPointF(rect.left() + rect.width() * 0.62, rect.top() + rect.height() * 0.18),
+        QPointF(rect.right() - rect.width() * 0.18, rect.center().y() - rect.height() * 0.08),
+    )
+    path.cubicTo(
+        QPointF(rect.right() - rect.width() * 0.12, rect.bottom() - rect.height() * 0.18),
+        QPointF(rect.left() + rect.width() * 0.42, rect.bottom() - rect.height() * 0.1),
+        QPointF(rect.left() + rect.width() * 0.15, rect.center().y()),
+    )
+    painter.drawPath(path)
+
+
+def _draw_area_auto(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    _draw_polygon_area(painter, color, rect)
+    painter.setPen(_pen(QColor("#0B0B0B"), 1.6))
+    painter.drawLine(QPointF(rect.center().x(), rect.top() + 3.0), QPointF(rect.center().x(), rect.top() + 8.0))
+    painter.drawLine(QPointF(rect.center().x() - 2.5, rect.top() + 5.5), QPointF(rect.center().x() + 2.5, rect.top() + 5.5))
 
 
 def _draw_images(painter: QPainter, color: QColor, rect: QRectF) -> None:
@@ -213,7 +257,10 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "select": _draw_select,
     "manual": _draw_manual,
     "snap": _draw_snap,
+    "polygon_area": _draw_polygon_area,
+    "freehand_area": _draw_freehand_area,
     "calibration": _draw_calibration,
+    "area_auto": _draw_area_auto,
     "open_images": _draw_images,
     "export": _draw_export,
     "fit": _draw_fit,

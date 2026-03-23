@@ -53,12 +53,19 @@ from fdm.models import (
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
+from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
-from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog, SettingsDialog
+from fdm.ui.dialogs import (
+    AreaAutoRecognitionDialog,
+    CalibrationInputDialog,
+    CalibrationPresetDialog,
+    ExportOptionsDialog,
+    SettingsDialog,
+)
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
@@ -83,12 +90,13 @@ class MainWindow(QMainWindow):
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
     TABLE_COL_GROUP = 0
-    TABLE_COL_RESULT = 1
-    TABLE_COL_UNIT = 2
-    TABLE_COL_MODE = 3
-    TABLE_COL_CONFIDENCE = 4
-    TABLE_COL_STATUS = 5
-    TABLE_COL_ID = 6
+    TABLE_COL_KIND = 1
+    TABLE_COL_RESULT = 2
+    TABLE_COL_UNIT = 3
+    TABLE_COL_MODE = 4
+    TABLE_COL_CONFIDENCE = 5
+    TABLE_COL_STATUS = 6
+    TABLE_COL_ID = 7
 
     def __init__(self) -> None:
         super().__init__()
@@ -111,6 +119,8 @@ class MainWindow(QMainWindow):
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
         self._load_state: BatchLoadState | None = None
+        self._show_area_fill = True
+        self._area_auto_button: QPushButton | None = None
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -125,6 +135,7 @@ class MainWindow(QMainWindow):
 
         self.export_service = ExportService()
         self.snap_service = SnapService(model_provider=NullModelProvider())
+        self.area_inference_service = AreaInferenceService()
 
         self._build_ui()
         self._refresh_preset_combo()
@@ -264,6 +275,8 @@ class MainWindow(QMainWindow):
             ("select", "浏览"),
             ("manual", "手动测量"),
             ("snap", "半自动吸附"),
+            ("polygon_area", "多边形面积"),
+            ("freehand_area", "自由形状面积"),
             ("calibration", "比例尺标定"),
             ("text", "文字"),
         ]:
@@ -276,6 +289,8 @@ class MainWindow(QMainWindow):
         self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
         self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
+        self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
+        self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["text"].setIcon(themed_icon("rename", color="#9C89B8"))
 
@@ -371,6 +386,8 @@ class MainWindow(QMainWindow):
         measure_toolbar.addAction(self._mode_actions["select"])
         measure_toolbar.addAction(self._mode_actions["manual"])
         measure_toolbar.addAction(self._mode_actions["snap"])
+        measure_toolbar.addAction(self._mode_actions["polygon_area"])
+        measure_toolbar.addAction(self._mode_actions["freehand_area"])
         measure_toolbar.addAction(self._mode_actions["calibration"])
         measure_toolbar.addAction(self._mode_actions["text"])
 
@@ -407,6 +424,10 @@ class MainWindow(QMainWindow):
         load_model_button.setIcon(themed_icon("model", color="#9AD1D4"))
         load_model_button.clicked.connect(self.load_model)
         model_layout.addWidget(load_model_button)
+        self._area_auto_button = QPushButton("面积自动识别...")
+        self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
+        self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
+        model_layout.addWidget(self._area_auto_button)
         layout.addWidget(model_box)
 
         calibration_box = QGroupBox("标定")
@@ -481,14 +502,15 @@ class MainWindow(QMainWindow):
 
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
-        self.measurement_table = QTableWidget(0, 7)
-        self.measurement_table.setHorizontalHeaderLabels(["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
+        self.measurement_table = QTableWidget(0, 8)
+        self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 180)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 90)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_CONFIDENCE, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_STATUS, 110)
         self.measurement_table.setColumnWidth(self.TABLE_COL_ID, 110)
@@ -797,6 +819,7 @@ class MainWindow(QMainWindow):
         canvas.set_document(target_document, image)
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(self._tool_mode)
+        canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
@@ -972,6 +995,7 @@ class MainWindow(QMainWindow):
     def _refresh_canvases_for_settings(self) -> None:
         for canvas in self._canvases.values():
             canvas.set_settings(self._app_settings)
+            canvas.set_show_area_fill(self._show_area_fill)
         self._populate_group_list(self.current_document())
         self._populate_measurement_table(self.current_document())
         self._update_action_states()
@@ -1151,6 +1175,98 @@ class MainWindow(QMainWindow):
         self._update_model_status()
         self.statusBar().showMessage(f"已加载模型: {path}", 5000)
 
+    def run_area_auto_recognition(self) -> None:
+        if not self.project.documents:
+            QMessageBox.information(self, "面积自动识别", "请先打开图片。")
+            return
+        mappings = self._app_settings.area_model_mappings
+        if not mappings:
+            QMessageBox.information(self, "面积自动识别", "请先在设置中配置面积模型名称与权重文件映射。")
+            return
+        dialog = AreaAutoRecognitionDialog(
+            mappings,
+            allow_all_scope=len(self.project.documents) > 1,
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        model_name, model_file, apply_all = dialog.values()
+        if not model_name or not model_file:
+            QMessageBox.warning(self, "面积自动识别", "请选择有效的模型配置。")
+            return
+        target_documents = self.project.documents if apply_all else ([self.current_document()] if self.current_document() else [])
+        target_documents = [document for document in target_documents if document is not None]
+        if not target_documents:
+            return
+
+        progress = QProgressDialog("正在执行面积自动识别...", "取消", 0, len(target_documents), self)
+        progress.setWindowTitle("面积自动识别")
+        progress.setWindowModality(Qt.WindowModality.ApplicationModal)
+        progress.setMinimumDuration(0)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+        progress.show()
+
+        completed = 0
+        failures: list[str] = []
+        for document in target_documents:
+            if progress.wasCanceled():
+                break
+            progress.setLabelText(f"正在识别 ({completed + 1}/{len(target_documents)})\n{Path(document.path).name}")
+            progress.setValue(completed)
+            QApplication.processEvents()
+            try:
+                result = self.area_inference_service.infer_image(
+                    image_path=document.path,
+                    model_name=model_name,
+                    model_file=model_file,
+                    settings=self._app_settings,
+                )
+                self._apply_area_inference_result(document, result.instances)
+            except Exception as exc:  # noqa: BLE001
+                failures.append(f"{Path(document.path).name}: {exc}")
+            completed += 1
+
+        progress.setValue(len(target_documents))
+        progress.close()
+        progress.deleteLater()
+        if failures:
+            QMessageBox.warning(self, "面积自动识别", "以下图片识别失败:\n" + "\n".join(failures[:10]))
+        if completed > 0:
+            self.statusBar().showMessage(f"面积自动识别已处理 {completed - len(failures)} / {completed} 张图片", 6000)
+
+    def _apply_area_inference_result(self, document: ImageDocument, instances) -> None:
+        if not instances:
+            def clear_mutate() -> None:
+                document.remove_auto_area_measurements()
+                document.select_measurement(None)
+
+            self._apply_document_change(document, "清除自动面积识别结果", clear_mutate)
+            return
+
+        def mutate() -> None:
+            document.remove_auto_area_measurements()
+            for instance in instances:
+                class_name = str(instance.class_name).strip() or UNCATEGORIZED_LABEL
+                group = document.ensure_group_for_label(
+                    class_name,
+                    color=self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)],
+                )
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="auto_instance",
+                    measurement_kind="area",
+                    polygon_px=list(instance.polygon_px),
+                    confidence=float(instance.score),
+                    status="auto_instance",
+                )
+                document.add_measurement(measurement)
+            document.select_measurement(None)
+
+        self._apply_document_change(document, "导入自动面积识别结果", mutate)
+
     def close_current_document(self) -> None:
         document = self.current_document()
         if document is None:
@@ -1267,41 +1383,55 @@ class MainWindow(QMainWindow):
             self.tab_widget.setCurrentIndex(index)
             self.image_list.setCurrentRow(index)
 
-    def _on_canvas_line_committed(self, document_id: str, mode: str, line: Line) -> None:
+    def _on_canvas_line_committed(self, document_id: str, mode: str, payload: object) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
         if mode == "calibration":
-            self._apply_calibration_line(document, line)
+            if isinstance(payload, Line):
+                self._apply_calibration_line(document, payload)
             self._focus_current_canvas()
             return
 
         group = document.get_group(document.active_group_id)
 
         def mutate() -> None:
-            if mode == "manual":
+            if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode=mode,
+                    measurement_kind="area",
+                    polygon_px=list(payload.get("polygon_px", [])),
+                    confidence=1.0,
+                    status="manual" if mode != "auto_instance" else "auto_instance",
+                )
+            elif mode == "manual" and isinstance(payload, Line):
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id if group else None,
                     mode="manual",
-                    line_px=line,
+                    line_px=payload,
                     confidence=1.0,
                     status="manual",
                 )
-            else:
-                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], line)
+            elif isinstance(payload, Line):
+                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], payload)
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id if group else None,
                     mode="snap",
-                    line_px=line,
-                    snapped_line_px=snap_result.snapped_line or line,
+                    line_px=payload,
+                    snapped_line_px=snap_result.snapped_line or payload,
                     confidence=snap_result.confidence,
                     status=snap_result.status if snap_result.snapped_line is not None else "manual_review",
                     debug_payload=snap_result.debug_payload,
                 )
+            else:
+                return
             document.add_measurement(measurement)
             document.select_text_annotation(None)
 
@@ -1318,7 +1448,7 @@ class MainWindow(QMainWindow):
         self._update_action_states()
         self._focus_current_canvas()
 
-    def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, line: Line) -> None:
+    def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
@@ -1327,7 +1457,13 @@ class MainWindow(QMainWindow):
             measurement = document.get_measurement(measurement_id)
             if measurement is None:
                 return
-            measurement.snapped_line_px = line
+            if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
+                measurement.polygon_px = list(payload.get("polygon_px", []))
+                measurement.measurement_kind = "area"
+            elif isinstance(payload, Line):
+                measurement.snapped_line_px = payload
+            else:
+                return
             measurement.status = "edited"
             measurement.recalculate(document.calibration)
             document.select_measurement(measurement.id)
@@ -1461,6 +1597,7 @@ class MainWindow(QMainWindow):
         if canvas is not None:
             canvas.set_settings(self._app_settings)
             canvas.set_tool_mode(self._tool_mode)
+            canvas.set_show_area_fill(self._show_area_fill)
         self._update_action_states()
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
@@ -1477,22 +1614,47 @@ class MainWindow(QMainWindow):
         self._table_rebuilding = True
         self.measurement_table.setRowCount(0)
         if document is not None:
-            unit = document.calibration.unit if document.calibration else "px"
             for row, measurement in enumerate(document.measurements):
                 self.measurement_table.insertRow(row)
                 display_id = measurement.id.split("_")[-1]
                 id_item = QTableWidgetItem(display_id)
                 id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
                 self.measurement_table.setCellWidget(row, self.TABLE_COL_GROUP, self._create_group_combo(document, measurement))
-                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{(measurement.diameter_unit or 0.0):.4f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(unit))
-                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem("半自动" if measurement.mode == "snap" else "手动"))
+                self.measurement_table.setItem(row, self.TABLE_COL_KIND, QTableWidgetItem(self._format_measurement_kind(measurement)))
+                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{measurement.display_value():.4f}"))
+                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(measurement.display_unit(document.calibration)))
+                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem(self._format_measurement_mode(measurement.mode)))
                 self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(f"{measurement.confidence:.2f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(measurement.status))
+                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(self._format_measurement_status(measurement.status)))
                 self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
         self._table_rebuilding = False
         if document is not None:
             self._sync_measurement_table_selection(document)
+
+    def _format_measurement_kind(self, measurement: Measurement) -> str:
+        return "面积" if measurement.measurement_kind == "area" else "线段"
+
+    def _format_measurement_mode(self, mode: str) -> str:
+        return {
+            "manual": "手动线段",
+            "snap": "半自动吸附",
+            "polygon_area": "多边形面积",
+            "freehand_area": "自由形状面积",
+            "auto_instance": "实例分割",
+        }.get(mode, mode)
+
+    def _format_measurement_status(self, status: str) -> str:
+        return {
+            "manual": "手动测量",
+            "ready": "已完成",
+            "manual_review": "需人工复核",
+            "snapped": "吸附成功",
+            "edited": "已编辑",
+            "line_too_short": "测量线过短",
+            "component_not_found": "未找到目标区域",
+            "boundary_not_found": "未找到边界",
+            "auto_instance": "自动识别",
+        }.get(status, status)
 
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
         combo = MeasurementGroupComboBox()
@@ -1637,6 +1799,8 @@ class MainWindow(QMainWindow):
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
         self.delete_group_action.setEnabled(has_deletable_group_target)
         self.delete_group_button.setEnabled(has_deletable_group_target)
+        if self._area_auto_button is not None:
+            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings))
         self.undo_action.setEnabled(bool(history and history.can_undo()))
         self.redo_action.setEnabled(bool(history and history.can_redo()))
 
@@ -1738,6 +1902,7 @@ class MainWindow(QMainWindow):
                 self._app_settings,
                 line_width=line_width,
                 endpoint_radius=endpoint_radius,
+                show_area_fill=self._show_area_fill,
             )
 
         if include_measurements or include_scale:
@@ -1789,6 +1954,17 @@ class MainWindow(QMainWindow):
             canvas = self.current_canvas()
             if canvas is not None:
                 canvas.set_temporary_grab_pressed(True)
+            event.accept()
+            return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() == Qt.Key.Key_V
+            and self._should_handle_group_hotkeys()
+        ):
+            self._show_area_fill = not self._show_area_fill
+            for canvas in self._canvases.values():
+                canvas.set_show_area_fill(self._show_area_fill)
+            self.statusBar().showMessage("面积填充已开启" if self._show_area_fill else "面积填充已关闭，仅显示轮廓", 3000)
             event.accept()
             return
         if (

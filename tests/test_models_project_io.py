@@ -10,6 +10,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
 from fdm.project_io import ProjectIO
+from fdm.services.area_inference import parse_area_model_labels
 from fdm.settings import AppSettings, AppSettingsIO
 
 
@@ -23,6 +24,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
         self.assertAlmostEqual(calibration.px_to_unit(100.0), 5.0)
         self.assertAlmostEqual(calibration.unit_to_px(2.5), 50.0)
+        self.assertAlmostEqual(calibration.px_area_to_unit(400.0), 1.0)
 
     def test_project_roundtrip(self) -> None:
         document = ImageDocument(
@@ -210,6 +212,45 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+
+    def test_area_measurement_roundtrip_keeps_polygon_and_area_unit(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_area_roundtrip.png",
+            image_size=(200, 160),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=10.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="polygon_area",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "area_roundtrip.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        measurement = loaded.documents[0].measurements[0]
+        self.assertEqual(measurement.measurement_kind, "area")
+        self.assertEqual(len(measurement.polygon_px), 4)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 200.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 2.0)
+
+    def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
+        self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])
 
 
 if __name__ == "__main__":
