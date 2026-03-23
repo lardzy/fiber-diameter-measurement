@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import replace
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QColorDialog,
@@ -19,7 +19,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
-    QProgressBar,
     QPushButton,
     QRadioButton,
     QSpinBox,
@@ -217,99 +216,6 @@ class ExportOptionsDialog(QDialog):
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
             render_mode=self._render_mode_combo.currentData(),
         )
-
-
-class TaskProgressDialog(QDialog):
-    canceled = Signal()
-
-    def __init__(
-        self,
-        label_text: str,
-        cancel_text: str,
-        minimum: int,
-        maximum: int,
-        parent=None,
-    ) -> None:
-        super().__init__(parent)
-        self._was_canceled = False
-        self.setModal(True)
-        self.setMinimumWidth(440)
-        self.setWindowFlag(Qt.WindowType.WindowContextHelpButtonHint, False)
-
-        self._label = QLabel(label_text)
-        self._label.setWordWrap(True)
-        self._label.setMinimumHeight(44)
-        self._progress_bar = QProgressBar()
-        self._progress_bar.setRange(minimum, maximum)
-        self._progress_bar.setValue(minimum)
-        self._progress_bar.setTextVisible(True)
-        self._cancel_button = QPushButton(cancel_text)
-        self._cancel_button.clicked.connect(self._on_cancel_clicked)
-
-        layout = QVBoxLayout(self)
-        layout.setContentsMargins(16, 16, 16, 16)
-        layout.setSpacing(12)
-        layout.addWidget(self._label)
-        layout.addWidget(self._progress_bar)
-        layout.addWidget(self._cancel_button, 0, Qt.AlignmentFlag.AlignRight)
-
-        self.setStyleSheet(
-            """
-            QDialog {
-                background: #F5F7FA;
-                color: #111827;
-            }
-            QLabel {
-                color: #111827;
-                font-size: 13px;
-                background: transparent;
-            }
-            QProgressBar {
-                min-height: 18px;
-                border: 1px solid #B8C2CC;
-                border-radius: 9px;
-                background: #FFFFFF;
-                color: #111827;
-                text-align: center;
-                padding: 0px;
-            }
-            QProgressBar::chunk {
-                border-radius: 8px;
-                background: #3B82F6;
-            }
-            QPushButton {
-                min-width: 84px;
-                min-height: 30px;
-                padding: 4px 12px;
-                border-radius: 6px;
-                border: 1px solid #B8C2CC;
-                background: #FFFFFF;
-                color: #111827;
-            }
-            QPushButton:hover {
-                background: #EEF2F7;
-            }
-            """
-        )
-
-    def _on_cancel_clicked(self) -> None:
-        if self._was_canceled:
-            return
-        self._was_canceled = True
-        self._cancel_button.setEnabled(False)
-        self.canceled.emit()
-
-    def setLabelText(self, text: str) -> None:
-        self._label.setText(text)
-
-    def setMaximum(self, value: int) -> None:
-        self._progress_bar.setMaximum(value)
-
-    def setValue(self, value: int) -> None:
-        self._progress_bar.setValue(value)
-
-    def wasCanceled(self) -> bool:
-        return self._was_canceled
 
 
 class SettingsDialog(QDialog):

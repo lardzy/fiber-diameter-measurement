@@ -27,13 +27,12 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog, TaskProgressDialog
+    from fdm.ui.dialogs import SettingsDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
-    TaskProgressDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -563,20 +562,22 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
-    def test_task_progress_dialog_tracks_label_value_and_cancel_state(self) -> None:
-        dialog = TaskProgressDialog("准备加载图片...", "取消", 0, 3)
+    def test_main_window_progress_dialog_uses_standard_qprogressdialog_with_width(self) -> None:
+        window = MainWindow()
         try:
-            dialog.setLabelText("正在识别 (1/3)\nexample.jpg")
-            dialog.setMaximum(5)
-            dialog.setValue(2)
-            self.assertFalse(dialog.wasCanceled())
-            self.assertEqual(dialog._label.text(), "正在识别 (1/3)\nexample.jpg")
-            self.assertEqual(dialog._progress_bar.maximum(), 5)
-            self.assertEqual(dialog._progress_bar.value(), 2)
-            dialog._on_cancel_clicked()
-            self.assertTrue(dialog.wasCanceled())
-        finally:
+            dialog = window._create_progress_dialog(
+                title="面积自动识别",
+                label_text="正在识别 (1/1)\nexample.jpg",
+                maximum=1,
+            )
+            self.assertEqual(dialog.windowTitle(), "面积自动识别")
+            self.assertEqual(dialog.labelText(), "正在识别 (1/1)\nexample.jpg")
+            self.assertGreaterEqual(dialog.minimumWidth(), 420)
+            self.assertEqual(dialog.maximum(), 1)
+            self.assertEqual(dialog.value(), 0)
             dialog.close()
+        finally:
+            window.close()
 
     def test_number_hotkey_switches_active_group_without_changing_measurement_group(self) -> None:
         window = MainWindow()
