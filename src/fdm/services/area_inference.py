@@ -15,6 +15,17 @@ LABEL_ALIAS: dict[str, str] = {
     "莫": "莫代尔",
 }
 
+LABEL_SWAP_BY_MODEL: dict[str, dict[str, str]] = {
+    "棉-莱赛尔": {
+        "棉": "莱赛尔",
+        "莱赛尔": "棉",
+    },
+    "粘纤-莱赛尔": {
+        "粘纤": "莱赛尔",
+        "莱赛尔": "粘纤",
+    },
+}
+
 
 def normalize_area_label(label: str) -> str:
     token = str(label or "").strip()
@@ -30,6 +41,16 @@ def parse_area_model_labels(model_name: str) -> list[str]:
         if normalized not in labels:
             labels.append(normalized)
     return labels or ["未分类"]
+
+
+def normalize_area_model_name(model_name: str) -> str:
+    return str(model_name or "").replace(" ", "").strip()
+
+
+def normalize_area_result_label(model_name: str, label: str) -> str:
+    normalized_label = normalize_area_label(label)
+    swap_mapping = LABEL_SWAP_BY_MODEL.get(normalize_area_model_name(model_name), {})
+    return swap_mapping.get(normalized_label, normalized_label)
 
 
 @dataclass(slots=True)
@@ -146,7 +167,7 @@ class AreaInferenceService:
                 continue
             instances.append(
                 AreaInstanceResult(
-                    class_name=normalize_area_label(str(item.get("class_name", ""))),
+                    class_name=normalize_area_result_label(model_name, str(item.get("class_name", ""))),
                     score=float(item.get("score", 0.0)),
                     bbox=[int(value) for value in item.get("bbox", [0, 0, 0, 0])][:4],
                     polygon_px=polygon_px,

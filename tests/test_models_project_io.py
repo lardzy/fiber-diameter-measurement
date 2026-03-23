@@ -11,7 +11,7 @@ from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
 from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
-from fdm.services.area_inference import parse_area_model_labels
+from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
     AppSettings,
     AppSettingsIO,
@@ -192,6 +192,34 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertFalse(document.hide_uncategorized_entry())
 
+    def test_auto_area_import_can_hide_uncategorized_entry_immediately(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/area_auto_hide_uncategorized.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+
+        self.assertTrue(document.should_show_uncategorized_entry())
+        self.assertIsNone(document.active_group_id)
+
+        group = document.ensure_group_for_label("棉", color="#1F7A8C")
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=group.id,
+            mode="auto_instance",
+            measurement_kind="area",
+            polygon_px=[Point(10, 10), Point(50, 10), Point(50, 50), Point(10, 50)],
+        )
+        document.add_measurement(measurement)
+        document.select_measurement(None)
+
+        self.assertTrue(document.hide_uncategorized_entry())
+        self.assertFalse(document.should_show_uncategorized_entry())
+        self.assertIsNotNone(document.active_group_id)
+        self.assertEqual(len(document.uncategorized_measurements()), 0)
+
     def test_app_settings_roundtrip_uses_user_writable_path(self) -> None:
         settings = AppSettings(
             show_measurement_labels=False,
@@ -303,6 +331,17 @@ class ModelsProjectIOTests(unittest.TestCase):
 
     def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
         self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])
+
+    def test_normalize_area_result_label_swaps_known_reversed_models(self) -> None:
+        self.assertEqual(normalize_area_result_label("棉-莱赛尔", "棉"), "莱赛尔")
+        self.assertEqual(normalize_area_result_label("棉-莱赛尔", "莱赛尔"), "棉")
+        self.assertEqual(normalize_area_result_label("粘纤-莱赛尔", "粘纤"), "莱赛尔")
+        self.assertEqual(normalize_area_result_label("粘纤-莱赛尔", "莱赛尔"), "粘纤")
+
+    def test_normalize_area_result_label_keeps_alias_and_non_swapped_models(self) -> None:
+        self.assertEqual(normalize_area_result_label("棉-粘-莱-莫", "粘"), "粘纤")
+        self.assertEqual(normalize_area_result_label("棉-莫代尔", "莫"), "莫代尔")
+        self.assertEqual(normalize_area_result_label("棉-莫代尔", "棉"), "棉")
 
     def test_default_area_model_mappings_match_reference_defaults(self) -> None:
         mappings = default_area_model_mappings()

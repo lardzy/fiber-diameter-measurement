@@ -1282,6 +1282,7 @@ class MainWindow(QMainWindow):
                 )
                 document.add_measurement(measurement)
             document.select_measurement(None)
+            document.hide_uncategorized_entry()
 
         self._apply_document_change(document, "导入自动面积识别结果", mutate)
 
