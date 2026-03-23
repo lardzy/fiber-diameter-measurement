@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -30,6 +31,28 @@ from fdm.workers.area_worker import _load_engine_module
 
 
 class AreaInferenceTests(unittest.TestCase):
+    def test_area_inference_service_uses_hidden_subprocess_flags_on_windows(self) -> None:
+        service = AreaInferenceService()
+
+        with (
+            patch.object(sys, "platform", "win32"),
+            patch.object(sys, "frozen", False, create=True),
+            patch.object(service, "_worker_command", return_value=["FiberAreaWorker.exe"]),
+            patch("fdm.services.area_inference.subprocess.CREATE_NO_WINDOW", 0x08000000, create=True),
+            patch(
+                "fdm.services.area_inference.subprocess.run",
+                return_value=type("Completed", (), {"returncode": 0, "stdout": '{"instances": [], "engine_meta": {}}', "stderr": ""})(),
+            ) as run_mock,
+        ):
+            service.infer_image(
+                image_path="/tmp/fake.png",
+                model_name="棉-莱赛尔",
+                model_file="b_c1_1.3.pth",
+                settings=AppSettings(),
+            )
+
+        self.assertEqual(run_mock.call_args.kwargs.get("creationflags"), 0x08000000)
+
     def test_load_engine_module_handles_dataclass_module_registration(self) -> None:
         vendor_root = application_root() / "runtime" / "area-infer" / "vendor" / "yolact"
         if not vendor_root.exists():

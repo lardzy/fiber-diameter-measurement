@@ -72,6 +72,13 @@ class AreaInferenceService:
     def __init__(self) -> None:
         self._worker_path = Path(__file__).resolve().parents[1] / "workers" / "area_worker.py"
 
+    @staticmethod
+    def _subprocess_kwargs() -> dict[str, object]:
+        kwargs: dict[str, object] = {}
+        if sys.platform.startswith("win"):
+            kwargs["creationflags"] = getattr(subprocess, "CREATE_NO_WINDOW", 0)
+        return kwargs
+
     def _worker_command(self, settings: AppSettings) -> list[str]:
         if getattr(sys, "frozen", False):
             executable = Path(sys.executable).resolve()
@@ -134,6 +141,7 @@ class AreaInferenceService:
             text=True,
             capture_output=True,
             check=False,
+            **self._subprocess_kwargs(),
         )
         stdout = result.stdout.strip()
         stderr = result.stderr.strip()
