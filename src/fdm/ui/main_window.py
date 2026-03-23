@@ -22,7 +22,6 @@ from PySide6.QtWidgets import (
     QMainWindow,
     QMenu,
     QMessageBox,
-    QProgressDialog,
     QPushButton,
     QSplitter,
     QStatusBar,
@@ -65,6 +64,7 @@ from fdm.ui.dialogs import (
     CalibrationPresetDialog,
     ExportOptionsDialog,
     SettingsDialog,
+    TaskProgressDialog,
 )
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
         self._measure_toolbar: QToolBar | None = None
         self._load_thread: QThread | None = None
         self._load_worker: ImageBatchLoaderWorker | None = None
-        self._load_progress_dialog: QProgressDialog | None = None
+        self._load_progress_dialog: TaskProgressDialog | None = None
         self._load_state: BatchLoadState | None = None
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
@@ -711,14 +711,10 @@ class MainWindow(QMainWindow):
             failures=[],
             missing_paths=list(missing_paths or []),
         )
-        progress = QProgressDialog("准备加载图片...", "取消", 0, len(requests), self)
+        progress = TaskProgressDialog("准备加载图片...", "取消", 0, len(requests), self)
         progress.setWindowTitle(context_label)
         progress.setWindowModality(Qt.WindowModality.ApplicationModal)
-        progress.setMinimumDuration(0)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
         progress.setValue(0)
-        progress.setMinimumWidth(420)
         self._load_progress_dialog = progress
 
         thread = QThread(self)
@@ -1217,12 +1213,10 @@ class MainWindow(QMainWindow):
         if not target_documents:
             return
 
-        progress = QProgressDialog("正在执行面积自动识别...", "取消", 0, len(target_documents), self)
+        progress = TaskProgressDialog("正在执行面积自动识别...", "取消", 0, len(target_documents), self)
         progress.setWindowTitle("面积自动识别")
         progress.setWindowModality(Qt.WindowModality.ApplicationModal)
-        progress.setMinimumDuration(0)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
+        progress.setValue(0)
         progress.show()
 
         completed = 0

@@ -27,12 +27,13 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog
+    from fdm.ui.dialogs import SettingsDialog, TaskProgressDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
+    TaskProgressDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -559,6 +560,21 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
+        finally:
+            dialog.close()
+
+    def test_task_progress_dialog_tracks_label_value_and_cancel_state(self) -> None:
+        dialog = TaskProgressDialog("准备加载图片...", "取消", 0, 3)
+        try:
+            dialog.setLabelText("正在识别 (1/3)\nexample.jpg")
+            dialog.setMaximum(5)
+            dialog.setValue(2)
+            self.assertFalse(dialog.wasCanceled())
+            self.assertEqual(dialog._label.text(), "正在识别 (1/3)\nexample.jpg")
+            self.assertEqual(dialog._progress_bar.maximum(), 5)
+            self.assertEqual(dialog._progress_bar.value(), 2)
+            dialog._on_cancel_clicked()
+            self.assertTrue(dialog.wasCanceled())
         finally:
             dialog.close()
 
