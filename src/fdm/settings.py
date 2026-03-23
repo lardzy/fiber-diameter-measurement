@@ -58,6 +58,17 @@ def application_root() -> Path:
     return project_runtime_root()
 
 
+def bundle_resource_root() -> Path:
+    if getattr(sys, "frozen", False):
+        meipass = getattr(sys, "_MEIPASS", "")
+        if meipass:
+            return Path(str(meipass)).resolve()
+        internal = application_root() / "_internal"
+        if internal.exists():
+            return internal.resolve()
+    return project_runtime_root()
+
+
 def _path_is_within(path: Path, root: Path) -> bool:
     try:
         path.resolve().relative_to(root.resolve())
@@ -70,19 +81,27 @@ def _display_path(path: Path) -> str:
     return path.as_posix() if not path.is_absolute() else str(path)
 
 
-def to_app_relative_path(value: str | Path | None) -> str:
+def _to_relative_path(value: str | Path | None, *, root: Path) -> str:
     token = str(value or "").strip()
     if not token:
         return ""
     path = Path(token).expanduser()
     if not path.is_absolute():
         return _display_path(path)
-    if _path_is_within(path, application_root()):
-        return path.resolve().relative_to(application_root().resolve()).as_posix()
+    if _path_is_within(path, root):
+        return path.resolve().relative_to(root.resolve()).as_posix()
     return str(path.resolve())
 
 
-def resolve_app_relative_path(value: str | Path | None, *, default: str | Path | None = None) -> Path:
+def to_app_relative_path(value: str | Path | None) -> str:
+    return _to_relative_path(value, root=application_root())
+
+
+def to_resource_relative_path(value: str | Path | None) -> str:
+    return _to_relative_path(value, root=bundle_resource_root())
+
+
+def _resolve_relative_path(value: str | Path | None, *, root: Path, default: str | Path | None = None) -> Path:
     token = str(value or "").strip()
     if not token and default is not None:
         token = str(default).strip()
@@ -91,11 +110,19 @@ def resolve_app_relative_path(value: str | Path | None, *, default: str | Path |
     path = Path(token).expanduser()
     if path.is_absolute():
         return path.resolve()
-    return (application_root() / path).resolve()
+    return (root / path).resolve()
+
+
+def resolve_app_relative_path(value: str | Path | None, *, default: str | Path | None = None) -> Path:
+    return _resolve_relative_path(value, root=application_root(), default=default)
+
+
+def resolve_resource_relative_path(value: str | Path | None, *, default: str | Path | None = None) -> Path:
+    return _resolve_relative_path(value, root=bundle_resource_root(), default=default)
 
 
 def runtime_directory() -> Path:
-    return application_root() / "runtime"
+    return bundle_resource_root() / "runtime"
 
 
 def default_area_reference_root() -> Path:
@@ -107,16 +134,16 @@ def default_area_reference_root() -> Path:
 
 def default_area_vendor_root() -> str:
     candidate = default_area_reference_root() / "vendor" / "yolact"
-    return to_app_relative_path(candidate) if candidate.exists() else ""
+    return to_resource_relative_path(candidate) if candidate.exists() else ""
 
 
 def default_area_weights_directory() -> str:
     project_candidate = runtime_directory() / "area-models"
     if project_candidate.exists():
-        return to_app_relative_path(project_candidate)
+        return to_resource_relative_path(project_candidate)
     project_candidate = project_runtime_root() / ".tmp" / "area-models"
     if project_candidate.exists():
-        return to_app_relative_path(project_candidate)
+        return to_resource_relative_path(project_candidate)
     return str(settings_directory() / "area-models")
 
 
@@ -170,13 +197,13 @@ class AppSettings:
         return normalized
 
     def resolved_area_weights_dir(self) -> Path:
-        return resolve_app_relative_path(
+        return resolve_resource_relative_path(
             self.area_weights_dir,
             default=default_area_weights_directory(),
         )
 
     def resolved_area_vendor_root(self) -> Path:
-        return resolve_app_relative_path(
+        return resolve_resource_relative_path(
             self.area_vendor_root,
             default=default_area_vendor_root(),
         )
@@ -189,16 +216,24 @@ class AppSettings:
 
     @staticmethod
     def _normalize_weights_dir(value: str | Path | None) -> str:
-        token = to_app_relative_path(value)
-        resolved = resolve_app_relative_path(token, default=default_area_weights_directory())
+        default_token = default_area_weights_directory()
+        token = to_resource_relative_path(value)
+        resolved = resolve_resource_relative_path(token, default=default_token)
+        if getattr(sys, "frozen", False):
+            legacy_default = legacy_area_weights_directory().resolve()
+            default_resolved = resolve_resource_relative_path(default_token, default=default_token)
+            if token and Path(str(token)).expanduser().is_absolute():
+                absolute_value = Path(str(token)).expanduser().resolve()
+                if absolute_value == legacy_default and default_resolved.exists():
+                    return default_token
         if not resolved.exists():
-            return default_area_weights_directory()
-        return token or default_area_weights_directory()
+            return default_token
+        return token or default_token
 
     @staticmethod
     def _normalize_vendor_root(value: str | Path | None) -> str:
-        token = to_app_relative_path(value)
-        resolved = resolve_app_relative_path(token, default=default_area_vendor_root())
+        token = to_resource_relative_path(value)
+        resolved = resolve_resource_relative_path(token, default=default_area_vendor_root())
         if not resolved.exists():
             return default_area_vendor_root()
         return token or default_area_vendor_root()
@@ -301,6 +336,10 @@ def settings_directory() -> Path:
 
 def settings_file_path() -> Path:
     return settings_directory() / "settings.json"
+
+
+def legacy_area_weights_directory() -> Path:
+    return settings_directory() / "area-models"
 
 
 class AppSettingsIO:

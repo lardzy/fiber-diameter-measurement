@@ -4,6 +4,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -16,6 +17,7 @@ from fdm.settings import (
     AppSettings,
     AppSettingsIO,
     application_root,
+    bundle_resource_root,
     default_area_model_mappings,
 )
 
@@ -274,6 +276,94 @@ class ModelsProjectIOTests(unittest.TestCase):
             (application_root() / "runtime" / "area-infer" / "vendor" / "yolact").resolve(),
         )
         self.assertEqual(settings.resolved_area_worker_program(), "")
+
+    def test_frozen_app_settings_use_bundle_resource_root_for_runtime_assets(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+            worker_path = dist_root / "FiberAreaWorker.exe"
+            worker_path.write_text("", encoding="utf-8")
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+            ):
+                settings = AppSettings()
+                payload = settings.to_dict()
+
+                self.assertEqual(bundle_resource_root(), internal_root.resolve())
+                self.assertEqual(payload["area_weights_dir"], "runtime/area-models")
+                self.assertEqual(payload["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+                self.assertEqual(payload["area_worker_python"], "FiberAreaWorker.exe")
+                self.assertEqual(settings.resolved_area_weights_dir(), weights_root.resolve())
+                self.assertEqual(settings.resolved_area_vendor_root(), vendor_root.resolve())
+                self.assertEqual(settings.resolved_area_worker_program(), str(worker_path.resolve()))
+
+    def test_frozen_existing_internal_paths_roundtrip_back_to_relative_strings(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+            ):
+                settings = AppSettings(
+                    area_weights_dir=str(weights_root.resolve()),
+                    area_vendor_root=str(vendor_root.resolve()),
+                    area_worker_python="",
+                )
+
+                self.assertEqual(settings.area_weights_dir, str(weights_root.resolve()))
+                self.assertEqual(settings.area_vendor_root, str(vendor_root.resolve()))
+                self.assertEqual(settings.to_dict()["area_weights_dir"], "runtime/area-models")
+                self.assertEqual(settings.to_dict()["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+
+    def test_frozen_legacy_user_settings_area_models_path_migrates_back_to_runtime_relative_default(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+            legacy_settings_root = Path(tmp_dir) / "localappdata" / "FiberDiameterMeasurement"
+            legacy_weights_root = legacy_settings_root / "area-models"
+            legacy_weights_root.mkdir(parents=True, exist_ok=True)
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "platform", "win32"),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+                patch.dict("os.environ", {"LOCALAPPDATA": str(Path(tmp_dir) / "localappdata")}, clear=False),
+            ):
+                settings = AppSettings.from_dict({"area_weights_dir": str(legacy_weights_root.resolve())})
+
+                self.assertEqual(settings.area_weights_dir, "runtime/area-models")
+                self.assertEqual(settings.resolved_area_weights_dir(), weights_root.resolve())
 
     def test_area_inference_service_uses_auto_worker_when_settings_worker_is_blank(self) -> None:
         service = AreaInferenceService()

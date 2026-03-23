@@ -38,8 +38,11 @@ from fdm.settings import (
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
     application_root,
+    bundle_resource_root,
     resolve_app_relative_path,
+    resolve_resource_relative_path,
     to_app_relative_path,
+    to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 
@@ -411,11 +414,11 @@ class SettingsDialog(QDialog):
         self._area_worker_python_edit = QLineEdit(settings.area_worker_python)
         self._area_worker_python_edit.setPlaceholderText("留空表示自动：打包后优先使用 FiberAreaWorker.exe")
         area_form = QFormLayout()
-        area_form.addRow("权重目录", self._with_browse_button(self._area_weights_dir_edit, directory=True))
-        area_form.addRow("YOLACT vendor 目录", self._with_browse_button(self._area_vendor_root_edit, directory=True))
-        area_form.addRow("Worker 可执行文件 / Python", self._with_browse_button(self._area_worker_python_edit, directory=False))
+        area_form.addRow("权重目录", self._with_browse_button(self._area_weights_dir_edit, directory=True, resource_relative=True))
+        area_form.addRow("YOLACT vendor 目录", self._with_browse_button(self._area_vendor_root_edit, directory=True, resource_relative=True))
+        area_form.addRow("Worker 可执行文件 / Python", self._with_browse_button(self._area_worker_python_edit, directory=False, resource_relative=False))
         area_layout.addLayout(area_form)
-        path_hint = QLabel("以上路径支持相对程序目录填写。保持 Worker 为空时，会自动选择打包后的 FiberAreaWorker 或当前 Python。")
+        path_hint = QLabel("权重和 vendor 支持相对运行时资源目录填写；Worker 支持相对程序目录填写。保持 Worker 为空时，会自动选择打包后的 FiberAreaWorker 或当前 Python。")
         path_hint.setWordWrap(True)
         area_layout.addWidget(path_hint)
 
@@ -504,24 +507,35 @@ class SettingsDialog(QDialog):
         if self._area_mapping_table.rowCount() == 0:
             self._append_area_mapping_row(AreaModelMapping(model_name="", model_file=""))
 
-    def _browse_path(self, line_edit: QLineEdit, *, directory: bool) -> None:
+    def _browse_path(self, line_edit: QLineEdit, *, directory: bool, resource_relative: bool) -> None:
         current_text = line_edit.text().strip()
-        start_path = resolve_app_relative_path(current_text) if current_text else application_root()
-        start_dir = str(start_path if start_path.exists() else application_root())
+        if resource_relative:
+            base_root = bundle_resource_root()
+            start_path = resolve_resource_relative_path(current_text) if current_text else base_root
+        else:
+            base_root = application_root()
+            start_path = resolve_app_relative_path(current_text) if current_text else base_root
+        start_dir = str(start_path if start_path.exists() else base_root)
         if directory:
             path = QFileDialog.getExistingDirectory(self, "选择目录", start_dir)
         else:
             path, _ = QFileDialog.getOpenFileName(self, "选择文件", start_dir)
         if path:
-            line_edit.setText(to_app_relative_path(path))
+            if resource_relative:
+                line_edit.setText(to_resource_relative_path(path))
+            else:
+                line_edit.setText(to_app_relative_path(path))
 
-    def _with_browse_button(self, line_edit: QLineEdit, *, directory: bool) -> QWidget:
+    def _with_browse_button(self, line_edit: QLineEdit, *, directory: bool, resource_relative: bool) -> QWidget:
         row = QWidget()
         layout = QHBoxLayout(row)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.addWidget(line_edit, 1)
         button = QPushButton("浏览...")
-        button.clicked.connect(lambda checked=False, target=line_edit, is_dir=directory: self._browse_path(target, directory=is_dir))
+        button.clicked.connect(
+            lambda checked=False, target=line_edit, is_dir=directory, use_resource_root=resource_relative:
+            self._browse_path(target, directory=is_dir, resource_relative=use_resource_root)
+        )
         layout.addWidget(button)
         return row
 
