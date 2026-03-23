@@ -66,6 +66,7 @@ from fdm.ui.dialogs import (
     ExportOptionsDialog,
     SettingsDialog,
 )
+from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
@@ -83,6 +84,15 @@ class BatchLoadState:
     cancelled: bool = False
     failures: list[str] | None = None
     missing_paths: list[str] | None = None
+
+
+@dataclass(slots=True)
+class AreaInferenceBatchState:
+    total: int
+    completed_count: int = 0
+    failed_count: int = 0
+    cancelled: bool = False
+    failures: list[str] | None = None
 
 
 class MainWindow(QMainWindow):
@@ -124,6 +134,10 @@ class MainWindow(QMainWindow):
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
         self._load_state: BatchLoadState | None = None
+        self._area_infer_thread: QThread | None = None
+        self._area_infer_worker: AreaBatchInferenceWorker | None = None
+        self._area_infer_progress_dialog: QProgressDialog | None = None
+        self._area_infer_state: AreaInferenceBatchState | None = None
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
         self._color_palette = [
@@ -813,6 +827,93 @@ class MainWindow(QMainWindow):
         elif state.cancelled or state.skipped_count:
             QMessageBox.information(self, state.context_label, "\n".join(detail_lines))
 
+    def _start_area_inference_batch(
+        self,
+        requests: list[AreaInferenceRequest],
+    ) -> None:
+        self._area_infer_state = AreaInferenceBatchState(
+            total=len(requests),
+            failures=[],
+        )
+        progress = self._create_progress_dialog(
+            title="面积自动识别",
+            label_text=f"正在识别 (1/{len(requests)})\n{Path(requests[0].image_path).name}",
+            maximum=len(requests),
+        )
+        self._area_infer_progress_dialog = progress
+
+        thread = QThread(self)
+        worker = AreaBatchInferenceWorker(requests, settings=self._app_settings)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_area_inference_progress)
+        worker.succeeded.connect(self._on_area_inference_succeeded)
+        worker.failed.connect(self._on_area_inference_failed)
+        worker.finished.connect(self._on_area_inference_finished)
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        progress.canceled.connect(worker.cancel)
+
+        self._area_infer_thread = thread
+        self._area_infer_worker = worker
+        thread.start()
+        progress.show()
+
+    def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
+        if self._area_infer_progress_dialog is None:
+            return
+        completed = self._area_infer_state.completed_count if self._area_infer_state is not None else 0
+        self._area_infer_progress_dialog.setMaximum(total)
+        self._area_infer_progress_dialog.setValue(completed)
+        self._area_infer_progress_dialog.setLabelText(f"正在识别 ({index}/{total})\n{Path(path).name}")
+
+    def _on_area_inference_succeeded(self, document_id: str, instances: object) -> None:
+        state = self._area_infer_state
+        if state is not None:
+            state.completed_count += 1
+        document = self.project.get_document(document_id)
+        if document is not None and isinstance(instances, list):
+            self._apply_area_inference_result(document, instances)
+        if self._area_infer_progress_dialog is not None and state is not None:
+            self._area_infer_progress_dialog.setValue(state.completed_count)
+
+    def _on_area_inference_failed(self, document_id: str, path: str, reason: str) -> None:
+        del document_id
+        state = self._area_infer_state
+        if state is not None:
+            state.completed_count += 1
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(f"{Path(path).name}: {reason}")
+        if self._area_infer_progress_dialog is not None and state is not None:
+            self._area_infer_progress_dialog.setValue(state.completed_count)
+
+    def _on_area_inference_finished(self, cancelled: bool, completed_count: int, failed_count: int) -> None:
+        state = self._area_infer_state
+        if state is None:
+            return
+        state.cancelled = cancelled
+        state.completed_count = completed_count
+        state.failed_count = failed_count
+        if self._area_infer_progress_dialog is not None:
+            self._area_infer_progress_dialog.setValue(state.total)
+            self._area_infer_progress_dialog.close()
+            self._area_infer_progress_dialog.deleteLater()
+            self._area_infer_progress_dialog = None
+
+        if state.failures:
+            QMessageBox.warning(self, "面积自动识别", "以下图片识别失败:\n" + "\n".join(state.failures[:10]))
+        if completed_count > 0:
+            self.statusBar().showMessage(
+                f"面积自动识别已处理 {completed_count - failed_count} / {completed_count} 张图片",
+                6000,
+            )
+
+        self._area_infer_thread = None
+        self._area_infer_worker = None
+        self._area_infer_state = None
+
     def _add_loaded_document(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
         absolute_path = request.path
         target_document = request.document or ImageDocument(
@@ -1213,41 +1314,16 @@ class MainWindow(QMainWindow):
         target_documents = [document for document in target_documents if document is not None]
         if not target_documents:
             return
-
-        progress = self._create_progress_dialog(
-            title="面积自动识别",
-            label_text=f"正在识别 (1/{len(target_documents)})\n{Path(target_documents[0].path).name}",
-            maximum=len(target_documents),
-        )
-        progress.show()
-
-        completed = 0
-        failures: list[str] = []
-        for document in target_documents:
-            if progress.wasCanceled():
-                break
-            progress.setLabelText(f"正在识别 ({completed + 1}/{len(target_documents)})\n{Path(document.path).name}")
-            progress.setValue(completed)
-            QApplication.processEvents()
-            try:
-                result = self.area_inference_service.infer_image(
-                    image_path=document.path,
-                    model_name=model_name,
-                    model_file=model_file,
-                    settings=self._app_settings,
-                )
-                self._apply_area_inference_result(document, result.instances)
-            except Exception as exc:  # noqa: BLE001
-                failures.append(f"{Path(document.path).name}: {exc}")
-            completed += 1
-
-        progress.setValue(len(target_documents))
-        progress.close()
-        progress.deleteLater()
-        if failures:
-            QMessageBox.warning(self, "面积自动识别", "以下图片识别失败:\n" + "\n".join(failures[:10]))
-        if completed > 0:
-            self.statusBar().showMessage(f"面积自动识别已处理 {completed - len(failures)} / {completed} 张图片", 6000)
+        requests = [
+            AreaInferenceRequest(
+                document_id=document.id,
+                image_path=document.path,
+                model_name=model_name,
+                model_file=model_file,
+            )
+            for document in target_documents
+        ]
+        self._start_area_inference_batch(requests)
 
     def _apply_area_inference_result(self, document: ImageDocument, instances) -> None:
         if not instances:

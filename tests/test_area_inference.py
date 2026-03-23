@@ -15,6 +15,15 @@ try:
 except Exception:
     AREA_RUNTIME_DEPS_AVAILABLE = False
 
+try:
+    from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
+
+    QT_AREA_WORKER_AVAILABLE = True
+except Exception:
+    AreaBatchInferenceWorker = object  # type: ignore[assignment]
+    AreaInferenceRequest = object  # type: ignore[assignment]
+    QT_AREA_WORKER_AVAILABLE = False
+
 from fdm.services.area_inference import AreaInferenceService
 from fdm.settings import AppSettings, application_root
 from fdm.workers.area_worker import _load_engine_module
@@ -56,3 +65,36 @@ class AreaInferenceTests(unittest.TestCase):
         self.assertEqual(result.engine_meta.get("effective_device"), "cpu")
         self.assertEqual(result.engine_meta.get("requested_device"), "cpu")
 
+    @unittest.skipUnless(QT_AREA_WORKER_AVAILABLE, "requires Qt area worker")
+    def test_area_batch_inference_worker_emits_progress_and_success(self) -> None:
+        emitted_progress: list[tuple[int, int, str]] = []
+        emitted_success: list[tuple[str, object]] = []
+        emitted_finished: list[tuple[bool, int, int]] = []
+
+        worker = AreaBatchInferenceWorker(
+            [
+                AreaInferenceRequest(
+                    document_id="doc-1",
+                    image_path="/tmp/fake-image.png",
+                    model_name="棉-莱赛尔",
+                    model_file="b_c1_1.3.pth",
+                )
+            ],
+            settings=AppSettings(),
+        )
+        worker.progress.connect(lambda index, total, path: emitted_progress.append((index, total, path)))
+        worker.succeeded.connect(lambda document_id, instances: emitted_success.append((document_id, instances)))
+        worker.finished.connect(lambda cancelled, completed, failed: emitted_finished.append((cancelled, completed, failed)))
+
+        class _FakeResult:
+            def __init__(self) -> None:
+                self.instances = ["ok"]
+
+        from unittest.mock import patch
+
+        with patch("fdm.ui.area_inference_worker.AreaInferenceService.infer_image", return_value=_FakeResult()):
+            worker.run()
+
+        self.assertEqual(emitted_progress, [(1, 1, "/tmp/fake-image.png")])
+        self.assertEqual(emitted_success, [("doc-1", ["ok"])])
+        self.assertEqual(emitted_finished, [(False, 1, 0)])
