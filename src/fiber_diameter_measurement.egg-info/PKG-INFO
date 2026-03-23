@@ -11,58 +11,161 @@ Requires-Dist: numpy>=1.26
 Requires-Dist: pandas>=2.2
 Requires-Dist: openpyxl>=3.1
 Requires-Dist: onnxruntime>=1.18
+Requires-Dist: Pillow>=10.4
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2; extra == "dev"
+Provides-Extra: area-infer
+Requires-Dist: torch>=2.4; extra == "area-infer"
+Requires-Dist: torchvision>=0.19; extra == "area-infer"
 Provides-Extra: packaging
 Requires-Dist: pyinstaller>=6.0; extra == "packaging"
 
-# Fiber Diameter Measurement
+# Fiber Diameter Measurement / 纤维直径测量软件
 
-离线纤维直径测量桌面软件，面向 Windows 10 无独显电脑。V1 聚焦完整测量闭环：多图同时打开、图内/预设标定、手动与半自动吸附测量、图片侧车保存标定、项目文件保存、叠加图导出、CSV/Excel 导出。
+![演示图片](sample_data/readme-demo/演示图片.jpg)
 
-## 当前能力
+离线纤维直径测量桌面软件，面向 Windows 10 / Windows 11 无独显电脑。当前版本聚焦完整测量闭环：多图打开、比例尺标定、手动测量、半自动吸附、纤维分类、项目保存，以及叠加图和表格数据导出。
 
-- 多标签页同时打开多张图片，支持 `PNG/JPG/BMP/TIF/TIFF`
-- 支持打开文件夹中的全部图片，忽略子文件夹
-- 三栏工作区：图片列表、测量画布、标定与测量结果面板
+## 功能概览
+
+- 多图工作流
+  - 同时打开多张图片，支持 `PNG / JPG / BMP / TIF / TIFF`
+  - 支持打开文件夹中的全部图片，忽略子文件夹
+  - 多图加载采用后台解码，并显示可取消的进度对话框
+- 三栏工作区
+  - 左侧：图片列表
+  - 中间：多标签测量画布
+  - 右侧：标定、模型、纤维类别、测量记录
+- 双层工具区
+  - 第一行：打开、保存、导出、视图、关闭图片等文件类操作
+  - 第二行：`浏览`、`手动测量`、`半自动吸附`、`比例尺标定` 四个主工具
 - 测量模式
-  - `浏览`：选择已有测量线并拖动端点微调
+  - `浏览`：选择已有测量线并编辑端点
   - `手动测量`：直接绘制直径线
-  - `半自动吸附`：先拉近似直径线，再用局部 ROI + 模型/传统算法寻找纤维边界
-  - `比例尺标定`：在图上拉线，输入真实长度与单位
-- 绘图快捷操作
-  - `Shift`：绘制或拖拽时限制为水平/垂直
-  - `Ctrl`：吸附到像素中心
-  - `Delete/Backspace`：删除当前选中测量
-  - `Ctrl+Z / Ctrl+Shift+Z`：撤回 / 重做当前图片中的编辑
-- 标尺来源
+  - `半自动吸附`：以用户拉线为基础，在局部 ROI 内吸附到纤维边界
+  - `比例尺标定`：在图中拉取已知长度并输入实际距离
+- 标定能力
   - 图内标定
-  - 设备预设标定
-- 标定会自动保存到图片同目录下的侧车文件 `<图片名>.fdm.json`
-- 纤维类别按编号管理，支持 `1-9` 快捷切换当前激活类别；类别可带可选名称和独立颜色
-- 结果导出
-  - 测量线叠加图
-  - 比例尺叠加图
-  - 比例尺 `JSON`
-  - `image_summary.csv`
-  - `fiber_details.csv`
-  - `measurement_details.csv`
-  - `measurement_export.xlsx`
-- 导出入口为下拉菜单，可按类型分别导出，也可直接导出“叠加图 + Excel”
-- 项目文件 `*.fdmproj`：保存图片路径、标定快照、分类、测量记录与视图状态
-- ONNX 模型接口：优先用本地 ONNX 模型做分割推理；模型不可用时自动回退到传统图像算法
+  - 标定预设
+  - 标定预设可通过“像素距离 + 实际距离 + 单位”自动计算比例尺
+  - 标定自动写入图片同目录侧车文件 `<图片名>.fdm.json`
+- 纤维类别
+  - 支持未分类与多个编号类别
+  - 支持新增、重命名、删除类别
+  - `1-9` 数字键切换右侧当前激活类别
+  - 新建测量会归入当前激活类别；旧测量不会因切换类别而改变
+- 导出能力
+  - 测量叠加图 PNG
+  - 比例尺叠加图 PNG
+  - 比例尺 JSON
+  - `图片汇总.csv`
+  - `纤维种类汇总.csv`
+  - `测量明细.csv`
+  - `纤维测量结果.xlsx`
+  - 支持“叠加图 + Excel”快捷导出
+- 图片导出渲染模式
+  - `完整分辨率`：按原图分辨率导出精确标注
+  - `整图按屏显比例导出`：更接近日常查看效果
+  - `当前视窗截图`：保留当前画布视口构图
+- 本地模型接入
+  - 支持 ONNX Runtime CPU 本地推理
+  - 未加载模型时自动回退到传统图像算法
+- 项目保存
+  - `*.fdmproj` 保存图片路径、标定快照、类别、测量记录与视图状态
+
+## 交互与快捷键
+
+- `空格`：临时抓手，按住后左键拖动画布
+- 鼠标滚轮：缩放画布
+- 鼠标中键拖动：平移画布
+- `Shift`：绘制或拖拽时约束为水平或垂直
+- `Ctrl`：端点吸附到像素中心
+- `Shift + Ctrl`：同时启用方向约束和像素中心吸附
+- `Delete / Backspace`：删除当前选中的测量
+- `Ctrl + Z`：撤回当前图片中的编辑
+- `Ctrl + Shift + Z`：重做当前图片中的编辑
+- `1-9`：切换当前激活类别
+
+说明：
+
+- 数字键只用于切换右侧“纤维类别”的当前激活项，不会直接修改某条测量记录的类别。
+- 测量记录表中的类别下拉需要显式点击展开后才会修改，滚轮经过不会误切换。
+
+## 典型使用流程
+
+1. 打开一张或多张显微图片，或直接打开包含图片的文件夹。
+2. 使用 `比例尺标定` 完成图内标定，或在右侧创建并应用标定预设。
+3. 在右侧创建或切换当前激活的纤维类别。
+4. 选择 `手动测量` 或 `半自动吸附` 开始测量。
+5. 如果需要，切换到 `浏览` 对已测量线段做端点微调。
+6. 在右侧测量记录表中检查类别、结果、模式、置信度和状态。
+7. 通过 `保存项目` 保存完整会话，或通过导出菜单导出叠加图、比例尺文件、CSV、Excel。
+
+## 半自动吸附说明
+
+- 半自动吸附会在用户拉出的近似测量线附近提取局部 ROI。
+- 若已加载 ONNX 分割模型，则优先使用模型输出寻找纤维边界。
+- 若模型不可用，则自动回退到阈值、形态学清理、连通域筛选等传统算法。
+- 当前实现会尽量保持用户原始拉线角度，只对边界位置做吸附修正，避免自动旋转到不合适的方向。
+
+## 标定与项目文件
+
+- 图内标定结果会自动写入图片同目录侧车文件：
+
+```text
+<image-name>.fdm.json
+```
+
+- 侧车文件只保存标定相关信息，不自动保存测量结果。
+- 若希望保存完整测量会话，请使用项目文件：
+
+```text
+*.fdmproj
+```
+
+- 打开图片时会优先读取同名侧车中的标定信息；打开项目文件时，以项目中的标定快照和会话数据为准。
+
+## 测量记录与类别
+
+- 右侧“纤维类别”区域用于管理当前图片的类别集合和当前激活类别。
+- 测量记录表默认列顺序为：
+  - `种类`
+  - `结果`
+  - `单位`
+  - `模式`
+  - `置信度`
+  - `状态`
+  - `ID`
+- 表格中的“种类”列可以直接修改单条测量所属类别。
+- 画布选中测量线后，右侧记录表会自动同步选中对应行；反向选择同样成立。
+
+## ONNX 模型约定
+
+- 目标任务：二分类分割，背景 / 纤维
+- 推荐输入：单通道灰度图，或可转换为单通道的图像
+- 支持的输出形态：
+  - `[1, 1, H, W]`
+  - `[1, H, W]`
+  - `[H, W]`
+- 预测值大于等于 `0.5` 时视为纤维掩码
+- 推理后续逻辑会结合连通域筛选和几何求交完成最终边界定位
 
 ## 技术栈
 
 - `Python 3.11+`
 - `PySide6`：桌面界面
-- `OpenCV + NumPy + ONNX Runtime CPU`：模型推理和图像处理扩展点
-- `pandas + openpyxl`：建议的表格处理依赖
-- 当前仓库中核心业务逻辑同时保留了纯 Python 可测试实现，因此即使没有装 GUI/推理依赖，也能跑单元测试
+- `NumPy`：基础数值计算
+- `OpenCV`：图像处理扩展依赖
+- `ONNX Runtime CPU`：本地模型推理
+- `pandas + openpyxl`：CSV / Excel 导出
+- `qtawesome`：优先使用的工具栏图标库
+  - 若当前环境未安装，界面会自动回退到内置线性图标
 
 ## 快速开始
 
 ### 1. 创建虚拟环境
+
+macOS / Linux:
 
 ```bash
 python -m venv .venv
@@ -82,62 +185,46 @@ python -m venv .venv
 pip install -e .
 ```
 
-### 3. 启动桌面应用
+### 3. 启动应用
 
 ```bash
 python -m fdm
 ```
 
-或
+或：
 
 ```bash
 fdm
 ```
 
-## 使用流程
-
-1. 打开一张或多张显微图片。
-2. 选择 `比例尺标定`，在图中拉出已知长度的比例尺线并输入真实长度。
-3. 如果你有固定倍率，也可以先在右侧新增并应用标定预设。
-4. 选择 `手动测量` 或 `半自动吸附`。
-5. 半自动模式下先拉一条近似垂直纤维长度方向的线，系统会在局部 ROI 中自动吸附到边界。
-6. 切回 `浏览`，拖动已有测量线端点做人工修正。
-7. 在右侧“纤维类别”区域创建类别，类别按数字编号显示；按 `1-9` 或直接点击类别块切换当前激活类别。
-8. 新建测量会自动归入当前激活类别；旧测量不会因切换类别而改变。
-9. 在测量记录表中可以直接修改任意测量所属的类别，画布选中和表格选中会自动同步。
-10. 通过 `保存项目` 保存完整会话，通过导出下拉菜单选择导出叠加图、比例尺文件、Excel 或 CSV。
-
-## ONNX 模型约定
-
-- 目标是二分类分割：背景 / 纤维
-- 输入建议为单通道灰度图或可转换为单通道的图像
-- 输出支持以下形态之一
-  - `[1, 1, H, W]`
-  - `[1, H, W]`
-  - `[H, W]`
-- 预测值大于等于 `0.5` 会被视为纤维掩码
-- 未加载模型时，软件会退回到局部阈值 + 形态学清理 + 连通域筛选 + 法线求交的纯算法流程
-
 ## 测试
 
-当前测试全部基于标准库 `unittest`，不依赖 PySide6。
+项目测试基于标准库 `unittest`。
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-覆盖范围：
+说明：
+
+- 纯逻辑测试不依赖 GUI。
+- GUI 相关测试位于 `tests/test_ui_canvas_and_export.py`，在安装了 `PySide6` 的环境中会运行；若环境缺少 `PySide6`，这些测试会自动跳过。
+- GUI 测试默认使用 `QT_QPA_PLATFORM=offscreen`，适合在无桌面环境下做基础回归。
+
+当前测试覆盖的重点包括：
 
 - 标定换算与项目文件读写
 - 标定侧车保存与自动恢复
 - 文档级撤回 / 重做
 - 旋转 ROI 提取
-- 半自动吸附算法在合成纤维图上的边界定位
-- CSV / XLSX / 比例尺 JSON 导出结构
+- 半自动吸附在合成图像上的边界定位
+- 画布缩放、抓手、端点编辑判定
+- 测量叠加图 / 比例尺图的导出可见性
+- 批量加载 worker 和主界面部分交互回归
 
 ## Windows 打包
 
-当前仓库已包含一套适合 `PyInstaller` 非单文件目录打包的脚本，产物可以直接交给 `Inno Setup` 继续制作安装包。界面图标优先使用 `qtawesome`，若当前环境未安装则会自动回退到内置线性图标。
+仓库内已包含一套面向 `PyInstaller onedir` 的 Windows 打包脚本，适合后续交给 `Inno Setup` 制作安装包。
 
 ### 1. 安装打包依赖
 
@@ -145,7 +232,7 @@ python -m unittest discover -s tests
 pip install -e .[packaging]
 ```
 
-### 2. 生成 `onedir` 打包目录
+### 2. 生成 Windows `onedir` 产物
 
 Windows PowerShell:
 
@@ -153,56 +240,41 @@ Windows PowerShell:
 python .\scripts\build_windows_onedir.py
 ```
 
-或直接双击 / 命令行执行：
+也可以使用批处理：
 
 ```bat
 scripts\build_windows_onedir.bat
 ```
 
-### 3. 打包输出位置
-
-脚本会生成：
+输出目录：
 
 ```text
 dist/windows/FiberDiameterMeasurement/
 ```
 
-这个目录就是后续 `Inno Setup` 的安装源目录。默认会清理旧的 `dist/windows` 和 `build/pyinstaller`；如果你想保留旧构建缓存，可以使用：
+### 3. 诊断启动问题
 
-```bash
-python scripts/build_windows_onedir.py --no-clean
-```
-
-如果 Windows 上的已打包程序双击后没有任何反应，可以先构建一个带控制台的诊断版本：
+如果打包后的 exe 双击无反应，可以先构建带控制台和 bootloader 调试信息的诊断版：
 
 ```powershell
 python .\scripts\build_windows_onedir.py --console --bootloader-debug
 ```
 
-然后在终端中启动：
+然后从终端启动：
 
 ```powershell
 .\dist\windows\FiberDiameterMeasurement\FiberDiameterMeasurement.exe
 ```
 
-若应用在启动早期抛出异常，程序还会把日志写到：
+如果应用在启动早期抛出 Python 异常，还会写入：
 
 ```text
 %LOCALAPPDATA%\FiberDiameterMeasurement\logs\startup.log
 ```
 
-### 4. 相关文件
+### 4. 使用 Inno Setup 生成安装包
 
-- `packaging/pyinstaller/fdm_onedir.spec`
-- `scripts/build_windows_onedir.py`
-- `scripts/build_windows_onedir.bat`
-- `packaging/inno-setup/fdm_installer.iss`
-
-这套配置默认使用窗口模式、非单文件目录输出，并显式收集 `onnxruntime` 的运行时二进制与必要模块，避免 `collect_submodules()` 把可选依赖一起扫入后产生无关警告。
-
-### 5. 使用 Inno Setup 生成安装包
-
-仓库中已包含一份安装脚本模板：
+仓库中已提供模板：
 
 ```text
 packaging/inno-setup/fdm_installer.iss
@@ -210,34 +282,52 @@ packaging/inno-setup/fdm_installer.iss
 
 推荐流程：
 
-1. 先运行 `python .\scripts\build_windows_onedir.py`
+1. 先执行 `python .\scripts\build_windows_onedir.py`
 2. 用 Inno Setup 打开 `packaging\inno-setup\fdm_installer.iss`
-3. 按需修改顶部宏，例如 `MyAppVersion`、`MyAppPublisher`
-4. 编译后会在 `dist\installer\` 下生成安装包
+3. 按需修改顶部宏，例如版本号、发布者、快捷方式名称
+4. 编译后在 `dist\installer\` 中获取安装包
 
 ## 目录结构
 
 ```text
 src/fdm/
+  __main__.py
   app.py
   geometry.py
+  history.py
   models.py
   project_io.py
   raster.py
   services/
     export_service.py
     model_provider.py
+    sidecar_io.py
     snap_service.py
   ui/
     canvas.py
     dialogs.py
+    icons.py
+    image_loader.py
     main_window.py
+    widgets.py
 tests/
+  test_export_service.py
+  test_history_and_sidecar.py
+  test_models_project_io.py
+  test_raster_and_snap.py
+  test_ui_canvas_and_export.py
+packaging/
+  inno-setup/
+    fdm_installer.iss
+  pyinstaller/
+    fdm_onedir.spec
+scripts/
+  build_windows_onedir.py
+  build_windows_onedir.bat
 ```
 
-## 后续建议
+## 当前边界
 
-- 在已有标注数据基础上训练轻量分割模型并导出量化 ONNX
-- 为半自动测量增加批量复核面板和快捷键
-- 增加单根纤维的多次测量统计视图
-- 补 Windows 打包脚本和图标资源
+- 当前版本仍以“用户指定目标纤维，系统辅助吸附测量”为主，不包含整张图全自动批量识别全部纤维。
+- ONNX 模型接入只覆盖推理接口，不包含训练、评估和导出工具链。
+- 目前导出以 PNG / JSON / CSV / XLSX 为主，未包含 PDF 报告工作流。

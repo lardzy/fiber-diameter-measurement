@@ -53,14 +53,25 @@ from fdm.models import (
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
+from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
+from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
-from fdm.ui.dialogs import CalibrationInputDialog, CalibrationPresetDialog, ExportOptionsDialog, SettingsDialog
+from fdm.ui.dialogs import (
+    AreaAutoRecognitionDialog,
+    CalibrationInputDialog,
+    CalibrationPresetDialog,
+    ExportOptionsDialog,
+    SettingsDialog,
+    ShortcutHelpDialog,
+)
+from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
 
@@ -78,17 +89,27 @@ class BatchLoadState:
     missing_paths: list[str] | None = None
 
 
+@dataclass(slots=True)
+class AreaInferenceBatchState:
+    total: int
+    completed_count: int = 0
+    failed_count: int = 0
+    cancelled: bool = False
+    failures: list[str] | None = None
+
+
 class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
     TABLE_COL_GROUP = 0
-    TABLE_COL_RESULT = 1
-    TABLE_COL_UNIT = 2
-    TABLE_COL_MODE = 3
-    TABLE_COL_CONFIDENCE = 4
-    TABLE_COL_STATUS = 5
-    TABLE_COL_ID = 6
+    TABLE_COL_KIND = 1
+    TABLE_COL_RESULT = 2
+    TABLE_COL_UNIT = 3
+    TABLE_COL_MODE = 4
+    TABLE_COL_CONFIDENCE = 5
+    TABLE_COL_STATUS = 6
+    TABLE_COL_ID = 7
 
     def __init__(self) -> None:
         super().__init__()
@@ -98,11 +119,16 @@ class MainWindow(QMainWindow):
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
         self._app_settings = AppSettingsIO.load()
+        try:
+            AppSettingsIO.save(self._app_settings)
+        except OSError:
+            pass
         self._document_order: list[str] = []
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
+        self._last_non_select_tool: str | None = None
         self._group_list_rebuilding = False
         self._table_rebuilding = False
         self._file_toolbar: QToolBar | None = None
@@ -111,6 +137,20 @@ class MainWindow(QMainWindow):
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
         self._load_state: BatchLoadState | None = None
+        self._area_infer_thread: QThread | None = None
+        self._area_infer_worker: AreaBatchInferenceWorker | None = None
+        self._area_infer_progress_dialog: QProgressDialog | None = None
+        self._area_infer_state: AreaInferenceBatchState | None = None
+        self._prompt_seg_thread: QThread | None = None
+        self._prompt_seg_worker: PromptSegmentationWorker | None = None
+        self._show_area_fill = True
+        self._area_auto_button: QPushButton | None = None
+        self._magic_controls_widget: QWidget | None = None
+        self._magic_controls_action: QAction | None = None
+        self._magic_prompt_label: QLabel | None = None
+        self._magic_toggle_button: QToolButton | None = None
+        self._magic_complete_button: QToolButton | None = None
+        self._magic_cancel_button: QToolButton | None = None
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -125,6 +165,7 @@ class MainWindow(QMainWindow):
 
         self.export_service = ExportService()
         self.snap_service = SnapService(model_provider=NullModelProvider())
+        self.area_inference_service = AreaInferenceService()
 
         self._build_ui()
         self._refresh_preset_combo()
@@ -215,6 +256,9 @@ class MainWindow(QMainWindow):
         self.settings_action.setIcon(themed_icon("rename", color="#D7E3FC"))
         self.settings_action.triggered.connect(self.open_settings_dialog)
 
+        self.shortcuts_help_action = QAction("快捷键说明", self)
+        self.shortcuts_help_action.triggered.connect(self.open_shortcut_help_dialog)
+
         self.export_actions: list[QAction] = []
         self.export_actions.append(
             self._make_export_action(
@@ -264,6 +308,9 @@ class MainWindow(QMainWindow):
             ("select", "浏览"),
             ("manual", "手动测量"),
             ("snap", "半自动吸附"),
+            ("polygon_area", "多边形面积"),
+            ("freehand_area", "自由形状面积"),
+            ("magic_segment", "魔棒分割"),
             ("calibration", "比例尺标定"),
             ("text", "文字"),
         ]:
@@ -276,6 +323,9 @@ class MainWindow(QMainWindow):
         self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
         self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
+        self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
+        self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
+        self._mode_actions["magic_segment"].setIcon(themed_icon("magic_segment", color="#D96C75"))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["text"].setIcon(themed_icon("rename", color="#9C89B8"))
 
@@ -311,6 +361,9 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.actual_size_action)
+
+        help_menu = self.menuBar().addMenu("帮助")
+        help_menu.addAction(self.shortcuts_help_action)
 
     def _build_toolbar(self) -> None:
         file_toolbar = QToolBar("文件工具栏")
@@ -371,8 +424,45 @@ class MainWindow(QMainWindow):
         measure_toolbar.addAction(self._mode_actions["select"])
         measure_toolbar.addAction(self._mode_actions["manual"])
         measure_toolbar.addAction(self._mode_actions["snap"])
+        measure_toolbar.addAction(self._mode_actions["polygon_area"])
+        measure_toolbar.addAction(self._mode_actions["freehand_area"])
+        measure_toolbar.addAction(self._mode_actions["magic_segment"])
         measure_toolbar.addAction(self._mode_actions["calibration"])
         measure_toolbar.addAction(self._mode_actions["text"])
+        measure_toolbar.addSeparator()
+        self._magic_controls_widget = self._build_magic_segment_controls()
+        self._magic_controls_action = measure_toolbar.addWidget(self._magic_controls_widget)
+        self._magic_controls_widget.setVisible(False)
+        self._magic_controls_action.setVisible(False)
+
+    def _build_magic_segment_controls(self) -> QWidget:
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(6, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self._magic_prompt_label = QLabel("当前提示：正采样点")
+        self._magic_prompt_label.setStyleSheet(
+            "padding: 6px 10px; border-radius: 8px; background: #F6F1E8; color: #182430; font-weight: 600;"
+        )
+        layout.addWidget(self._magic_prompt_label)
+
+        self._magic_toggle_button = QToolButton(container)
+        self._magic_toggle_button.setText("切换正负 (R)")
+        self._magic_toggle_button.clicked.connect(self._cycle_magic_segment_prompt_type)
+        layout.addWidget(self._magic_toggle_button)
+
+        self._magic_complete_button = QToolButton(container)
+        self._magic_complete_button.setText("完成 (Enter / F)")
+        self._magic_complete_button.clicked.connect(self._commit_magic_segment_preview)
+        layout.addWidget(self._magic_complete_button)
+
+        self._magic_cancel_button = QToolButton(container)
+        self._magic_cancel_button.setText("放弃 (Esc)")
+        self._magic_cancel_button.clicked.connect(self._cancel_magic_segment_session)
+        layout.addWidget(self._magic_cancel_button)
+
+        return container
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
@@ -399,6 +489,10 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
 
+        top_container = QWidget()
+        top_layout = QVBoxLayout(top_container)
+        top_layout.setContentsMargins(0, 0, 0, 0)
+
         model_box = QGroupBox("模型状态")
         model_layout = QVBoxLayout(model_box)
         self.model_status_label = QLabel("未加载")
@@ -407,7 +501,11 @@ class MainWindow(QMainWindow):
         load_model_button.setIcon(themed_icon("model", color="#9AD1D4"))
         load_model_button.clicked.connect(self.load_model)
         model_layout.addWidget(load_model_button)
-        layout.addWidget(model_box)
+        self._area_auto_button = QPushButton("面积自动识别...")
+        self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
+        self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
+        model_layout.addWidget(self._area_auto_button)
+        top_layout.addWidget(model_box)
 
         calibration_box = QGroupBox("标定")
         calibration_layout = QVBoxLayout(calibration_box)
@@ -425,7 +523,7 @@ class MainWindow(QMainWindow):
         preset_row.addWidget(add_preset_button)
         preset_row.addWidget(apply_preset_button)
         calibration_layout.addLayout(preset_row)
-        layout.addWidget(calibration_box)
+        top_layout.addWidget(calibration_box)
 
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
@@ -477,18 +575,19 @@ class MainWindow(QMainWindow):
         group_button_row.addWidget(rename_group_button)
         group_button_row.addWidget(self.delete_group_button)
         group_layout.addLayout(group_button_row)
-        layout.addWidget(group_box)
+        top_layout.addWidget(group_box)
 
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
-        self.measurement_table = QTableWidget(0, 7)
-        self.measurement_table.setHorizontalHeaderLabels(["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
+        self.measurement_table = QTableWidget(0, 8)
+        self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 180)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 90)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_CONFIDENCE, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_STATUS, 110)
         self.measurement_table.setColumnWidth(self.TABLE_COL_ID, 110)
@@ -502,7 +601,14 @@ class MainWindow(QMainWindow):
         self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
         measurement_layout.addWidget(self.delete_measurement_button)
-        layout.addWidget(measurement_box, 1)
+
+        right_splitter = QSplitter(Qt.Orientation.Vertical)
+        right_splitter.addWidget(top_container)
+        right_splitter.addWidget(measurement_box)
+        right_splitter.setStretchFactor(0, 0)
+        right_splitter.setStretchFactor(1, 1)
+        right_splitter.setSizes([430, 360])
+        layout.addWidget(right_splitter)
 
         return container
 
@@ -512,13 +618,15 @@ class MainWindow(QMainWindow):
         return action
 
     def set_tool_mode(self, mode: str) -> None:
+        if mode != "select":
+            self._last_non_select_tool = mode
         self._tool_mode = mode
-        canvas = self.current_canvas()
-        if canvas is not None:
+        for canvas in self._canvases.values():
             canvas.set_tool_mode(mode)
         if mode in self._mode_actions:
             self._mode_actions[mode].setChecked(True)
             self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
+        self._update_magic_segment_controls()
 
     def current_document(self) -> ImageDocument | None:
         index = self.tab_widget.currentIndex()
@@ -671,14 +779,11 @@ class MainWindow(QMainWindow):
             failures=[],
             missing_paths=list(missing_paths or []),
         )
-        progress = QProgressDialog("准备加载图片...", "取消", 0, len(requests), self)
-        progress.setWindowTitle(context_label)
-        progress.setWindowModality(Qt.WindowModality.ApplicationModal)
-        progress.setMinimumDuration(0)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
-        progress.setValue(0)
-        progress.setMinimumWidth(420)
+        progress = self._create_progress_dialog(
+            title=context_label,
+            label_text="准备加载图片...",
+            maximum=len(requests),
+        )
         self._load_progress_dialog = progress
 
         thread = QThread(self)
@@ -776,6 +881,106 @@ class MainWindow(QMainWindow):
         elif state.cancelled or state.skipped_count:
             QMessageBox.information(self, state.context_label, "\n".join(detail_lines))
 
+    def _start_area_inference_batch(
+        self,
+        requests: list[AreaInferenceRequest],
+    ) -> None:
+        self._area_infer_state = AreaInferenceBatchState(
+            total=len(requests),
+            failures=[],
+        )
+        progress = self._create_progress_dialog(
+            title="面积自动识别",
+            label_text=f"正在识别 (1/{len(requests)})\n{Path(requests[0].image_path).name}",
+            maximum=len(requests),
+        )
+        self._area_infer_progress_dialog = progress
+
+        thread = QThread(self)
+        worker = AreaBatchInferenceWorker(requests, settings=self._app_settings)
+        worker.moveToThread(thread)
+        thread.started.connect(worker.run)
+        worker.progress.connect(self._on_area_inference_progress)
+        worker.succeeded.connect(self._on_area_inference_succeeded)
+        worker.failed.connect(self._on_area_inference_failed)
+        worker.finished.connect(self._on_area_inference_finished)
+        worker.finished.connect(thread.quit)
+        worker.finished.connect(worker.deleteLater)
+        thread.finished.connect(thread.deleteLater)
+        progress.canceled.connect(worker.cancel)
+
+        self._area_infer_thread = thread
+        self._area_infer_worker = worker
+        thread.start()
+        progress.show()
+
+    def _ensure_prompt_segmentation_worker(self) -> None:
+        if self._prompt_seg_thread is not None and self._prompt_seg_worker is not None:
+            return
+        thread = QThread(self)
+        worker = PromptSegmentationWorker()
+        worker.moveToThread(thread)
+        worker.succeeded.connect(self._on_prompt_segmentation_succeeded)
+        worker.failed.connect(self._on_prompt_segmentation_failed)
+        thread.finished.connect(worker.deleteLater)
+        thread.start()
+        self._prompt_seg_thread = thread
+        self._prompt_seg_worker = worker
+
+    def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
+        if self._area_infer_progress_dialog is None:
+            return
+        completed = self._area_infer_state.completed_count if self._area_infer_state is not None else 0
+        self._area_infer_progress_dialog.setMaximum(total)
+        self._area_infer_progress_dialog.setValue(completed)
+        self._area_infer_progress_dialog.setLabelText(f"正在识别 ({index}/{total})\n{Path(path).name}")
+
+    def _on_area_inference_succeeded(self, document_id: str, instances: object) -> None:
+        state = self._area_infer_state
+        if state is not None:
+            state.completed_count += 1
+        document = self.project.get_document(document_id)
+        if document is not None and isinstance(instances, list):
+            self._apply_area_inference_result(document, instances)
+        if self._area_infer_progress_dialog is not None and state is not None:
+            self._area_infer_progress_dialog.setValue(state.completed_count)
+
+    def _on_area_inference_failed(self, document_id: str, path: str, reason: str) -> None:
+        del document_id
+        state = self._area_infer_state
+        if state is not None:
+            state.completed_count += 1
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(f"{Path(path).name}: {reason}")
+        if self._area_infer_progress_dialog is not None and state is not None:
+            self._area_infer_progress_dialog.setValue(state.completed_count)
+
+    def _on_area_inference_finished(self, cancelled: bool, completed_count: int, failed_count: int) -> None:
+        state = self._area_infer_state
+        if state is None:
+            return
+        state.cancelled = cancelled
+        state.completed_count = completed_count
+        state.failed_count = failed_count
+        if self._area_infer_progress_dialog is not None:
+            self._area_infer_progress_dialog.setValue(state.total)
+            self._area_infer_progress_dialog.close()
+            self._area_infer_progress_dialog.deleteLater()
+            self._area_infer_progress_dialog = None
+
+        if state.failures:
+            QMessageBox.warning(self, "面积自动识别", "以下图片识别失败:\n" + "\n".join(state.failures[:10]))
+        if completed_count > 0:
+            self.statusBar().showMessage(
+                f"面积自动识别已处理 {completed_count - failed_count} / {completed_count} 张图片",
+                6000,
+            )
+
+        self._area_infer_thread = None
+        self._area_infer_worker = None
+        self._area_infer_state = None
+
     def _add_loaded_document(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
         absolute_path = request.path
         target_document = request.document or ImageDocument(
@@ -797,6 +1002,7 @@ class MainWindow(QMainWindow):
         canvas.set_document(target_document, image)
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(self._tool_mode)
+        canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
@@ -804,6 +1010,8 @@ class MainWindow(QMainWindow):
         canvas.textSelected.connect(self._on_canvas_text_selected)
         canvas.textMoved.connect(self._on_canvas_text_moved)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
+        canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
+        canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
 
         self.project.documents.append(target_document)
         self._document_order.append(target_document.id)
@@ -969,9 +1177,14 @@ class MainWindow(QMainWindow):
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
 
+    def open_shortcut_help_dialog(self) -> None:
+        dialog = ShortcutHelpDialog(self)
+        dialog.exec()
+
     def _refresh_canvases_for_settings(self) -> None:
         for canvas in self._canvases.values():
             canvas.set_settings(self._app_settings)
+            canvas.set_show_area_fill(self._show_area_fill)
         self._populate_group_list(self.current_document())
         self._populate_measurement_table(self.current_document())
         self._update_action_states()
@@ -1151,6 +1364,130 @@ class MainWindow(QMainWindow):
         self._update_model_status()
         self.statusBar().showMessage(f"已加载模型: {path}", 5000)
 
+    def run_area_auto_recognition(self) -> None:
+        if not self.project.documents:
+            QMessageBox.information(self, "面积自动识别", "请先打开图片。")
+            return
+        mappings = self._app_settings.area_model_mappings
+        if not mappings:
+            QMessageBox.information(self, "面积自动识别", "请先在设置中配置面积模型名称与权重文件映射。")
+            return
+        dialog = AreaAutoRecognitionDialog(
+            mappings,
+            allow_all_scope=len(self.project.documents) > 1,
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        model_name, model_file, apply_all = dialog.values()
+        if not model_name or not model_file:
+            QMessageBox.warning(self, "面积自动识别", "请选择有效的模型配置。")
+            return
+        target_documents = self.project.documents if apply_all else ([self.current_document()] if self.current_document() else [])
+        target_documents = [document for document in target_documents if document is not None]
+        if not target_documents:
+            return
+        requests = [
+            AreaInferenceRequest(
+                document_id=document.id,
+                image_path=document.path,
+                model_name=model_name,
+                model_file=model_file,
+            )
+            for document in target_documents
+        ]
+        self._start_area_inference_batch(requests)
+
+    def _apply_area_inference_result(self, document: ImageDocument, instances) -> None:
+        if not instances:
+            def clear_mutate() -> None:
+                document.remove_auto_area_measurements()
+                document.select_measurement(None)
+
+            self._apply_document_change(document, "清除自动面积识别结果", clear_mutate)
+            return
+
+        def mutate() -> None:
+            document.remove_auto_area_measurements()
+            for instance in instances:
+                class_name = str(instance.class_name).strip() or UNCATEGORIZED_LABEL
+                group = document.ensure_group_for_label(
+                    class_name,
+                    color=self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)],
+                )
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="auto_instance",
+                    measurement_kind="area",
+                    polygon_px=list(instance.polygon_px),
+                    confidence=float(instance.score),
+                    status="auto_instance",
+                )
+                document.add_measurement(measurement)
+            document.select_measurement(None)
+            document.hide_uncategorized_entry()
+
+        self._apply_document_change(document, "导入自动面积识别结果", mutate)
+
+    def _on_canvas_magic_segment_requested(self, document_id: str, payload: object) -> None:
+        canvas = self._canvases.get(document_id)
+        document = self.project.get_document(document_id)
+        if canvas is None or document is None or not isinstance(payload, dict):
+            return
+        request_id = int(payload.get("request_id", 0))
+        positive_points = list(payload.get("positive_points", []))
+        negative_points = list(payload.get("negative_points", []))
+        if not positive_points:
+            canvas.apply_magic_segment_result(request_id, [])
+            self._update_magic_segment_controls()
+            return
+        if not PromptSegmentationService.models_ready():
+            canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            QMessageBox.warning(
+                self,
+                "魔棒分割",
+                "未找到 EdgeSAM 模型文件，请确认 runtime/segment-anything/edge_sam 中存在 encoder/decoder ONNX。",
+            )
+            return
+        self._ensure_prompt_segmentation_worker()
+        if self._prompt_seg_worker is None:
+            canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            return
+        self._prompt_seg_worker.requested.emit(
+            PromptSegmentationRequest(
+                document_id=document_id,
+                image_path=document.path,
+                request_id=request_id,
+                positive_points=positive_points,
+                negative_points=negative_points,
+            )
+        )
+        self._update_magic_segment_controls()
+
+    def _on_canvas_magic_segment_session_changed(self, document_id: str) -> None:
+        current_document = self.current_document()
+        if current_document is not None and current_document.id == document_id:
+            self._update_magic_segment_controls()
+
+    def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, polygon: object) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        canvas.apply_magic_segment_result(request_id, list(polygon) if isinstance(polygon, list) else [])
+        self._update_magic_segment_controls()
+
+    def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        canvas.fail_magic_segment_result(request_id)
+        self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
+        self._update_magic_segment_controls()
+
     def close_current_document(self) -> None:
         document = self.current_document()
         if document is None:
@@ -1251,6 +1588,8 @@ class MainWindow(QMainWindow):
         if index < 0:
             return
         self.image_list.setCurrentRow(index)
+        current_document = self.current_document()
+        self._clear_magic_segment_sessions(except_document_id=current_document.id if current_document is not None else None)
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode)
@@ -1267,41 +1606,55 @@ class MainWindow(QMainWindow):
             self.tab_widget.setCurrentIndex(index)
             self.image_list.setCurrentRow(index)
 
-    def _on_canvas_line_committed(self, document_id: str, mode: str, line: Line) -> None:
+    def _on_canvas_line_committed(self, document_id: str, mode: str, payload: object) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
         if mode == "calibration":
-            self._apply_calibration_line(document, line)
+            if isinstance(payload, Line):
+                self._apply_calibration_line(document, payload)
             self._focus_current_canvas()
             return
 
         group = document.get_group(document.active_group_id)
 
         def mutate() -> None:
-            if mode == "manual":
+            if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode=mode,
+                    measurement_kind="area",
+                    polygon_px=list(payload.get("polygon_px", [])),
+                    confidence=1.0,
+                    status="manual" if mode != "auto_instance" else "auto_instance",
+                )
+            elif mode == "manual" and isinstance(payload, Line):
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id if group else None,
                     mode="manual",
-                    line_px=line,
+                    line_px=payload,
                     confidence=1.0,
                     status="manual",
                 )
-            else:
-                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], line)
+            elif isinstance(payload, Line):
+                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], payload)
                 measurement = Measurement(
                     id=new_id("meas"),
                     image_id=document.id,
                     fiber_group_id=group.id if group else None,
                     mode="snap",
-                    line_px=line,
-                    snapped_line_px=snap_result.snapped_line or line,
+                    line_px=payload,
+                    snapped_line_px=snap_result.snapped_line or payload,
                     confidence=snap_result.confidence,
                     status=snap_result.status if snap_result.snapped_line is not None else "manual_review",
                     debug_payload=snap_result.debug_payload,
                 )
+            else:
+                return
             document.add_measurement(measurement)
             document.select_text_annotation(None)
 
@@ -1318,7 +1671,7 @@ class MainWindow(QMainWindow):
         self._update_action_states()
         self._focus_current_canvas()
 
-    def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, line: Line) -> None:
+    def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
@@ -1327,7 +1680,13 @@ class MainWindow(QMainWindow):
             measurement = document.get_measurement(measurement_id)
             if measurement is None:
                 return
-            measurement.snapped_line_px = line
+            if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
+                measurement.polygon_px = list(payload.get("polygon_px", []))
+                measurement.measurement_kind = "area"
+            elif isinstance(payload, Line):
+                measurement.snapped_line_px = payload
+            else:
+                return
             measurement.status = "edited"
             measurement.recalculate(document.calibration)
             document.select_measurement(measurement.id)
@@ -1461,6 +1820,7 @@ class MainWindow(QMainWindow):
         if canvas is not None:
             canvas.set_settings(self._app_settings)
             canvas.set_tool_mode(self._tool_mode)
+            canvas.set_show_area_fill(self._show_area_fill)
         self._update_action_states()
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
@@ -1477,22 +1837,48 @@ class MainWindow(QMainWindow):
         self._table_rebuilding = True
         self.measurement_table.setRowCount(0)
         if document is not None:
-            unit = document.calibration.unit if document.calibration else "px"
             for row, measurement in enumerate(document.measurements):
                 self.measurement_table.insertRow(row)
                 display_id = measurement.id.split("_")[-1]
                 id_item = QTableWidgetItem(display_id)
                 id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
                 self.measurement_table.setCellWidget(row, self.TABLE_COL_GROUP, self._create_group_combo(document, measurement))
-                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{(measurement.diameter_unit or 0.0):.4f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(unit))
-                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem("半自动" if measurement.mode == "snap" else "手动"))
+                self.measurement_table.setItem(row, self.TABLE_COL_KIND, QTableWidgetItem(self._format_measurement_kind(measurement)))
+                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{measurement.display_value():.4f}"))
+                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(measurement.display_unit(document.calibration)))
+                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem(self._format_measurement_mode(measurement.mode)))
                 self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(f"{measurement.confidence:.2f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(measurement.status))
+                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(self._format_measurement_status(measurement.status)))
                 self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
         self._table_rebuilding = False
         if document is not None:
             self._sync_measurement_table_selection(document)
+
+    def _format_measurement_kind(self, measurement: Measurement) -> str:
+        return "面积" if measurement.measurement_kind == "area" else "线段"
+
+    def _format_measurement_mode(self, mode: str) -> str:
+        return {
+            "manual": "手动线段",
+            "snap": "半自动吸附",
+            "polygon_area": "多边形面积",
+            "freehand_area": "自由形状面积",
+            "magic_segment": "魔棒分割",
+            "auto_instance": "实例分割",
+        }.get(mode, mode)
+
+    def _format_measurement_status(self, status: str) -> str:
+        return {
+            "manual": "手动测量",
+            "ready": "已完成",
+            "manual_review": "需人工复核",
+            "snapped": "吸附成功",
+            "edited": "已编辑",
+            "line_too_short": "测量线过短",
+            "component_not_found": "未找到目标区域",
+            "boundary_not_found": "未找到边界",
+            "auto_instance": "自动识别",
+        }.get(status, status)
 
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
         combo = MeasurementGroupComboBox()
@@ -1611,6 +1997,17 @@ class MainWindow(QMainWindow):
         else:
             self.model_status_label.setText(f"未就绪\n{health.get('reason', '') or '将使用传统算法兜底'}")
 
+    def _create_progress_dialog(self, *, title: str, label_text: str, maximum: int) -> QProgressDialog:
+        progress = QProgressDialog(label_text, "取消", 0, maximum, self)
+        progress.setWindowTitle(title)
+        progress.setWindowModality(Qt.WindowModality.ApplicationModal)
+        progress.setMinimumDuration(0)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+        progress.setValue(0)
+        progress.setMinimumWidth(420)
+        return progress
+
     def _update_action_states(self) -> None:
         document = self.current_document()
         history = document.history if document is not None else None
@@ -1637,8 +2034,70 @@ class MainWindow(QMainWindow):
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
         self.delete_group_action.setEnabled(has_deletable_group_target)
         self.delete_group_button.setEnabled(has_deletable_group_target)
+        if self._area_auto_button is not None:
+            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings))
         self.undo_action.setEnabled(bool(history and history.can_undo()))
         self.redo_action.setEnabled(bool(history and history.can_redo()))
+        self._update_magic_segment_controls()
+
+    def _magic_prompt_label_text(self, prompt_type: str) -> str:
+        return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
+
+    def _update_magic_segment_controls(self) -> None:
+        if self._magic_controls_widget is None or self._magic_controls_action is None:
+            return
+        is_visible = self._tool_mode == "magic_segment"
+        self._magic_controls_action.setVisible(is_visible)
+        self._magic_controls_widget.setVisible(is_visible)
+        if not is_visible:
+            return
+        canvas = self.current_canvas()
+        has_document = canvas is not None and canvas.document_id is not None
+        prompt_type = canvas.current_magic_segment_prompt_type() if canvas is not None else "positive"
+        if self._magic_prompt_label is not None:
+            self._magic_prompt_label.setText(self._magic_prompt_label_text(prompt_type))
+        if self._magic_toggle_button is not None:
+            self._magic_toggle_button.setEnabled(has_document)
+        if self._magic_complete_button is not None:
+            self._magic_complete_button.setEnabled(bool(canvas and canvas.has_magic_segment_preview()))
+        if self._magic_cancel_button is not None:
+            self._magic_cancel_button.setEnabled(bool(canvas and canvas.has_magic_segment_session()))
+
+    def _cycle_magic_segment_prompt_type(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return
+        prompt_type = canvas.cycle_magic_segment_prompt_type()
+        self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
+        self._focus_current_canvas()
+
+    def _commit_magic_segment_preview(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return False
+        committed = canvas.commit_magic_segment_preview()
+        if committed:
+            self.statusBar().showMessage("已创建魔棒分割面积", 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+        return committed
+
+    def _cancel_magic_segment_session(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return
+        if canvas.has_magic_segment_session():
+            canvas.clear_magic_segment_session()
+            self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+
+    def _clear_magic_segment_sessions(self, *, except_document_id: str | None = None) -> None:
+        for document_id, canvas in self._canvases.items():
+            if document_id == except_document_id:
+                continue
+            if canvas.has_magic_segment_session():
+                canvas.clear_magic_segment_session()
 
     def _group_chip_label(self, text: str, *, selected: bool) -> str:
         return f"✓ {text}" if selected else text
@@ -1738,6 +2197,7 @@ class MainWindow(QMainWindow):
                 self._app_settings,
                 line_width=line_width,
                 endpoint_radius=endpoint_radius,
+                show_area_fill=self._show_area_fill,
             )
 
         if include_measurements or include_scale:
@@ -1791,6 +2251,39 @@ class MainWindow(QMainWindow):
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
             return
+        if self._tool_mode == "magic_segment" and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() == Qt.Key.Key_R:
+                self._cycle_magic_segment_prompt_type()
+                event.accept()
+                return
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                self._commit_magic_segment_preview()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                self._cancel_magic_segment_session()
+                event.accept()
+                return
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_A:
+            if self._tool_mode == "select":
+                if self._last_non_select_tool and self._last_non_select_tool != "select":
+                    self.set_tool_mode(self._last_non_select_tool)
+            else:
+                self._last_non_select_tool = self._tool_mode
+                self.set_tool_mode("select")
+            event.accept()
+            return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() == Qt.Key.Key_V
+            and self._should_handle_group_hotkeys()
+        ):
+            self._show_area_fill = not self._show_area_fill
+            for canvas in self._canvases.values():
+                canvas.set_show_area_fill(self._show_area_fill)
+            self.statusBar().showMessage("面积填充已开启" if self._show_area_fill else "面积填充已关闭，仅显示轮廓", 3000)
+            event.accept()
+            return
         if (
             event.modifiers() == Qt.KeyboardModifier.NoModifier
             and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9
@@ -1818,4 +2311,7 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
+        if self._prompt_seg_thread is not None:
+            self._prompt_seg_thread.quit()
+            self._prompt_seg_thread.wait(1500)
         event.accept()

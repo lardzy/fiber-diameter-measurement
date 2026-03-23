@@ -7,7 +7,7 @@ from typing import Any
 import statistics
 import uuid
 
-from fdm.geometry import Line, Point, line_length
+from fdm.geometry import Line, Point, line_length, polygon_area, polygon_centroid
 
 UNCATEGORIZED_LABEL = "未分类"
 UNCATEGORIZED_COLOR = "#98A2B3"
@@ -29,6 +29,10 @@ def format_measurement_label_value(value: float, unit: str, decimals: int) -> st
     if not formatted:
         formatted = "0"
     return f"{formatted} {unit}"
+
+
+def square_unit(unit: str) -> str:
+    return f"{unit}²"
 
 
 @dataclass(slots=True)
@@ -62,6 +66,11 @@ class Calibration:
 
     def unit_to_px(self, value: float) -> float:
         return value * self.pixels_per_unit
+
+    def px_area_to_unit(self, value_px: float) -> float:
+        if self.pixels_per_unit <= 0:
+            return value_px
+        return value_px / (self.pixels_per_unit ** 2)
 
 
 @dataclass(slots=True)
@@ -160,35 +169,76 @@ class Measurement:
     image_id: str
     fiber_group_id: str | None
     mode: str
-    line_px: Line
+    measurement_kind: str = "line"
+    line_px: Line | None = None
+    polygon_px: list[Point] = field(default_factory=list)
     snapped_line_px: Line | None = None
     diameter_px: float | None = None
     diameter_unit: float | None = None
+    area_px: float | None = None
+    area_unit: float | None = None
     confidence: float = 0.0
     status: str = "ready"
     created_at: str = field(default_factory=utc_now_iso)
     debug_payload: dict[str, Any] = field(default_factory=dict)
 
     def effective_line(self) -> Line:
+        if self.line_px is None:
+            raise ValueError("Area measurements do not have line geometry.")
         return self.snapped_line_px or self.line_px
 
+    def display_value(self) -> float:
+        if self.measurement_kind == "area":
+            return self.area_unit if self.area_unit is not None else self.area_px or 0.0
+        return self.diameter_unit if self.diameter_unit is not None else self.diameter_px or 0.0
+
+    def display_unit(self, calibration: Calibration | None) -> str:
+        if self.measurement_kind == "area":
+            return square_unit(calibration.unit if calibration else "px")
+        return calibration.unit if calibration else "px"
+
+    def display_label(self, calibration: Calibration | None) -> str:
+        return format_measurement_label_value(
+            self.display_value(),
+            self.display_unit(calibration),
+            4,
+        )
+
+    def polygon_center(self) -> Point:
+        return polygon_centroid(self.polygon_px)
+
     def recalculate(self, calibration: Calibration | None) -> None:
+        if self.measurement_kind == "area":
+            self.area_px = polygon_area(self.polygon_px)
+            if calibration is None:
+                self.area_unit = self.area_px
+            else:
+                self.area_unit = calibration.px_area_to_unit(self.area_px)
+            self.diameter_px = None
+            self.diameter_unit = None
+            return
         self.diameter_px = line_length(self.effective_line())
         if calibration is None:
             self.diameter_unit = self.diameter_px
         else:
             self.diameter_unit = calibration.px_to_unit(self.diameter_px)
+        self.area_px = None
+        self.area_unit = None
 
     def to_dict(self) -> dict[str, Any]:
         return {
             "id": self.id,
             "image_id": self.image_id,
             "fiber_group_id": self.fiber_group_id,
+            "measurement_kind": self.measurement_kind,
             "mode": self.mode,
-            "line_px": self.line_px.to_dict(),
+            "line_px": self.line_px.to_dict() if self.line_px else None,
+            "polygon_px": [point.to_dict() for point in self.polygon_px],
             "snapped_line_px": self.snapped_line_px.to_dict() if self.snapped_line_px else None,
             "diameter_px": self.diameter_px,
             "diameter_unit": self.diameter_unit,
+            "area_px": self.area_px,
+            "area_unit": self.area_unit,
             "confidence": self.confidence,
             "status": self.status,
             "created_at": self.created_at,
@@ -198,15 +248,25 @@ class Measurement:
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "Measurement":
         snapped_line = payload.get("snapped_line_px")
+        line_payload = payload.get("line_px")
+        kind = str(payload.get("measurement_kind", "line"))
         return cls(
             id=str(payload["id"]),
             image_id=str(payload["image_id"]),
             fiber_group_id=payload.get("fiber_group_id"),
+            measurement_kind=kind,
             mode=str(payload["mode"]),
-            line_px=Line.from_dict(payload["line_px"]),
+            line_px=Line.from_dict(line_payload) if line_payload else None,
+            polygon_px=[
+                Point.from_dict(item)
+                for item in payload.get("polygon_px", [])
+                if isinstance(item, dict)
+            ],
             snapped_line_px=Line.from_dict(snapped_line) if snapped_line else None,
             diameter_px=payload.get("diameter_px"),
             diameter_unit=payload.get("diameter_unit"),
+            area_px=payload.get("area_px"),
+            area_unit=payload.get("area_unit"),
             confidence=float(payload.get("confidence", 0.0)),
             status=str(payload.get("status", "ready")),
             created_at=str(payload.get("created_at", utc_now_iso())),
@@ -339,6 +399,12 @@ class ImageDocument:
     def uncategorized_measurements(self) -> list[Measurement]:
         return [measurement for measurement in self.measurements if measurement.fiber_group_id is None]
 
+    def line_measurements(self) -> list[Measurement]:
+        return [measurement for measurement in self.measurements if measurement.measurement_kind == "line"]
+
+    def area_measurements(self) -> list[Measurement]:
+        return [measurement for measurement in self.measurements if measurement.measurement_kind == "area"]
+
     def uncategorized_measurement_count(self) -> int:
         return len(self.uncategorized_measurements())
 
@@ -369,6 +435,24 @@ class ImageDocument:
         self.fiber_groups.sort(key=lambda item: item.number)
         if self.active_group_id is None:
             self.active_group_id = group.id
+        return group
+
+    def find_group_by_label(self, label: str) -> FiberGroup | None:
+        token = str(label or "").strip()
+        if not token:
+            return None
+        for group in self.sorted_groups():
+            if group.label.strip() == token or group.display_name() == token:
+                return group
+        return None
+
+    def ensure_group_for_label(self, label: str, *, color: str) -> FiberGroup:
+        existing = self.find_group_by_label(label)
+        if existing is not None:
+            return existing
+        active_group_id = self.active_group_id
+        group = self.create_group(color=color, label=label)
+        self.active_group_id = active_group_id
         return group
 
     def ensure_default_group(self) -> FiberGroup:
@@ -439,6 +523,23 @@ class ImageDocument:
             if measurement.id != measurement_id
         ]
         if self.view_state.selected_measurement_id == measurement_id:
+            self.select_measurement(None)
+        self.rebuild_group_memberships()
+        self.refresh_dirty_flags()
+
+    def remove_auto_area_measurements(self) -> None:
+        auto_ids = {
+            measurement.id
+            for measurement in self.measurements
+            if measurement.measurement_kind == "area" and measurement.mode == "auto_instance"
+        }
+        if not auto_ids:
+            return
+        self.measurements = [
+            measurement for measurement in self.measurements
+            if measurement.id not in auto_ids
+        ]
+        if self.view_state.selected_measurement_id in auto_ids:
             self.select_measurement(None)
         self.rebuild_group_memberships()
         self.refresh_dirty_flags()
@@ -518,8 +619,15 @@ class ImageDocument:
     def measurement_values(self) -> list[float]:
         return [
             measurement.diameter_unit
-            for measurement in self.measurements
+            for measurement in self.line_measurements()
             if measurement.diameter_unit is not None
+        ]
+
+    def area_values(self) -> list[float]:
+        return [
+            measurement.area_unit
+            for measurement in self.area_measurements()
+            if measurement.area_unit is not None
         ]
 
     def stats(self) -> dict[str, float | None]:

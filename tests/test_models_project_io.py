@@ -4,13 +4,22 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
 from fdm.project_io import ProjectIO
-from fdm.settings import AppSettings, AppSettingsIO
+from fdm.services.area_inference import AreaInferenceService
+from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
+from fdm.settings import (
+    AppSettings,
+    AppSettingsIO,
+    application_root,
+    bundle_resource_root,
+    default_area_model_mappings,
+)
 
 
 class ModelsProjectIOTests(unittest.TestCase):
@@ -23,6 +32,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
         self.assertAlmostEqual(calibration.px_to_unit(100.0), 5.0)
         self.assertAlmostEqual(calibration.unit_to_px(2.5), 50.0)
+        self.assertAlmostEqual(calibration.px_area_to_unit(400.0), 1.0)
 
     def test_project_roundtrip(self) -> None:
         document = ImageDocument(
@@ -184,6 +194,34 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertFalse(document.hide_uncategorized_entry())
 
+    def test_auto_area_import_can_hide_uncategorized_entry_immediately(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/area_auto_hide_uncategorized.png",
+            image_size=(320, 200),
+        )
+        document.initialize_runtime_state()
+
+        self.assertTrue(document.should_show_uncategorized_entry())
+        self.assertIsNone(document.active_group_id)
+
+        group = document.ensure_group_for_label("棉", color="#1F7A8C")
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=group.id,
+            mode="auto_instance",
+            measurement_kind="area",
+            polygon_px=[Point(10, 10), Point(50, 10), Point(50, 50), Point(10, 50)],
+        )
+        document.add_measurement(measurement)
+        document.select_measurement(None)
+
+        self.assertTrue(document.hide_uncategorized_entry())
+        self.assertFalse(document.should_show_uncategorized_entry())
+        self.assertIsNotNone(document.active_group_id)
+        self.assertEqual(len(document.uncategorized_measurements()), 0)
+
     def test_app_settings_roundtrip_uses_user_writable_path(self) -> None:
         settings = AppSettings(
             show_measurement_labels=False,
@@ -210,6 +248,197 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+
+    def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
+        runtime_root = application_root() / "runtime"
+        settings = AppSettings(
+            area_weights_dir=str((runtime_root / "area-models").resolve()),
+            area_vendor_root=str((runtime_root / "area-infer" / "vendor" / "yolact").resolve()),
+            area_worker_python=str(Path(sys.executable).resolve()),
+        )
+
+        payload = settings.to_dict()
+
+        self.assertEqual(payload["area_weights_dir"], "runtime/area-models")
+        self.assertEqual(payload["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+        self.assertEqual(payload["area_worker_python"], "")
+
+    def test_app_settings_resolve_relative_area_paths_back_to_application_root(self) -> None:
+        settings = AppSettings(
+            area_weights_dir="runtime/area-models",
+            area_vendor_root="runtime/area-infer/vendor/yolact",
+            area_worker_python="",
+        )
+
+        self.assertEqual(settings.resolved_area_weights_dir(), (application_root() / "runtime" / "area-models").resolve())
+        self.assertEqual(
+            settings.resolved_area_vendor_root(),
+            (application_root() / "runtime" / "area-infer" / "vendor" / "yolact").resolve(),
+        )
+        self.assertEqual(settings.resolved_area_worker_program(), "")
+
+    def test_frozen_app_settings_use_bundle_resource_root_for_runtime_assets(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+            worker_path = dist_root / "FiberAreaWorker.exe"
+            worker_path.write_text("", encoding="utf-8")
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+            ):
+                settings = AppSettings()
+                payload = settings.to_dict()
+
+                self.assertEqual(bundle_resource_root(), internal_root.resolve())
+                self.assertEqual(payload["area_weights_dir"], "runtime/area-models")
+                self.assertEqual(payload["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+                self.assertEqual(payload["area_worker_python"], "FiberAreaWorker.exe")
+                self.assertEqual(settings.resolved_area_weights_dir(), weights_root.resolve())
+                self.assertEqual(settings.resolved_area_vendor_root(), vendor_root.resolve())
+                self.assertEqual(settings.resolved_area_worker_program(), str(worker_path.resolve()))
+
+    def test_frozen_existing_internal_paths_roundtrip_back_to_relative_strings(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+            ):
+                settings = AppSettings(
+                    area_weights_dir=str(weights_root.resolve()),
+                    area_vendor_root=str(vendor_root.resolve()),
+                    area_worker_python="",
+                )
+
+                self.assertEqual(settings.area_weights_dir, str(weights_root.resolve()))
+                self.assertEqual(settings.area_vendor_root, str(vendor_root.resolve()))
+                self.assertEqual(settings.to_dict()["area_weights_dir"], "runtime/area-models")
+                self.assertEqual(settings.to_dict()["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+
+    def test_frozen_legacy_user_settings_area_models_path_migrates_back_to_runtime_relative_default(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            dist_root = Path(tmp_dir) / "dist" / "FiberDiameterMeasurement"
+            internal_root = dist_root / "_internal"
+            runtime_root = internal_root / "runtime"
+            weights_root = runtime_root / "area-models"
+            vendor_root = runtime_root / "area-infer" / "vendor" / "yolact"
+            weights_root.mkdir(parents=True, exist_ok=True)
+            vendor_root.mkdir(parents=True, exist_ok=True)
+            exe_path = dist_root / "FiberDiameterMeasurement.exe"
+            exe_path.parent.mkdir(parents=True, exist_ok=True)
+            exe_path.write_text("", encoding="utf-8")
+            legacy_settings_root = Path(tmp_dir) / "localappdata" / "FiberDiameterMeasurement"
+            legacy_weights_root = legacy_settings_root / "area-models"
+            legacy_weights_root.mkdir(parents=True, exist_ok=True)
+
+            with (
+                patch.object(sys, "frozen", True, create=True),
+                patch.object(sys, "platform", "win32"),
+                patch.object(sys, "_MEIPASS", str(internal_root), create=True),
+                patch.object(sys, "executable", str(exe_path), create=True),
+                patch.dict("os.environ", {"LOCALAPPDATA": str(Path(tmp_dir) / "localappdata")}, clear=False),
+            ):
+                settings = AppSettings.from_dict({"area_weights_dir": str(legacy_weights_root.resolve())})
+
+                self.assertEqual(settings.area_weights_dir, "runtime/area-models")
+                self.assertEqual(settings.resolved_area_weights_dir(), weights_root.resolve())
+
+    def test_area_inference_service_uses_auto_worker_when_settings_worker_is_blank(self) -> None:
+        service = AreaInferenceService()
+        settings = AppSettings(area_worker_python="")
+
+        worker_command = service._worker_command(settings)
+
+        self.assertEqual(worker_command[0], sys.executable)
+        self.assertTrue(worker_command[1].endswith("area_worker.py"))
+
+    def test_app_settings_migrate_missing_absolute_worker_path_back_to_auto(self) -> None:
+        payload = {
+            "area_worker_python": str((Path("/tmp") / "missing-python-for-area-worker.exe").resolve()),
+        }
+
+        settings = AppSettings.from_dict(payload)
+
+        self.assertEqual(settings.area_worker_python, "")
+
+    def test_area_measurement_roundtrip_keeps_polygon_and_area_unit(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_area_roundtrip.png",
+            image_size=(200, 160),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=10.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="polygon_area",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "area_roundtrip.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        measurement = loaded.documents[0].measurements[0]
+        self.assertEqual(measurement.measurement_kind, "area")
+        self.assertEqual(len(measurement.polygon_px), 4)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 200.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 2.0)
+
+    def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
+        self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])
+
+    def test_normalize_area_result_label_swaps_known_reversed_models(self) -> None:
+        self.assertEqual(normalize_area_result_label("棉-莱赛尔", "棉"), "莱赛尔")
+        self.assertEqual(normalize_area_result_label("棉-莱赛尔", "莱赛尔"), "棉")
+        self.assertEqual(normalize_area_result_label("粘纤-莱赛尔", "粘纤"), "莱赛尔")
+        self.assertEqual(normalize_area_result_label("粘纤-莱赛尔", "莱赛尔"), "粘纤")
+
+    def test_normalize_area_result_label_keeps_alias_and_non_swapped_models(self) -> None:
+        self.assertEqual(normalize_area_result_label("棉-粘-莱-莫", "粘"), "粘纤")
+        self.assertEqual(normalize_area_result_label("棉-莫代尔", "莫"), "莫代尔")
+        self.assertEqual(normalize_area_result_label("棉-莫代尔", "棉"), "棉")
+
+    def test_default_area_model_mappings_match_reference_defaults(self) -> None:
+        mappings = default_area_model_mappings()
+        mapping_dict = {item.model_name: item.model_file for item in mappings}
+        self.assertEqual(mapping_dict["棉-莱赛尔"], "b_c1_1.3.pth")
+        self.assertEqual(mapping_dict["粘纤-莱赛尔"], "b_v1_1.3.pth")
+        self.assertEqual(mapping_dict["棉-粘-莱-莫"], "b_cvlm_1.3.pth")
 
 
 if __name__ == "__main__":

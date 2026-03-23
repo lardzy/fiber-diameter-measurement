@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QListView
+    from PySide6.QtWidgets import QApplication, QListView, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -27,12 +27,13 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog
+    from fdm.ui.dialogs import SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
+    ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -329,7 +330,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._populate_measurement_table(document)
             headers = [window.measurement_table.horizontalHeaderItem(index).text() for index in range(window.measurement_table.columnCount())]
 
-            self.assertEqual(headers, ["种类", "结果", "单位", "模式", "置信度", "状态", "ID"])
+            self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
             self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
         finally:
             window.close()
@@ -339,12 +340,160 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertIsNotNone(window._file_toolbar)
             self.assertIsNotNone(window._measure_toolbar)
-            action_texts = [action.text() for action in window._measure_toolbar.actions()]
-            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "比例尺标定", "文字"])
-            self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
+            action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
+            self.assertEqual(
+                action_texts,
+                ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+            )
+            visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
+            self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
         finally:
+            window.close()
+
+    def test_magic_segment_controls_are_only_visible_in_magic_mode(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._magic_controls_widget)
+            self.assertIsNotNone(window._magic_controls_action)
+            self.assertFalse(window._magic_controls_action.isVisible())
+
+            window.set_tool_mode("magic_segment")
+            self.assertTrue(window._magic_controls_action.isVisible())
+
+            window.set_tool_mode("select")
+            self.assertFalse(window._magic_controls_action.isVisible())
+        finally:
+            window.close()
+
+    def test_shortcut_help_dialog_opens_from_help_action(self) -> None:
+        window = MainWindow()
+        dialogs: list[ShortcutHelpDialog] = []
+
+        def fake_exec(dialog_self) -> int:
+            dialogs.append(dialog_self)
+            return dialog_self.DialogCode.Accepted
+
+        try:
+            with patch.object(ShortcutHelpDialog, "exec", fake_exec):
+                window.open_shortcut_help_dialog()
+            self.assertEqual(len(dialogs), 1)
+            self.assertIn("R", dialogs[0]._content.toPlainText())
+            self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_right_panel_uses_vertical_splitter_for_resizable_measurement_area(self) -> None:
+        window = MainWindow()
+        try:
+            splitters = window.findChildren(QSplitter)
+            self.assertTrue(any(splitter.orientation() == Qt.Orientation.Vertical for splitter in splitters))
+        finally:
+            window.close()
+
+    def test_polygon_area_tool_commits_when_clicking_first_point(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("polygon_area")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        points = [Point(20, 20), Point(100, 20), Point(90, 90)]
+        for point in points:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(points[0]), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "polygon_area")
+        self.assertEqual(commits[0][2]["measurement_kind"], "area")
+        self.assertEqual(len(commits[0][2]["polygon_px"]), 3)
+
+    def test_freehand_area_tool_commits_on_release(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("freehand_area")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(100, 20)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(100, 80)), button=Qt.MouseButton.LeftButton))
+        canvas._freehand_last_sample_at -= 1.0
+        canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(25, 85)), button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(Point(25, 85)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "freehand_area")
+        self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
+
+    def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        requests: list[tuple[str, object]] = []
+        commits: list[tuple[str, str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][0], document.id)
+        self.assertEqual(len(requests[0][1]["positive_points"]), 1)
+        self.assertEqual(len(requests[0][1]["negative_points"]), 0)
+
+        request_id = requests[0][1]["request_id"]
+        canvas.apply_magic_segment_result(
+            request_id,
+            [Point(20, 20), Point(90, 18), Point(92, 76), Point(24, 80)],
+        )
+
+        self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertTrue(canvas.commit_magic_segment_preview())
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+        self.assertEqual(commits[0][2]["measurement_kind"], "area")
+
+    def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_segment.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode("magic_segment")
+
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "positive")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
+
+            canvas._magic_segment.request_id = 1
+            canvas.apply_magic_segment_result(
+                1,
+                [Point(24, 24), Point(88, 22), Point(92, 76), Point(26, 80)],
+            )
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "magic_segment")
+
+            canvas.set_tool_mode("magic_segment")
+            canvas._magic_segment.positive_points = [Point(40, 40)]
+            self.assertTrue(canvas.has_magic_segment_session())
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+            self.assertFalse(canvas.has_magic_segment_session())
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
@@ -506,6 +655,36 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_settings_dialog_uses_separate_area_models_tab(self) -> None:
+        settings = AppSettings()
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            self.assertEqual(dialog._tabs.count(), 3)
+            self.assertEqual(dialog._tabs.tabText(1), "面积识别")
+            self.assertLessEqual(dialog.width(), 720)
+            self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
+            self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
+            self.assertEqual(dialog._area_worker_python_edit.text(), "")
+        finally:
+            dialog.close()
+
+    def test_main_window_progress_dialog_uses_standard_qprogressdialog_with_width(self) -> None:
+        window = MainWindow()
+        try:
+            dialog = window._create_progress_dialog(
+                title="面积自动识别",
+                label_text="正在识别 (1/1)\nexample.jpg",
+                maximum=1,
+            )
+            self.assertEqual(dialog.windowTitle(), "面积自动识别")
+            self.assertEqual(dialog.labelText(), "正在识别 (1/1)\nexample.jpg")
+            self.assertGreaterEqual(dialog.minimumWidth(), 420)
+            self.assertEqual(dialog.maximum(), 1)
+            self.assertEqual(dialog.value(), 0)
+            dialog.close()
+        finally:
+            window.close()
+
     def test_number_hotkey_switches_active_group_without_changing_measurement_group(self) -> None:
         window = MainWindow()
         try:
@@ -570,6 +749,21 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(combo.focusPolicy(), Qt.FocusPolicy.NoFocus)
             self.assertEqual(combo.currentIndex(), current_index)
             self.assertTrue(event.ignored)
+        finally:
+            window.close()
+
+    def test_a_shortcut_toggles_between_select_and_previous_tool(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window._tool_mode, "select")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "select")
+
+            window.set_tool_mode("snap")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "select")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "snap")
         finally:
             window.close()
 

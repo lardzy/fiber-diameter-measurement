@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 import csv
+import json
 import math
 import zipfile
 from xml.sax.saxutils import escape
@@ -186,6 +187,8 @@ class ExportService:
                         ("标尺来源", document.calibration.source_label if document.calibration else ""),
                         ("单位", document.calibration.unit if document.calibration else "px"),
                         ("测量数量", len(document.measurements)),
+                        ("线段数量", len(document.line_measurements())),
+                        ("面积数量", len(document.area_measurements())),
                         ("纤维种类数量", len(document.fiber_groups)),
                         ("当前激活种类编号", active_group.number if active_group else None),
                         ("当前激活种类名称", active_group.label if active_group else ""),
@@ -231,35 +234,65 @@ class ExportService:
         rows: list[dict[str, object]] = []
         for document in documents:
             group_lookup = {group.id: group for group in document.fiber_groups}
-            unit = document.calibration.unit if document.calibration else "px"
             for measurement in document.measurements:
-                effective_line = measurement.effective_line()
                 group = group_lookup.get(measurement.fiber_group_id or "")
-                rows.append(
-                    OrderedDict(
+                base_row = OrderedDict(
+                    [
+                        ("纤维种类", group.display_name() if group else UNCATEGORIZED_LABEL),
+                        ("类型", self._format_measurement_kind(measurement.measurement_kind)),
+                        ("结果", round(measurement.display_value(), 6)),
+                        ("单位", measurement.display_unit(document.calibration)),
+                        ("标尺信息", self._format_calibration_info(document)),
+                        ("模式", self._format_measurement_mode(measurement.mode)),
+                        ("状态", self._format_measurement_status(measurement.status)),
+                        ("置信度", round(measurement.confidence, 4)),
+                    ]
+                )
+                if measurement.measurement_kind == "line":
+                    effective_line = measurement.effective_line()
+                    base_row.update(
                         [
-                            ("纤维种类", group.display_name() if group else UNCATEGORIZED_LABEL),
-                            ("测量直径", round(measurement.diameter_unit or 0.0, 6)),
-                            ("单位", unit),
-                            ("标尺信息", self._format_calibration_info(document)),
-                            ("测量方式", self._format_measurement_mode(measurement.mode)),
-                            ("状态", self._format_measurement_status(measurement.status)),
-                            ("置信度", round(measurement.confidence, 4)),
                             ("起点X(px)", round(effective_line.start.x, 3)),
                             ("起点Y(px)", round(effective_line.start.y, 3)),
                             ("终点X(px)", round(effective_line.end.x, 3)),
                             ("终点Y(px)", round(effective_line.end.y, 3)),
                             ("像素直径(px)", round(measurement.diameter_px or 0.0, 6)),
-                            ("创建时间", measurement.created_at),
-                            ("图片路径", document.path),
-                            ("图片编号", document.id),
-                            ("测量记录ID", measurement.id),
-                            ("纤维种类ID", measurement.fiber_group_id or ""),
-                            ("纤维种类编号", group.number if group else None),
-                            ("纤维种类名称", group.label if group else UNCATEGORIZED_LABEL),
-                            ("纤维种类颜色", group.color if group else UNCATEGORIZED_COLOR),
+                            ("多边形点数", None),
+                            ("多边形顶点JSON", ""),
+                            ("面积(px²)", None),
                         ]
                     )
+                else:
+                    polygon_json = [
+                        {"x": round(point.x, 3), "y": round(point.y, 3)}
+                        for point in measurement.polygon_px
+                    ]
+                    base_row.update(
+                        [
+                            ("起点X(px)", None),
+                            ("起点Y(px)", None),
+                            ("终点X(px)", None),
+                            ("终点Y(px)", None),
+                            ("像素直径(px)", None),
+                            ("多边形点数", len(measurement.polygon_px)),
+                            ("多边形顶点JSON", json.dumps(polygon_json, ensure_ascii=False)),
+                            ("面积(px²)", round(measurement.area_px or 0.0, 6)),
+                        ]
+                    )
+                base_row.update(
+                    [
+                        ("创建时间", measurement.created_at),
+                        ("图片路径", document.path),
+                        ("图片编号", document.id),
+                        ("测量记录ID", measurement.id),
+                        ("纤维种类ID", measurement.fiber_group_id or ""),
+                        ("纤维种类编号", group.number if group else None),
+                        ("纤维种类名称", group.label if group else UNCATEGORIZED_LABEL),
+                        ("纤维种类颜色", group.color if group else UNCATEGORIZED_COLOR),
+                    ]
+                )
+                rows.append(
+                    base_row
                 )
         return rows
 
@@ -457,7 +490,17 @@ class ExportService:
         return {
             "manual": "手动测量",
             "snap": "半自动吸附",
+            "polygon_area": "多边形面积",
+            "freehand_area": "自由形状面积",
+            "magic_segment": "魔棒分割",
+            "auto_instance": "实例分割",
         }.get(mode, mode)
+
+    def _format_measurement_kind(self, kind: str) -> str:
+        return {
+            "line": "线段",
+            "area": "面积",
+        }.get(kind, kind)
 
     def _format_measurement_status(self, status: str) -> str:
         return {

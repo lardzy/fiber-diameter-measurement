@@ -8,7 +8,9 @@ src/fdm/history.py
 src/fdm/models.py
 src/fdm/project_io.py
 src/fdm/raster.py
+src/fdm/settings.py
 src/fdm/services/__init__.py
+src/fdm/services/area_inference.py
 src/fdm/services/export_service.py
 src/fdm/services/model_provider.py
 src/fdm/services/sidecar_io.py
@@ -19,6 +21,9 @@ src/fdm/ui/dialogs.py
 src/fdm/ui/icons.py
 src/fdm/ui/image_loader.py
 src/fdm/ui/main_window.py
+src/fdm/ui/rendering.py
+src/fdm/ui/widgets.py
+src/fdm/workers/area_worker.py
 src/fiber_diameter_measurement.egg-info/PKG-INFO
 src/fiber_diameter_measurement.egg-info/SOURCES.txt
 src/fiber_diameter_measurement.egg-info/dependency_links.txt

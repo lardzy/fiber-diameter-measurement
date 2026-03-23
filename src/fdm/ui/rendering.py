@@ -55,10 +55,8 @@ def measurement_display_text_with_settings(
     document: ImageDocument,
     settings: AppSettings | None,
 ) -> str:
-    value = measurement.diameter_unit
-    if value is None:
-        value = measurement.diameter_px or 0.0
-    unit = document.calibration.unit if document.calibration else "px"
+    value = measurement.display_value()
+    unit = measurement.display_unit(document.calibration)
     decimals = settings.measurement_label_decimals if settings is not None else 4
     return format_measurement_label_value(value, unit, decimals)
 
@@ -140,8 +138,24 @@ def draw_measurements(
     line_width: float,
     endpoint_radius: float,
     selected_measurement_id: str | None = None,
+    show_area_fill: bool = True,
+    show_area_handles: bool = False,
 ) -> None:
     for measurement in document.measurements:
+        if measurement.measurement_kind == "area":
+            draw_area_measurement(
+                painter,
+                document,
+                measurement,
+                image_to_output,
+                settings,
+                line_width=line_width,
+                endpoint_radius=endpoint_radius,
+                selected=measurement.id == selected_measurement_id,
+                show_fill=show_area_fill,
+                show_handles=show_area_handles and measurement.id == selected_measurement_id,
+            )
+            continue
         line = measurement.effective_line()
         start_point = image_to_output(line.start)
         end_point = image_to_output(line.end)
@@ -180,6 +194,53 @@ def draw_measurements(
         )
         if settings.show_measurement_labels:
             draw_measurement_label(painter, measurement, document, settings, start_point, end_point)
+
+
+def draw_area_measurement(
+    painter: QPainter,
+    document: ImageDocument,
+    measurement: Measurement,
+    image_to_output,
+    settings: AppSettings,
+    *,
+    line_width: float,
+    endpoint_radius: float,
+    selected: bool,
+    show_fill: bool,
+    show_handles: bool,
+) -> None:
+    if len(measurement.polygon_px) < 3:
+        return
+    color = measurement_color(document, measurement, settings)
+    polygon = [image_to_output(point) for point in measurement.polygon_px]
+    outline_width = max(line_width * (1.65 if selected else 1.0), 1.8)
+    if show_fill:
+        fill = QColor(color)
+        fill.setAlpha(80 if not selected else 110)
+        painter.setBrush(fill)
+    else:
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.setPen(QPen(QColor("#0B0B0B"), max(outline_width * 1.9, outline_width + 1.0), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+    painter.drawPolygon(polygon)
+    painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+    painter.drawPolygon(polygon)
+    if not show_handles:
+        return
+    for point in polygon:
+        _draw_circle_endpoint(painter, point, color, endpoint_radius * 0.95)
+    center_point = image_to_output(measurement.polygon_center())
+    painter.setBrush(QColor("#FFFFFF"))
+    painter.setPen(QPen(QColor("#0B0B0B"), 1.6))
+    painter.drawEllipse(center_point, endpoint_radius * 0.9, endpoint_radius * 0.9)
+    painter.setPen(QPen(QColor("#0B0B0B"), 1.3))
+    painter.drawLine(
+        QPointF(center_point.x() - endpoint_radius * 0.45, center_point.y()),
+        QPointF(center_point.x() + endpoint_radius * 0.45, center_point.y()),
+    )
+    painter.drawLine(
+        QPointF(center_point.x(), center_point.y() - endpoint_radius * 0.45),
+        QPointF(center_point.x(), center_point.y() + endpoint_radius * 0.45),
+    )
 
 
 def draw_measurement_label(
