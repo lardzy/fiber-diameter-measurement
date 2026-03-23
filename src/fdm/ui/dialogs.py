@@ -20,6 +20,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
+    QPlainTextEdit,
     QRadioButton,
     QSpinBox,
     QHeaderView,
@@ -219,6 +220,53 @@ class ExportOptionsDialog(QDialog):
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
             render_mode=self._render_mode_combo.currentData(),
         )
+
+
+class ShortcutHelpDialog(QDialog):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("快捷键说明")
+        self.resize(560, 460)
+
+        self._content = QPlainTextEdit()
+        self._content.setReadOnly(True)
+        self._content.setPlainText(
+            "\n".join(
+                [
+                    "基础操作",
+                    "Ctrl+O  打开图片",
+                    "Ctrl+S  保存项目",
+                    "Ctrl+W  关闭当前图片",
+                    "Ctrl+Shift+W  关闭所有图片",
+                    "Ctrl+Z  撤回",
+                    "Ctrl+Shift+Z  重做",
+                    "Delete / Backspace  删除选中对象",
+                    "",
+                    "视图与工具",
+                    "Space  临时抓手 / 平移画布",
+                    "A  在当前工具与浏览工具之间切换",
+                    "V  切换面积填充显示",
+                    "1-9  切换当前激活纤维类别",
+                    "",
+                    "面积与魔棒",
+                    "R  在正采样点 / 负采样点之间切换",
+                    "Enter / F  完成当前魔棒遮罩",
+                    "Esc  放弃当前多边形、自由形状或魔棒草稿",
+                    "",
+                    "说明",
+                    "正采样点用于告诉模型“这里属于目标区域”。",
+                    "负采样点用于告诉模型“这里不属于目标区域”。",
+                ]
+            )
+        )
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Close)
+        buttons.rejected.connect(self.reject)
+        buttons.accepted.connect(self.accept)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(self._content)
+        layout.addWidget(buttons)
 
 
 class SettingsDialog(QDialog):

@@ -492,6 +492,7 @@ class ExportService:
             "snap": "半自动吸附",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
+            "magic_segment": "魔棒分割",
             "auto_instance": "实例分割",
         }.get(mode, mode)
 

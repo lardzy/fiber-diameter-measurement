@@ -27,12 +27,13 @@ from fdm.services.export_service import ExportImageRenderMode
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog
+    from fdm.ui.dialogs import SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
+    ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -339,12 +340,50 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertIsNotNone(window._file_toolbar)
             self.assertIsNotNone(window._measure_toolbar)
-            action_texts = [action.text() for action in window._measure_toolbar.actions()]
-            self.assertEqual(action_texts, ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "比例尺标定", "文字"])
-            self.assertTrue(all(not action.icon().isNull() for action in window._measure_toolbar.actions()))
+            action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
+            self.assertEqual(
+                action_texts,
+                ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+            )
+            visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
+            self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
         finally:
+            window.close()
+
+    def test_magic_segment_controls_are_only_visible_in_magic_mode(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._magic_controls_widget)
+            self.assertIsNotNone(window._magic_controls_action)
+            self.assertFalse(window._magic_controls_action.isVisible())
+
+            window.set_tool_mode("magic_segment")
+            self.assertTrue(window._magic_controls_action.isVisible())
+
+            window.set_tool_mode("select")
+            self.assertFalse(window._magic_controls_action.isVisible())
+        finally:
+            window.close()
+
+    def test_shortcut_help_dialog_opens_from_help_action(self) -> None:
+        window = MainWindow()
+        dialogs: list[ShortcutHelpDialog] = []
+
+        def fake_exec(dialog_self) -> int:
+            dialogs.append(dialog_self)
+            return dialog_self.DialogCode.Accepted
+
+        try:
+            with patch.object(ShortcutHelpDialog, "exec", fake_exec):
+                window.open_shortcut_help_dialog()
+            self.assertEqual(len(dialogs), 1)
+            self.assertIn("R", dialogs[0]._content.toPlainText())
+            self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
+        finally:
+            for dialog in dialogs:
+                dialog.close()
             window.close()
 
     def test_right_panel_uses_vertical_splitter_for_resizable_measurement_area(self) -> None:
@@ -389,6 +428,73 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "freehand_area")
         self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
+
+    def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        requests: list[tuple[str, object]] = []
+        commits: list[tuple[str, str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][0], document.id)
+        self.assertEqual(len(requests[0][1]["positive_points"]), 1)
+        self.assertEqual(len(requests[0][1]["negative_points"]), 0)
+
+        request_id = requests[0][1]["request_id"]
+        canvas.apply_magic_segment_result(
+            request_id,
+            [Point(20, 20), Point(90, 18), Point(92, 76), Point(24, 80)],
+        )
+
+        self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertTrue(canvas.commit_magic_segment_preview())
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+        self.assertEqual(commits[0][2]["measurement_kind"], "area")
+
+    def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_segment.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode("magic_segment")
+
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "positive")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
+
+            canvas._magic_segment.request_id = 1
+            canvas.apply_magic_segment_result(
+                1,
+                [Point(24, 24), Point(88, 22), Point(92, 76), Point(26, 80)],
+            )
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "magic_segment")
+
+            canvas.set_tool_mode("magic_segment")
+            canvas._magic_segment.positive_points = [Point(40, 40)]
+            self.assertTrue(canvas.has_magic_segment_session())
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+            self.assertFalse(canvas.has_magic_segment_session())
+        finally:
+            window._reset_workspace()
+            window.close()
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()

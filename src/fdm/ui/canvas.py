@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 import time
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
@@ -28,6 +29,22 @@ from fdm.ui.rendering import (
 )
 
 
+@dataclass(slots=True)
+class PromptSegmentationSession:
+    prompt_type: str = "positive"
+    positive_points: list[Point] = field(default_factory=list)
+    negative_points: list[Point] = field(default_factory=list)
+    preview_polygon: list[Point] = field(default_factory=list)
+    request_id: int = 0
+    busy: bool = False
+
+    def has_points(self) -> bool:
+        return bool(self.positive_points or self.negative_points)
+
+    def has_preview(self) -> bool:
+        return len(self.preview_polygon) >= 3
+
+
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
@@ -36,6 +53,8 @@ class DocumentCanvas(QWidget):
     textSelected = Signal(str, object)
     textMoved = Signal(str, str, object)
     scaleAnchorPicked = Signal(str, object)
+    magicSegmentRequested = Signal(str, object)
+    magicSegmentSessionChanged = Signal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -77,6 +96,7 @@ class DocumentCanvas(QWidget):
         self._scale_anchor_pick_active = False
         self._scale_anchor_preview_point: Point | None = None
         self._show_area_fill = True
+        self._magic_segment = PromptSegmentationSession()
 
     @property
     def document_id(self) -> str | None:
@@ -85,6 +105,7 @@ class DocumentCanvas(QWidget):
     def set_document(self, document: ImageDocument, image: QImage) -> None:
         self._document = document
         self._image = image
+        self._magic_segment = PromptSegmentationSession()
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -94,6 +115,8 @@ class DocumentCanvas(QWidget):
     def set_tool_mode(self, mode: str) -> None:
         if mode != self._tool_mode:
             self._cancel_area_drawing()
+            if self._tool_mode == "magic_segment" or mode != "magic_segment":
+                self.clear_magic_segment_session()
         self._tool_mode = mode
         self._update_cursor()
         self.update()
@@ -105,6 +128,58 @@ class DocumentCanvas(QWidget):
     def set_show_area_fill(self, visible: bool) -> None:
         self._show_area_fill = visible
         self.update()
+
+    def current_magic_segment_prompt_type(self) -> str:
+        return self._magic_segment.prompt_type
+
+    def has_magic_segment_session(self) -> bool:
+        return self._magic_segment.has_points() or self._magic_segment.has_preview()
+
+    def has_magic_segment_preview(self) -> bool:
+        return self._magic_segment.has_preview()
+
+    def set_magic_segment_prompt_type(self, prompt_type: str) -> None:
+        self._magic_segment.prompt_type = "negative" if prompt_type == "negative" else "positive"
+        self._emit_magic_segment_session_changed()
+
+    def cycle_magic_segment_prompt_type(self) -> str:
+        self._magic_segment.prompt_type = "negative" if self._magic_segment.prompt_type == "positive" else "positive"
+        self._emit_magic_segment_session_changed()
+        return self._magic_segment.prompt_type
+
+    def apply_magic_segment_result(self, request_id: int, polygon_points: list[Point]) -> None:
+        if request_id != self._magic_segment.request_id:
+            return
+        self._magic_segment.busy = False
+        self._magic_segment.preview_polygon = list(polygon_points)
+        self._emit_magic_segment_session_changed()
+
+    def fail_magic_segment_result(self, request_id: int) -> None:
+        if request_id != self._magic_segment.request_id:
+            return
+        self._magic_segment.busy = False
+        self._magic_segment.preview_polygon = []
+        self._emit_magic_segment_session_changed()
+
+    def clear_magic_segment_session(self) -> None:
+        self._magic_segment = PromptSegmentationSession()
+        self._emit_magic_segment_session_changed()
+
+    def commit_magic_segment_preview(self) -> bool:
+        document_id = self._document.id if self._document is not None else None
+        polygon_points = list(self._magic_segment.preview_polygon)
+        self.clear_magic_segment_session()
+        if document_id is None or len(polygon_points) < 3:
+            return False
+        self.lineCommitted.emit(
+            document_id,
+            "magic_segment",
+            {
+                "measurement_kind": "area",
+                "polygon_px": polygon_points,
+            },
+        )
+        return True
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
@@ -168,6 +243,10 @@ class DocumentCanvas(QWidget):
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
             self.set_temporary_grab_pressed(True)
+            event.accept()
+            return
+        if event.key() == Qt.Key.Key_Escape and self._tool_mode == "magic_segment" and self.has_magic_segment_session():
+            self.clear_magic_segment_session()
             event.accept()
             return
         if event.key() == Qt.Key.Key_Escape and (self._drawing_polygon_points or self._drawing_freehand_active):
@@ -250,6 +329,32 @@ class DocumentCanvas(QWidget):
             if self._point_in_image(image_point):
                 self._scale_anchor_preview_point = self._clamp_to_image(image_point, pixel_center=False)
                 self.scaleAnchorPicked.emit(self._document.id, self._scale_anchor_preview_point)
+            return
+
+        if self._tool_mode == "magic_segment":
+            if not self._point_in_image(image_point):
+                return
+            self._document.select_measurement(None)
+            self._document.select_text_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            if self._magic_segment.prompt_type == "negative":
+                self._magic_segment.negative_points.append(point)
+            else:
+                self._magic_segment.positive_points.append(point)
+            self._magic_segment.request_id += 1
+            self._magic_segment.busy = True
+            self._magic_segment.preview_polygon = []
+            self.magicSegmentRequested.emit(
+                self._document.id,
+                {
+                    "request_id": self._magic_segment.request_id,
+                    "positive_points": list(self._magic_segment.positive_points),
+                    "negative_points": list(self._magic_segment.negative_points),
+                },
+            )
+            self._emit_magic_segment_session_changed()
             return
 
         if self._tool_mode == "text":
@@ -645,6 +750,9 @@ class DocumentCanvas(QWidget):
                     selected_text_id=annotation.id,
                 )
 
+        if self._tool_mode == "magic_segment":
+            self._draw_magic_segment_preview(painter)
+
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
             draw_preview_scale_anchor(painter, self.image_to_widget(preview_point))
@@ -791,6 +899,57 @@ class DocumentCanvas(QWidget):
             or self._scale_anchor_pick_active
         )
 
+    def _draw_magic_segment_preview(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        if len(self._magic_segment.preview_polygon) >= 3:
+            polygon = QPolygonF([self.image_to_widget(point) for point in self._magic_segment.preview_polygon])
+            if self._show_area_fill:
+                painter.setBrush(QColor(52, 211, 153, 72))
+            else:
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.drawPolygon(polygon)
+            painter.setPen(QPen(QColor("#34D399"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.drawPolygon(polygon)
+
+        self._draw_magic_prompt_points(painter, self._magic_segment.positive_points, QColor("#34D399"), positive=True)
+        self._draw_magic_prompt_points(painter, self._magic_segment.negative_points, QColor("#F87171"), positive=False)
+
+        prompt_text = "当前提示：负采样点" if self._magic_segment.prompt_type == "negative" else "当前提示：正采样点"
+        if self._magic_segment.busy:
+            prompt_text += " / 推理中..."
+        rect = QRectF(14.0, 14.0, 240.0, 32.0)
+        painter.fillRect(rect, QColor(16, 24, 32, 188))
+        painter.setPen(QPen(QColor("#FFFFFF"), 1))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, prompt_text)
+
+    def _draw_magic_prompt_points(
+        self,
+        painter: QPainter,
+        points: list[Point],
+        color: QColor,
+        *,
+        positive: bool,
+    ) -> None:
+        for point in points:
+            widget_point = self.image_to_widget(point)
+            painter.setBrush(QColor("#0B0B0B"))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(widget_point, 5.6, 5.6)
+            painter.setBrush(color)
+            painter.drawEllipse(widget_point, 3.6, 3.6)
+            painter.setPen(QPen(QColor("#FFFFFF"), 1.5))
+            painter.drawLine(
+                QPointF(widget_point.x() - 2.4, widget_point.y()),
+                QPointF(widget_point.x() + 2.4, widget_point.y()),
+            )
+            if positive:
+                painter.drawLine(
+                    QPointF(widget_point.x(), widget_point.y() - 2.4),
+                    QPointF(widget_point.x(), widget_point.y() + 2.4),
+                )
+
     def _cancel_area_drawing(self) -> None:
         self._drawing_polygon_points = []
         self._area_hover_point = None
@@ -844,6 +1003,11 @@ class DocumentCanvas(QWidget):
         self._drag_area_origin_points = list(measurement.polygon_px)
         self._drag_area_preview_points = list(measurement.polygon_px)
         self._drag_area_press_point = image_point
+
+    def _emit_magic_segment_session_changed(self) -> None:
+        self.update()
+        if self._document is not None:
+            self.magicSegmentSessionChanged.emit(self._document.id)
 
     def _update_cursor(self) -> None:
         if self._panning:

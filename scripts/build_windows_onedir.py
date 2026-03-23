@@ -22,6 +22,15 @@ def check_area_runtime_dependencies() -> list[str]:
     return missing
 
 
+def check_magic_segment_runtime_assets(root: Path) -> list[str]:
+    runtime_root = root / "runtime" / "segment-anything" / "edge_sam"
+    missing: list[str] = []
+    for filename in ("edge_sam_encoder.onnx", "edge_sam_decoder.onnx"):
+        if not (runtime_root / filename).exists():
+            missing.append(filename)
+    return missing
+
+
 def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     root = Path(__file__).resolve().parents[1]
     spec_path = root / "packaging" / "pyinstaller" / "fdm_onedir.spec"
@@ -51,6 +60,14 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
         )
         print(
             "If you need area auto-recognition in the packaged app, install them before building.",
+            file=sys.stderr,
+        )
+
+    missing_magic_assets = check_magic_segment_runtime_assets(root)
+    if missing_magic_assets:
+        print(
+            "Warning: the magic segmentation tool may be unavailable because these runtime assets are missing: "
+            + ", ".join(missing_magic_assets),
             file=sys.stderr,
         )
 

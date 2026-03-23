@@ -56,6 +56,7 @@ from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOve
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
+from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
@@ -65,10 +66,12 @@ from fdm.ui.dialogs import (
     CalibrationPresetDialog,
     ExportOptionsDialog,
     SettingsDialog,
+    ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
 
@@ -138,8 +141,16 @@ class MainWindow(QMainWindow):
         self._area_infer_worker: AreaBatchInferenceWorker | None = None
         self._area_infer_progress_dialog: QProgressDialog | None = None
         self._area_infer_state: AreaInferenceBatchState | None = None
+        self._prompt_seg_thread: QThread | None = None
+        self._prompt_seg_worker: PromptSegmentationWorker | None = None
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
+        self._magic_controls_widget: QWidget | None = None
+        self._magic_controls_action: QAction | None = None
+        self._magic_prompt_label: QLabel | None = None
+        self._magic_toggle_button: QToolButton | None = None
+        self._magic_complete_button: QToolButton | None = None
+        self._magic_cancel_button: QToolButton | None = None
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -245,6 +256,9 @@ class MainWindow(QMainWindow):
         self.settings_action.setIcon(themed_icon("rename", color="#D7E3FC"))
         self.settings_action.triggered.connect(self.open_settings_dialog)
 
+        self.shortcuts_help_action = QAction("快捷键说明", self)
+        self.shortcuts_help_action.triggered.connect(self.open_shortcut_help_dialog)
+
         self.export_actions: list[QAction] = []
         self.export_actions.append(
             self._make_export_action(
@@ -296,6 +310,7 @@ class MainWindow(QMainWindow):
             ("snap", "半自动吸附"),
             ("polygon_area", "多边形面积"),
             ("freehand_area", "自由形状面积"),
+            ("magic_segment", "魔棒分割"),
             ("calibration", "比例尺标定"),
             ("text", "文字"),
         ]:
@@ -310,6 +325,7 @@ class MainWindow(QMainWindow):
         self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
         self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
+        self._mode_actions["magic_segment"].setIcon(themed_icon("magic_segment", color="#D96C75"))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["text"].setIcon(themed_icon("rename", color="#9C89B8"))
 
@@ -345,6 +361,9 @@ class MainWindow(QMainWindow):
         view_menu.addSeparator()
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.actual_size_action)
+
+        help_menu = self.menuBar().addMenu("帮助")
+        help_menu.addAction(self.shortcuts_help_action)
 
     def _build_toolbar(self) -> None:
         file_toolbar = QToolBar("文件工具栏")
@@ -407,8 +426,43 @@ class MainWindow(QMainWindow):
         measure_toolbar.addAction(self._mode_actions["snap"])
         measure_toolbar.addAction(self._mode_actions["polygon_area"])
         measure_toolbar.addAction(self._mode_actions["freehand_area"])
+        measure_toolbar.addAction(self._mode_actions["magic_segment"])
         measure_toolbar.addAction(self._mode_actions["calibration"])
         measure_toolbar.addAction(self._mode_actions["text"])
+        measure_toolbar.addSeparator()
+        self._magic_controls_widget = self._build_magic_segment_controls()
+        self._magic_controls_action = measure_toolbar.addWidget(self._magic_controls_widget)
+        self._magic_controls_widget.setVisible(False)
+        self._magic_controls_action.setVisible(False)
+
+    def _build_magic_segment_controls(self) -> QWidget:
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(6, 0, 0, 0)
+        layout.setSpacing(6)
+
+        self._magic_prompt_label = QLabel("当前提示：正采样点")
+        self._magic_prompt_label.setStyleSheet(
+            "padding: 6px 10px; border-radius: 8px; background: #F6F1E8; color: #182430; font-weight: 600;"
+        )
+        layout.addWidget(self._magic_prompt_label)
+
+        self._magic_toggle_button = QToolButton(container)
+        self._magic_toggle_button.setText("切换正负 (R)")
+        self._magic_toggle_button.clicked.connect(self._cycle_magic_segment_prompt_type)
+        layout.addWidget(self._magic_toggle_button)
+
+        self._magic_complete_button = QToolButton(container)
+        self._magic_complete_button.setText("完成 (Enter / F)")
+        self._magic_complete_button.clicked.connect(self._commit_magic_segment_preview)
+        layout.addWidget(self._magic_complete_button)
+
+        self._magic_cancel_button = QToolButton(container)
+        self._magic_cancel_button.setText("放弃 (Esc)")
+        self._magic_cancel_button.clicked.connect(self._cancel_magic_segment_session)
+        layout.addWidget(self._magic_cancel_button)
+
+        return container
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
@@ -567,12 +621,12 @@ class MainWindow(QMainWindow):
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
-        canvas = self.current_canvas()
-        if canvas is not None:
+        for canvas in self._canvases.values():
             canvas.set_tool_mode(mode)
         if mode in self._mode_actions:
             self._mode_actions[mode].setChecked(True)
             self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
+        self._update_magic_segment_controls()
 
     def current_document(self) -> ImageDocument | None:
         index = self.tab_widget.currentIndex()
@@ -860,6 +914,19 @@ class MainWindow(QMainWindow):
         thread.start()
         progress.show()
 
+    def _ensure_prompt_segmentation_worker(self) -> None:
+        if self._prompt_seg_thread is not None and self._prompt_seg_worker is not None:
+            return
+        thread = QThread(self)
+        worker = PromptSegmentationWorker()
+        worker.moveToThread(thread)
+        worker.succeeded.connect(self._on_prompt_segmentation_succeeded)
+        worker.failed.connect(self._on_prompt_segmentation_failed)
+        thread.finished.connect(worker.deleteLater)
+        thread.start()
+        self._prompt_seg_thread = thread
+        self._prompt_seg_worker = worker
+
     def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
         if self._area_infer_progress_dialog is None:
             return
@@ -943,6 +1010,8 @@ class MainWindow(QMainWindow):
         canvas.textSelected.connect(self._on_canvas_text_selected)
         canvas.textMoved.connect(self._on_canvas_text_moved)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
+        canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
+        canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
 
         self.project.documents.append(target_document)
         self._document_order.append(target_document.id)
@@ -1107,6 +1176,10 @@ class MainWindow(QMainWindow):
             self._begin_scale_anchor_pick(self.current_document())
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
+
+    def open_shortcut_help_dialog(self) -> None:
+        dialog = ShortcutHelpDialog(self)
+        dialog.exec()
 
     def _refresh_canvases_for_settings(self) -> None:
         for canvas in self._canvases.values():
@@ -1358,6 +1431,63 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "导入自动面积识别结果", mutate)
 
+    def _on_canvas_magic_segment_requested(self, document_id: str, payload: object) -> None:
+        canvas = self._canvases.get(document_id)
+        document = self.project.get_document(document_id)
+        if canvas is None or document is None or not isinstance(payload, dict):
+            return
+        request_id = int(payload.get("request_id", 0))
+        positive_points = list(payload.get("positive_points", []))
+        negative_points = list(payload.get("negative_points", []))
+        if not positive_points:
+            canvas.apply_magic_segment_result(request_id, [])
+            self._update_magic_segment_controls()
+            return
+        if not PromptSegmentationService.models_ready():
+            canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            QMessageBox.warning(
+                self,
+                "魔棒分割",
+                "未找到 EdgeSAM 模型文件，请确认 runtime/segment-anything/edge_sam 中存在 encoder/decoder ONNX。",
+            )
+            return
+        self._ensure_prompt_segmentation_worker()
+        if self._prompt_seg_worker is None:
+            canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            return
+        self._prompt_seg_worker.requested.emit(
+            PromptSegmentationRequest(
+                document_id=document_id,
+                image_path=document.path,
+                request_id=request_id,
+                positive_points=positive_points,
+                negative_points=negative_points,
+            )
+        )
+        self._update_magic_segment_controls()
+
+    def _on_canvas_magic_segment_session_changed(self, document_id: str) -> None:
+        current_document = self.current_document()
+        if current_document is not None and current_document.id == document_id:
+            self._update_magic_segment_controls()
+
+    def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, polygon: object) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        canvas.apply_magic_segment_result(request_id, list(polygon) if isinstance(polygon, list) else [])
+        self._update_magic_segment_controls()
+
+    def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        canvas.fail_magic_segment_result(request_id)
+        self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
+        self._update_magic_segment_controls()
+
     def close_current_document(self) -> None:
         document = self.current_document()
         if document is None:
@@ -1458,6 +1588,8 @@ class MainWindow(QMainWindow):
         if index < 0:
             return
         self.image_list.setCurrentRow(index)
+        current_document = self.current_document()
+        self._clear_magic_segment_sessions(except_document_id=current_document.id if current_document is not None else None)
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode)
@@ -1731,6 +1863,7 @@ class MainWindow(QMainWindow):
             "snap": "半自动吸附",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
+            "magic_segment": "魔棒分割",
             "auto_instance": "实例分割",
         }.get(mode, mode)
 
@@ -1905,6 +2038,66 @@ class MainWindow(QMainWindow):
             self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings))
         self.undo_action.setEnabled(bool(history and history.can_undo()))
         self.redo_action.setEnabled(bool(history and history.can_redo()))
+        self._update_magic_segment_controls()
+
+    def _magic_prompt_label_text(self, prompt_type: str) -> str:
+        return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
+
+    def _update_magic_segment_controls(self) -> None:
+        if self._magic_controls_widget is None or self._magic_controls_action is None:
+            return
+        is_visible = self._tool_mode == "magic_segment"
+        self._magic_controls_action.setVisible(is_visible)
+        self._magic_controls_widget.setVisible(is_visible)
+        if not is_visible:
+            return
+        canvas = self.current_canvas()
+        has_document = canvas is not None and canvas.document_id is not None
+        prompt_type = canvas.current_magic_segment_prompt_type() if canvas is not None else "positive"
+        if self._magic_prompt_label is not None:
+            self._magic_prompt_label.setText(self._magic_prompt_label_text(prompt_type))
+        if self._magic_toggle_button is not None:
+            self._magic_toggle_button.setEnabled(has_document)
+        if self._magic_complete_button is not None:
+            self._magic_complete_button.setEnabled(bool(canvas and canvas.has_magic_segment_preview()))
+        if self._magic_cancel_button is not None:
+            self._magic_cancel_button.setEnabled(bool(canvas and canvas.has_magic_segment_session()))
+
+    def _cycle_magic_segment_prompt_type(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return
+        prompt_type = canvas.cycle_magic_segment_prompt_type()
+        self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
+        self._focus_current_canvas()
+
+    def _commit_magic_segment_preview(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return False
+        committed = canvas.commit_magic_segment_preview()
+        if committed:
+            self.statusBar().showMessage("已创建魔棒分割面积", 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+        return committed
+
+    def _cancel_magic_segment_session(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment":
+            return
+        if canvas.has_magic_segment_session():
+            canvas.clear_magic_segment_session()
+            self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+
+    def _clear_magic_segment_sessions(self, *, except_document_id: str | None = None) -> None:
+        for document_id, canvas in self._canvases.items():
+            if document_id == except_document_id:
+                continue
+            if canvas.has_magic_segment_session():
+                canvas.clear_magic_segment_session()
 
     def _group_chip_label(self, text: str, *, selected: bool) -> str:
         return f"✓ {text}" if selected else text
@@ -2058,6 +2251,19 @@ class MainWindow(QMainWindow):
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
             return
+        if self._tool_mode == "magic_segment" and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() == Qt.Key.Key_R:
+                self._cycle_magic_segment_prompt_type()
+                event.accept()
+                return
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                self._commit_magic_segment_preview()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                self._cancel_magic_segment_session()
+                event.accept()
+                return
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_A:
             if self._tool_mode == "select":
                 if self._last_non_select_tool and self._last_non_select_tool != "select":
@@ -2105,4 +2311,7 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
+        if self._prompt_seg_thread is not None:
+            self._prompt_seg_thread.quit()
+            self._prompt_seg_thread.wait(1500)
         event.accept()

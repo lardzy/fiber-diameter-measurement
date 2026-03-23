@@ -25,6 +25,8 @@ runtime_root = project_root / "runtime"
 if runtime_root.exists():
     for file_path in runtime_root.rglob("*"):
         if file_path.is_file():
+            if file_path.name == ".DS_Store" or file_path.name.startswith("._"):
+                continue
             relative_dir = file_path.parent.relative_to(project_root)
             datas.append((str(file_path), str(relative_dir)))
 binaries = collect_dynamic_libs("onnxruntime")

@@ -33,6 +33,7 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "select": "fa5s.mouse-pointer",
     "manual": "mdi6.vector-line",
     "snap": "mdi6.magnet",
+    "magic_segment": "fa5s.magic",
     "polygon_area": "mdi6.draw-polygon",
     "freehand_area": "mdi6.draw",
     "calibration": "mdi6.ruler",
@@ -167,6 +168,24 @@ def _draw_area_auto(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.drawLine(QPointF(rect.center().x() - 2.5, rect.top() + 5.5), QPointF(rect.center().x() + 2.5, rect.top() + 5.5))
 
 
+def _draw_magic_segment(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    _draw_polygon_area(painter, color, rect)
+    painter.setPen(_pen(QColor("#FFFFFF"), 1.4))
+    painter.drawLine(
+        QPointF(rect.left() + rect.width() * 0.24, rect.top() + rect.height() * 0.18),
+        QPointF(rect.left() + rect.width() * 0.24, rect.top() + rect.height() * 0.34),
+    )
+    painter.drawLine(
+        QPointF(rect.left() + rect.width() * 0.16, rect.top() + rect.height() * 0.26),
+        QPointF(rect.left() + rect.width() * 0.32, rect.top() + rect.height() * 0.26),
+    )
+    painter.setPen(_pen(QColor("#F87171"), 1.4))
+    painter.drawLine(
+        QPointF(rect.right() - rect.width() * 0.34, rect.bottom() - rect.height() * 0.26),
+        QPointF(rect.right() - rect.width() * 0.18, rect.bottom() - rect.height() * 0.26),
+    )
+
+
 def _draw_images(painter: QPainter, color: QColor, rect: QRectF) -> None:
     back = QRectF(rect.left() + 2.0, rect.top() + 4.0, rect.width() * 0.62, rect.height() * 0.62)
     front = QRectF(rect.left() + 6.0, rect.top() + 7.0, rect.width() * 0.62, rect.height() * 0.62)
@@ -257,6 +276,7 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "select": _draw_select,
     "manual": _draw_manual,
     "snap": _draw_snap,
+    "magic_segment": _draw_magic_segment,
     "polygon_area": _draw_polygon_area,
     "freehand_area": _draw_freehand_area,
     "calibration": _draw_calibration,
