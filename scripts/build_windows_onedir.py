@@ -8,6 +8,20 @@ import sys
 from pathlib import Path
 
 
+def check_area_runtime_dependencies() -> list[str]:
+    missing: list[str] = []
+    for module_name, package_name in (
+        ("PIL", "Pillow"),
+        ("torch", "torch"),
+        ("torchvision", "torchvision"),
+    ):
+        try:
+            __import__(module_name)
+        except ImportError:
+            missing.append(package_name)
+    return missing
+
+
 def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     root = Path(__file__).resolve().parents[1]
     spec_path = root / "packaging" / "pyinstaller" / "fdm_onedir.spec"
@@ -27,6 +41,18 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
             file=sys.stderr,
         )
         return 1
+
+    missing_area_dependencies = check_area_runtime_dependencies()
+    if missing_area_dependencies:
+        print(
+            "Warning: the area auto-recognition worker may be incomplete because these packages are missing: "
+            + ", ".join(missing_area_dependencies),
+            file=sys.stderr,
+        )
+        print(
+            "If you need area auto-recognition in the packaged app, install them before building.",
+            file=sys.stderr,
+        )
 
     if clean:
         shutil.rmtree(dist_path, ignore_errors=True)
@@ -60,6 +86,9 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     print(f"Output directory: {app_dir}")
     print(f"Console mode: {'on' if console else 'off'}")
     print(f"Bootloader debug: {'on' if bootloader_debug else 'off'}")
+    print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
+    print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
+    print(f"Runtime assets: {app_dir / 'runtime'}")
     print("Use this directory as the source folder for your Inno Setup installer.")
     return 0
 

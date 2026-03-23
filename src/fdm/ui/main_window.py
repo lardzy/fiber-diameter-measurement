@@ -106,11 +106,16 @@ class MainWindow(QMainWindow):
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
         self._app_settings = AppSettingsIO.load()
+        try:
+            AppSettingsIO.save(self._app_settings)
+        except OSError:
+            pass
         self._document_order: list[str] = []
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
+        self._last_non_select_tool: str | None = None
         self._group_list_rebuilding = False
         self._table_rebuilding = False
         self._file_toolbar: QToolBar | None = None
@@ -416,6 +421,10 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
 
+        top_container = QWidget()
+        top_layout = QVBoxLayout(top_container)
+        top_layout.setContentsMargins(0, 0, 0, 0)
+
         model_box = QGroupBox("模型状态")
         model_layout = QVBoxLayout(model_box)
         self.model_status_label = QLabel("未加载")
@@ -428,7 +437,7 @@ class MainWindow(QMainWindow):
         self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
         self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
         model_layout.addWidget(self._area_auto_button)
-        layout.addWidget(model_box)
+        top_layout.addWidget(model_box)
 
         calibration_box = QGroupBox("标定")
         calibration_layout = QVBoxLayout(calibration_box)
@@ -446,7 +455,7 @@ class MainWindow(QMainWindow):
         preset_row.addWidget(add_preset_button)
         preset_row.addWidget(apply_preset_button)
         calibration_layout.addLayout(preset_row)
-        layout.addWidget(calibration_box)
+        top_layout.addWidget(calibration_box)
 
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
@@ -498,7 +507,7 @@ class MainWindow(QMainWindow):
         group_button_row.addWidget(rename_group_button)
         group_button_row.addWidget(self.delete_group_button)
         group_layout.addLayout(group_button_row)
-        layout.addWidget(group_box)
+        top_layout.addWidget(group_box)
 
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
@@ -524,7 +533,14 @@ class MainWindow(QMainWindow):
         self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
         measurement_layout.addWidget(self.delete_measurement_button)
-        layout.addWidget(measurement_box, 1)
+
+        right_splitter = QSplitter(Qt.Orientation.Vertical)
+        right_splitter.addWidget(top_container)
+        right_splitter.addWidget(measurement_box)
+        right_splitter.setStretchFactor(0, 0)
+        right_splitter.setStretchFactor(1, 1)
+        right_splitter.setSizes([430, 360])
+        layout.addWidget(right_splitter)
 
         return container
 
@@ -534,6 +550,8 @@ class MainWindow(QMainWindow):
         return action
 
     def set_tool_mode(self, mode: str) -> None:
+        if mode != "select":
+            self._last_non_select_tool = mode
         self._tool_mode = mode
         canvas = self.current_canvas()
         if canvas is not None:
@@ -1954,6 +1972,15 @@ class MainWindow(QMainWindow):
             canvas = self.current_canvas()
             if canvas is not None:
                 canvas.set_temporary_grab_pressed(True)
+            event.accept()
+            return
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_A:
+            if self._tool_mode == "select":
+                if self._last_non_select_tool and self._last_non_select_tool != "select":
+                    self.set_tool_mode(self._last_non_select_tool)
+            else:
+                self._last_non_select_tool = self._tool_mode
+                self.set_tool_mode("select")
             event.accept()
             return
         if (

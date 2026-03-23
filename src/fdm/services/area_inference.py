@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import json
 import subprocess
+import sys
 
 from fdm.geometry import Point
 from fdm.settings import AppSettings
@@ -50,6 +51,39 @@ class AreaInferenceService:
     def __init__(self) -> None:
         self._worker_path = Path(__file__).resolve().parents[1] / "workers" / "area_worker.py"
 
+    def _worker_command(self, settings: AppSettings) -> list[str]:
+        if getattr(sys, "frozen", False):
+            executable = Path(sys.executable).resolve()
+            sibling_worker = executable.with_name("FiberAreaWorker.exe")
+            if sibling_worker.exists():
+                return [str(sibling_worker)]
+        configured = settings.resolved_area_worker_program()
+        if configured:
+            configured_path = Path(configured)
+            if configured_path.exists() and configured_path.name.lower().startswith("fiberareaworker"):
+                return [str(configured_path)]
+            return [configured, str(self._worker_path)]
+        return [sys.executable, str(self._worker_path)]
+
+    def _friendly_failure_message(self, message: str, *, worker_command: list[str]) -> str:
+        token = str(message or "").strip()
+        missing_module = None
+        if "No module named 'PIL'" in token or 'No module named "PIL"' in token:
+            missing_module = "Pillow(PIL)"
+        elif "No module named 'torchvision'" in token or 'No module named "torchvision"' in token:
+            missing_module = "torchvision"
+        elif "No module named 'torch'" in token or 'No module named "torch"' in token:
+            missing_module = "torch"
+        if missing_module is not None:
+            command_hint = worker_command[0] if worker_command else "当前 Worker"
+            return (
+                f"面积识别运行环境缺少 {missing_module}。"
+                f"\n当前使用的 Worker: {command_hint}"
+                "\n如果你在源码环境运行，请安装面积识别依赖；"
+                "如果你在打包后的程序中运行，请检查设置里的 Worker 是否仍指向外部 Python，建议留空使用自动模式。"
+            )
+        return token or "面积识别失败"
+
     def infer_image(
         self,
         *,
@@ -59,22 +93,22 @@ class AreaInferenceService:
         settings: AppSettings,
         inference_options: dict[str, object] | None = None,
     ) -> AreaInferenceResult:
-        worker_python = str(settings.area_worker_python or "").strip()
-        if not worker_python:
-            raise RuntimeError("未配置面积识别 Worker Python。")
-        if not self._worker_path.exists():
+        if not self._worker_path.exists() and not getattr(sys, "frozen", False):
             raise RuntimeError(f"未找到面积识别 worker: {self._worker_path}")
 
+        resolved_weights_dir = settings.resolved_area_weights_dir()
+        resolved_vendor_root = settings.resolved_area_vendor_root()
         payload = {
             "image_path": str(Path(image_path).expanduser().resolve()),
             "model_name": model_name,
             "model_file": model_file,
-            "weights_dir": settings.area_weights_dir,
-            "vendor_root": settings.area_vendor_root,
+            "weights_dir": str(resolved_weights_dir),
+            "vendor_root": str(resolved_vendor_root),
             "inference_options": dict(inference_options or {}),
         }
+        worker_command = self._worker_command(settings)
         result = subprocess.run(
-            [worker_python, str(self._worker_path)],
+            worker_command,
             input=json.dumps(payload, ensure_ascii=False),
             text=True,
             capture_output=True,
@@ -90,7 +124,10 @@ class AreaInferenceService:
             raise RuntimeError(f"面积识别返回了无法解析的数据: {stdout[:300]}") from exc
 
         if result.returncode != 0:
-            message = str(response.get("error") or stderr or "面积识别失败")
+            message = self._friendly_failure_message(
+                str(response.get("error") or stderr or "面积识别失败"),
+                worker_command=worker_command,
+            )
             raise RuntimeError(message)
         if not isinstance(response, dict):
             raise RuntimeError("面积识别返回格式无效。")

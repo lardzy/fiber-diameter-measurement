@@ -21,11 +21,17 @@ def _load_engine_module(vendor_root: Path):
     engine_path = area_infer_root / "app" / "engine.py"
     if not engine_path.exists():
         raise RuntimeError(f"未找到参考 area engine: {engine_path}")
-    spec = importlib.util.spec_from_file_location("fdm_area_ref_engine", engine_path)
+    module_name = "fdm_area_ref_engine"
+    spec = importlib.util.spec_from_file_location(module_name, engine_path)
     if spec is None or spec.loader is None:
         raise RuntimeError(f"无法加载 area engine: {engine_path}")
     module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
+    sys.modules[module_name] = module
+    try:
+        spec.loader.exec_module(module)
+    except Exception:
+        sys.modules.pop(module_name, None)
+        raise
     return module
 
 
@@ -57,6 +63,7 @@ def main() -> int:
         engine = engine_module.AreaNativeEngine(
             weights_dir=str(weights_dir.resolve()),
             vendor_root=str(vendor_root.resolve()),
+            infer_device="cpu",
         )
         result = engine.infer(
             model_name=model_name,

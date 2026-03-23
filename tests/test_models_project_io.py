@@ -10,8 +10,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
 from fdm.project_io import ProjectIO
+from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import parse_area_model_labels
-from fdm.settings import AppSettings, AppSettingsIO
+from fdm.settings import (
+    AppSettings,
+    AppSettingsIO,
+    application_root,
+    default_area_model_mappings,
+)
 
 
 class ModelsProjectIOTests(unittest.TestCase):
@@ -213,6 +219,52 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
 
+    def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
+        runtime_root = application_root() / "runtime"
+        settings = AppSettings(
+            area_weights_dir=str((runtime_root / "area-models").resolve()),
+            area_vendor_root=str((runtime_root / "area-infer" / "vendor" / "yolact").resolve()),
+            area_worker_python=str(Path(sys.executable).resolve()),
+        )
+
+        payload = settings.to_dict()
+
+        self.assertEqual(payload["area_weights_dir"], "runtime/area-models")
+        self.assertEqual(payload["area_vendor_root"], "runtime/area-infer/vendor/yolact")
+        self.assertEqual(payload["area_worker_python"], "")
+
+    def test_app_settings_resolve_relative_area_paths_back_to_application_root(self) -> None:
+        settings = AppSettings(
+            area_weights_dir="runtime/area-models",
+            area_vendor_root="runtime/area-infer/vendor/yolact",
+            area_worker_python="",
+        )
+
+        self.assertEqual(settings.resolved_area_weights_dir(), (application_root() / "runtime" / "area-models").resolve())
+        self.assertEqual(
+            settings.resolved_area_vendor_root(),
+            (application_root() / "runtime" / "area-infer" / "vendor" / "yolact").resolve(),
+        )
+        self.assertEqual(settings.resolved_area_worker_program(), "")
+
+    def test_area_inference_service_uses_auto_worker_when_settings_worker_is_blank(self) -> None:
+        service = AreaInferenceService()
+        settings = AppSettings(area_worker_python="")
+
+        worker_command = service._worker_command(settings)
+
+        self.assertEqual(worker_command[0], sys.executable)
+        self.assertTrue(worker_command[1].endswith("area_worker.py"))
+
+    def test_app_settings_migrate_missing_absolute_worker_path_back_to_auto(self) -> None:
+        payload = {
+            "area_worker_python": str((Path("/tmp") / "missing-python-for-area-worker.exe").resolve()),
+        }
+
+        settings = AppSettings.from_dict(payload)
+
+        self.assertEqual(settings.area_worker_python, "")
+
     def test_area_measurement_roundtrip_keeps_polygon_and_area_unit(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
@@ -251,6 +303,13 @@ class ModelsProjectIOTests(unittest.TestCase):
 
     def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
         self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])
+
+    def test_default_area_model_mappings_match_reference_defaults(self) -> None:
+        mappings = default_area_model_mappings()
+        mapping_dict = {item.model_name: item.model_file for item in mappings}
+        self.assertEqual(mapping_dict["棉-莱赛尔"], "b_c1_1.3.pth")
+        self.assertEqual(mapping_dict["粘纤-莱赛尔"], "b_v1_1.3.pth")
+        self.assertEqual(mapping_dict["棉-粘-莱-莫"], "b_cvlm_1.3.pth")
 
 
 if __name__ == "__main__":

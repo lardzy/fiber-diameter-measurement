@@ -37,6 +37,9 @@ from fdm.settings import (
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
+    application_root,
+    resolve_app_relative_path,
+    to_app_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 
@@ -225,7 +228,7 @@ class SettingsDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("设置")
-        self.resize(760, 680)
+        self.resize(700, 560)
         self._initial_settings = replace(settings)
         self._document = document
         self._group_color_buttons: dict[str | None, QPushButton] = {}
@@ -233,6 +236,7 @@ class SettingsDialog(QDialog):
 
         self._tabs = QTabWidget()
         self._tabs.addTab(self._build_app_settings_tab(settings), "应用设置")
+        self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片样式")
 
         self._button_box = QDialogButtonBox(
@@ -366,9 +370,19 @@ class SettingsDialog(QDialog):
         text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
 
-        area_group = QGroupBox("面积自动识别")
+        layout.addWidget(measurement_group)
+        layout.addWidget(behavior_group)
+        layout.addWidget(text_group)
+        layout.addStretch(1)
+        return page
+
+    def _build_area_models_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        area_group = QGroupBox("面积自动识别模型")
         area_layout = QVBoxLayout(area_group)
-        area_hint = QLabel("模型名称会用于解析识别标签，权重文件名用于定位本地权重文件。")
+        area_hint = QLabel("模型名称会用于解析识别标签，权重文件名用于定位本地权重文件。默认映射已参考面积识别项目写入。")
         area_hint.setWordWrap(True)
         area_layout.addWidget(area_hint)
         self._area_mapping_table = QTableWidget(0, 2)
@@ -395,15 +409,16 @@ class SettingsDialog(QDialog):
         self._area_weights_dir_edit = QLineEdit(settings.area_weights_dir)
         self._area_vendor_root_edit = QLineEdit(settings.area_vendor_root)
         self._area_worker_python_edit = QLineEdit(settings.area_worker_python)
+        self._area_worker_python_edit.setPlaceholderText("留空表示自动：打包后优先使用 FiberAreaWorker.exe")
         area_form = QFormLayout()
         area_form.addRow("权重目录", self._with_browse_button(self._area_weights_dir_edit, directory=True))
         area_form.addRow("YOLACT vendor 目录", self._with_browse_button(self._area_vendor_root_edit, directory=True))
-        area_form.addRow("Worker Python", self._with_browse_button(self._area_worker_python_edit, directory=False))
+        area_form.addRow("Worker 可执行文件 / Python", self._with_browse_button(self._area_worker_python_edit, directory=False))
         area_layout.addLayout(area_form)
+        path_hint = QLabel("以上路径支持相对程序目录填写。保持 Worker 为空时，会自动选择打包后的 FiberAreaWorker 或当前 Python。")
+        path_hint.setWordWrap(True)
+        area_layout.addWidget(path_hint)
 
-        layout.addWidget(measurement_group)
-        layout.addWidget(behavior_group)
-        layout.addWidget(text_group)
         layout.addWidget(area_group)
         layout.addStretch(1)
         return page
@@ -490,12 +505,15 @@ class SettingsDialog(QDialog):
             self._append_area_mapping_row(AreaModelMapping(model_name="", model_file=""))
 
     def _browse_path(self, line_edit: QLineEdit, *, directory: bool) -> None:
+        current_text = line_edit.text().strip()
+        start_path = resolve_app_relative_path(current_text) if current_text else application_root()
+        start_dir = str(start_path if start_path.exists() else application_root())
         if directory:
-            path = QFileDialog.getExistingDirectory(self, "选择目录", line_edit.text().strip() or "")
+            path = QFileDialog.getExistingDirectory(self, "选择目录", start_dir)
         else:
-            path, _ = QFileDialog.getOpenFileName(self, "选择文件", line_edit.text().strip() or "")
+            path, _ = QFileDialog.getOpenFileName(self, "选择文件", start_dir)
         if path:
-            line_edit.setText(path)
+            line_edit.setText(to_app_relative_path(path))
 
     def _with_browse_button(self, line_edit: QLineEdit, *, directory: bool) -> QWidget:
         row = QWidget()

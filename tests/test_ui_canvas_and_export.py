@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QListView
+    from PySide6.QtWidgets import QApplication, QListView, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -347,6 +347,14 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_right_panel_uses_vertical_splitter_for_resizable_measurement_area(self) -> None:
+        window = MainWindow()
+        try:
+            splitters = window.findChildren(QSplitter)
+            self.assertTrue(any(splitter.orientation() == Qt.Orientation.Vertical for splitter in splitters))
+        finally:
+            window.close()
+
     def test_polygon_area_tool_commits_when_clicking_first_point(self) -> None:
         document, _, canvas = self._create_canvas_document()
         canvas.set_tool_mode("polygon_area")
@@ -541,6 +549,19 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_settings_dialog_uses_separate_area_models_tab(self) -> None:
+        settings = AppSettings()
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            self.assertEqual(dialog._tabs.count(), 3)
+            self.assertEqual(dialog._tabs.tabText(1), "面积识别")
+            self.assertLessEqual(dialog.width(), 720)
+            self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
+            self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
+            self.assertEqual(dialog._area_worker_python_edit.text(), "")
+        finally:
+            dialog.close()
+
     def test_number_hotkey_switches_active_group_without_changing_measurement_group(self) -> None:
         window = MainWindow()
         try:
@@ -605,6 +626,21 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(combo.focusPolicy(), Qt.FocusPolicy.NoFocus)
             self.assertEqual(combo.currentIndex(), current_index)
             self.assertTrue(event.ignored)
+        finally:
+            window.close()
+
+    def test_a_shortcut_toggles_between_select_and_previous_tool(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window._tool_mode, "select")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "select")
+
+            window.set_tool_mode("snap")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "select")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "snap")
         finally:
             window.close()
 
