@@ -474,6 +474,7 @@ class ExportService:
         return {
             "preset": "标定预设",
             "image_scale": "图内标定",
+            "project_default": "项目统一比例尺",
             "none": "未标定",
         }.get(mode, mode or "未标定")
 

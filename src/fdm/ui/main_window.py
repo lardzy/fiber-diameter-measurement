@@ -151,6 +151,12 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
+        self._add_preset_button: QPushButton | None = None
+        self._edit_preset_button: QPushButton | None = None
+        self._delete_preset_button: QPushButton | None = None
+        self._apply_preset_button: QPushButton | None = None
+        self._project_clean_snapshot: dict[str, object] | None = None
+        self._pending_project_load_snapshot = False
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -171,6 +177,7 @@ class MainWindow(QMainWindow):
         self._refresh_preset_combo()
         self._update_model_status()
         self._update_ui_for_current_document()
+        self._mark_project_saved()
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
@@ -466,6 +473,7 @@ class MainWindow(QMainWindow):
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
+        container.setMinimumWidth(180)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.addWidget(QLabel("已打开图片"))
@@ -480,6 +488,9 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         self.tab_widget = QTabWidget()
+        self.tab_widget.setUsesScrollButtons(True)
+        self.tab_widget.tabBar().setExpanding(False)
+        self.tab_widget.tabBar().setElideMode(Qt.TextElideMode.ElideRight)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
         layout.addWidget(self.tab_widget)
         return container
@@ -514,15 +525,23 @@ class MainWindow(QMainWindow):
         self.preset_combo = QComboBox()
         calibration_layout.addWidget(self.preset_combo)
         preset_row = QHBoxLayout()
-        add_preset_button = QPushButton("新增预设")
-        add_preset_button.setIcon(themed_icon("preset_add", color="#7BD389"))
-        add_preset_button.clicked.connect(self.add_calibration_preset)
-        apply_preset_button = QPushButton("应用预设")
-        apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
-        apply_preset_button.clicked.connect(self.apply_selected_preset)
-        preset_row.addWidget(add_preset_button)
-        preset_row.addWidget(apply_preset_button)
+        self._add_preset_button = QPushButton("新增预设")
+        self._add_preset_button.setIcon(themed_icon("preset_add", color="#7BD389"))
+        self._add_preset_button.clicked.connect(self.add_calibration_preset)
+        self._edit_preset_button = QPushButton("编辑预设")
+        self._edit_preset_button.setIcon(themed_icon("rename", color="#D7E3FC"))
+        self._edit_preset_button.clicked.connect(self.edit_selected_preset)
+        self._delete_preset_button = QPushButton("删除预设")
+        self._delete_preset_button.setIcon(themed_icon("delete", color="#F28482"))
+        self._delete_preset_button.clicked.connect(self.delete_selected_preset)
+        preset_row.addWidget(self._add_preset_button)
+        preset_row.addWidget(self._edit_preset_button)
+        preset_row.addWidget(self._delete_preset_button)
         calibration_layout.addLayout(preset_row)
+        self._apply_preset_button = QPushButton("应用预设")
+        self._apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
+        self._apply_preset_button.clicked.connect(self.apply_selected_preset)
+        calibration_layout.addWidget(self._apply_preset_button)
         top_layout.addWidget(calibration_box)
 
         group_box = QGroupBox("纤维类别")
@@ -648,6 +667,183 @@ class MainWindow(QMainWindow):
             canvas.fit_to_view()
         elif mode == OpenImageViewMode.ACTUAL:
             canvas.actual_size()
+
+    def _save_app_settings(self, *, context: str) -> bool:
+        try:
+            AppSettingsIO.save(self._app_settings)
+        except OSError as exc:
+            QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
+            return False
+        return True
+
+    def _calibration_presets(self) -> list[CalibrationPreset]:
+        return self._app_settings.calibration_presets
+
+    def _selected_preset(self) -> tuple[int, CalibrationPreset] | None:
+        preset_index = self.preset_combo.currentIndex()
+        presets = self._calibration_presets()
+        if preset_index < 0 or preset_index >= len(presets):
+            return None
+        return preset_index, presets[preset_index]
+
+    def _project_snapshot(self) -> dict[str, object]:
+        inherited_ids = sorted(
+            document.id
+            for document in self.project.documents
+            if document.calibration is not None and document.calibration.mode == "project_default"
+        )
+        return {
+            "project_default_calibration": self.project.project_default_calibration.to_dict() if self.project.project_default_calibration else None,
+            "project_default_document_ids": inherited_ids,
+        }
+
+    def _mark_project_saved(self) -> None:
+        self._project_clean_snapshot = self._project_snapshot()
+
+    def _project_dirty(self) -> bool:
+        return self._project_clean_snapshot is not None and self._project_snapshot() != self._project_clean_snapshot
+
+    def _clone_preset(self, preset: CalibrationPreset, *, name: str | None = None) -> CalibrationPreset:
+        return CalibrationPreset(
+            name=preset.name if name is None else name,
+            pixels_per_unit=preset.pixels_per_unit,
+            unit=preset.unit,
+            pixel_distance=preset.pixel_distance,
+            actual_distance=preset.actual_distance,
+            computed_pixels_per_unit=preset.computed_pixels_per_unit,
+        )
+
+    def _preset_content_equal(self, left: CalibrationPreset, right: CalibrationPreset, *, include_name: bool = True) -> bool:
+        if include_name and left.name != right.name:
+            return False
+        return (
+            abs(left.resolved_pixels_per_unit() - right.resolved_pixels_per_unit()) < 1e-9
+            and left.unit == right.unit
+            and left.pixel_distance == right.pixel_distance
+            and left.actual_distance == right.actual_distance
+        )
+
+    def _find_matching_preset(self, calibration: Calibration | None) -> CalibrationPreset | None:
+        if calibration is None:
+            return None
+        for preset in self._calibration_presets():
+            if (
+                preset.name == calibration.source_label
+                and preset.unit == calibration.unit
+                and abs(preset.resolved_pixels_per_unit() - calibration.pixels_per_unit) < 1e-9
+            ):
+                return preset
+        for preset in self._calibration_presets():
+            if (
+                preset.unit == calibration.unit
+                and abs(preset.resolved_pixels_per_unit() - calibration.pixels_per_unit) < 1e-9
+            ):
+                return preset
+        return None
+
+    def _default_preset_dialog_values(self, document: ImageDocument | None) -> tuple[float, float, str]:
+        if document is None or document.calibration is None:
+            return 100.0, 10.0, "um"
+        calibration = document.calibration
+        calibration_line = document.metadata.get("calibration_line")
+        if calibration_line:
+            line = calibration_line if isinstance(calibration_line, Line) else Line.from_dict(calibration_line)
+            pixel_distance = max(line_length(line), 0.000001)
+            actual_distance = calibration.px_to_unit(pixel_distance)
+            if actual_distance > 0:
+                return pixel_distance, actual_distance, calibration.unit
+        preset = self._find_matching_preset(calibration)
+        if preset is not None and preset.pixel_distance is not None and preset.actual_distance is not None:
+            return preset.pixel_distance, preset.actual_distance, preset.unit
+        return max(calibration.unit_to_px(1.0), 0.000001), 1.0, calibration.unit
+
+    def _merge_legacy_calibration_presets(self, presets: list[CalibrationPreset]) -> int:
+        imported_count = 0
+        existing_presets = list(self._calibration_presets())
+        for legacy_preset in presets:
+            if any(self._preset_content_equal(item, legacy_preset) for item in existing_presets):
+                continue
+            candidate_name = legacy_preset.name
+            if any(item.name == candidate_name for item in existing_presets):
+                candidate_name = f"{legacy_preset.name} (导入)"
+                suffix = 2
+                while any(item.name == candidate_name for item in existing_presets):
+                    candidate_name = f"{legacy_preset.name} (导入 {suffix})"
+                    suffix += 1
+            existing_presets.append(self._clone_preset(legacy_preset, name=candidate_name))
+            imported_count += 1
+        if imported_count:
+            self._app_settings.calibration_presets = existing_presets
+            self._save_app_settings(context="导入旧项目预设")
+            self._refresh_preset_combo()
+        return imported_count
+
+    def _format_calibration_mode(self, mode: str) -> str:
+        return {
+            "preset": "标定预设",
+            "image_scale": "图内标定",
+            "project_default": "项目统一比例尺",
+            "none": "未标定",
+        }.get(mode, mode or "未标定")
+
+    def _set_document_project_default_calibration(self, document: ImageDocument) -> None:
+        project_default = self.project.project_default_calibration
+        if project_default is None:
+            return
+        document.calibration = project_default.clone()
+        document.metadata.pop("calibration_line", None)
+        document.recalculate_measurements()
+
+    def _apply_project_default_calibration(self, calibration: Calibration, *, label: str) -> None:
+        project_default = calibration.as_project_default()
+        self.project.project_default_calibration = project_default.clone()
+        for document in self.project.documents:
+            before = document.snapshot_state()
+            self._set_document_project_default_calibration(document)
+            after = document.snapshot_state()
+            if document.history is not None and before != after:
+                document.history.push(label, before, after)
+        self._update_ui_for_current_document()
+
+    def _prompt_project_default_conflict(self, *, image_name: str, document_calibration: Calibration) -> bool:
+        project_calibration = self.project.project_default_calibration
+        if project_calibration is None:
+            return False
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("标尺冲突")
+        box.setText(f"{image_name} 同时存在图片标尺和项目统一比例尺。")
+        box.setInformativeText(
+            "图片标尺: "
+            f"{document_calibration.source_label or self._format_calibration_mode(document_calibration.mode)}\n"
+            "项目标尺: "
+            f"{project_calibration.source_label or self._format_calibration_mode(project_calibration.mode)}"
+        )
+        image_button = box.addButton("使用图片标尺", QMessageBox.ButtonRole.AcceptRole)
+        project_button = box.addButton("使用项目标尺", QMessageBox.ButtonRole.ActionRole)
+        box.setDefaultButton(image_button)
+        box.setEscapeButton(image_button)
+        box.exec()
+        return box.clickedButton() == project_button
+
+    def _prompt_preset_apply_scope(self, preset: CalibrationPreset) -> str | None:
+        if len(self.project.documents) <= 1:
+            return "current"
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Question)
+        box.setWindowTitle("应用标定预设")
+        box.setText(f"将预设“{preset.name}”应用到哪里？")
+        current_button = box.addButton("当前图片", QMessageBox.ButtonRole.AcceptRole)
+        project_button = box.addButton("项目所有图片", QMessageBox.ButtonRole.ActionRole)
+        cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(current_button)
+        box.setEscapeButton(cancel_button)
+        box.exec()
+        if box.clickedButton() == project_button:
+            return "project_all"
+        if box.clickedButton() == current_button:
+            return "current"
+        return None
 
     def open_images(self) -> None:
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
@@ -846,6 +1042,9 @@ class MainWindow(QMainWindow):
             self._load_progress_dialog.deleteLater()
             self._load_progress_dialog = None
         self._show_batch_load_summary(state)
+        if self._pending_project_load_snapshot:
+            self._mark_project_saved()
+            self._pending_project_load_snapshot = False
         self._load_thread = None
         self._load_worker = None
         self._load_state = None
@@ -993,7 +1192,17 @@ class MainWindow(QMainWindow):
         target_document.sidecar_path = target_document.default_sidecar_path()
         target_document.initialize_runtime_state()
         if target_document.calibration is None:
-            CalibrationSidecarIO.load_document(target_document)
+            loaded_from_sidecar = CalibrationSidecarIO.load_document(target_document)
+            if self.project.project_default_calibration is not None:
+                use_project_default = not loaded_from_sidecar
+                if loaded_from_sidecar and target_document.calibration is not None:
+                    use_project_default = self._prompt_project_default_conflict(
+                        image_name=Path(absolute_path).name,
+                        document_calibration=target_document.calibration,
+                    )
+                if use_project_default:
+                    self._set_document_project_default_calibration(target_document)
+                    target_document.mark_calibration_saved()
         else:
             target_document.mark_calibration_saved()
         target_document.mark_session_saved()
@@ -1020,8 +1229,10 @@ class MainWindow(QMainWindow):
         self._canvases[target_document.id] = canvas
 
         tab_index = self.tab_widget.addTab(canvas, Path(absolute_path).name)
+        self.tab_widget.setTabToolTip(tab_index, absolute_path)
         list_item = QListWidgetItem(Path(absolute_path).name)
         list_item.setData(Qt.ItemDataRole.UserRole, target_document.id)
+        list_item.setToolTip(absolute_path)
         self.image_list.addItem(list_item)
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
@@ -1049,6 +1260,7 @@ class MainWindow(QMainWindow):
         for document in self.project.documents:
             document.mark_session_saved()
             document.mark_calibration_saved()
+        self._mark_project_saved()
         self._update_ui_for_current_document()
         self.statusBar().showMessage(f"项目已保存: {target_path}", 5000)
         return True
@@ -1063,10 +1275,15 @@ class MainWindow(QMainWindow):
         if not path:
             return
         project = ProjectIO.load(path)
+        imported_count = self._merge_legacy_calibration_presets(project.calibration_presets)
         missing_paths = []
         self._reset_workspace()
         self._project_path = Path(path)
-        self.project = ProjectState(version=project.version, documents=[], calibration_presets=project.calibration_presets)
+        self.project = ProjectState(
+            version=project.version,
+            documents=[],
+            project_default_calibration=project.project_default_calibration,
+        )
         self.project.metadata = project.metadata
         self._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
@@ -1075,8 +1292,15 @@ class MainWindow(QMainWindow):
                 load_items.append((document.path, document))
             else:
                 missing_paths.append(document.path)
+        self._pending_project_load_snapshot = True
         self._open_image_requests(load_items, context_label="打开项目", missing_paths=missing_paths)
-        self.statusBar().showMessage(f"项目已加载: {path}", 5000)
+        if self._load_thread is None:
+            self._mark_project_saved()
+            self._pending_project_load_snapshot = False
+        message = f"项目已加载: {path}"
+        if imported_count:
+            message += f"；已导入 {imported_count} 个旧版标定预设"
+        self.statusBar().showMessage(message, 5000)
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
         if not self.project.documents:
@@ -1151,10 +1375,10 @@ class MainWindow(QMainWindow):
         self._apply_settings_dialog(dialog, close_after=True)
 
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
-        previous_settings = self._app_settings
         new_settings = dialog.app_settings()
         self._app_settings = new_settings
-        AppSettingsIO.save(new_settings)
+        self._save_app_settings(context="设置")
+        self._refresh_preset_combo()
         self._refresh_canvases_for_settings()
 
         document = self.current_document()
@@ -1200,14 +1424,20 @@ class MainWindow(QMainWindow):
         canvas.begin_scale_anchor_pick()
 
     def add_calibration_preset(self) -> None:
-        dialog = CalibrationPresetDialog(self)
+        pixel_distance, actual_distance, unit = self._default_preset_dialog_values(self.current_document())
+        dialog = CalibrationPresetDialog(
+            self,
+            initial_pixel_distance=pixel_distance,
+            initial_actual_distance=actual_distance,
+            initial_unit=unit,
+        )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
         name, pixel_distance, actual_distance, pixels_per_unit, unit = dialog.values()
         if not name:
             QMessageBox.warning(self, "新增预设", "预设名称不能为空。")
             return
-        self.project.calibration_presets.append(
+        self._app_settings.calibration_presets.append(
             CalibrationPreset(
                 name=name,
                 pixels_per_unit=pixels_per_unit,
@@ -1217,15 +1447,76 @@ class MainWindow(QMainWindow):
                 computed_pixels_per_unit=pixels_per_unit,
             )
         )
-        self._refresh_preset_combo()
+        self._save_app_settings(context="新增预设")
+        self._refresh_preset_combo(selected_name=name)
         self.statusBar().showMessage(f"已新增标定预设: {name}", 4000)
+
+    def edit_selected_preset(self) -> None:
+        selected = self._selected_preset()
+        if selected is None:
+            return
+        preset_index, preset = selected
+        initial_pixel_distance = preset.pixel_distance if preset.pixel_distance is not None else max(preset.resolved_pixels_per_unit(), 0.000001)
+        initial_actual_distance = preset.actual_distance if preset.actual_distance is not None else 1.0
+        dialog = CalibrationPresetDialog(
+            self,
+            title="编辑标定预设",
+            initial_name=preset.name,
+            initial_pixel_distance=initial_pixel_distance,
+            initial_actual_distance=initial_actual_distance,
+            initial_unit=preset.unit,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        name, pixel_distance, actual_distance, pixels_per_unit, unit = dialog.values()
+        if not name:
+            QMessageBox.warning(self, "编辑预设", "预设名称不能为空。")
+            return
+        self._app_settings.calibration_presets[preset_index] = CalibrationPreset(
+            name=name,
+            pixels_per_unit=pixels_per_unit,
+            unit=unit,
+            pixel_distance=pixel_distance,
+            actual_distance=actual_distance,
+            computed_pixels_per_unit=pixels_per_unit,
+        )
+        self._save_app_settings(context="编辑预设")
+        self._refresh_preset_combo(selected_name=name)
+        self.statusBar().showMessage(f"已更新标定预设: {name}", 4000)
+
+    def delete_selected_preset(self) -> None:
+        selected = self._selected_preset()
+        if selected is None:
+            return
+        preset_index, preset = selected
+        result = QMessageBox.question(
+            self,
+            "删除预设",
+            f"确定删除标定预设“{preset.name}”吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if result != QMessageBox.StandardButton.Yes:
+            return
+        del self._app_settings.calibration_presets[preset_index]
+        self._save_app_settings(context="删除预设")
+        self._refresh_preset_combo()
+        self.statusBar().showMessage(f"已删除标定预设: {preset.name}", 4000)
 
     def apply_selected_preset(self) -> None:
         document = self.current_document()
-        preset_index = self.preset_combo.currentIndex()
-        if document is None or preset_index < 0 or preset_index >= len(self.project.calibration_presets):
+        selected = self._selected_preset()
+        if document is None or selected is None:
             return
-        preset = self.project.calibration_presets[preset_index]
+        _, preset = selected
+        scope = self._prompt_preset_apply_scope(preset)
+        if scope is None:
+            return
+
+        if scope == "project_all":
+            self._apply_project_default_calibration(preset.to_calibration(), label="应用项目统一标尺")
+            self.statusBar().showMessage(f"已将标定预设应用到当前项目: {preset.name}", 4000)
+            return
 
         def mutate() -> None:
             document.calibration = preset.to_calibration()
@@ -1508,28 +1799,39 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None or document.history is None or not document.history.undo(document):
             return
-        CalibrationSidecarIO.save_document(document)
+        if document.calibration is not None and document.calibration.mode == "project_default":
+            document.mark_calibration_saved()
+        else:
+            CalibrationSidecarIO.save_document(document)
         self._update_ui_for_current_document()
 
     def redo_current_document(self) -> None:
         document = self.current_document()
         if document is None or document.history is None or not document.history.redo(document):
             return
-        CalibrationSidecarIO.save_document(document)
+        if document.calibration is not None and document.calibration.mode == "project_default":
+            document.mark_calibration_saved()
+        else:
+            CalibrationSidecarIO.save_document(document)
         self._update_ui_for_current_document()
 
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
         dirty_documents = [document for document in documents if document.dirty_flags.session_dirty]
-        if not dirty_documents:
+        has_project_dirty = self._project_dirty()
+        if not dirty_documents and not has_project_dirty:
             return True
-        if len(dirty_documents) == 1 and len(documents) == 1:
-            message = f"{Path(dirty_documents[0].path).name} 有未保存的会话改动。"
-        else:
-            message = f"共有 {len(dirty_documents)} 张图片存在未保存的会话改动。"
+        message_parts: list[str] = []
+        if dirty_documents:
+            if len(dirty_documents) == 1 and len(documents) == 1:
+                message_parts.append(f"{Path(dirty_documents[0].path).name} 有未保存的会话改动。")
+            else:
+                message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的会话改动。")
+        if has_project_dirty:
+            message_parts.append("当前项目的统一比例尺或继承关系有未保存改动。")
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
-        box.setText(message)
+        box.setText("\n".join(message_parts))
         save_button = box.addButton("保存", QMessageBox.ButtonRole.AcceptRole)
         discard_button = box.addButton("放弃", QMessageBox.ButtonRole.DestructiveRole)
         cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
@@ -1544,12 +1846,14 @@ class MainWindow(QMainWindow):
     def _reset_workspace(self) -> None:
         self.project = ProjectState.empty()
         self._project_path = None
+        self._pending_project_load_snapshot = False
         self._document_order.clear()
         self._images.clear()
         self._rasters.clear()
         self._canvases.clear()
         self.image_list.clear()
         self.tab_widget.clear()
+        self._mark_project_saved()
 
     def _remove_document(self, document_id: str) -> None:
         if document_id not in self._document_order:
@@ -1761,26 +2065,50 @@ class MainWindow(QMainWindow):
         dialog = CalibrationInputDialog(self)
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        actual_length, unit = dialog.values()
+        actual_length, unit, apply_to_project = dialog.values()
         pixels_per_unit = line_length(line) / actual_length
+        calibration = Calibration(
+            mode="image_scale",
+            pixels_per_unit=pixels_per_unit,
+            unit=unit,
+            source_label=f"图内标定 {actual_length:g}{unit}",
+        )
+
+        if apply_to_project:
+            self._apply_project_default_calibration(calibration, label="设置项目统一标尺")
+            self.statusBar().showMessage("项目统一比例尺已更新", 4000)
+            return
 
         def mutate() -> None:
-            document.calibration = Calibration(
-                mode="image_scale",
-                pixels_per_unit=pixels_per_unit,
-                unit=unit,
-                source_label=f"图内标定 {actual_length:g}{unit}",
-            )
+            document.calibration = calibration
             document.metadata["calibration_line"] = line.to_dict()
             document.recalculate_measurements()
 
         self._apply_document_change(document, "图内标定", mutate, sync_sidecar=True)
         self.statusBar().showMessage("图内标尺标定已更新", 4000)
 
-    def _refresh_preset_combo(self) -> None:
+    def _refresh_preset_combo(self, *, selected_name: str | None = None) -> None:
+        current_name = selected_name
+        selected = self._selected_preset()
+        if current_name is None and selected is not None:
+            current_name = selected[1].name
         self.preset_combo.clear()
-        for preset in self.project.calibration_presets:
+        target_index = -1
+        for index, preset in enumerate(self._calibration_presets()):
             self.preset_combo.addItem(f"{preset.name} ({preset.resolved_pixels_per_unit():g} px/{preset.unit})")
+            if current_name is not None and preset.name == current_name and target_index < 0:
+                target_index = index
+        if target_index >= 0:
+            self.preset_combo.setCurrentIndex(target_index)
+        elif self.preset_combo.count() > 0:
+            self.preset_combo.setCurrentIndex(0)
+        has_preset = self.preset_combo.count() > 0
+        if self._edit_preset_button is not None:
+            self._edit_preset_button.setEnabled(has_preset)
+        if self._delete_preset_button is not None:
+            self._delete_preset_button.setEnabled(has_preset)
+        if self._apply_preset_button is not None:
+            self._apply_preset_button.setEnabled(has_preset and self.current_document() is not None)
 
     def _populate_group_list(self, document: ImageDocument | None) -> None:
         self._group_list_rebuilding = True
@@ -1828,10 +2156,15 @@ class MainWindow(QMainWindow):
             self.calibration_label.setText("当前图片未标定")
             return
         calibration = document.calibration
-        sidecar_info = f"\n侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}"
-        self.calibration_label.setText(
-            f"{calibration.source_label}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}{sidecar_info}"
-        )
+        lines = [
+            calibration.source_label or self._format_calibration_mode(calibration.mode),
+            f"{self._format_calibration_mode(calibration.mode)}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}",
+        ]
+        if calibration.mode == "project_default":
+            lines.append("保存位置: 当前项目")
+        else:
+            lines.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
+        self.calibration_label.setText("\n".join(lines))
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
         self._table_rebuilding = True
@@ -2034,6 +2367,15 @@ class MainWindow(QMainWindow):
         self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
         self.delete_group_action.setEnabled(has_deletable_group_target)
         self.delete_group_button.setEnabled(has_deletable_group_target)
+        has_preset = bool(self._calibration_presets())
+        if self._add_preset_button is not None:
+            self._add_preset_button.setEnabled(True)
+        if self._edit_preset_button is not None:
+            self._edit_preset_button.setEnabled(has_preset)
+        if self._delete_preset_button is not None:
+            self._delete_preset_button.setEnabled(has_preset)
+        if self._apply_preset_button is not None:
+            self._apply_preset_button.setEnabled(has_document and has_preset)
         if self._area_auto_button is not None:
             self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings))
         self.undo_action.setEnabled(bool(history and history.can_undo()))

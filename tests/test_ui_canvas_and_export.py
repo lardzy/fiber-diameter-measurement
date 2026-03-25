@@ -3,6 +3,7 @@ from __future__ import annotations
 import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import json
 import sys
 import unittest
 from unittest.mock import patch
@@ -21,9 +22,10 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, TextAnnotation, new_id
 from fdm.settings import AppSettings, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
+from fdm.services.sidecar_io import CalibrationSidecarIO
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
@@ -352,6 +354,180 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_preset_combo_reads_global_settings_presets(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(
+                    name="40x",
+                    pixels_per_unit=12.5,
+                    unit="um",
+                    pixel_distance=250.0,
+                    actual_distance=20.0,
+                    computed_pixels_per_unit=12.5,
+                )
+            ]
+
+            window._refresh_preset_combo()
+
+            self.assertEqual(window.preset_combo.count(), 1)
+            self.assertIn("40x", window.preset_combo.itemText(0))
+        finally:
+            window.close()
+
+    def test_default_preset_values_prioritize_current_calibration_line(self) -> None:
+        window = MainWindow()
+        try:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/preset_defaults.png",
+                image_size=(240, 160),
+            )
+            document.initialize_runtime_state()
+            document.calibration = Calibration(
+                mode="preset",
+                pixels_per_unit=10.0,
+                unit="um",
+                source_label="demo preset",
+            )
+            document.metadata["calibration_line"] = Line(Point(5, 5), Point(105, 5)).to_dict()
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(
+                    name="demo preset",
+                    pixels_per_unit=10.0,
+                    unit="um",
+                    pixel_distance=250.0,
+                    actual_distance=25.0,
+                    computed_pixels_per_unit=10.0,
+                )
+            ]
+
+            pixel_distance, actual_distance, unit = window._default_preset_dialog_values(document)
+
+            self.assertAlmostEqual(pixel_distance, 100.0)
+            self.assertAlmostEqual(actual_distance, 10.0)
+            self.assertEqual(unit, "um")
+        finally:
+            window.close()
+
+    def test_apply_project_default_calibration_updates_all_open_documents_without_sidecars(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+
+                for name in ("a.png", "b.png"):
+                    path = str(Path(tmp_dir) / name)
+                    document = ImageDocument(
+                        id=new_id("image"),
+                        path=path,
+                        image_size=(image.width(), image.height()),
+                    )
+                    document.initialize_runtime_state()
+                    self._load_document_into_window(window, document, image)
+
+                calibration = Calibration(
+                    mode="preset",
+                    pixels_per_unit=8.0,
+                    unit="um",
+                    source_label="40x",
+                )
+
+                window._apply_project_default_calibration(calibration, label="测试项目统一标尺")
+
+                self.assertIsNotNone(window.project.project_default_calibration)
+                self.assertEqual(window.project.project_default_calibration.mode, "project_default")
+                self.assertEqual(len(window.project.documents), 2)
+                self.assertTrue(all(document.calibration is not None for document in window.project.documents))
+                self.assertTrue(all(document.calibration.mode == "project_default" for document in window.project.documents))
+                self.assertFalse(any(Path(document.default_sidecar_path()).exists() for document in window.project.documents))
+        finally:
+            window.close()
+
+    def test_add_loaded_document_can_prefer_project_default_over_sidecar(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "conflict.png"
+                image_path.write_bytes(b"fake")
+                sidecar_source = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(200, 120),
+                )
+                sidecar_source.initialize_runtime_state()
+                sidecar_source.calibration = Calibration(
+                    mode="image_scale",
+                    pixels_per_unit=5.0,
+                    unit="um",
+                    source_label="图片标尺",
+                )
+                CalibrationSidecarIO.save_document(sidecar_source)
+                original_payload = json.loads(Path(sidecar_source.default_sidecar_path()).read_text(encoding="utf-8"))
+
+                window.project.project_default_calibration = Calibration(
+                    mode="project_default",
+                    pixels_per_unit=9.0,
+                    unit="um",
+                    source_label="项目标尺",
+                )
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+
+                with patch.object(window, "_prompt_project_default_conflict", return_value=True):
+                    window._add_loaded_document(
+                        ImageLoadRequest(path=str(image_path), document=None),
+                        image,
+                        qimage_to_raster(image),
+                    )
+
+                self.assertEqual(window.current_document().calibration.mode, "project_default")
+                payload = json.loads(Path(sidecar_source.default_sidecar_path()).read_text(encoding="utf-8"))
+                self.assertEqual(payload, original_payload)
+        finally:
+            window.close()
+
+    def test_merge_legacy_presets_renames_name_conflicts(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(
+                    name="40x",
+                    pixels_per_unit=10.0,
+                    unit="um",
+                    pixel_distance=100.0,
+                    actual_distance=10.0,
+                    computed_pixels_per_unit=10.0,
+                )
+            ]
+            legacy_presets = [
+                CalibrationPreset(
+                    name="40x",
+                    pixels_per_unit=12.0,
+                    unit="um",
+                    pixel_distance=120.0,
+                    actual_distance=10.0,
+                    computed_pixels_per_unit=12.0,
+                ),
+                CalibrationPreset(
+                    name="40x",
+                    pixels_per_unit=10.0,
+                    unit="um",
+                    pixel_distance=100.0,
+                    actual_distance=10.0,
+                    computed_pixels_per_unit=10.0,
+                ),
+            ]
+
+            with patch.object(window, "_save_app_settings", return_value=True):
+                imported_count = window._merge_legacy_calibration_presets(legacy_presets)
+
+            self.assertEqual(imported_count, 1)
+            self.assertEqual([preset.name for preset in window._app_settings.calibration_presets], ["40x", "40x (导入)"])
+        finally:
+            window.close()
+
     def test_magic_segment_controls_are_only_visible_in_magic_mode(self) -> None:
         window = MainWindow()
         try:
@@ -391,6 +567,14 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             splitters = window.findChildren(QSplitter)
             self.assertTrue(any(splitter.orientation() == Qt.Orientation.Vertical for splitter in splitters))
+        finally:
+            window.close()
+
+    def test_tab_strip_uses_scroll_buttons_without_shrinking_left_panel(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertTrue(window.tab_widget.usesScrollButtons())
+            self.assertGreaterEqual(window.image_list.parentWidget().minimumWidth(), 180)
         finally:
             window.close()
 

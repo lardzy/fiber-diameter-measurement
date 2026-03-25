@@ -42,6 +42,17 @@ class Calibration:
     unit: str
     source_label: str
 
+    def clone(self, *, mode: str | None = None, source_label: str | None = None) -> "Calibration":
+        return Calibration(
+            mode=mode or self.mode,
+            pixels_per_unit=self.pixels_per_unit,
+            unit=self.unit,
+            source_label=self.source_label if source_label is None else source_label,
+        )
+
+    def as_project_default(self) -> "Calibration":
+        return self.clone(mode="project_default")
+
     def to_dict(self) -> dict[str, Any]:
         return {
             "mode": self.mode,
@@ -768,6 +779,7 @@ class ProjectState:
     version: str
     documents: list[ImageDocument]
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
+    project_default_calibration: Calibration | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_document(self, document_id: str) -> ImageDocument | None:
@@ -780,7 +792,7 @@ class ProjectState:
         return {
             "version": self.version,
             "documents": [document.to_dict() for document in self.documents],
-            "calibration_presets": [preset.to_dict() for preset in self.calibration_presets],
+            "project_default_calibration": self.project_default_calibration.to_dict() if self.project_default_calibration else None,
             "metadata": self.metadata,
         }
 
@@ -797,5 +809,6 @@ class ProjectState:
                 CalibrationPreset.from_dict(item)
                 for item in payload.get("calibration_presets", [])
             ],
+            project_default_calibration=Calibration.from_dict(payload["project_default_calibration"]) if payload.get("project_default_calibration") else None,
             metadata=dict(payload.get("metadata", {})),
         )

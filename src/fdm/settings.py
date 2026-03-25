@@ -6,6 +6,8 @@ import json
 import os
 import sys
 
+from fdm.models import CalibrationPreset
+
 
 class MeasurementEndpointStyle:
     CIRCLE = "circle"
@@ -188,6 +190,7 @@ class AppSettings:
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
     area_worker_python: str = field(default_factory=default_area_worker_python)
+    calibration_presets: list[CalibrationPreset] = field(default_factory=list)
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
@@ -283,6 +286,7 @@ class AppSettings:
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
             "area_worker_python": normalized.area_worker_python,
+            "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
         }
 
     @classmethod
@@ -315,6 +319,13 @@ class AppSettings:
         settings.area_weights_dir = cls._normalize_weights_dir(payload.get("area_weights_dir", settings.area_weights_dir))
         settings.area_vendor_root = cls._normalize_vendor_root(payload.get("area_vendor_root", settings.area_vendor_root))
         settings.area_worker_python = cls._normalize_worker_program(payload.get("area_worker_python", settings.area_worker_python))
+        presets = payload.get("calibration_presets", None)
+        if isinstance(presets, list):
+            settings.calibration_presets = [
+                CalibrationPreset.from_dict(item)
+                for item in presets
+                if isinstance(item, dict) and str(item.get("name", "")).strip()
+            ]
         return settings
 
 

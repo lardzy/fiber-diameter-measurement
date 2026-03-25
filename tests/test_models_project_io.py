@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import json
 import sys
 import unittest
 from unittest.mock import patch
@@ -248,6 +249,82 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+
+    def test_app_settings_roundtrip_preserves_calibration_presets(self) -> None:
+        settings = AppSettings(
+            calibration_presets=[
+                CalibrationPreset(
+                    name="40x",
+                    pixels_per_unit=12.5,
+                    unit="um",
+                    pixel_distance=250.0,
+                    actual_distance=20.0,
+                    computed_pixels_per_unit=12.5,
+                )
+            ]
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            saved_path = AppSettingsIO.save(settings, path)
+            loaded = AppSettingsIO.load(saved_path)
+
+        self.assertEqual(len(loaded.calibration_presets), 1)
+        self.assertEqual(loaded.calibration_presets[0].name, "40x")
+        self.assertAlmostEqual(loaded.calibration_presets[0].pixel_distance or 0.0, 250.0)
+        self.assertAlmostEqual(loaded.calibration_presets[0].actual_distance or 0.0, 20.0)
+
+    def test_project_roundtrip_persists_project_default_calibration_without_writing_legacy_presets(self) -> None:
+        project = ProjectState(
+            version="0.1.0",
+            documents=[],
+            calibration_presets=[
+                CalibrationPreset(
+                    name="legacy preset",
+                    pixels_per_unit=5.0,
+                    unit="um",
+                )
+            ],
+            project_default_calibration=Calibration(
+                mode="project_default",
+                pixels_per_unit=4.0,
+                unit="um",
+                source_label="项目统一标尺",
+            ),
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "demo.fdmproj"
+            ProjectIO.save(project, path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            loaded = ProjectIO.load(path)
+
+        self.assertNotIn("calibration_presets", payload)
+        self.assertEqual(payload["project_default_calibration"]["mode"], "project_default")
+        self.assertIsNotNone(loaded.project_default_calibration)
+        self.assertEqual(loaded.project_default_calibration.mode, "project_default")
+        self.assertEqual(len(loaded.calibration_presets), 0)
+
+    def test_project_state_loads_legacy_calibration_presets_for_migration(self) -> None:
+        payload = {
+            "version": "0.1.0",
+            "documents": [],
+            "calibration_presets": [
+                {
+                    "name": "legacy 40x",
+                    "pixels_per_unit": 8.0,
+                    "unit": "um",
+                    "pixel_distance": 160.0,
+                    "actual_distance": 20.0,
+                    "computed_pixels_per_unit": 8.0,
+                }
+            ],
+        }
+
+        project = ProjectState.from_dict(payload)
+
+        self.assertEqual(len(project.calibration_presets), 1)
+        self.assertEqual(project.calibration_presets[0].name, "legacy 40x")
 
     def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
         runtime_root = application_root() / "runtime"

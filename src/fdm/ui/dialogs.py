@@ -58,6 +58,7 @@ class CalibrationInputDialog(QDialog):
         self._length_spin.setValue(100.0)
         self._unit_combo = QComboBox()
         self._unit_combo.addItems(["um", "mm"])
+        self._apply_to_project = QCheckBox("应用到当前项目（当前及后续打开图片）")
 
         form = QFormLayout()
         form.addRow("真实长度", self._length_spin)
@@ -69,28 +70,46 @@ class CalibrationInputDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
+        layout.addWidget(self._apply_to_project)
         layout.addWidget(buttons)
 
-    def values(self) -> tuple[float, str]:
-        return self._length_spin.value(), self._unit_combo.currentText()
+    def values(self) -> tuple[float, str, bool]:
+        return (
+            self._length_spin.value(),
+            self._unit_combo.currentText(),
+            self._apply_to_project.isChecked(),
+        )
 
 
 class CalibrationPresetDialog(QDialog):
-    def __init__(self, parent=None) -> None:
+    def __init__(
+        self,
+        parent=None,
+        *,
+        title: str = "新增标定预设",
+        initial_name: str = "",
+        initial_pixel_distance: float = 100.0,
+        initial_actual_distance: float = 10.0,
+        initial_unit: str = "um",
+    ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("新增标定预设")
+        self.setWindowTitle(title)
         self._name_edit = QLineEdit()
         self._name_edit.setPlaceholderText("例如 40x 显微镜")
+        self._name_edit.setText(initial_name)
         self._pixel_distance_spin = QDoubleSpinBox()
         self._pixel_distance_spin.setDecimals(6)
         self._pixel_distance_spin.setRange(0.000001, 1_000_000.0)
-        self._pixel_distance_spin.setValue(100.0)
+        self._pixel_distance_spin.setValue(initial_pixel_distance)
         self._actual_distance_spin = QDoubleSpinBox()
         self._actual_distance_spin.setDecimals(6)
         self._actual_distance_spin.setRange(0.000001, 1_000_000.0)
-        self._actual_distance_spin.setValue(10.0)
+        self._actual_distance_spin.setValue(initial_actual_distance)
         self._unit_combo = QComboBox()
         self._unit_combo.addItems(["um", "mm"])
+        initial_index = self._unit_combo.findText(initial_unit)
+        if initial_index >= 0:
+            self._unit_combo.setCurrentIndex(initial_index)
         self._computed_label = QLabel()
         self._computed_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
 
@@ -326,6 +345,7 @@ class SettingsDialog(QDialog):
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
             area_worker_python=self._area_worker_python_edit.text().strip(),
+            calibration_presets=list(self._initial_settings.calibration_presets),
         )
 
     def area_model_mappings(self) -> list[AreaModelMapping]:
