@@ -252,7 +252,7 @@ class QtVideoCaptureBackend(CaptureBackend):
 
 class MicroviewCaptureBackend(CaptureBackend):
     backend_key = "microview"
-    _PREVIEW_INTERVAL_MS = 33
+    _PREVIEW_INTERVAL_MS = 16
     _MV_RUN = 1
     _MV_STOP = 0
     _PARAM_BUFFERTYPE = 4
@@ -260,9 +260,14 @@ class MicroviewCaptureBackend(CaptureBackend):
     _PARAM_DISP_WHND = 7
     _PARAM_DISP_TOP = 8
     _PARAM_DISP_LEFT = 9
+    _PARAM_ADJUST_LUMINANCE = 15
+    _PARAM_ADJUST_SATURATION = 17
+    _PARAM_ADJUST_HUE = 18
+    _PARAM_ADJUST_CONTRAST = 19
     _PARAM_GRAB_BITDESCRIBE = 66
     _BUFFER_SYSTEM_MEMORY_GDI = 1
     _SHOW_CLOSE = 0
+    _DEFAULT_VIDEO_LEVEL = 128
     _FORMAT_MONO8 = 0
     _FORMAT_RGB1555 = 1
     _FORMAT_RGB24 = 2
@@ -362,17 +367,11 @@ class MicroviewCaptureBackend(CaptureBackend):
         if self._dll is None or not self._device_handle or self._frame_callback is None:
             return
         try:
-            info = self._MVImageInfo()
-            buffer_ptr = self._dll.MV_CaptureSingle(
-                self._device_handle,
-                True,
-                None,
-                0,
-                ctypes.byref(info),
-            )
-            if not buffer_ptr:
+            image = self._capture_live_buffer_image()
+            if image.isNull():
+                image = self._capture_single_frame_image()
+            if image.isNull():
                 return
-            image = _microview_buffer_to_qimage(buffer_ptr, info)
         except Exception as exc:
             callback = self._error_callback
             self.stop_preview()
@@ -419,6 +418,19 @@ class MicroviewCaptureBackend(CaptureBackend):
             ctypes.POINTER(self._MVImageInfo),
         ]
         dll.MV_CaptureSingle.restype = ctypes.c_void_p
+        for function_name, restype in (
+            ("MV_LabView_GetBuffer", ctypes.c_void_p),
+            ("MV_LabView_GetLength", ctypes.c_ulong),
+            ("MV_LabView_GetnColor", ctypes.c_ulong),
+            ("MV_LabView_GetHeigth", ctypes.c_ulong),
+            ("MV_LabView_GetWidth", ctypes.c_ulong),
+            ("MV_LabView_GetLineSkipPixel", ctypes.c_ulong),
+        ):
+            function = getattr(dll, function_name, None)
+            if function is None:
+                continue
+            function.argtypes = [ctypes.c_void_p]
+            function.restype = restype
         self._dll = dll
         return self._dll
 
@@ -455,9 +467,53 @@ class MicroviewCaptureBackend(CaptureBackend):
         except Exception:
             pass
         try:
-            dll.MV_SetDeviceParameter(device_handle, self._PARAM_GRAB_BITDESCRIBE, self._FORMAT_RGB24)
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_GRAB_BITDESCRIBE, self._FORMAT_ARGB8888)
         except Exception:
             pass
+        for parameter in (
+            self._PARAM_ADJUST_LUMINANCE,
+            self._PARAM_ADJUST_CONTRAST,
+            self._PARAM_ADJUST_HUE,
+            self._PARAM_ADJUST_SATURATION,
+        ):
+            try:
+                dll.MV_SetDeviceParameter(device_handle, parameter, self._DEFAULT_VIDEO_LEVEL)
+            except Exception:
+                pass
+
+    def _capture_live_buffer_image(self) -> QImage:
+        if self._dll is None or not self._device_handle:
+            return QImage()
+        buffer_getter = getattr(self._dll, "MV_LabView_GetBuffer", None)
+        if buffer_getter is None:
+            return QImage()
+        buffer_ptr = buffer_getter(self._device_handle)
+        if not buffer_ptr:
+            return QImage()
+        info = self._MVImageInfo()
+        info.Length = getattr(self._dll, "MV_LabView_GetLength", lambda *_args: 0)(self._device_handle)
+        info.nColor = getattr(self._dll, "MV_LabView_GetnColor", lambda *_args: 0)(self._device_handle)
+        info.Heigth = getattr(self._dll, "MV_LabView_GetHeigth", lambda *_args: 0)(self._device_handle)
+        info.Width = getattr(self._dll, "MV_LabView_GetWidth", lambda *_args: 0)(self._device_handle)
+        info.SkipPixel = getattr(self._dll, "MV_LabView_GetLineSkipPixel", lambda *_args: 0)(self._device_handle)
+        if int(info.Length) <= 0 or int(info.Width) <= 0 or int(info.Heigth) <= 0:
+            return QImage()
+        return _microview_buffer_to_qimage(buffer_ptr, info)
+
+    def _capture_single_frame_image(self) -> QImage:
+        if self._dll is None or not self._device_handle:
+            return QImage()
+        info = self._MVImageInfo()
+        buffer_ptr = self._dll.MV_CaptureSingle(
+            self._device_handle,
+            False,
+            None,
+            0,
+            ctypes.byref(info),
+        )
+        if not buffer_ptr:
+            return QImage()
+        return _microview_buffer_to_qimage(buffer_ptr, info)
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:
@@ -660,7 +716,7 @@ def _microview_qimage_format(pixel_format: int):
     if pixel_format == MicroviewCaptureBackend._FORMAT_RGB24:
         return getattr(QImage.Format, "Format_BGR888", QImage.Format.Format_RGB888)
     if pixel_format == MicroviewCaptureBackend._FORMAT_ARGB8888:
-        return getattr(QImage.Format, "Format_RGBA8888", QImage.Format.Format_ARGB32)
+        return getattr(QImage.Format, "Format_ARGB32", QImage.Format.Format_RGBA8888)
     if pixel_format == MicroviewCaptureBackend._FORMAT_RGB565:
         return getattr(QImage.Format, "Format_RGB16", None)
     if pixel_format in (
