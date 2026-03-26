@@ -154,6 +154,9 @@ except ModuleNotFoundError as exc:
         def active_warning(self) -> str:
             return ""
 
+        def capture_diagnostics(self) -> str:
+            return ""
+
         def device_refresh_warnings(self) -> list[str]:
             return [f"采集模块未安装: {_CAPTURE_IMPORT_ERROR}"] if _CAPTURE_IMPORT_ERROR is not None else []
 
@@ -1147,7 +1150,6 @@ class MainWindow(QMainWindow):
 
     def capture_current_frame(self) -> None:
         was_preview_active = self._capture_manager.is_preview_active()
-        preview_kind = self._preview_kind()
         frame: QImage | None
         try:
             frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
@@ -1155,7 +1157,11 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "采集一张", str(exc))
             return
         if frame is None or frame.isNull():
-            QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
+            diagnostics = self._capture_manager.capture_diagnostics().strip()
+            if diagnostics:
+                QMessageBox.warning(self, "采集一张", f"当前未抓拍到有效图像。\n\n抓拍诊断:\n{diagnostics}")
+            else:
+                QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
             return
         if was_preview_active:
             self.stop_live_preview()

@@ -330,6 +330,36 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual((image.width(), image.height()), (2, 1))
         self.assertEqual(image.pixelColor(0, 0).red(), 255)
 
+    @unittest.skipIf(MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_failed_capture_records_diagnostics(self) -> None:
+        backend = MicroviewCaptureBackend()
+
+        class FakeDll:
+            def MV_SetDeviceParameter(self, handle, parameter, value):
+                if int(parameter) == MicroviewCaptureBackend._PARAM_SET_GARBIMAGEINFO:
+                    info = ctypes.cast(int(value), ctypes.POINTER(MicroviewCaptureBackend._MVImageInfo)).contents
+                    info.Length = 0
+                    info.Width = 0
+                    info.Heigth = 0
+                    info.nColor = 24
+                    info.SkipPixel = 0
+                return True
+
+            def MV_CaptureSingle(self, handle, process, buffer_ptr, buffer_len, info_ptr):
+                return 0
+
+            def MV_GetLastError(self, display):
+                return 12
+
+        backend._dll = FakeDll()
+
+        image = backend._capture_single_frame_image(handle=1, process=False)
+
+        self.assertTrue(image.isNull())
+        diagnostics = backend.last_capture_diagnostics()
+        self.assertIn("attempt=1", diagnostics)
+        self.assertIn("sdk_error_after=12", diagnostics)
+
 
 if __name__ == "__main__":
     unittest.main()

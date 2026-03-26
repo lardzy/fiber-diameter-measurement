@@ -74,6 +74,9 @@ class CaptureBackend:
     def active_warning(self) -> str:
         return ""
 
+    def last_capture_diagnostics(self) -> str:
+        return ""
+
 
 def available_capture_backends() -> list[CaptureBackend]:
     return [
@@ -183,6 +186,13 @@ class CaptureSessionManager(QObject):
         if self._active_backend is None:
             return ""
         return self._active_backend.active_warning()
+
+    def capture_diagnostics(self) -> str:
+        device = self.selected_device()
+        backend = self._active_backend if self.is_preview_active() and self._active_backend is not None else self._backend_for_device(device)
+        if backend is None:
+            return ""
+        return backend.last_capture_diagnostics()
 
     def device_refresh_warnings(self) -> list[str]:
         return list(self._device_refresh_warnings)
@@ -467,6 +477,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._preview_buffer_type = self._BUFFER_SYSTEM_MEMORY_DX
         self._preview_resolution: tuple[int, int] | None = None
         self._active_warning = ""
+        self._last_capture_diagnostics = ""
         self._frame_callback: Callable[[QImage], None] | None = None
         self._error_callback: Callable[[str], None] | None = None
 
@@ -572,6 +583,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         return True
 
     def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
+        self._last_capture_diagnostics = ""
         try:
             dll = self._ensure_library()
         except OSError as exc:
@@ -596,7 +608,13 @@ class MicroviewCaptureBackend(CaptureBackend):
         if handle is None:
             return None
         try:
-            return self._capture_single_frame_image(handle=handle, process=False)
+            image = self._capture_single_frame_image(handle=handle, process=False)
+            if image.isNull():
+                diagnostics = self._last_capture_diagnostics.strip()
+                if diagnostics:
+                    raise RuntimeError(f"Microview 抓拍失败。\n{diagnostics}")
+                raise RuntimeError("Microview 抓拍失败，未返回有效图像。")
+            return image
         finally:
             if temp_handle:
                 try:
@@ -646,6 +664,9 @@ class MicroviewCaptureBackend(CaptureBackend):
 
     def active_warning(self) -> str:
         return self._active_warning
+
+    def last_capture_diagnostics(self) -> str:
+        return self._last_capture_diagnostics
 
     def _ensure_library(self) -> ctypes.WinDLL | None:
         if self._dll is not None:
@@ -866,40 +887,79 @@ class MicroviewCaptureBackend(CaptureBackend):
             handle = self._device_handle
         if not handle:
             return QImage()
+        diagnostics: list[str] = []
         flags: list[bool] = [process]
         if not process:
             flags.append(True)
-        for process_flag in flags:
+        for attempt_index, process_flag in enumerate(flags, start=1):
             info = self._MVImageInfo()
             capture_buffer = None
             capture_ptr: int | None = None
             capture_length = 0
+            set_info_ok = False
             try:
-                self._dll.MV_SetDeviceParameter(
+                set_info_ok = bool(self._dll.MV_SetDeviceParameter(
                     handle,
                     self._PARAM_SET_GARBIMAGEINFO,
                     ctypes.addressof(info),
-                )
+                ))
             except Exception:
-                pass
+                set_info_ok = False
             if int(info.Length) > 0:
                 capture_length = int(info.Length)
                 capture_buffer = ctypes.create_string_buffer(capture_length)
                 capture_ptr = ctypes.addressof(capture_buffer)
-            buffer_ptr = self._dll.MV_CaptureSingle(
-                handle,
-                process_flag,
-                capture_ptr,
-                capture_length,
-                ctypes.byref(info),
-            )
+            sdk_error_before = self._microview_last_error_code()
+            try:
+                buffer_ptr = self._dll.MV_CaptureSingle(
+                    handle,
+                    process_flag,
+                    capture_ptr,
+                    capture_length,
+                    ctypes.byref(info),
+                )
+            except Exception as exc:
+                diagnostics.append(
+                    "attempt="
+                    f"{attempt_index}, process={process_flag}, set_info_ok={set_info_ok}, "
+                    f"prealloc_len={capture_length}, error={exc.__class__.__name__}: {exc}"
+                )
+                continue
             resolved_ptr = int(buffer_ptr) if buffer_ptr else (capture_ptr or 0)
+            diagnostics.append(
+                "attempt="
+                f"{attempt_index}, process={process_flag}, set_info_ok={set_info_ok}, "
+                f"prealloc_len={capture_length}, sdk_ptr={int(buffer_ptr) if buffer_ptr else 0}, "
+                f"resolved_ptr={resolved_ptr}, "
+                f"info=(len={int(info.Length)}, w={int(info.Width)}, h={int(info.Heigth)}, color={int(info.nColor)}, skip={int(info.SkipPixel)}), "
+                f"sdk_error_before={sdk_error_before}, sdk_error_after={self._microview_last_error_code()}"
+            )
             if not resolved_ptr:
                 continue
-            image = _microview_buffer_to_qimage(resolved_ptr, info)
+            try:
+                image = _microview_buffer_to_qimage(resolved_ptr, info)
+            except Exception as exc:
+                diagnostics.append(
+                    "attempt="
+                    f"{attempt_index}, decode_error={exc.__class__.__name__}: {exc}"
+                )
+                continue
             if not image.isNull():
+                diagnostics.append(
+                    f"success=(w={image.width()}, h={image.height()}, process={process_flag})"
+                )
+                self._last_capture_diagnostics = "\n".join(diagnostics)
                 return image
+        self._last_capture_diagnostics = "\n".join(diagnostics)
         return QImage()
+
+    def _microview_last_error_code(self) -> int:
+        if self._dll is None:
+            return 0
+        try:
+            return int(self._dll.MV_GetLastError(False))
+        except Exception:
+            return 0
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:
