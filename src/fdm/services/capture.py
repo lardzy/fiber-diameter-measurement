@@ -40,6 +40,9 @@ class CaptureBackend:
     def preview_kind(self, device: CaptureDevice) -> str:
         return "frame_stream"
 
+    def preview_resolution(self, device: CaptureDevice) -> tuple[int, int] | None:
+        return None
+
     def start_preview(
         self,
         device: CaptureDevice,
@@ -135,6 +138,13 @@ class CaptureSessionManager(QObject):
         if device is None or backend is None:
             return "frame_stream"
         return backend.preview_kind(device)
+
+    def preview_resolution(self) -> tuple[int, int] | None:
+        device = self.selected_device()
+        backend = self._active_backend if self.is_preview_active() and self._active_backend is not None else self._backend_for_device(device)
+        if device is None or backend is None:
+            return None
+        return backend.preview_resolution(device)
 
     def can_capture_still(self) -> bool:
         device = self.selected_device()
@@ -454,12 +464,18 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._board_type: int | None = None
         self._preview_target: object | None = None
         self._preview_buffer_type = self._BUFFER_SYSTEM_MEMORY_DX
+        self._preview_resolution: tuple[int, int] | None = None
         self._active_warning = ""
         self._frame_callback: Callable[[QImage], None] | None = None
         self._error_callback: Callable[[str], None] | None = None
 
     def preview_kind(self, device: CaptureDevice) -> str:
         return "native_embed"
+
+    def preview_resolution(self, device: CaptureDevice) -> tuple[int, int] | None:
+        if self._active_device_matches(device) and self._preview_resolution is not None:
+            return self._preview_resolution
+        return self._resolve_preview_resolution_for_device(device)
 
     def list_devices(self) -> list[CaptureDevice]:
         if sys.platform != "win32":
@@ -511,6 +527,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._device_handle = int(raw_device_handle)
         self._device_index = int(device.native_id)
         self._board_type = self._get_board_type(raw_device_handle)
+        self._preview_resolution = self._get_capture_dimensions(raw_device_handle)
         self._configure_capture_defaults(dll, raw_device_handle, self._board_type)
         self._bind_preview_target(dll, raw_device_handle, preview_target)
         if not self._start_with_display_mode(dll, raw_device_handle, self._BUFFER_SYSTEM_MEMORY_DX):
@@ -539,6 +556,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._board_type = None
         self._preview_target = None
         self._preview_buffer_type = self._BUFFER_SYSTEM_MEMORY_DX
+        self._preview_resolution = None
         self._active_warning = ""
         self._frame_callback = None
         self._error_callback = None
@@ -777,6 +795,26 @@ class MicroviewCaptureBackend(CaptureBackend):
             except Exception:
                 pass
 
+    def _resolve_preview_resolution_for_device(self, device: CaptureDevice) -> tuple[int, int] | None:
+        if self._active_device_matches(device) and self._preview_resolution is not None:
+            return self._preview_resolution
+        try:
+            dll = self._ensure_library()
+        except OSError:
+            return None
+        if dll is None:
+            return None
+        raw_handle = dll.MV_OpenDevice(int(device.native_id), True)
+        if not raw_handle:
+            return None
+        try:
+            return self._get_capture_dimensions(raw_handle)
+        finally:
+            try:
+                dll.MV_CloseDevice(raw_handle)
+            except Exception:
+                pass
+
     def _get_board_type(self, device_handle) -> int:
         if self._dll is None:
             return 0
@@ -784,6 +822,16 @@ class MicroviewCaptureBackend(CaptureBackend):
             return int(self._dll.MV_GetDeviceParameter(device_handle, self._PARAM_GET_BOARD_TYPE))
         except Exception:
             return 0
+
+    def _get_capture_dimensions(self, device_handle) -> tuple[int, int] | None:
+        if self._dll is None:
+            return None
+        try:
+            width = max(1, int(self._dll.MV_GetDeviceParameter(device_handle, self._PARAM_GRAB_WIDTH)))
+            height = max(1, int(self._dll.MV_GetDeviceParameter(device_handle, self._PARAM_GRAB_HEIGHT)))
+        except Exception:
+            return None
+        return width, height
 
     def _signal_param_summary(self, dll, device_handle) -> str:
         values: dict[str, int] = {}
@@ -817,17 +865,24 @@ class MicroviewCaptureBackend(CaptureBackend):
             handle = self._device_handle
         if not handle:
             return QImage()
-        info = self._MVImageInfo()
-        buffer_ptr = self._dll.MV_CaptureSingle(
-            handle,
-            process,
-            None,
-            0,
-            ctypes.byref(info),
-        )
-        if not buffer_ptr:
-            return QImage()
-        return _microview_buffer_to_qimage(buffer_ptr, info)
+        flags: list[bool] = [process]
+        if not process:
+            flags.append(True)
+        for process_flag in flags:
+            info = self._MVImageInfo()
+            buffer_ptr = self._dll.MV_CaptureSingle(
+                handle,
+                process_flag,
+                None,
+                0,
+                ctypes.byref(info),
+            )
+            if not buffer_ptr:
+                continue
+            image = _microview_buffer_to_qimage(buffer_ptr, info)
+            if not image.isNull():
+                return image
+        return QImage()
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:

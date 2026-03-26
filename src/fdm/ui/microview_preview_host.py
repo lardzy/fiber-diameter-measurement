@@ -17,12 +17,18 @@ class MicroviewPreviewHost(QWidget):
         palette = self.palette()
         palette.setColor(QPalette.ColorRole.Window, QColor("#101820"))
         self.setPalette(palette)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.setMinimumSize(320, 240)
+        self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self.set_preview_resolution(640, 480)
 
     def ensure_native_handle(self) -> int:
         self.winId()
         return self.native_preview_handle()
+
+    def set_preview_resolution(self, width: int, height: int) -> None:
+        width = max(1, int(width))
+        height = max(1, int(height))
+        self.setFixedSize(width, height)
+        self.metricsChanged.emit()
 
     def native_preview_handle(self) -> int:
         try:

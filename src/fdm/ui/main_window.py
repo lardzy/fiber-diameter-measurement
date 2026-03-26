@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QDialogButtonBox,
     QFileDialog,
+    QFrame,
     QGroupBox,
     QHBoxLayout,
     QHeaderView,
@@ -25,6 +26,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressDialog,
     QPushButton,
+    QScrollArea,
     QSizePolicy,
     QSplitter,
     QStackedWidget,
@@ -138,6 +140,9 @@ except ModuleNotFoundError as exc:
             return False
 
         def capture_still_frame(self) -> QImage | None:
+            return None
+
+        def preview_resolution(self) -> tuple[int, int] | None:
             return None
 
         def can_optimize_signal(self) -> bool:
@@ -267,6 +272,7 @@ class MainWindow(QMainWindow):
         self._preview_display_stack: QStackedWidget | None = None
         self._preview_canvas: DocumentCanvas | None = None
         self._microview_preview_host: MicroviewPreviewHost | None = None
+        self._microview_preview_scroll: QScrollArea | None = None
         self._preview_status_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
         self._preview_active = False
@@ -661,7 +667,12 @@ class MainWindow(QMainWindow):
         self._preview_display_stack.addWidget(self._preview_canvas)
         self._microview_preview_host = MicroviewPreviewHost()
         self._microview_preview_host.metricsChanged.connect(self._on_preview_host_metrics_changed)
-        self._preview_display_stack.addWidget(self._microview_preview_host)
+        self._microview_preview_scroll = QScrollArea()
+        self._microview_preview_scroll.setWidget(self._microview_preview_host)
+        self._microview_preview_scroll.setWidgetResizable(False)
+        self._microview_preview_scroll.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        self._microview_preview_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._preview_display_stack.addWidget(self._microview_preview_scroll)
         preview_layout.addWidget(self._preview_display_stack, 1)
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
@@ -856,9 +867,13 @@ class MainWindow(QMainWindow):
         return None
 
     def _apply_preview_surface(self, preview_kind: str) -> None:
-        if self._preview_display_stack is None or self._preview_canvas is None or self._microview_preview_host is None:
+        if (
+            self._preview_display_stack is None
+            or self._preview_canvas is None
+            or self._microview_preview_scroll is None
+        ):
             return
-        target_widget = self._microview_preview_host if preview_kind == "native_embed" else self._preview_canvas
+        target_widget = self._microview_preview_scroll if preview_kind == "native_embed" else self._preview_canvas
         self._preview_display_stack.setCurrentWidget(target_widget)
 
     def _refresh_preview_surface(self) -> None:
@@ -873,6 +888,19 @@ class MainWindow(QMainWindow):
         warning = self._capture_manager.active_warning().strip()
         if warning:
             self.statusBar().showMessage(warning, 7000)
+
+    def _apply_native_preview_resolution(self) -> None:
+        if self._microview_preview_host is None:
+            return
+        resolution = self._capture_manager.preview_resolution()
+        if resolution is None:
+            return
+        width, height = resolution
+        self._microview_preview_host.set_preview_resolution(width, height)
+        if self._preview_status_label is not None:
+            selected = self._selected_capture_device()
+            label = selected.name if selected is not None else "采集设备"
+            self._preview_status_label.setText(f"正在预览: {label}  ({width} x {height}, 原始分辨率)")
 
     def _maybe_hint_signal_optimization(self) -> None:
         selected = self._selected_capture_device()
@@ -1044,6 +1072,7 @@ class MainWindow(QMainWindow):
         if active:
             self._refresh_preview_surface()
             if self._is_native_preview() and self._microview_preview_host is not None:
+                self._apply_native_preview_resolution()
                 QApplication.processEvents()
                 self._capture_manager.update_preview_target(self._microview_preview_host)
             self._show_active_capture_warning()
@@ -1120,15 +1149,15 @@ class MainWindow(QMainWindow):
         was_preview_active = self._capture_manager.is_preview_active()
         preview_kind = self._preview_kind()
         frame: QImage | None
-        if was_preview_active and preview_kind == "native_embed":
-            self.stop_live_preview()
-            frame = self._capture_manager.capture_still_frame()
-        else:
+        try:
             frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
+        except Exception as exc:
+            QMessageBox.warning(self, "采集一张", str(exc))
+            return
         if frame is None or frame.isNull():
             QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
             return
-        if was_preview_active and preview_kind != "native_embed":
+        if was_preview_active:
             self.stop_live_preview()
         document = ImageDocument(
             id=new_id("image"),

@@ -263,13 +263,16 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_native_preview_switches_to_microview_host_surface(self) -> None:
         window = MainWindow()
         window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.preview_resolution = lambda: (1760, 1328)  # type: ignore[method-assign]
 
         window._on_live_preview_state_changed(True)
 
         self.assertIsNone(window.current_canvas())
         self.assertIsNotNone(window._preview_display_stack)
         self.assertIsNotNone(window._microview_preview_host)
-        self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_host)
+        self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_scroll)
+        self.assertEqual(window._microview_preview_host.size().width(), 1760)
+        self.assertEqual(window._microview_preview_host.size().height(), 1328)
 
     def test_native_preview_capture_uses_still_capture_path(self) -> None:
         window = MainWindow()
