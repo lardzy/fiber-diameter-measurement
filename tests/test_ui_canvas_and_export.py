@@ -26,6 +26,7 @@ from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measuremen
 from fdm.settings import AppSettings, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
+from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
@@ -1303,6 +1304,59 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._tool_mode, "select")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
             self.assertEqual(window._tool_mode, "manual")
+        finally:
+            window.close()
+
+    def test_snap_tool_is_available_and_can_be_selected(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIn("snap", window._mode_actions)
+
+            window.set_tool_mode("snap")
+
+            self.assertEqual(window._tool_mode, "snap")
+            self.assertTrue(window._mode_actions["snap"].isChecked())
+        finally:
+            window.close()
+
+    def test_snap_line_commit_creates_snap_measurement(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/snap_measurement.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+            original_line = Line(Point(40, 70), Point(180, 70))
+            snapped_line = Line(Point(84.0, 70.0), Point(136.0, 70.0))
+
+            with patch.object(
+                window.snap_service,
+                "snap_measurement",
+                return_value=SnapResult(
+                    status="snapped",
+                    original_line=original_line,
+                    snapped_line=snapped_line,
+                    diameter_px=52.0,
+                    confidence=0.88,
+                    debug_payload={"polarity": "dark_on_light"},
+                ),
+            ):
+                window._on_canvas_line_committed(document.id, "snap", original_line)
+
+            self.assertEqual(len(document.measurements), 1)
+            measurement = document.measurements[0]
+            self.assertEqual(measurement.mode, "snap")
+            self.assertEqual(measurement.status, "snapped")
+            self.assertEqual(measurement.line_px, original_line)
+            self.assertEqual(measurement.snapped_line_px, snapped_line)
+            self.assertEqual(window._format_measurement_mode(measurement.mode), "边缘吸附")
         finally:
             window.close()
 

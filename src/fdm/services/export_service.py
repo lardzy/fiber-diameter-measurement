@@ -490,7 +490,7 @@ class ExportService:
     def _format_measurement_mode(self, mode: str) -> str:
         return {
             "manual": "手动测量",
-            "snap": "半自动吸附",
+            "snap": "边缘吸附",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
             "magic_segment": "魔棒分割",
@@ -510,6 +510,8 @@ class ExportService:
             "snapped": "吸附成功",
             "edited": "已编辑",
             "line_too_short": "测量线过短",
+            "profile_too_flat": "灰度变化不足",
+            "edge_pair_not_found": "未找到有效边缘",
             "component_not_found": "未找到目标区域",
             "boundary_not_found": "未找到边界",
         }.get(status, status)

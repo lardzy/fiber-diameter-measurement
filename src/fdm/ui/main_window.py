@@ -66,6 +66,7 @@ from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
+from fdm.services.snap_service import SnapResult, SnapService
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
@@ -313,6 +314,7 @@ class MainWindow(QMainWindow):
 
         self.export_service = ExportService()
         self.area_inference_service = AreaInferenceService()
+        self.snap_service = SnapService()
 
         self._build_ui()
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
@@ -477,6 +479,7 @@ class MainWindow(QMainWindow):
         for mode, label in [
             ("select", "浏览"),
             ("manual", "手动测量"),
+            ("snap", "边缘吸附"),
             ("polygon_area", "多边形面积"),
             ("freehand_area", "自由形状面积"),
             ("magic_segment", "魔棒分割"),
@@ -491,6 +494,7 @@ class MainWindow(QMainWindow):
         self._mode_actions["select"].setChecked(True)
         self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
+        self._mode_actions["snap"].setIcon(themed_icon("snap", color="#7BD389"))
         self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
         self._mode_actions["magic_segment"].setIcon(themed_icon("magic_segment", color="#D96C75"))
@@ -599,6 +603,7 @@ class MainWindow(QMainWindow):
         self._measure_toolbar = measure_toolbar
         measure_toolbar.addAction(self._mode_actions["select"])
         measure_toolbar.addAction(self._mode_actions["manual"])
+        measure_toolbar.addAction(self._mode_actions["snap"])
         measure_toolbar.addAction(self._mode_actions["polygon_area"])
         measure_toolbar.addAction(self._mode_actions["freehand_area"])
         measure_toolbar.addAction(self._mode_actions["magic_segment"])
@@ -836,7 +841,7 @@ class MainWindow(QMainWindow):
         return action
 
     def set_tool_mode(self, mode: str) -> None:
-        if mode == "snap" or mode not in self._mode_actions:
+        if mode not in self._mode_actions:
             mode = "select"
         if mode != "select":
             self._last_non_select_tool = mode
@@ -2868,6 +2873,22 @@ class MainWindow(QMainWindow):
             return
 
         group = document.get_group(document.active_group_id)
+        snap_result: SnapResult | None = None
+        if mode == "snap":
+            if not isinstance(payload, Line):
+                self._focus_current_canvas()
+                return
+            image = self._images.get(document.id)
+            if image is None or image.isNull():
+                self.statusBar().showMessage("当前图片还未完成加载，暂时无法进行边缘吸附。", 4000)
+                self._focus_current_canvas()
+                return
+            try:
+                snap_result = self.snap_service.snap_measurement(image, payload)
+            except Exception as exc:  # noqa: BLE001
+                self.statusBar().showMessage(f"边缘吸附失败: {exc}", 5000)
+                self._focus_current_canvas()
+                return
 
         def mutate() -> None:
             if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
@@ -2891,13 +2912,28 @@ class MainWindow(QMainWindow):
                     confidence=1.0,
                     status="manual",
                 )
+            elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode="snap",
+                    line_px=snap_result.original_line,
+                    snapped_line_px=snap_result.snapped_line,
+                    confidence=snap_result.confidence,
+                    status=snap_result.status,
+                    debug_payload=dict(snap_result.debug_payload),
+                )
             else:
                 return
             document.add_measurement(measurement)
             document.select_text_annotation(None)
 
         self._apply_document_change(document, "新增测量", mutate)
-        self.statusBar().showMessage("已新增测量", 2500)
+        if snap_result is not None:
+            self.statusBar().showMessage(self._edge_snap_status_message(snap_result), 4000)
+        else:
+            self.statusBar().showMessage("已新增测量", 2500)
         self._focus_current_canvas()
 
     def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str | None) -> None:
@@ -3131,7 +3167,7 @@ class MainWindow(QMainWindow):
     def _format_measurement_mode(self, mode: str) -> str:
         return {
             "manual": "手动线段",
-            "snap": "半自动吸附",
+            "snap": "边缘吸附",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
             "magic_segment": "魔棒分割",
@@ -3146,10 +3182,21 @@ class MainWindow(QMainWindow):
             "snapped": "吸附成功",
             "edited": "已编辑",
             "line_too_short": "测量线过短",
+            "profile_too_flat": "灰度变化不足",
+            "edge_pair_not_found": "未找到有效边缘",
             "component_not_found": "未找到目标区域",
             "boundary_not_found": "未找到边界",
             "auto_instance": "自动识别",
         }.get(status, status)
+
+    def _edge_snap_status_message(self, result: SnapResult) -> str:
+        return {
+            "snapped": "边缘吸附成功",
+            "manual_review": "边缘吸附完成，建议人工复核",
+            "line_too_short": "测量线过短，已保留原线供人工修正",
+            "profile_too_flat": "灰度变化不足，已保留原线供人工修正",
+            "edge_pair_not_found": "未找到有效边缘，已保留原线供人工修正",
+        }.get(result.status, "边缘吸附已完成")
 
     def _create_group_combo(self, document: ImageDocument, measurement: Measurement) -> QComboBox:
         combo = MeasurementGroupComboBox()
