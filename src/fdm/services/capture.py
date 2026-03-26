@@ -259,8 +259,15 @@ class MicroviewCaptureBackend(CaptureBackend):
     _PARAM_DISP_WHND = 7
     _PARAM_DISP_TOP = 8
     _PARAM_DISP_LEFT = 9
+    _PARAM_GRAB_BITDESCRIBE = 66
     _BUFFER_SYSTEM_MEMORY_GDI = 1
     _SHOW_CLOSE = 0
+    _FORMAT_MONO8 = 0
+    _FORMAT_RGB1555 = 1
+    _FORMAT_RGB24 = 2
+    _FORMAT_ARGB8888 = 3
+    _FORMAT_RGB565 = 5
+    _FORMAT_RGB5515 = 6
 
     class _MVImageInfo(ctypes.Structure):
         _fields_ = [
@@ -352,17 +359,24 @@ class MicroviewCaptureBackend(CaptureBackend):
     def _capture_single_frame(self) -> None:
         if self._dll is None or not self._device_handle or self._frame_callback is None:
             return
-        info = self._MVImageInfo()
-        buffer_ptr = self._dll.MV_CaptureSingle(
-            self._device_handle,
-            True,
-            None,
-            0,
-            ctypes.byref(info),
-        )
-        if not buffer_ptr:
+        try:
+            info = self._MVImageInfo()
+            buffer_ptr = self._dll.MV_CaptureSingle(
+                self._device_handle,
+                True,
+                None,
+                0,
+                ctypes.byref(info),
+            )
+            if not buffer_ptr:
+                return
+            image = _microview_buffer_to_qimage(buffer_ptr, info)
+        except Exception as exc:
+            callback = self._error_callback
+            self.stop_preview()
+            if callback is not None:
+                callback(f"Microview 帧解析失败: {exc}")
             return
-        image = _microview_buffer_to_qimage(buffer_ptr, info)
         if not image.isNull():
             self._frame_callback(image)
 
@@ -436,6 +450,10 @@ class MicroviewCaptureBackend(CaptureBackend):
             pass
         try:
             dll.MV_SetDeviceParameter(device_handle, self._PARAM_BUFFERTYPE, self._BUFFER_SYSTEM_MEMORY_GDI)
+        except Exception:
+            pass
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_GRAB_BITDESCRIBE, self._FORMAT_RGB24)
         except Exception:
             pass
 
@@ -596,20 +614,114 @@ def _find_microview_support_library(library_name: str, dll_root: Path) -> Path |
     return None
 
 
+def _microview_pixel_format_name(pixel_format: int) -> str:
+    return {
+        MicroviewCaptureBackend._FORMAT_MONO8: "MONO8",
+        MicroviewCaptureBackend._FORMAT_RGB1555: "RGB1555",
+        MicroviewCaptureBackend._FORMAT_RGB24: "RGB24",
+        MicroviewCaptureBackend._FORMAT_ARGB8888: "ARGB8888",
+        MicroviewCaptureBackend._FORMAT_RGB565: "RGB565",
+        MicroviewCaptureBackend._FORMAT_RGB5515: "RGB5515",
+        7: "YUV444",
+        8: "YUV422",
+        9: "YUV411",
+    }.get(pixel_format, str(pixel_format))
+
+
+def _microview_bytes_per_pixel(pixel_format: int) -> int | None:
+    return {
+        MicroviewCaptureBackend._FORMAT_MONO8: 1,
+        MicroviewCaptureBackend._FORMAT_RGB1555: 2,
+        MicroviewCaptureBackend._FORMAT_RGB24: 3,
+        MicroviewCaptureBackend._FORMAT_ARGB8888: 4,
+        MicroviewCaptureBackend._FORMAT_RGB565: 2,
+        MicroviewCaptureBackend._FORMAT_RGB5515: 2,
+    }.get(pixel_format)
+
+
+def _microview_qimage_format(pixel_format: int):
+    if pixel_format == MicroviewCaptureBackend._FORMAT_MONO8:
+        return QImage.Format.Format_Grayscale8
+    if pixel_format == MicroviewCaptureBackend._FORMAT_RGB24:
+        return QImage.Format.Format_RGB888
+    if pixel_format == MicroviewCaptureBackend._FORMAT_ARGB8888:
+        return getattr(QImage.Format, "Format_RGBA8888", QImage.Format.Format_ARGB32)
+    if pixel_format == MicroviewCaptureBackend._FORMAT_RGB565:
+        return getattr(QImage.Format, "Format_RGB16", None)
+    if pixel_format in (
+        MicroviewCaptureBackend._FORMAT_RGB1555,
+        MicroviewCaptureBackend._FORMAT_RGB5515,
+    ):
+        return getattr(QImage.Format, "Format_RGB555", None)
+    return None
+
+
+def _microview_compact_rows(data: bytes, row_stride: int, active_stride: int, height: int) -> bytes:
+    chunks: list[bytes] = []
+    for row_index in range(height):
+        row_start = row_index * row_stride
+        row_end = row_start + active_stride
+        chunks.append(data[row_start:row_end])
+    return b"".join(chunks)
+
+
 def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._MVImageInfo) -> QImage:
     width = int(info.Width)
     height = int(info.Heigth)
-    if width <= 0 or height <= 0 or int(info.Length) <= 0:
+    total_length = int(info.Length)
+    pixel_format = int(info.nColor)
+    skip_pixels = max(0, int(info.SkipPixel))
+    if width <= 0 or height <= 0 or total_length <= 0:
         return QImage()
-    channels = max(1, int(info.nColor))
-    data = ctypes.string_at(buffer_ptr, int(info.Length))
-    minimum_bytes_per_line = width * channels
-    bytes_per_line = minimum_bytes_per_line + max(0, int(info.SkipPixel))
-    if bytes_per_line * height > len(data):
-        bytes_per_line = max(minimum_bytes_per_line, len(data) // max(height, 1))
-    if channels <= 1:
-        return QImage(data, width, height, bytes_per_line, QImage.Format.Format_Grayscale8).copy()
-    if channels == 4:
-        return QImage(data, width, height, bytes_per_line, QImage.Format.Format_RGBA8888).copy()
-    image_format = getattr(QImage.Format, "Format_BGR888", QImage.Format.Format_RGB888)
-    return QImage(data, width, height, bytes_per_line, image_format).copy()
+    bytes_per_pixel = _microview_bytes_per_pixel(pixel_format)
+    if bytes_per_pixel is None:
+        raise ValueError(
+            "不支持的 Microview 像素格式: "
+            f"{_microview_pixel_format_name(pixel_format)} ({pixel_format})"
+        )
+    image_format = _microview_qimage_format(pixel_format)
+    if image_format is None:
+        raise ValueError(
+            "当前 Qt 运行环境不支持 Microview 像素格式: "
+            f"{_microview_pixel_format_name(pixel_format)}"
+        )
+    data = ctypes.string_at(buffer_ptr, total_length)
+    active_stride = width * bytes_per_pixel
+    minimum_total = active_stride * height
+    if len(data) < minimum_total:
+        raise ValueError(
+            "Microview 图像缓冲区长度不足: "
+            f"{len(data)} < {minimum_total} ({width}x{height}, format={_microview_pixel_format_name(pixel_format)})"
+        )
+
+    row_stride_candidates: list[int] = []
+    expected_stride = (width + skip_pixels) * bytes_per_pixel
+    if expected_stride >= active_stride and expected_stride * height <= len(data):
+        row_stride_candidates.append(expected_stride)
+    if len(data) % height == 0:
+        derived_stride = len(data) // height
+        if derived_stride >= active_stride and derived_stride not in row_stride_candidates:
+            row_stride_candidates.append(derived_stride)
+    if active_stride not in row_stride_candidates and minimum_total <= len(data):
+        row_stride_candidates.append(active_stride)
+    if not row_stride_candidates:
+        raise ValueError(
+            "无法确定 Microview 图像步长: "
+            f"length={len(data)}, width={width}, height={height}, "
+            f"skip_pixels={skip_pixels}, format={_microview_pixel_format_name(pixel_format)}"
+        )
+
+    row_stride = row_stride_candidates[0]
+    if row_stride * height > len(data):
+        raise ValueError(
+            "Microview 图像步长超过缓冲区长度: "
+            f"stride={row_stride}, height={height}, length={len(data)}"
+        )
+    compact_data = data if row_stride == active_stride else _microview_compact_rows(data, row_stride, active_stride, height)
+    image = QImage(compact_data, width, height, active_stride, image_format)
+    if image.isNull():
+        raise ValueError(
+            "Qt 无法构建 Microview 图像: "
+            f"{width}x{height}, stride={active_stride}, format={_microview_pixel_format_name(pixel_format)}"
+        )
+    return image.copy()

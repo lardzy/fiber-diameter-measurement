@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import ctypes
 import struct
 import sys
 import unittest
@@ -16,11 +17,19 @@ from fdm.services.cu_scale_io import (
 )
 
 try:
-    from fdm.services.capture import CaptureBackend, CaptureDevice, CaptureSessionManager
+    from fdm.services.capture import (
+        CaptureBackend,
+        CaptureDevice,
+        CaptureSessionManager,
+        MicroviewCaptureBackend,
+        _microview_buffer_to_qimage,
+    )
 except ModuleNotFoundError:
     CaptureBackend = None
     CaptureDevice = None
     CaptureSessionManager = None
+    MicroviewCaptureBackend = None
+    _microview_buffer_to_qimage = None
 
 
 class CaptureAndCuScaleTests(unittest.TestCase):
@@ -105,6 +114,43 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual([device.id for device in devices], ["qt_multimedia:usb-1"])
         self.assertEqual(manager.selected_device_id(), "qt_multimedia:usb-1")
         self.assertEqual(manager.device_refresh_warnings(), ["Microview SDK: sdk load failed"])
+
+    @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_rgb24_buffer_converts_to_qimage(self) -> None:
+        info = MicroviewCaptureBackend._MVImageInfo()
+        info.Width = 2
+        info.Heigth = 2
+        info.nColor = MicroviewCaptureBackend._FORMAT_RGB24
+        info.SkipPixel = 0
+        payload = bytes(
+            [
+                255, 0, 0,
+                0, 255, 0,
+                0, 0, 255,
+                255, 255, 255,
+            ]
+        )
+        info.Length = len(payload)
+        buffer = ctypes.create_string_buffer(payload)
+
+        image = _microview_buffer_to_qimage(ctypes.addressof(buffer), info)
+
+        self.assertFalse(image.isNull())
+        self.assertEqual((image.width(), image.height()), (2, 2))
+
+    @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_buffer_rejects_short_payload_before_qimage_construction(self) -> None:
+        info = MicroviewCaptureBackend._MVImageInfo()
+        info.Width = 3
+        info.Heigth = 2
+        info.nColor = MicroviewCaptureBackend._FORMAT_RGB24
+        info.SkipPixel = 0
+        payload = bytes([0] * 8)
+        info.Length = len(payload)
+        buffer = ctypes.create_string_buffer(payload)
+
+        with self.assertRaises(ValueError):
+            _microview_buffer_to_qimage(ctypes.addressof(buffer), info)
 
 
 if __name__ == "__main__":
