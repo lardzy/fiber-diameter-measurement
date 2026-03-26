@@ -95,11 +95,11 @@ def main(argv: list[str] | None = None) -> int:
     _install_global_exception_hook()
 
     try:
-        from fdm.ui.main_window import MainWindow
-
         app = QApplication(argv or sys.argv)
         app.setApplicationName(APP_NAME)
         app.setOrganizationName("Codex")
+        from fdm.ui.main_window import MainWindow
+
         window = MainWindow()
         window.show()
         return app.exec()
