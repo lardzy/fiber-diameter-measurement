@@ -68,7 +68,8 @@ class PromptSegmentationService:
     def predict_polygon(
         self,
         *,
-        image_path: str | Path,
+        image,
+        cache_key: str,
         positive_points: list[Point],
         negative_points: list[Point],
     ) -> PromptSegmentationResult:
@@ -78,7 +79,7 @@ class PromptSegmentationService:
                 area_px=0.0,
                 metadata={"reason": "missing_positive_prompt"},
             )
-        embedding = self._embedding_for_path(Path(image_path))
+        embedding = self._embedding_for_image(image, cache_key=cache_key)
         mask = self._predict_mask_from_embedding(
             embedding,
             positive_points=positive_points,
@@ -92,6 +93,7 @@ class PromptSegmentationService:
                 "positive_points": len(positive_points),
                 "negative_points": len(negative_points),
                 "cache_size": len(self._embedding_cache),
+                "cache_key": cache_key,
             },
         )
 
@@ -122,29 +124,26 @@ class PromptSegmentationService:
         self._encoder_input_name = inputs[0].name
         self._decoder_input_names = {item.name: item.name for item in self._decoder_session.get_inputs()}
 
-    def _embedding_for_path(self, image_path: Path) -> _EmbeddingEntry:
-        key = str(image_path.expanduser().resolve())
+    def _embedding_for_image(self, image, *, cache_key: str) -> _EmbeddingEntry:
+        key = str(cache_key)
         cached = self._embedding_cache.get(key)
         if cached is not None:
             return cached
-        cv_image = self._load_image_rgb(image_path)
+        cv_image = self._image_to_rgb_array(image)
         image_embeddings, original_size = self._run_encoder(cv_image)
         cached = _EmbeddingEntry(image_embeddings=image_embeddings, original_size=original_size)
         self._embedding_cache[key] = cached
         return cached
 
-    def _load_image_rgb(self, image_path: Path):
+    def _image_to_rgb_array(self, image):
         try:
             import numpy as np
         except ImportError as exc:
             raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        from PySide6.QtGui import QImage, QImageReader
+        from PySide6.QtGui import QImage
 
-        reader = QImageReader(str(image_path))
-        reader.setAutoTransform(True)
-        image = reader.read()
-        if image.isNull():
-            raise RuntimeError(reader.errorString() or f"无法读取图片: {image_path}")
+        if image is None or not hasattr(image, "isNull") or image.isNull():
+            raise RuntimeError("无法读取图片: 当前图像为空。")
         rgb = image.convertToFormat(QImage.Format.Format_RGB888)
         buffer = rgb.constBits()
         array = np.frombuffer(buffer, dtype=np.uint8, count=rgb.sizeInBytes())

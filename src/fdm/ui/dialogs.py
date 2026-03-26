@@ -148,6 +148,39 @@ class CalibrationPresetDialog(QDialog):
         )
 
 
+class FiberGroupDialog(QDialog):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        title: str = "新增类别",
+        initial_label: str = "",
+        apply_to_project_default: bool = True,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self._label_edit = QLineEdit()
+        self._label_edit.setPlaceholderText("类别名称")
+        self._label_edit.setText(initial_label)
+        self._apply_to_project = QCheckBox("应用到当前项目全局")
+        self._apply_to_project.setChecked(apply_to_project_default)
+
+        form = QFormLayout()
+        form.addRow("类别名称", self._label_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(self._apply_to_project)
+        layout.addWidget(buttons)
+
+    def values(self) -> tuple[str, bool]:
+        return self._label_edit.text().strip(), self._apply_to_project.isChecked()
+
+
 class ExportOptionsDialog(QDialog):
     def __init__(
         self,

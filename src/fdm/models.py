@@ -43,6 +43,10 @@ def square_unit(unit: str) -> str:
     return f"{unit}²"
 
 
+def normalize_group_label(label: str) -> str:
+    return str(label or "").strip()
+
+
 @dataclass(slots=True)
 class Calibration:
     mode: str
@@ -176,9 +180,31 @@ class FiberGroup:
             id=str(payload["id"]),
             image_id=str(payload["image_id"]),
             number=int(payload.get("number", fallback_number)),
-            label=str(payload.get("label", payload.get("name", ""))),
+            label=normalize_group_label(str(payload.get("label", payload.get("name", "")))),
             color=str(payload["color"]),
             measurement_ids=list(payload.get("measurement_ids", [])),
+        )
+
+
+@dataclass(slots=True)
+class ProjectGroupTemplate:
+    label: str
+    color: str
+
+    def normalized_label(self) -> str:
+        return normalize_group_label(self.label)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "label": normalize_group_label(self.label),
+            "color": self.color,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "ProjectGroupTemplate":
+        return cls(
+            label=normalize_group_label(str(payload.get("label", ""))),
+            color=str(payload.get("color", "#1F7A8C")),
         )
 
 
@@ -385,6 +411,7 @@ class ImageDocument:
     active_group_id: str | None = None
     selected_text_id: str | None = None
     scale_overlay_anchor: Point | None = None
+    suppressed_project_group_labels: list[str] = field(default_factory=list)
     sidecar_path: str | None = None
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
@@ -399,6 +426,7 @@ class ImageDocument:
         if self.sidecar_path is None and self.path and self.uses_sidecar():
             self.sidecar_path = self.default_sidecar_path()
         self.fiber_groups.sort(key=lambda group: group.number)
+        self.suppressed_project_group_labels = self._normalized_suppressed_project_group_labels(self.suppressed_project_group_labels)
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
@@ -463,7 +491,7 @@ class ImageDocument:
             id=new_id("group"),
             image_id=self.id,
             number=self.next_group_number(),
-            label=label,
+            label=normalize_group_label(label),
             color=color,
         )
         self.fiber_groups.append(group)
@@ -473,13 +501,23 @@ class ImageDocument:
         return group
 
     def find_group_by_label(self, label: str) -> FiberGroup | None:
-        token = str(label or "").strip()
+        token = normalize_group_label(label)
         if not token:
             return None
         for group in self.sorted_groups():
-            if group.label.strip() == token or group.display_name() == token:
+            if normalize_group_label(group.label) == token:
                 return group
         return None
+
+    def groups_by_label(self, label: str) -> list[FiberGroup]:
+        token = normalize_group_label(label)
+        if not token:
+            return []
+        return [
+            group
+            for group in self.sorted_groups()
+            if normalize_group_label(group.label) == token
+        ]
 
     def ensure_group_for_label(self, label: str, *, color: str) -> FiberGroup:
         existing = self.find_group_by_label(label)
@@ -604,6 +642,24 @@ class ImageDocument:
             group.number = index
         self.fiber_groups.sort(key=lambda group: group.number)
 
+    def merge_group_into(self, source_group_id: str, target_group_id: str) -> bool:
+        if source_group_id == target_group_id:
+            return False
+        source_group = self.get_group(source_group_id)
+        target_group = self.get_group(target_group_id)
+        if source_group is None or target_group is None:
+            return False
+        for measurement in self.measurements:
+            if measurement.fiber_group_id == source_group_id:
+                measurement.fiber_group_id = target_group_id
+        self.fiber_groups = [group for group in self.fiber_groups if group.id != source_group_id]
+        if self.active_group_id == source_group_id:
+            self.active_group_id = target_group_id
+        self.rebuild_group_memberships()
+        self.renumber_groups()
+        self.refresh_dirty_flags()
+        return True
+
     def add_text_annotation(self, annotation: TextAnnotation) -> None:
         self.text_annotations.append(annotation)
         self.select_text_annotation(annotation.id)
@@ -651,6 +707,35 @@ class ImageDocument:
         self.refresh_dirty_flags()
         return True
 
+    def is_project_group_label_suppressed(self, label: str) -> bool:
+        token = normalize_group_label(label)
+        return bool(token) and token in self.suppressed_project_group_labels
+
+    def suppress_project_group_label(self, label: str) -> bool:
+        token = normalize_group_label(label)
+        if not token or token in self.suppressed_project_group_labels:
+            return False
+        self.suppressed_project_group_labels.append(token)
+        self.suppressed_project_group_labels.sort()
+        self.refresh_dirty_flags()
+        return True
+
+    def unsuppress_project_group_label(self, label: str) -> bool:
+        token = normalize_group_label(label)
+        if not token or token not in self.suppressed_project_group_labels:
+            return False
+        self.suppressed_project_group_labels = [
+            item
+            for item in self.suppressed_project_group_labels
+            if item != token
+        ]
+        self.refresh_dirty_flags()
+        return True
+
+    @staticmethod
+    def _normalized_suppressed_project_group_labels(labels: list[str]) -> list[str]:
+        return sorted({token for token in (normalize_group_label(item) for item in labels) if token})
+
     def measurement_values(self) -> list[float]:
         return [
             measurement.diameter_unit
@@ -692,6 +777,7 @@ class ImageDocument:
             "measurements": [measurement.to_dict() for measurement in self.measurements],
             "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
+            "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
 
     def calibration_snapshot(self) -> dict[str, Any]:
@@ -712,6 +798,7 @@ class ImageDocument:
             "selected_measurement_id": self.view_state.selected_measurement_id,
             "selected_text_id": self.selected_text_id,
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
+            "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
 
     def restore_snapshot(self, snapshot: dict[str, Any]) -> None:
@@ -734,6 +821,9 @@ class ImageDocument:
         self.selected_text_id = snapshot.get("selected_text_id")
         scale_overlay_anchor = snapshot.get("scale_overlay_anchor")
         self.scale_overlay_anchor = Point.from_dict(scale_overlay_anchor) if scale_overlay_anchor else None
+        self.suppressed_project_group_labels = self._normalized_suppressed_project_group_labels(
+            list(snapshot.get("suppressed_project_group_labels", []))
+        )
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
@@ -774,6 +864,7 @@ class ImageDocument:
             "active_group_id": self.active_group_id,
             "selected_text_id": self.selected_text_id,
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
+            "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
 
     @classmethod
@@ -795,6 +886,7 @@ class ImageDocument:
             active_group_id=payload.get("active_group_id"),
             selected_text_id=payload.get("selected_text_id"),
             scale_overlay_anchor=Point.from_dict(payload["scale_overlay_anchor"]) if payload.get("scale_overlay_anchor") else None,
+            suppressed_project_group_labels=list(payload.get("suppressed_project_group_labels", [])),
         )
         image_document.initialize_runtime_state()
         return image_document
@@ -806,6 +898,7 @@ class ProjectState:
     documents: list[ImageDocument]
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
     project_default_calibration: Calibration | None = None
+    project_group_templates: list[ProjectGroupTemplate] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def get_document(self, document_id: str) -> ImageDocument | None:
@@ -815,10 +908,19 @@ class ProjectState:
         return None
 
     def to_dict(self) -> dict[str, Any]:
+        seen_template_labels: set[str] = set()
+        serialized_templates: list[dict[str, Any]] = []
+        for template in self.project_group_templates:
+            token = template.normalized_label()
+            if not token or token in seen_template_labels:
+                continue
+            seen_template_labels.add(token)
+            serialized_templates.append(template.to_dict())
         return {
             "version": self.version,
             "documents": [document.to_dict() for document in self.documents],
             "project_default_calibration": self.project_default_calibration.to_dict() if self.project_default_calibration else None,
+            "project_group_templates": serialized_templates,
             "metadata": self.metadata,
         }
 
@@ -828,6 +930,15 @@ class ProjectState:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ProjectState":
+        seen_template_labels: set[str] = set()
+        project_group_templates: list[ProjectGroupTemplate] = []
+        for item in payload.get("project_group_templates", []):
+            template = ProjectGroupTemplate.from_dict(item)
+            token = template.normalized_label()
+            if not token or token in seen_template_labels:
+                continue
+            seen_template_labels.add(token)
+            project_group_templates.append(template)
         return cls(
             version=str(payload.get("version", "0.1.0")),
             documents=[ImageDocument.from_dict(item) for item in payload.get("documents", [])],
@@ -836,5 +947,6 @@ class ProjectState:
                 for item in payload.get("calibration_presets", [])
             ],
             project_default_calibration=Calibration.from_dict(payload["project_default_calibration"]) if payload.get("project_default_calibration") else None,
+            project_group_templates=project_group_templates,
             metadata=dict(payload.get("metadata", {})),
         )

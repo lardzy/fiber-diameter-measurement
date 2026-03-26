@@ -8,9 +8,18 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Point
-from fdm.services.prompt_segmentation import PromptSegmentationService, edge_sam_model_paths
+
+try:
+    from fdm.services.prompt_segmentation import PromptSegmentationService, edge_sam_model_paths
+
+    PROMPT_SEGMENTATION_AVAILABLE = True
+except ModuleNotFoundError:
+    PromptSegmentationService = object  # type: ignore[assignment]
+    edge_sam_model_paths = object  # type: ignore[assignment]
+    PROMPT_SEGMENTATION_AVAILABLE = False
 
 
+@unittest.skipUnless(PROMPT_SEGMENTATION_AVAILABLE, "requires prompt segmentation runtime dependencies")
 class PromptSegmentationTests(unittest.TestCase):
     def test_edge_sam_model_paths_point_to_runtime_directory(self) -> None:
         encoder_path, decoder_path = edge_sam_model_paths()
@@ -23,13 +32,14 @@ class PromptSegmentationTests(unittest.TestCase):
     def test_embedding_cache_reuses_encoder_result_for_same_image(self) -> None:
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
         fake_embeddings = object()
+        image = object()
 
         with (
-            patch.object(service, "_load_image_rgb", return_value="demo-image") as load_mock,
+            patch.object(service, "_image_to_rgb_array", return_value="demo-image") as load_mock,
             patch.object(service, "_run_encoder", return_value=(fake_embeddings, (120, 200))) as run_mock,
         ):
-            first = service._embedding_for_path(Path("/tmp/prompt-segmentation.png"))
-            second = service._embedding_for_path(Path("/tmp/prompt-segmentation.png"))
+            first = service._embedding_for_image(image, cache_key="prompt-segmentation")
+            second = service._embedding_for_image(image, cache_key="prompt-segmentation")
 
         self.assertIs(first, second)
         self.assertIs(first.image_embeddings, fake_embeddings)
@@ -41,7 +51,8 @@ class PromptSegmentationTests(unittest.TestCase):
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
 
         result = service.predict_polygon(
-            image_path="/tmp/demo.png",
+            image=object(),
+            cache_key="demo",
             positive_points=[],
             negative_points=[Point(12, 18)],
         )

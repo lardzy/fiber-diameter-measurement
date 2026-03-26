@@ -51,9 +51,11 @@ from fdm.models import (
     CalibrationPreset,
     ImageDocument,
     Measurement,
+    ProjectGroupTemplate,
     ProjectState,
     TextAnnotation,
     UNCATEGORIZED_LABEL,
+    normalize_group_label,
     new_id,
     project_assets_root,
     project_capture_root,
@@ -70,6 +72,7 @@ from fdm.ui.dialogs import (
     CalibrationInputDialog,
     CalibrationPresetDialog,
     ExportOptionsDialog,
+    FiberGroupDialog,
     SettingsDialog,
     ShortcutHelpDialog,
 )
@@ -1295,10 +1298,16 @@ class MainWindow(QMainWindow):
             for document in self.project.documents
             if document.is_project_asset()
         )
+        project_group_templates = [
+            template.to_dict()
+            for template in self.project.project_group_templates
+            if normalize_group_label(template.label)
+        ]
         return {
             "project_default_calibration": self.project.project_default_calibration.to_dict() if self.project.project_default_calibration else None,
             "project_default_document_ids": inherited_ids,
             "project_asset_documents": project_assets,
+            "project_group_templates": project_group_templates,
         }
 
     def _mark_project_saved(self) -> None:
@@ -1485,6 +1494,92 @@ class MainWindow(QMainWindow):
         box.setEscapeButton(image_button)
         box.exec()
         return box.clickedButton() == project_button
+
+    def _project_group_template_for_label(self, label: str) -> ProjectGroupTemplate | None:
+        token = normalize_group_label(label)
+        if not token:
+            return None
+        for template in self.project.project_group_templates:
+            if normalize_group_label(template.label) == token:
+                return template
+        return None
+
+    def _next_group_color(self, document: ImageDocument) -> str:
+        return self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)]
+
+    def _ensure_project_group_template(self, *, label: str, color: str) -> bool:
+        token = normalize_group_label(label)
+        if not token or self._project_group_template_for_label(token) is not None:
+            return False
+        self.project.project_group_templates.append(
+            ProjectGroupTemplate(label=token, color=color),
+        )
+        return True
+
+    def _apply_project_group_templates_to_document(self, document: ImageDocument) -> bool:
+        changed = False
+        for template in self.project.project_group_templates:
+            token = normalize_group_label(template.label)
+            if not token or document.is_project_group_label_suppressed(token):
+                continue
+            _group, ensured_changed = self._ensure_document_named_group(
+                document,
+                label=token,
+                color=template.color,
+                activate=False,
+            )
+            changed = ensured_changed or changed
+        if document.active_group_id is None and document.can_delete_uncategorized_entry():
+            changed = document.hide_uncategorized_entry() or changed
+        return changed
+
+    def _sync_project_group_templates(self, *, label: str) -> bool:
+        any_changed = False
+        for document in self.project.documents:
+            before = document.snapshot_state()
+            changed = self._apply_project_group_templates_to_document(document)
+            after = document.snapshot_state()
+            if changed and document.history is not None and before != after:
+                document.history.push(label, before, after)
+                any_changed = True
+            elif changed:
+                any_changed = True
+        return any_changed
+    def _clear_group_suppression_when_present(self, document: ImageDocument, label: str) -> None:
+        if document.find_group_by_label(label) is not None:
+            document.unsuppress_project_group_label(label)
+
+    def _ensure_document_named_group(
+        self,
+        document: ImageDocument,
+        *,
+        label: str,
+        color: str,
+        activate: bool,
+    ) -> tuple[object | None, bool]:
+        token = normalize_group_label(label)
+        if not token:
+            return None, False
+        changed = False
+        matches = document.groups_by_label(token)
+        if matches:
+            canonical = matches[0]
+            for duplicate in matches[1:]:
+                if document.merge_group_into(duplicate.id, canonical.id):
+                    changed = True
+            if activate and document.active_group_id != canonical.id:
+                document.set_active_group(canonical.id)
+                changed = True
+        else:
+            active_group_id = document.active_group_id
+            canonical = document.create_group(color=color, label=token)
+            if activate or active_group_id is None:
+                document.set_active_group(canonical.id)
+            elif active_group_id != canonical.id:
+                document.set_active_group(active_group_id)
+            changed = True
+        changed = document.unsuppress_project_group_label(token) or changed
+        return canonical, changed
 
     def _prompt_preset_apply_scope(self, preset: CalibrationPreset) -> str | None:
         if len(self.project.documents) <= 1:
@@ -1920,6 +2015,7 @@ class MainWindow(QMainWindow):
                     target_document.mark_calibration_saved()
         else:
             target_document.mark_calibration_saved()
+        self._apply_project_group_templates_to_document(target_document)
         target_document.mark_session_saved()
 
         self._mount_document(
@@ -2013,6 +2109,7 @@ class MainWindow(QMainWindow):
             version=project.version,
             documents=[],
             project_default_calibration=project.project_default_calibration,
+            project_group_templates=list(project.project_group_templates),
         )
         self.project.metadata = project.metadata
         self._refresh_preset_combo()
@@ -2304,18 +2401,50 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None:
             return
-        label, ok = QInputDialog.getText(self, "新增类别", "类别名称（可留空）")
-        if not ok:
+        dialog = FiberGroupDialog(self, title="新增类别")
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        label, apply_to_project = dialog.values()
+        token = normalize_group_label(label)
+        if apply_to_project and not token:
+            QMessageBox.warning(self, "新增类别", "应用到当前项目全局时，类别名称不能为空。")
             return
 
-        def mutate() -> None:
-            group = document.create_group(
-                color=self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)],
-                label=label.strip(),
-            )
-            document.set_active_group(group.id)
+        existing_group = document.find_group_by_label(token) if token else None
+        color = existing_group.color if existing_group is not None else self._next_group_color(document)
+        template_added = False
+        if apply_to_project:
+            template_added = self._ensure_project_group_template(label=token, color=color)
 
-        self._apply_document_change(document, "新增类别", mutate)
+        def mutate() -> None:
+            if token:
+                self._ensure_document_named_group(
+                    document,
+                    label=token,
+                    color=color,
+                    activate=True,
+                )
+            else:
+                group = document.create_group(
+                    color=color,
+                    label="",
+                )
+                document.set_active_group(group.id)
+
+        current_changed = self._apply_document_change(document, "新增类别", mutate)
+        sync_changed = self._sync_project_group_templates(label="同步项目全局类别") if apply_to_project else False
+        self._update_ui_for_current_document()
+        self._focus_current_canvas()
+
+        if apply_to_project:
+            if current_changed or sync_changed or template_added:
+                self.statusBar().showMessage(f"已更新项目全局类别: {token}", 3000)
+            else:
+                self.statusBar().showMessage(f"项目全局类别已存在: {token}", 3000)
+            return
+        if token and not current_changed:
+            self.statusBar().showMessage(f"同名类别已存在，已切换到现有类别: {token}", 3000)
+            return
         self.statusBar().showMessage("已新增类别", 3000)
 
     def rename_active_group(self) -> None:
@@ -2328,13 +2457,54 @@ class MainWindow(QMainWindow):
         label, ok = QInputDialog.getText(self, "重命名类别", "类别名称（可留空）", text=group.label)
         if not ok:
             return
+        target_label = normalize_group_label(label)
+        current_label = normalize_group_label(group.label)
+        if target_label == current_label:
+            return
+        merge_target = document.find_group_by_label(target_label) if target_label else None
+        if merge_target is not None and merge_target.id != group.id:
+            response = QMessageBox.question(
+                self,
+                "合并类别",
+                f"当前图片中已存在类别“{target_label}”。\n\n确认后会将“{group.display_name()}”合并到该类别。",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
 
-        def mutate() -> None:
+            def mutate_merge() -> None:
+                source = document.get_group(group.id)
+                target = document.get_group(merge_target.id)
+                if source is None or target is None:
+                    return
+                source_label = normalize_group_label(source.label)
+                target_token = normalize_group_label(target.label)
+                document.merge_group_into(source.id, target.id)
+                if self._project_group_template_for_label(source_label) is not None:
+                    document.suppress_project_group_label(source_label)
+                if self._project_group_template_for_label(target_token) is not None:
+                    document.unsuppress_project_group_label(target_token)
+
+            changed = self._apply_document_change(document, "合并类别", mutate_merge)
+            if changed:
+                self.statusBar().showMessage("类别已合并", 3000)
+            return
+
+        def mutate_rename() -> None:
             target = document.get_group(group.id)
-            if target is not None:
-                target.label = label.strip()
+            if target is None:
+                return
+            original_label = normalize_group_label(target.label)
+            target.label = target_label
+            if original_label and original_label != target_label and self._project_group_template_for_label(original_label) is not None:
+                document.suppress_project_group_label(original_label)
+            if self._project_group_template_for_label(target_label) is not None:
+                document.unsuppress_project_group_label(target_label)
 
-        self._apply_document_change(document, "重命名类别", mutate)
+        changed = self._apply_document_change(document, "重命名类别", mutate_rename)
+        if changed:
+            self.statusBar().showMessage("类别已重命名", 3000)
 
     def delete_active_group(self) -> None:
         document = self.current_document()
@@ -2357,10 +2527,17 @@ class MainWindow(QMainWindow):
                 return
 
             def mutate() -> None:
-                document.remove_group_to_uncategorized(group.id)
+                target = document.get_group(group.id)
+                if target is None:
+                    return
+                template_label = normalize_group_label(target.label)
+                document.remove_group_to_uncategorized(target.id)
+                if self._project_group_template_for_label(template_label) is not None:
+                    document.suppress_project_group_label(template_label)
 
-            self._apply_document_change(document, "删除类别", mutate)
-            self.statusBar().showMessage("类别已删除", 3000)
+            changed = self._apply_document_change(document, "删除类别", mutate)
+            if changed:
+                self.statusBar().showMessage("类别已删除", 3000)
             return
 
         if document.uncategorized_measurement_count() > 0:
@@ -2487,12 +2664,18 @@ class MainWindow(QMainWindow):
         document = self.project.get_document(document_id)
         if canvas is None or document is None or not isinstance(payload, dict):
             return
+        image = self._images.get(document_id)
         request_id = int(payload.get("request_id", 0))
         positive_points = list(payload.get("positive_points", []))
         negative_points = list(payload.get("negative_points", []))
         if not positive_points:
             canvas.apply_magic_segment_result(request_id, [])
             self._update_magic_segment_controls()
+            return
+        if image is None or image.isNull():
+            canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            QMessageBox.warning(self, "魔棒分割", "当前图片还未完成加载，暂时无法进行魔棒分割。")
             return
         if not PromptSegmentationService.models_ready():
             canvas.fail_magic_segment_result(request_id)
@@ -2511,7 +2694,8 @@ class MainWindow(QMainWindow):
         self._prompt_seg_worker.requested.emit(
             PromptSegmentationRequest(
                 document_id=document_id,
-                image_path=document.path,
+                image=image,
+                cache_key=f"{document_id}:{int(image.cacheKey())}",
                 request_id=request_id,
                 positive_points=positive_points,
                 negative_points=negative_points,
@@ -2587,7 +2771,7 @@ class MainWindow(QMainWindow):
             else:
                 message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的项目改动。")
         if has_project_dirty:
-            message_parts.append("当前项目的统一比例尺、项目内图片或继承关系有未保存改动。")
+            message_parts.append("当前项目的统一比例尺、项目内图片、全局类别或继承关系有未保存改动。")
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
@@ -2635,19 +2819,21 @@ class MainWindow(QMainWindow):
         mutator,
         *,
         sync_sidecar: bool = False,
-    ) -> None:
+    ) -> bool:
         before = document.snapshot_state()
         mutator()
         document.rebuild_group_memberships()
         document.refresh_dirty_flags()
         after = document.snapshot_state()
-        if document.history is not None:
+        changed = before != after
+        if changed and document.history is not None:
             document.history.push(label, before, after)
         if sync_sidecar and document.uses_sidecar():
             CalibrationSidecarIO.save_document(document)
         elif sync_sidecar:
             document.mark_calibration_saved()
         self._update_ui_for_current_document()
+        return changed
 
     def _on_tab_changed(self, index: int) -> None:
         if index < 0:

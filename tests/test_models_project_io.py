@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id, project_assets_root
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id, project_assets_root
 from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
@@ -357,6 +357,34 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertEqual(len(project.calibration_presets), 1)
         self.assertEqual(project.calibration_presets[0].name, "legacy 40x")
+
+    def test_project_roundtrip_persists_project_group_templates_and_document_suppression(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/project_groups.png",
+            image_size=(200, 120),
+            suppressed_project_group_labels=["棉", "棉", " 莱赛尔 "],
+        )
+        document.initialize_runtime_state()
+        project = ProjectState(
+            version="0.1.0",
+            documents=[document],
+            project_group_templates=[
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="棉", color="#E07A5F"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ],
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "project_groups.fdmproj"
+            ProjectIO.save(project, path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            loaded = ProjectIO.load(path)
+
+        self.assertEqual([item["label"] for item in payload["project_group_templates"]], ["棉", "莱赛尔"])
+        self.assertEqual([template.label for template in loaded.project_group_templates], ["棉", "莱赛尔"])
+        self.assertEqual(loaded.documents[0].suppressed_project_group_labels, ["棉", "莱赛尔"])
 
     def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
         runtime_root = application_root() / "runtime"

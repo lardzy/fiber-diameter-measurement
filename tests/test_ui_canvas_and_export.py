@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QSplitter
+    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -22,18 +22,19 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import AppSettings, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
@@ -643,6 +644,202 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertEqual(window.current_document().calibration.mode, "project_default")
                 payload = json.loads(Path(sidecar_source.default_sidecar_path()).read_text(encoding="utf-8"))
                 self.assertEqual(payload, original_payload)
+        finally:
+            window.close()
+
+    def test_add_loaded_document_applies_project_group_templates(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ]
+            image = QImage(200, 120, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/project_groups_apply.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            window._add_loaded_document(
+                ImageLoadRequest(path=document.path, document=document),
+                image,
+            )
+
+            loaded = window.current_document()
+            self.assertIsNotNone(loaded)
+            self.assertEqual([group.label for group in loaded.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertFalse(loaded.dirty_flags.session_dirty)
+        finally:
+            window.close()
+
+    def test_magic_segment_request_uses_in_memory_image_and_cache_key(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/preview.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._prompt_seg_worker = fake_worker
+
+            with patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None), patch(
+                "fdm.ui.main_window.PromptSegmentationService.models_ready",
+                return_value=True,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 7,
+                        "positive_points": [Point(20, 20)],
+                        "negative_points": [Point(30, 30)],
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertIs(fake_worker.requested.payload.image, image)
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 7)
+            self.assertTrue(fake_worker.requested.payload.cache_key.startswith(f"{document.id}:"))
+        finally:
+            window.close()
+
+    def test_add_fiber_group_global_syncs_existing_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉"])
+            self.assertIsNotNone(first.find_group_by_label("棉"))
+            self.assertIsNotNone(second.find_group_by_label("棉"))
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_add_fiber_group_duplicate_local_is_noop(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_local_noop.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([item.label for item in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.active_group_id, group.id)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_rename_group_to_existing_merges_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_merge.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            hemp = document.create_group(color="#E07A5F", label="麻")
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=hemp.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
+            document.set_active_group(hemp.id)
+            self._load_document_into_window(window, document, image)
+
+            with patch("fdm.ui.main_window.QInputDialog.getText", return_value=("棉", True)), patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.measurements[0].fiber_group_id, cotton.id)
+            self.assertEqual(document.active_group_id, cotton.id)
+        finally:
+            window.close()
+
+    def test_delete_project_global_group_adds_local_suppression(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_delete_global.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            self._load_document_into_window(window, document, image)
+
+            with patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.delete_active_group()
+
+            self.assertIsNone(document.find_group_by_label("棉"))
+            self.assertEqual(document.suppressed_project_group_labels, ["棉"])
+            self.assertFalse(window._apply_project_group_templates_to_document(document))
+            self.assertIsNone(document.find_group_by_label("棉"))
         finally:
             window.close()
 

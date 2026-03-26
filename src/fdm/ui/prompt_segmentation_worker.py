@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
+from PySide6.QtGui import QImage
 
 from fdm.geometry import Point
 from fdm.services.prompt_segmentation import PromptSegmentationService
@@ -11,7 +12,8 @@ from fdm.services.prompt_segmentation import PromptSegmentationService
 @dataclass(slots=True)
 class PromptSegmentationRequest:
     document_id: str
-    image_path: str
+    image: QImage
+    cache_key: str
     request_id: int
     positive_points: list[Point]
     negative_points: list[Point]
@@ -33,7 +35,8 @@ class PromptSegmentationWorker(QObject):
             if self._service is None:
                 self._service = PromptSegmentationService()
             result = self._service.predict_polygon(
-                image_path=request.image_path,
+                image=request.image,
+                cache_key=request.cache_key,
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
             )
