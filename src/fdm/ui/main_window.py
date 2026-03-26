@@ -5,7 +5,7 @@ from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPixmap
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -691,10 +691,10 @@ class MainWindow(QMainWindow):
         preview_layout.addWidget(self._preview_display_stack, 1)
         self._image_resolution_label = QLabel("像素尺寸: -")
         self._image_resolution_label.setWordWrap(True)
-        self._image_resolution_label.setStyleSheet("color: #C8D3DD; padding: 6px 2px 0 2px;")
-        preview_layout.addWidget(self._image_resolution_label)
+        self._image_resolution_label.setStyleSheet("padding: 6px 2px 0 2px;")
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
+        layout.addWidget(self._image_resolution_label)
         return container
 
     def _build_right_panel(self) -> QWidget:
@@ -912,9 +912,31 @@ class MainWindow(QMainWindow):
         text = f"{value:.4f}".rstrip("0").rstrip(".")
         return text or "0"
 
+    def _is_dark_palette(self) -> bool:
+        return self.palette().color(QPalette.ColorRole.Window).lightnessF() < 0.5
+
+    def _status_color(self, kind: str) -> str:
+        if kind == "danger":
+            return "#FF7B72" if self._is_dark_palette() else "#C62828"
+        if kind == "info":
+            return "#79C0FF" if self._is_dark_palette() else "#1565C0"
+        if kind == "muted":
+            return "#C8D3DD" if self._is_dark_palette() else "#4E5969"
+        return self.palette().color(QPalette.ColorRole.WindowText).name()
+
+    def _set_calibration_label(self, text: str, *, status: str) -> None:
+        color_key = {
+            "uncalibrated": "danger",
+            "calibrated": "info",
+            "preview": "muted",
+        }.get(status, "default")
+        self.calibration_label.setText(text)
+        self.calibration_label.setStyleSheet(f"color: {self._status_color(color_key)};")
+
     def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
         if self._image_resolution_label is None:
             return
+        self._image_resolution_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 6px 2px 0 2px;")
         if self._preview_active:
             resolution = self._capture_manager.preview_resolution()
             if resolution is None:
@@ -2928,10 +2950,10 @@ class MainWindow(QMainWindow):
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         if self._preview_active:
-            self.calibration_label.setText("实时预览中")
+            self._set_calibration_label("实时预览中", status="preview")
             return
         if document is None or document.calibration is None:
-            self.calibration_label.setText("当前图片未标定")
+            self._set_calibration_label("当前图片未标定", status="uncalibrated")
             return
         calibration = document.calibration
         lines = [
@@ -2942,7 +2964,7 @@ class MainWindow(QMainWindow):
             lines.append("保存位置: 当前项目")
         else:
             lines.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
-        self.calibration_label.setText("\n".join(lines))
+        self._set_calibration_label("\n".join(lines), status="calibrated")
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
         self._table_rebuilding = True

@@ -320,6 +320,52 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIn("像素尺寸: 200 x 100 px", label_text)
         self.assertIn("实际尺寸: 20 x 10 um", label_text)
 
+    def test_calibration_label_uses_red_for_uncalibrated_document(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/uncalibrated_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+            qimage_to_raster(image),
+        )
+
+        self.assertEqual(window.calibration_label.text(), "当前图片未标定")
+        self.assertIn(window._status_color("danger"), window.calibration_label.styleSheet())
+
+    def test_calibration_label_uses_blue_for_calibrated_document(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/calibrated_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="20x",
+        )
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+            qimage_to_raster(image),
+        )
+
+        self.assertIn("20x", window.calibration_label.text())
+        self.assertIn(window._status_color("info"), window.calibration_label.styleSheet())
+
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
         window = MainWindow()
         preview_frame = QImage(96, 64, QImage.Format.Format_RGB32)
