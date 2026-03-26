@@ -266,6 +266,7 @@ class MicroviewCaptureBackend(CaptureBackend):
 
     def __init__(self) -> None:
         self._dll: ctypes.WinDLL | None = None
+        self._support_libraries: dict[str, ctypes.WinDLL] = {}
         self._dll_dirs: list[object] = []
         self._timer: QTimer | None = None
         self._device_handle: int | None = None
@@ -367,6 +368,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         add_dir = getattr(os, "add_dll_directory", None)
         if callable(add_dir):
             self._dll_dirs.append(add_dir(str(dll_root)))
+        self._preload_support_libraries(dll_root)
         dll_path = dll_root / "MVAPI.dll"
         dll = ctypes.WinDLL(str(dll_path))
         dll.MV_GetDeviceNumber.restype = ctypes.c_ulong
@@ -387,6 +389,20 @@ class MicroviewCaptureBackend(CaptureBackend):
         dll.MV_CaptureSingle.restype = ctypes.c_void_p
         self._dll = dll
         return self._dll
+
+    def _preload_support_libraries(self, dll_root: Path) -> None:
+        for library_name in ("Function.dll", "MVBT.dll", "saa7130.dll", "mvavi.dll"):
+            if library_name in self._support_libraries:
+                continue
+            library_path = dll_root / library_name
+            if not library_path.exists():
+                continue
+            try:
+                self._support_libraries[library_name] = ctypes.WinDLL(str(library_path))
+            except OSError:
+                # Let MVAPI surface the final failure if one of the helper DLLs
+                # still cannot be loaded on this machine.
+                continue
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:
@@ -451,9 +467,35 @@ def _microview_open_error_message(dll) -> str:
         error_code = int(dll.MV_GetLastError(False))
     except Exception:
         error_code = 0
+    if error_code == 2:
+        message = (
+            "Microview 设备打开失败。SDK 错误码: 2\n"
+            "这通常表示 Microview 运行环境未完整安装，或设备正被其它程序占用。\n"
+            "请先关闭官方采集软件/演示程序，再确认驱动与运行库已按 SDK 说明安装。"
+        )
+        details = _microview_runtime_diagnostics()
+        if details:
+            return f"{message}\n{details}"
+        return message
     if error_code > 0:
         return f"Microview 设备打开失败。SDK 错误码: {error_code}"
     return "Microview 设备打开失败。"
+
+
+def _microview_runtime_diagnostics() -> str:
+    if sys.platform != "win32":
+        return ""
+    system_root = Path(os.environ.get("WINDIR", r"C:\Windows"))
+    missing: list[str] = []
+    for candidate in (
+        system_root / "System32" / "drivers" / "MVBT.sys",
+        system_root / "System32" / "drivers" / "saa7130.sys",
+    ):
+        if not candidate.exists():
+            missing.append(candidate.name)
+    if missing:
+        return f"未检测到驱动文件: {', '.join(missing)}"
+    return "系统驱动文件存在，更可能是设备被其它程序占用或官方运行库未注册。"
 
 
 def _resolve_microview_dll_root() -> Path | None:
