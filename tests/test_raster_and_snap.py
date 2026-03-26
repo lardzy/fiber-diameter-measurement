@@ -49,6 +49,16 @@ def make_low_contrast_fiber_image(width: int = 120, height: int = 80, *, x0: int
     return image
 
 
+def make_layered_fiber_image(width: int = 120, height: int = 80, *, x0: int = 48, x1: int = 72, cx0: int = 58, cx1: int = 62) -> RasterImage:
+    image = RasterImage.blank(width, height, fill=235)
+    for y in range(height):
+        for x in range(x0, x1):
+            image.set(x, y, 80)
+        for x in range(cx0, cx1):
+            image.set(x, y, 20)
+    return image
+
+
 @unittest.skipUnless(NUMPY_AVAILABLE, "requires numpy")
 class RasterAndSnapTests(unittest.TestCase):
     def test_extract_rotated_roi_preserves_midpoint(self) -> None:
@@ -112,6 +122,18 @@ class RasterAndSnapTests(unittest.TestCase):
 
         self.assertIn(result.status, {"profile_too_flat", "edge_pair_not_found"})
         self.assertIsNone(result.snapped_line)
+
+    def test_snap_service_prefers_outer_edges_over_internal_texture(self) -> None:
+        image = make_layered_fiber_image()
+        line = Line(Point(30, 40), Point(90, 40))
+
+        result = SnapService().snap_measurement(image, line)
+
+        self.assertEqual(result.status, "snapped")
+        self.assertIsNotNone(result.snapped_line)
+        self.assertAlmostEqual(result.snapped_line.start.x, 48.0, delta=2.0)
+        self.assertAlmostEqual(result.snapped_line.end.x, 72.0, delta=2.0)
+        self.assertGreater((result.diameter_px or 0.0), 16.0)
 
     @unittest.skipUnless(PYSIDE_AVAILABLE, "requires PySide6")
     def test_snap_service_accepts_qimage_input(self) -> None:

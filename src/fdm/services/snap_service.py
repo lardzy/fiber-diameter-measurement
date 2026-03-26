@@ -277,6 +277,7 @@ class SnapService:
         if gradient.size < 5:
             return None
         center = gradient.size // 2
+        edge_guard = max(2, min(center - 1, int(round(gradient.size * 0.05))))
         if polarity == "light_on_dark":
             left_sign = 1
             right_sign = -1
@@ -284,27 +285,84 @@ class SnapService:
             left_sign = -1
             right_sign = 1
 
-        left_peaks = self._signed_peaks(gradient[:center], sign=left_sign, threshold=threshold)
-        right_peaks = [center + 1 + index for index in self._signed_peaks(gradient[center + 1 :], sign=right_sign, threshold=threshold)]
+        left_slice_start = edge_guard
+        left_slice_end = center
+        right_slice_start = center + 1
+        right_slice_end = max(right_slice_start, gradient.size - edge_guard)
+
+        left_endpoint_peak = self._first_signed_peak(
+            gradient[left_slice_start:left_slice_end],
+            sign=left_sign,
+            threshold=threshold,
+            reverse=False,
+        )
+        right_endpoint_peak = self._first_signed_peak(
+            gradient[right_slice_start:right_slice_end],
+            sign=right_sign,
+            threshold=threshold,
+            reverse=True,
+        )
+        if left_endpoint_peak is not None and right_endpoint_peak is not None:
+            left_index = left_slice_start + left_endpoint_peak
+            right_index = right_slice_start + right_endpoint_peak
+            if left_index < right_index:
+                return left_index, right_index, False
+
+        left_peaks = self._signed_peaks(gradient[left_slice_start:left_slice_end], sign=left_sign, threshold=threshold)
+        right_peaks = [
+            right_slice_start + index
+            for index in self._signed_peaks(gradient[right_slice_start:right_slice_end], sign=right_sign, threshold=threshold)
+        ]
         if left_peaks and right_peaks:
-            return left_peaks[-1], right_peaks[0], False
+            return left_slice_start + left_peaks[0], right_peaks[-1], True
 
-        left_fallback = self._strongest_signed_index(gradient[:center], sign=left_sign, threshold=threshold)
-        right_fallback = self._strongest_signed_index(gradient[center + 1 :], sign=right_sign, threshold=threshold)
+        left_fallback = self._strongest_signed_index(
+            gradient[left_slice_start:left_slice_end],
+            sign=left_sign,
+            threshold=threshold,
+        )
+        right_fallback = self._strongest_signed_index(
+            gradient[right_slice_start:right_slice_end],
+            sign=right_sign,
+            threshold=threshold,
+        )
         if left_fallback is not None and right_fallback is not None:
-            return left_fallback, center + 1 + right_fallback, True
+            return left_slice_start + left_fallback, right_slice_start + right_fallback, True
 
-        left_any = self._strongest_abs_index(gradient[:center], threshold=threshold)
-        right_any = self._strongest_abs_index(gradient[center + 1 :], threshold=threshold)
+        left_any = self._strongest_abs_index(gradient[left_slice_start:left_slice_end], threshold=threshold)
+        right_any = self._strongest_abs_index(gradient[right_slice_start:right_slice_end], threshold=threshold)
         if left_any is None or right_any is None:
             return None
-        left_index = left_any
-        right_index = center + 1 + right_any
+        left_index = left_slice_start + left_any
+        right_index = right_slice_start + right_any
         if gradient[left_index] == 0 or gradient[right_index] == 0:
             return None
         if math.copysign(1.0, float(gradient[left_index])) == math.copysign(1.0, float(gradient[right_index])):
             return None
         return left_index, right_index, True
+
+    def _first_signed_peak(
+        self,
+        values: np.ndarray[Any, np.float32],
+        *,
+        sign: int,
+        threshold: float,
+        reverse: bool,
+    ) -> int | None:
+        if values.size < 3:
+            return None
+        indices = range(values.size - 2, 0, -1) if reverse else range(1, values.size - 1)
+        for index in indices:
+            current = float(values[index])
+            previous = float(values[index - 1])
+            nxt = float(values[index + 1])
+            if sign > 0:
+                if current >= threshold and current >= previous and current >= nxt:
+                    return index
+            else:
+                if current <= -threshold and current <= previous and current <= nxt:
+                    return index
+        return None
 
     def _signed_peaks(
         self,
