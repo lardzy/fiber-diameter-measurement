@@ -21,6 +21,14 @@ def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
 
 
+def project_assets_root(project_path: str | Path) -> Path:
+    return Path(project_path).with_suffix(".assets")
+
+
+def project_capture_root(project_path: str | Path) -> Path:
+    return project_assets_root(project_path) / "captures"
+
+
 def format_measurement_label_value(value: float, unit: str, decimals: int) -> str:
     decimals = max(0, min(8, int(decimals)))
     formatted = f"{value:.{decimals}f}"
@@ -367,6 +375,7 @@ class ImageDocument:
     id: str
     path: str
     image_size: tuple[int, int]
+    source_type: str = "filesystem"
     calibration: Calibration | None = None
     fiber_groups: list[FiberGroup] = field(default_factory=list)
     measurements: list[Measurement] = field(default_factory=list)
@@ -387,7 +396,7 @@ class ImageDocument:
 
         if self.history is None:
             self.history = DocumentHistory()
-        if self.sidecar_path is None and self.path:
+        if self.sidecar_path is None and self.path and self.uses_sidecar():
             self.sidecar_path = self.default_sidecar_path()
         self.fiber_groups.sort(key=lambda group: group.number)
         self.rebuild_group_memberships()
@@ -402,7 +411,22 @@ class ImageDocument:
         self.refresh_dirty_flags()
 
     def default_sidecar_path(self) -> str:
-        return f"{self.path}.fdm.json"
+        return f"{self.resolved_path()}.fdm.json"
+
+    def uses_sidecar(self) -> bool:
+        return self.source_type == "filesystem" and bool(str(self.path).strip())
+
+    def is_project_asset(self) -> bool:
+        return self.source_type == "project_asset"
+
+    def resolved_path(self, project_path: str | Path | None = None) -> Path:
+        token = str(self.path or "").strip()
+        if not token:
+            return Path()
+        if self.is_project_asset():
+            base = project_assets_root(project_path) if project_path is not None else Path()
+            return (base / token).resolve() if base else Path(token)
+        return Path(token).expanduser().resolve()
 
     def sorted_groups(self) -> list[FiberGroup]:
         return sorted(self.fiber_groups, key=lambda group: group.number)
@@ -739,6 +763,7 @@ class ImageDocument:
         return {
             "id": self.id,
             "path": self.path,
+            "source_type": self.source_type,
             "image_size": list(self.image_size),
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
@@ -756,6 +781,7 @@ class ImageDocument:
         image_document = cls(
             id=str(payload["id"]),
             path=str(payload["path"]),
+            source_type=str(payload.get("source_type", "filesystem")),
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,
             fiber_groups=[

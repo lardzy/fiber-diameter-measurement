@@ -53,6 +53,11 @@ try:
 except Exception:
     pass
 
+try:
+    hiddenimports += collect_submodules("PySide6.QtMultimedia")
+except Exception:
+    pass
+
 main_analysis = Analysis(
     [str(entry_script)],
     pathex=[str(src_root)],

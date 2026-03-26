@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 
 from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
@@ -24,7 +25,9 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressDialog,
     QPushButton,
+    QSizePolicy,
     QSplitter,
+    QStackedWidget,
     QStatusBar,
     QTableWidget,
     QTableWidgetItem,
@@ -49,11 +52,15 @@ from fdm.models import (
     TextAnnotation,
     UNCATEGORIZED_LABEL,
     new_id,
+    project_assets_root,
+    project_capture_root,
 )
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
 from fdm.services.area_inference import AreaInferenceService
+from fdm.services.capture import CaptureDevice, CaptureSessionManager
+from fdm.services.cu_scale_io import parse_cu_scale_file
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.prompt_segmentation import PromptSegmentationService
@@ -154,9 +161,19 @@ class MainWindow(QMainWindow):
         self._add_preset_button: QPushButton | None = None
         self._edit_preset_button: QPushButton | None = None
         self._delete_preset_button: QPushButton | None = None
+        self._import_cu_preset_button: QPushButton | None = None
         self._apply_preset_button: QPushButton | None = None
+        self._center_stack: QStackedWidget | None = None
+        self._preview_page: QWidget | None = None
+        self._preview_canvas: DocumentCanvas | None = None
+        self._preview_status_label: QLabel | None = None
+        self._preview_notice_label: QLabel | None = None
+        self._preview_active = False
+        self._preview_document: ImageDocument | None = None
+        self._capture_devices: list[CaptureDevice] = []
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
+        self._capture_manager = CaptureSessionManager(selected_device_id=self._app_settings.selected_capture_device_id)
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -174,7 +191,13 @@ class MainWindow(QMainWindow):
         self.area_inference_service = AreaInferenceService()
 
         self._build_ui()
+        self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
+        self._capture_manager.previewStateChanged.connect(self._on_live_preview_state_changed)
+        self._capture_manager.frameReady.connect(self._on_live_preview_frame_ready)
+        self._capture_manager.errorOccurred.connect(self._on_capture_error)
+        self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
+        self._refresh_capture_devices()
         self._update_model_status()
         self._update_ui_for_current_document()
         self._mark_project_saved()
@@ -223,6 +246,19 @@ class MainWindow(QMainWindow):
         self.close_all_action.setIcon(themed_icon("close_all", color="#F2B5A7"))
         self.close_all_action.setShortcut("Ctrl+Shift+W")
         self.close_all_action.triggered.connect(self.close_all_documents)
+
+        self.switch_capture_device_action = QAction("切换采集设备", self)
+        self.switch_capture_device_action.setIcon(themed_icon("capture_device", color="#D7E3FC"))
+        self.switch_capture_device_action.triggered.connect(self.show_capture_device_menu)
+
+        self.live_preview_action = QAction("实时预览", self)
+        self.live_preview_action.setCheckable(True)
+        self.live_preview_action.setIcon(themed_icon("live_preview", color="#7BD389"))
+        self.live_preview_action.triggered.connect(self.toggle_live_preview)
+
+        self.capture_frame_action = QAction("采集一张", self)
+        self.capture_frame_action.setIcon(themed_icon("capture_frame", color="#F4D35E"))
+        self.capture_frame_action.triggered.connect(self.capture_current_frame)
 
         self.undo_action = QAction("撤回", self)
         self.undo_action.setIcon(themed_icon("undo", color="#E7ECEF"))
@@ -401,6 +437,13 @@ class MainWindow(QMainWindow):
         file_toolbar.addSeparator()
         file_toolbar.addAction(self.close_current_action)
         file_toolbar.addAction(self.close_all_action)
+        spacer = QWidget(self)
+        spacer.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
+        file_toolbar.addWidget(spacer)
+        file_toolbar.addSeparator()
+        file_toolbar.addAction(self.switch_capture_device_action)
+        file_toolbar.addAction(self.live_preview_action)
+        file_toolbar.addAction(self.capture_frame_action)
 
         self.addToolBarBreak()
         measure_toolbar = QToolBar("测量工具")
@@ -487,12 +530,24 @@ class MainWindow(QMainWindow):
         container = QWidget()
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
+        self._center_stack = QStackedWidget()
         self.tab_widget = QTabWidget()
         self.tab_widget.setUsesScrollButtons(True)
         self.tab_widget.tabBar().setExpanding(False)
         self.tab_widget.tabBar().setElideMode(Qt.TextElideMode.ElideRight)
         self.tab_widget.currentChanged.connect(self._on_tab_changed)
-        layout.addWidget(self.tab_widget)
+        self._center_stack.addWidget(self.tab_widget)
+
+        self._preview_page = QWidget()
+        preview_layout = QVBoxLayout(self._preview_page)
+        preview_layout.setContentsMargins(0, 0, 0, 0)
+        self._preview_status_label = QLabel("请选择采集设备并开始实时预览")
+        preview_layout.addWidget(self._preview_status_label)
+        self._preview_canvas = DocumentCanvas()
+        self._preview_canvas.set_read_only(True)
+        preview_layout.addWidget(self._preview_canvas)
+        self._center_stack.addWidget(self._preview_page)
+        layout.addWidget(self._center_stack)
         return container
 
     def _build_right_panel(self) -> QWidget:
@@ -520,6 +575,11 @@ class MainWindow(QMainWindow):
 
         calibration_box = QGroupBox("标定")
         calibration_layout = QVBoxLayout(calibration_box)
+        self._preview_notice_label = QLabel("实时预览中，图片编辑已禁用")
+        self._preview_notice_label.setWordWrap(True)
+        self._preview_notice_label.setStyleSheet("color: #F4D35E;")
+        self._preview_notice_label.hide()
+        calibration_layout.addWidget(self._preview_notice_label)
         self.calibration_label = QLabel("当前图片未标定")
         calibration_layout.addWidget(self.calibration_label)
         self.preset_combo = QComboBox()
@@ -538,6 +598,10 @@ class MainWindow(QMainWindow):
         preset_row.addWidget(self._edit_preset_button)
         preset_row.addWidget(self._delete_preset_button)
         calibration_layout.addLayout(preset_row)
+        self._import_cu_preset_button = QPushButton("导入CU标尺")
+        self._import_cu_preset_button.setIcon(themed_icon("preset_import", color="#D7E3FC"))
+        self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
+        calibration_layout.addWidget(self._import_cu_preset_button)
         self._apply_preset_button = QPushButton("应用预设")
         self._apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
         self._apply_preset_button.clicked.connect(self.apply_selected_preset)
@@ -648,16 +712,221 @@ class MainWindow(QMainWindow):
         self._update_magic_segment_controls()
 
     def current_document(self) -> ImageDocument | None:
+        if self._preview_active:
+            return None
         index = self.tab_widget.currentIndex()
         if index < 0 or index >= len(self._document_order):
             return None
         return self.project.get_document(self._document_order[index])
 
     def current_canvas(self) -> DocumentCanvas | None:
+        if self._preview_active:
+            return self._preview_canvas
         document = self.current_document()
         if document is None:
             return None
         return self._canvases.get(document.id)
+
+    def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
+        return document.resolved_path(project_path or self._project_path)
+
+    def _document_display_name(self, document: ImageDocument) -> str:
+        token = str(document.path or "").strip()
+        if token:
+            return Path(token).name or token
+        return document.id
+
+    def _document_tooltip(self, document: ImageDocument, *, project_path: str | Path | None = None) -> str:
+        if document.is_project_asset():
+            resolved = self._resolved_document_path(document, project_path=project_path)
+            if project_path is None and self._project_path is None:
+                return f"项目内采集图片\n相对路径: {document.path}"
+            return f"项目资源\n{resolved}"
+        return str(self._resolved_document_path(document, project_path=project_path))
+
+    def _document_has_unsaved_project_changes(self, document: ImageDocument) -> bool:
+        return document.dirty_flags.session_dirty or (not document.uses_sidecar() and document.dirty_flags.calibration_dirty)
+
+    def _selected_capture_device(self) -> CaptureDevice | None:
+        return self._capture_manager.selected_device()
+
+    def _sync_live_preview_action(self) -> None:
+        self.live_preview_action.blockSignals(True)
+        self.live_preview_action.setChecked(self._preview_active)
+        self.live_preview_action.setText("终止预览" if self._preview_active else "实时预览")
+        self.live_preview_action.blockSignals(False)
+
+    def _update_capture_device_ui(self) -> None:
+        selected = self._selected_capture_device()
+        if selected is None:
+            self.switch_capture_device_action.setEnabled(False)
+            self.switch_capture_device_action.setToolTip("未检测到可用的采集设备")
+        else:
+            self.switch_capture_device_action.setEnabled(True)
+            self.switch_capture_device_action.setToolTip(f"当前设备: {selected.name}")
+        self._sync_live_preview_action()
+
+    def _on_capture_devices_changed(self, devices: object) -> None:
+        self._capture_devices = list(devices) if isinstance(devices, list) else []
+        if self._capture_devices and not self._app_settings.selected_capture_device_id:
+            selected = self._selected_capture_device()
+            if selected is not None:
+                self._app_settings.selected_capture_device_id = selected.id
+        self._update_capture_device_ui()
+        self._update_action_states()
+
+    def _refresh_capture_devices(self) -> None:
+        self._capture_devices = self._capture_manager.refresh_devices()
+        selected = self._selected_capture_device()
+        if selected is not None and not self._app_settings.selected_capture_device_id:
+            self._app_settings.selected_capture_device_id = selected.id
+        self._update_capture_device_ui()
+
+    def _set_selected_capture_device(self, device_id: str) -> None:
+        if not self._capture_manager.set_selected_device(device_id):
+            QMessageBox.warning(self, "切换采集设备", "无法切换到所选设备。")
+            return
+        self._app_settings.selected_capture_device_id = device_id
+        self._save_app_settings(context="切换采集设备")
+        selected = self._selected_capture_device()
+        if selected is not None:
+            self.statusBar().showMessage(f"当前采集设备: {selected.name}", 4000)
+        self._update_capture_device_ui()
+
+    def show_capture_device_menu(self) -> None:
+        self._refresh_capture_devices()
+        if not self._capture_devices:
+            QMessageBox.information(self, "切换采集设备", "当前未检测到可用的采集设备。")
+            return
+        menu = QMenu(self)
+        for device in self._capture_devices:
+            action = menu.addAction(device.name)
+            action.setCheckable(True)
+            action.setChecked(device.id == self._capture_manager.selected_device_id())
+            action.triggered.connect(
+                lambda checked=False, device_id=device.id: self._set_selected_capture_device(device_id)
+            )
+        menu.exec(self.cursor().pos())
+
+    def toggle_live_preview(self, checked: bool) -> None:
+        if checked:
+            self.start_live_preview()
+            return
+        self.stop_live_preview()
+
+    def start_live_preview(self) -> None:
+        self._refresh_capture_devices()
+        if not self._capture_manager.start_preview():
+            self._sync_live_preview_action()
+            return
+        selected = self._selected_capture_device()
+        if self._preview_status_label is not None:
+            self._preview_status_label.setText(f"正在预览: {selected.name if selected is not None else '采集设备'}")
+        self.statusBar().showMessage("实时预览已启动", 3000)
+
+    def stop_live_preview(self) -> None:
+        if not self._capture_manager.is_preview_active():
+            self._preview_active = False
+            self._sync_live_preview_action()
+            return
+        self._capture_manager.stop_preview()
+        self.statusBar().showMessage("实时预览已停止", 3000)
+
+    def _on_live_preview_state_changed(self, active: bool) -> None:
+        self._preview_active = active
+        if self._preview_notice_label is not None:
+            self._preview_notice_label.setVisible(active)
+        if self._center_stack is not None and self._preview_page is not None:
+            self._center_stack.setCurrentWidget(self._preview_page if active else self.tab_widget)
+        if not active:
+            self._preview_document = None
+            if self._preview_status_label is not None:
+                self._preview_status_label.setText("请选择采集设备并开始实时预览")
+        self._sync_live_preview_action()
+        self._update_ui_for_current_document()
+
+    def _on_live_preview_frame_ready(self, image: object) -> None:
+        if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
+            return
+        if (
+            self._preview_document is None
+            or self._preview_document.image_size != (image.width(), image.height())
+        ):
+            self._preview_document = ImageDocument(
+                id="preview_document",
+                path="preview_frame.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            self._preview_canvas.set_document(self._preview_document, image)
+            self._preview_canvas.fit_to_view()
+        else:
+            self._preview_canvas.set_image(image)
+        if self._preview_status_label is not None:
+            selected = self._selected_capture_device()
+            label = selected.name if selected is not None else "采集设备"
+            self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
+        self.capture_frame_action.setEnabled(True)
+
+    def _on_capture_error(self, message: str) -> None:
+        self._sync_live_preview_action()
+        self.statusBar().showMessage(message, 5000)
+        QMessageBox.warning(self, "实时预览", message)
+
+    def _next_project_capture_relative_path(self) -> str:
+        existing = {
+            document.path
+            for document in self.project.documents
+            if document.is_project_asset()
+        }
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        counter = 1
+        while True:
+            candidate = f"captures/capture_{stamp}_{counter:02d}.png"
+            if candidate not in existing:
+                return candidate
+            counter += 1
+
+    def _persist_project_assets(self, target_path: Path) -> bool:
+        for document in self.project.documents:
+            if not document.is_project_asset():
+                continue
+            image = self._images.get(document.id)
+            if image is None or image.isNull():
+                QMessageBox.warning(self, "保存项目", f"无法找到项目内图片数据: {self._document_display_name(document)}")
+                return False
+            output_path = project_assets_root(target_path) / document.path
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            if not image.save(str(output_path), "PNG"):
+                QMessageBox.warning(self, "保存项目", f"写入项目内图片失败: {output_path}")
+                return False
+        return True
+
+    def capture_current_frame(self) -> None:
+        frame = self._capture_manager.last_frame()
+        if frame is None or frame.isNull():
+            QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
+            return
+        self.stop_live_preview()
+        document = ImageDocument(
+            id=new_id("image"),
+            path=self._next_project_capture_relative_path(),
+            image_size=(frame.width(), frame.height()),
+            source_type="project_asset",
+        )
+        document.initialize_runtime_state()
+        if self.project.project_default_calibration is not None:
+            self._set_document_project_default_calibration(document)
+        document.mark_session_saved()
+        document.mark_calibration_saved()
+        raster = qimage_to_raster(frame)
+        self._mount_document(
+            document,
+            frame,
+            raster,
+            tooltip=self._document_tooltip(document),
+        )
+        self.statusBar().showMessage("已采集当前画面到项目内存", 4000)
 
     def _apply_open_view_mode(self, canvas: DocumentCanvas | None) -> None:
         if canvas is None:
@@ -692,9 +961,15 @@ class MainWindow(QMainWindow):
             for document in self.project.documents
             if document.calibration is not None and document.calibration.mode == "project_default"
         )
+        project_assets = sorted(
+            (document.id, document.path)
+            for document in self.project.documents
+            if document.is_project_asset()
+        )
         return {
             "project_default_calibration": self.project.project_default_calibration.to_dict() if self.project.project_default_calibration else None,
             "project_default_document_ids": inherited_ids,
+            "project_asset_documents": project_assets,
         }
 
     def _mark_project_saved(self) -> None:
@@ -757,23 +1032,40 @@ class MainWindow(QMainWindow):
             return preset.pixel_distance, preset.actual_distance, preset.unit
         return max(calibration.unit_to_px(1.0), 0.000001), 1.0, calibration.unit
 
-    def _merge_legacy_calibration_presets(self, presets: list[CalibrationPreset]) -> int:
+    def _merge_imported_preset_batch(
+        self,
+        presets: list[CalibrationPreset],
+        *,
+        dedupe_by_content_only: bool,
+    ) -> tuple[int, int, int]:
         imported_count = 0
+        skipped_count = 0
+        renamed_count = 0
         existing_presets = list(self._calibration_presets())
-        for legacy_preset in presets:
-            if any(self._preset_content_equal(item, legacy_preset) for item in existing_presets):
+        for incoming_preset in presets:
+            if any(self._preset_content_equal(item, incoming_preset, include_name=not dedupe_by_content_only) for item in existing_presets):
+                skipped_count += 1
                 continue
-            candidate_name = legacy_preset.name
+            candidate_name = incoming_preset.name
             if any(item.name == candidate_name for item in existing_presets):
-                candidate_name = f"{legacy_preset.name} (导入)"
+                candidate_name = f"{incoming_preset.name} (导入)"
                 suffix = 2
                 while any(item.name == candidate_name for item in existing_presets):
-                    candidate_name = f"{legacy_preset.name} (导入 {suffix})"
+                    candidate_name = f"{incoming_preset.name} (导入 {suffix})"
                     suffix += 1
-            existing_presets.append(self._clone_preset(legacy_preset, name=candidate_name))
+                renamed_count += 1
+            existing_presets.append(self._clone_preset(incoming_preset, name=candidate_name))
             imported_count += 1
         if imported_count:
             self._app_settings.calibration_presets = existing_presets
+        return imported_count, skipped_count, renamed_count
+
+    def _merge_legacy_calibration_presets(self, presets: list[CalibrationPreset]) -> int:
+        imported_count, _, _ = self._merge_imported_preset_batch(
+            presets,
+            dedupe_by_content_only=False,
+        )
+        if imported_count:
             self._save_app_settings(context="导入旧项目预设")
             self._refresh_preset_combo()
         return imported_count
@@ -846,6 +1138,7 @@ class MainWindow(QMainWindow):
         return None
 
     def open_images(self) -> None:
+        self.stop_live_preview()
         paths, _ = QFileDialog.getOpenFileNames(self, "选择图片", "", self.IMAGE_FILTER)
         if not paths:
             return
@@ -855,6 +1148,7 @@ class MainWindow(QMainWindow):
         )
 
     def open_folder(self) -> None:
+        self.stop_live_preview()
         folder = QFileDialog.getExistingDirectory(self, "选择图片文件夹")
         if not folder:
             return
@@ -878,10 +1172,14 @@ class MainWindow(QMainWindow):
         self,
         items: list[tuple[str, ImageDocument | None]],
     ) -> tuple[list[ImageLoadRequest], int, str | None]:
-        open_documents = {
-            self._normalize_image_path(document.path): document
-            for document in self.project.documents
-        }
+        open_documents: dict[str, ImageDocument] = {}
+        for document in self.project.documents:
+            if document.is_project_asset() and self._project_path is None:
+                continue
+            resolved_path = self._resolved_document_path(document)
+            if not resolved_path:
+                continue
+            open_documents[self._normalize_image_path(resolved_path)] = document
         seen_paths: set[str] = set()
         requests: list[ImageLoadRequest] = []
         skipped_count = 0
@@ -1187,12 +1485,15 @@ class MainWindow(QMainWindow):
             path=absolute_path,
             image_size=(image.width(), image.height()),
         )
-        target_document.path = absolute_path
         target_document.image_size = (image.width(), image.height())
-        target_document.sidecar_path = target_document.default_sidecar_path()
+        if request.document is None:
+            target_document.path = absolute_path
+            target_document.source_type = "filesystem"
+        elif target_document.uses_sidecar():
+            target_document.sidecar_path = target_document.default_sidecar_path()
         target_document.initialize_runtime_state()
         if target_document.calibration is None:
-            loaded_from_sidecar = CalibrationSidecarIO.load_document(target_document)
+            loaded_from_sidecar = target_document.uses_sidecar() and CalibrationSidecarIO.load_document(target_document)
             if self.project.project_default_calibration is not None:
                 use_project_default = not loaded_from_sidecar
                 if loaded_from_sidecar and target_document.calibration is not None:
@@ -1207,8 +1508,23 @@ class MainWindow(QMainWindow):
             target_document.mark_calibration_saved()
         target_document.mark_session_saved()
 
+        self._mount_document(
+            target_document,
+            image,
+            raster,
+            tooltip=absolute_path if request.document is None else self._document_tooltip(target_document),
+        )
+
+    def _mount_document(
+        self,
+        document: ImageDocument,
+        image: QImage,
+        raster: RasterImage,
+        *,
+        tooltip: str,
+    ) -> None:
         canvas = DocumentCanvas()
-        canvas.set_document(target_document, image)
+        canvas.set_document(document, image)
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(self._tool_mode)
         canvas.set_show_area_fill(self._show_area_fill)
@@ -1222,17 +1538,17 @@ class MainWindow(QMainWindow):
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
 
-        self.project.documents.append(target_document)
-        self._document_order.append(target_document.id)
-        self._images[target_document.id] = image
-        self._rasters[target_document.id] = raster
-        self._canvases[target_document.id] = canvas
+        self.project.documents.append(document)
+        self._document_order.append(document.id)
+        self._images[document.id] = image
+        self._rasters[document.id] = raster
+        self._canvases[document.id] = canvas
 
-        tab_index = self.tab_widget.addTab(canvas, Path(absolute_path).name)
-        self.tab_widget.setTabToolTip(tab_index, absolute_path)
-        list_item = QListWidgetItem(Path(absolute_path).name)
-        list_item.setData(Qt.ItemDataRole.UserRole, target_document.id)
-        list_item.setToolTip(absolute_path)
+        tab_index = self.tab_widget.addTab(canvas, self._document_display_name(document))
+        self.tab_widget.setTabToolTip(tab_index, tooltip)
+        list_item = QListWidgetItem(self._document_display_name(document))
+        list_item.setData(Qt.ItemDataRole.UserRole, document.id)
+        list_item.setToolTip(tooltip)
         self.image_list.addItem(list_item)
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
@@ -1255,6 +1571,8 @@ class MainWindow(QMainWindow):
                 return False
             target_path = Path(selected_path)
         self.project.version = __version__
+        if not self._persist_project_assets(target_path):
+            return False
         ProjectIO.save(self.project, target_path)
         self._project_path = target_path
         for document in self.project.documents:
@@ -1266,6 +1584,7 @@ class MainWindow(QMainWindow):
         return True
 
     def load_project(self) -> None:
+        self.stop_live_preview()
         if self._load_thread is not None:
             QMessageBox.information(self, "打开项目", "当前仍有图片在加载，请稍候。")
             return
@@ -1288,10 +1607,11 @@ class MainWindow(QMainWindow):
         self._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
         for document in project.documents:
-            if Path(document.path).exists():
-                load_items.append((document.path, document))
+            resolved_path = document.resolved_path(self._project_path)
+            if resolved_path.exists():
+                load_items.append((str(resolved_path), document))
             else:
-                missing_paths.append(document.path)
+                missing_paths.append(str(resolved_path))
         self._pending_project_load_snapshot = True
         self._open_image_requests(load_items, context_label="打开项目", missing_paths=missing_paths)
         if self._load_thread is None:
@@ -1409,6 +1729,9 @@ class MainWindow(QMainWindow):
         for canvas in self._canvases.values():
             canvas.set_settings(self._app_settings)
             canvas.set_show_area_fill(self._show_area_fill)
+        if self._preview_canvas is not None:
+            self._preview_canvas.set_settings(self._app_settings)
+            self._preview_canvas.set_show_area_fill(False)
         self._populate_group_list(self.current_document())
         self._populate_measurement_table(self.current_document())
         self._update_action_states()
@@ -1422,6 +1745,42 @@ class MainWindow(QMainWindow):
             return
         self.statusBar().showMessage("请在画布中单击比例尺起点位置。", 5000)
         canvas.begin_scale_anchor_pick()
+
+    def import_cu_calibration_presets(self) -> None:
+        paths, _ = QFileDialog.getOpenFileNames(self, "导入CU标尺", "", "CU 标尺 (*.scl)")
+        if not paths:
+            return
+        parsed_presets: list[CalibrationPreset] = []
+        failures: list[str] = []
+        for path in paths:
+            try:
+                parsed_presets.append(parse_cu_scale_file(path).preset)
+            except Exception as exc:
+                failures.append(f"{Path(path).name}: {exc}")
+        imported_count = 0
+        skipped_count = 0
+        renamed_count = 0
+        if parsed_presets:
+            imported_count, skipped_count, renamed_count = self._merge_imported_preset_batch(
+                parsed_presets,
+                dedupe_by_content_only=True,
+            )
+            if imported_count:
+                self._save_app_settings(context="导入CU标尺")
+                self._refresh_preset_combo()
+        summary_lines = [
+            f"成功导入 {imported_count} 个预设",
+            f"跳过重复 {skipped_count} 个",
+            f"自动改名 {renamed_count} 个",
+        ]
+        if failures:
+            summary_lines.append("")
+            summary_lines.append("失败文件:")
+            summary_lines.extend(failures[:8])
+        dialog_method = QMessageBox.warning if failures else QMessageBox.information
+        dialog_method(self, "导入CU标尺", "\n".join(summary_lines))
+        if imported_count:
+            self.statusBar().showMessage(f"已导入 {imported_count} 个 CU 标尺预设", 4000)
 
     def add_calibration_preset(self) -> None:
         pixel_distance, actual_distance, unit = self._default_preset_dialog_values(self.current_document())
@@ -1799,7 +2158,7 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None or document.history is None or not document.history.undo(document):
             return
-        if document.calibration is not None and document.calibration.mode == "project_default":
+        if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
             document.mark_calibration_saved()
         else:
             CalibrationSidecarIO.save_document(document)
@@ -1809,25 +2168,25 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None or document.history is None or not document.history.redo(document):
             return
-        if document.calibration is not None and document.calibration.mode == "project_default":
+        if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
             document.mark_calibration_saved()
         else:
             CalibrationSidecarIO.save_document(document)
         self._update_ui_for_current_document()
 
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
-        dirty_documents = [document for document in documents if document.dirty_flags.session_dirty]
+        dirty_documents = [document for document in documents if self._document_has_unsaved_project_changes(document)]
         has_project_dirty = self._project_dirty()
         if not dirty_documents and not has_project_dirty:
             return True
         message_parts: list[str] = []
         if dirty_documents:
             if len(dirty_documents) == 1 and len(documents) == 1:
-                message_parts.append(f"{Path(dirty_documents[0].path).name} 有未保存的会话改动。")
+                message_parts.append(f"{Path(dirty_documents[0].path).name} 有未保存的项目改动。")
             else:
-                message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的会话改动。")
+                message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的项目改动。")
         if has_project_dirty:
-            message_parts.append("当前项目的统一比例尺或继承关系有未保存改动。")
+            message_parts.append("当前项目的统一比例尺、项目内图片或继承关系有未保存改动。")
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
@@ -1844,6 +2203,7 @@ class MainWindow(QMainWindow):
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        self.stop_live_preview()
         self.project = ProjectState.empty()
         self._project_path = None
         self._pending_project_load_snapshot = False
@@ -1884,8 +2244,10 @@ class MainWindow(QMainWindow):
         after = document.snapshot_state()
         if document.history is not None:
             document.history.push(label, before, after)
-        if sync_sidecar:
+        if sync_sidecar and document.uses_sidecar():
             CalibrationSidecarIO.save_document(document)
+        elif sync_sidecar:
+            document.mark_calibration_saved()
         self._update_ui_for_current_document()
 
     def _on_tab_changed(self, index: int) -> None:
@@ -2147,11 +2509,14 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)
-            canvas.set_tool_mode(self._tool_mode)
-            canvas.set_show_area_fill(self._show_area_fill)
+            canvas.set_tool_mode("select" if self._preview_active and canvas is self._preview_canvas else self._tool_mode)
+            canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
         self._update_action_states()
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
+        if self._preview_active:
+            self.calibration_label.setText("实时预览中")
+            return
         if document is None or document.calibration is None:
             self.calibration_label.setText("当前图片未标定")
             return
@@ -2160,7 +2525,7 @@ class MainWindow(QMainWindow):
             calibration.source_label or self._format_calibration_mode(calibration.mode),
             f"{self._format_calibration_mode(calibration.mode)}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}",
         ]
-        if calibration.mode == "project_default":
+        if calibration.mode == "project_default" or not document.uses_sidecar():
             lines.append("保存位置: 当前项目")
         else:
             lines.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
@@ -2345,6 +2710,7 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
+        preview_active = self._preview_active
         has_selected_object = bool(
             has_document
             and self._tool_mode != "calibration"
@@ -2361,12 +2727,12 @@ class MainWindow(QMainWindow):
         )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
-        self.delete_measurement_action.setEnabled(has_selected_object)
-        self.delete_measurement_button.setEnabled(has_selected_object)
-        self.add_group_action.setEnabled(has_document)
-        self.rename_group_action.setEnabled(has_document and document.get_group(document.active_group_id) is not None if document else False)
-        self.delete_group_action.setEnabled(has_deletable_group_target)
-        self.delete_group_button.setEnabled(has_deletable_group_target)
+        self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
+        self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
+        self.add_group_action.setEnabled(has_document and not preview_active)
+        self.rename_group_action.setEnabled(has_document and not preview_active and document.get_group(document.active_group_id) is not None if document else False)
+        self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
+        self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
         has_preset = bool(self._calibration_presets())
         if self._add_preset_button is not None:
             self._add_preset_button.setEnabled(True)
@@ -2374,12 +2740,19 @@ class MainWindow(QMainWindow):
             self._edit_preset_button.setEnabled(has_preset)
         if self._delete_preset_button is not None:
             self._delete_preset_button.setEnabled(has_preset)
+        if self._import_cu_preset_button is not None:
+            self._import_cu_preset_button.setEnabled(True)
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(has_document and has_preset)
+            self._apply_preset_button.setEnabled(has_document and has_preset and not preview_active)
         if self._area_auto_button is not None:
-            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings))
-        self.undo_action.setEnabled(bool(history and history.can_undo()))
-        self.redo_action.setEnabled(bool(history and history.can_redo()))
+            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings) and not preview_active)
+        self.undo_action.setEnabled(bool(history and history.can_undo()) and not preview_active)
+        self.redo_action.setEnabled(bool(history and history.can_redo()) and not preview_active)
+        self.switch_capture_device_action.setEnabled(bool(self._capture_devices))
+        self.live_preview_action.setEnabled(bool(self._capture_devices))
+        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.last_frame() is not None)
+        for mode, action in self._mode_actions.items():
+            action.setEnabled(not preview_active or mode == "select")
         self._update_magic_segment_controls()
 
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
@@ -2388,7 +2761,7 @@ class MainWindow(QMainWindow):
     def _update_magic_segment_controls(self) -> None:
         if self._magic_controls_widget is None or self._magic_controls_action is None:
             return
-        is_visible = self._tool_mode == "magic_segment"
+        is_visible = self._tool_mode == "magic_segment" and not self._preview_active
         self._magic_controls_action.setVisible(is_visible)
         self._magic_controls_widget.setVisible(is_visible)
         if not is_visible:
@@ -2653,6 +3026,7 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
+        self.stop_live_preview()
         if self._prompt_seg_thread is not None:
             self._prompt_seg_thread.quit()
             self._prompt_seg_thread.wait(1500)

@@ -235,6 +235,50 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
 
+    def test_live_preview_frame_can_be_captured_as_project_asset_document(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(180, 120, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+
+        window._on_live_preview_state_changed(True)
+        window._on_live_preview_frame_ready(preview_frame)
+        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
+
+        self.assertIsNone(window.current_document())
+        self.assertIs(window.current_canvas(), window._preview_canvas)
+        self.assertTrue(window.capture_frame_action.isEnabled())
+
+        window.capture_current_frame()
+
+        self.assertEqual(len(window.project.documents), 1)
+        captured_document = window.project.documents[0]
+        self.assertEqual(captured_document.source_type, "project_asset")
+        self.assertTrue(captured_document.path.startswith("captures/"))
+        self.assertIn(captured_document.id, window._images)
+        self.assertTrue(window._project_dirty())
+
+    def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(96, 64, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#9AD1D4"))
+        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
+
+        window.capture_current_frame()
+        captured_document = window.project.documents[0]
+
+        with TemporaryDirectory() as tmp_dir:
+            project_path = Path(tmp_dir) / "demo.fdmproj"
+            self.assertTrue(window.save_project(str(project_path)))
+            asset_path = project_path.with_suffix(".assets") / captured_document.path
+
+            self.assertTrue(asset_path.exists())
+            self.assertEqual(asset_path.suffix.lower(), ".png")
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
+            self.assertEqual(payload["documents"][0]["path"], captured_document.path)
+
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
         window, document = self._create_main_window_fixture()
 

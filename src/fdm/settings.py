@@ -191,6 +191,7 @@ class AppSettings:
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
     area_worker_python: str = field(default_factory=default_area_worker_python)
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
+    selected_capture_device_id: str = ""
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
@@ -287,6 +288,7 @@ class AppSettings:
             "area_vendor_root": normalized.area_vendor_root,
             "area_worker_python": normalized.area_worker_python,
             "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
+            "selected_capture_device_id": normalized.selected_capture_device_id,
         }
 
     @classmethod
@@ -326,6 +328,7 @@ class AppSettings:
                 for item in presets
                 if isinstance(item, dict) and str(item.get("name", "")).strip()
             ]
+        settings.selected_capture_device_id = str(payload.get("selected_capture_device_id", settings.selected_capture_device_id)).strip()
         return settings
 
 
