@@ -241,8 +241,10 @@ class CanvasAndExportTests(unittest.TestCase):
         preview_frame.fill(QColor("#CCE3DE"))
 
         window._on_live_preview_state_changed(True)
+        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
         window._on_live_preview_frame_ready(preview_frame)
         window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
         window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
 
         self.assertIsNone(window.current_document())
@@ -257,6 +259,35 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertTrue(captured_document.path.startswith("captures/"))
         self.assertIn(captured_document.id, window._images)
         self.assertTrue(window._project_dirty())
+
+    def test_native_preview_switches_to_microview_host_surface(self) -> None:
+        window = MainWindow()
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+
+        window._on_live_preview_state_changed(True)
+
+        self.assertIsNone(window.current_canvas())
+        self.assertIsNotNone(window._preview_display_stack)
+        self.assertIsNotNone(window._microview_preview_host)
+        self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_host)
+
+    def test_native_preview_capture_uses_still_capture_path(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(96, 72, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#F4D35E"))
+        stop_calls: list[str] = []
+
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: True  # type: ignore[method-assign]
+        window._capture_manager.stop_preview = lambda: stop_calls.append("stopped")  # type: ignore[method-assign]
+
+        window.capture_current_frame()
+
+        self.assertEqual(stop_calls, ["stopped"])
+        self.assertEqual(len(window.project.documents), 1)
+        self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
         window = MainWindow()

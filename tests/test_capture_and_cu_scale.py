@@ -31,6 +31,12 @@ except ModuleNotFoundError:
     MicroviewCaptureBackend = None
     _microview_buffer_to_qimage = None
 
+try:
+    from PySide6.QtGui import QColor, QImage
+except ModuleNotFoundError:
+    QColor = None
+    QImage = None
+
 
 class CaptureAndCuScaleTests(unittest.TestCase):
     def test_cu_scale_display_name_strips_date_suffix(self) -> None:
@@ -198,6 +204,98 @@ class CaptureAndCuScaleTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             _microview_buffer_to_qimage(ctypes.addressof(buffer), info)
+
+    @unittest.skipIf(MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_frame_mode_uses_work_skip_for_levin_board(self) -> None:
+        backend = MicroviewCaptureBackend()
+        calls: list[tuple[int, int]] = []
+
+        class FakeDll:
+            def MV_SetDeviceParameter(self, handle, parameter, value):
+                calls.append((int(parameter), int(value)))
+                return True
+
+        backend._apply_frame_mode(FakeDll(), 1, MicroviewCaptureBackend._LEVIN_M20)
+
+        self.assertEqual(
+            calls,
+            [
+                (
+                    MicroviewCaptureBackend._PARAM_WORK_SKIP,
+                    MicroviewCaptureBackend._INTERLUDE,
+                )
+            ],
+        )
+
+    @unittest.skipIf(MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_frame_mode_uses_work_field_for_non_levin_board(self) -> None:
+        backend = MicroviewCaptureBackend()
+        calls: list[tuple[int, int]] = []
+
+        class FakeDll:
+            def MV_SetDeviceParameter(self, handle, parameter, value):
+                calls.append((int(parameter), int(value)))
+                return True
+
+        backend._apply_frame_mode(FakeDll(), 1, 0x12345678)
+
+        self.assertEqual(
+            calls,
+            [
+                (
+                    MicroviewCaptureBackend._PARAM_WORK_FIELD,
+                    MicroviewCaptureBackend._COLLECTION_FRAME,
+                )
+            ],
+        )
+
+    @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
+    def test_capture_session_manager_does_not_cache_native_embed_still_frame(self) -> None:
+        still_frame = QImage(64, 48, QImage.Format.Format_RGB32)
+        still_frame.fill(QColor("#88CCEE"))
+
+        class NativeBackend(CaptureBackend):
+            backend_key = "microview"
+
+            def __init__(self) -> None:
+                self.capture_calls = 0
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [
+                    CaptureDevice(
+                        id="microview:0",
+                        name="Microview #1",
+                        backend_key=self.backend_key,
+                        native_id=0,
+                    )
+                ]
+
+            def preview_kind(self, device: CaptureDevice) -> str:
+                return "native_embed"
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                return None
+
+            def stop_preview(self) -> None:
+                return None
+
+            def can_capture_still(self, device: CaptureDevice) -> bool:
+                return True
+
+            def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
+                self.capture_calls += 1
+                return still_frame.copy()
+
+        backend = NativeBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+
+        captured = manager.capture_still_frame()
+
+        self.assertIsNotNone(captured)
+        self.assertEqual((captured.width(), captured.height()), (64, 48))
+        self.assertEqual(backend.capture_calls, 1)
+        self.assertIsNone(manager.last_frame())
 
 
 if __name__ == "__main__":

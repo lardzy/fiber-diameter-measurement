@@ -76,6 +76,7 @@ from fdm.ui.dialogs import (
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
@@ -130,6 +131,24 @@ except ModuleNotFoundError as exc:
         def last_frame(self) -> QImage | None:
             return None
 
+        def preview_kind(self) -> str:
+            return "frame_stream"
+
+        def can_capture_still(self) -> bool:
+            return False
+
+        def capture_still_frame(self) -> QImage | None:
+            return None
+
+        def can_optimize_signal(self) -> bool:
+            return False
+
+        def optimize_signal(self) -> str:
+            raise RuntimeError("当前采集设备不支持信号优化。")
+
+        def active_warning(self) -> str:
+            return ""
+
         def device_refresh_warnings(self) -> list[str]:
             return [f"采集模块未安装: {_CAPTURE_IMPORT_ERROR}"] if _CAPTURE_IMPORT_ERROR is not None else []
 
@@ -140,12 +159,15 @@ except ModuleNotFoundError as exc:
         def set_selected_device(self, device_id: str) -> bool:
             return False
 
-        def start_preview(self) -> bool:
+        def start_preview(self, *, preview_target: object | None = None) -> bool:
             detail = str(_CAPTURE_IMPORT_ERROR).strip() if _CAPTURE_IMPORT_ERROR is not None else "未知错误"
             self.errorOccurred.emit(f"当前版本缺少采集模块，实时预览不可用。\n{detail}")
             return False
 
         def stop_preview(self) -> None:
+            return
+
+        def update_preview_target(self, preview_target: object | None) -> None:
             return
 
 try:
@@ -242,12 +264,15 @@ class MainWindow(QMainWindow):
         self._apply_preset_button: QPushButton | None = None
         self._center_stack: QStackedWidget | None = None
         self._preview_page: QWidget | None = None
+        self._preview_display_stack: QStackedWidget | None = None
         self._preview_canvas: DocumentCanvas | None = None
+        self._microview_preview_host: MicroviewPreviewHost | None = None
         self._preview_status_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
         self._capture_devices: list[CaptureDevice] = []
+        self._microview_optimize_hints_shown: set[str] = set()
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
         self._capture_manager = CaptureSessionManager(
@@ -339,6 +364,10 @@ class MainWindow(QMainWindow):
         self.capture_frame_action = QAction("采集一张", self)
         self.capture_frame_action.setIcon(themed_icon("capture_frame", color="#F4D35E"))
         self.capture_frame_action.triggered.connect(self.capture_current_frame)
+
+        self.optimize_capture_signal_action = QAction("优化采集参数", self)
+        self.optimize_capture_signal_action.setIcon(themed_icon("capture_device", color="#7BD389"))
+        self.optimize_capture_signal_action.triggered.connect(self.optimize_capture_signal)
 
         self.undo_action = QAction("撤回", self)
         self.undo_action.setIcon(themed_icon("undo", color="#E7ECEF"))
@@ -524,6 +553,7 @@ class MainWindow(QMainWindow):
         file_toolbar.addAction(self.switch_capture_device_action)
         file_toolbar.addAction(self.live_preview_action)
         file_toolbar.addAction(self.capture_frame_action)
+        file_toolbar.addAction(self.optimize_capture_signal_action)
 
         self.addToolBarBreak()
         measure_toolbar = QToolBar("测量工具")
@@ -623,11 +653,16 @@ class MainWindow(QMainWindow):
         preview_layout.setContentsMargins(0, 0, 0, 0)
         self._preview_status_label = QLabel("请选择采集设备并开始实时预览")
         preview_layout.addWidget(self._preview_status_label)
+        self._preview_display_stack = QStackedWidget()
         self._preview_canvas = DocumentCanvas()
         self._preview_canvas.set_read_only(True)
         self._preview_canvas.set_fit_alignment("top_left")
         self._preview_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        preview_layout.addWidget(self._preview_canvas, 1)
+        self._preview_display_stack.addWidget(self._preview_canvas)
+        self._microview_preview_host = MicroviewPreviewHost()
+        self._microview_preview_host.metricsChanged.connect(self._on_preview_host_metrics_changed)
+        self._preview_display_stack.addWidget(self._microview_preview_host)
+        preview_layout.addWidget(self._preview_display_stack, 1)
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
         return container
@@ -803,11 +838,50 @@ class MainWindow(QMainWindow):
 
     def current_canvas(self) -> DocumentCanvas | None:
         if self._preview_active:
-            return self._preview_canvas
+            return self._preview_canvas if self._capture_manager.preview_kind() == "frame_stream" else None
         document = self.current_document()
         if document is None:
             return None
         return self._canvases.get(document.id)
+
+    def _preview_kind(self) -> str:
+        return self._capture_manager.preview_kind()
+
+    def _is_native_preview(self) -> bool:
+        return self._preview_kind() == "native_embed"
+
+    def _current_preview_target(self) -> object | None:
+        if self._is_native_preview():
+            return self._microview_preview_host
+        return None
+
+    def _apply_preview_surface(self, preview_kind: str) -> None:
+        if self._preview_display_stack is None or self._preview_canvas is None or self._microview_preview_host is None:
+            return
+        target_widget = self._microview_preview_host if preview_kind == "native_embed" else self._preview_canvas
+        self._preview_display_stack.setCurrentWidget(target_widget)
+
+    def _refresh_preview_surface(self) -> None:
+        self._apply_preview_surface(self._preview_kind())
+
+    def _on_preview_host_metrics_changed(self) -> None:
+        if not self._preview_active or not self._is_native_preview() or self._microview_preview_host is None:
+            return
+        self._capture_manager.update_preview_target(self._microview_preview_host)
+
+    def _show_active_capture_warning(self) -> None:
+        warning = self._capture_manager.active_warning().strip()
+        if warning:
+            self.statusBar().showMessage(warning, 7000)
+
+    def _maybe_hint_signal_optimization(self) -> None:
+        selected = self._selected_capture_device()
+        if selected is None or selected.id in self._microview_optimize_hints_shown:
+            return
+        if not self._capture_manager.can_optimize_signal():
+            return
+        self._microview_optimize_hints_shown.add(selected.id)
+        self.statusBar().showMessage("如果预览出现横条撕裂，可尝试点击“优化采集参数”。", 7000)
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -842,14 +916,21 @@ class MainWindow(QMainWindow):
         if _CAPTURE_IMPORT_ERROR is not None:
             self.switch_capture_device_action.setToolTip(f"实时预览模块不可用: {_CAPTURE_IMPORT_ERROR}")
             self.live_preview_action.setToolTip("实时预览模块不可用")
+            self.optimize_capture_signal_action.setToolTip("实时预览模块不可用")
+            self._sync_live_preview_action()
             return
         selected = self._selected_capture_device()
         if selected is None:
             self.switch_capture_device_action.setToolTip("切换或刷新采集设备")
             self.live_preview_action.setToolTip("开始或停止实时预览")
+            self.optimize_capture_signal_action.setToolTip("当前设备不支持采集参数优化")
         else:
             self.switch_capture_device_action.setToolTip(f"当前设备: {selected.name}")
             self.live_preview_action.setToolTip(f"使用 {selected.name} 进行实时预览")
+            if self._capture_manager.can_optimize_signal():
+                self.optimize_capture_signal_action.setToolTip("优化当前 Microview 设备的信号/场频参数")
+            else:
+                self.optimize_capture_signal_action.setToolTip("当前设备不支持采集参数优化")
         self._sync_live_preview_action()
 
     def _capture_refresh_message(self) -> str:
@@ -876,8 +957,12 @@ class MainWindow(QMainWindow):
         if selected is not None and not self._app_settings.selected_capture_device_id:
             self._app_settings.selected_capture_device_id = selected.id
         self._update_capture_device_ui()
+        self._update_action_states()
 
     def _set_selected_capture_device(self, device_id: str) -> None:
+        restart_preview = self._capture_manager.is_preview_active()
+        if restart_preview:
+            self.stop_live_preview()
         if not self._capture_manager.set_selected_device(device_id):
             QMessageBox.warning(self, "切换采集设备", "无法切换到所选设备。")
             return
@@ -886,7 +971,11 @@ class MainWindow(QMainWindow):
         selected = self._selected_capture_device()
         if selected is not None:
             self.statusBar().showMessage(f"当前采集设备: {selected.name}", 4000)
+        self._show_active_capture_warning()
         self._update_capture_device_ui()
+        self._update_action_states()
+        if restart_preview:
+            self.start_live_preview()
 
     def show_capture_device_menu(self) -> None:
         self._refresh_capture_devices()
@@ -915,12 +1004,27 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, "实时预览", self._capture_refresh_message())
             self._sync_live_preview_action()
             return
-        if not self._capture_manager.start_preview():
+        preview_kind = self._preview_kind()
+        preview_target = self._current_preview_target()
+        if self._center_stack is not None and self._preview_page is not None:
+            self._center_stack.setCurrentWidget(self._preview_page)
+        self._apply_preview_surface(preview_kind)
+        if preview_kind == "native_embed" and self._microview_preview_host is not None:
+            self._microview_preview_host.ensure_native_handle()
+            QApplication.processEvents()
+        if not self._capture_manager.start_preview(preview_target=preview_target):
+            if self._center_stack is not None:
+                self._center_stack.setCurrentWidget(self.tab_widget)
             self._sync_live_preview_action()
             return
         selected = self._selected_capture_device()
         if self._preview_status_label is not None:
-            self._preview_status_label.setText(f"正在预览: {selected.name if selected is not None else '采集设备'}")
+            if preview_kind == "native_embed":
+                self._preview_status_label.setText(
+                    f"正在预览: {selected.name if selected is not None else '采集设备'}  (Microview 原生预览)"
+                )
+            else:
+                self._preview_status_label.setText(f"正在预览: {selected.name if selected is not None else '采集设备'}")
         self.statusBar().showMessage("实时预览已启动", 3000)
 
     def stop_live_preview(self) -> None:
@@ -937,14 +1041,24 @@ class MainWindow(QMainWindow):
             self._preview_notice_label.setVisible(active)
         if self._center_stack is not None and self._preview_page is not None:
             self._center_stack.setCurrentWidget(self._preview_page if active else self.tab_widget)
+        if active:
+            self._refresh_preview_surface()
+            if self._is_native_preview() and self._microview_preview_host is not None:
+                QApplication.processEvents()
+                self._capture_manager.update_preview_target(self._microview_preview_host)
+            self._show_active_capture_warning()
+            self._maybe_hint_signal_optimization()
         if not active:
             self._preview_document = None
+            self._apply_preview_surface("frame_stream")
             if self._preview_status_label is not None:
                 self._preview_status_label.setText("请选择采集设备并开始实时预览")
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
 
     def _on_live_preview_frame_ready(self, image: object) -> None:
+        if self._is_native_preview():
+            return
         if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
             return
         if (
@@ -965,10 +1079,11 @@ class MainWindow(QMainWindow):
             selected = self._selected_capture_device()
             label = selected.name if selected is not None else "采集设备"
             self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
-        self.capture_frame_action.setEnabled(True)
+        self._update_action_states()
 
     def _on_capture_error(self, message: str) -> None:
         self._sync_live_preview_action()
+        self._update_action_states()
         self.statusBar().showMessage(message, 5000)
         QMessageBox.warning(self, "实时预览", message)
 
@@ -1002,11 +1117,19 @@ class MainWindow(QMainWindow):
         return True
 
     def capture_current_frame(self) -> None:
-        frame = self._capture_manager.last_frame()
+        was_preview_active = self._capture_manager.is_preview_active()
+        preview_kind = self._preview_kind()
+        frame: QImage | None
+        if was_preview_active and preview_kind == "native_embed":
+            self.stop_live_preview()
+            frame = self._capture_manager.capture_still_frame()
+        else:
+            frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
         if frame is None or frame.isNull():
             QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
             return
-        self.stop_live_preview()
+        if was_preview_active and preview_kind != "native_embed":
+            self.stop_live_preview()
         document = ImageDocument(
             id=new_id("image"),
             path=self._next_project_capture_relative_path(),
@@ -1026,6 +1149,25 @@ class MainWindow(QMainWindow):
             tooltip=self._document_tooltip(document),
         )
         self.statusBar().showMessage("已采集当前画面到项目内存", 4000)
+
+    def optimize_capture_signal(self) -> None:
+        selected = self._selected_capture_device()
+        if selected is None or not self._capture_manager.can_optimize_signal():
+            QMessageBox.information(self, "优化采集参数", "当前设备不支持自动优化采集参数。")
+            return
+        restart_preview = self._capture_manager.is_preview_active()
+        if restart_preview:
+            self.stop_live_preview()
+        try:
+            message = self._capture_manager.optimize_signal()
+        except Exception as exc:
+            QMessageBox.warning(self, "优化采集参数", str(exc))
+            if restart_preview:
+                self.start_live_preview()
+            return
+        QMessageBox.information(self, "优化采集参数", message)
+        if restart_preview:
+            self.start_live_preview()
 
     def _apply_open_view_mode(self, canvas: DocumentCanvas | None) -> None:
         if canvas is None:
@@ -2853,7 +2995,10 @@ class MainWindow(QMainWindow):
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
-        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.last_frame() is not None)
+        can_optimize_signal = capture_feature_available and self._capture_manager.can_optimize_signal()
+        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.can_capture_still())
+        self.optimize_capture_signal_action.setVisible(can_optimize_signal)
+        self.optimize_capture_signal_action.setEnabled(can_optimize_signal)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
         self._update_magic_segment_controls()
