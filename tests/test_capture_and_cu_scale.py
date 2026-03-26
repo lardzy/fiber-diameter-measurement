@@ -17,6 +17,7 @@ from fdm.services.cu_scale_io import (
 )
 
 try:
+    import fdm.services.capture as capture_module
     from fdm.services.capture import (
         CaptureBackend,
         CaptureDevice,
@@ -25,6 +26,7 @@ try:
         _microview_buffer_to_qimage,
     )
 except ModuleNotFoundError:
+    capture_module = None
     CaptureBackend = None
     CaptureDevice = None
     CaptureSessionManager = None
@@ -296,6 +298,37 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual((captured.width(), captured.height()), (64, 48))
         self.assertEqual(backend.capture_calls, 1)
         self.assertIsNone(manager.last_frame())
+
+    @unittest.skipIf(
+        capture_module is None or _microview_buffer_to_qimage is None or MicroviewCaptureBackend is None,
+        "PySide6 not installed",
+    )
+    def test_microview_capture_single_uses_preallocated_buffer_when_sdk_returns_null_pointer(self) -> None:
+        backend = MicroviewCaptureBackend()
+        payload = bytes([0, 0, 255, 0, 255, 0])
+
+        class FakeDll:
+            def MV_SetDeviceParameter(self, handle, parameter, value):
+                if int(parameter) == MicroviewCaptureBackend._PARAM_SET_GARBIMAGEINFO:
+                    info = ctypes.cast(int(value), ctypes.POINTER(MicroviewCaptureBackend._MVImageInfo)).contents
+                    info.Length = len(payload)
+                    info.Width = 2
+                    info.Heigth = 1
+                    info.nColor = 24
+                    info.SkipPixel = 0
+                return True
+
+            def MV_CaptureSingle(self, handle, process, buffer_ptr, buffer_len, info_ptr):
+                ctypes.memmove(int(buffer_ptr), payload, len(payload))
+                return 0
+
+        backend._dll = FakeDll()
+
+        image = backend._capture_single_frame_image(handle=1, process=False)
+
+        self.assertFalse(image.isNull())
+        self.assertEqual((image.width(), image.height()), (2, 1))
+        self.assertEqual(image.pixelColor(0, 0).red(), 255)
 
 
 if __name__ == "__main__":

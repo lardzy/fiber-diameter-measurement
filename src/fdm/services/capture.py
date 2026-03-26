@@ -388,6 +388,7 @@ class MicroviewCaptureBackend(CaptureBackend):
     _MV_STOP = 0
     _MV_ERROR = 4
     _PARAM_GET_BOARD_TYPE = 0
+    _PARAM_SET_GARBIMAGEINFO = 2
     _PARAM_BUFFERTYPE = 4
     _PARAM_DISP_WIDTH = 11
     _PARAM_DISP_HEIGHT = 10
@@ -870,16 +871,32 @@ class MicroviewCaptureBackend(CaptureBackend):
             flags.append(True)
         for process_flag in flags:
             info = self._MVImageInfo()
+            capture_buffer = None
+            capture_ptr: int | None = None
+            capture_length = 0
+            try:
+                self._dll.MV_SetDeviceParameter(
+                    handle,
+                    self._PARAM_SET_GARBIMAGEINFO,
+                    ctypes.addressof(info),
+                )
+            except Exception:
+                pass
+            if int(info.Length) > 0:
+                capture_length = int(info.Length)
+                capture_buffer = ctypes.create_string_buffer(capture_length)
+                capture_ptr = ctypes.addressof(capture_buffer)
             buffer_ptr = self._dll.MV_CaptureSingle(
                 handle,
                 process_flag,
-                None,
-                0,
+                capture_ptr,
+                capture_length,
                 ctypes.byref(info),
             )
-            if not buffer_ptr:
+            resolved_ptr = int(buffer_ptr) if buffer_ptr else (capture_ptr or 0)
+            if not resolved_ptr:
                 continue
-            image = _microview_buffer_to_qimage(buffer_ptr, info)
+            image = _microview_buffer_to_qimage(resolved_ptr, info)
             if not image.isNull():
                 return image
         return QImage()
