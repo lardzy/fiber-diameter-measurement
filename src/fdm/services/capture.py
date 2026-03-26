@@ -7,7 +7,7 @@ import ctypes
 import os
 import sys
 
-from PySide6.QtCore import QObject, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QImage
 
 from fdm.settings import project_runtime_root, runtime_directory
@@ -252,6 +252,7 @@ class QtVideoCaptureBackend(CaptureBackend):
 
 class MicroviewCaptureBackend(CaptureBackend):
     backend_key = "microview"
+    _PREVIEW_INTERVAL_MS = 33
     _MV_RUN = 1
     _MV_STOP = 0
     _PARAM_BUFFERTYPE = 4
@@ -334,7 +335,8 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._configure_preview_session(dll, raw_device_handle)
         dll.MV_OperateDevice(self._device_handle, self._MV_RUN)
         self._timer = QTimer()
-        self._timer.setInterval(80)
+        self._timer.setTimerType(Qt.TimerType.PreciseTimer)
+        self._timer.setInterval(self._PREVIEW_INTERVAL_MS)
         self._timer.timeout.connect(self._capture_single_frame)
         self._timer.start()
 
@@ -656,7 +658,7 @@ def _microview_qimage_format(pixel_format: int):
     if pixel_format == MicroviewCaptureBackend._FORMAT_MONO8:
         return QImage.Format.Format_Grayscale8
     if pixel_format == MicroviewCaptureBackend._FORMAT_RGB24:
-        return QImage.Format.Format_RGB888
+        return getattr(QImage.Format, "Format_BGR888", QImage.Format.Format_RGB888)
     if pixel_format == MicroviewCaptureBackend._FORMAT_ARGB8888:
         return getattr(QImage.Format, "Format_RGBA8888", QImage.Format.Format_ARGB32)
     if pixel_format == MicroviewCaptureBackend._FORMAT_RGB565:
