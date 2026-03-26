@@ -173,7 +173,10 @@ class MainWindow(QMainWindow):
         self._capture_devices: list[CaptureDevice] = []
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
-        self._capture_manager = CaptureSessionManager(selected_device_id=self._app_settings.selected_capture_device_id)
+        self._capture_manager = CaptureSessionManager(
+            selected_device_id=self._app_settings.selected_capture_device_id,
+            refresh_on_init=False,
+        )
         self._color_palette = [
             "#1F7A8C",
             "#E07A5F",
@@ -197,7 +200,7 @@ class MainWindow(QMainWindow):
         self._capture_manager.errorOccurred.connect(self._on_capture_error)
         self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
-        self._refresh_capture_devices()
+        self._update_capture_device_ui()
         self._update_model_status()
         self._update_ui_for_current_document()
         self._mark_project_saved()
@@ -759,12 +762,21 @@ class MainWindow(QMainWindow):
     def _update_capture_device_ui(self) -> None:
         selected = self._selected_capture_device()
         if selected is None:
-            self.switch_capture_device_action.setEnabled(False)
-            self.switch_capture_device_action.setToolTip("未检测到可用的采集设备")
+            self.switch_capture_device_action.setToolTip("切换或刷新采集设备")
+            self.live_preview_action.setToolTip("开始或停止实时预览")
         else:
-            self.switch_capture_device_action.setEnabled(True)
             self.switch_capture_device_action.setToolTip(f"当前设备: {selected.name}")
+            self.live_preview_action.setToolTip(f"使用 {selected.name} 进行实时预览")
         self._sync_live_preview_action()
+
+    def _capture_refresh_message(self) -> str:
+        lines = ["当前未检测到可用的采集设备。"]
+        warnings = self._capture_manager.device_refresh_warnings()
+        if warnings:
+            lines.append("")
+            lines.append("采集模块诊断:")
+            lines.extend(warnings[:4])
+        return "\n".join(lines)
 
     def _on_capture_devices_changed(self, devices: object) -> None:
         self._capture_devices = list(devices) if isinstance(devices, list) else []
@@ -796,7 +808,7 @@ class MainWindow(QMainWindow):
     def show_capture_device_menu(self) -> None:
         self._refresh_capture_devices()
         if not self._capture_devices:
-            QMessageBox.information(self, "切换采集设备", "当前未检测到可用的采集设备。")
+            QMessageBox.information(self, "切换采集设备", self._capture_refresh_message())
             return
         menu = QMenu(self)
         for device in self._capture_devices:
@@ -816,6 +828,10 @@ class MainWindow(QMainWindow):
 
     def start_live_preview(self) -> None:
         self._refresh_capture_devices()
+        if not self._capture_devices:
+            QMessageBox.information(self, "实时预览", self._capture_refresh_message())
+            self._sync_live_preview_action()
+            return
         if not self._capture_manager.start_preview():
             self._sync_live_preview_action()
             return
@@ -2748,8 +2764,8 @@ class MainWindow(QMainWindow):
             self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings) and not preview_active)
         self.undo_action.setEnabled(bool(history and history.can_undo()) and not preview_active)
         self.redo_action.setEnabled(bool(history and history.can_redo()) and not preview_active)
-        self.switch_capture_device_action.setEnabled(bool(self._capture_devices))
-        self.live_preview_action.setEnabled(bool(self._capture_devices))
+        self.switch_capture_device_action.setEnabled(True)
+        self.live_preview_action.setEnabled(True)
         self.capture_frame_action.setEnabled(preview_active and self._capture_manager.last_frame() is not None)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
