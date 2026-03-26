@@ -628,7 +628,19 @@ def _microview_pixel_format_name(pixel_format: int) -> str:
     }.get(pixel_format, str(pixel_format))
 
 
+def _microview_normalize_pixel_format(pixel_format: int) -> int:
+    aliases = {
+        8: MicroviewCaptureBackend._FORMAT_MONO8,
+        15: MicroviewCaptureBackend._FORMAT_RGB1555,
+        16: MicroviewCaptureBackend._FORMAT_RGB565,
+        24: MicroviewCaptureBackend._FORMAT_RGB24,
+        32: MicroviewCaptureBackend._FORMAT_ARGB8888,
+    }
+    return aliases.get(pixel_format, pixel_format)
+
+
 def _microview_bytes_per_pixel(pixel_format: int) -> int | None:
+    pixel_format = _microview_normalize_pixel_format(pixel_format)
     return {
         MicroviewCaptureBackend._FORMAT_MONO8: 1,
         MicroviewCaptureBackend._FORMAT_RGB1555: 2,
@@ -640,6 +652,7 @@ def _microview_bytes_per_pixel(pixel_format: int) -> int | None:
 
 
 def _microview_qimage_format(pixel_format: int):
+    pixel_format = _microview_normalize_pixel_format(pixel_format)
     if pixel_format == MicroviewCaptureBackend._FORMAT_MONO8:
         return QImage.Format.Format_Grayscale8
     if pixel_format == MicroviewCaptureBackend._FORMAT_RGB24:
@@ -669,7 +682,8 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
     width = int(info.Width)
     height = int(info.Heigth)
     total_length = int(info.Length)
-    pixel_format = int(info.nColor)
+    raw_pixel_format = int(info.nColor)
+    pixel_format = _microview_normalize_pixel_format(raw_pixel_format)
     skip_pixels = max(0, int(info.SkipPixel))
     if width <= 0 or height <= 0 or total_length <= 0:
         return QImage()
@@ -677,13 +691,13 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
     if bytes_per_pixel is None:
         raise ValueError(
             "不支持的 Microview 像素格式: "
-            f"{_microview_pixel_format_name(pixel_format)} ({pixel_format})"
+            f"{_microview_pixel_format_name(raw_pixel_format)} ({raw_pixel_format})"
         )
     image_format = _microview_qimage_format(pixel_format)
     if image_format is None:
         raise ValueError(
             "当前 Qt 运行环境不支持 Microview 像素格式: "
-            f"{_microview_pixel_format_name(pixel_format)}"
+            f"{_microview_pixel_format_name(raw_pixel_format)}"
         )
     data = ctypes.string_at(buffer_ptr, total_length)
     active_stride = width * bytes_per_pixel
@@ -691,7 +705,7 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
     if len(data) < minimum_total:
         raise ValueError(
             "Microview 图像缓冲区长度不足: "
-            f"{len(data)} < {minimum_total} ({width}x{height}, format={_microview_pixel_format_name(pixel_format)})"
+            f"{len(data)} < {minimum_total} ({width}x{height}, format={_microview_pixel_format_name(raw_pixel_format)})"
         )
 
     row_stride_candidates: list[int] = []
@@ -708,7 +722,7 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
         raise ValueError(
             "无法确定 Microview 图像步长: "
             f"length={len(data)}, width={width}, height={height}, "
-            f"skip_pixels={skip_pixels}, format={_microview_pixel_format_name(pixel_format)}"
+            f"skip_pixels={skip_pixels}, format={_microview_pixel_format_name(raw_pixel_format)}"
         )
 
     row_stride = row_stride_candidates[0]
@@ -722,6 +736,6 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
     if image.isNull():
         raise ValueError(
             "Qt 无法构建 Microview 图像: "
-            f"{width}x{height}, stride={active_stride}, format={_microview_pixel_format_name(pixel_format)}"
+            f"{width}x{height}, stride={active_stride}, format={_microview_pixel_format_name(raw_pixel_format)}"
         )
     return image.copy()

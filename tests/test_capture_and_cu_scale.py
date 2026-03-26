@@ -139,6 +139,29 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual((image.width(), image.height()), (2, 2))
 
     @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_24bpp_alias_converts_to_qimage(self) -> None:
+        info = MicroviewCaptureBackend._MVImageInfo()
+        info.Width = 2
+        info.Heigth = 2
+        info.nColor = 24
+        info.SkipPixel = 0
+        payload = bytes(
+            [
+                255, 0, 0,
+                0, 255, 0,
+                0, 0, 255,
+                255, 255, 255,
+            ]
+        )
+        info.Length = len(payload)
+        buffer = ctypes.create_string_buffer(payload)
+
+        image = _microview_buffer_to_qimage(ctypes.addressof(buffer), info)
+
+        self.assertFalse(image.isNull())
+        self.assertEqual((image.width(), image.height()), (2, 2))
+
+    @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
     def test_microview_buffer_rejects_short_payload_before_qimage_construction(self) -> None:
         info = MicroviewCaptureBackend._MVImageInfo()
         info.Width = 3
