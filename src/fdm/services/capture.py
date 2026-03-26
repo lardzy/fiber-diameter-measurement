@@ -528,7 +528,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         info = self._MVImageInfo()
         buffer_ptr = self._dll.MV_CaptureSingle(
             self._device_handle,
-            False,
+            True,
             None,
             0,
             ctypes.byref(info),
