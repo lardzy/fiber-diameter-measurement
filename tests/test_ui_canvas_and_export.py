@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QListView, QSplitter
+    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -30,7 +30,7 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import SettingsDialog, ShortcutHelpDialog
-    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
@@ -38,7 +38,6 @@ else:
     ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
-    qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
 
 
@@ -157,7 +156,6 @@ class CanvasAndExportTests(unittest.TestCase):
         window._add_loaded_document(
             ImageLoadRequest(path=document.path, document=document),
             image,
-            qimage_to_raster(image),
         )
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
@@ -312,7 +310,6 @@ class CanvasAndExportTests(unittest.TestCase):
         window._add_loaded_document(
             ImageLoadRequest(path=document.path, document=document),
             image,
-            qimage_to_raster(image),
         )
 
         self.assertIsNotNone(window._image_resolution_label)
@@ -334,7 +331,6 @@ class CanvasAndExportTests(unittest.TestCase):
         window._add_loaded_document(
             ImageLoadRequest(path=document.path, document=document),
             image,
-            qimage_to_raster(image),
         )
 
         self.assertEqual(window.calibration_label.text(), "当前图片未标定")
@@ -360,7 +356,6 @@ class CanvasAndExportTests(unittest.TestCase):
         window._add_loaded_document(
             ImageLoadRequest(path=document.path, document=document),
             image,
-            qimage_to_raster(image),
         )
 
         self.assertIn("20x", window.calibration_label.text())
@@ -497,12 +492,24 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+                ["浏览", "手动测量", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
             )
             visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+        finally:
+            window.close()
+
+    def test_right_panel_hides_onnx_status_and_keeps_area_auto_entry(self) -> None:
+        window = MainWindow()
+        try:
+            group_titles = [box.title() for box in window.findChildren(QGroupBox)]
+            self.assertIsNone(getattr(window, "model_status_label", None))
+            self.assertIsNotNone(window._area_auto_button)
+            self.assertEqual(window._area_auto_button.text(), "面积自动识别...")
+            self.assertIn("面积识别", group_titles)
+            self.assertNotIn("模型状态", group_titles)
         finally:
             window.close()
 
@@ -631,7 +638,6 @@ class CanvasAndExportTests(unittest.TestCase):
                     window._add_loaded_document(
                         ImageLoadRequest(path=str(image_path), document=None),
                         image,
-                        qimage_to_raster(image),
                     )
 
                 self.assertEqual(window.current_document().calibration.mode, "project_default")
@@ -1095,11 +1101,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
             self.assertEqual(window._tool_mode, "select")
 
-            window.set_tool_mode("snap")
+            window.set_tool_mode("manual")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
             self.assertEqual(window._tool_mode, "select")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
-            self.assertEqual(window._tool_mode, "snap")
+            self.assertEqual(window._tool_mode, "manual")
         finally:
             window.close()
 

@@ -59,14 +59,11 @@ from fdm.models import (
     project_capture_root,
 )
 from fdm.project_io import ProjectIO
-from fdm.raster import RasterImage
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
-from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
-from fdm.services.snap_service import SnapService
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
@@ -78,7 +75,7 @@ from fdm.ui.dialogs import (
 )
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.icons import themed_icon
-from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
@@ -250,7 +247,6 @@ class MainWindow(QMainWindow):
             pass
         self._document_order: list[str] = []
         self._images: dict[str, QImage] = {}
-        self._rasters: dict[str, RasterImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
@@ -313,7 +309,6 @@ class MainWindow(QMainWindow):
         ]
 
         self.export_service = ExportService()
-        self.snap_service = SnapService(model_provider=NullModelProvider())
         self.area_inference_service = AreaInferenceService()
 
         self._build_ui()
@@ -324,7 +319,6 @@ class MainWindow(QMainWindow):
         self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
         self._update_capture_device_ui()
-        self._update_model_status()
         self._update_ui_for_current_document()
         self._mark_project_saved()
 
@@ -480,7 +474,6 @@ class MainWindow(QMainWindow):
         for mode, label in [
             ("select", "浏览"),
             ("manual", "手动测量"),
-            ("snap", "半自动吸附"),
             ("polygon_area", "多边形面积"),
             ("freehand_area", "自由形状面积"),
             ("magic_segment", "魔棒分割"),
@@ -495,7 +488,6 @@ class MainWindow(QMainWindow):
         self._mode_actions["select"].setChecked(True)
         self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
-        self._mode_actions["snap"].setIcon(themed_icon("snap", color="#2A9D8F"))
         self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
         self._mode_actions["magic_segment"].setIcon(themed_icon("magic_segment", color="#D96C75"))
@@ -604,7 +596,6 @@ class MainWindow(QMainWindow):
         self._measure_toolbar = measure_toolbar
         measure_toolbar.addAction(self._mode_actions["select"])
         measure_toolbar.addAction(self._mode_actions["manual"])
-        measure_toolbar.addAction(self._mode_actions["snap"])
         measure_toolbar.addAction(self._mode_actions["polygon_area"])
         measure_toolbar.addAction(self._mode_actions["freehand_area"])
         measure_toolbar.addAction(self._mode_actions["magic_segment"])
@@ -706,14 +697,8 @@ class MainWindow(QMainWindow):
         top_layout = QVBoxLayout(top_container)
         top_layout.setContentsMargins(0, 0, 0, 0)
 
-        model_box = QGroupBox("模型状态")
+        model_box = QGroupBox("面积识别")
         model_layout = QVBoxLayout(model_box)
-        self.model_status_label = QLabel("未加载")
-        model_layout.addWidget(self.model_status_label)
-        load_model_button = QPushButton("加载 ONNX 模型")
-        load_model_button.setIcon(themed_icon("model", color="#9AD1D4"))
-        load_model_button.clicked.connect(self.load_model)
-        model_layout.addWidget(load_model_button)
         self._area_auto_button = QPushButton("面积自动识别...")
         self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
         self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
@@ -848,6 +833,8 @@ class MainWindow(QMainWindow):
         return action
 
     def set_tool_mode(self, mode: str) -> None:
+        if mode == "snap" or mode not in self._mode_actions:
+            mode = "select"
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
@@ -1244,11 +1231,9 @@ class MainWindow(QMainWindow):
             self._set_document_project_default_calibration(document)
         document.mark_session_saved()
         document.mark_calibration_saved()
-        raster = qimage_to_raster(frame)
         self._mount_document(
             document,
             frame,
-            raster,
             tooltip=self._document_tooltip(document),
         )
         self.statusBar().showMessage("已采集当前画面到项目内存", 4000)
@@ -1683,8 +1668,7 @@ class MainWindow(QMainWindow):
             if state.failures is not None:
                 state.failures.append(f"{Path(request.path).name}: {reason}")
             return
-        raster = qimage_to_raster(image)
-        self._add_loaded_document(request, image, raster)
+        self._add_loaded_document(request, image)
         state.completed_count += 1
         state.loaded_count += 1
 
@@ -1736,12 +1720,12 @@ class MainWindow(QMainWindow):
         self._load_progress_dialog.setValue(completed)
         self._load_progress_dialog.setLabelText(f"正在加载 ({index}/{total})\n{Path(path).name}")
 
-    def _on_batch_load_loaded(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
+    def _on_batch_load_loaded(self, request: ImageLoadRequest, image: QImage) -> None:
         state = self._load_state
         if state is not None:
             state.completed_count += 1
             state.loaded_count += 1
-        self._add_loaded_document(request, image, raster)
+        self._add_loaded_document(request, image)
         if self._load_progress_dialog is not None and state is not None:
             self._load_progress_dialog.setValue(state.completed_count)
 
@@ -1908,7 +1892,7 @@ class MainWindow(QMainWindow):
         self._area_infer_worker = None
         self._area_infer_state = None
 
-    def _add_loaded_document(self, request: ImageLoadRequest, image: QImage, raster: RasterImage) -> None:
+    def _add_loaded_document(self, request: ImageLoadRequest, image: QImage) -> None:
         absolute_path = request.path
         target_document = request.document or ImageDocument(
             id=new_id("image"),
@@ -1941,7 +1925,6 @@ class MainWindow(QMainWindow):
         self._mount_document(
             target_document,
             image,
-            raster,
             tooltip=absolute_path if request.document is None else self._document_tooltip(target_document),
         )
 
@@ -1949,7 +1932,6 @@ class MainWindow(QMainWindow):
         self,
         document: ImageDocument,
         image: QImage,
-        raster: RasterImage,
         *,
         tooltip: str,
     ) -> None:
@@ -1971,7 +1953,6 @@ class MainWindow(QMainWindow):
         self.project.documents.append(document)
         self._document_order.append(document.id)
         self._images[document.id] = image
-        self._rasters[document.id] = raster
         self._canvases[document.id] = canvas
 
         tab_index = self.tab_widget.addTab(canvas, self._document_display_name(document))
@@ -2434,20 +2415,6 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "删除测量", mutate)
 
-    def load_model(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "选择 ONNX 模型", "", "ONNX 文件 (*.onnx)")
-        if not path:
-            return
-        provider = OnnxModelProvider()
-        try:
-            provider.load(path)
-        except Exception as exc:  # noqa: BLE001
-            QMessageBox.warning(self, "模型加载失败", str(exc))
-            return
-        self.snap_service.set_model_provider(provider)
-        self._update_model_status()
-        self.statusBar().showMessage(f"已加载模型: {path}", 5000)
-
     def run_area_auto_recognition(self) -> None:
         if not self.project.documents:
             QMessageBox.information(self, "面积自动识别", "请先打开图片。")
@@ -2643,7 +2610,6 @@ class MainWindow(QMainWindow):
         self._pending_project_load_snapshot = False
         self._document_order.clear()
         self._images.clear()
-        self._rasters.clear()
         self._canvases.clear()
         self.image_list.clear()
         self.tab_widget.clear()
@@ -2656,7 +2622,6 @@ class MainWindow(QMainWindow):
         self._document_order.pop(index)
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
         self._images.pop(document_id, None)
-        self._rasters.pop(document_id, None)
         self._canvases.pop(document_id, None)
         self.tab_widget.removeTab(index)
         item = self.image_list.takeItem(index)
@@ -2739,19 +2704,6 @@ class MainWindow(QMainWindow):
                     line_px=payload,
                     confidence=1.0,
                     status="manual",
-                )
-            elif isinstance(payload, Line):
-                snap_result = self.snap_service.snap_measurement(self._rasters[document.id], payload)
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="snap",
-                    line_px=payload,
-                    snapped_line_px=snap_result.snapped_line or payload,
-                    confidence=snap_result.confidence,
-                    status=snap_result.status if snap_result.snapped_line is not None else "manual_review",
-                    debug_payload=snap_result.debug_payload,
                 )
             else:
                 return
@@ -3122,13 +3074,6 @@ class MainWindow(QMainWindow):
         self._update_action_states()
         self._focus_current_canvas()
         return True
-
-    def _update_model_status(self) -> None:
-        health = self.snap_service.model_provider.healthcheck()
-        if health.get("ready"):
-            self.model_status_label.setText(f"已加载\n{health.get('model_path', '')}")
-        else:
-            self.model_status_label.setText(f"未就绪\n{health.get('reason', '') or '将使用传统算法兜底'}")
 
     def _create_progress_dialog(self, *, title: str, label_text: str, maximum: int) -> QProgressDialog:
         progress = QProgressDialog(label_text, "取消", 0, maximum, self)

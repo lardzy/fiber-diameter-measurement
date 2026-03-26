@@ -25,7 +25,7 @@ def qimage_to_raster(image: QImage) -> RasterImage:
 
 class ImageBatchLoaderWorker(QObject):
     progress = Signal(int, int, str)
-    loaded = Signal(object, object, object)
+    loaded = Signal(object, object)
     failed = Signal(str, str)
     finished = Signal(bool, int, int, int)
 
@@ -55,7 +55,6 @@ class ImageBatchLoaderWorker(QObject):
                 failed_count += 1
                 self.failed.emit(request.path, reason)
                 continue
-            raster = qimage_to_raster(image)
             loaded_count += 1
-            self.loaded.emit(request, image, raster)
+            self.loaded.emit(request, image)
         self.finished.emit(self._cancelled, loaded_count, self._skipped_count, failed_count)
