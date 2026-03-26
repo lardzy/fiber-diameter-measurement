@@ -625,7 +625,9 @@ class MainWindow(QMainWindow):
         preview_layout.addWidget(self._preview_status_label)
         self._preview_canvas = DocumentCanvas()
         self._preview_canvas.set_read_only(True)
-        preview_layout.addWidget(self._preview_canvas)
+        self._preview_canvas.set_fit_alignment("top_left")
+        self._preview_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        preview_layout.addWidget(self._preview_canvas, 1)
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
         return container

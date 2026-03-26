@@ -98,6 +98,7 @@ class DocumentCanvas(QWidget):
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
         self._read_only = False
+        self._fit_alignment = "center"
 
     @property
     def document_id(self) -> str | None:
@@ -131,6 +132,10 @@ class DocumentCanvas(QWidget):
             self._drag_text_preview_anchor = None
             self._scale_anchor_pick_active = False
         self._update_cursor()
+        self.update()
+
+    def set_fit_alignment(self, alignment: str) -> None:
+        self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
 
     def set_tool_mode(self, mode: str) -> None:
@@ -240,10 +245,13 @@ class DocumentCanvas(QWidget):
         self._zoom = max(0.05, min(zoom_x, zoom_y))
         target_width = self._image.width() * self._zoom
         target_height = self._image.height() * self._zoom
-        self._pan = Point(
-            (self.width() - target_width) / 2.0,
-            (self.height() - target_height) / 2.0,
-        )
+        if self._fit_alignment == "top_left":
+            self._pan = Point(20.0, 20.0)
+        else:
+            self._pan = Point(
+                (self.width() - target_width) / 2.0,
+                (self.height() - target_height) / 2.0,
+            )
         self._persist_view_state()
         self.update()
 
