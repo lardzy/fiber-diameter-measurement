@@ -266,6 +266,7 @@ class MicroviewCaptureBackend(CaptureBackend):
 
     def __init__(self) -> None:
         self._dll: ctypes.WinDLL | None = None
+        self._dll_root: Path | None = None
         self._support_libraries: dict[str, ctypes.WinDLL] = {}
         self._dll_dirs: list[object] = []
         self._timer: QTimer | None = None
@@ -314,7 +315,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._error_callback = error_callback
         raw_device_handle = dll.MV_OpenDevice(int(device.native_id), True)
         if not raw_device_handle:
-            raise RuntimeError(_microview_open_error_message(dll))
+            raise RuntimeError(_microview_open_error_message(dll, self._dll_root))
         self._device_handle = int(raw_device_handle)
         dll.MV_OperateDevice(self._device_handle, self._MV_RUN)
         self._timer = QTimer()
@@ -365,12 +366,17 @@ class MicroviewCaptureBackend(CaptureBackend):
         dll_root = _resolve_microview_dll_root()
         if dll_root is None:
             return None
+        self._dll_root = dll_root
         add_dir = getattr(os, "add_dll_directory", None)
         if callable(add_dir):
             self._dll_dirs.append(add_dir(str(dll_root)))
         self._preload_support_libraries(dll_root)
         dll_path = dll_root / "MVAPI.dll"
-        dll = ctypes.WinDLL(str(dll_path))
+        loader = getattr(getattr(ctypes, "windll", None), "LoadLibrary", None)
+        if callable(loader):
+            dll = loader(str(dll_path))
+        else:
+            dll = ctypes.WinDLL(str(dll_path))
         dll.MV_GetDeviceNumber.restype = ctypes.c_ulong
         dll.MV_GetLastError.argtypes = [ctypes.c_bool]
         dll.MV_GetLastError.restype = ctypes.c_ulong
@@ -391,17 +397,17 @@ class MicroviewCaptureBackend(CaptureBackend):
         return self._dll
 
     def _preload_support_libraries(self, dll_root: Path) -> None:
+        loader = getattr(getattr(ctypes, "windll", None), "LoadLibrary", None)
+        library_loader = loader if callable(loader) else ctypes.WinDLL
         for library_name in ("Function.dll", "MVBT.dll", "saa7130.dll", "mvavi.dll"):
             if library_name in self._support_libraries:
                 continue
-            library_path = dll_root / library_name
-            if not library_path.exists():
+            library_path = _find_microview_support_library(library_name, dll_root)
+            if library_path is None:
                 continue
             try:
-                self._support_libraries[library_name] = ctypes.WinDLL(str(library_path))
+                self._support_libraries[library_name] = library_loader(str(library_path))
             except OSError:
-                # Let MVAPI surface the final failure if one of the helper DLLs
-                # still cannot be loaded on this machine.
                 continue
 
 
@@ -462,11 +468,12 @@ def _format_backend_error(backend: CaptureBackend, exc: Exception) -> str:
     return f"{name}: {detail}"
 
 
-def _microview_open_error_message(dll) -> str:
+def _microview_open_error_message(dll, dll_root: Path | None = None) -> str:
     try:
         error_code = int(dll.MV_GetLastError(False))
     except Exception:
         error_code = 0
+    root_hint = f"\n当前 SDK 目录: {dll_root}" if dll_root is not None else ""
     if error_code == 2:
         message = (
             "Microview 设备打开失败。SDK 错误码: 2\n"
@@ -475,11 +482,11 @@ def _microview_open_error_message(dll) -> str:
         )
         details = _microview_runtime_diagnostics()
         if details:
-            return f"{message}\n{details}"
-        return message
+            return f"{message}\n{details}{root_hint}"
+        return f"{message}{root_hint}"
     if error_code > 0:
-        return f"Microview 设备打开失败。SDK 错误码: {error_code}"
-    return "Microview 设备打开失败。"
+        return f"Microview 设备打开失败。SDK 错误码: {error_code}{root_hint}"
+    return f"Microview 设备打开失败。{root_hint}".rstrip()
 
 
 def _microview_runtime_diagnostics() -> str:
@@ -499,13 +506,63 @@ def _microview_runtime_diagnostics() -> str:
 
 
 def _resolve_microview_dll_root() -> Path | None:
-    arch = "x64" if sys.maxsize > 2 ** 32 else "x86"
-    candidates = [
-        runtime_directory() / "camera" / "microview" / arch,
-        project_runtime_root() / ".tmp" / "Microview-ref" / "MVFG" / "sdk" / "dll" / arch,
-    ]
+    candidates = _microview_dll_candidates()
     for candidate in candidates:
         if (candidate / "MVAPI.dll").exists():
+            return candidate
+    return None
+
+
+def _microview_dll_candidates() -> list[Path]:
+    arch = "x64" if sys.maxsize > 2 ** 32 else "x86"
+    candidates: list[Path] = []
+    env_dir = os.environ.get("FDM_MICROVIEW_DLL_DIR", "").strip()
+    if env_dir:
+        candidates.append(Path(env_dir).expanduser())
+    if sys.platform == "win32":
+        system_root = Path(os.environ.get("WINDIR", r"C:\Windows"))
+        if arch == "x64":
+            candidates.extend(
+                [
+                    system_root / "SysWOW64",
+                    system_root / "System32",
+                    system_root,
+                ]
+            )
+        else:
+            candidates.extend(
+                [
+                    system_root / "System32",
+                    system_root / "SysWOW64",
+                    system_root,
+                ]
+            )
+    candidates.extend(
+        [
+            runtime_directory() / "camera" / "microview" / arch,
+            project_runtime_root() / "dll" / arch,
+            project_runtime_root() / ".tmp" / "Microview-ref" / "MVFG" / "sdk" / "dll" / arch,
+        ]
+    )
+    deduped: list[Path] = []
+    seen: set[str] = set()
+    for candidate in candidates:
+        key = str(candidate).lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(candidate)
+    return deduped
+
+
+def _find_microview_support_library(library_name: str, dll_root: Path) -> Path | None:
+    search_roots: list[Path] = [dll_root]
+    if sys.platform == "win32":
+        system_root = Path(os.environ.get("WINDIR", r"C:\Windows"))
+        search_roots.extend([system_root, system_root / "System32", system_root / "SysWOW64"])
+    for root in search_roots:
+        candidate = root / library_name
+        if candidate.exists():
             return candidate
     return None
 
