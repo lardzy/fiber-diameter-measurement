@@ -44,3 +44,15 @@ def parse_cu_scale_file(path: str | Path) -> CuScaleImportRecord:
             computed_pixels_per_unit=1.0 / um_per_pixel,
         ),
     )
+
+
+def format_cu_scale_record_summary(record: CuScaleImportRecord) -> str:
+    preset = record.preset
+    pixels_per_unit = preset.resolved_pixels_per_unit()
+    unit_per_pixel = 1.0 / pixels_per_unit
+    return (
+        f"文件: {record.source_path.name}\n"
+        f"预设名称: {preset.name}\n"
+        f"标尺: {pixels_per_unit:.6g} px/{preset.unit}\n"
+        f"换算: {unit_per_pixel:.6g} {preset.unit}/px"
+    )

@@ -13,6 +13,7 @@ from fdm.services.cu_scale_io import (
     CU_SCALE_MIN_FILE_SIZE,
     CU_SCALE_OFFSET,
     cu_scale_display_name,
+    format_cu_scale_record_summary,
     parse_cu_scale_file,
 )
 
@@ -71,6 +72,22 @@ class CaptureAndCuScaleTests(unittest.TestCase):
 
         self.assertEqual(record.preset.name, "10x-legacy")
         self.assertAlmostEqual(record.preset.resolved_pixels_per_unit(), 2.0)
+
+    def test_format_cu_scale_record_summary_contains_scale_values(self) -> None:
+        payload = bytearray(CU_SCALE_MIN_FILE_SIZE)
+        struct.pack_into("<f", payload, CU_SCALE_OFFSET, 0.25)
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "20x-2025.09.15.scl"
+            path.write_bytes(bytes(payload))
+            record = parse_cu_scale_file(path)
+
+        summary = format_cu_scale_record_summary(record)
+
+        self.assertIn("文件: 20x-2025.09.15.scl", summary)
+        self.assertIn("预设名称: 20x", summary)
+        self.assertIn("标尺: 4 px/um", summary)
+        self.assertIn("换算: 0.25 um/px", summary)
 
     def test_parse_cu_scale_file_rejects_invalid_payload(self) -> None:
         with TemporaryDirectory() as tmp_dir:

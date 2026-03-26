@@ -292,6 +292,34 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
+    def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
+        window = MainWindow()
+        image = QImage(200, 100, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/resolution_label.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=10.0,
+            unit="um",
+            source_label="10x",
+        )
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+            qimage_to_raster(image),
+        )
+
+        self.assertIsNotNone(window._image_resolution_label)
+        label_text = window._image_resolution_label.text()
+        self.assertIn("像素尺寸: 200 x 100 px", label_text)
+        self.assertIn("实际尺寸: 20 x 10 um", label_text)
+
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
         window = MainWindow()
         preview_frame = QImage(96, 64, QImage.Format.Format_RGB32)

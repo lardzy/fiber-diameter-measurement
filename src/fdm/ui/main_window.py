@@ -10,6 +10,7 @@ from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
     QComboBox,
+    QDialog,
     QDialogButtonBox,
     QFileDialog,
     QFrame,
@@ -179,7 +180,7 @@ except ModuleNotFoundError as exc:
             return
 
 try:
-    from fdm.services.cu_scale_io import parse_cu_scale_file
+    from fdm.services.cu_scale_io import format_cu_scale_record_summary, parse_cu_scale_file
 
     _CU_SCALE_IMPORT_ERROR: Exception | None = None
 except ModuleNotFoundError as exc:
@@ -187,6 +188,9 @@ except ModuleNotFoundError as exc:
     _cu_scale_import_error_message = str(exc)
 
     def parse_cu_scale_file(path: str | Path):
+        raise RuntimeError(f"当前版本缺少 CU 标尺导入模块，无法导入标尺。\n{_cu_scale_import_error_message}")
+
+    def format_cu_scale_record_summary(record) -> str:
         raise RuntimeError(f"当前版本缺少 CU 标尺导入模块，无法导入标尺。\n{_cu_scale_import_error_message}")
 
 
@@ -210,6 +214,13 @@ class AreaInferenceBatchState:
     failed_count: int = 0
     cancelled: bool = False
     failures: list[str] | None = None
+
+
+@dataclass(slots=True)
+class PresetImportPlanEntry:
+    preset: CalibrationPreset
+    action: str
+    final_name: str
 
 
 class MainWindow(QMainWindow):
@@ -277,6 +288,7 @@ class MainWindow(QMainWindow):
         self._microview_preview_host: MicroviewPreviewHost | None = None
         self._microview_preview_scroll: QScrollArea | None = None
         self._preview_status_label: QLabel | None = None
+        self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -677,6 +689,10 @@ class MainWindow(QMainWindow):
         self._microview_preview_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._preview_display_stack.addWidget(self._microview_preview_scroll)
         preview_layout.addWidget(self._preview_display_stack, 1)
+        self._image_resolution_label = QLabel("像素尺寸: -")
+        self._image_resolution_label.setWordWrap(True)
+        self._image_resolution_label.setStyleSheet("color: #C8D3DD; padding: 6px 2px 0 2px;")
+        preview_layout.addWidget(self._image_resolution_label)
         self._center_stack.addWidget(self._preview_page)
         layout.addWidget(self._center_stack)
         return container
@@ -892,6 +908,33 @@ class MainWindow(QMainWindow):
         if warning:
             self.statusBar().showMessage(warning, 7000)
 
+    def _format_dimension_value(self, value: float) -> str:
+        text = f"{value:.4f}".rstrip("0").rstrip(".")
+        return text or "0"
+
+    def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
+        if self._image_resolution_label is None:
+            return
+        if self._preview_active:
+            resolution = self._capture_manager.preview_resolution()
+            if resolution is None:
+                self._image_resolution_label.setText("实时预览分辨率: -")
+            else:
+                self._image_resolution_label.setText(f"实时预览分辨率: {resolution[0]} x {resolution[1]} px")
+            return
+        target_document = document or self.current_document()
+        if target_document is None:
+            self._image_resolution_label.setText("像素尺寸: -")
+            return
+        width_px, height_px = target_document.image_size
+        parts = [f"像素尺寸: {width_px} x {height_px} px"]
+        calibration = target_document.calibration
+        if calibration is not None and calibration.pixels_per_unit > 0:
+            width_unit = self._format_dimension_value(calibration.px_to_unit(width_px))
+            height_unit = self._format_dimension_value(calibration.px_to_unit(height_px))
+            parts.append(f"实际尺寸: {width_unit} x {height_unit} {calibration.unit}")
+        self._image_resolution_label.setText("    |    ".join(parts))
+
     def _apply_native_preview_resolution(self) -> None:
         if self._microview_preview_host is None:
             return
@@ -904,6 +947,7 @@ class MainWindow(QMainWindow):
             selected = self._selected_capture_device()
             label = selected.name if selected is not None else "采集设备"
             self._preview_status_label.setText(f"正在预览: {label}  ({width} x {height}, 原始分辨率)")
+        self._update_image_resolution_label()
 
     def _maybe_hint_signal_optimization(self) -> None:
         selected = self._selected_capture_device()
@@ -1111,6 +1155,8 @@ class MainWindow(QMainWindow):
             selected = self._selected_capture_device()
             label = selected.name if selected is not None else "采集设备"
             self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
+        if self._image_resolution_label is not None:
+            self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
         self._update_action_states()
 
     def _on_capture_error(self, message: str) -> None:
@@ -1314,23 +1360,62 @@ class MainWindow(QMainWindow):
         *,
         dedupe_by_content_only: bool,
     ) -> tuple[int, int, int]:
-        imported_count = 0
-        skipped_count = 0
-        renamed_count = 0
+        plan = self._plan_imported_preset_batch(
+            presets,
+            dedupe_by_content_only=dedupe_by_content_only,
+        )
+        return self._apply_imported_preset_plan(plan)
+
+    def _plan_imported_preset_batch(
+        self,
+        presets: list[CalibrationPreset],
+        *,
+        dedupe_by_content_only: bool,
+    ) -> list[PresetImportPlanEntry]:
+        plan: list[PresetImportPlanEntry] = []
         existing_presets = list(self._calibration_presets())
         for incoming_preset in presets:
             if any(self._preset_content_equal(item, incoming_preset, include_name=not dedupe_by_content_only) for item in existing_presets):
-                skipped_count += 1
+                plan.append(
+                    PresetImportPlanEntry(
+                        preset=self._clone_preset(incoming_preset),
+                        action="skip",
+                        final_name=incoming_preset.name,
+                    )
+                )
                 continue
             candidate_name = incoming_preset.name
+            action = "import"
             if any(item.name == candidate_name for item in existing_presets):
                 candidate_name = f"{incoming_preset.name} (导入)"
                 suffix = 2
                 while any(item.name == candidate_name for item in existing_presets):
                     candidate_name = f"{incoming_preset.name} (导入 {suffix})"
                     suffix += 1
+                action = "rename"
+            planned_preset = self._clone_preset(incoming_preset, name=candidate_name)
+            existing_presets.append(planned_preset)
+            plan.append(
+                PresetImportPlanEntry(
+                    preset=planned_preset,
+                    action=action,
+                    final_name=candidate_name,
+                )
+            )
+        return plan
+
+    def _apply_imported_preset_plan(self, plan: list[PresetImportPlanEntry]) -> tuple[int, int, int]:
+        imported_count = 0
+        skipped_count = 0
+        renamed_count = 0
+        existing_presets = list(self._calibration_presets())
+        for entry in plan:
+            if entry.action == "skip":
+                skipped_count += 1
+                continue
+            if entry.action == "rename":
                 renamed_count += 1
-            existing_presets.append(self._clone_preset(incoming_preset, name=candidate_name))
+            existing_presets.append(self._clone_preset(entry.preset, name=entry.final_name))
             imported_count += 1
         if imported_count:
             self._app_settings.calibration_presets = existing_presets
@@ -1412,6 +1497,53 @@ class MainWindow(QMainWindow):
         if box.clickedButton() == current_button:
             return "current"
         return None
+
+    def _build_cu_import_preview_text(
+        self,
+        records: list[object],
+        plan: list[PresetImportPlanEntry],
+        *,
+        failures: list[str],
+    ) -> str:
+        lines = ["以下是本次解析到的 CU 标尺信息，请确认后再导入。"]
+        for index, (record, entry) in enumerate(zip(records, plan), start=1):
+            lines.append("")
+            lines.append(f"{index}. {format_cu_scale_record_summary(record)}")
+            if entry.action == "skip":
+                lines.append("处理结果: 跳过，内容与现有预设重复")
+            elif entry.action == "rename":
+                lines.append(f"处理结果: 重命名导入为 {entry.final_name}")
+            else:
+                lines.append("处理结果: 直接导入")
+        if failures:
+            lines.append("")
+            lines.append("以下文件解析失败，不会导入:")
+            lines.extend(failures[:10])
+        return "\n".join(lines)
+
+    def _confirm_cu_import_preview(self, preview_text: str) -> bool:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("确认导入CU标尺")
+        dialog.resize(760, 520)
+        layout = QVBoxLayout(dialog)
+        description = QLabel("请核对下面的标尺名称和换算关系。确认后将写入全局标定预设。")
+        description.setWordWrap(True)
+        layout.addWidget(description)
+        content = QPlainTextEdit()
+        content.setReadOnly(True)
+        content.setPlainText(preview_text)
+        layout.addWidget(content, 1)
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        ok_button = buttons.button(QDialogButtonBox.StandardButton.Ok)
+        cancel_button = buttons.button(QDialogButtonBox.StandardButton.Cancel)
+        if ok_button is not None:
+            ok_button.setText("确认导入")
+        if cancel_button is not None:
+            cancel_button.setText("取消")
+        buttons.accepted.connect(dialog.accept)
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+        return dialog.exec() == QDialog.DialogCode.Accepted
 
     def open_images(self) -> None:
         self.stop_live_preview()
@@ -2029,37 +2161,38 @@ class MainWindow(QMainWindow):
         paths, _ = QFileDialog.getOpenFileNames(self, "导入CU标尺", "", "CU 标尺 (*.scl)")
         if not paths:
             return
-        parsed_presets: list[CalibrationPreset] = []
+        parsed_records: list[object] = []
         failures: list[str] = []
         for path in paths:
             try:
-                parsed_presets.append(parse_cu_scale_file(path).preset)
+                parsed_records.append(parse_cu_scale_file(path))
             except Exception as exc:
                 failures.append(f"{Path(path).name}: {exc}")
-        imported_count = 0
-        skipped_count = 0
-        renamed_count = 0
-        if parsed_presets:
-            imported_count, skipped_count, renamed_count = self._merge_imported_preset_batch(
-                parsed_presets,
-                dedupe_by_content_only=True,
-            )
-            if imported_count:
-                self._save_app_settings(context="导入CU标尺")
-                self._refresh_preset_combo()
-        summary_lines = [
-            f"成功导入 {imported_count} 个预设",
-            f"跳过重复 {skipped_count} 个",
-            f"自动改名 {renamed_count} 个",
-        ]
-        if failures:
-            summary_lines.append("")
-            summary_lines.append("失败文件:")
-            summary_lines.extend(failures[:8])
-        dialog_method = QMessageBox.warning if failures else QMessageBox.information
-        dialog_method(self, "导入CU标尺", "\n".join(summary_lines))
+        if not parsed_records:
+            QMessageBox.warning(self, "导入CU标尺", "\n".join(failures) if failures else "没有可导入的 CU 标尺。")
+            return
+        parsed_presets = [record.preset for record in parsed_records]
+        plan = self._plan_imported_preset_batch(parsed_presets, dedupe_by_content_only=True)
+        preview_text = self._build_cu_import_preview_text(parsed_records, plan, failures=failures)
+        if not self._confirm_cu_import_preview(preview_text):
+            self.statusBar().showMessage("已取消导入 CU 标尺", 3000)
+            return
+        imported_count, skipped_count, renamed_count = self._apply_imported_preset_plan(plan)
         if imported_count:
+            self._save_app_settings(context="导入CU标尺")
+            self._refresh_preset_combo()
             self.statusBar().showMessage(f"已导入 {imported_count} 个 CU 标尺预设", 4000)
+        if failures or skipped_count or renamed_count or imported_count == 0:
+            summary_lines = [
+                f"成功导入 {imported_count} 个预设",
+                f"跳过重复 {skipped_count} 个",
+                f"自动改名 {renamed_count} 个",
+            ]
+            if failures:
+                summary_lines.append("")
+                summary_lines.append("失败文件:")
+                summary_lines.extend(failures[:8])
+            QMessageBox.information(self, "导入CU标尺", "\n".join(summary_lines))
 
     def add_calibration_preset(self) -> None:
         pixel_distance, actual_distance, unit = self._default_preset_dialog_values(self.current_document())
@@ -2785,6 +2918,7 @@ class MainWindow(QMainWindow):
         self._populate_group_list(document)
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
+        self._update_image_resolution_label(document)
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)
