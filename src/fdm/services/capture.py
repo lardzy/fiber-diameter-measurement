@@ -311,9 +311,10 @@ class MicroviewCaptureBackend(CaptureBackend):
         self.stop_preview()
         self._frame_callback = frame_callback
         self._error_callback = error_callback
-        self._device_handle = int(dll.MV_OpenDevice(int(device.native_id), True))
-        if not self._device_handle:
-            raise RuntimeError("Microview 设备打开失败。")
+        raw_device_handle = dll.MV_OpenDevice(int(device.native_id), True)
+        if not raw_device_handle:
+            raise RuntimeError(_microview_open_error_message(dll))
+        self._device_handle = int(raw_device_handle)
         dll.MV_OperateDevice(self._device_handle, self._MV_RUN)
         self._timer = QTimer()
         self._timer.setInterval(80)
@@ -369,6 +370,8 @@ class MicroviewCaptureBackend(CaptureBackend):
         dll_path = dll_root / "MVAPI.dll"
         dll = ctypes.WinDLL(str(dll_path))
         dll.MV_GetDeviceNumber.restype = ctypes.c_ulong
+        dll.MV_GetLastError.argtypes = [ctypes.c_bool]
+        dll.MV_GetLastError.restype = ctypes.c_ulong
         dll.MV_OpenDevice.argtypes = [ctypes.c_ulong, ctypes.c_bool]
         dll.MV_OpenDevice.restype = ctypes.c_void_p
         dll.MV_CloseDevice.argtypes = [ctypes.c_void_p]
@@ -441,6 +444,16 @@ def _format_backend_error(backend: CaptureBackend, exc: Exception) -> str:
     }.get(backend.backend_key, backend.backend_key)
     detail = str(exc).strip() or exc.__class__.__name__
     return f"{name}: {detail}"
+
+
+def _microview_open_error_message(dll) -> str:
+    try:
+        error_code = int(dll.MV_GetLastError(False))
+    except Exception:
+        error_code = 0
+    if error_code > 0:
+        return f"Microview 设备打开失败。SDK 错误码: {error_code}"
+    return "Microview 设备打开失败。"
 
 
 def _resolve_microview_dll_root() -> Path | None:
