@@ -6,6 +6,8 @@ from typing import Callable
 import ctypes
 import os
 import sys
+import threading
+import time
 
 from PySide6.QtCore import QObject, Qt, QTimer, Signal
 from PySide6.QtGui import QImage
@@ -182,6 +184,8 @@ class CaptureSessionManager(QObject):
         self.frameReady.emit(self._last_frame.copy())
 
     def _on_backend_error(self, message: str) -> None:
+        if self.is_preview_active():
+            self.stop_preview()
         self.errorOccurred.emit(message)
 
 
@@ -264,10 +268,12 @@ class MicroviewCaptureBackend(CaptureBackend):
     _PARAM_ADJUST_SATURATION = 17
     _PARAM_ADJUST_HUE = 18
     _PARAM_ADJUST_CONTRAST = 19
+    _PARAM_WORK_FIELD = 40
     _PARAM_GRAB_BITDESCRIBE = 66
     _BUFFER_SYSTEM_MEMORY_GDI = 1
     _SHOW_CLOSE = 0
     _DEFAULT_VIDEO_LEVEL = 128
+    _COLLECTION_FRAME = 0
     _FORMAT_MONO8 = 0
     _FORMAT_RGB1555 = 1
     _FORMAT_RGB24 = 2
@@ -290,6 +296,8 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._support_libraries: dict[str, ctypes.WinDLL] = {}
         self._dll_dirs: list[object] = []
         self._timer: QTimer | None = None
+        self._capture_thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
         self._device_handle: int | None = None
         self._frame_callback: Callable[[QImage], None] | None = None
         self._error_callback: Callable[[str], None] | None = None
@@ -339,17 +347,24 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._device_handle = int(raw_device_handle)
         self._configure_preview_session(dll, raw_device_handle)
         dll.MV_OperateDevice(self._device_handle, self._MV_RUN)
-        self._timer = QTimer()
-        self._timer.setTimerType(Qt.TimerType.PreciseTimer)
-        self._timer.setInterval(self._PREVIEW_INTERVAL_MS)
-        self._timer.timeout.connect(self._capture_single_frame)
-        self._timer.start()
+        self._stop_event.clear()
+        self._capture_thread = threading.Thread(
+            target=self._capture_loop,
+            name="MicroviewCaptureThread",
+            daemon=True,
+        )
+        self._capture_thread.start()
 
     def stop_preview(self) -> None:
+        self._stop_event.set()
         if self._timer is not None:
             self._timer.stop()
             self._timer.deleteLater()
         self._timer = None
+        if self._capture_thread is not None and self._capture_thread.is_alive():
+            if threading.current_thread() is not self._capture_thread:
+                self._capture_thread.join(timeout=1.0)
+        self._capture_thread = None
         if self._dll is not None and self._device_handle:
             try:
                 self._dll.MV_OperateDevice(self._device_handle, self._MV_STOP)
@@ -363,23 +378,26 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._frame_callback = None
         self._error_callback = None
 
-    def _capture_single_frame(self) -> None:
-        if self._dll is None or not self._device_handle or self._frame_callback is None:
-            return
-        try:
-            image = self._capture_live_buffer_image()
-            if image.isNull():
+    def _capture_loop(self) -> None:
+        while not self._stop_event.is_set():
+            started_at = time.perf_counter()
+            callback = self._frame_callback
+            try:
+                if self._dll is None or not self._device_handle or callback is None:
+                    break
                 image = self._capture_single_frame_image()
-            if image.isNull():
-                return
-        except Exception as exc:
-            callback = self._error_callback
-            self.stop_preview()
-            if callback is not None:
-                callback(f"Microview 帧解析失败: {exc}")
-            return
-        if not image.isNull():
-            self._frame_callback(image)
+                if not image.isNull():
+                    callback(image)
+            except Exception as exc:
+                error_callback = self._error_callback
+                self._stop_event.set()
+                if error_callback is not None:
+                    error_callback(f"Microview 帧解析失败: {exc}")
+                break
+            elapsed = time.perf_counter() - started_at
+            delay = max(0.0, (self._PREVIEW_INTERVAL_MS / 1000.0) - elapsed)
+            if delay > 0:
+                self._stop_event.wait(delay)
 
     def _ensure_library(self) -> ctypes.WinDLL | None:
         if self._dll is not None:
@@ -464,6 +482,10 @@ class MicroviewCaptureBackend(CaptureBackend):
             pass
         try:
             dll.MV_SetDeviceParameter(device_handle, self._PARAM_BUFFERTYPE, self._BUFFER_SYSTEM_MEMORY_GDI)
+        except Exception:
+            pass
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_WORK_FIELD, self._COLLECTION_FRAME)
         except Exception:
             pass
         try:
