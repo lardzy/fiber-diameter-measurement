@@ -9,7 +9,7 @@ import sys
 import threading
 import time
 
-from PySide6.QtCore import QObject, Qt, QTimer, Signal
+from PySide6.QtCore import QObject, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QImage
 
 from fdm.settings import project_runtime_root, runtime_directory
@@ -64,6 +64,8 @@ class CaptureSessionManager(QObject):
     previewStateChanged = Signal(bool)
     frameReady = Signal(object)
     errorOccurred = Signal(str)
+    _deliverFrame = Signal(object)
+    _deliverError = Signal(str)
 
     def __init__(
         self,
@@ -79,6 +81,8 @@ class CaptureSessionManager(QObject):
         self._active_device_id = ""
         self._last_frame: QImage | None = None
         self._device_refresh_warnings: list[str] = []
+        self._deliverFrame.connect(self._on_frame_ready, Qt.ConnectionType.QueuedConnection)
+        self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
         if refresh_on_init:
             self.refresh_devices()
 
@@ -146,8 +150,8 @@ class CaptureSessionManager(QObject):
         try:
             backend.start_preview(
                 device,
-                frame_callback=self._on_frame_ready,
-                error_callback=self._on_backend_error,
+                frame_callback=self._deliver_frame_threadsafe,
+                error_callback=self._deliver_error_threadsafe,
             )
         except Exception as exc:  # pragma: no cover - hardware dependent
             self.errorOccurred.emit(str(exc))
@@ -177,16 +181,24 @@ class CaptureSessionManager(QObject):
                 return backend
         return None
 
+    @Slot(object)
     def _on_frame_ready(self, image: QImage) -> None:
         if image.isNull():
             return
         self._last_frame = image.copy()
         self.frameReady.emit(self._last_frame.copy())
 
+    @Slot(str)
     def _on_backend_error(self, message: str) -> None:
         if self.is_preview_active():
             self.stop_preview()
         self.errorOccurred.emit(message)
+
+    def _deliver_frame_threadsafe(self, image: QImage) -> None:
+        self._deliverFrame.emit(image)
+
+    def _deliver_error_threadsafe(self, message: str) -> None:
+        self._deliverError.emit(message)
 
 
 class QtVideoCaptureBackend(CaptureBackend):
