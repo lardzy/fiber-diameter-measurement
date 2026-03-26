@@ -59,8 +59,6 @@ from fdm.project_io import ProjectIO
 from fdm.raster import RasterImage
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
 from fdm.services.area_inference import AreaInferenceService
-from fdm.services.capture import CaptureDevice, CaptureSessionManager
-from fdm.services.cu_scale_io import parse_cu_scale_file
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.model_provider import NullModelProvider, OnnxModelProvider
 from fdm.services.prompt_segmentation import PromptSegmentationService
@@ -81,6 +79,85 @@ from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
+
+try:
+    from fdm.services.capture import CaptureDevice, CaptureSessionManager
+
+    _CAPTURE_IMPORT_ERROR: Exception | None = None
+except ModuleNotFoundError as exc:
+    _CAPTURE_IMPORT_ERROR = exc
+
+    @dataclass(slots=True)
+    class CaptureDevice:
+        id: str
+        name: str
+        backend_key: str
+        native_id: object
+        available: bool = True
+        detail: str = ""
+
+    class _SignalProxy:
+        def __init__(self) -> None:
+            self._callbacks: list[object] = []
+
+        def connect(self, callback) -> None:
+            self._callbacks.append(callback)
+
+        def emit(self, *args) -> None:
+            for callback in list(self._callbacks):
+                callback(*args)
+
+    class CaptureSessionManager:
+        def __init__(self, *args, selected_device_id: str = "", refresh_on_init: bool = True, **kwargs) -> None:
+            self._selected_device_id = selected_device_id
+            self.devicesChanged = _SignalProxy()
+            self.previewStateChanged = _SignalProxy()
+            self.frameReady = _SignalProxy()
+            self.errorOccurred = _SignalProxy()
+
+        def devices(self) -> list[CaptureDevice]:
+            return []
+
+        def selected_device_id(self) -> str:
+            return self._selected_device_id
+
+        def selected_device(self) -> CaptureDevice | None:
+            return None
+
+        def is_preview_active(self) -> bool:
+            return False
+
+        def last_frame(self) -> QImage | None:
+            return None
+
+        def device_refresh_warnings(self) -> list[str]:
+            return [f"采集模块未安装: {_CAPTURE_IMPORT_ERROR}"] if _CAPTURE_IMPORT_ERROR is not None else []
+
+        def refresh_devices(self) -> list[CaptureDevice]:
+            self.devicesChanged.emit([])
+            return []
+
+        def set_selected_device(self, device_id: str) -> bool:
+            return False
+
+        def start_preview(self) -> bool:
+            detail = str(_CAPTURE_IMPORT_ERROR).strip() if _CAPTURE_IMPORT_ERROR is not None else "未知错误"
+            self.errorOccurred.emit(f"当前版本缺少采集模块，实时预览不可用。\n{detail}")
+            return False
+
+        def stop_preview(self) -> None:
+            return
+
+try:
+    from fdm.services.cu_scale_io import parse_cu_scale_file
+
+    _CU_SCALE_IMPORT_ERROR: Exception | None = None
+except ModuleNotFoundError as exc:
+    _CU_SCALE_IMPORT_ERROR = exc
+    _cu_scale_import_error_message = str(exc)
+
+    def parse_cu_scale_file(path: str | Path):
+        raise RuntimeError(f"当前版本缺少 CU 标尺导入模块，无法导入标尺。\n{_cu_scale_import_error_message}")
 
 
 @dataclass(slots=True)
@@ -760,6 +837,10 @@ class MainWindow(QMainWindow):
         self.live_preview_action.blockSignals(False)
 
     def _update_capture_device_ui(self) -> None:
+        if _CAPTURE_IMPORT_ERROR is not None:
+            self.switch_capture_device_action.setToolTip(f"实时预览模块不可用: {_CAPTURE_IMPORT_ERROR}")
+            self.live_preview_action.setToolTip("实时预览模块不可用")
+            return
         selected = self._selected_capture_device()
         if selected is None:
             self.switch_capture_device_action.setToolTip("切换或刷新采集设备")
@@ -1763,6 +1844,9 @@ class MainWindow(QMainWindow):
         canvas.begin_scale_anchor_pick()
 
     def import_cu_calibration_presets(self) -> None:
+        if _CU_SCALE_IMPORT_ERROR is not None:
+            QMessageBox.warning(self, "导入CU标尺", f"当前版本缺少 CU 标尺导入模块。\n{_CU_SCALE_IMPORT_ERROR}")
+            return
         paths, _ = QFileDialog.getOpenFileNames(self, "导入CU标尺", "", "CU 标尺 (*.scl)")
         if not paths:
             return
@@ -2757,15 +2841,16 @@ class MainWindow(QMainWindow):
         if self._delete_preset_button is not None:
             self._delete_preset_button.setEnabled(has_preset)
         if self._import_cu_preset_button is not None:
-            self._import_cu_preset_button.setEnabled(True)
+            self._import_cu_preset_button.setEnabled(_CU_SCALE_IMPORT_ERROR is None)
         if self._apply_preset_button is not None:
             self._apply_preset_button.setEnabled(has_document and has_preset and not preview_active)
         if self._area_auto_button is not None:
             self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings) and not preview_active)
         self.undo_action.setEnabled(bool(history and history.can_undo()) and not preview_active)
         self.redo_action.setEnabled(bool(history and history.can_redo()) and not preview_active)
-        self.switch_capture_device_action.setEnabled(True)
-        self.live_preview_action.setEnabled(True)
+        capture_feature_available = _CAPTURE_IMPORT_ERROR is None
+        self.switch_capture_device_action.setEnabled(capture_feature_available)
+        self.live_preview_action.setEnabled(capture_feature_available)
         self.capture_frame_action.setEnabled(preview_active and self._capture_manager.last_frame() is not None)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
