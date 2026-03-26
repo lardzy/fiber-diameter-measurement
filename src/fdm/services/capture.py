@@ -254,6 +254,13 @@ class MicroviewCaptureBackend(CaptureBackend):
     backend_key = "microview"
     _MV_RUN = 1
     _MV_STOP = 0
+    _PARAM_BUFFERTYPE = 4
+    _PARAM_DISP_PRESENCE = 6
+    _PARAM_DISP_WHND = 7
+    _PARAM_DISP_TOP = 8
+    _PARAM_DISP_LEFT = 9
+    _BUFFER_SYSTEM_MEMORY_GDI = 1
+    _SHOW_CLOSE = 0
 
     class _MVImageInfo(ctypes.Structure):
         _fields_ = [
@@ -317,6 +324,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         if not raw_device_handle:
             raise RuntimeError(_microview_open_error_message(dll, self._dll_root))
         self._device_handle = int(raw_device_handle)
+        self._configure_preview_session(dll, raw_device_handle)
         dll.MV_OperateDevice(self._device_handle, self._MV_RUN)
         self._timer = QTimer()
         self._timer.setInterval(80)
@@ -385,6 +393,8 @@ class MicroviewCaptureBackend(CaptureBackend):
         dll.MV_CloseDevice.argtypes = [ctypes.c_void_p]
         dll.MV_OperateDevice.argtypes = [ctypes.c_void_p, ctypes.c_int]
         dll.MV_OperateDevice.restype = ctypes.c_int
+        dll.MV_SetDeviceParameter.argtypes = [ctypes.c_void_p, ctypes.c_int, ctypes.c_ulong]
+        dll.MV_SetDeviceParameter.restype = ctypes.c_bool
         dll.MV_CaptureSingle.argtypes = [
             ctypes.c_void_p,
             ctypes.c_bool,
@@ -409,6 +419,25 @@ class MicroviewCaptureBackend(CaptureBackend):
                 self._support_libraries[library_name] = library_loader(str(library_path))
             except OSError:
                 continue
+
+    def _configure_preview_session(self, dll, device_handle) -> None:
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_DISP_PRESENCE, self._SHOW_CLOSE)
+        except Exception:
+            pass
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_DISP_WHND, 0)
+        except Exception:
+            pass
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_DISP_LEFT, 0)
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_DISP_TOP, 0)
+        except Exception:
+            pass
+        try:
+            dll.MV_SetDeviceParameter(device_handle, self._PARAM_BUFFERTYPE, self._BUFFER_SYSTEM_MEMORY_GDI)
+        except Exception:
+            pass
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:
