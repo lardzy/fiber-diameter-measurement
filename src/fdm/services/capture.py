@@ -1208,6 +1208,15 @@ def _microview_compact_rows(data: bytes, row_stride: int, active_stride: int, he
     return b"".join(chunks)
 
 
+def _microview_force_opaque_alpha(data: bytes) -> bytes:
+    if not data:
+        return data
+    mutable = bytearray(data)
+    for index in range(3, len(mutable), 4):
+        mutable[index] = 0xFF
+    return bytes(mutable)
+
+
 def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._MVImageInfo) -> QImage:
     width = int(info.Width)
     height = int(info.Heigth)
@@ -1262,6 +1271,8 @@ def _microview_buffer_to_qimage(buffer_ptr: int, info: MicroviewCaptureBackend._
             f"stride={row_stride}, height={height}, length={len(data)}"
         )
     compact_data = data if row_stride == active_stride else _microview_compact_rows(data, row_stride, active_stride, height)
+    if pixel_format == MicroviewCaptureBackend._FORMAT_ARGB8888:
+        compact_data = _microview_force_opaque_alpha(compact_data)
     image = QImage(compact_data, width, height, active_stride, image_format)
     if image.isNull():
         raise ValueError(
