@@ -582,6 +582,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         error_callback: Callable[[str], None],
     ) -> None:
         started_at = perf_counter()
+        self.stop_preview()
         try:
             dll = self._ensure_library()
         except OSError as exc:
@@ -590,7 +591,6 @@ class MicroviewCaptureBackend(CaptureBackend):
             raise RuntimeError("未找到 Microview SDK DLL，无法启动实时预览。")
         if preview_target is None:
             raise RuntimeError("Microview 原生预览缺少目标窗口，无法启动预览。")
-        self.stop_preview()
         self._frame_callback = frame_callback
         self._error_callback = error_callback
         self._preview_target = preview_target
@@ -621,8 +621,11 @@ class MicroviewCaptureBackend(CaptureBackend):
 
     def stop_preview(self) -> None:
         started_at = perf_counter()
+        had_device_handle = self._device_handle is not None
         if self._dll is not None and self._device_handle:
             self._release_runtime_state(self._dll, self._device_handle)
+        if self._dll is not None:
+            self._dispose_loaded_libraries()
         self._device_handle = None
         self._device_index = None
         self._board_type = None
@@ -632,7 +635,8 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._active_warning = ""
         self._frame_callback = None
         self._error_callback = None
-        self._log_perf("Microview preview stop", started_at)
+        if had_device_handle:
+            self._log_perf("Microview preview stop", started_at)
 
     def update_preview_target(self, preview_target: object | None) -> None:
         if self._dll is None or not self._device_handle or preview_target is None:
@@ -687,6 +691,7 @@ class MicroviewCaptureBackend(CaptureBackend):
         finally:
             if temp_handle:
                 self._release_runtime_state(dll, handle)
+            self._dispose_loaded_libraries()
 
     def can_optimize_signal(self, device: CaptureDevice) -> bool:
         try:
@@ -887,6 +892,38 @@ class MicroviewCaptureBackend(CaptureBackend):
             dll.MV_CloseDevice(handle)
         except Exception:
             pass
+
+    def _dispose_loaded_libraries(self) -> None:
+        if sys.platform != "win32":
+            self._dll = None
+            self._dll_root = None
+            self._support_libraries.clear()
+            self._dll_dirs.clear()
+            return
+        kernel32 = getattr(getattr(ctypes, "windll", None), "kernel32", None)
+        free_library = getattr(kernel32, "FreeLibrary", None)
+        if callable(free_library):
+            if self._dll is not None:
+                try:
+                    free_library(int(self._dll._handle))
+                except Exception:
+                    pass
+            for library in list(self._support_libraries.values()):
+                try:
+                    free_library(int(library._handle))
+                except Exception:
+                    pass
+        for dll_dir in self._dll_dirs:
+            close = getattr(dll_dir, "close", None)
+            if callable(close):
+                try:
+                    close()
+                except Exception:
+                    pass
+        self._dll = None
+        self._dll_root = None
+        self._support_libraries.clear()
+        self._dll_dirs.clear()
 
     def _log_perf(self, title: str, started_at: float, *, detail: str = "") -> None:
         elapsed_ms = (perf_counter() - started_at) * 1000.0
