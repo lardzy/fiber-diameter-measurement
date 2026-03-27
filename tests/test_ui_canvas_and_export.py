@@ -278,17 +278,20 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         preview_frame = QImage(96, 72, QImage.Format.Format_RGB32)
         preview_frame.fill(QColor("#F4D35E"))
-        stop_calls: list[str] = []
+        call_order: list[str] = []
 
         window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
         window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
-        window._capture_manager.capture_still_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: call_order.append("capture") or preview_frame.copy()  # type: ignore[method-assign]
         window._capture_manager.is_preview_active = lambda: True  # type: ignore[method-assign]
-        window._capture_manager.stop_preview = lambda: stop_calls.append("stopped")  # type: ignore[method-assign]
+        window._capture_manager.stop_preview = lambda: call_order.append("stop")  # type: ignore[method-assign]
+        window._capture_manager.selected_device = (  # type: ignore[method-assign]
+            lambda: type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
+        )
 
         window.capture_current_frame()
 
-        self.assertEqual(stop_calls, ["stopped"])
+        self.assertEqual(call_order, ["stop", "capture"])
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
@@ -311,6 +314,24 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNotNone(window._preview_canvas)
         self.assertIsNone(window._preview_canvas.document_id)
         self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+
+    def test_live_preview_stop_requests_magic_cache_clear(self) -> None:
+        window = MainWindow()
+        clear_calls: list[str] = []
+
+        class FakeSignal:
+            def emit(self) -> None:
+                clear_calls.append("clear")
+
+        class FakeWorker:
+            def __init__(self) -> None:
+                self.clearRequested = FakeSignal()
+
+        window._prompt_seg_worker = FakeWorker()
+
+        window._on_live_preview_state_changed(False)
+
+        self.assertEqual(clear_calls, ["clear"])
 
     def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
         window = MainWindow()

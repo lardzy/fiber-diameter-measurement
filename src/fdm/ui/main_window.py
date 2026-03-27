@@ -1123,6 +1123,7 @@ class MainWindow(QMainWindow):
         if not self._capture_manager.is_preview_active():
             self._preview_active = False
             self._clear_preview_surface_state()
+            self._clear_prompt_segmentation_cache()
             self._update_ui_for_current_document()
             self._sync_live_preview_action()
             return
@@ -1145,6 +1146,7 @@ class MainWindow(QMainWindow):
             self._maybe_hint_signal_optimization()
         if not active:
             self._clear_preview_surface_state()
+            self._clear_prompt_segmentation_cache()
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
 
@@ -1220,6 +1222,15 @@ class MainWindow(QMainWindow):
 
     def capture_current_frame(self) -> None:
         was_preview_active = self._capture_manager.is_preview_active()
+        selected_device = self._selected_capture_device()
+        stop_before_capture = bool(
+            was_preview_active
+            and selected_device is not None
+            and selected_device.backend_key == "microview"
+            and self._capture_manager.can_capture_still()
+        )
+        if stop_before_capture:
+            self.stop_live_preview()
         frame: QImage | None
         try:
             frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
@@ -1233,7 +1244,7 @@ class MainWindow(QMainWindow):
             else:
                 QMessageBox.information(self, "采集一张", "当前还没有可用的预览画面。")
             return
-        if was_preview_active:
+        if was_preview_active and not stop_before_capture:
             self.stop_live_preview()
         document = ImageDocument(
             id=new_id("image"),
@@ -1251,6 +1262,7 @@ class MainWindow(QMainWindow):
             frame,
             tooltip=self._document_tooltip(document),
         )
+        self._clear_prompt_segmentation_cache()
         self.statusBar().showMessage("已采集当前画面到项目内存", 4000)
 
     def optimize_capture_signal(self) -> None:
@@ -1944,6 +1956,14 @@ class MainWindow(QMainWindow):
         thread.start()
         self._prompt_seg_thread = thread
         self._prompt_seg_worker = worker
+
+    def _clear_prompt_segmentation_cache(self) -> None:
+        if self._prompt_seg_worker is None:
+            return
+        try:
+            self._prompt_seg_worker.clearRequested.emit()
+        except Exception:
+            return
 
     def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
         if self._area_infer_progress_dialog is None:
@@ -2801,6 +2821,7 @@ class MainWindow(QMainWindow):
 
     def _reset_workspace(self) -> None:
         self.stop_live_preview()
+        self._clear_prompt_segmentation_cache()
         self.project = ProjectState.empty()
         self._project_path = None
         self._pending_project_load_snapshot = False
@@ -2822,6 +2843,7 @@ class MainWindow(QMainWindow):
         self.tab_widget.removeTab(index)
         item = self.image_list.takeItem(index)
         del item
+        self._clear_prompt_segmentation_cache()
         self._update_ui_for_current_document()
 
     def _apply_document_change(
@@ -3651,6 +3673,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self.stop_live_preview()
+        self._clear_prompt_segmentation_cache()
         if self._prompt_seg_thread is not None:
             self._prompt_seg_thread.quit()
             self._prompt_seg_thread.wait(1500)

@@ -329,6 +329,79 @@ class CaptureAndCuScaleTests(unittest.TestCase):
             ],
         )
 
+    @unittest.skipIf(MicroviewCaptureBackend is None, "PySide6 not installed")
+    def test_microview_stop_preview_releases_display_and_capture_state(self) -> None:
+        backend = MicroviewCaptureBackend()
+        calls: list[tuple[str, int, int]] = []
+
+        class FakeDll:
+            def MV_SetDeviceParameter(self, handle, parameter, value):
+                calls.append(("set", int(parameter), int(value)))
+                return True
+
+            def MV_OperateDevice(self, handle, operation):
+                calls.append(("operate", int(operation), 0))
+                return 0
+
+            def MV_CloseDevice(self, handle):
+                calls.append(("close", int(handle), 0))
+                return None
+
+        backend._dll = FakeDll()
+        backend._device_handle = 9
+        backend._device_index = 0
+        backend._preview_resolution = (1760, 1328)
+
+        backend.stop_preview()
+
+        self.assertEqual(
+            calls,
+            [
+                ("set", MicroviewCaptureBackend._PARAM_DISP_PRESENCE, MicroviewCaptureBackend._SHOW_CLOSE),
+                ("set", MicroviewCaptureBackend._PARAM_DISP_WHND, 0),
+                ("set", MicroviewCaptureBackend._PARAM_DISP_LEFT, 0),
+                ("set", MicroviewCaptureBackend._PARAM_DISP_TOP, 0),
+                ("set", MicroviewCaptureBackend._PARAM_RESTOPCAPTURE, 0),
+                ("operate", MicroviewCaptureBackend._MV_STOP, 0),
+                ("close", 9, 0),
+            ],
+        )
+        self.assertIsNone(backend._device_handle)
+
+    @unittest.skipIf(CaptureSessionManager is None, "PySide6 not installed")
+    def test_capture_session_manager_recreates_microview_backend_after_stop(self) -> None:
+        class NativeBackend(CaptureBackend):
+            backend_key = "microview"
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [
+                    CaptureDevice(
+                        id="microview:0",
+                        name="Microview #1",
+                        backend_key=self.backend_key,
+                        native_id=0,
+                    )
+                ]
+
+            def preview_kind(self, device: CaptureDevice) -> str:
+                return "native_embed"
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                return None
+
+            def stop_preview(self) -> None:
+                return None
+
+        backend = NativeBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+
+        self.assertTrue(manager.start_preview(preview_target=object()))
+        manager.stop_preview()
+
+        self.assertIsNot(manager._backends[0], backend)
+        self.assertIsInstance(manager._backends[0], NativeBackend)
+
     @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
     def test_capture_session_manager_does_not_cache_native_embed_still_frame(self) -> None:
         still_frame = QImage(64, 48, QImage.Format.Format_RGB32)

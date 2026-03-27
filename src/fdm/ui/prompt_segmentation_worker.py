@@ -21,6 +21,7 @@ class PromptSegmentationRequest:
 
 class PromptSegmentationWorker(QObject):
     requested = Signal(object)
+    clearRequested = Signal()
     succeeded = Signal(str, int, object)
     failed = Signal(str, int, str)
 
@@ -28,6 +29,7 @@ class PromptSegmentationWorker(QObject):
         super().__init__()
         self._service: PromptSegmentationService | None = None
         self.requested.connect(self.infer, Qt.ConnectionType.QueuedConnection)
+        self.clearRequested.connect(self.clear_cache, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def infer(self, request: PromptSegmentationRequest) -> None:
@@ -43,3 +45,8 @@ class PromptSegmentationWorker(QObject):
             self.succeeded.emit(request.document_id, request.request_id, result.polygon_px)
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(request.document_id, request.request_id, str(exc))
+
+    @Slot()
+    def clear_cache(self) -> None:
+        if self._service is not None:
+            self._service.clear_cache()

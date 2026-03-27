@@ -47,6 +47,31 @@ class PromptSegmentationTests(unittest.TestCase):
         load_mock.assert_called_once()
         run_mock.assert_called_once()
 
+    def test_embedding_cache_uses_small_lru_window(self) -> None:
+        service = PromptSegmentationService(
+            encoder_path="/tmp/encoder.onnx",
+            decoder_path="/tmp/decoder.onnx",
+            max_cache_entries=2,
+        )
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value="demo-image"),
+            patch.object(
+                service,
+                "_run_encoder",
+                side_effect=[
+                    (object(), (120, 200)),
+                    (object(), (120, 200)),
+                    (object(), (120, 200)),
+                ],
+            ),
+        ):
+            service._embedding_for_image(object(), cache_key="first")
+            service._embedding_for_image(object(), cache_key="second")
+            service._embedding_for_image(object(), cache_key="third")
+
+        self.assertEqual(list(service._embedding_cache.keys()), ["second", "third"])
+
     def test_predict_polygon_without_positive_points_returns_empty_result(self) -> None:
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
 

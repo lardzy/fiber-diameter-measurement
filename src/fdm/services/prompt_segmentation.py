@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
+from time import perf_counter
 
 import cv2
 
 from fdm.geometry import Point
+from fdm.runtime_logging import append_runtime_log
 from fdm.settings import bundle_resource_root
 
 
@@ -46,16 +49,18 @@ class PromptSegmentationService:
         encoder_path: str | Path | None = None,
         decoder_path: str | Path | None = None,
         target_length: int = EDGE_SAM_TARGET_LENGTH,
+        max_cache_entries: int = 2,
     ) -> None:
         default_encoder, default_decoder = edge_sam_model_paths()
         self._encoder_path = Path(encoder_path) if encoder_path is not None else default_encoder
         self._decoder_path = Path(decoder_path) if decoder_path is not None else default_decoder
         self._target_length = target_length
+        self._max_cache_entries = max(1, int(max_cache_entries))
         self._encoder_session = None
         self._decoder_session = None
         self._encoder_input_name = ""
         self._decoder_input_names: dict[str, str] = {}
-        self._embedding_cache: dict[str, _EmbeddingEntry] = {}
+        self._embedding_cache: OrderedDict[str, _EmbeddingEntry] = OrderedDict()
 
     @staticmethod
     def models_ready() -> bool:
@@ -128,11 +133,26 @@ class PromptSegmentationService:
         key = str(cache_key)
         cached = self._embedding_cache.get(key)
         if cached is not None:
+            self._embedding_cache.move_to_end(key)
             return cached
+        started_at = perf_counter()
         cv_image = self._image_to_rgb_array(image)
         image_embeddings, original_size = self._run_encoder(cv_image)
         cached = _EmbeddingEntry(image_embeddings=image_embeddings, original_size=original_size)
         self._embedding_cache[key] = cached
+        self._embedding_cache.move_to_end(key)
+        while len(self._embedding_cache) > self._max_cache_entries:
+            self._embedding_cache.popitem(last=False)
+        elapsed_ms = (perf_counter() - started_at) * 1000.0
+        if elapsed_ms >= 80.0:
+            append_runtime_log(
+                "Magic segmentation preprocess",
+                (
+                    f"elapsed_ms={elapsed_ms:.2f}, "
+                    f"cache_size={len(self._embedding_cache)}, "
+                    f"image_size={original_size[1]}x{original_size[0]}"
+                ),
+            )
         return cached
 
     def _image_to_rgb_array(self, image):

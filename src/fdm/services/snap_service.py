@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import math
+from time import perf_counter
 from typing import TYPE_CHECKING, Any
 
 from fdm.geometry import Line, Point, clamp, direction, line_length
 from fdm.raster import RasterImage
+from fdm.runtime_logging import append_runtime_log
 
 if TYPE_CHECKING:
     from PySide6.QtGui import QImage
@@ -40,6 +42,7 @@ class SnapService:
         self._gaussian_kernel = (1.0 / 16.0, 4.0 / 16.0, 6.0 / 16.0, 4.0 / 16.0, 1.0 / 16.0)
 
     def snap_measurement(self, image: "QImage | RasterImage | np.ndarray[Any, Any]", line: Line) -> SnapResult:
+        started_at = perf_counter()
         self._require_numpy()
         if line_length(line) < 3.0:
             return SnapResult(
@@ -51,7 +54,8 @@ class SnapService:
                 debug_payload={"reason": "Input line is too short."},
             )
 
-        grayscale = self._to_grayscale_array(image)
+        image_size = self._image_dimensions(image)
+        grayscale, roi_origin = self._grayscale_roi_for_line(image, line, image_size=image_size)
         if grayscale.size == 0:
             return SnapResult(
                 status="profile_too_flat",
@@ -62,7 +66,8 @@ class SnapService:
                 debug_payload={"reason": "Image is empty."},
             )
 
-        profile_data = self._extract_profile(grayscale, line)
+        local_line = self._translate_line(line, dx=-roi_origin.x, dy=-roi_origin.y)
+        profile_data = self._extract_profile(grayscale, local_line)
         if profile_data is None:
             return SnapResult(
                 status="profile_too_flat",
@@ -73,7 +78,7 @@ class SnapService:
                 debug_payload={"reason": "Unable to extract a stable profile."},
             )
 
-        positions, profile, axis, image_size = profile_data
+        positions, profile, axis, local_image_size = profile_data
         smoothed = self._smooth_profile(profile)
         gradient = np.gradient(smoothed, positions)
         max_abs_gradient = float(np.max(np.abs(gradient))) if gradient.size else 0.0
@@ -96,6 +101,8 @@ class SnapService:
                     "gradient_threshold": 3.0,
                     "used_fallback_pairing": False,
                     "angle_preserved": True,
+                    "roi_origin": (roi_origin.x, roi_origin.y),
+                    "roi_size": (int(local_image_size[0]), int(local_image_size[1])),
                 },
             )
 
@@ -117,6 +124,8 @@ class SnapService:
                     "gradient_threshold": threshold,
                     "used_fallback_pairing": False,
                     "angle_preserved": True,
+                    "roi_origin": (roi_origin.x, roi_origin.y),
+                    "roi_size": (int(local_image_size[0]), int(local_image_size[1])),
                 },
             )
 
@@ -141,11 +150,23 @@ class SnapService:
                     "gradient_threshold": threshold,
                     "used_fallback_pairing": used_fallback,
                     "angle_preserved": True,
+                    "roi_origin": (roi_origin.x, roi_origin.y),
+                    "roi_size": (int(local_image_size[0]), int(local_image_size[1])),
                 },
             )
 
-        start = self._line_point_at(line.start, axis, left_position, image_size)
-        end = self._line_point_at(line.start, axis, right_position, image_size)
+        start = self._translate_point(
+            self._line_point_at(local_line.start, axis, left_position, local_image_size),
+            dx=roi_origin.x,
+            dy=roi_origin.y,
+            image_size=image_size,
+        )
+        end = self._translate_point(
+            self._line_point_at(local_line.start, axis, right_position, local_image_size),
+            dx=roi_origin.x,
+            dy=roi_origin.y,
+            image_size=image_size,
+        )
         snapped_line = Line(start=start, end=end)
         diameter_px = line_length(snapped_line)
         confidence = self._confidence_for_profile(
@@ -176,17 +197,43 @@ class SnapService:
                 "gradient_threshold": threshold,
                 "used_fallback_pairing": used_fallback,
                 "angle_preserved": True,
+                "roi_origin": (roi_origin.x, roi_origin.y),
+                "roi_size": (int(local_image_size[0]), int(local_image_size[1])),
             },
         )
+        elapsed_ms = (perf_counter() - started_at) * 1000.0
+        if elapsed_ms >= 40.0:
+            append_runtime_log(
+                "Edge snap preprocess",
+                (
+                    f"elapsed_ms={elapsed_ms:.2f}, "
+                    f"status={result.status}, roi={int(local_image_size[0])}x{int(local_image_size[1])}, "
+                    f"samples={len(positions)}"
+                ),
+            )
+        return result
 
-    def _to_grayscale_array(self, image: "QImage | RasterImage | np.ndarray[Any, Any]") -> np.ndarray[Any, np.float32]:
+    def _to_grayscale_array(
+        self,
+        image: "QImage | RasterImage | np.ndarray[Any, Any]",
+        *,
+        roi: tuple[int, int, int, int] | None = None,
+    ) -> np.ndarray[Any, np.float32]:
         if isinstance(image, RasterImage):
             if image.width <= 0 or image.height <= 0:
                 return np.zeros((0, 0), dtype=np.float32)
-            return np.asarray(image.pixels, dtype=np.float32).reshape((image.height, image.width))
+            array = np.asarray(image.pixels, dtype=np.float32).reshape((image.height, image.width))
+            if roi is None:
+                return array
+            x, y, width, height = roi
+            return array[y : y + height, x : x + width]
 
         if isinstance(image, np.ndarray):
-            array = np.asarray(image, dtype=np.float32)
+            array = np.asarray(image)
+            if roi is not None:
+                x, y, width, height = roi
+                array = array[y : y + height, x : x + width]
+            array = np.asarray(array, dtype=np.float32)
             if array.ndim == 2:
                 return array
             if array.ndim == 3 and array.shape[2] >= 3:
@@ -198,13 +245,72 @@ class SnapService:
                 return np.zeros((0, 0), dtype=np.float32)
             from PySide6.QtGui import QImage
 
-            grayscale = image.convertToFormat(QImage.Format.Format_Grayscale8)
+            source = image
+            if roi is not None:
+                x, y, width, height = roi
+                source = image.copy(x, y, width, height)
+            grayscale = source.convertToFormat(QImage.Format.Format_Grayscale8)
             buffer = grayscale.constBits()
             array = np.frombuffer(buffer, dtype=np.uint8, count=grayscale.sizeInBytes())
             array = array.reshape((grayscale.height(), grayscale.bytesPerLine()))
             return array[:, : grayscale.width()].astype(np.float32, copy=True)
 
         raise TypeError("Unsupported image input for edge snapping.")
+
+    def _image_dimensions(self, image: "QImage | RasterImage | np.ndarray[Any, Any]") -> tuple[int, int]:
+        if isinstance(image, RasterImage):
+            return image.width, image.height
+        if isinstance(image, np.ndarray):
+            if image.ndim < 2:
+                return 0, 0
+            return int(image.shape[1]), int(image.shape[0])
+        if hasattr(image, "width") and hasattr(image, "height") and hasattr(image, "isNull"):
+            if image.isNull():
+                return 0, 0
+            return int(image.width()), int(image.height())
+        return 0, 0
+
+    def _grayscale_roi_for_line(
+        self,
+        image: "QImage | RasterImage | np.ndarray[Any, Any]",
+        line: Line,
+        *,
+        image_size: tuple[int, int],
+    ) -> tuple[np.ndarray[Any, np.float32], Point]:
+        roi = self._profile_roi(line, image_size=image_size)
+        grayscale = self._to_grayscale_array(image, roi=roi)
+        return grayscale, Point(float(roi[0]), float(roi[1]))
+
+    def _profile_roi(self, line: Line, *, image_size: tuple[int, int]) -> tuple[int, int, int, int]:
+        width, height = image_size
+        if width <= 0 or height <= 0:
+            return (0, 0, 0, 0)
+        margin = max(4, self.profile_half_width_px + 3)
+        min_x = min(line.start.x, line.end.x) - margin
+        max_x = max(line.start.x, line.end.x) + margin
+        min_y = min(line.start.y, line.end.y) - margin
+        max_y = max(line.start.y, line.end.y) + margin
+        x0 = max(0, int(math.floor(min_x)))
+        y0 = max(0, int(math.floor(min_y)))
+        x1 = min(width, int(math.ceil(max_x)) + 1)
+        y1 = min(height, int(math.ceil(max_y)) + 1)
+        return self._normalize_roi(x0, y0, x1 - x0, y1 - y0, image_size=image_size)
+
+    def _normalize_roi(
+        self,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        *,
+        image_size: tuple[int, int],
+    ) -> tuple[int, int, int, int]:
+        max_width, max_height = image_size
+        x = max(0, min(int(x), max(0, max_width - 1)))
+        y = max(0, min(int(y), max(0, max_height - 1)))
+        width = max(1, min(int(width), max_width - x))
+        height = max(1, min(int(height), max_height - y))
+        return x, y, width, height
 
     def _extract_profile(
         self,
@@ -457,6 +563,26 @@ class SnapService:
         return Point(
             x=clamp(start.x + (axis[0] * distance_along_line), 0.0, max(0.0, width - 1.0)),
             y=clamp(start.y + (axis[1] * distance_along_line), 0.0, max(0.0, height - 1.0)),
+        )
+
+    def _translate_line(self, line: Line, *, dx: float, dy: float) -> Line:
+        return Line(
+            start=Point(line.start.x + dx, line.start.y + dy),
+            end=Point(line.end.x + dx, line.end.y + dy),
+        )
+
+    def _translate_point(
+        self,
+        point: Point,
+        *,
+        dx: float,
+        dy: float,
+        image_size: tuple[int, int],
+    ) -> Point:
+        width, height = image_size
+        return Point(
+            x=clamp(point.x + dx, 0.0, max(0.0, width - 1.0)),
+            y=clamp(point.y + dy, 0.0, max(0.0, height - 1.0)),
         )
 
     def _bilinear_sample(

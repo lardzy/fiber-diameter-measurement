@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -134,6 +135,21 @@ class RasterAndSnapTests(unittest.TestCase):
         self.assertAlmostEqual(result.snapped_line.start.x, 48.0, delta=2.0)
         self.assertAlmostEqual(result.snapped_line.end.x, 72.0, delta=2.0)
         self.assertGreater((result.diameter_px or 0.0), 16.0)
+
+    def test_snap_service_uses_local_roi_for_grayscale_sampling(self) -> None:
+        image = make_vertical_fiber_image(width=400, height=240, x0=190, x1=210)
+        line = Line(Point(120, 120), Point(280, 120))
+        service = SnapService()
+
+        with patch.object(service, "_to_grayscale_array", wraps=service._to_grayscale_array) as grayscale_mock:
+            result = service.snap_measurement(image, line)
+
+        self.assertEqual(result.status, "snapped")
+        _image_arg = grayscale_mock.call_args.args[0]
+        roi = grayscale_mock.call_args.kwargs.get("roi")
+        self.assertIsNotNone(roi)
+        self.assertLess(roi[2], image.width)
+        self.assertLess(roi[3], image.height)
 
     @unittest.skipUnless(PYSIDE_AVAILABLE, "requires PySide6")
     def test_snap_service_accepts_qimage_input(self) -> None:
