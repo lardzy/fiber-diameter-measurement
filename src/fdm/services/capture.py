@@ -1,14 +1,16 @@
 from __future__ import annotations
 
 import ctypes
+import json
 import os
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
 from typing import Callable
 
-from PySide6.QtCore import QObject, Qt, QTimer, Signal, Slot
+from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QImage
 
 from fdm.runtime_logging import append_runtime_log
@@ -82,7 +84,7 @@ class CaptureBackend:
 
 def available_capture_backends() -> list[CaptureBackend]:
     return [
-        MicroviewCaptureBackend(),
+        MicroviewIsolatedBackend(),
         QtVideoCaptureBackend(),
     ]
 
@@ -1098,6 +1100,319 @@ class MicroviewCaptureBackend(CaptureBackend):
             return int(self._dll.MV_GetLastError(False))
         except Exception:
             return 0
+
+
+class MicroviewIsolatedBackend(CaptureBackend):
+    backend_key = "microview"
+
+    def __init__(self) -> None:
+        self._device_info: dict[str, dict[str, object]] = {}
+        self._preview_process: QProcess | None = None
+        self._preview_stdout_buffer = ""
+        self._preview_stderr_buffer = ""
+        self._preview_started = False
+        self._active_device_id = ""
+        self._active_resolution: tuple[int, int] | None = None
+        self._active_warning = ""
+        self._last_capture_diagnostics = ""
+        self._pending_preview_error: str | None = None
+
+    def list_devices(self) -> list[CaptureDevice]:
+        if sys.platform != "win32":
+            return []
+        response = self._run_helper_command("list")
+        devices_payload = response.get("devices", [])
+        if not isinstance(devices_payload, list):
+            return []
+        devices: list[CaptureDevice] = []
+        self._device_info.clear()
+        for item in devices_payload:
+            if not isinstance(item, dict):
+                continue
+            index = int(item.get("index", len(devices)))
+            device_id = f"{self.backend_key}:{index}"
+            resolution_payload = item.get("resolution", [])
+            resolution = None
+            if isinstance(resolution_payload, list) and len(resolution_payload) == 2:
+                resolution = (int(resolution_payload[0]), int(resolution_payload[1]))
+            board_type = int(item.get("board_type", 0))
+            devices.append(
+                CaptureDevice(
+                    id=device_id,
+                    name=str(item.get("name") or f"Microview #{index + 1}"),
+                    backend_key=self.backend_key,
+                    native_id=index,
+                )
+            )
+            self._device_info[device_id] = {
+                "resolution": resolution,
+                "board_type": board_type,
+            }
+        return devices
+
+    def preview_kind(self, device: CaptureDevice) -> str:
+        return "native_embed"
+
+    def preview_resolution(self, device: CaptureDevice) -> tuple[int, int] | None:
+        if self._active_device_id == device.id and self._active_resolution is not None:
+            return self._active_resolution
+        info = self._device_info.get(device.id, {})
+        resolution = info.get("resolution")
+        if isinstance(resolution, tuple) and len(resolution) == 2:
+            return resolution
+        return None
+
+    def start_preview(
+        self,
+        device: CaptureDevice,
+        *,
+        preview_target: object | None = None,
+        frame_callback: Callable[[QImage], None],
+        error_callback: Callable[[str], None],
+    ) -> None:
+        del frame_callback
+        if sys.platform != "win32":
+            raise RuntimeError("Microview 实时预览仅支持 Windows。")
+        if preview_target is None:
+            raise RuntimeError("Microview 原生预览缺少目标窗口，无法启动预览。")
+        self.stop_preview()
+        program, arguments = _microview_helper_command(
+            "preview",
+            device_index=int(device.native_id),
+            preview_target=preview_target,
+        )
+        process = QProcess()
+        environment = QProcessEnvironment.systemEnvironment()
+        environment.insert("PYTHONUNBUFFERED", "1")
+        process.setProcessEnvironment(environment)
+        process.setProgram(program)
+        process.setArguments(arguments)
+        self._preview_process = process
+        self._preview_stdout_buffer = ""
+        self._preview_stderr_buffer = ""
+        self._preview_started = False
+        self._active_device_id = device.id
+        self._active_warning = ""
+        self._active_resolution = None
+        self._pending_preview_error = None
+        process.readyReadStandardOutput.connect(lambda: self._drain_preview_stdout(error_callback))
+        process.readyReadStandardError.connect(self._drain_preview_stderr)
+        process.finished.connect(lambda exit_code, exit_status: self._on_preview_finished(exit_code, exit_status, error_callback))
+        process.start()
+        if not process.waitForStarted(5000):
+            self._preview_process = None
+            raise RuntimeError("Microview 预览 helper 进程启动失败。")
+        deadline = perf_counter() + 5.0
+        while not self._preview_started and process.state() == QProcess.ProcessState.Running and perf_counter() < deadline:
+            process.waitForReadyRead(250)
+            self._drain_preview_stdout(error_callback)
+            self._drain_preview_stderr()
+            if self._pending_preview_error:
+                break
+        if not self._preview_started:
+            message = self._pending_preview_error or self._preview_stderr_buffer.strip() or "Microview 预览 helper 初始化失败。"
+            self.stop_preview()
+            raise RuntimeError(message)
+
+    def stop_preview(self) -> None:
+        process = self._preview_process
+        if process is not None:
+            if process.state() == QProcess.ProcessState.Running:
+                try:
+                    payload = json.dumps({"command": "stop"}, ensure_ascii=False).encode("utf-8") + b"\n"
+                    process.write(payload)
+                    process.waitForBytesWritten(500)
+                    process.closeWriteChannel()
+                    process.waitForFinished(2000)
+                except Exception:
+                    pass
+            if process.state() == QProcess.ProcessState.Running:
+                process.terminate()
+                process.waitForFinished(1000)
+            if process.state() == QProcess.ProcessState.Running:
+                process.kill()
+                process.waitForFinished(1000)
+            process.deleteLater()
+        self._preview_process = None
+        self._preview_stdout_buffer = ""
+        self._preview_stderr_buffer = ""
+        self._preview_started = False
+        self._active_device_id = ""
+        self._active_resolution = None
+        self._active_warning = ""
+        self._pending_preview_error = None
+
+    def update_preview_target(self, preview_target: object | None) -> None:
+        del preview_target
+        return None
+
+    def can_capture_still(self, device: CaptureDevice) -> bool:
+        del device
+        return True
+
+    def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
+        response = self._run_helper_command("capture", device_index=int(device.native_id), timeout_ms=15000)
+        diagnostics = str(response.get("diagnostics", "")).strip()
+        self._last_capture_diagnostics = diagnostics
+        image_path = str(response.get("image_path", "")).strip()
+        if not image_path:
+            return None
+        path = Path(image_path)
+        image = QImage(str(path))
+        try:
+            path.unlink(missing_ok=True)
+        except OSError:
+            pass
+        if image.isNull():
+            return None
+        return image
+
+    def can_optimize_signal(self, device: CaptureDevice) -> bool:
+        board_type = int(self._device_info.get(device.id, {}).get("board_type", 0))
+        return board_type in MicroviewCaptureBackend._SIGNAL_OPTIMIZE_BOARDS
+
+    def optimize_signal(self, device: CaptureDevice) -> str:
+        response = self._run_helper_command("optimize", device_index=int(device.native_id), timeout_ms=15000)
+        return str(response.get("message", "")).strip() or "已完成 Microview 采集参数优化。"
+
+    def active_warning(self) -> str:
+        return self._active_warning
+
+    def last_capture_diagnostics(self) -> str:
+        return self._last_capture_diagnostics
+
+    def _run_helper_command(
+        self,
+        command: str,
+        *,
+        device_index: int | None = None,
+        preview_target: object | None = None,
+        timeout_ms: int = 8000,
+    ) -> dict[str, object]:
+        program, arguments = _microview_helper_command(
+            command,
+            device_index=device_index,
+            preview_target=preview_target,
+        )
+        env = os.environ.copy()
+        env["PYTHONUNBUFFERED"] = "1"
+        completed = subprocess.run(
+            [program, *arguments],
+            capture_output=True,
+            text=True,
+            timeout=max(1, int(timeout_ms / 1000)),
+            env=env,
+        )
+        stdout_lines = [line.strip() for line in completed.stdout.splitlines() if line.strip()]
+        payload: dict[str, object] | None = None
+        if stdout_lines:
+            try:
+                parsed = json.loads(stdout_lines[-1])
+                if isinstance(parsed, dict):
+                    payload = parsed
+            except json.JSONDecodeError:
+                payload = None
+        if completed.returncode != 0:
+            message = ""
+            if isinstance(payload, dict):
+                message = str(payload.get("message", "")).strip()
+            if not message:
+                message = completed.stderr.strip() or completed.stdout.strip() or f"Microview helper 执行失败: {command}"
+            raise RuntimeError(message)
+        if payload is None:
+            raise RuntimeError(f"Microview helper 未返回有效响应: {command}")
+        return payload
+
+    def _drain_preview_stdout(self, error_callback: Callable[[str], None]) -> None:
+        process = self._preview_process
+        if process is None:
+            return
+        chunk = bytes(process.readAllStandardOutput()).decode("utf-8", errors="replace")
+        if not chunk:
+            return
+        self._preview_stdout_buffer += chunk
+        while "\n" in self._preview_stdout_buffer:
+            raw_line, self._preview_stdout_buffer = self._preview_stdout_buffer.split("\n", 1)
+            line = raw_line.strip()
+            if not line:
+                continue
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if not isinstance(payload, dict):
+                continue
+            message_type = str(payload.get("type", "")).strip()
+            if message_type == "started":
+                resolution_payload = payload.get("resolution", [])
+                if isinstance(resolution_payload, list) and len(resolution_payload) == 2:
+                    self._active_resolution = (int(resolution_payload[0]), int(resolution_payload[1]))
+                self._active_warning = str(payload.get("warning", "")).strip()
+                self._preview_started = True
+                continue
+            if message_type == "error":
+                self._pending_preview_error = str(payload.get("message", "")).strip() or "Microview 预览 helper 出错。"
+                if self._preview_started and self._pending_preview_error:
+                    error_callback(self._pending_preview_error)
+
+    def _drain_preview_stderr(self) -> None:
+        process = self._preview_process
+        if process is None:
+            return
+        chunk = bytes(process.readAllStandardError()).decode("utf-8", errors="replace")
+        if chunk:
+            self._preview_stderr_buffer += chunk
+
+    def _on_preview_finished(self, exit_code: int, exit_status, error_callback: Callable[[str], None]) -> None:
+        del exit_status
+        process = self._preview_process
+        if process is None:
+            return
+        self._drain_preview_stdout(error_callback)
+        self._drain_preview_stderr()
+        unexpected = self._preview_started and self._active_device_id and exit_code != 0
+        self._preview_process = None
+        self._preview_stdout_buffer = ""
+        self._preview_started = False
+        self._active_device_id = ""
+        self._active_resolution = None
+        self._active_warning = ""
+        if unexpected:
+            message = self._pending_preview_error or self._preview_stderr_buffer.strip() or "Microview 预览 helper 意外退出。"
+            error_callback(message)
+        self._preview_stderr_buffer = ""
+        self._pending_preview_error = None
+
+
+def _microview_helper_command(
+    command: str,
+    *,
+    device_index: int | None = None,
+    preview_target: object | None = None,
+) -> tuple[str, list[str]]:
+    arguments: list[str]
+    if getattr(sys, "frozen", False):
+        program = sys.executable
+        arguments = ["--microview-helper", command]
+    else:
+        program = sys.executable
+        arguments = ["-u", "-m", "fdm.microview_helper", command]
+    if device_index is not None:
+        arguments.extend(["--device-index", str(int(device_index))])
+    if command == "preview":
+        hwnd = _preview_target_handle(preview_target)
+        width, height = _preview_target_dimensions(preview_target) if preview_target is not None else (640, 480)
+        arguments.extend(
+            [
+                "--preview-hwnd",
+                str(int(hwnd)),
+                "--preview-width",
+                str(int(width)),
+                "--preview-height",
+                str(int(height)),
+            ]
+        )
+    return program, arguments
 
 
 def _qt_camera_token(device: QCameraDevice) -> str:

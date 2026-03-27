@@ -48,6 +48,7 @@ hiddenimports = [
     "onnxruntime.capi",
     "onnxruntime.capi.onnxruntime_inference_collection",
     "onnxruntime.capi.onnxruntime_pybind11_state",
+    "fdm.microview_helper",
 ]
 
 for optional_pkg in ("cv2", "PIL", "torch", "torchvision"):

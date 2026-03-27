@@ -77,6 +77,15 @@ def _install_global_exception_hook() -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    args = argv or sys.argv
+    if len(args) > 1 and args[1] == "--microview-helper":
+        try:
+            from fdm.microview_helper import main as microview_helper_main
+
+            return microview_helper_main(args[2:])
+        except Exception as exc:  # noqa: BLE001
+            return _report_startup_exception("Microview helper 启动失败", exc)
+
     try:
         from PySide6.QtWidgets import QApplication
     except ImportError as exc:
@@ -95,7 +104,7 @@ def main(argv: list[str] | None = None) -> int:
     _install_global_exception_hook()
 
     try:
-        app = QApplication(argv or sys.argv)
+        app = QApplication(args)
         app.setApplicationName(APP_NAME)
         app.setOrganizationName("Codex")
         from fdm.ui.main_window import MainWindow
