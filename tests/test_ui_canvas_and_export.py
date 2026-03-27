@@ -292,6 +292,26 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
+    def test_live_preview_stop_clears_preview_canvas_and_late_frame_is_ignored(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(180, 120, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        late_frame = QImage(160, 90, QImage.Format.Format_RGB32)
+        late_frame.fill(QColor("#F4D35E"))
+
+        window._on_live_preview_state_changed(True)
+        window._on_live_preview_frame_ready(preview_frame)
+        self.assertIsNotNone(window._preview_canvas)
+        self.assertEqual(window._preview_canvas.document_id, "preview_document")
+
+        window._on_live_preview_state_changed(False)
+        window._on_live_preview_frame_ready(late_frame)
+
+        self.assertIsNone(window._preview_document)
+        self.assertIsNotNone(window._preview_canvas)
+        self.assertIsNone(window._preview_canvas.document_id)
+        self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+
     def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
         window = MainWindow()
         image = QImage(200, 100, QImage.Format.Format_RGB32)

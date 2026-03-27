@@ -120,6 +120,22 @@ class DocumentCanvas(QWidget):
             self._document.image_size = (image.width(), image.height())
         self.update()
 
+    def clear_document(self) -> None:
+        self._document = None
+        self._image = None
+        self._drawing_anchor_raw = None
+        self._drawing_line = None
+        self._dragging_handle = None
+        self._drag_preview_line = None
+        self._dragging_area_handle = None
+        self._drag_area_preview_points = None
+        self._drag_area_origin_points = None
+        self._drag_area_press_point = None
+        self._dragging_text_id = None
+        self._drag_text_preview_anchor = None
+        self._magic_segment = PromptSegmentationSession()
+        self.update()
+
     def set_read_only(self, read_only: bool) -> None:
         self._read_only = read_only
         if read_only:

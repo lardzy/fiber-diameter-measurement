@@ -140,6 +140,49 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual(manager.selected_device_id(), "qt_multimedia:usb-1")
         self.assertEqual(manager.device_refresh_warnings(), ["Microview SDK: sdk load failed"])
 
+    @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
+    def test_capture_session_manager_ignores_stale_frames_after_stop(self) -> None:
+        class WorkingBackend(CaptureBackend):
+            backend_key = "qt_multimedia"
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [
+                    CaptureDevice(
+                        id="qt_multimedia:usb-1",
+                        name="USB Camera",
+                        backend_key=self.backend_key,
+                        native_id="usb-1",
+                    )
+                ]
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                return None
+
+            def stop_preview(self) -> None:
+                return None
+
+        manager = CaptureSessionManager(backends=[WorkingBackend()], refresh_on_init=False)
+        manager.refresh_devices()
+        received: list[tuple[int, int]] = []
+        manager.frameReady.connect(lambda image: received.append((image.width(), image.height())))
+
+        self.assertTrue(manager.start_preview())
+        generation = manager._preview_generation
+        first_frame = QImage(32, 24, QImage.Format.Format_RGB32)
+        first_frame.fill(QColor("#88CCEE"))
+        manager._on_frame_ready(generation, first_frame)
+
+        self.assertEqual(received, [(32, 24)])
+        self.assertIsNotNone(manager.last_frame())
+
+        manager.stop_preview()
+        stale_frame = QImage(48, 36, QImage.Format.Format_RGB32)
+        stale_frame.fill(QColor("#F4D35E"))
+        manager._on_frame_ready(generation, stale_frame)
+
+        self.assertEqual(received, [(32, 24)])
+        self.assertIsNone(manager.last_frame())
+
     @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
     def test_microview_rgb24_buffer_converts_to_qimage(self) -> None:
         info = MicroviewCaptureBackend._MVImageInfo()

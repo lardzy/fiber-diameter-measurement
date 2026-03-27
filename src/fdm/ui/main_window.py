@@ -1122,6 +1122,8 @@ class MainWindow(QMainWindow):
     def stop_live_preview(self) -> None:
         if not self._capture_manager.is_preview_active():
             self._preview_active = False
+            self._clear_preview_surface_state()
+            self._update_ui_for_current_document()
             self._sync_live_preview_action()
             return
         self._capture_manager.stop_preview()
@@ -1142,15 +1144,12 @@ class MainWindow(QMainWindow):
             self._show_active_capture_warning()
             self._maybe_hint_signal_optimization()
         if not active:
-            self._preview_document = None
-            self._apply_preview_surface("frame_stream")
-            if self._preview_status_label is not None:
-                self._preview_status_label.setText("请选择采集设备并开始实时预览")
+            self._clear_preview_surface_state()
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
 
     def _on_live_preview_frame_ready(self, image: object) -> None:
-        if self._is_native_preview():
+        if not self._preview_active or self._is_native_preview():
             return
         if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
             return
@@ -1175,6 +1174,14 @@ class MainWindow(QMainWindow):
         if self._image_resolution_label is not None:
             self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
         self._update_action_states()
+
+    def _clear_preview_surface_state(self) -> None:
+        self._preview_document = None
+        self._apply_preview_surface("frame_stream")
+        if self._preview_canvas is not None:
+            self._preview_canvas.clear_document()
+        if self._preview_status_label is not None:
+            self._preview_status_label.setText("请选择采集设备并开始实时预览")
 
     def _on_capture_error(self, message: str) -> None:
         self._sync_live_preview_action()

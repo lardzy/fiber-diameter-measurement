@@ -90,8 +90,8 @@ class CaptureSessionManager(QObject):
     previewStateChanged = Signal(bool)
     frameReady = Signal(object)
     errorOccurred = Signal(str)
-    _deliverFrame = Signal(object)
-    _deliverError = Signal(str)
+    _deliverFrame = Signal(int, object)
+    _deliverError = Signal(int, str)
 
     def __init__(
         self,
@@ -109,6 +109,7 @@ class CaptureSessionManager(QObject):
         self._active_preview_target: object | None = None
         self._active_backend: CaptureBackend | None = None
         self._last_frame: QImage | None = None
+        self._preview_generation = 0
         self._device_refresh_warnings: list[str] = []
         self._deliverFrame.connect(self._on_frame_ready, Qt.ConnectionType.QueuedConnection)
         self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
@@ -237,27 +238,35 @@ class CaptureSessionManager(QObject):
         if backend is None:
             self.errorOccurred.emit("未找到对应的采集后端。")
             return False
+        self._preview_generation += 1
+        generation = self._preview_generation
         self._last_frame = None
-        try:
-            backend.start_preview(
-                device,
-                preview_target=preview_target,
-                frame_callback=self._deliver_frame_threadsafe,
-                error_callback=self._deliver_error_threadsafe,
-            )
-        except Exception as exc:  # pragma: no cover - hardware dependent
-            self.errorOccurred.emit(str(exc))
-            return False
         self._active_backend = backend
         self._active_device_id = device.id
         self._active_preview_kind = backend.preview_kind(device)
         self._active_preview_target = preview_target
+        try:
+            backend.start_preview(
+                device,
+                preview_target=preview_target,
+                frame_callback=lambda image, _generation=generation: self._deliver_frame_threadsafe(_generation, image),
+                error_callback=lambda message, _generation=generation: self._deliver_error_threadsafe(_generation, message),
+            )
+        except Exception as exc:  # pragma: no cover - hardware dependent
+            self._active_backend = None
+            self._active_device_id = ""
+            self._active_preview_kind = "frame_stream"
+            self._active_preview_target = None
+            self.errorOccurred.emit(str(exc))
+            return False
         self.previewStateChanged.emit(True)
         return True
 
     def stop_preview(self) -> None:
         if not self.is_preview_active():
+            self._last_frame = None
             return
+        self._preview_generation += 1
         device = next((item for item in self._devices if item.id == self._active_device_id), None)
         backend = self._backend_for_device(device) if device is not None else None
         if backend is not None:
@@ -269,6 +278,7 @@ class CaptureSessionManager(QObject):
         self._active_preview_kind = "frame_stream"
         self._active_preview_target = None
         self._active_backend = None
+        self._last_frame = None
         self.previewStateChanged.emit(False)
 
     def update_preview_target(self, preview_target: object | None) -> None:
@@ -288,24 +298,28 @@ class CaptureSessionManager(QObject):
                 return backend
         return None
 
-    @Slot(object)
-    def _on_frame_ready(self, image: QImage) -> None:
+    @Slot(int, object)
+    def _on_frame_ready(self, generation: int, image: QImage) -> None:
+        if generation != self._preview_generation or not self.is_preview_active():
+            return
         if image.isNull():
             return
         self._last_frame = image
         self.frameReady.emit(image)
 
-    @Slot(str)
-    def _on_backend_error(self, message: str) -> None:
+    @Slot(int, str)
+    def _on_backend_error(self, generation: int, message: str) -> None:
+        if generation != self._preview_generation:
+            return
         if self.is_preview_active():
             self.stop_preview()
         self.errorOccurred.emit(message)
 
-    def _deliver_frame_threadsafe(self, image: QImage) -> None:
-        self._deliverFrame.emit(image)
+    def _deliver_frame_threadsafe(self, generation: int, image: QImage) -> None:
+        self._deliverFrame.emit(generation, image)
 
-    def _deliver_error_threadsafe(self, message: str) -> None:
-        self._deliverError.emit(message)
+    def _deliver_error_threadsafe(self, generation: int, message: str) -> None:
+        self._deliverError.emit(generation, message)
 
 
 class QtVideoCaptureBackend(CaptureBackend):
@@ -316,6 +330,8 @@ class QtVideoCaptureBackend(CaptureBackend):
         self._session: QMediaCaptureSession | None = None
         self._sink: QVideoSink | None = None
         self._last_frame: QImage | None = None
+        self._frame_slot = None
+        self._error_slot = None
 
     def list_devices(self) -> list[CaptureDevice]:
         _load_qt_multimedia()
@@ -358,23 +374,51 @@ class QtVideoCaptureBackend(CaptureBackend):
         self._session.setCamera(self._camera)
         self._session.setVideoSink(self._sink)
         self._last_frame = None
-        self._sink.videoFrameChanged.connect(lambda frame: self._on_video_frame(frame, frame_callback))
+        self._frame_slot = lambda frame: self._on_video_frame(frame, frame_callback)
+        self._sink.videoFrameChanged.connect(self._frame_slot)
         try:  # pragma: no branch - signal signature depends on Qt runtime
-            self._camera.errorOccurred.connect(lambda _error, text: error_callback(text or "USB 相机预览失败"))
+            self._error_slot = lambda _error, text: error_callback(text or "USB 相机预览失败")
+            self._camera.errorOccurred.connect(self._error_slot)
         except Exception:
-            pass
+            self._error_slot = None
         self._camera.start()
 
     def stop_preview(self) -> None:
+        if self._session is not None:
+            try:
+                self._session.setVideoSink(None)
+            except Exception:
+                pass
+            try:
+                self._session.setCamera(None)
+            except Exception:
+                pass
+        if self._sink is not None and self._frame_slot is not None:
+            try:
+                self._sink.videoFrameChanged.disconnect(self._frame_slot)
+            except Exception:
+                pass
+        if self._camera is not None and self._error_slot is not None:
+            try:
+                self._camera.errorOccurred.disconnect(self._error_slot)
+            except Exception:
+                pass
         if self._camera is not None:
             self._camera.stop()
             self._camera.deleteLater()
         if self._sink is not None:
             self._sink.deleteLater()
+        if self._session is not None:
+            try:
+                self._session.deleteLater()
+            except Exception:
+                pass
         self._camera = None
         self._session = None
         self._sink = None
         self._last_frame = None
+        self._frame_slot = None
+        self._error_slot = None
 
     def can_capture_still(self, device: CaptureDevice) -> bool:
         return self._last_frame is not None and not self._last_frame.isNull()
