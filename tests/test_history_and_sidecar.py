@@ -77,6 +77,28 @@ class HistoryAndSidecarTests(unittest.TestCase):
         self.assertTrue(document.history.redo(document))
         self.assertEqual(len(document.measurements), 1)
 
+    def test_project_asset_document_does_not_create_sidecar_file(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/in_memory_capture.png",
+                image_size=(320, 200),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            document.calibration = Calibration(
+                mode="image_scale",
+                pixels_per_unit=8.0,
+                unit="um",
+                source_label="项目内标尺",
+            )
+
+            sidecar_path = CalibrationSidecarIO.save_document(document)
+
+            self.assertIsNone(sidecar_path)
+            self.assertIsNone(document.sidecar_path)
+            self.assertFalse((Path(tmp_dir) / "captures" / "in_memory_capture.png.fdm.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

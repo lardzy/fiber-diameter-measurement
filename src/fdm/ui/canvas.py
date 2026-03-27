@@ -97,6 +97,8 @@ class DocumentCanvas(QWidget):
         self._scale_anchor_preview_point: Point | None = None
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
+        self._read_only = False
+        self._fit_alignment = "center"
 
     @property
     def document_id(self) -> str | None:
@@ -110,6 +112,46 @@ class DocumentCanvas(QWidget):
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
             self.fit_to_view()
+        self.update()
+
+    def set_image(self, image: QImage) -> None:
+        self._image = image
+        if self._document is not None:
+            self._document.image_size = (image.width(), image.height())
+        self.update()
+
+    def clear_document(self) -> None:
+        self._document = None
+        self._image = None
+        self._drawing_anchor_raw = None
+        self._drawing_line = None
+        self._dragging_handle = None
+        self._drag_preview_line = None
+        self._dragging_area_handle = None
+        self._drag_area_preview_points = None
+        self._drag_area_origin_points = None
+        self._drag_area_press_point = None
+        self._dragging_text_id = None
+        self._drag_text_preview_anchor = None
+        self._magic_segment = PromptSegmentationSession()
+        self.update()
+
+    def set_read_only(self, read_only: bool) -> None:
+        self._read_only = read_only
+        if read_only:
+            self._cancel_area_drawing()
+            self._drawing_anchor_raw = None
+            self._drawing_line = None
+            self._dragging_handle = None
+            self._drag_preview_line = None
+            self._dragging_text_id = None
+            self._drag_text_preview_anchor = None
+            self._scale_anchor_pick_active = False
+        self._update_cursor()
+        self.update()
+
+    def set_fit_alignment(self, alignment: str) -> None:
+        self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
 
     def set_tool_mode(self, mode: str) -> None:
@@ -219,10 +261,13 @@ class DocumentCanvas(QWidget):
         self._zoom = max(0.05, min(zoom_x, zoom_y))
         target_width = self._image.width() * self._zoom
         target_height = self._image.height() * self._zoom
-        self._pan = Point(
-            (self.width() - target_width) / 2.0,
-            (self.height() - target_height) / 2.0,
-        )
+        if self._fit_alignment == "top_left":
+            self._pan = Point(20.0, 20.0)
+        else:
+            self._pan = Point(
+                (self.width() - target_width) / 2.0,
+                (self.height() - target_height) / 2.0,
+            )
         self._persist_view_state()
         self.update()
 
@@ -321,6 +366,8 @@ class DocumentCanvas(QWidget):
             self._panning = True
             self._pan_button = event.button()
             self._update_cursor()
+            return
+        if self._read_only:
             return
 
         image_point = self.widget_to_image(event.position())
@@ -478,6 +525,8 @@ class DocumentCanvas(QWidget):
             self._scale_anchor_preview_point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
             self.update()
             return
+        if self._read_only:
+            return
 
         image_point = self.widget_to_image(event.position())
 
@@ -564,6 +613,9 @@ class DocumentCanvas(QWidget):
             return
         if event.button() != Qt.MouseButton.LeftButton:
             return
+        if self._read_only:
+            self._update_cursor()
+            return
 
         if self._drawing_freehand_active:
             polygon_points = list(self._drawing_polygon_points)
@@ -636,6 +688,8 @@ class DocumentCanvas(QWidget):
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
+            return
+        if self._read_only:
             return
         if event.button() == Qt.MouseButton.LeftButton and self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
             point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
@@ -1014,6 +1068,8 @@ class DocumentCanvas(QWidget):
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
         elif self._scale_anchor_pick_active:
             self.setCursor(Qt.CursorShape.CrossCursor)
+        elif self._read_only:
+            self.setCursor(Qt.CursorShape.OpenHandCursor if self._temporary_grab_active else Qt.CursorShape.ArrowCursor)
         elif self._temporary_grab_active:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
         else:

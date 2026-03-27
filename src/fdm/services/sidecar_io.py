@@ -26,6 +26,9 @@ class CalibrationSidecarIO:
 
     @classmethod
     def save_document(cls, document: ImageDocument) -> Path | None:
+        if not document.uses_sidecar():
+            document.mark_calibration_saved()
+            return None
         sidecar = cls.build_sidecar(document)
         output_path = Path(document.sidecar_path or cls.sidecar_path_for_image(document.path))
         if sidecar is None:
@@ -44,6 +47,9 @@ class CalibrationSidecarIO:
 
     @classmethod
     def load_document(cls, document: ImageDocument) -> bool:
+        if not document.uses_sidecar():
+            document.mark_calibration_saved()
+            return False
         input_path = Path(document.sidecar_path or cls.sidecar_path_for_image(document.path))
         document.sidecar_path = input_path.as_posix()
         if not input_path.exists():

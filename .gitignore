@@ -1,0 +1,9 @@
+/.tmp/
+/runtime/area-models/b_c1_1.3(++).pth
+/runtime/area-models/b_c1_1.3(old).pth
+/runtime/area-models/b_c1_1.3.pth
+/runtime/area-models/b_cc_1.3.pth
+/runtime/area-models/b_cm_1.3.pth
+/runtime/area-models/b_cv_1.3.pth
+/runtime/area-models/b_cvlm_1.3.pth
+/runtime/area-models/b_v1_1.3.pth

@@ -10,7 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectState, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id, project_assets_root
 from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
@@ -87,6 +87,28 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
+
+    def test_project_roundtrip_preserves_project_asset_document_source_type(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="captures/capture_20260326_01.png",
+            image_size=(320, 240),
+            source_type="project_asset",
+        )
+        document.initialize_runtime_state()
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "demo.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        self.assertEqual(loaded.documents[0].source_type, "project_asset")
+        self.assertEqual(loaded.documents[0].path, "captures/capture_20260326_01.png")
+        self.assertEqual(
+            loaded.documents[0].resolved_path(path),
+            (project_assets_root(path) / "captures" / "capture_20260326_01.png").resolve(),
+        )
 
     def test_calibration_preset_roundtrip_keeps_source_distances(self) -> None:
         preset = CalibrationPreset(
@@ -274,6 +296,16 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(loaded.calibration_presets[0].pixel_distance or 0.0, 250.0)
         self.assertAlmostEqual(loaded.calibration_presets[0].actual_distance or 0.0, 20.0)
 
+    def test_app_settings_roundtrip_preserves_selected_capture_device(self) -> None:
+        settings = AppSettings(selected_capture_device_id="microview:1")
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            saved_path = AppSettingsIO.save(settings, path)
+            loaded = AppSettingsIO.load(saved_path)
+
+        self.assertEqual(loaded.selected_capture_device_id, "microview:1")
+
     def test_project_roundtrip_persists_project_default_calibration_without_writing_legacy_presets(self) -> None:
         project = ProjectState(
             version="0.1.0",
@@ -325,6 +357,34 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertEqual(len(project.calibration_presets), 1)
         self.assertEqual(project.calibration_presets[0].name, "legacy 40x")
+
+    def test_project_roundtrip_persists_project_group_templates_and_document_suppression(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/project_groups.png",
+            image_size=(200, 120),
+            suppressed_project_group_labels=["棉", "棉", " 莱赛尔 "],
+        )
+        document.initialize_runtime_state()
+        project = ProjectState(
+            version="0.1.0",
+            documents=[document],
+            project_group_templates=[
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="棉", color="#E07A5F"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ],
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "project_groups.fdmproj"
+            ProjectIO.save(project, path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            loaded = ProjectIO.load(path)
+
+        self.assertEqual([item["label"] for item in payload["project_group_templates"]], ["棉", "莱赛尔"])
+        self.assertEqual([template.label for template in loaded.project_group_templates], ["棉", "莱赛尔"])
+        self.assertEqual(loaded.documents[0].suppressed_project_group_labels, ["棉", "莱赛尔"])
 
     def test_app_settings_store_runtime_area_paths_relative_to_application_root(self) -> None:
         runtime_root = application_root() / "runtime"

@@ -18,6 +18,19 @@ app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
 console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
 
+
+def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str, str]]:
+    collected: list[tuple[str, str]] = []
+    if not root.exists():
+        return collected
+    for file_path in root.rglob("*"):
+        if not file_path.is_file():
+            continue
+        relative_parent = file_path.parent.relative_to(root)
+        target_dir = Path(target_root) / relative_parent if str(relative_parent) != "." else Path(target_root)
+        collected.append((str(file_path), str(target_dir)))
+    return collected
+
 datas = [
     (str(project_root / "README.md"), "."),
 ]
@@ -35,6 +48,7 @@ hiddenimports = [
     "onnxruntime.capi",
     "onnxruntime.capi.onnxruntime_inference_collection",
     "onnxruntime.capi.onnxruntime_pybind11_state",
+    "fdm.microview_helper",
 ]
 
 for optional_pkg in ("cv2", "PIL", "torch", "torchvision"):
@@ -50,6 +64,21 @@ for optional_pkg in ("cv2", "PIL", "torch", "torchvision"):
 try:
     datas += collect_data_files("qtawesome", include_py_files=False)
     hiddenimports.append("qtawesome")
+except Exception:
+    pass
+
+try:
+    hiddenimports.append("PySide6.QtMultimedia")
+    hiddenimports += collect_submodules("PySide6.QtMultimedia")
+except Exception:
+    pass
+
+try:
+    import PySide6
+
+    pyside_root = Path(PySide6.__file__).resolve().parent
+    datas += _collect_directory_files(pyside_root / "plugins" / "multimedia", target_root="PySide6/plugins/multimedia")
+    datas += _collect_directory_files(pyside_root / "plugins" / "mediaservice", target_root="PySide6/plugins/mediaservice")
 except Exception:
     pass
 

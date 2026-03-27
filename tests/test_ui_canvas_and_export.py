@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QListView, QSplitter
+    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -22,23 +22,24 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import AppSettings, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
+from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
-    from fdm.ui.dialogs import SettingsDialog, ShortcutHelpDialog
-    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+    from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
-    qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
 
 
@@ -157,7 +158,6 @@ class CanvasAndExportTests(unittest.TestCase):
         window._add_loaded_document(
             ImageLoadRequest(path=document.path, document=document),
             image,
-            qimage_to_raster(image),
         )
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
@@ -234,6 +234,216 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
+
+    def test_live_preview_frame_can_be_captured_as_project_asset_document(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(180, 120, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+
+        window._on_live_preview_state_changed(True)
+        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
+        window._on_live_preview_frame_ready(preview_frame)
+        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
+
+        self.assertIsNone(window.current_document())
+        self.assertIs(window.current_canvas(), window._preview_canvas)
+        self.assertTrue(window.capture_frame_action.isEnabled())
+
+        window.capture_current_frame()
+
+        self.assertEqual(len(window.project.documents), 1)
+        captured_document = window.project.documents[0]
+        self.assertEqual(captured_document.source_type, "project_asset")
+        self.assertTrue(captured_document.path.startswith("captures/"))
+        self.assertIn(captured_document.id, window._images)
+        self.assertTrue(window._project_dirty())
+
+    def test_native_preview_switches_to_microview_host_surface(self) -> None:
+        window = MainWindow()
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.preview_resolution = lambda: (1760, 1328)  # type: ignore[method-assign]
+
+        window._on_live_preview_state_changed(True)
+
+        self.assertIsNone(window.current_canvas())
+        self.assertIsNotNone(window._preview_display_stack)
+        self.assertIsNotNone(window._microview_preview_host)
+        self.assertIs(window._preview_display_stack.currentWidget(), window._microview_preview_scroll)
+        self.assertEqual(window._microview_preview_host.size().width(), 1760)
+        self.assertEqual(window._microview_preview_host.size().height(), 1328)
+
+    def test_start_live_preview_applies_native_resolution_before_backend_start(self) -> None:
+        window = MainWindow()
+        observed_sizes: list[tuple[int, int]] = []
+        device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
+
+        window._capture_devices = [device]
+        window._refresh_capture_devices = lambda: None  # type: ignore[method-assign]
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.preview_resolution = lambda: (768, 576)  # type: ignore[method-assign]
+        window._capture_manager.selected_device = lambda: device  # type: ignore[method-assign]
+        window._capture_manager.start_preview = (  # type: ignore[method-assign]
+            lambda *, preview_target=None: observed_sizes.append(preview_target.native_preview_size()) or True
+        )
+
+        window.start_live_preview()
+
+        self.assertEqual(observed_sizes, [(768, 576)])
+        self.assertIsNotNone(window._microview_preview_host)
+        self.assertEqual(window._microview_preview_host.native_preview_size(), (768, 576))
+
+    def test_native_preview_capture_uses_still_capture_path(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(96, 72, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#F4D35E"))
+        call_order: list[str] = []
+
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.can_capture_still = lambda: True  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: call_order.append("capture") or preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: True  # type: ignore[method-assign]
+        window._capture_manager.stop_preview = lambda: call_order.append("stop")  # type: ignore[method-assign]
+        window._capture_manager.selected_device = (  # type: ignore[method-assign]
+            lambda: type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
+        )
+
+        window.capture_current_frame()
+
+        self.assertEqual(call_order, ["stop", "capture"])
+        self.assertEqual(len(window.project.documents), 1)
+        self.assertEqual(window.project.documents[0].source_type, "project_asset")
+
+    def test_live_preview_stop_clears_preview_canvas_and_late_frame_is_ignored(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(180, 120, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        late_frame = QImage(160, 90, QImage.Format.Format_RGB32)
+        late_frame.fill(QColor("#F4D35E"))
+
+        window._on_live_preview_state_changed(True)
+        window._on_live_preview_frame_ready(preview_frame)
+        self.assertIsNotNone(window._preview_canvas)
+        self.assertEqual(window._preview_canvas.document_id, "preview_document")
+
+        window._on_live_preview_state_changed(False)
+        window._on_live_preview_frame_ready(late_frame)
+
+        self.assertIsNone(window._preview_document)
+        self.assertIsNotNone(window._preview_canvas)
+        self.assertIsNone(window._preview_canvas.document_id)
+        self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+
+    def test_live_preview_stop_requests_magic_cache_clear(self) -> None:
+        window = MainWindow()
+        clear_calls: list[str] = []
+
+        class FakeSignal:
+            def emit(self) -> None:
+                clear_calls.append("clear")
+
+        class FakeWorker:
+            def __init__(self) -> None:
+                self.clearRequested = FakeSignal()
+
+        window._prompt_seg_worker = FakeWorker()
+
+        window._on_live_preview_state_changed(False)
+
+        self.assertEqual(clear_calls, ["clear"])
+
+    def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
+        window = MainWindow()
+        image = QImage(200, 100, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/resolution_label.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=10.0,
+            unit="um",
+            source_label="10x",
+        )
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+        )
+
+        self.assertIsNotNone(window._image_resolution_label)
+        label_text = window._image_resolution_label.text()
+        self.assertIn("像素尺寸: 200 x 100 px", label_text)
+        self.assertIn("实际尺寸: 20 x 10 um", label_text)
+
+    def test_calibration_label_uses_red_for_uncalibrated_document(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/uncalibrated_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+        )
+
+        self.assertEqual(window.calibration_label.text(), "当前图片未标定")
+        self.assertIn(window._status_color("danger"), window.calibration_label.styleSheet())
+
+    def test_calibration_label_uses_blue_for_calibrated_document(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/calibrated_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="20x",
+        )
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+        )
+
+        self.assertIn("20x", window.calibration_label.text())
+        self.assertIn(window._status_color("info"), window.calibration_label.styleSheet())
+
+    def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(96, 64, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#9AD1D4"))
+        window._capture_manager.last_frame = lambda: preview_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.is_preview_active = lambda: False  # type: ignore[method-assign]
+
+        window.capture_current_frame()
+        captured_document = window.project.documents[0]
+
+        with TemporaryDirectory() as tmp_dir:
+            project_path = Path(tmp_dir) / "demo.fdmproj"
+            self.assertTrue(window.save_project(str(project_path)))
+            asset_path = project_path.with_suffix(".assets") / captured_document.path
+
+            self.assertTrue(asset_path.exists())
+            self.assertEqual(asset_path.suffix.lower(), ".png")
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
+            self.assertEqual(payload["documents"][0]["path"], captured_document.path)
 
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
         window, document = self._create_main_window_fixture()
@@ -345,12 +555,24 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "半自动吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+                ["浏览", "手动测量", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
             )
             visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+        finally:
+            window.close()
+
+    def test_right_panel_hides_onnx_status_and_keeps_area_auto_entry(self) -> None:
+        window = MainWindow()
+        try:
+            group_titles = [box.title() for box in window.findChildren(QGroupBox)]
+            self.assertIsNone(getattr(window, "model_status_label", None))
+            self.assertIsNotNone(window._area_auto_button)
+            self.assertEqual(window._area_auto_button.text(), "面积自动识别...")
+            self.assertIn("面积识别", group_titles)
+            self.assertNotIn("模型状态", group_titles)
         finally:
             window.close()
 
@@ -479,12 +701,207 @@ class CanvasAndExportTests(unittest.TestCase):
                     window._add_loaded_document(
                         ImageLoadRequest(path=str(image_path), document=None),
                         image,
-                        qimage_to_raster(image),
                     )
 
                 self.assertEqual(window.current_document().calibration.mode, "project_default")
                 payload = json.loads(Path(sidecar_source.default_sidecar_path()).read_text(encoding="utf-8"))
                 self.assertEqual(payload, original_payload)
+        finally:
+            window.close()
+
+    def test_add_loaded_document_applies_project_group_templates(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ]
+            image = QImage(200, 120, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/project_groups_apply.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            window._add_loaded_document(
+                ImageLoadRequest(path=document.path, document=document),
+                image,
+            )
+
+            loaded = window.current_document()
+            self.assertIsNotNone(loaded)
+            self.assertEqual([group.label for group in loaded.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertFalse(loaded.dirty_flags.session_dirty)
+        finally:
+            window.close()
+
+    def test_magic_segment_request_uses_in_memory_image_and_cache_key(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/preview.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._prompt_seg_worker = fake_worker
+
+            with patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None), patch(
+                "fdm.ui.main_window.PromptSegmentationService.models_ready",
+                return_value=True,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 7,
+                        "positive_points": [Point(20, 20)],
+                        "negative_points": [Point(30, 30)],
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertIs(fake_worker.requested.payload.image, image)
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 7)
+            self.assertTrue(fake_worker.requested.payload.cache_key.startswith(f"{document.id}:"))
+        finally:
+            window.close()
+
+    def test_add_fiber_group_global_syncs_existing_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉"])
+            self.assertIsNotNone(first.find_group_by_label("棉"))
+            self.assertIsNotNone(second.find_group_by_label("棉"))
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_add_fiber_group_duplicate_local_is_noop(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_local_noop.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([item.label for item in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.active_group_id, group.id)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_rename_group_to_existing_merges_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_merge.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            hemp = document.create_group(color="#E07A5F", label="麻")
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=hemp.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
+            document.set_active_group(hemp.id)
+            self._load_document_into_window(window, document, image)
+
+            with patch("fdm.ui.main_window.QInputDialog.getText", return_value=("棉", True)), patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.measurements[0].fiber_group_id, cotton.id)
+            self.assertEqual(document.active_group_id, cotton.id)
+        finally:
+            window.close()
+
+    def test_delete_project_global_group_adds_local_suppression(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_delete_global.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            self._load_document_into_window(window, document, image)
+
+            with patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.delete_active_group()
+
+            self.assertIsNone(document.find_group_by_label("棉"))
+            self.assertEqual(document.suppressed_project_group_labels, ["棉"])
+            self.assertFalse(window._apply_project_group_templates_to_document(document))
+            self.assertIsNone(document.find_group_by_label("棉"))
         finally:
             window.close()
 
@@ -943,11 +1360,64 @@ class CanvasAndExportTests(unittest.TestCase):
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
             self.assertEqual(window._tool_mode, "select")
 
-            window.set_tool_mode("snap")
+            window.set_tool_mode("manual")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
             self.assertEqual(window._tool_mode, "select")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_A))
+            self.assertEqual(window._tool_mode, "manual")
+        finally:
+            window.close()
+
+    def test_snap_tool_is_available_and_can_be_selected(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIn("snap", window._mode_actions)
+
+            window.set_tool_mode("snap")
+
             self.assertEqual(window._tool_mode, "snap")
+            self.assertTrue(window._mode_actions["snap"].isChecked())
+        finally:
+            window.close()
+
+    def test_snap_line_commit_creates_snap_measurement(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/snap_measurement.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+            original_line = Line(Point(40, 70), Point(180, 70))
+            snapped_line = Line(Point(84.0, 70.0), Point(136.0, 70.0))
+
+            with patch.object(
+                window.snap_service,
+                "snap_measurement",
+                return_value=SnapResult(
+                    status="snapped",
+                    original_line=original_line,
+                    snapped_line=snapped_line,
+                    diameter_px=52.0,
+                    confidence=0.88,
+                    debug_payload={"polarity": "dark_on_light"},
+                ),
+            ):
+                window._on_canvas_line_committed(document.id, "snap", original_line)
+
+            self.assertEqual(len(document.measurements), 1)
+            measurement = document.measurements[0]
+            self.assertEqual(measurement.mode, "snap")
+            self.assertEqual(measurement.status, "snapped")
+            self.assertEqual(measurement.line_px, original_line)
+            self.assertEqual(measurement.snapped_line_px, snapped_line)
+            self.assertEqual(window._format_measurement_mode(measurement.mode), "边缘吸附")
         finally:
             window.close()
 

@@ -1,0 +1,292 @@
+[Version]
+Signature="$CHICAGO$"
+Class=Media
+Provider=%String0%
+DriverVer=02/02/2015,5.0.2.8
+CatalogFile=mvdriver.cat
+
+[Manufacturer]
+%String1%=Microsoft, NTx86, NTamd64
+
+
+[Microsoft]
+%String2% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43504d56
+
+%String4% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_73104d56
+
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43204d56
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43214d56
+
+%String10% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_32404d56
+
+%String12% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_B1004d56
+
+%String14% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_72104d56
+
+%String16% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33104d56
+
+%String18% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43104d56
+
+%String20% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_21104d56
+
+%String22% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_31104d56
+
+%String24% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_10104d56
+
+%String26% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_12104d56
+
+%String28% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e104d56
+
+%String30% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e134d56
+
+%String32% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e044d56
+
+%String34% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33A04d56
+
+%String8% = Mvpci.Install, PCI\VEN_109E&DEV_036E
+
+[Microsoft.NTx86]
+%String2% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43504d56
+
+%String4% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_73104d56
+
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43204d56
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43214d56
+
+%String10% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_32404d56
+
+%String12% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_B1004d56
+
+%String14% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_72104d56
+
+%String16% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33104d56
+
+%String18% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43104d56
+
+%String20% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_21104d56
+
+%String22% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_31104d56
+
+%String24% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_10104d56
+
+%String26% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_12104d56
+
+%String28% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e104d56
+
+%String30% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e134d56
+
+%String32% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e044d56
+
+%String34% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33A04d56
+
+%String8% = Mvpci.Install, PCI\VEN_109E&DEV_036E
+
+[Microsoft.NTamd64]
+%String2% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43504d56
+
+%String4% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_73104d56
+
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43204d56
+%String6% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43214d56
+
+%String10% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_32404d56
+
+%String12% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_B1004d56
+
+%String14% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_72104d56
+
+%String16% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33104d56
+
+%String18% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_43104d56
+
+%String20% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_21104d56
+
+%String22% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_31104d56
+
+%String24% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_10104d56
+
+%String26% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_12104d56
+
+%String28% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e104d56
+
+%String30% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e134d56
+
+%String32% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_8e044d56
+
+%String34% = Mvpci.Install, PCI\VEN_109E&DEV_036E&SUBSYS_33A04d56
+
+%String8% = Mvpci.Install, PCI\VEN_109E&DEV_036E
+
+
+[DestinationDirs]
+Mvpci.Files.Driver=10,System32\Drivers
+Mvpci.Files.Driver.NTx86=10,System32\Drivers
+Mvpci.Files.Driver.NTAMD64=10,System32\Drivers
+
+CopySDK.Section=10
+CopyDS.Section=10,twain_32
+
+[SourceDisksNames]
+1="Wdm build directory",,,
+
+[SourceDisksFiles]
+MVBT.sys=1
+;;NVBT.ini=1
+;;MVAPI.dll=1
+;;mvavi.dll=1
+;;saa7130.dll=1
+;;Function.dll=1
+;;MV_Twain.ds=1
+
+[SourceDisksFiles.x86]
+MVBT.sys=1
+[SourceDisksFiles.AMD64]
+MVBT.sys=1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  Windows98
+[Mvpci.Install]
+CopyFiles=Mvpci.Files.Driver,CopySDK.Section,CopyDS.Section
+AddReg=Mvpci.AddReg, Parameters
+
+[Mvpci.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,MVBT.sys
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"Driver",,"Function.dll"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"FriendlyName",,"Microview Video Device"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"Description",,"Microview Video Device Capture Driver"
+
+[Mvpci.Files.Driver]
+MVBT.sys
+[Parameters]
+;HKR,%ParamsBranch%,VinFieldOffset,1,aa
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  Windows98
+[MvpciA.Install]
+CopyFiles=MvpciA.Files.Driver,CopySDK.Section,CopyDS.Section
+AddReg=MvpciA.AddReg, Parameters
+
+[MvpciA.AddReg]
+HKR,,DevLoader,,*ntkern
+HKR,,NTMPDriver,,MVBT.sys
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msaudio\MICROVIEW,"Driver",,"Function.dll"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msaudio\MICROVIEW,"FriendlyName",,"Microview Video Device"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msaudio\MICROVIEW,"Description",,"Microview Video Device Capture Driver"
+
+[MvpciA.Files.Driver]
+MVBT.sys
+
+[CopySDK.Section]
+;;MVBT.ini,,,2
+;;MVAPI.dll,,,2
+;;mvavi.dll,,,2
+;;MVBT.dll,,,2
+;;Function.dll,,,2
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  Windows2000
+[Mvpci.Install.NTx86]
+CopyFiles=Mvpci.Files.Driver.Ntx86,CopySDK.Section,CopyDS.Section
+AddReg=Mvpci.AddReg, Parameters.NT
+
+[Mvpci.Install.NTAMD64]
+CopyFiles=Mvpci.Files.Driver.NTAMD64,CopySDK.Section,CopyDS.Section
+AddReg=Parameters.NT
+
+[Mvpci.Files.Driver.NTx86]
+MVBT.sys,,,%COPYFLG_NOSKIP%
+
+[Mvpci.Files.Driver.NTAMD64]
+MVBT.sys,,,%COPYFLG_NOSKIP%
+
+[Mvpci.Install.NTx86.Services]
+AddService=MVBT, %SPSVCINST_ASSOCSERVICE%, Mvpci.Service
+[Mvpci.Install.NTAMD64.Services]
+AddService = MVBT, %SPSVCINST_ASSOCSERVICE%, Mvpci.Service
+
+[Mvpci.Service]
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_MANUAL_START%
+ErrorControl   = %SERVICE_ERROR_NORMAL%
+ServiceBinary  = %10%\System32\Drivers\MVBT.sys
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;  Windows2000
+[MvpciA.Install.NTx86]
+CopyFiles=MvpciA.Files.Driver.Ntx86,CopySDK.Section,CopyDS.Section
+AddReg=MvpciA.AddReg, Parameters.NT
+
+[MvpciA.Install.NTAMD64]
+CopyFiles=MvpciA.Files.Driver.NTAMD64,CopySDK.Section,CopyDS.Section
+AddReg=Parameters.NT
+
+[MvpciA.Files.Driver.NTx86]
+MVBT.sys,,,%COPYFLG_NOSKIP%
+
+[MvpciA.Files.Driver.NTAMD64]
+MVBT.sys,,,%COPYFLG_NOSKIP%
+
+[MvpciA.Install.NTx86.Services]
+AddService=MVBT, %SPSVCINST_ASSOCSERVICE%, Mvpci.Service
+[MvpciA.Install.NTAMD64.Services]
+AddService = MVBT, %SPSVCINST_ASSOCSERVICE%, Mvpci.Service
+
+[MvpciA.Service]
+ServiceType    = %SERVICE_KERNEL_DRIVER%
+StartType      = %SERVICE_MANUAL_START%
+ErrorControl   = %SERVICE_ERROR_NORMAL%
+ServiceBinary  = %10%\System32\Drivers\MVBT.sys
+
+[Parameters]
+;HKR,%ParamsBranch%,VinFieldOffset,1,aa
+
+
+[Parameters.NT]
+;HKLM,System\CurrentControlSet\Services\MVBT,CommonBufferSize,0x00010003,0x200000
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"Driver",,"Function.dll"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"FriendlyName",,"Microview Video Device"
+HKLM,SYSTEM\CurrentControlSet\Control\MediaResources\msvideo\MICROVIEW,"Description",,"Microview Video Device Capture Driver"
+
+[CopyDS.Section]
+;;MV_Twain.ds
+
+[Strings]
+String0="Microview Electronic Co.,Ltd, Inc."
+String1="Microview"
+String2="Microview V110(Video) WDM Driver Build5028"
+String4="Microview MOKAC10(Video) WDM Driver Build5028"
+String6="Microview S100(Video) WDM Driver Build5028"
+
+String8="Microview V8T/S100/S400/S420(Video) WDM Driver Build5028"
+
+String10="Microview X400(Video) WDM Driver Build5028"
+String12="Microview X800(Video) WDM Driver Build5028"
+
+String14="Microview MokaC40(Video) WDM Driver Build5028"
+
+String16="Microview S401(Video) WDM Driver Build5028"
+
+String18="Microview V401(Video) WDM Driver Build5028"
+
+String20="Microview V211(Video) WDM Driver Build5028"
+
+String22="Microview S211(Video) WDM Driver Build5028"
+
+String24="Microview MP110(Video) WDM Driver Build50288"
+
+String26="Microview MP240(Video) WDM Driver Build5028"
+
+String28="Microview E400(Video) WDM Driver Build5028"
+
+String30="Microview E403(Video) WDM Driver Build5028"
+
+String32="Microview E110(Video) WDM Driver Build5028"
+
+String34="Microview V112(Video) WDM Driver Build5028"
+
+SPSVCINST_ASSOCSERVICE = 0x00000002
+COPYFLG_NOSKIP=2	; Do not allow user to skip file
+SERVICE_KERNEL_DRIVER  = 1
+SERVICE_MANUAL_START    = 3
+SERVICE_ERROR_NORMAL  = 1
