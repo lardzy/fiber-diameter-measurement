@@ -1243,7 +1243,26 @@ class MicroviewIsolatedBackend(CaptureBackend):
         self._pending_preview_error = None
 
     def update_preview_target(self, preview_target: object | None) -> None:
-        del preview_target
+        process = self._preview_process
+        if (
+            preview_target is None
+            or process is None
+            or process.state() != QProcess.ProcessState.Running
+            or not self._preview_started
+        ):
+            return None
+        hwnd = _preview_target_handle(preview_target)
+        width, height = _preview_target_dimensions(preview_target)
+        if hwnd <= 0:
+            return None
+        self._send_preview_command(
+            {
+                "command": "update_target",
+                "hwnd": int(hwnd),
+                "width": int(width),
+                "height": int(height),
+            }
+        )
         return None
 
     def can_capture_still(self, device: CaptureDevice) -> bool:
@@ -1382,6 +1401,17 @@ class MicroviewIsolatedBackend(CaptureBackend):
             error_callback(message)
         self._preview_stderr_buffer = ""
         self._pending_preview_error = None
+
+    def _send_preview_command(self, payload: dict[str, object]) -> None:
+        process = self._preview_process
+        if process is None or process.state() != QProcess.ProcessState.Running:
+            return
+        try:
+            message = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+            process.write(message)
+            process.waitForBytesWritten(500)
+        except Exception:
+            return
 
 
 def _microview_helper_command(

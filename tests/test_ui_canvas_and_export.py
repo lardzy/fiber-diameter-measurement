@@ -274,6 +274,26 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(window._microview_preview_host.size().width(), 1760)
         self.assertEqual(window._microview_preview_host.size().height(), 1328)
 
+    def test_start_live_preview_applies_native_resolution_before_backend_start(self) -> None:
+        window = MainWindow()
+        observed_sizes: list[tuple[int, int]] = []
+        device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
+
+        window._capture_devices = [device]
+        window._refresh_capture_devices = lambda: None  # type: ignore[method-assign]
+        window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+        window._capture_manager.preview_resolution = lambda: (768, 576)  # type: ignore[method-assign]
+        window._capture_manager.selected_device = lambda: device  # type: ignore[method-assign]
+        window._capture_manager.start_preview = (  # type: ignore[method-assign]
+            lambda *, preview_target=None: observed_sizes.append(preview_target.native_preview_size()) or True
+        )
+
+        window.start_live_preview()
+
+        self.assertEqual(observed_sizes, [(768, 576)])
+        self.assertIsNotNone(window._microview_preview_host)
+        self.assertEqual(window._microview_preview_host.native_preview_size(), (768, 576))
+
     def test_native_preview_capture_uses_still_capture_path(self) -> None:
         window = MainWindow()
         preview_frame = QImage(96, 72, QImage.Format.Format_RGB32)

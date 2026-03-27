@@ -103,8 +103,21 @@ def _run_preview(args) -> int:
                 payload = json.loads(line)
             except json.JSONDecodeError:
                 continue
-            if isinstance(payload, dict) and payload.get("command") == "stop":
+            if not isinstance(payload, dict):
+                continue
+            command = str(payload.get("command", "")).strip()
+            if command == "stop":
                 break
+            if command == "update_target":
+                try:
+                    target = _PreviewTarget(
+                        int(payload.get("hwnd", 0)),
+                        int(payload.get("width", 1)),
+                        int(payload.get("height", 1)),
+                    )
+                    backend.update_preview_target(target)
+                except Exception as exc:  # noqa: BLE001
+                    _emit({"type": "error", "message": f"Microview 预览目标更新失败: {exc}"})
         return 0
     except Exception as exc:  # noqa: BLE001
         _emit({"type": "error", "message": str(exc)})

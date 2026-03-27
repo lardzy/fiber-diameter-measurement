@@ -1097,13 +1097,14 @@ class MainWindow(QMainWindow):
             self._sync_live_preview_action()
             return
         preview_kind = self._preview_kind()
-        preview_target = self._current_preview_target()
         if self._center_stack is not None and self._preview_page is not None:
             self._center_stack.setCurrentWidget(self._preview_page)
         self._apply_preview_surface(preview_kind)
         if preview_kind == "native_embed" and self._microview_preview_host is not None:
+            self._apply_native_preview_resolution()
             self._microview_preview_host.ensure_native_handle()
             QApplication.processEvents()
+        preview_target = self._current_preview_target()
         if not self._capture_manager.start_preview(preview_target=preview_target):
             if self._center_stack is not None:
                 self._center_stack.setCurrentWidget(self.tab_widget)

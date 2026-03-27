@@ -183,6 +183,49 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual(received, [(32, 24)])
         self.assertIsNone(manager.last_frame())
 
+    @unittest.skipIf(capture_module is None, "PySide6 not installed")
+    def test_microview_isolated_backend_update_preview_target_sends_helper_command(self) -> None:
+        class FakePreviewTarget:
+            def native_preview_handle(self) -> int:
+                return 12345
+
+            def native_preview_size(self) -> tuple[int, int]:
+                return 768, 576
+
+        class FakeProcess:
+            def __init__(self) -> None:
+                self.payloads: list[bytes] = []
+
+            def state(self):
+                return capture_module.QProcess.ProcessState.Running
+
+            def write(self, payload: bytes) -> int:
+                self.payloads.append(payload)
+                return len(payload)
+
+            def waitForBytesWritten(self, timeout: int) -> bool:
+                del timeout
+                return True
+
+        backend = capture_module.MicroviewIsolatedBackend()
+        fake_process = FakeProcess()
+        backend._preview_process = fake_process
+        backend._preview_started = True
+
+        backend.update_preview_target(FakePreviewTarget())
+
+        self.assertEqual(len(fake_process.payloads), 1)
+        payload = json.loads(fake_process.payloads[0].decode("utf-8"))
+        self.assertEqual(
+            payload,
+            {
+                "command": "update_target",
+                "hwnd": 12345,
+                "width": 768,
+                "height": 576,
+            },
+        )
+
     @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
     def test_microview_rgb24_buffer_converts_to_qimage(self) -> None:
         info = MicroviewCaptureBackend._MVImageInfo()
