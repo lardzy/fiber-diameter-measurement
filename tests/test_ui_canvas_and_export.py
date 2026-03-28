@@ -33,6 +33,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
+    from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
@@ -41,6 +42,7 @@ else:
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
+    PreviewAnalysisDialog = object  # type: ignore[assignment]
 
 
 class FakeWheelEvent:
@@ -405,6 +407,37 @@ class CanvasAndExportTests(unittest.TestCase):
         window._on_live_preview_state_changed(False)
 
         self.assertEqual(clear_calls, ["clear"])
+
+    def test_preview_analysis_dialog_enables_post_sharpen_by_default(self) -> None:
+        dialog = PreviewAnalysisDialog(
+            "景深合成",
+            intro_text="测试",
+            show_post_sharpen_option=True,
+        )
+        try:
+            self.assertTrue(dialog.post_sharpen_enabled())
+        finally:
+            dialog.close()
+
+    def test_map_build_button_is_disabled_and_marked_developing(self) -> None:
+        window = MainWindow()
+        try:
+            fake_device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
+            window._preview_active = True
+            window._capture_manager.selected_device = lambda: fake_device  # type: ignore[method-assign]
+            window._capture_manager.can_request_analysis_frame = lambda: True  # type: ignore[method-assign]
+
+            window._update_preview_analysis_controls()
+
+            self.assertIsNotNone(window._focus_stack_button)
+            self.assertIsNotNone(window._map_build_button)
+            self.assertIsNotNone(window._map_build_status_label)
+            self.assertTrue(window._focus_stack_button.isEnabled())
+            self.assertFalse(window._map_build_button.isEnabled())
+            self.assertEqual(window._map_build_status_label.text(), "开发中")
+            self.assertFalse(window._map_build_status_label.isHidden())
+        finally:
+            window.close()
 
     def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
         window = MainWindow()

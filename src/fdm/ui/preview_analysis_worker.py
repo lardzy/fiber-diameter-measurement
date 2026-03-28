@@ -28,7 +28,7 @@ class FocusStackSessionWorker(QObject):
         super().__init__()
         self._analyzer = FocusStackAnalyzer(device_id=device_id, device_name=device_name)
         self._cancelled = False
-        self._post_sharpen_enabled = False
+        self._post_sharpen_enabled = True
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)

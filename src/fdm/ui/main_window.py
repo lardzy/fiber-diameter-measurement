@@ -239,6 +239,7 @@ class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+    MAP_BUILD_AVAILABLE = False
     TABLE_COL_GROUP = 0
     TABLE_COL_KIND = 1
     TABLE_COL_RESULT = 2
@@ -291,6 +292,7 @@ class MainWindow(QMainWindow):
         self._preview_analysis_action: QAction | None = None
         self._focus_stack_button: QToolButton | None = None
         self._map_build_button: QToolButton | None = None
+        self._map_build_status_label: QLabel | None = None
         self._add_preset_button: QPushButton | None = None
         self._edit_preset_button: QPushButton | None = None
         self._delete_preset_button: QPushButton | None = None
@@ -698,6 +700,12 @@ class MainWindow(QMainWindow):
         self._map_build_button.setCheckable(True)
         self._map_build_button.clicked.connect(lambda checked=False: self._toggle_preview_analysis_mode("map_build", checked))
         layout.addWidget(self._map_build_button)
+
+        self._map_build_status_label = QLabel("开发中")
+        self._map_build_status_label.setStyleSheet("color: #9C6B2F; font-weight: 600;")
+        self._map_build_status_label.setToolTip("地图构建功能开发中，当前版本暂不可用。")
+        self._map_build_status_label.setVisible(not self.MAP_BUILD_AVAILABLE)
+        layout.addWidget(self._map_build_status_label)
 
         return container
 
@@ -3480,7 +3488,7 @@ class MainWindow(QMainWindow):
         ):
             return False
         if mode == "map_build":
-            return selected.backend_key == "microview"
+            return self.MAP_BUILD_AVAILABLE and selected.backend_key == "microview"
         return True
 
     def _sync_preview_analysis_buttons(self) -> None:
@@ -3503,8 +3511,8 @@ class MainWindow(QMainWindow):
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")
         focus_tooltip = "实时预览分析：景深合成"
-        map_tooltip = "地图构建首版仅支持 Microview 实时预览。"
-        if selected is not None and selected.backend_key == "microview":
+        map_tooltip = "地图构建功能开发中，当前版本暂不可用。"
+        if self.MAP_BUILD_AVAILABLE and selected is not None and selected.backend_key == "microview":
             map_tooltip = "实时预览分析：地图构建"
         focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
         map_enabled = is_visible and map_supported and not self._preview_analysis_finalizing
@@ -3514,6 +3522,8 @@ class MainWindow(QMainWindow):
         if self._map_build_button is not None:
             self._map_build_button.setEnabled(map_enabled)
             self._map_build_button.setToolTip(map_tooltip)
+        if self._map_build_status_label is not None:
+            self._map_build_status_label.setVisible(is_visible and not self.MAP_BUILD_AVAILABLE)
         self._sync_preview_analysis_buttons()
 
     def _preview_analysis_intro_text(self, mode: str) -> str:
@@ -3537,7 +3547,7 @@ class MainWindow(QMainWindow):
         if not self._preview_analysis_supported(mode):
             message = "该功能需要实时预览已提供可用分析帧。"
             if mode == "map_build":
-                message = "地图构建首版仅支持 Microview 实时预览。"
+                message = "地图构建功能开发中，当前版本暂不可用。"
             self._sync_preview_analysis_buttons()
             QMessageBox.information(self, self._analysis_mode_label(mode), message)
             return
