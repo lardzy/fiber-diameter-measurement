@@ -101,7 +101,11 @@ class MapBuildSessionWorker(QObject):
             detail=(
                 f"sampled={report.sampled_frames}, "
                 f"accepted={report.accepted_frames}, "
-                f"tiles={report.tile_count}"
+                f"tiles={report.tile_count}, "
+                f"motion_state={report.motion_state}, "
+                f"stable={report.stable_streak}, "
+                f"translation_px={report.translation_px:.2f}, "
+                f"response={report.correlation_response:.4f}"
             ),
         )
         self.previewUpdated.emit(report)

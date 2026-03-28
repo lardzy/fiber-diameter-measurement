@@ -34,6 +34,20 @@ except ModuleNotFoundError:
 
 @unittest.skipUnless(PREVIEW_ANALYSIS_READY, "requires numpy, opencv-python and PySide6")
 class PreviewAnalysisTests(unittest.TestCase):
+    def _make_map_base(self) -> np.ndarray:
+        base = np.full((220, 320, 3), 245, dtype=np.uint8)
+        cv2.circle(base, (120, 110), 26, (30, 30, 30), -1, cv2.LINE_AA)
+        cv2.rectangle(base, (170, 40), (250, 170), (70, 70, 70), -1)
+        cv2.putText(base, "A1", (36, 76), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2, cv2.LINE_AA)
+        return base
+
+    def _shift_frame(self, image: np.ndarray, *, dx: int = 0, dy: int = 0, blur_sigma: float | None = None) -> QImage:
+        shifted = np.roll(image, shift=dy, axis=0)
+        shifted = np.roll(shifted, shift=dx, axis=1)
+        if blur_sigma is not None:
+            shifted = cv2.GaussianBlur(shifted, (0, 0), sigmaX=blur_sigma, sigmaY=blur_sigma)
+        return bgr_array_to_qimage(shifted)
+
     def _make_focus_frames(self) -> tuple[QImage, QImage]:
         base = np.full((180, 260, 3), 255, dtype=np.uint8)
         cv2.putText(base, "FOCUS", (20, 90), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0, 0, 0), 3, cv2.LINE_AA)
@@ -65,22 +79,119 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertGreaterEqual(fused_score, max(left_score, right_score) * 0.9)
 
     def test_map_build_analyzer_creates_two_tile_mosaic(self) -> None:
-        base = np.full((220, 320, 3), 245, dtype=np.uint8)
-        cv2.circle(base, (120, 110), 26, (30, 30, 30), -1, cv2.LINE_AA)
-        cv2.rectangle(base, (170, 40), (250, 170), (70, 70, 70), -1)
-        cv2.putText(base, "A1", (36, 76), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2, cv2.LINE_AA)
+        base = self._make_map_base()
         frame_a = bgr_array_to_qimage(base)
-        shifted = np.roll(base, shift=-120, axis=1)
-        frame_b = bgr_array_to_qimage(shifted)
+        frame_b = self._shift_frame(base, dx=-120)
 
         analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
         report_a = analyzer.add_frame(frame_a)
+        analyzer.add_frame(frame_a)
+        analyzer.add_frame(frame_a)
+        analyzer.add_frame(frame_b)
+        analyzer.add_frame(frame_b)
         report_b = analyzer.add_frame(frame_b)
         result = analyzer.finalize()
 
-        self.assertFalse(report_a.preview_image.isNull())
+        self.assertTrue(report_a.preview_image.isNull() or report_a.motion_state in {"settling", "moving"})
         self.assertFalse(report_b.preview_image.isNull())
         self.assertFalse(result.image.isNull())
         self.assertEqual(result.tile_count, 2)
         self.assertGreater(result.image.width(), frame_a.width())
 
+    def test_map_build_waits_for_three_stable_frames_before_sampling(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        report_a = analyzer.add_frame(frame)
+        report_b = analyzer.add_frame(frame)
+        report_c = analyzer.add_frame(frame)
+
+        self.assertEqual(report_a.motion_state, "settling")
+        self.assertEqual(report_b.motion_state, "settling")
+        self.assertEqual(report_c.motion_state, "stable")
+        self.assertEqual(report_c.accepted_frames, 1)
+        self.assertIn("已静止", report_c.message)
+
+    def test_map_build_rejects_moving_blurred_frames_until_new_tile_is_stable(self) -> None:
+        base = self._make_map_base()
+        stable = bgr_array_to_qimage(base)
+        moving = self._shift_frame(base, dx=-100, blur_sigma=4.0)
+        shifted = self._shift_frame(base, dx=-120)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(stable)
+        analyzer.add_frame(stable)
+        analyzer.add_frame(stable)
+        steady_report = analyzer.add_frame(stable)
+        moving_report = analyzer.add_frame(moving)
+        settling_a = analyzer.add_frame(shifted)
+        settling_b = analyzer.add_frame(shifted)
+        stable_report = analyzer.add_frame(shifted)
+        result = analyzer.finalize()
+
+        self.assertEqual(steady_report.accepted_frames, 2)
+        self.assertEqual(moving_report.motion_state, "transition_pending")
+        self.assertEqual(moving_report.accepted_frames, 2)
+        self.assertIn("等待稳定", moving_report.message)
+        self.assertEqual(settling_a.motion_state, "transition_pending")
+        self.assertEqual(settling_b.motion_state, "transition_pending")
+        self.assertEqual(stable_report.motion_state, "stable")
+        self.assertEqual(stable_report.accepted_frames, 3)
+        self.assertEqual(result.tile_count, 2)
+
+    def test_map_build_focus_only_changes_are_allowed_inside_same_tile(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        softened = self._shift_frame(base, blur_sigma=2.5)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        start_report = analyzer.add_frame(frame)
+        focus_report = analyzer.add_frame(softened)
+        result = analyzer.finalize()
+
+        self.assertEqual(start_report.accepted_frames, 1)
+        self.assertEqual(focus_report.motion_state, "stable")
+        self.assertEqual(focus_report.tile_count, 1)
+        self.assertGreaterEqual(focus_report.accepted_frames, 2)
+        self.assertEqual(result.tile_count, 1)
+
+    def test_map_build_returns_to_same_position_without_opening_new_tile(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        wobble = self._shift_frame(base, dx=-20, blur_sigma=3.0)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(wobble)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        resume_report = analyzer.add_frame(frame)
+        result = analyzer.finalize()
+
+        self.assertEqual(resume_report.motion_state, "stable")
+        self.assertEqual(result.tile_count, 1)
+
+    def test_map_build_rejects_far_stable_position_when_overlap_is_too_small(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        far = self._shift_frame(base, dx=-300)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(far)
+        analyzer.add_frame(far)
+        low_conf_report = analyzer.add_frame(far)
+        result = analyzer.finalize()
+
+        self.assertTrue(low_conf_report.low_confidence or "未创建新 tile" in low_conf_report.message)
+        self.assertIn("未创建新 tile", low_conf_report.message)
+        self.assertEqual(result.tile_count, 1)

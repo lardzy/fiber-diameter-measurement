@@ -69,6 +69,11 @@ class MapBuildReport:
     tile_count: int
     message: str
     low_confidence: bool = False
+    motion_state: str = "moving"
+    stable_streak: int = 0
+    translation_px: float = 0.0
+    correlation_response: float = 0.0
+    quality_score: float = 0.0
 
 
 @dataclass(slots=True)
@@ -211,6 +216,9 @@ class MapBuildAnalyzer:
         self._device_name = device_name
         self._sampled_frames = 0
         self._accepted_frames = 0
+        self._rejected_moving_frames = 0
+        self._rejected_low_confidence_frames = 0
+        self._stable_accept_count = 0
         self._tiles: list[_TileRecord] = []
         self._edges: list[_TileEdge] = []
         self._current_accumulator = FocusAccumulator()
@@ -218,30 +226,135 @@ class MapBuildAnalyzer:
         self._current_predicted_position = (0.0, 0.0)
         self._pending_transition = (0.0, 0.0)
         self._tile_counter = 0
+        self._previous_frame: _PreparedFrame | None = None
+        self._transition_pending = False
+        self._is_stable = False
+        self._stable_streak = 0
+        self._unstable_streak = 0
+        self._stable_window: list[_PreparedFrame] = []
+        self._stable_required = 3
         self._last_message = "等待移动样品台并采样"
         self._tile_shift_threshold_px: float | None = None
+        self._stable_step_threshold_px: float | None = None
+        self._tile_freeze_threshold_px: float | None = None
+        self._stable_response_threshold = 0.015
+        self._resume_origin_threshold_px: float | None = None
+        self._last_translation_px = 0.0
+        self._last_response = 0.0
+        self._last_quality_score = 0.0
 
     def add_frame(self, image: QImage) -> MapBuildReport:
         frame = _prepare_frame(image)
         self._sampled_frames += 1
         if self._tile_shift_threshold_px is None:
             self._tile_shift_threshold_px = max(72.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.18)
-        if not self._current_accumulator.has_frames():
-            self._current_origin_small = frame.small_gray
-            self._current_accumulator.add_prepared_frame(frame)
-            self._accepted_frames += 1
-            self._last_message = "已开始采集第 1 个 tile"
+        if self._stable_step_threshold_px is None:
+            self._stable_step_threshold_px = max(2.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.005)
+        if self._tile_freeze_threshold_px is None:
+            self._tile_freeze_threshold_px = max(6.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.015)
+        if self._resume_origin_threshold_px is None:
+            self._resume_origin_threshold_px = max(4.0, float(self._tile_freeze_threshold_px or 6.0) * 0.65)
+        self._last_quality_score = frame.sharpness
+        if self._previous_frame is None:
+            self._previous_frame = frame
+            self._stable_window = [frame]
+            self._stable_streak = 1
+            self._unstable_streak = 0
+            self._last_translation_px = 0.0
+            self._last_response = 1.0
+            self._last_message = self._settling_message()
             return self._build_report()
 
-        shift_dx = 0.0
-        shift_dy = 0.0
-        response = 0.0
+        step_dx, step_dy, step_response = _estimate_translation(self._previous_frame.small_gray, frame.small_gray)
+        step_scale = _small_frame_scale(frame.gray.shape, frame.small_gray.shape)
+        step_dx *= step_scale
+        step_dy *= step_scale
+        step_translation = math.hypot(step_dx, step_dy)
+        self._last_translation_px = step_translation
+        self._last_response = step_response
+        self._previous_frame = frame
+
+        newly_stable, stable_anchor = self._update_stability_gate(
+            frame,
+            translation_px=step_translation,
+            response=step_response,
+            allow_soft_stable=self._is_stable and self._current_accumulator.has_frames(),
+        )
+
+        origin_dx = 0.0
+        origin_dy = 0.0
+        origin_response = 0.0
+        origin_translation = 0.0
         if self._current_origin_small is not None:
-            shift_dx, shift_dy, response = _estimate_translation(self._current_origin_small, frame.small_gray)
-            shift_dx *= _small_frame_scale(frame.gray.shape, frame.small_gray.shape)
-            shift_dy *= _small_frame_scale(frame.gray.shape, frame.small_gray.shape)
-        if response > 0.015 and math.hypot(shift_dx, shift_dy) >= float(self._tile_shift_threshold_px or 80.0):
-            transition = (shift_dx, shift_dy)
+            origin_dx, origin_dy, origin_response = _estimate_translation(self._current_origin_small, frame.small_gray)
+            origin_dx *= step_scale
+            origin_dy *= step_scale
+            origin_translation = math.hypot(origin_dx, origin_dy)
+
+        if self._current_accumulator.has_frames() and origin_translation >= float(self._tile_freeze_threshold_px or 6.0):
+            if not self._transition_pending:
+                self._transition_pending = True
+                self._is_stable = False
+                self._unstable_streak = 0
+                if step_translation <= float(self._stable_step_threshold_px or 2.0) and step_response >= self._stable_response_threshold:
+                    self._stable_streak = 1
+                    self._stable_window = [frame]
+                else:
+                    self._stable_streak = 0
+                    self._stable_window.clear()
+            self._pending_transition = (origin_dx, origin_dy)
+
+        if not self._current_accumulator.has_frames():
+            if self._is_stable and stable_anchor is not None:
+                self._current_origin_small = stable_anchor.small_gray
+                self._current_predicted_position = (0.0, 0.0)
+                self._accept_prepared_frame(stable_anchor)
+                self._last_message = self._sampling_message()
+            else:
+                self._rejected_moving_frames += 1
+                self._last_message = self._motion_wait_message()
+            return self._build_report()
+
+        if self._transition_pending:
+            if not self._is_stable:
+                self._rejected_moving_frames += 1
+                self._last_message = "检测到新位置，等待稳定"
+                return self._build_report()
+
+            candidate = stable_anchor or self._best_stable_frame()
+            if candidate is None:
+                self._last_message = "检测到新位置，等待稳定"
+                return self._build_report()
+            candidate_dx, candidate_dy, candidate_response = _estimate_translation(self._current_origin_small, candidate.small_gray)
+            candidate_dx *= step_scale
+            candidate_dy *= step_scale
+            candidate_translation = math.hypot(candidate_dx, candidate_dy)
+            if candidate_translation <= float(self._resume_origin_threshold_px or 4.0):
+                self._transition_pending = False
+                if self._accept_prepared_frame(candidate):
+                    self._last_message = self._sampling_message()
+                else:
+                    self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
+                return self._build_report()
+            if candidate_translation < float(self._tile_shift_threshold_px or 80.0):
+                self._rejected_low_confidence_frames += 1
+                self._last_message = "位移过大或重叠不足，未创建新 tile"
+                return self._build_report()
+            if (
+                candidate_response < self._stable_response_threshold
+                or _predicted_overlap_ratio(
+                    self._current_accumulator.preview_image().width() or frame.bgr.shape[1],
+                    self._current_accumulator.preview_image().height() or frame.bgr.shape[0],
+                    candidate.bgr.shape[1],
+                    candidate.bgr.shape[0],
+                    candidate_dx,
+                    candidate_dy,
+                ) < 0.08
+            ):
+                self._rejected_low_confidence_frames += 1
+                self._last_message = "位移过大或重叠不足，未创建新 tile"
+                return self._build_report()
+            transition = (candidate_dx, candidate_dy)
             self._pending_transition = transition
             self._finalize_current_tile()
             if self._tiles:
@@ -249,21 +362,24 @@ class MapBuildAnalyzer:
                 self._current_predicted_position = (last_tile.x + transition[0], last_tile.y + transition[1])
             else:
                 self._current_predicted_position = transition
-            self._current_origin_small = frame.small_gray
-            self._current_accumulator = FocusAccumulator()
-            self._current_accumulator.add_prepared_frame(frame)
-            self._accepted_frames += 1
-            self._last_message = f"已切换到第 {len(self._tiles) + 1} 个 tile"
+            self._current_origin_small = candidate.small_gray
+            self._transition_pending = False
+            if self._accept_prepared_frame(candidate):
+                self._last_message = self._sampling_message()
+            else:
+                self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
             return self._build_report()
 
-        accepted = self._current_accumulator.add_prepared_frame(frame)
-        if accepted:
-            self._accepted_frames += 1
-            self._last_message = (
-                f"tile {len(self._tiles) + 1} 采样中 | 当前 tile 接受 {self._current_accumulator.accepted_frames} 帧"
-            )
+        if not self._is_stable:
+            self._rejected_moving_frames += 1
+            self._last_message = self._motion_wait_message()
+            return self._build_report()
+
+        candidate = stable_anchor if newly_stable and stable_anchor is not None else frame
+        if self._accept_prepared_frame(candidate):
+            self._last_message = self._sampling_message()
         else:
-            self._last_message = f"tile {len(self._tiles) + 1} 重复帧已跳过"
+            self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
         return self._build_report()
 
     def finalize(self) -> MapBuildFinalResult:
@@ -278,6 +394,9 @@ class MapBuildAnalyzer:
             "sampled_frames": self._sampled_frames,
             "accepted_frames": self._accepted_frames,
             "tile_count": len(self._tiles),
+            "rejected_moving_frames": self._rejected_moving_frames,
+            "rejected_low_confidence_frames": self._rejected_low_confidence_frames,
+            "stable_accept_count": self._stable_accept_count,
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
         return MapBuildFinalResult(
@@ -312,13 +431,19 @@ class MapBuildAnalyzer:
             message += f" | {warning}"
         elif self._last_message:
             message += f" | {self._last_message}"
+        low_confidence = bool(warning or "未创建新 tile" in self._last_message)
         return MapBuildReport(
             preview_image=bgr_array_to_qimage(mosaic) if mosaic is not None else QImage(),
             sampled_frames=self._sampled_frames,
             accepted_frames=self._accepted_frames,
             tile_count=len(self._tiles) + (1 if self._current_accumulator.has_frames() else 0),
             message=message,
-            low_confidence=bool(warning),
+            low_confidence=low_confidence,
+            motion_state=self._motion_state(),
+            stable_streak=self._stable_streak,
+            translation_px=self._last_translation_px,
+            correlation_response=self._last_response,
+            quality_score=self._last_quality_score,
         )
 
     def _finalize_current_tile(self) -> None:
@@ -418,6 +543,71 @@ class MapBuildAnalyzer:
         if self._edges and self._edges[-1].weight <= 0.08:
             return "最近 tile 匹配置信度较低"
         return ""
+
+    def _motion_state(self) -> str:
+        if self._transition_pending:
+            return "transition_pending"
+        if self._is_stable:
+            return "stable"
+        if self._stable_streak > 0:
+            return "settling"
+        return "moving"
+
+    def _settling_message(self) -> str:
+        return f"静止确认中 {min(self._stable_streak, self._stable_required)}/{self._stable_required}"
+
+    def _sampling_message(self) -> str:
+        return f"已静止，正在采样 tile {len(self._tiles) + 1}"
+
+    def _motion_wait_message(self) -> str:
+        if self._transition_pending:
+            return "检测到新位置，等待稳定"
+        if self._stable_streak > 0:
+            return self._settling_message()
+        return "运动中，暂停入图"
+
+    def _best_stable_frame(self) -> _PreparedFrame | None:
+        if not self._stable_window:
+            return None
+        return max(self._stable_window, key=lambda frame: frame.sharpness)
+
+    def _update_stability_gate(
+        self,
+        frame: _PreparedFrame,
+        *,
+        translation_px: float,
+        response: float,
+        allow_soft_stable: bool,
+    ) -> tuple[bool, _PreparedFrame | None]:
+        stable_threshold = float(self._stable_step_threshold_px or 2.0)
+        stationary = translation_px <= stable_threshold and response >= self._stable_response_threshold
+        soft_stationary = allow_soft_stable and translation_px <= stable_threshold * 0.55
+        if stationary or soft_stationary:
+            self._stable_streak += 1
+            self._unstable_streak = 0
+            self._stable_window.append(frame)
+            max_window = max(4, self._stable_required + 1)
+            if len(self._stable_window) > max_window:
+                self._stable_window = self._stable_window[-max_window:]
+            newly_stable = not self._is_stable and self._stable_streak >= self._stable_required
+            if newly_stable:
+                self._is_stable = True
+                return True, self._best_stable_frame()
+            return False, None
+        self._unstable_streak += 1
+        if self._is_stable and self._unstable_streak < 2 and translation_px <= stable_threshold * 0.55:
+            return False, None
+        self._is_stable = False
+        self._stable_streak = 0
+        self._stable_window.clear()
+        return False, None
+
+    def _accept_prepared_frame(self, frame: _PreparedFrame) -> bool:
+        accepted = self._current_accumulator.add_prepared_frame(frame)
+        if accepted:
+            self._accepted_frames += 1
+            self._stable_accept_count += 1
+        return accepted
 
 
 def _prepare_frame(image: QImage) -> _PreparedFrame:
