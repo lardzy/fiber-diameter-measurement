@@ -183,6 +183,56 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual(received, [(32, 24)])
         self.assertIsNone(manager.last_frame())
 
+    @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
+    def test_capture_session_manager_routes_analysis_frames(self) -> None:
+        class WorkingBackend(CaptureBackend):
+            backend_key = "microview"
+
+            def __init__(self) -> None:
+                self.request_ids: list[int] = []
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [
+                    CaptureDevice(
+                        id="microview:0",
+                        name="Microview #1",
+                        backend_key=self.backend_key,
+                        native_id=0,
+                    )
+                ]
+
+            def preview_kind(self, device: CaptureDevice) -> str:
+                return "native_embed"
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                return None
+
+            def stop_preview(self) -> None:
+                return None
+
+            def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+                return True
+
+            def request_analysis_frame(self, device, *, request_id: int, frame_callback, error_callback) -> None:
+                self.request_ids.append(request_id)
+                image = QImage(64, 48, QImage.Format.Format_RGB32)
+                image.fill(QColor("#88CCEE"))
+                frame_callback(request_id, image)
+
+        backend = WorkingBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+        self.assertTrue(manager.start_preview(preview_target=object()))
+        received: list[tuple[int, int, int]] = []
+        manager.analysisFrameReady.connect(
+            lambda request_id, image: received.append((request_id, image.width(), image.height()))
+        )
+
+        self.assertTrue(manager.request_analysis_frame(7))
+
+        self.assertEqual(backend.request_ids, [7])
+        self.assertEqual(received, [(7, 64, 48)])
+
     @unittest.skipIf(capture_module is None, "PySide6 not installed")
     def test_microview_isolated_backend_update_preview_target_sends_helper_command(self) -> None:
         class FakePreviewTarget:
@@ -225,6 +275,40 @@ class CaptureAndCuScaleTests(unittest.TestCase):
                 "height": 576,
             },
         )
+
+    @unittest.skipIf(capture_module is None, "PySide6 not installed")
+    def test_microview_isolated_backend_snapshot_command_is_sent(self) -> None:
+        class FakeProcess:
+            def __init__(self) -> None:
+                self.payloads: list[bytes] = []
+
+            def state(self):
+                return capture_module.QProcess.ProcessState.Running
+
+            def write(self, payload: bytes) -> int:
+                self.payloads.append(payload)
+                return len(payload)
+
+            def waitForBytesWritten(self, timeout: int) -> bool:
+                del timeout
+                return True
+
+        backend = capture_module.MicroviewIsolatedBackend()
+        backend._preview_process = FakeProcess()
+        backend._preview_started = True
+        requested: list[int] = []
+
+        backend.request_analysis_frame(
+            capture_module.CaptureDevice(id="microview:0", name="Microview #1", backend_key="microview", native_id=0),
+            request_id=11,
+            frame_callback=lambda request_id, image: requested.append(request_id),
+            error_callback=lambda request_id, message: requested.append(-request_id),
+        )
+
+        self.assertEqual(requested, [])
+        self.assertEqual(len(backend._preview_process.payloads), 1)
+        payload = json.loads(backend._preview_process.payloads[0].decode("utf-8"))
+        self.assertEqual(payload, {"command": "snapshot", "request_id": 11})
 
     @unittest.skipIf(_microview_buffer_to_qimage is None or MicroviewCaptureBackend is None, "PySide6 not installed")
     def test_microview_rgb24_buffer_converts_to_qimage(self) -> None:

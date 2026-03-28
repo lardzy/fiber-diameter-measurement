@@ -118,6 +118,36 @@ def _run_preview(args) -> int:
                     backend.update_preview_target(target)
                 except Exception as exc:  # noqa: BLE001
                     _emit({"type": "error", "message": f"Microview 预览目标更新失败: {exc}"})
+            if command == "snapshot":
+                request_id = int(payload.get("request_id", 0))
+                try:
+                    frame = backend._capture_single_frame_image(handle=backend._device_handle, process=False)
+                except Exception as exc:  # noqa: BLE001
+                    _emit({"type": "snapshot_error", "request_id": request_id, "message": str(exc)})
+                    continue
+                if frame.isNull():
+                    _emit(
+                        {
+                            "type": "snapshot_error",
+                            "request_id": request_id,
+                            "message": backend.last_capture_diagnostics() or "Microview 分析帧抓取失败。",
+                        }
+                    )
+                    continue
+                try:
+                    image_path = _save_temp_png(frame)
+                except Exception as exc:  # noqa: BLE001
+                    _emit({"type": "snapshot_error", "request_id": request_id, "message": str(exc)})
+                    continue
+                _emit(
+                    {
+                        "type": "snapshot",
+                        "request_id": request_id,
+                        "image_path": str(image_path),
+                        "width": frame.width(),
+                        "height": frame.height(),
+                    }
+                )
         return 0
     except Exception as exc:  # noqa: BLE001
         _emit({"type": "error", "message": str(exc)})

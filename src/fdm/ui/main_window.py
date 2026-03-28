@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread
+from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -64,6 +64,7 @@ from fdm.project_io import ProjectIO
 from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
+from fdm.services.preview_analysis import FocusStackFinalResult, FocusStackReport, MapBuildFinalResult, MapBuildReport
 from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
@@ -81,6 +82,8 @@ from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInference
 from fdm.ui.icons import themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
+from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
+from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
 from fdm.ui.widgets import MeasurementGroupComboBox
@@ -118,6 +121,8 @@ except ModuleNotFoundError as exc:
             self.devicesChanged = _SignalProxy()
             self.previewStateChanged = _SignalProxy()
             self.frameReady = _SignalProxy()
+            self.analysisFrameReady = _SignalProxy()
+            self.analysisFrameFailed = _SignalProxy()
             self.errorOccurred = _SignalProxy()
 
         def devices(self) -> list[CaptureDevice]:
@@ -150,6 +155,9 @@ except ModuleNotFoundError as exc:
         def can_optimize_signal(self) -> bool:
             return False
 
+        def can_request_analysis_frame(self) -> bool:
+            return False
+
         def optimize_signal(self) -> str:
             raise RuntimeError("当前采集设备不支持信号优化。")
 
@@ -179,6 +187,9 @@ except ModuleNotFoundError as exc:
 
         def update_preview_target(self, preview_target: object | None) -> None:
             return
+
+        def request_analysis_frame(self, request_id: int) -> bool:
+            return False
 
 try:
     from fdm.services.cu_scale_io import format_cu_scale_record_summary, parse_cu_scale_file
@@ -276,6 +287,10 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
+        self._preview_analysis_widget: QWidget | None = None
+        self._preview_analysis_action: QAction | None = None
+        self._focus_stack_button: QToolButton | None = None
+        self._map_build_button: QToolButton | None = None
         self._add_preset_button: QPushButton | None = None
         self._edit_preset_button: QPushButton | None = None
         self._delete_preset_button: QPushButton | None = None
@@ -294,6 +309,16 @@ class MainWindow(QMainWindow):
         self._preview_document: ImageDocument | None = None
         self._capture_devices: list[CaptureDevice] = []
         self._microview_optimize_hints_shown: set[str] = set()
+        self._preview_analysis_mode = "none"
+        self._preview_analysis_dialog: PreviewAnalysisDialog | None = None
+        self._preview_analysis_thread: QThread | None = None
+        self._preview_analysis_worker: FocusStackSessionWorker | MapBuildSessionWorker | None = None
+        self._preview_analysis_timer = QTimer(self)
+        self._preview_analysis_timer.setInterval(300)
+        self._preview_analysis_timer.timeout.connect(self._request_preview_analysis_frame)
+        self._preview_analysis_request_id = 0
+        self._preview_analysis_request_pending = False
+        self._preview_analysis_finalizing = False
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
         self._capture_manager = CaptureSessionManager(
@@ -320,6 +345,8 @@ class MainWindow(QMainWindow):
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
         self._capture_manager.previewStateChanged.connect(self._on_live_preview_state_changed)
         self._capture_manager.frameReady.connect(self._on_live_preview_frame_ready)
+        self._capture_manager.analysisFrameReady.connect(self._on_preview_analysis_frame_ready)
+        self._capture_manager.analysisFrameFailed.connect(self._on_preview_analysis_frame_failed)
         self._capture_manager.errorOccurred.connect(self._on_capture_error)
         self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
@@ -614,6 +641,10 @@ class MainWindow(QMainWindow):
         self._magic_controls_action = measure_toolbar.addWidget(self._magic_controls_widget)
         self._magic_controls_widget.setVisible(False)
         self._magic_controls_action.setVisible(False)
+        self._preview_analysis_widget = self._build_preview_analysis_controls()
+        self._preview_analysis_action = measure_toolbar.addWidget(self._preview_analysis_widget)
+        self._preview_analysis_widget.setVisible(False)
+        self._preview_analysis_action.setVisible(False)
 
     def _build_magic_segment_controls(self) -> QWidget:
         container = QWidget(self)
@@ -641,6 +672,32 @@ class MainWindow(QMainWindow):
         self._magic_cancel_button.setText("放弃 (Esc)")
         self._magic_cancel_button.clicked.connect(self._cancel_magic_segment_session)
         layout.addWidget(self._magic_cancel_button)
+
+        return container
+
+    def _build_preview_analysis_controls(self) -> QWidget:
+        container = QWidget(self)
+        layout = QHBoxLayout(container)
+        layout.setContentsMargins(6, 0, 0, 0)
+        layout.setSpacing(6)
+
+        label = QLabel("预览分析")
+        label.setStyleSheet(
+            "padding: 6px 10px; border-radius: 8px; background: #E8F1F2; color: #12343B; font-weight: 600;"
+        )
+        layout.addWidget(label)
+
+        self._focus_stack_button = QToolButton(container)
+        self._focus_stack_button.setText("景深合成")
+        self._focus_stack_button.setCheckable(True)
+        self._focus_stack_button.clicked.connect(lambda checked=False: self._toggle_preview_analysis_mode("focus_stack", checked))
+        layout.addWidget(self._focus_stack_button)
+
+        self._map_build_button = QToolButton(container)
+        self._map_build_button.setText("地图构建")
+        self._map_build_button.setCheckable(True)
+        self._map_build_button.clicked.connect(lambda checked=False: self._toggle_preview_analysis_mode("map_build", checked))
+        layout.addWidget(self._map_build_button)
 
         return container
 
@@ -1121,6 +1178,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("实时预览已启动", 3000)
 
     def stop_live_preview(self) -> None:
+        if self._preview_analysis_mode != "none":
+            self._cancel_preview_analysis_session()
         if not self._capture_manager.is_preview_active():
             self._preview_active = False
             self._clear_preview_surface_state()
@@ -1132,6 +1191,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("实时预览已停止", 3000)
 
     def _on_live_preview_state_changed(self, active: bool) -> None:
+        if not active and self._preview_analysis_mode != "none":
+            self._cancel_preview_analysis_session()
         self._preview_active = active
         if self._preview_notice_label is not None:
             self._preview_notice_label.setVisible(active)
@@ -1247,24 +1308,7 @@ class MainWindow(QMainWindow):
             return
         if was_preview_active and not stop_before_capture:
             self.stop_live_preview()
-        document = ImageDocument(
-            id=new_id("image"),
-            path=self._next_project_capture_relative_path(),
-            image_size=(frame.width(), frame.height()),
-            source_type="project_asset",
-        )
-        document.initialize_runtime_state()
-        if self.project.project_default_calibration is not None:
-            self._set_document_project_default_calibration(document)
-        document.mark_session_saved()
-        document.mark_calibration_saved()
-        self._mount_document(
-            document,
-            frame,
-            tooltip=self._document_tooltip(document),
-        )
-        self._clear_prompt_segmentation_cache()
-        self.statusBar().showMessage("已采集当前画面到项目内存", 4000)
+        self._add_project_asset_image(frame, status_message="已采集当前画面到项目内存")
 
     def optimize_capture_signal(self) -> None:
         selected = self._selected_capture_device()
@@ -3395,12 +3439,14 @@ class MainWindow(QMainWindow):
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
         can_optimize_signal = capture_feature_available and self._capture_manager.can_optimize_signal()
-        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.can_capture_still())
+        analysis_active = self._preview_analysis_mode != "none"
+        self.capture_frame_action.setEnabled(preview_active and self._capture_manager.can_capture_still() and not analysis_active)
         self.optimize_capture_signal_action.setVisible(can_optimize_signal)
-        self.optimize_capture_signal_action.setEnabled(can_optimize_signal)
+        self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
         self._update_magic_segment_controls()
+        self._update_preview_analysis_controls()
 
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
         return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
@@ -3424,6 +3470,246 @@ class MainWindow(QMainWindow):
             self._magic_complete_button.setEnabled(bool(canvas and canvas.has_magic_segment_preview()))
         if self._magic_cancel_button is not None:
             self._magic_cancel_button.setEnabled(bool(canvas and canvas.has_magic_segment_session()))
+
+    def _preview_analysis_supported(self) -> bool:
+        selected = self._selected_capture_device()
+        return bool(
+            self._preview_active
+            and selected is not None
+            and selected.backend_key == "microview"
+            and self._capture_manager.can_request_analysis_frame()
+        )
+
+    def _sync_preview_analysis_buttons(self) -> None:
+        if self._focus_stack_button is not None:
+            self._focus_stack_button.blockSignals(True)
+            self._focus_stack_button.setChecked(self._preview_analysis_mode == "focus_stack")
+            self._focus_stack_button.blockSignals(False)
+        if self._map_build_button is not None:
+            self._map_build_button.blockSignals(True)
+            self._map_build_button.setChecked(self._preview_analysis_mode == "map_build")
+            self._map_build_button.blockSignals(False)
+
+    def _update_preview_analysis_controls(self) -> None:
+        if self._preview_analysis_widget is None or self._preview_analysis_action is None:
+            return
+        is_visible = self._preview_active
+        self._preview_analysis_widget.setVisible(is_visible)
+        self._preview_analysis_action.setVisible(is_visible)
+        selected = self._selected_capture_device()
+        supported = self._preview_analysis_supported()
+        tooltip = "景深合成与地图构建首版仅支持 Microview 实时预览。"
+        if selected is not None and selected.backend_key == "microview":
+            tooltip = "实时预览分析：景深合成 / 地图构建"
+        enabled = is_visible and supported and not self._preview_analysis_finalizing
+        if self._focus_stack_button is not None:
+            self._focus_stack_button.setEnabled(enabled)
+            self._focus_stack_button.setToolTip(tooltip)
+        if self._map_build_button is not None:
+            self._map_build_button.setEnabled(enabled)
+            self._map_build_button.setToolTip(tooltip)
+        self._sync_preview_analysis_buttons()
+
+    def _preview_analysis_intro_text(self, mode: str) -> str:
+        if mode == "map_build":
+            return "移动样品台并适当切换焦距，系统会先对每个 tile 做景深合成，再实时拼接地图。按 Enter 或 F 结束，Esc 取消。"
+        return "尽量均匀地从一个焦距移动到另一个焦距，系统会持续采样并合成清晰图像。按 Enter 或 F 结束，Esc 取消。"
+
+    def _analysis_mode_label(self, mode: str) -> str:
+        return {
+            "focus_stack": "景深合成",
+            "map_build": "地图构建",
+        }.get(mode, mode)
+
+    def _toggle_preview_analysis_mode(self, mode: str, checked: bool) -> None:
+        if not checked:
+            if self._preview_analysis_mode == mode:
+                self._cancel_preview_analysis_session(message=f"已取消{self._analysis_mode_label(mode)}")
+            else:
+                self._sync_preview_analysis_buttons()
+            return
+        if not self._preview_analysis_supported():
+            QMessageBox.information(self, self._analysis_mode_label(mode), "该功能首版仅支持 Microview 实时预览。")
+            self._sync_preview_analysis_buttons()
+            return
+        if self._preview_analysis_mode != "none":
+            self._cancel_preview_analysis_session()
+        self._start_preview_analysis_session(mode)
+
+    def _create_preview_analysis_dialog(self, mode: str) -> PreviewAnalysisDialog:
+        dialog = PreviewAnalysisDialog(
+            self._analysis_mode_label(mode),
+            intro_text=self._preview_analysis_intro_text(mode),
+            parent=self,
+        )
+        dialog.finishRequested.connect(self._finalize_preview_analysis_session)
+        dialog.cancelRequested.connect(lambda: self._cancel_preview_analysis_session())
+        return dialog
+
+    def _start_preview_analysis_session(self, mode: str) -> None:
+        if mode not in {"focus_stack", "map_build"}:
+            return
+        selected = self._selected_capture_device()
+        if selected is None:
+            return
+        self._clear_magic_segment_sessions()
+        self._preview_analysis_mode = mode
+        self._preview_analysis_request_pending = False
+        self._preview_analysis_finalizing = False
+        self._preview_analysis_dialog = self._create_preview_analysis_dialog(mode)
+        self._preview_analysis_dialog.show()
+        self._preview_analysis_dialog.raise_()
+        self._preview_analysis_dialog.activateWindow()
+
+        thread = QThread(self)
+        worker = (
+            FocusStackSessionWorker(device_id=selected.id, device_name=selected.name)
+            if mode == "focus_stack"
+            else MapBuildSessionWorker(device_id=selected.id, device_name=selected.name)
+        )
+        worker.moveToThread(thread)
+        worker.previewUpdated.connect(self._on_preview_analysis_worker_preview)
+        worker.finished.connect(self._on_preview_analysis_worker_finished)
+        worker.failed.connect(self._on_preview_analysis_worker_failed)
+        thread.finished.connect(worker.deleteLater)
+        thread.start()
+
+        self._preview_analysis_thread = thread
+        self._preview_analysis_worker = worker
+        self._preview_analysis_timer.start()
+        self._request_preview_analysis_frame()
+        self.statusBar().showMessage(f"{self._analysis_mode_label(mode)}已启动", 3000)
+        self._update_action_states()
+
+    def _teardown_preview_analysis_session(self, *, cancel_worker: bool, status_message: str | None = None) -> None:
+        self._preview_analysis_timer.stop()
+        self._preview_analysis_request_pending = False
+        self._preview_analysis_finalizing = False
+        worker = self._preview_analysis_worker
+        thread = self._preview_analysis_thread
+        dialog = self._preview_analysis_dialog
+        self._preview_analysis_worker = None
+        self._preview_analysis_thread = None
+        self._preview_analysis_dialog = None
+        self._preview_analysis_mode = "none"
+        if worker is not None and cancel_worker:
+            try:
+                worker.cancelRequested.emit()
+            except Exception:
+                pass
+        if thread is not None:
+            thread.quit()
+            thread.wait(2000)
+        if dialog is not None:
+            dialog.close_silently()
+        if status_message:
+            self.statusBar().showMessage(status_message, 4000)
+        self._update_action_states()
+
+    def _cancel_preview_analysis_session(self, *, message: str | None = None) -> None:
+        if self._preview_analysis_mode == "none":
+            self._sync_preview_analysis_buttons()
+            return
+        self._teardown_preview_analysis_session(cancel_worker=True, status_message=message)
+
+    def _finalize_preview_analysis_session(self) -> None:
+        if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
+            return
+        self._preview_analysis_finalizing = True
+        self._preview_analysis_timer.stop()
+        self._preview_analysis_request_pending = False
+        self._preview_analysis_worker.finalizeRequested.emit()
+        self._update_action_states()
+
+    def _request_preview_analysis_frame(self) -> None:
+        if (
+            self._preview_analysis_mode == "none"
+            or self._preview_analysis_worker is None
+            or self._preview_analysis_request_pending
+            or self._preview_analysis_finalizing
+        ):
+            return
+        self._preview_analysis_request_id += 1
+        request_id = self._preview_analysis_request_id
+        if self._capture_manager.request_analysis_frame(request_id):
+            self._preview_analysis_request_pending = True
+
+    def _on_preview_analysis_frame_ready(self, request_id: int, image: object) -> None:
+        if request_id != self._preview_analysis_request_id:
+            return
+        self._preview_analysis_request_pending = False
+        if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
+            return
+        if isinstance(image, QImage) and not image.isNull():
+            self._preview_analysis_worker.frameSubmitted.emit(image.copy())
+
+    def _on_preview_analysis_frame_failed(self, request_id: int, message: str) -> None:
+        if request_id != self._preview_analysis_request_id:
+            return
+        self._preview_analysis_request_pending = False
+        if self._preview_analysis_dialog is not None:
+            self._preview_analysis_dialog.set_status(message)
+        self.statusBar().showMessage(message, 4000)
+
+    def _on_preview_analysis_worker_preview(self, payload: object) -> None:
+        if self._preview_analysis_dialog is None:
+            return
+        if isinstance(payload, FocusStackReport):
+            self._preview_analysis_dialog.set_result_image(payload.preview_image)
+            self._preview_analysis_dialog.set_status(payload.message)
+            self.statusBar().showMessage(payload.message, 2500)
+            return
+        if isinstance(payload, MapBuildReport):
+            self._preview_analysis_dialog.set_result_image(payload.preview_image)
+            self._preview_analysis_dialog.set_status(payload.message)
+            self.statusBar().showMessage(payload.message, 2500)
+
+    def _add_project_asset_image(self, image: QImage, *, metadata: dict[str, object] | None = None, status_message: str) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path=self._next_project_capture_relative_path(),
+            image_size=(image.width(), image.height()),
+            source_type="project_asset",
+            metadata=dict(metadata or {}),
+        )
+        document.initialize_runtime_state()
+        if self.project.project_default_calibration is not None:
+            self._set_document_project_default_calibration(document)
+        document.mark_session_saved()
+        document.mark_calibration_saved()
+        self._mount_document(
+            document,
+            image,
+            tooltip=self._document_tooltip(document),
+        )
+        self._clear_prompt_segmentation_cache()
+        self.statusBar().showMessage(status_message, 4000)
+
+    def _on_preview_analysis_worker_finished(self, payload: object) -> None:
+        mode = self._preview_analysis_mode
+        if isinstance(payload, FocusStackFinalResult):
+            image = payload.image
+            metadata = dict(payload.metadata)
+            message = f"景深合成完成，已导入项目（采样 {payload.sampled_frames} / 接受 {payload.accepted_frames}）"
+        elif isinstance(payload, MapBuildFinalResult):
+            image = payload.image
+            metadata = dict(payload.metadata)
+            message = f"地图构建完成，已导入项目（tile {payload.tile_count}）"
+        else:
+            return
+        self._teardown_preview_analysis_session(cancel_worker=False)
+        if self._capture_manager.is_preview_active():
+            self.stop_live_preview()
+        self._add_project_asset_image(image, metadata=metadata, status_message=message)
+        if mode != "none":
+            self.statusBar().showMessage(message, 5000)
+
+    def _on_preview_analysis_worker_failed(self, message: str) -> None:
+        if self._preview_analysis_mode == "none":
+            return
+        title = self._analysis_mode_label(self._preview_analysis_mode)
+        self._teardown_preview_analysis_session(cancel_worker=True)
+        QMessageBox.warning(self, title, message)
 
     def _cycle_magic_segment_prompt_type(self) -> None:
         canvas = self.current_canvas()
@@ -3613,6 +3899,15 @@ class MainWindow(QMainWindow):
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
             return
+        if self._preview_analysis_mode != "none" and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                self._finalize_preview_analysis_session()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_Escape:
+                self._cancel_preview_analysis_session()
+                event.accept()
+                return
         if self._tool_mode == "magic_segment" and event.modifiers() == Qt.KeyboardModifier.NoModifier:
             if event.key() == Qt.Key.Key_R:
                 self._cycle_magic_segment_prompt_type()

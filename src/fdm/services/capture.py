@@ -69,6 +69,19 @@ class CaptureBackend:
     def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
         return None
 
+    def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+        return False
+
+    def request_analysis_frame(
+        self,
+        device: CaptureDevice,
+        *,
+        request_id: int,
+        frame_callback: Callable[[int, QImage], None],
+        error_callback: Callable[[int, str], None],
+    ) -> None:
+        raise RuntimeError("当前采集设备不支持分析帧采样。")
+
     def can_optimize_signal(self, device: CaptureDevice) -> bool:
         return False
 
@@ -93,9 +106,13 @@ class CaptureSessionManager(QObject):
     devicesChanged = Signal(object)
     previewStateChanged = Signal(bool)
     frameReady = Signal(object)
+    analysisFrameReady = Signal(int, object)
+    analysisFrameFailed = Signal(int, str)
     errorOccurred = Signal(str)
     _deliverFrame = Signal(int, object)
     _deliverError = Signal(int, str)
+    _deliverAnalysisFrame = Signal(int, int, object)
+    _deliverAnalysisError = Signal(int, int, str)
 
     def __init__(
         self,
@@ -117,6 +134,8 @@ class CaptureSessionManager(QObject):
         self._device_refresh_warnings: list[str] = []
         self._deliverFrame.connect(self._on_frame_ready, Qt.ConnectionType.QueuedConnection)
         self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
+        self._deliverAnalysisFrame.connect(self._on_analysis_frame_ready, Qt.ConnectionType.QueuedConnection)
+        self._deliverAnalysisError.connect(self._on_analysis_error, Qt.ConnectionType.QueuedConnection)
         if refresh_on_init:
             self.refresh_devices()
 
@@ -160,6 +179,37 @@ class CaptureSessionManager(QObject):
         if device is None or backend is None:
             return False
         return backend.can_capture_still(device)
+
+    def can_request_analysis_frame(self) -> bool:
+        if not self.is_preview_active() or self._active_backend is None:
+            return False
+        device = self.selected_device()
+        if device is None:
+            return False
+        return self._active_backend.can_request_analysis_frame(device)
+
+    def request_analysis_frame(self, request_id: int) -> bool:
+        if not self.is_preview_active() or self._active_backend is None:
+            return False
+        device = self.selected_device()
+        if device is None or not self._active_backend.can_request_analysis_frame(device):
+            return False
+        generation = self._preview_generation
+        try:
+            self._active_backend.request_analysis_frame(
+                device,
+                request_id=request_id,
+                frame_callback=lambda req_id, image, _generation=generation: self._deliver_analysis_frame_threadsafe(
+                    _generation, req_id, image
+                ),
+                error_callback=lambda req_id, message, _generation=generation: self._deliver_analysis_error_threadsafe(
+                    _generation, req_id, message
+                ),
+            )
+        except Exception as exc:
+            self._deliver_analysis_error_threadsafe(generation, request_id, str(exc))
+            return False
+        return True
 
     def capture_still_frame(self) -> QImage | None:
         device = self.selected_device()
@@ -339,6 +389,26 @@ class CaptureSessionManager(QObject):
     def _deliver_error_threadsafe(self, generation: int, message: str) -> None:
         self._deliverError.emit(generation, message)
 
+    @Slot(int, int, object)
+    def _on_analysis_frame_ready(self, generation: int, request_id: int, image: QImage) -> None:
+        if generation != self._preview_generation or not self.is_preview_active():
+            return
+        if image.isNull():
+            return
+        self.analysisFrameReady.emit(request_id, image)
+
+    @Slot(int, int, str)
+    def _on_analysis_error(self, generation: int, request_id: int, message: str) -> None:
+        if generation != self._preview_generation or not self.is_preview_active():
+            return
+        self.analysisFrameFailed.emit(request_id, message)
+
+    def _deliver_analysis_frame_threadsafe(self, generation: int, request_id: int, image: QImage) -> None:
+        self._deliverAnalysisFrame.emit(generation, request_id, image)
+
+    def _deliver_analysis_error_threadsafe(self, generation: int, request_id: int, message: str) -> None:
+        self._deliverAnalysisError.emit(generation, request_id, message)
+
 
 class QtVideoCaptureBackend(CaptureBackend):
     backend_key = "qt_multimedia"
@@ -445,6 +515,23 @@ class QtVideoCaptureBackend(CaptureBackend):
         if self._last_frame is None or self._last_frame.isNull():
             return None
         return self._last_frame.copy()
+
+    def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+        return self._last_frame is not None and not self._last_frame.isNull()
+
+    def request_analysis_frame(
+        self,
+        device: CaptureDevice,
+        *,
+        request_id: int,
+        frame_callback: Callable[[int, QImage], None],
+        error_callback: Callable[[int, str], None],
+    ) -> None:
+        del device
+        if self._last_frame is None or self._last_frame.isNull():
+            error_callback(request_id, "当前预览尚未提供可用分析帧。")
+            return
+        frame_callback(request_id, self._last_frame.copy())
 
     def _on_video_frame(self, frame, frame_callback: Callable[[QImage], None]) -> None:
         image = _qt_video_frame_to_qimage(frame)
@@ -694,6 +781,29 @@ class MicroviewCaptureBackend(CaptureBackend):
             if temp_handle:
                 self._release_runtime_state(dll, handle)
             self._dispose_loaded_libraries()
+
+    def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+        del device
+        return self._device_handle is not None and self._dll is not None
+
+    def request_analysis_frame(
+        self,
+        device: CaptureDevice,
+        *,
+        request_id: int,
+        frame_callback: Callable[[int, QImage], None],
+        error_callback: Callable[[int, str], None],
+    ) -> None:
+        del device
+        if self._device_handle is None or self._dll is None:
+            error_callback(request_id, "Microview 预览尚未准备好分析帧。")
+            return
+        image = self._capture_single_frame_image(handle=self._device_handle, process=False)
+        if image.isNull():
+            diagnostics = self._last_capture_diagnostics.strip()
+            error_callback(request_id, diagnostics or "Microview 分析帧抓取失败。")
+            return
+        frame_callback(request_id, image.copy())
 
     def can_optimize_signal(self, device: CaptureDevice) -> bool:
         try:
@@ -1116,6 +1226,7 @@ class MicroviewIsolatedBackend(CaptureBackend):
         self._active_warning = ""
         self._last_capture_diagnostics = ""
         self._pending_preview_error: str | None = None
+        self._pending_snapshot_callbacks: dict[int, tuple[Callable[[int, QImage], None], Callable[[int, str], None]]] = {}
 
     def list_devices(self) -> list[CaptureDevice]:
         if sys.platform != "win32":
@@ -1241,6 +1352,7 @@ class MicroviewIsolatedBackend(CaptureBackend):
         self._active_resolution = None
         self._active_warning = ""
         self._pending_preview_error = None
+        self._pending_snapshot_callbacks.clear()
 
     def update_preview_target(self, preview_target: object | None) -> None:
         process = self._preview_process
@@ -1268,6 +1380,31 @@ class MicroviewIsolatedBackend(CaptureBackend):
     def can_capture_still(self, device: CaptureDevice) -> bool:
         del device
         return True
+
+    def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+        del device
+        return self._preview_process is not None and self._preview_started
+
+    def request_analysis_frame(
+        self,
+        device: CaptureDevice,
+        *,
+        request_id: int,
+        frame_callback: Callable[[int, QImage], None],
+        error_callback: Callable[[int, str], None],
+    ) -> None:
+        del device
+        process = self._preview_process
+        if process is None or process.state() != QProcess.ProcessState.Running or not self._preview_started:
+            error_callback(request_id, "Microview 预览 helper 尚未准备好分析帧。")
+            return
+        self._pending_snapshot_callbacks[request_id] = (frame_callback, error_callback)
+        self._send_preview_command(
+            {
+                "command": "snapshot",
+                "request_id": int(request_id),
+            }
+        )
 
     def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
         response = self._run_helper_command("capture", device_index=int(device.native_id), timeout_ms=15000)
@@ -1369,6 +1506,29 @@ class MicroviewIsolatedBackend(CaptureBackend):
                 self._active_warning = str(payload.get("warning", "")).strip()
                 self._preview_started = True
                 continue
+            if message_type == "snapshot":
+                request_id = int(payload.get("request_id", 0))
+                callbacks = self._pending_snapshot_callbacks.pop(request_id, None)
+                if callbacks is None:
+                    continue
+                image_path = str(payload.get("image_path", "")).strip()
+                path = Path(image_path)
+                image = QImage(str(path))
+                try:
+                    path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+                if image.isNull():
+                    callbacks[1](request_id, "Microview 分析帧读取失败。")
+                else:
+                    callbacks[0](request_id, image)
+                continue
+            if message_type == "snapshot_error":
+                request_id = int(payload.get("request_id", 0))
+                callbacks = self._pending_snapshot_callbacks.pop(request_id, None)
+                if callbacks is not None:
+                    callbacks[1](request_id, str(payload.get("message", "")).strip() or "Microview 分析帧抓取失败。")
+                continue
             if message_type == "error":
                 self._pending_preview_error = str(payload.get("message", "")).strip() or "Microview 预览 helper 出错。"
                 if self._preview_started and self._pending_preview_error:
@@ -1401,6 +1561,10 @@ class MicroviewIsolatedBackend(CaptureBackend):
             error_callback(message)
         self._preview_stderr_buffer = ""
         self._pending_preview_error = None
+        pending = list(self._pending_snapshot_callbacks.items())
+        self._pending_snapshot_callbacks.clear()
+        for request_id, callbacks in pending:
+            callbacks[1](request_id, "Microview 预览已结束，分析帧请求已取消。")
 
     def _send_preview_command(self, payload: dict[str, object]) -> None:
         process = self._preview_process
