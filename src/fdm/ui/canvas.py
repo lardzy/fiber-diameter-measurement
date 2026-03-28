@@ -68,6 +68,7 @@ class DocumentCanvas(QWidget):
 
         self._drawing_anchor_raw: Point | None = None
         self._drawing_line: Line | None = None
+        self._line_commit_on_second_click = False
 
         self._drawing_polygon_points: list[Point] = []
         self._area_hover_point: Point | None = None
@@ -123,8 +124,7 @@ class DocumentCanvas(QWidget):
     def clear_document(self) -> None:
         self._document = None
         self._image = None
-        self._drawing_anchor_raw = None
-        self._drawing_line = None
+        self._cancel_line_drawing()
         self._dragging_handle = None
         self._drag_preview_line = None
         self._dragging_area_handle = None
@@ -140,8 +140,7 @@ class DocumentCanvas(QWidget):
         self._read_only = read_only
         if read_only:
             self._cancel_area_drawing()
-            self._drawing_anchor_raw = None
-            self._drawing_line = None
+            self._cancel_line_drawing()
             self._dragging_handle = None
             self._drag_preview_line = None
             self._dragging_text_id = None
@@ -157,6 +156,7 @@ class DocumentCanvas(QWidget):
     def set_tool_mode(self, mode: str) -> None:
         if mode != self._tool_mode:
             self._cancel_area_drawing()
+            self._cancel_line_drawing()
             if self._tool_mode == "magic_segment" or mode != "magic_segment":
                 self.clear_magic_segment_session()
         self._tool_mode = mode
@@ -292,6 +292,11 @@ class DocumentCanvas(QWidget):
             return
         if event.key() == Qt.Key.Key_Escape and self._tool_mode == "magic_segment" and self.has_magic_segment_session():
             self.clear_magic_segment_session()
+            event.accept()
+            return
+        if event.key() == Qt.Key.Key_Escape and self._drawing_anchor_raw is not None:
+            self._cancel_line_drawing()
+            self.update()
             event.accept()
             return
         if event.key() == Qt.Key.Key_Escape and (self._drawing_polygon_points or self._drawing_freehand_active):
@@ -437,12 +442,18 @@ class DocumentCanvas(QWidget):
 
         if self._tool_mode == "calibration":
             if self._point_in_image(image_point):
-                anchor = self._clamp_to_image(
-                    snap_to_pixel_center(image_point) if event.modifiers() & Qt.KeyboardModifier.ControlModifier else image_point,
-                    pixel_center=bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier),
-                )
-                self._drawing_anchor_raw = anchor
-                self._drawing_line = Line(start=anchor, end=anchor)
+                anchor = self._anchor_point_for_event(image_point, event.modifiers())
+                self._begin_line_drawing(anchor)
+                self.update()
+            return
+
+        if self._tool_mode == "snap":
+            if self._drawing_anchor_raw is not None and self._line_commit_on_second_click:
+                self._commit_click_line(image_point, event.modifiers())
+                return
+            if self._point_in_image(image_point):
+                anchor = self._anchor_point_for_event(image_point, event.modifiers())
+                self._begin_line_drawing(anchor, commit_on_second_click=True)
                 self.update()
             return
 
@@ -502,12 +513,8 @@ class DocumentCanvas(QWidget):
             return
 
         if self._point_in_image(image_point):
-            anchor = self._clamp_to_image(
-                snap_to_pixel_center(image_point) if event.modifiers() & Qt.KeyboardModifier.ControlModifier else image_point,
-                pixel_center=bool(event.modifiers() & Qt.KeyboardModifier.ControlModifier),
-            )
-            self._drawing_anchor_raw = anchor
-            self._drawing_line = Line(start=anchor, end=anchor)
+            anchor = self._anchor_point_for_event(image_point, event.modifiers())
+            self._begin_line_drawing(anchor)
             self.update()
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
@@ -625,9 +632,11 @@ class DocumentCanvas(QWidget):
             return
 
         if self._drawing_line is not None:
+            if self._line_commit_on_second_click:
+                self.update()
+                return
             line = self._drawing_line
-            self._drawing_anchor_raw = None
-            self._drawing_line = None
+            self._cancel_line_drawing()
             if line_length(line) >= 1.0:
                 self.lineCommitted.emit(self._document.id, self._tool_mode, line)
             if self._space_pressed:
@@ -924,6 +933,41 @@ class DocumentCanvas(QWidget):
         fixed = self._clamp_to_image(fixed, pixel_center=use_ctrl and snap_anchor)
         moving = self._clamp_to_image(moving, pixel_center=use_ctrl)
         return fixed, moving
+
+    def _anchor_point_for_event(self, image_point: Point, modifiers: Qt.KeyboardModifiers) -> Point:
+        use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
+        return self._clamp_to_image(
+            snap_to_pixel_center(image_point) if use_ctrl else image_point,
+            pixel_center=use_ctrl,
+        )
+
+    def _begin_line_drawing(self, anchor: Point, *, commit_on_second_click: bool = False) -> None:
+        self._drawing_anchor_raw = anchor
+        self._drawing_line = Line(start=anchor, end=anchor)
+        self._line_commit_on_second_click = commit_on_second_click
+
+    def _cancel_line_drawing(self) -> None:
+        self._drawing_anchor_raw = None
+        self._drawing_line = None
+        self._line_commit_on_second_click = False
+
+    def _commit_click_line(self, image_point: Point, modifiers: Qt.KeyboardModifiers) -> None:
+        if self._document is None or self._drawing_anchor_raw is None:
+            return
+        start, end = self._apply_line_constraints(
+            self._drawing_anchor_raw,
+            image_point,
+            modifiers,
+            snap_anchor=True,
+        )
+        line = Line(start=start, end=end)
+        self._cancel_line_drawing()
+        if line_length(line) >= 1.0:
+            self.lineCommitted.emit(self._document.id, self._tool_mode, line)
+        if self._space_pressed:
+            self._temporary_grab_active = True
+            self._update_cursor()
+        self.update()
 
     def _clamp_to_image(self, point: Point, *, pixel_center: bool) -> Point:
         if self._image is None:

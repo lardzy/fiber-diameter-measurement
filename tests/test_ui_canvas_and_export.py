@@ -197,6 +197,59 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
 
+    def test_snap_mode_uses_two_click_commit_instead_of_release(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("snap")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        start = Point(24, 18)
+        end = Point(140, 76)
+        start_pos = canvas.image_to_widget(start)
+        end_pos = canvas.image_to_widget(end)
+
+        canvas.mousePressEvent(FakeMouseEvent(start_pos, button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(start_pos, button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 0)
+        self.assertIsNotNone(canvas._drawing_line)
+        self.assertTrue(canvas._line_commit_on_second_click)
+
+        canvas.mouseMoveEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(canvas._drawing_line, Line(start=start, end=end))
+
+        canvas.mousePressEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][0], document.id)
+        self.assertEqual(commits[0][1], "snap")
+        self.assertEqual(commits[0][2], Line(start=start, end=end))
+        self.assertIsNone(canvas._drawing_line)
+        self.assertFalse(canvas._line_commit_on_second_click)
+
+    def test_snap_mode_does_not_grab_measurement_handles(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        document.add_measurement(measurement)
+        document.view_state.selected_measurement_id = measurement.id
+        canvas.set_selected_measurement(measurement.id)
+        canvas.set_tool_mode("snap")
+
+        endpoint_position = canvas.image_to_widget(Point(20, 20))
+        canvas.mousePressEvent(FakeMouseEvent(endpoint_position))
+
+        self.assertIsNone(canvas._dragging_handle)
+        self.assertIsNotNone(canvas._drawing_line)
+        self.assertTrue(canvas._line_commit_on_second_click)
+
     def test_space_drag_temporarily_pans_in_manual_mode(self) -> None:
         _, _, canvas = self._create_canvas_document()
         canvas.set_tool_mode("manual")
