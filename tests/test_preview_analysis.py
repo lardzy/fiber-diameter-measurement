@@ -213,3 +213,22 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertTrue(low_conf_report.low_confidence or "未创建新 tile" in low_conf_report.message)
         self.assertIn("未创建新 tile", low_conf_report.message)
         self.assertEqual(result.tile_count, 1)
+
+    def test_map_build_allows_small_but_stable_translation_to_create_new_tile(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        nearby = self._shift_frame(base, dx=-26)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(nearby)
+        analyzer.add_frame(nearby)
+        stable_report = analyzer.add_frame(nearby)
+        result = analyzer.finalize()
+
+        self.assertEqual(stable_report.motion_state, "stable")
+        self.assertGreaterEqual(stable_report.accepted_frames, 3)
+        self.assertEqual(result.tile_count, 2)

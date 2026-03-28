@@ -250,13 +250,13 @@ class MapBuildAnalyzer:
         frame = _prepare_frame(image)
         self._sampled_frames += 1
         if self._tile_shift_threshold_px is None:
-            self._tile_shift_threshold_px = max(72.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.18)
+            self._tile_shift_threshold_px = max(20.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.06)
         if self._stable_step_threshold_px is None:
-            self._stable_step_threshold_px = max(2.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.005)
+            self._stable_step_threshold_px = max(2.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.004)
         if self._tile_freeze_threshold_px is None:
-            self._tile_freeze_threshold_px = max(6.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.015)
+            self._tile_freeze_threshold_px = max(4.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.01)
         if self._resume_origin_threshold_px is None:
-            self._resume_origin_threshold_px = max(4.0, float(self._tile_freeze_threshold_px or 6.0) * 0.65)
+            self._resume_origin_threshold_px = max(3.0, float(self._tile_freeze_threshold_px or 4.0) * 0.75)
         self._last_quality_score = frame.sharpness
         if self._previous_frame is None:
             self._previous_frame = frame
@@ -339,20 +339,17 @@ class MapBuildAnalyzer:
                 else:
                     self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
                 return self._build_report()
-            if candidate_translation < float(self._tile_shift_threshold_px or 80.0):
-                self._rejected_low_confidence_frames += 1
-                self._last_message = "位移过大或重叠不足，未创建新 tile"
-                return self._build_report()
+            overlap_ratio = _predicted_overlap_ratio(
+                self._current_accumulator.preview_image().width() or frame.bgr.shape[1],
+                self._current_accumulator.preview_image().height() or frame.bgr.shape[0],
+                candidate.bgr.shape[1],
+                candidate.bgr.shape[0],
+                candidate_dx,
+                candidate_dy,
+            )
             if (
                 candidate_response < self._stable_response_threshold
-                or _predicted_overlap_ratio(
-                    self._current_accumulator.preview_image().width() or frame.bgr.shape[1],
-                    self._current_accumulator.preview_image().height() or frame.bgr.shape[0],
-                    candidate.bgr.shape[1],
-                    candidate.bgr.shape[0],
-                    candidate_dx,
-                    candidate_dy,
-                ) < 0.08
+                or overlap_ratio < 0.10
             ):
                 self._rejected_low_confidence_frames += 1
                 self._last_message = "位移过大或重叠不足，未创建新 tile"
@@ -475,32 +472,29 @@ class MapBuildAnalyzer:
     def _refine_edges_for_tile(self, tile: _TileRecord) -> None:
         if len(self._tiles) == 1:
             return
-        candidates = self._tiles[:-1][-6:]
-        for candidate in candidates:
-            predicted_dx = tile.x - candidate.x
-            predicted_dy = tile.y - candidate.y
-            overlap_ok = _predicted_overlap_ratio(
-                candidate.width,
-                candidate.height,
-                tile.width,
-                tile.height,
-                predicted_dx,
-                predicted_dy,
-            ) >= 0.08
-            if not overlap_ok and candidate is not self._tiles[-2]:
-                continue
-            refined_dx, refined_dy, response = _refine_translation(candidate.gray, tile.gray, predicted_dx, predicted_dy)
-            if response <= 0.01 and candidate is not self._tiles[-2]:
-                continue
-            self._edges.append(
-                _TileEdge(
-                    source_id=candidate.tile_id,
-                    target_id=tile.tile_id,
-                    dx=refined_dx,
-                    dy=refined_dy,
-                    weight=max(0.05, float(response)),
-                )
+        candidate = self._tiles[-2]
+        predicted_dx = tile.x - candidate.x
+        predicted_dy = tile.y - candidate.y
+        overlap_ratio = _predicted_overlap_ratio(
+            candidate.width,
+            candidate.height,
+            tile.width,
+            tile.height,
+            predicted_dx,
+            predicted_dy,
+        )
+        refined_dx, refined_dy, response = _refine_translation(candidate.gray, tile.gray, predicted_dx, predicted_dy)
+        if overlap_ratio < 0.05 and response <= 0.02:
+            return
+        self._edges.append(
+            _TileEdge(
+                source_id=candidate.tile_id,
+                target_id=tile.tile_id,
+                dx=refined_dx,
+                dy=refined_dy,
+                weight=max(0.08, float(response)),
             )
+        )
 
     def _optimize_tile_positions(self) -> None:
         if len(self._tiles) <= 1 or not self._edges:
