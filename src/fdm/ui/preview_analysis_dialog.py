@@ -32,8 +32,8 @@ class PreviewAnalysisDialog(QDialog):
 
         if show_post_sharpen_option:
             self._post_sharpen_checkbox = QCheckBox("合成后锐化")
-            self._post_sharpen_checkbox.setChecked(False)
-            self._post_sharpen_checkbox.setToolTip("默认关闭。仅对景深合成结束后的最终导出结果生效，不影响实时预览。")
+            self._post_sharpen_checkbox.setChecked(True)
+            self._post_sharpen_checkbox.setToolTip("默认开启。仅对景深合成结束后的最终导出结果生效，不影响实时预览。")
             layout.addWidget(self._post_sharpen_checkbox)
 
         self.canvas = DocumentCanvas(self)
