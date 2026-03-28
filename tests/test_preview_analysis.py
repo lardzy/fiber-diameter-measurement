@@ -267,6 +267,25 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertGreaterEqual(response, 0.0)
         self.assertGreater(ncc, 0.2)
 
+    def test_local_search_can_recover_from_bad_initial_prediction(self) -> None:
+        base = self._make_repetitive_map_base()
+        shifted = np.roll(base, shift=-26, axis=1)
+        gray_a = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY)
+        gray_b = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+
+        dx, dy, response, ncc = _search_local_translation_near_prediction(
+            gray_a,
+            gray_b,
+            predicted_dx=18.0,
+            predicted_dy=0.0,
+            search_radius=32.0,
+        )
+
+        self.assertLess(abs(dx + 26.0), 5.0)
+        self.assertLess(abs(dy), 4.0)
+        self.assertGreaterEqual(response, 0.0)
+        self.assertGreater(ncc, 0.12)
+
     def test_orb_fallback_can_recover_small_translation(self) -> None:
         base = self._make_repetitive_map_base()
         shifted = np.roll(base, shift=-24, axis=1)

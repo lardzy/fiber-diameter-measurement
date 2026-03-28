@@ -134,7 +134,9 @@ class _TransitionTracker:
     cumulative_dy: float = 0.0
     best_stable_frames: list[_PreparedFrame] = field(default_factory=list)
 
-    def observe_step(self, dx: float, dy: float) -> None:
+    def observe_step(self, dx: float, dy: float, *, response: float, max_step: float) -> None:
+        if response < 0.2 or math.hypot(dx, dy) > max_step:
+            return
         self.cumulative_dx += dx
         self.cumulative_dy += dy
 
@@ -368,7 +370,12 @@ class MapBuildAnalyzer:
                     self._stable_streak = 0
                     self._stable_window.clear()
             if self._transition_tracker is not None:
-                self._transition_tracker.observe_step(step_dx, step_dy)
+                self._transition_tracker.observe_step(
+                    step_dx,
+                    step_dy,
+                    response=step_response,
+                    max_step=max(float(self._transition_search_radius_px or 18.0) * 2.0, float(self._tile_shift_threshold_px or 20.0) * 1.5),
+                )
             self._pending_transition = (origin_dx, origin_dy)
 
         if not self._current_accumulator.has_frames():
@@ -572,27 +579,41 @@ class MapBuildAnalyzer:
         predicted_dx: float,
         predicted_dy: float,
     ) -> _RegistrationResult:
-        search_radius = float(self._transition_search_radius_px or 18.0)
+        search_radius = max(28.0, float(self._transition_search_radius_px or 18.0))
         overlap_min = 0.10
-        phase_min = max(0.02, self._stable_response_threshold)
-        ncc_min = 0.30
-        delta_limit = max(search_radius * 1.2, 12.0)
-        dx, dy, response, ncc = _search_local_translation_near_prediction(
-            reference.gray,
-            candidate.gray,
-            predicted_dx,
-            predicted_dy,
-            search_radius=search_radius,
+        phase_min = max(0.015, self._stable_response_threshold)
+        ncc_min = 0.16
+        delta_limit = max(search_radius * 1.6, 20.0)
+        phase_candidates: list[tuple[float, float, float, float, float, float]] = []
+        seen: set[tuple[int, int]] = set()
+        for seed_dx, seed_dy in self._registration_seed_candidates(predicted_dx, predicted_dy):
+            rounded = (int(round(seed_dx)), int(round(seed_dy)))
+            if rounded in seen:
+                continue
+            seen.add(rounded)
+            dx, dy, response, ncc = _search_local_translation_near_prediction(
+                reference.gray,
+                candidate.gray,
+                seed_dx,
+                seed_dy,
+                search_radius=search_radius,
+            )
+            delta = math.hypot(dx - seed_dx, dy - seed_dy)
+            overlap_ratio = _predicted_overlap_ratio(
+                reference.bgr.shape[1],
+                reference.bgr.shape[0],
+                candidate.bgr.shape[1],
+                candidate.bgr.shape[0],
+                dx,
+                dy,
+            )
+            phase_candidates.append((dx, dy, response, ncc, delta, overlap_ratio))
+        if not phase_candidates:
+            phase_candidates.append((predicted_dx, predicted_dy, 0.0, -1.0, 0.0, 0.0))
+        dx, dy, response, ncc, delta, overlap_ratio = max(
+            phase_candidates,
+            key=lambda item: (item[3], item[2], -item[4]),
         )
-        overlap_ratio = _predicted_overlap_ratio(
-            reference.bgr.shape[1],
-            reference.bgr.shape[0],
-            candidate.bgr.shape[1],
-            candidate.bgr.shape[0],
-            dx,
-            dy,
-        )
-        delta = math.hypot(dx - predicted_dx, dy - predicted_dy)
         if response >= phase_min and ncc >= ncc_min and overlap_ratio >= overlap_min and delta <= delta_limit:
             return _RegistrationResult(
                 accepted=True,
@@ -618,7 +639,7 @@ class MapBuildAnalyzer:
             orb_dx,
             orb_dy,
         )
-        if inliers >= 8 and orb_ncc >= max(0.22, ncc_min - 0.05) and orb_overlap >= overlap_min and orb_delta <= delta_limit:
+        if inliers >= 5 and orb_ncc >= max(0.12, ncc_min - 0.04) and orb_overlap >= overlap_min and orb_delta <= delta_limit:
             return _RegistrationResult(
                 accepted=True,
                 dx=orb_dx,
@@ -742,6 +763,17 @@ class MapBuildAnalyzer:
         if self._stable_streak > 0:
             return self._settling_message()
         return "运动中，暂停入图"
+
+    def _registration_seed_candidates(self, predicted_dx: float, predicted_dy: float) -> list[tuple[float, float]]:
+        candidates: list[tuple[float, float]] = [(predicted_dx, predicted_dy)]
+        if self._pending_transition != (0.0, 0.0):
+            candidates.append(self._pending_transition)
+        if self._transition_tracker is not None:
+            tracker_dx, tracker_dy = self._transition_tracker.predicted_shift()
+            candidates.append((tracker_dx, tracker_dy))
+        candidates.append((predicted_dx * 0.5, predicted_dy * 0.5))
+        candidates.append((0.0, 0.0))
+        return candidates
 
     def _best_stable_frame(self) -> _PreparedFrame | None:
         if not self._stable_window:
