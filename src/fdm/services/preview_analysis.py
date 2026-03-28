@@ -74,6 +74,13 @@ class MapBuildReport:
     translation_px: float = 0.0
     correlation_response: float = 0.0
     quality_score: float = 0.0
+    transition_predicted_dx: float = 0.0
+    transition_predicted_dy: float = 0.0
+    transition_refined_dx: float = 0.0
+    transition_refined_dy: float = 0.0
+    transition_method: str = ""
+    transition_ncc: float = 0.0
+    transition_delta_from_prediction: float = 0.0
 
 
 @dataclass(slots=True)
@@ -118,6 +125,42 @@ class _TileEdge:
     dx: float
     dy: float
     weight: float
+
+
+@dataclass(slots=True)
+class _TransitionTracker:
+    start_position: tuple[float, float]
+    cumulative_dx: float = 0.0
+    cumulative_dy: float = 0.0
+    best_stable_frames: list[_PreparedFrame] = field(default_factory=list)
+
+    def observe_step(self, dx: float, dy: float) -> None:
+        self.cumulative_dx += dx
+        self.cumulative_dy += dy
+
+    def predicted_shift(self) -> tuple[float, float]:
+        return self.cumulative_dx, self.cumulative_dy
+
+    def predicted_position(self) -> tuple[float, float]:
+        return (self.start_position[0] + self.cumulative_dx, self.start_position[1] + self.cumulative_dy)
+
+    def note_stable_frame(self, frame: _PreparedFrame) -> None:
+        self.best_stable_frames.append(frame)
+        self.best_stable_frames.sort(key=lambda item: item.sharpness, reverse=True)
+        if len(self.best_stable_frames) > 4:
+            self.best_stable_frames = self.best_stable_frames[:4]
+
+
+@dataclass(slots=True)
+class _RegistrationResult:
+    accepted: bool
+    dx: float
+    dy: float
+    response: float
+    ncc: float
+    method: str
+    delta_from_prediction: float
+    inlier_count: int = 0
 
 
 class FocusAccumulator:
@@ -230,6 +273,7 @@ class MapBuildAnalyzer:
         self._pending_transition = (0.0, 0.0)
         self._tile_counter = 0
         self._previous_frame: _PreparedFrame | None = None
+        self._transition_tracker: _TransitionTracker | None = None
         self._transition_pending = False
         self._is_stable = False
         self._stable_streak = 0
@@ -242,9 +286,17 @@ class MapBuildAnalyzer:
         self._tile_freeze_threshold_px: float | None = None
         self._stable_response_threshold = 0.015
         self._resume_origin_threshold_px: float | None = None
+        self._transition_search_radius_px: float | None = None
         self._last_translation_px = 0.0
         self._last_response = 0.0
         self._last_quality_score = 0.0
+        self._last_transition_predicted_dx = 0.0
+        self._last_transition_predicted_dy = 0.0
+        self._last_transition_refined_dx = 0.0
+        self._last_transition_refined_dy = 0.0
+        self._last_transition_method = ""
+        self._last_transition_ncc = 0.0
+        self._last_transition_delta = 0.0
 
     def add_frame(self, image: QImage) -> MapBuildReport:
         frame = _prepare_frame(image)
@@ -257,7 +309,16 @@ class MapBuildAnalyzer:
             self._tile_freeze_threshold_px = max(4.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.01)
         if self._resume_origin_threshold_px is None:
             self._resume_origin_threshold_px = max(3.0, float(self._tile_freeze_threshold_px or 4.0) * 0.75)
+        if self._transition_search_radius_px is None:
+            self._transition_search_radius_px = max(18.0, float(self._tile_shift_threshold_px or 20.0) * 0.75)
         self._last_quality_score = frame.sharpness
+        self._last_transition_predicted_dx = 0.0
+        self._last_transition_predicted_dy = 0.0
+        self._last_transition_refined_dx = 0.0
+        self._last_transition_refined_dy = 0.0
+        self._last_transition_method = ""
+        self._last_transition_ncc = 0.0
+        self._last_transition_delta = 0.0
         if self._previous_frame is None:
             self._previous_frame = frame
             self._stable_window = [frame]
@@ -297,6 +358,7 @@ class MapBuildAnalyzer:
         if self._current_accumulator.has_frames() and origin_translation >= float(self._tile_freeze_threshold_px or 6.0):
             if not self._transition_pending:
                 self._transition_pending = True
+                self._transition_tracker = _TransitionTracker(start_position=self._current_predicted_position)
                 self._is_stable = False
                 self._unstable_streak = 0
                 if step_translation <= float(self._stable_step_threshold_px or 2.0) and step_response >= self._stable_response_threshold:
@@ -305,6 +367,8 @@ class MapBuildAnalyzer:
                 else:
                     self._stable_streak = 0
                     self._stable_window.clear()
+            if self._transition_tracker is not None:
+                self._transition_tracker.observe_step(step_dx, step_dy)
             self._pending_transition = (origin_dx, origin_dy)
 
         if not self._current_accumulator.has_frames():
@@ -328,33 +392,49 @@ class MapBuildAnalyzer:
             if candidate is None:
                 self._last_message = "检测到新位置，等待稳定"
                 return self._build_report()
-            candidate_dx, candidate_dy, candidate_response = _estimate_translation(self._current_origin_small, candidate.small_gray)
-            candidate_dx *= step_scale
-            candidate_dy *= step_scale
-            candidate_translation = math.hypot(candidate_dx, candidate_dy)
+            if self._transition_tracker is not None:
+                self._transition_tracker.note_stable_frame(candidate)
+                predicted_dx, predicted_dy = self._transition_tracker.predicted_shift()
+            else:
+                predicted_dx, predicted_dy = self._pending_transition
+            self._last_transition_predicted_dx = predicted_dx
+            self._last_transition_predicted_dy = predicted_dy
+
+            current_reference = self._current_tile_reference_frame()
+            registration = self._register_transition_candidate(
+                current_reference,
+                candidate,
+                predicted_dx=predicted_dx,
+                predicted_dy=predicted_dy,
+            )
+            self._last_transition_refined_dx = registration.dx
+            self._last_transition_refined_dy = registration.dy
+            self._last_transition_method = registration.method
+            self._last_transition_ncc = registration.ncc
+            self._last_transition_delta = registration.delta_from_prediction
+
+            candidate_translation = math.hypot(registration.dx, registration.dy)
             if candidate_translation <= float(self._resume_origin_threshold_px or 4.0):
                 self._transition_pending = False
+                self._transition_tracker = None
                 if self._accept_prepared_frame(candidate):
                     self._last_message = self._sampling_message()
                 else:
                     self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
                 return self._build_report()
-            overlap_ratio = _predicted_overlap_ratio(
-                self._current_accumulator.preview_image().width() or frame.bgr.shape[1],
-                self._current_accumulator.preview_image().height() or frame.bgr.shape[0],
-                candidate.bgr.shape[1],
-                candidate.bgr.shape[0],
-                candidate_dx,
-                candidate_dy,
-            )
-            if (
-                candidate_response < self._stable_response_threshold
-                or overlap_ratio < 0.10
-            ):
-                self._rejected_low_confidence_frames += 1
-                self._last_message = "位移过大或重叠不足，未创建新 tile"
+            if candidate_translation < float(self._tile_shift_threshold_px or 20.0):
+                self._transition_pending = False
+                self._transition_tracker = None
+                if self._accept_prepared_frame(candidate):
+                    self._last_message = self._sampling_message()
+                else:
+                    self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
                 return self._build_report()
-            transition = (candidate_dx, candidate_dy)
+            if not registration.accepted:
+                self._rejected_low_confidence_frames += 1
+                self._last_message = "重叠纹理不足或匹配不可靠，未创建新 tile"
+                return self._build_report()
+            transition = (registration.dx, registration.dy)
             self._pending_transition = transition
             self._finalize_current_tile()
             if self._tiles:
@@ -364,6 +444,7 @@ class MapBuildAnalyzer:
                 self._current_predicted_position = transition
             self._current_origin_small = candidate.small_gray
             self._transition_pending = False
+            self._transition_tracker = None
             if self._accept_prepared_frame(candidate):
                 self._last_message = self._sampling_message()
             else:
@@ -444,6 +525,13 @@ class MapBuildAnalyzer:
             translation_px=self._last_translation_px,
             correlation_response=self._last_response,
             quality_score=self._last_quality_score,
+            transition_predicted_dx=self._last_transition_predicted_dx,
+            transition_predicted_dy=self._last_transition_predicted_dy,
+            transition_refined_dx=self._last_transition_refined_dx,
+            transition_refined_dy=self._last_transition_refined_dy,
+            transition_method=self._last_transition_method,
+            transition_ncc=self._last_transition_ncc,
+            transition_delta_from_prediction=self._last_transition_delta,
         )
 
     def _finalize_current_tile(self) -> None:
@@ -468,6 +556,89 @@ class MapBuildAnalyzer:
         self._current_accumulator = FocusAccumulator()
         self._current_origin_small = None
         self._pending_transition = (0.0, 0.0)
+        self._transition_tracker = None
+
+    def _current_tile_reference_frame(self) -> _PreparedFrame:
+        current_preview = self._current_accumulator.preview_image()
+        if current_preview.isNull():
+            raise RuntimeError("当前 tile 为空，无法继续地图构建。")
+        return _prepare_frame(current_preview)
+
+    def _register_transition_candidate(
+        self,
+        reference: _PreparedFrame,
+        candidate: _PreparedFrame,
+        *,
+        predicted_dx: float,
+        predicted_dy: float,
+    ) -> _RegistrationResult:
+        search_radius = float(self._transition_search_radius_px or 18.0)
+        overlap_min = 0.10
+        phase_min = max(0.02, self._stable_response_threshold)
+        ncc_min = 0.30
+        delta_limit = max(search_radius * 1.2, 12.0)
+        dx, dy, response, ncc = _search_local_translation_near_prediction(
+            reference.gray,
+            candidate.gray,
+            predicted_dx,
+            predicted_dy,
+            search_radius=search_radius,
+        )
+        overlap_ratio = _predicted_overlap_ratio(
+            reference.bgr.shape[1],
+            reference.bgr.shape[0],
+            candidate.bgr.shape[1],
+            candidate.bgr.shape[0],
+            dx,
+            dy,
+        )
+        delta = math.hypot(dx - predicted_dx, dy - predicted_dy)
+        if response >= phase_min and ncc >= ncc_min and overlap_ratio >= overlap_min and delta <= delta_limit:
+            return _RegistrationResult(
+                accepted=True,
+                dx=dx,
+                dy=dy,
+                response=response,
+                ncc=ncc,
+                method="phase_local",
+                delta_from_prediction=delta,
+            )
+        orb_dx, orb_dy, orb_ncc, inliers = _estimate_translation_orb(
+            reference.gray,
+            candidate.gray,
+            predicted_dx,
+            predicted_dy,
+        )
+        orb_delta = math.hypot(orb_dx - predicted_dx, orb_dy - predicted_dy)
+        orb_overlap = _predicted_overlap_ratio(
+            reference.bgr.shape[1],
+            reference.bgr.shape[0],
+            candidate.bgr.shape[1],
+            candidate.bgr.shape[0],
+            orb_dx,
+            orb_dy,
+        )
+        if inliers >= 8 and orb_ncc >= max(0.22, ncc_min - 0.05) and orb_overlap >= overlap_min and orb_delta <= delta_limit:
+            return _RegistrationResult(
+                accepted=True,
+                dx=orb_dx,
+                dy=orb_dy,
+                response=response,
+                ncc=orb_ncc,
+                method="orb_fallback",
+                delta_from_prediction=orb_delta,
+                inlier_count=inliers,
+            )
+        return _RegistrationResult(
+            accepted=False,
+            dx=dx,
+            dy=dy,
+            response=response,
+            ncc=ncc,
+            method="rejected",
+            delta_from_prediction=delta,
+            inlier_count=inliers,
+        )
 
     def _refine_edges_for_tile(self, tile: _TileRecord) -> None:
         if len(self._tiles) == 1:
@@ -475,24 +646,33 @@ class MapBuildAnalyzer:
         candidate = self._tiles[-2]
         predicted_dx = tile.x - candidate.x
         predicted_dy = tile.y - candidate.y
-        overlap_ratio = _predicted_overlap_ratio(
-            candidate.width,
-            candidate.height,
-            tile.width,
-            tile.height,
-            predicted_dx,
-            predicted_dy,
+        registration = self._register_transition_candidate(
+            _PreparedFrame(
+                bgr=candidate.bgr,
+                gray=candidate.gray,
+                focus_map=None,
+                small_gray=candidate.gray,
+                sharpness=0.0,
+            ),
+            _PreparedFrame(
+                bgr=tile.bgr,
+                gray=tile.gray,
+                focus_map=None,
+                small_gray=tile.gray,
+                sharpness=0.0,
+            ),
+            predicted_dx=predicted_dx,
+            predicted_dy=predicted_dy,
         )
-        refined_dx, refined_dy, response = _refine_translation(candidate.gray, tile.gray, predicted_dx, predicted_dy)
-        if overlap_ratio < 0.05 and response <= 0.02:
+        if not registration.accepted:
             return
         self._edges.append(
             _TileEdge(
                 source_id=candidate.tile_id,
                 target_id=tile.tile_id,
-                dx=refined_dx,
-                dy=refined_dy,
-                weight=max(0.08, float(response)),
+                dx=registration.dx,
+                dy=registration.dy,
+                weight=max(0.10, float(min(1.0, registration.response + registration.ncc * 0.35))),
             )
         )
 
@@ -738,6 +918,101 @@ def _refine_translation(gray_a, gray_b, predicted_dx: float, predicted_dy: float
         return predicted_dx, predicted_dy, 0.0
     residual_dx, residual_dy, response = _estimate_translation(crop_a, crop_b)
     return predicted_dx + residual_dx, predicted_dy + residual_dy, response
+
+
+def _normalized_cross_correlation(gray_a, gray_b, dx: float, dy: float) -> float:
+    _, np = _ensure_cv_numpy()
+    crop_a, crop_b = _crop_overlap(gray_a, gray_b, dx, dy)
+    if crop_a is None or crop_b is None:
+        return -1.0
+    a = crop_a.astype(np.float32, copy=False)
+    b = crop_b.astype(np.float32, copy=False)
+    a -= float(a.mean())
+    b -= float(b.mean())
+    denom = float(np.linalg.norm(a) * np.linalg.norm(b))
+    if denom <= 1e-6:
+        return -1.0
+    return float(np.sum(a * b) / denom)
+
+
+def _search_local_translation_near_prediction(gray_a, gray_b, predicted_dx: float, predicted_dy: float, *, search_radius: float) -> tuple[float, float, float, float]:
+    cv2, _ = _ensure_cv_numpy()
+    coarse_best_dx = predicted_dx
+    coarse_best_dy = predicted_dy
+    coarse_best_ncc = -1.0
+    radius = max(4, int(round(search_radius)))
+    coarse_step = max(2, radius // 4)
+    for dy in range(-radius, radius + 1, coarse_step):
+        for dx in range(-radius, radius + 1, coarse_step):
+            trial_dx = predicted_dx + dx
+            trial_dy = predicted_dy + dy
+            ncc = _normalized_cross_correlation(gray_a, gray_b, trial_dx, trial_dy)
+            if ncc > coarse_best_ncc:
+                coarse_best_ncc = ncc
+                coarse_best_dx = trial_dx
+                coarse_best_dy = trial_dy
+    fine_best_dx = coarse_best_dx
+    fine_best_dy = coarse_best_dy
+    fine_best_ncc = coarse_best_ncc
+    for dy in range(-max(2, coarse_step), max(2, coarse_step) + 1):
+        for dx in range(-max(2, coarse_step), max(2, coarse_step) + 1):
+            trial_dx = coarse_best_dx + dx
+            trial_dy = coarse_best_dy + dy
+            ncc = _normalized_cross_correlation(gray_a, gray_b, trial_dx, trial_dy)
+            if ncc > fine_best_ncc:
+                fine_best_ncc = ncc
+                fine_best_dx = trial_dx
+                fine_best_dy = trial_dy
+    crop_a, crop_b = _crop_overlap(gray_a, gray_b, fine_best_dx, fine_best_dy)
+    if crop_a is None or crop_b is None:
+        return fine_best_dx, fine_best_dy, 0.0, fine_best_ncc
+    residual_dx, residual_dy, response = _estimate_translation(crop_a, crop_b)
+    if abs(residual_dx) > 6.0 or abs(residual_dy) > 6.0:
+        residual_dx = 0.0
+        residual_dy = 0.0
+    refined_dx = fine_best_dx + residual_dx
+    refined_dy = fine_best_dy + residual_dy
+    refined_ncc = _normalized_cross_correlation(gray_a, gray_b, refined_dx, refined_dy)
+    if refined_ncc < fine_best_ncc:
+        refined_dx = fine_best_dx
+        refined_dy = fine_best_dy
+        refined_ncc = fine_best_ncc
+    return refined_dx, refined_dy, float(response), refined_ncc
+
+
+def _estimate_translation_orb(gray_a, gray_b, predicted_dx: float, predicted_dy: float) -> tuple[float, float, float, int]:
+    cv2, np = _ensure_cv_numpy()
+    crop_a, crop_b = _crop_overlap(gray_a, gray_b, predicted_dx, predicted_dy)
+    if crop_a is None or crop_b is None:
+        return predicted_dx, predicted_dy, -1.0, 0
+    orb = cv2.ORB_create(nfeatures=800, fastThreshold=10)
+    keypoints_a, descriptors_a = orb.detectAndCompute(crop_a, None)
+    keypoints_b, descriptors_b = orb.detectAndCompute(crop_b, None)
+    if descriptors_a is None or descriptors_b is None or len(keypoints_a) < 8 or len(keypoints_b) < 8:
+        return predicted_dx, predicted_dy, -1.0, 0
+    matcher = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=True)
+    matches = sorted(matcher.match(descriptors_a, descriptors_b), key=lambda item: item.distance)
+    if len(matches) < 8:
+        return predicted_dx, predicted_dy, -1.0, len(matches)
+    matches = matches[: min(120, len(matches))]
+    points_a = np.float32([keypoints_a[match.queryIdx].pt for match in matches]).reshape(-1, 1, 2)
+    points_b = np.float32([keypoints_b[match.trainIdx].pt for match in matches]).reshape(-1, 1, 2)
+    matrix, inliers = cv2.estimateAffinePartial2D(
+        points_b,
+        points_a,
+        method=cv2.RANSAC,
+        ransacReprojThreshold=3.0,
+        maxIters=2000,
+        confidence=0.99,
+    )
+    if matrix is None or inliers is None:
+        return predicted_dx, predicted_dy, -1.0, 0
+    residual_dx = float(matrix[0, 2])
+    residual_dy = float(matrix[1, 2])
+    dx = predicted_dx + residual_dx
+    dy = predicted_dy + residual_dy
+    ncc = _normalized_cross_correlation(gray_a, gray_b, dx, dy)
+    return dx, dy, ncc, int(inliers.sum())
 
 
 def _render_mosaic(tiles: list[_TileRecord], *, max_dimension: int | None = None):

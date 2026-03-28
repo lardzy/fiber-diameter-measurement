@@ -109,7 +109,12 @@ class MapBuildSessionWorker(QObject):
                 f"motion_state={report.motion_state}, "
                 f"stable={report.stable_streak}, "
                 f"translation_px={report.translation_px:.2f}, "
-                f"response={report.correlation_response:.4f}"
+                f"response={report.correlation_response:.4f}, "
+                f"transition_pred=({report.transition_predicted_dx:.2f},{report.transition_predicted_dy:.2f}), "
+                f"transition_refined=({report.transition_refined_dx:.2f},{report.transition_refined_dy:.2f}), "
+                f"transition_method={report.transition_method or 'none'}, "
+                f"transition_ncc={report.transition_ncc:.4f}, "
+                f"transition_delta={report.transition_delta_from_prediction:.2f}"
             ),
         )
         self.previewUpdated.emit(report)

@@ -14,7 +14,9 @@ try:
     from fdm.services.preview_analysis import (
         FocusStackAnalyzer,
         MapBuildAnalyzer,
+        _estimate_translation_orb,
         _focus_measure,
+        _search_local_translation_near_prediction,
         bgr_array_to_qimage,
         qimage_to_bgr_array,
     )
@@ -27,7 +29,9 @@ except ModuleNotFoundError:
     QImage = None
     FocusStackAnalyzer = None
     MapBuildAnalyzer = None
+    _estimate_translation_orb = None
     _focus_measure = None
+    _search_local_translation_near_prediction = None
     bgr_array_to_qimage = None
     qimage_to_bgr_array = None
 
@@ -39,6 +43,17 @@ class PreviewAnalysisTests(unittest.TestCase):
         cv2.circle(base, (120, 110), 26, (30, 30, 30), -1, cv2.LINE_AA)
         cv2.rectangle(base, (170, 40), (250, 170), (70, 70, 70), -1)
         cv2.putText(base, "A1", (36, 76), cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 0, 0), 2, cv2.LINE_AA)
+        return base
+
+    def _make_repetitive_map_base(self) -> np.ndarray:
+        base = np.full((240, 360, 3), 240, dtype=np.uint8)
+        for x in range(12, 360, 28):
+            cv2.line(base, (x, 0), (x, 239), (135, 135, 135), 2, cv2.LINE_AA)
+        for y in range(20, 240, 36):
+            cv2.line(base, (0, y), (359, y), (165, 165, 165), 1, cv2.LINE_AA)
+        cv2.circle(base, (92, 62), 18, (35, 35, 35), -1, cv2.LINE_AA)
+        cv2.rectangle(base, (210, 138), (286, 216), (50, 50, 50), -1)
+        cv2.putText(base, "R", (154, 116), cv2.FONT_HERSHEY_SIMPLEX, 1.2, (0, 0, 0), 2, cv2.LINE_AA)
         return base
 
     def _shift_frame(self, image: np.ndarray, *, dx: int = 0, dy: int = 0, blur_sigma: float | None = None) -> QImage:
@@ -232,3 +247,35 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertEqual(stable_report.motion_state, "stable")
         self.assertGreaterEqual(stable_report.accepted_frames, 3)
         self.assertEqual(result.tile_count, 2)
+
+    def test_local_search_prefers_prediction_on_repetitive_texture(self) -> None:
+        base = self._make_repetitive_map_base()
+        shifted = np.roll(base, shift=-26, axis=1)
+        gray_a = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY)
+        gray_b = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+
+        dx, dy, response, ncc = _search_local_translation_near_prediction(
+            gray_a,
+            gray_b,
+            predicted_dx=-24.0,
+            predicted_dy=0.0,
+            search_radius=18.0,
+        )
+
+        self.assertLess(abs(dx + 26.0), 4.0)
+        self.assertLess(abs(dy), 3.0)
+        self.assertGreaterEqual(response, 0.0)
+        self.assertGreater(ncc, 0.2)
+
+    def test_orb_fallback_can_recover_small_translation(self) -> None:
+        base = self._make_repetitive_map_base()
+        shifted = np.roll(base, shift=-24, axis=1)
+        gray_a = cv2.cvtColor(base, cv2.COLOR_BGR2GRAY)
+        gray_b = cv2.cvtColor(shifted, cv2.COLOR_BGR2GRAY)
+
+        dx, dy, ncc, inliers = _estimate_translation_orb(gray_a, gray_b, predicted_dx=-22.0, predicted_dy=0.0)
+
+        self.assertGreaterEqual(inliers, 8)
+        self.assertLess(abs(dx + 24.0), 5.0)
+        self.assertLess(abs(dy), 4.0)
+        self.assertGreater(ncc, 0.15)
