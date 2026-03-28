@@ -28,6 +28,7 @@ class FocusStackSessionWorker(QObject):
         super().__init__()
         self._analyzer = FocusStackAnalyzer(device_id=device_id, device_name=device_name)
         self._cancelled = False
+        self._post_sharpen_enabled = False
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
@@ -58,7 +59,7 @@ class FocusStackSessionWorker(QObject):
         if self._cancelled:
             return
         try:
-            result = self._analyzer.finalize()
+            result = self._analyzer.finalize(post_sharpen=self._post_sharpen_enabled)
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(str(exc))
             return
@@ -67,6 +68,9 @@ class FocusStackSessionWorker(QObject):
     @Slot()
     def cancel(self) -> None:
         self._cancelled = True
+
+    def set_post_sharpen_enabled(self, enabled: bool) -> None:
+        self._post_sharpen_enabled = bool(enabled)
 
 
 class MapBuildSessionWorker(QObject):

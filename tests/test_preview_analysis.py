@@ -78,6 +78,24 @@ class PreviewAnalysisTests(unittest.TestCase):
         right_score = float(_focus_measure(cv2.cvtColor(qimage_to_bgr_array(right_frame), cv2.COLOR_BGR2GRAY)).mean())
         self.assertGreaterEqual(fused_score, max(left_score, right_score) * 0.9)
 
+    def test_focus_stack_finalize_can_apply_optional_post_sharpen(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        analyzer = FocusStackAnalyzer(device_id="qt_multimedia:test", device_name="USB Camera")
+        analyzer.add_frame(left_frame)
+        analyzer.add_frame(right_frame)
+
+        plain = analyzer.finalize(post_sharpen=False)
+        sharpened = analyzer.finalize(post_sharpen=True)
+
+        plain_bgr = qimage_to_bgr_array(plain.image)
+        sharpened_bgr = qimage_to_bgr_array(sharpened.image)
+        mean_diff = float(np.mean(np.abs(sharpened_bgr.astype(np.int16) - plain_bgr.astype(np.int16))))
+
+        self.assertFalse(sharpened.image.isNull())
+        self.assertTrue(sharpened.metadata.get("post_sharpen"))
+        self.assertFalse(plain.metadata.get("post_sharpen"))
+        self.assertGreater(mean_diff, 0.05)
+
     def test_map_build_analyzer_creates_two_tile_mosaic(self) -> None:
         base = self._make_map_base()
         frame_a = bgr_array_to_qimage(base)

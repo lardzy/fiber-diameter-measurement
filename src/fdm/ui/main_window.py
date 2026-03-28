@@ -3471,14 +3471,17 @@ class MainWindow(QMainWindow):
         if self._magic_cancel_button is not None:
             self._magic_cancel_button.setEnabled(bool(canvas and canvas.has_magic_segment_session()))
 
-    def _preview_analysis_supported(self) -> bool:
+    def _preview_analysis_supported(self, mode: str | None = None) -> bool:
         selected = self._selected_capture_device()
-        return bool(
+        if not bool(
             self._preview_active
             and selected is not None
-            and selected.backend_key == "microview"
             and self._capture_manager.can_request_analysis_frame()
-        )
+        ):
+            return False
+        if mode == "map_build":
+            return selected.backend_key == "microview"
+        return True
 
     def _sync_preview_analysis_buttons(self) -> None:
         if self._focus_stack_button is not None:
@@ -3497,17 +3500,20 @@ class MainWindow(QMainWindow):
         self._preview_analysis_widget.setVisible(is_visible)
         self._preview_analysis_action.setVisible(is_visible)
         selected = self._selected_capture_device()
-        supported = self._preview_analysis_supported()
-        tooltip = "景深合成与地图构建首版仅支持 Microview 实时预览。"
+        focus_supported = self._preview_analysis_supported("focus_stack")
+        map_supported = self._preview_analysis_supported("map_build")
+        focus_tooltip = "实时预览分析：景深合成"
+        map_tooltip = "地图构建首版仅支持 Microview 实时预览。"
         if selected is not None and selected.backend_key == "microview":
-            tooltip = "实时预览分析：景深合成 / 地图构建"
-        enabled = is_visible and supported and not self._preview_analysis_finalizing
+            map_tooltip = "实时预览分析：地图构建"
+        focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
+        map_enabled = is_visible and map_supported and not self._preview_analysis_finalizing
         if self._focus_stack_button is not None:
-            self._focus_stack_button.setEnabled(enabled)
-            self._focus_stack_button.setToolTip(tooltip)
+            self._focus_stack_button.setEnabled(focus_enabled)
+            self._focus_stack_button.setToolTip(focus_tooltip)
         if self._map_build_button is not None:
-            self._map_build_button.setEnabled(enabled)
-            self._map_build_button.setToolTip(tooltip)
+            self._map_build_button.setEnabled(map_enabled)
+            self._map_build_button.setToolTip(map_tooltip)
         self._sync_preview_analysis_buttons()
 
     def _preview_analysis_intro_text(self, mode: str) -> str:
@@ -3528,9 +3534,12 @@ class MainWindow(QMainWindow):
             else:
                 self._sync_preview_analysis_buttons()
             return
-        if not self._preview_analysis_supported():
-            QMessageBox.information(self, self._analysis_mode_label(mode), "该功能首版仅支持 Microview 实时预览。")
+        if not self._preview_analysis_supported(mode):
+            message = "该功能需要实时预览已提供可用分析帧。"
+            if mode == "map_build":
+                message = "地图构建首版仅支持 Microview 实时预览。"
             self._sync_preview_analysis_buttons()
+            QMessageBox.information(self, self._analysis_mode_label(mode), message)
             return
         if self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
@@ -3540,6 +3549,7 @@ class MainWindow(QMainWindow):
         dialog = PreviewAnalysisDialog(
             self._analysis_mode_label(mode),
             intro_text=self._preview_analysis_intro_text(mode),
+            show_post_sharpen_option=(mode == "focus_stack"),
             parent=self,
         )
         dialog.finishRequested.connect(self._finalize_preview_analysis_session)
@@ -3618,6 +3628,12 @@ class MainWindow(QMainWindow):
         self._preview_analysis_finalizing = True
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        if (
+            self._preview_analysis_mode == "focus_stack"
+            and isinstance(self._preview_analysis_worker, FocusStackSessionWorker)
+            and self._preview_analysis_dialog is not None
+        ):
+            self._preview_analysis_worker.set_post_sharpen_enabled(self._preview_analysis_dialog.post_sharpen_enabled())
         self._preview_analysis_worker.finalizeRequested.emit()
         self._update_action_states()
 

@@ -188,10 +188,12 @@ class FocusStackAnalyzer:
             low_confidence=accepted_count < 2,
         )
 
-    def finalize(self) -> FocusStackFinalResult:
+    def finalize(self, *, post_sharpen: bool = False) -> FocusStackFinalResult:
         if not self._accumulator.has_frames():
             raise RuntimeError("景深合成未收到有效采样帧。")
         image = self._accumulator.final_image()
+        if post_sharpen and not image.isNull():
+            image = _apply_post_sharpen(image)
         sampled = self._accumulator.sampled_frames
         accepted = self._accumulator.accepted_frames
         metadata = {
@@ -200,6 +202,7 @@ class FocusStackAnalyzer:
             "device_name": self._device_name,
             "sampled_frames": sampled,
             "accepted_frames": accepted,
+            "post_sharpen": bool(post_sharpen),
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
         return FocusStackFinalResult(
@@ -680,6 +683,15 @@ def _focus_stack_multiscale(images: list, focus_maps: list):
     total_weights /= np.clip(total_weights.sum(axis=0, keepdims=True), 1e-6, None)
     fused = np.sum(image_stack * total_weights[..., None], axis=0)
     return np.clip(fused, 0, 255).astype(np.uint8)
+
+
+def _apply_post_sharpen(image: QImage) -> QImage:
+    cv2, np = _ensure_cv_numpy()
+    bgr = qimage_to_bgr_array(image)
+    blurred = cv2.GaussianBlur(bgr, (0, 0), sigmaX=1.1, sigmaY=1.1)
+    sharpened = cv2.addWeighted(bgr, 1.35, blurred, -0.35, 0.0)
+    sharpened = np.clip(sharpened, 0, 255).astype(np.uint8, copy=False)
+    return bgr_array_to_qimage(sharpened)
 
 
 def _estimate_translation(gray_a, gray_b) -> tuple[float, float, float]:
