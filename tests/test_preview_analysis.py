@@ -248,6 +248,25 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertGreaterEqual(stable_report.accepted_frames, 3)
         self.assertEqual(result.tile_count, 2)
 
+    def test_map_build_small_stable_shift_starts_new_tile_instead_of_refocusing_current_tile(self) -> None:
+        base = self._make_map_base()
+        frame = bgr_array_to_qimage(base)
+        slight_shift = self._shift_frame(base, dx=-8)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(frame)
+        analyzer.add_frame(slight_shift)
+        analyzer.add_frame(slight_shift)
+        report = analyzer.add_frame(slight_shift)
+        result = analyzer.finalize()
+
+        self.assertEqual(report.motion_state, "stable")
+        self.assertEqual(result.tile_count, 2)
+        self.assertGreater(result.image.width(), frame.width())
+
     def test_local_search_prefers_prediction_on_repetitive_texture(self) -> None:
         base = self._make_repetitive_map_base()
         shifted = np.roll(base, shift=-26, axis=1)

@@ -429,14 +429,6 @@ class MapBuildAnalyzer:
                 else:
                     self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
                 return self._build_report()
-            if candidate_translation < float(self._tile_shift_threshold_px or 20.0):
-                self._transition_pending = False
-                self._transition_tracker = None
-                if self._accept_prepared_frame(candidate):
-                    self._last_message = self._sampling_message()
-                else:
-                    self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
-                return self._build_report()
             if not registration.accepted:
                 self._rejected_low_confidence_frames += 1
                 self._last_message = "重叠纹理不足或匹配不可靠，未创建新 tile"
