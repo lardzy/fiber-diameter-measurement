@@ -1,224 +1,267 @@
-# Fiber Measurement / 纤维测量软件
+# Fiber Diameter Measurement / 纤维显微测量工作台
 
-![演示图片](sample_data/readme-demo/演示图片.jpg)
+> 一个面向显微图像的离线桌面测量工具，用于完成纤维直径测量、面积圈定、自动识别、标尺标定、项目保存和结果导出。
 
-离线纤维测量桌面软件，面向 Windows 10 / Windows 11 无独显电脑。当前版本已经覆盖纤维直径测量、纤维面积测量、实例分割面积自动识别、点提示魔棒分割、比例尺标定、项目保存，以及叠加图和表格数据导出。
+> `docs/readme-assets/` 中的插图当前为占位示意图，后续可直接替换为同名真实截图。
 
-## 功能概览
+![工作台总览](docs/readme-assets/workspace-overview.jpg)
 
-- 多图工作流
-  - 同时打开多张图片，支持 `PNG / JPG / BMP / TIF / TIFF`
-  - 支持打开文件夹中的全部图片，忽略子文件夹
-  - 多图加载采用后台解码，并显示可取消的进度对话框
-- 三栏工作区
-  - 左侧：图片列表
-  - 中间：多标签测量画布
-  - 右侧：标定、模型、纤维类别、测量记录
-- 双层工具区
-  - 第一行：打开、保存、导出、视图、关闭图片等文件类操作
-  - 第二行：`浏览`、`手动测量`、`半自动吸附`、`多边形面积`、`自由形状面积`、`魔棒分割`、`比例尺标定`、`文字`
-- 测量模式
-  - `浏览`：选择已有测量线并编辑端点
-  - `手动测量`：直接绘制直径线
-  - `半自动吸附`：第一次点击确定起点，第二次点击确定终点，再在局部 ROI 内吸附到纤维边界
-  - `多边形面积`：逐点绘制闭环区域，点击首点或双击完成
-  - `自由形状面积`：按住左键自由勾画区域，松开自动闭环
-  - `魔棒分割`：通过正 / 负采样点交互式生成区域遮罩
-  - `比例尺标定`：在图中拉取已知长度并输入实际距离
-  - `文字`：添加任意说明文字，并在浏览模式拖动位置
-- 面积识别
-  - 支持实例分割模型自动识别面积结果
-  - 支持当前图片或全部已打开图片批量识别
-  - 自动识别结果会直接写入测量记录和类别
-- 实时预览与预览分析
-  - 支持采集设备实时预览
-  - 支持在实时预览中启动 `景深合成`
-  - `景深合成` 的“合成后锐化”默认开启
-  - `地图构建` 入口当前保留在界面中，但默认不可用，并标注“开发中”
-- 标定能力
-  - 图内标定
-  - 标定预设
-  - 标定预设可通过“像素距离 + 实际距离 + 单位”自动计算比例尺
-  - 标定自动写入图片同目录侧车文件 `<图片名>.fdm.json`
-- 纤维类别
-  - 支持未分类与多个编号类别
-  - 支持新增、重命名、删除类别
-  - `1-9` 数字键切换右侧当前激活类别
-  - 新建测量会归入当前激活类别；旧测量不会因切换类别而改变
-- 导出能力
-  - 测量叠加图 PNG
-  - 比例尺叠加图 PNG
-  - 比例尺 JSON
-  - `图片汇总.csv`
-  - `纤维种类汇总.csv`
-  - `测量明细.csv`
-  - `纤维测量结果.xlsx`
-  - 支持“叠加图 + Excel”快捷导出
-- 图片导出渲染模式
-  - `完整分辨率`：按原图分辨率导出精确标注
-  - `整图按屏显比例导出`：更接近日常查看效果
-  - `当前视窗截图`：保留当前画布视口构图
-- 本地模型接入
-  - 支持 ONNX Runtime CPU 本地推理
-  - 未加载模型时自动回退到传统图像算法
-  - `EdgeSAM` ONNX 已集成到项目运行时目录，用于魔棒分割
-  - 面积自动识别使用独立 worker，在无独显 Windows 设备上走 CPU 推理
-- 项目保存
-  - `*.fdmproj` 保存图片路径、标定快照、类别、测量记录与视图状态
-  - 文本标注、面积记录和手动比例尺位置都会保存到项目文件
+## 项目定位
 
-## 交互与快捷键
+本项目是一个围绕显微图片和采集预览构建的离线测量工作台，能力范围已覆盖直径测量、面积分割、标尺标定、项目归档与结果导出：
 
-- `空格`：临时抓手，按住后左键拖动画布
-- 鼠标滚轮：缩放画布
-- 鼠标中键拖动：平移画布
-- `Shift`：绘制或拖拽时约束为水平或垂直
-- `Ctrl`：端点吸附到像素中心
-- `Shift + Ctrl`：同时启用方向约束和像素中心吸附
-- `Delete / Backspace`：删除当前选中的测量
-- `Ctrl + Z`：撤回当前图片中的编辑
-- `Ctrl + Shift + Z`：重做当前图片中的编辑
-- `A`：在当前工具与 `浏览` 工具之间切换
-- `V`：切换面积填充显示 / 仅轮廓显示
-- `1-9`：切换当前激活类别
-- `R`：在魔棒分割的正采样点 / 负采样点之间循环切换
-- `Enter / F`：完成当前魔棒遮罩
-- `Esc`：放弃当前测量线、多边形、自由形状或魔棒草稿
+- 面向对象是纤维类显微图像，而不是通用图片编辑。
+- 核心任务是“标定 + 测量 + 分类 + 保存 + 导出”的完整业务闭环。
+- 交互中心是多图片工作区，每张图片都有自己的标定、测量记录、类别、文字标注和历史记录。
+- 算法能力分成三层：手工绘制、传统图像算法辅助、模型推理辅助。
+- 项目保存不仅保存结构化数据，还支持把实时预览抓拍图像一起归档到项目资产目录。
 
-说明：
+本项目的核心作用可以概括为：
 
-- 数字键只用于切换右侧“纤维类别”的当前激活项，不会直接修改某条测量记录的类别。
-- 测量记录表中的类别下拉需要显式点击展开后才会修改，滚轮经过不会误切换。
-- 也可以通过菜单 `帮助 > 快捷键说明` 查看完整快捷键列表。
+> 把显微图像的人工测量、半自动辅助测量、面积分割、实时采集预览和结果导出，收敛到同一个本地桌面工作流里。
 
-## 典型使用流程
+## 适用场景
 
-1. 打开一张或多张显微图片，或直接打开包含图片的文件夹。
-2. 使用 `比例尺标定` 完成图内标定，或在右侧创建并应用标定预设。
-3. 在右侧创建或切换当前激活的纤维类别。
-4. 根据场景选择 `手动测量`、`半自动吸附`、`多边形面积`、`自由形状面积` 或 `魔棒分割`。
-5. 如果需要自动识别面积，可点击右侧 `面积自动识别...`。
-6. 切换到 `浏览` 对线段端点、面积顶点、面积整体位置或文字位置做编辑。
-7. 在右侧测量记录表中检查类别、类型、结果、模式、置信度和状态。
-8. 通过 `保存项目` 保存完整会话，或通过导出菜单导出叠加图、比例尺文件、CSV、Excel。
+- 对显微图片中的纤维做直径测量。
+- 对纤维区域做面积圈选、面积统计和分类记录。
+- 使用本地模型辅助完成魔棒分割或批量面积自动识别。
+- 在采集端实时预览显微画面，并将当前帧导入到项目中继续测量。
+- 保存完整测量会话，后续继续编辑或导出 CSV / Excel / 叠加图。
 
-## 半自动吸附说明
+## 核心能力
 
-- 半自动吸附会在用户两次点击确定的近似测量线附近提取局部 ROI。
-- 若已加载 ONNX 分割模型，则优先使用模型输出寻找纤维边界。
-- 若模型不可用，则自动回退到阈值、形态学清理、连通域筛选等传统算法。
-- 当前实现会尽量保持用户原始测量线角度，只对边界位置做吸附修正，避免自动旋转到不合适的方向。
+- 多图工作区
+  - 支持同时打开多张图片或整个文件夹。
+  - 图片解码走后台 worker，避免阻塞主界面。
+  - 每张图片都有独立标签页、列表项和画布状态。
+- 标定体系
+  - 支持图内比例尺标定。
+  - 支持标定预设。
+  - 支持项目统一比例尺。
+  - 文件系统图片会自动读写同目录侧车文件 `*.fdm.json`。
+- 测量与标注
+  - 手动直径测量。
+  - 半自动吸附测量。
+  - 多边形面积。
+  - 自由形状面积。
+  - 交互式魔棒分割。
+  - 文字标注。
+- 智能能力
+  - `SnapService` 负责基于局部 ROI 的边界吸附。
+  - `PromptSegmentationService` 基于内置 EdgeSAM ONNX 做点提示分割。
+  - `AreaInferenceService` 调用独立 worker，基于 YOLACT 权重做面积实例识别。
+- 实时预览与分析
+  - 支持 USB 相机预览。
+  - 支持 Microview 采集卡预览。
+  - 支持抓拍当前帧进入项目。
+  - 支持景深合成。
+  - 地图构建逻辑已具备实现基础，但当前界面默认仍标记为“开发中”。
+- 导出与归档
+  - 叠加图 PNG。
+  - 比例尺 JSON。
+  - 图片汇总、纤维种类汇总、测量明细 CSV。
+  - `纤维测量结果.xlsx`。
+  - `*.fdmproj` 项目文件及其 `.assets` 资产目录。
 
-## 实时预览分析说明
+## 典型工作流
 
-- `景深合成` 可在实时预览中持续采样，并在结束时生成更清晰的合成图像。
-- `景深合成` 对话框中的“合成后锐化”默认开启，只影响最终导出结果，不影响实时预览过程中的画面。
-- `地图构建` 按钮当前会显示在预览分析区域，但默认不可用，并在按钮附近标注“开发中”，用于提示该功能尚未开放。
+![标定与测量流程](docs/readme-assets/measurement-workflow.jpg)
 
-## 面积测量与魔棒分割
+1. 打开显微图片，或从实时预览抓拍一帧导入项目。
+2. 对当前图片进行图内标定，或应用已有标定预设。
+3. 创建纤维类别并切换当前激活类别。
+4. 选择合适的测量方式：
+   - 手动画线
+   - 半自动吸附
+   - 多边形 / 自由形状面积
+   - 魔棒分割
+   - 面积自动识别
+5. 在右侧记录表中检查结果、模式、置信度、状态和所属类别。
+6. 保存项目，或导出叠加图、表格和标尺文件。
 
-- 面积记录和线段记录共用同一套类别、撤回 / 重做、项目保存和导出链路。
-- `多边形面积` 支持点击首点闭环和双击自动闭环。
-- `自由形状面积` 适合快速圈定不规则区域。
-- `魔棒分割` 使用项目内置的 `EdgeSAM` ONNX 模型：
-  - 左键添加当前类型的采样点
-  - `R` 循环切换正采样点 / 负采样点
-  - `Enter / F` 将当前预览遮罩固化为面积记录
-  - `Esc` 放弃当前草稿
-- 浏览模式下点击面积记录后，才会显示顶点和中心手柄；可拖中心整体移动，也可拖顶点改形状。
+![面积识别与交互分割](docs/readme-assets/area-segmentation.jpg)
 
-## 面积自动识别说明
+## 架构与实现概览
 
-- 面积自动识别使用本地实例分割 worker，不依赖 GPU。
-- 运行前请确保设置中的模型名称与权重文件映射正确，且 `runtime/area-models` 中存在对应权重。
-- 自动识别可以选择仅处理当前图片，或批量处理所有已打开图片。
-- 重复执行同一张图的面积自动识别时，会替换该图旧的自动识别面积记录，但不会删除手绘面积或线段记录。
+### 1. 文档驱动的数据组织
 
-## 标定与项目文件
+本项目以 `ImageDocument` 作为核心数据对象，将单张图片的主要状态聚合在同一个文档模型中：
 
-- 图内标定结果会自动写入图片同目录侧车文件：
+- 图片路径与来源类型。
+- 标定信息。
+- 纤维类别与当前激活类别。
+- 线段测量、面积测量、文本标注。
+- 视图缩放、平移、当前选中对象。
+- 标尺锚点、脏状态、撤回 / 重做历史。
+
+因此，本项目的大多数功能都围绕“单张图片文档”组织，便于扩展、保存和恢复。
+
+### 2. 交互层与算法层的职责拆分
+
+- `src/fdm/ui/main_window.py`
+  - 负责菜单、工具栏、右侧面板、批量加载、项目保存、导出、实时预览编排。
+- `src/fdm/ui/canvas.py`
+  - 负责画布缩放平移、图上绘制、拖拽编辑、魔棒交互、选中逻辑。
+- `src/fdm/services/`
+  - 负责真正的算法和 I/O：吸附、导出、侧车、模型推理、预览分析、采集后端等。
+
+这种拆分形成了清晰的职责边界：UI 负责流程编排，服务层负责能力实现，模型层负责状态管理。
+
+### 3. 智能能力的三条实现链路
+
+- 传统算法辅助测量
+  - `SnapService` 对手工给出的近似线段做边界吸附。
+- 交互式提示分割
+  - `PromptSegmentationService` 使用 EdgeSAM 的 encoder / decoder ONNX。
+- 批量实例识别
+  - `AreaInferenceService` 启动 `src/fdm/workers/area_worker.py` 子进程，再加载 `runtime/area-infer/app/engine.py` 中的 YOLACT 推理引擎。
+
+本项目将面积自动识别实现为独立 worker，用于隔离 `torch / torchvision / Pillow` 等重量依赖，避免将主界面线程与推理运行时直接耦合。
+
+### 4. 持久化设计分成“侧车、项目、资产目录”三层
+
+- 图片侧车 `*.fdm.json`
+  - 只保存标定相关数据。
+- 项目文件 `*.fdmproj`
+  - 保存会话结构化状态，例如测量记录、类别、视图状态、标定快照、文本标注等。
+- 项目资产目录 `<project>.assets/`
+  - 保存抓拍导入项目、但原始磁盘路径并不存在的图片资产，例如 `captures/*.png`。
+
+这套设计使本项目能够同时兼顾文件系统图片的原路径管理与临时采集图片的项目内归档。
+
+### 5. 部署目标与运行环境
+
+- 主界面使用 `PySide6`，适合桌面打包。
+- 运行时内置 `runtime/camera/microview/` DLL 与驱动资源。
+- `scripts/build_windows_onedir.py`、`packaging/pyinstaller/`、`packaging/inno-setup/` 都说明项目已经考虑 Windows 发行流程。
+- 面积自动识别 worker 当前桌面集成默认走 CPU 推理，符合“无独显也能跑”的目标。
+
+![实时预览与景深合成](docs/readme-assets/live-preview.jpg)
+
+## 模块结构
+
+| 模块 | 主要职责 | 说明 |
+| --- | --- | --- |
+| `src/fdm/app.py` | 应用入口 | 启动 Qt 应用、安装异常钩子、写启动日志 |
+| `src/fdm/models.py` | 领域模型 | 文档、标定、类别、测量、项目状态、脏标记 |
+| `src/fdm/ui/main_window.py` | 主窗口编排 | 文件操作、工具栏、右侧面板、导出、预览、worker 协调 |
+| `src/fdm/ui/canvas.py` | 图像画布 | 绘制、编辑、缩放、交互式分割和选中逻辑 |
+| `src/fdm/services/snap_service.py` | 半自动吸附 | 在局部 ROI 内做边界定位 |
+| `src/fdm/services/prompt_segmentation.py` | 魔棒分割 | 基于 EdgeSAM ONNX 的点提示分割 |
+| `src/fdm/services/area_inference.py` | 面积自动识别入口 | 调用独立 worker 并解析结果 |
+| `src/fdm/workers/area_worker.py` | 推理子进程 | 加载参考引擎并做 CPU 推理 |
+| `src/fdm/services/capture.py` | 采集管理 | USB 相机 / Microview 统一抽象 |
+| `src/fdm/services/preview_analysis.py` | 预览分析 | 景深合成、地图构建分析器 |
+| `src/fdm/services/export_service.py` | 结果导出 | PNG / JSON / CSV / XLSX |
+| `src/fdm/services/sidecar_io.py` | 标尺侧车 | 读写 `*.fdm.json` |
+
+## 目录导览
 
 ```text
-<image-name>.fdm.json
+fiber-diameter-measurement/
+├─ src/fdm/                    主程序源码
+│  ├─ ui/                      界面、画布、对话框、后台 worker
+│  ├─ services/                算法与 I/O 服务
+│  ├─ workers/                 独立推理 worker
+│  ├─ models.py                核心数据模型
+│  ├─ settings.py              应用设置与运行时路径解析
+│  └─ app.py                   桌面应用入口
+├─ runtime/                    随程序分发的运行时资源
+│  ├─ segment-anything/edge_sam/
+│  ├─ area-infer/
+│  ├─ area-models/
+│  └─ camera/microview/
+├─ tests/                      回归测试
+├─ packaging/                  PyInstaller / Inno Setup 打包配置
+├─ scripts/                    构建脚本
+├─ sample_data/                示例说明与演示图片
+└─ docs/readme-assets/         README 插图资源
 ```
 
-- 侧车文件只保存标定相关信息，不自动保存测量结果。
-- 若希望保存完整测量会话，请使用项目文件：
+## 运行时资源约定
 
-```text
-*.fdmproj
-```
+### EdgeSAM 魔棒分割
 
-- 打开图片时会优先读取同名侧车中的标定信息；打开项目文件时，以项目中的标定快照和会话数据为准。
+- 路径：`runtime/segment-anything/edge_sam/`
+- 关键文件：
+  - `edge_sam_encoder.onnx`
+  - `edge_sam_decoder.onnx`
+- 作用：为画布中的点提示交互分割提供本地 ONNX 推理能力。
 
-## 测量记录与类别
+### 面积自动识别
 
-- 右侧“纤维类别”区域用于管理当前图片的类别集合和当前激活类别。
-- 测量记录表默认列顺序为：
-  - `种类`
-  - `类型`
-  - `结果`
-  - `单位`
-  - `模式`
-  - `置信度`
-  - `状态`
-  - `ID`
-- 表格中的“种类”列可以直接修改单条测量所属类别。
-- 画布选中测量线后，右侧记录表会自动同步选中对应行；反向选择同样成立。
+- 引擎参考代码：`runtime/area-infer/app/`
+- 第三方模型代码：`runtime/area-infer/vendor/yolact/`
+- 权重目录约定：`runtime/area-models/`
+- Python 额外依赖：`torch`、`torchvision`
 
-## ONNX 模型约定
+注意：
 
-- 目标任务：二分类分割，背景 / 纤维
-- 推荐输入：单通道灰度图，或可转换为单通道的图像
-- 支持的输出形态：
-  - `[1, 1, H, W]`
-  - `[1, H, W]`
-  - `[H, W]`
-- 预测值大于等于 `0.5` 时视为纤维掩码
-- 推理后续逻辑会结合连通域筛选和几何求交完成最终边界定位
+- 仓库里已经包含面积识别的运行时框架和 vendor 代码。
+- 业务权重文件是否随发行包提供，取决于你的交付方式；源码仓库里不一定自带完整 `.pth` 权重。
 
-## 技术栈
+### 相机采集
 
-- `Python 3.11+`
-- `PySide6`：桌面界面
-- `NumPy`：基础数值计算
-- `OpenCV`：图像处理扩展依赖
-- `ONNX Runtime CPU`：本地模型推理
-- `pandas + openpyxl`：CSV / Excel 导出
-- `qtawesome`：优先使用的工具栏图标库
-  - 若当前环境未安装，界面会自动回退到内置线性图标
+- 通用 USB 相机：通过 Qt Multimedia 接入。
+- Microview 设备：通过 `runtime/camera/microview/` 下的 DLL 和驱动文件接入。
+- Microview 相关链路明显依赖 Windows 运行环境。
+
+## 数据文件说明
+
+| 文件 | 作用 | 说明 |
+| --- | --- | --- |
+| `*.fdm.json` | 图片标尺侧车 | 保存标定信息和标定线，不保存完整测量结果 |
+| `*.fdmproj` | 项目文件 | 保存图片列表、测量记录、类别、视图状态、文本标注等 |
+| `<project>.assets/` | 项目资产目录 | 保存抓拍进入项目的图片资源 |
+| `图片汇总.csv` | 导出统计 | 按图片聚合 |
+| `纤维种类汇总.csv` | 导出统计 | 按类别聚合 |
+| `测量明细.csv` | 导出统计 | 明细级记录 |
+| `纤维测量结果.xlsx` | 综合导出 | 多 sheet 汇总 |
+
+![项目保存与导出](docs/readme-assets/export-output.jpg)
+
+## 已验证的测试覆盖
+
+本项目当前的自动化回归用例主要覆盖以下内容：
+
+- `tests/test_models_project_io.py`
+  - 项目文件往返读写、类别、标定预设、项目资产路径解析。
+- `tests/test_history_and_sidecar.py`
+  - 撤回 / 重做、标尺侧车读写。
+- `tests/test_raster_and_snap.py`
+  - 旋转 ROI、半自动吸附的边界定位与退化场景。
+- `tests/test_prompt_segmentation.py`
+  - EdgeSAM 路径解析、embedding 缓存、掩码转多边形。
+- `tests/test_preview_analysis.py`
+  - 景深合成、地图构建的稳定性判断与拼接逻辑。
+- `tests/test_ui_canvas_and_export.py`
+  - 画布交互、导出渲染、实时预览抓拍进入项目等行为。
+
+这表明本项目不仅提供界面功能，也对关键业务链路建立了较系统的自动化验证。
 
 ## 快速开始
 
-### 1. 创建虚拟环境
+### 环境要求
 
-macOS / Linux:
+- Python `3.11+`
+- 推荐系统：Windows 10 / Windows 11
+- 基础依赖见 `pyproject.toml`
+
+### 安装依赖
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
-```
-
-Windows PowerShell:
-
-```powershell
-python -m venv .venv
-.venv\Scripts\Activate.ps1
-```
-
-### 2. 安装依赖
-
-```bash
 pip install -e .
 ```
 
-如果你需要在开发环境中启用“面积自动识别”：
+如需启用“面积自动识别”，请额外安装：
 
 ```bash
 pip install -e .[area-infer]
 ```
 
-### 3. 启动应用
+### 启动应用
 
 ```bash
 python -m fdm
@@ -230,165 +273,30 @@ python -m fdm
 fdm
 ```
 
-## 测试
+## 开发与测试
 
-项目测试基于标准库 `unittest`。
+运行测试：
 
 ```bash
 python -m unittest discover -s tests
 ```
 
-说明：
-
-- 纯逻辑测试不依赖 GUI。
-- GUI 相关测试位于 `tests/test_ui_canvas_and_export.py`，在安装了 `PySide6` 的环境中会运行；若环境缺少 `PySide6`，这些测试会自动跳过。
-- GUI 测试默认使用 `QT_QPA_PLATFORM=offscreen`，适合在无桌面环境下做基础回归。
-
-当前测试覆盖的重点包括：
-
-- 标定换算与项目文件读写
-- 标定侧车保存与自动恢复
-- 文档级撤回 / 重做
-- 旋转 ROI 提取
-- 半自动吸附在合成图像上的边界定位
-- 面积测量、多边形编辑与面积导出
-- 魔棒分割服务、画布交互和快捷键行为
-- 画布缩放、抓手、端点编辑判定
-- 测量叠加图 / 比例尺图的导出可见性
-- 批量加载 worker 和主界面部分交互回归
-
-## Windows 打包
-
-仓库内已包含一套面向 `PyInstaller onedir` 的 Windows 打包脚本，适合后续交给 `Inno Setup` 制作安装包。
-
-### 1. 安装打包依赖
+Windows 打包：
 
 ```bash
-pip install -e .[packaging]
+python scripts/build_windows_onedir.py
 ```
 
-如果安装包需要同时包含“面积自动识别”的运行能力，建议在打包环境额外安装：
+相关文件：
 
-```bash
-pip install -e .[area-infer]
-```
+- `packaging/pyinstaller/fdm_onedir.spec`
+- `packaging/inno-setup/fdm_installer.iss`
 
-### 2. 生成 Windows `onedir` 产物
+## 当前状态与注意事项
 
-Windows PowerShell:
+- 本项目名称虽然强调“直径测量”，但当前实际能力已经覆盖直径、面积、文字标注、实时预览分析和结果导出。
+- `地图构建` 相关分析器与测试已经存在，但主界面默认仍将其视为开发中能力。
+- 面积自动识别依赖额外 Python 包和模型权重，源码环境下不会自动帮你补齐这些文件。
+- 如果运行环境缺少 `QtMultimedia` 或 Microview 相关 DLL，实时预览能力会降级或不可用。
+- `sample_data/` 目前只放了最小示例说明和演示图片，不包含完整业务数据集。
 
-```powershell
-python .\scripts\build_windows_onedir.py
-```
-
-也可以使用批处理：
-
-```bat
-scripts\build_windows_onedir.bat
-```
-
-输出目录：
-
-```text
-dist/windows/FiberDiameterMeasurement/
-```
-
-打包后的目录中应至少包含：
-
-```text
-FiberDiameterMeasurement.exe
-FiberAreaWorker.exe
-runtime/
-```
-
-其中 `runtime/` 会带上：
-
-- `runtime/area-models`：面积自动识别权重
-- `runtime/area-infer`：面积自动识别运行时代码
-- `runtime/segment-anything/edge_sam`：魔棒分割使用的 EdgeSAM ONNX
-
-### 3. 诊断启动问题
-
-如果打包后的 exe 双击无反应，可以先构建带控制台和 bootloader 调试信息的诊断版：
-
-```powershell
-python .\scripts\build_windows_onedir.py --console --bootloader-debug
-```
-
-然后从终端启动：
-
-```powershell
-.\dist\windows\FiberDiameterMeasurement\FiberDiameterMeasurement.exe
-```
-
-如果应用在启动早期抛出 Python 异常，还会写入：
-
-```text
-%LOCALAPPDATA%\FiberDiameterMeasurement\logs\startup.log
-```
-
-构建脚本还会在打包前检查：
-
-- 面积自动识别依赖（`Pillow / torch / torchvision`）
-- 魔棒分割运行时模型（`edge_sam_encoder.onnx / edge_sam_decoder.onnx`）
-
-### 4. 使用 Inno Setup 生成安装包
-
-仓库中已提供模板：
-
-```text
-packaging/inno-setup/fdm_installer.iss
-```
-
-推荐流程：
-
-1. 先执行 `python .\scripts\build_windows_onedir.py`
-2. 用 Inno Setup 打开 `packaging\inno-setup\fdm_installer.iss`
-3. 按需修改顶部宏，例如版本号、发布者、快捷方式名称
-4. 编译后在 `dist\installer\` 中获取安装包
-
-## 目录结构
-
-```text
-src/fdm/
-  __main__.py
-  app.py
-  geometry.py
-  history.py
-  models.py
-  project_io.py
-  raster.py
-  services/
-    export_service.py
-    model_provider.py
-    sidecar_io.py
-    snap_service.py
-  ui/
-    canvas.py
-    dialogs.py
-    icons.py
-    image_loader.py
-    main_window.py
-    widgets.py
-tests/
-  test_export_service.py
-  test_history_and_sidecar.py
-  test_models_project_io.py
-  test_raster_and_snap.py
-  test_ui_canvas_and_export.py
-packaging/
-  inno-setup/
-    fdm_installer.iss
-  pyinstaller/
-    fdm_onedir.spec
-scripts/
-  build_windows_onedir.py
-  build_windows_onedir.bat
-```
-
-## 当前边界
-
-- 当前版本仍以“用户指定目标纤维，系统辅助吸附测量”为主，不包含整张图全自动批量识别全部纤维。
-- ONNX 模型接入只覆盖推理接口，不包含训练、评估和导出工具链。
-- 目前导出以 PNG / JSON / CSV / XLSX 为主，未包含 PDF 报告工作流。
-- `地图构建` 入口已预留，但当前版本仍处于开发中，默认不可用。
