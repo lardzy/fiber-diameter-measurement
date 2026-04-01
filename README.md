@@ -290,6 +290,14 @@ python scripts/build_windows_onedir.py
 - `packaging/pyinstaller/fdm_onedir.spec`
 - `packaging/inno-setup/fdm_installer.iss`
 
+## 开源协议
+
+本项目采用 GNU General Public License v3.0（GPLv3）开源协议发布。
+
+- 任何个人或组织均可在遵守 GPLv3 的前提下使用、复制、修改和分发本项目代码。
+- 基于本项目修改并再发布的衍生作品，应继续以 GPLv3 协议开放源代码，并保留原始版权声明与协议说明。
+- 分发本项目或其衍生作品时，应附带相应的 GPLv3 协议文本。
+
 ## 当前状态与注意事项
 
 - 本项目名称虽然强调“直径测量”，但当前实际能力已经覆盖直径、面积、文字标注、实时预览分析和结果导出。
@@ -297,4 +305,3 @@ python scripts/build_windows_onedir.py
 - 面积自动识别依赖额外 Python 包和模型权重，项目中将不提供。
 - 如果运行环境缺少 `QtMultimedia` 或 Microview 相关 DLL，实时预览能力会降级或不可用。
 - `sample_data/` 目前只放了最小示例说明和演示图片，不包含完整业务逻辑。
-
