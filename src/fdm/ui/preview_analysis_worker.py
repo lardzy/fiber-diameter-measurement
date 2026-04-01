@@ -8,6 +8,7 @@ from PySide6.QtGui import QImage
 from fdm.services.preview_analysis import (
     FocusStackAnalyzer,
     FocusStackFinalResult,
+    FocusStackRenderConfig,
     FocusStackReport,
     MapBuildAnalyzer,
     MapBuildFinalResult,
@@ -18,18 +19,29 @@ from fdm.services.preview_analysis import (
 
 class FocusStackSessionWorker(QObject):
     frameSubmitted = Signal(object)
+    renderConfigSubmitted = Signal(object)
     finalizeRequested = Signal()
     cancelRequested = Signal()
     previewUpdated = Signal(object)
     finished = Signal(object)
     failed = Signal(str)
 
-    def __init__(self, *, device_id: str, device_name: str) -> None:
+    def __init__(
+        self,
+        *,
+        device_id: str,
+        device_name: str,
+        render_config: FocusStackRenderConfig | None = None,
+    ) -> None:
         super().__init__()
-        self._analyzer = FocusStackAnalyzer(device_id=device_id, device_name=device_name)
+        self._analyzer = FocusStackAnalyzer(
+            device_id=device_id,
+            device_name=device_name,
+            render_config=render_config,
+        )
         self._cancelled = False
-        self._post_sharpen_enabled = True
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
+        self.renderConfigSubmitted.connect(self.update_render_config, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
@@ -59,18 +71,27 @@ class FocusStackSessionWorker(QObject):
         if self._cancelled:
             return
         try:
-            result = self._analyzer.finalize(post_sharpen=self._post_sharpen_enabled)
+            result = self._analyzer.finalize()
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(str(exc))
             return
         self.finished.emit(result)
 
+    @Slot(object)
+    def update_render_config(self, render_config: object) -> None:
+        if self._cancelled or not isinstance(render_config, FocusStackRenderConfig):
+            return
+        try:
+            self._analyzer.set_render_config(render_config)
+            report = self._analyzer.refresh_preview()
+        except Exception as exc:  # noqa: BLE001
+            self.failed.emit(str(exc))
+            return
+        self.previewUpdated.emit(report)
+
     @Slot()
     def cancel(self) -> None:
         self._cancelled = True
-
-    def set_post_sharpen_enabled(self, enabled: bool) -> None:
-        self._post_sharpen_enabled = bool(enabled)
 
 
 class MapBuildSessionWorker(QObject):

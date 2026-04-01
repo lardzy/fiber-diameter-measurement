@@ -8,7 +8,7 @@ from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen
 
 from fdm.geometry import Line, Point, direction, normal
 from fdm.models import ImageDocument, Measurement, TextAnnotation, format_measurement_label_value
-from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode
+from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
 
 
 @dataclass(slots=True)
@@ -74,6 +74,21 @@ def text_annotation_font(settings: AppSettings) -> QFont:
     font.setFamily(settings.text_font_family)
     font.setPixelSize(int(max(8, settings.text_font_size)))
     return font
+
+
+def scale_overlay_font(settings: AppSettings, *, suggested_font_px: float, render_mode: str) -> tuple[QFont, float]:
+    font = QFont()
+    font.setFamily(settings.scale_overlay_font_family)
+    base_font_px = float(max(8, settings.scale_overlay_font_size))
+    if render_mode == "full_resolution":
+        resolved_px = min(max(base_font_px, 12.0), 28.0)
+    else:
+        lower_bound = max(10.0, suggested_font_px * 0.75)
+        upper_bound = max(lower_bound, suggested_font_px * 1.6)
+        resolved_px = min(max(base_font_px, lower_bound), upper_bound)
+    font.setPixelSize(int(round(resolved_px)))
+    font.setBold(True)
+    return font, resolved_px
 
 
 def _text_layout(font: QFont, content: str) -> tuple[QFontMetricsF, list[str], float, float]:
@@ -352,6 +367,32 @@ def draw_preview_scale_anchor(
     painter.drawText(QPointF(position.x(), position.y() - 12.0), text)
 
 
+def _overlay_outline_color(color: QColor) -> QColor:
+    if color.lightnessF() > 0.58:
+        return QColor("#101820")
+    return QColor("#F7F4EA")
+
+
+def _draw_scale_ticks(
+    painter: QPainter,
+    start_point: QPointF,
+    end_point: QPointF,
+    *,
+    outline_color: QColor,
+    foreground_color: QColor,
+    bg_width: float,
+    fg_width: float,
+    tick_length: float,
+) -> None:
+    for anchor in (start_point, end_point):
+        tick_start = QPointF(anchor.x(), anchor.y() - tick_length)
+        tick_end = QPointF(anchor.x(), anchor.y() + tick_length)
+        painter.setPen(QPen(outline_color, bg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        painter.drawLine(tick_start, tick_end)
+        painter.setPen(QPen(foreground_color, fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+        painter.drawLine(tick_start, tick_end)
+
+
 def draw_scale_overlay(
     painter: QPainter,
     document: ImageDocument,
@@ -363,33 +404,56 @@ def draw_scale_overlay(
     scale_bg_width: float,
     scale_fg_width: float,
     font_px: float,
-    target_output_px: float,
+    render_mode: str,
 ) -> None:
+    target_output_px = max(48.0, image_width * settings.scale_overlay_length_ratio)
     scale_value = nice_scale_value(document, target_output_px=target_output_px, image_to_output_scale=image_to_output_scale)
     if scale_value is None:
         return
     value, bar_px = scale_value
+    font, resolved_font_px = scale_overlay_font(settings, suggested_font_px=font_px, render_mode=render_mode)
+    line_color = QColor(settings.scale_overlay_color)
+    line_outline = _overlay_outline_color(line_color)
+    text_color = QColor(settings.scale_overlay_text_color)
+    text_outline = _overlay_outline_color(text_color)
     start_point, draw_below = _scale_overlay_start(
         document,
         settings,
         image_width=image_width,
         image_height=image_height,
         bar_px=bar_px,
-        font_px=font_px,
+        font_px=resolved_font_px,
         image_to_output_scale=image_to_output_scale,
     )
-    painter.setPen(QPen(QColor("#111111"), scale_bg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-    painter.drawLine(start_point, QPointF(start_point.x() + bar_px, start_point.y()))
-    painter.setPen(QPen(QColor("#FFFFFF"), scale_fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-    painter.drawLine(start_point, QPointF(start_point.x() + bar_px, start_point.y()))
-    font = QFont(painter.font())
-    font.setPixelSize(int(round(font_px)))
-    font.setBold(True)
+    end_point = QPointF(start_point.x() + bar_px, start_point.y())
+    bg_width = scale_bg_width
+    fg_width = scale_fg_width
+    cap_style = Qt.PenCapStyle.RoundCap
+    if settings.scale_overlay_style == ScaleOverlayStyle.BAR:
+        bg_width = max(bg_width * 2.2, fg_width * 2.0)
+        fg_width = max(fg_width * 1.9, scale_fg_width + 1.5)
+        cap_style = Qt.PenCapStyle.SquareCap
+    painter.setPen(QPen(line_outline, bg_width, Qt.PenStyle.SolidLine, cap_style))
+    painter.drawLine(start_point, end_point)
+    painter.setPen(QPen(line_color, fg_width, Qt.PenStyle.SolidLine, cap_style))
+    painter.drawLine(start_point, end_point)
+    if settings.scale_overlay_style == ScaleOverlayStyle.TICKS:
+        tick_length = max(resolved_font_px * 0.34, fg_width * 2.4, 6.0)
+        _draw_scale_ticks(
+            painter,
+            start_point,
+            end_point,
+            outline_color=line_outline,
+            foreground_color=line_color,
+            bg_width=max(bg_width * 0.9, fg_width + 1.0),
+            fg_width=max(1.0, fg_width * 0.8),
+            tick_length=tick_length,
+        )
     painter.setFont(font)
-    text_y = start_point.y() + max(font_px * 1.1, 18.0) if draw_below else start_point.y() - max(12.0, font_px * 0.55)
-    painter.setPen(QPen(QColor("#101820"), 3))
+    text_y = start_point.y() + max(resolved_font_px * 1.1, 18.0) if draw_below else start_point.y() - max(12.0, resolved_font_px * 0.55)
+    painter.setPen(QPen(text_outline, 3))
     painter.drawText(QPointF(start_point.x(), text_y), f"{value:g} {document.calibration.unit}")
-    painter.setPen(QPen(QColor("#FFFFFF"), 1))
+    painter.setPen(QPen(text_color, 1))
     painter.drawText(QPointF(start_point.x(), text_y), f"{value:g} {document.calibration.unit}")
 
 

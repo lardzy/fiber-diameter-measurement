@@ -14,10 +14,12 @@ try:
     from fdm.services.preview_analysis import (
         FocusStackAnalyzer,
         MapBuildAnalyzer,
+        FocusStackRenderConfig,
         _focus_measure,
         bgr_array_to_qimage,
         qimage_to_bgr_array,
     )
+    from fdm.settings import FocusStackProfile
 
     PREVIEW_ANALYSIS_READY = True
 except ModuleNotFoundError:
@@ -27,6 +29,8 @@ except ModuleNotFoundError:
     QImage = None
     FocusStackAnalyzer = None
     MapBuildAnalyzer = None
+    FocusStackRenderConfig = None
+    FocusStackProfile = None
     _focus_measure = None
     bgr_array_to_qimage = None
     qimage_to_bgr_array = None
@@ -61,7 +65,14 @@ class PreviewAnalysisTests(unittest.TestCase):
 
     def test_focus_stack_analyzer_combines_two_focus_planes(self) -> None:
         left_frame, right_frame = self._make_focus_frames()
-        analyzer = FocusStackAnalyzer(device_id="microview:0", device_name="Microview #1")
+        analyzer = FocusStackAnalyzer(
+            device_id="microview:0",
+            device_name="Microview #1",
+            render_config=FocusStackRenderConfig(
+                profile=FocusStackProfile.BALANCED,
+                sharpen_strength=35,
+            ),
+        )
 
         report_a = analyzer.add_frame(left_frame)
         report_b = analyzer.add_frame(right_frame)
@@ -78,23 +89,101 @@ class PreviewAnalysisTests(unittest.TestCase):
         right_score = float(_focus_measure(cv2.cvtColor(qimage_to_bgr_array(right_frame), cv2.COLOR_BGR2GRAY)).mean())
         self.assertGreaterEqual(fused_score, max(left_score, right_score) * 0.9)
 
-    def test_focus_stack_finalize_can_apply_optional_post_sharpen(self) -> None:
+    def test_focus_stack_preview_matches_final_when_using_same_render_config(self) -> None:
         left_frame, right_frame = self._make_focus_frames()
-        analyzer = FocusStackAnalyzer(device_id="qt_multimedia:test", device_name="USB Camera")
+        analyzer = FocusStackAnalyzer(
+            device_id="qt_multimedia:test",
+            device_name="USB Camera",
+            render_config=FocusStackRenderConfig(
+                profile=FocusStackProfile.BALANCED,
+                sharpen_strength=35,
+            ),
+        )
+        analyzer.add_frame(left_frame)
+        preview_report = analyzer.add_frame(right_frame)
+        result = analyzer.finalize()
+
+        preview_bgr = qimage_to_bgr_array(preview_report.preview_image)
+        final_bgr = qimage_to_bgr_array(result.image)
+        mean_diff = float(np.mean(np.abs(final_bgr.astype(np.int16) - preview_bgr.astype(np.int16))))
+
+        self.assertFalse(result.image.isNull())
+        self.assertLess(mean_diff, 1.0)
+
+    def test_focus_stack_profiles_follow_expected_sharpness_order(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        scores: dict[str, float] = {}
+        for profile in (
+            FocusStackProfile.SHARP,
+            FocusStackProfile.BALANCED,
+            FocusStackProfile.SOFT,
+        ):
+            analyzer = FocusStackAnalyzer(
+                device_id=f"profile:{profile}",
+                device_name="USB Camera",
+                render_config=FocusStackRenderConfig(profile=profile, sharpen_strength=0),
+            )
+            analyzer.add_frame(left_frame)
+            analyzer.add_frame(right_frame)
+            fused = qimage_to_bgr_array(analyzer.finalize().image)
+            scores[profile] = float(_focus_measure(cv2.cvtColor(fused, cv2.COLOR_BGR2GRAY)).mean())
+
+        self.assertGreater(scores[FocusStackProfile.SHARP], scores[FocusStackProfile.BALANCED])
+        self.assertGreater(scores[FocusStackProfile.BALANCED], scores[FocusStackProfile.SOFT])
+
+    def test_focus_stack_sharpen_strength_affects_preview_and_final_output(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        analyzer = FocusStackAnalyzer(
+            device_id="qt_multimedia:test",
+            device_name="USB Camera",
+            render_config=FocusStackRenderConfig(
+                profile=FocusStackProfile.BALANCED,
+                sharpen_strength=0,
+            ),
+        )
+        analyzer.add_frame(left_frame)
+        preview_plain = analyzer.add_frame(right_frame)
+        plain = analyzer.finalize()
+
+        analyzer.set_render_config(
+            FocusStackRenderConfig(
+                profile=FocusStackProfile.BALANCED,
+                sharpen_strength=85,
+            )
+        )
+        preview_sharp = analyzer.refresh_preview()
+        sharp = analyzer.finalize()
+
+        preview_plain_bgr = qimage_to_bgr_array(preview_plain.preview_image)
+        preview_sharp_bgr = qimage_to_bgr_array(preview_sharp.preview_image)
+        plain_bgr = qimage_to_bgr_array(plain.image)
+        sharp_bgr = qimage_to_bgr_array(sharp.image)
+
+        preview_diff = float(np.mean(np.abs(preview_sharp_bgr.astype(np.int16) - preview_plain_bgr.astype(np.int16))))
+        final_diff = float(np.mean(np.abs(sharp_bgr.astype(np.int16) - plain_bgr.astype(np.int16))))
+
+        self.assertGreater(preview_diff, 0.05)
+        self.assertGreater(final_diff, 0.05)
+        self.assertEqual(sharp.metadata.get("focus_stack_profile"), FocusStackProfile.BALANCED)
+        self.assertEqual(sharp.metadata.get("sharpen_strength"), 85)
+
+    def test_focus_stack_refresh_preview_after_config_change_keeps_accepted_frames(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        analyzer = FocusStackAnalyzer(device_id="microview:0", device_name="Microview #1")
         analyzer.add_frame(left_frame)
         analyzer.add_frame(right_frame)
 
-        plain = analyzer.finalize(post_sharpen=False)
-        sharpened = analyzer.finalize(post_sharpen=True)
+        analyzer.set_render_config(
+            FocusStackRenderConfig(
+                profile=FocusStackProfile.SHARP,
+                sharpen_strength=60,
+            )
+        )
+        refreshed = analyzer.refresh_preview()
 
-        plain_bgr = qimage_to_bgr_array(plain.image)
-        sharpened_bgr = qimage_to_bgr_array(sharpened.image)
-        mean_diff = float(np.mean(np.abs(sharpened_bgr.astype(np.int16) - plain_bgr.astype(np.int16))))
-
-        self.assertFalse(sharpened.image.isNull())
-        self.assertTrue(sharpened.metadata.get("post_sharpen"))
-        self.assertFalse(plain.metadata.get("post_sharpen"))
-        self.assertGreater(mean_diff, 0.05)
+        self.assertEqual(refreshed.accepted_frames, 2)
+        self.assertFalse(refreshed.preview_image.isNull())
+        self.assertIn("预览参数已更新", refreshed.message)
 
     def test_map_build_analyzer_creates_two_tile_mosaic(self) -> None:
         base = self._make_map_base()

@@ -31,6 +31,18 @@ class ScaleOverlayPlacementMode:
     MANUAL = "manual"
 
 
+class ScaleOverlayStyle:
+    LINE = "line"
+    TICKS = "ticks"
+    BAR = "bar"
+
+
+class FocusStackProfile:
+    SHARP = "sharp"
+    BALANCED = "balanced"
+    SOFT = "soft"
+
+
 @dataclass(slots=True)
 class AreaModelMapping:
     model_name: str
@@ -183,9 +195,17 @@ class AppSettings:
     default_measurement_color: str = "#E0FBFC"
     open_image_view_mode: str = OpenImageViewMode.DEFAULT
     scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_LEFT
+    scale_overlay_style: str = ScaleOverlayStyle.LINE
+    scale_overlay_length_ratio: float = 0.18
+    scale_overlay_color: str = "#FFFFFF"
+    scale_overlay_text_color: str = "#FFFFFF"
+    scale_overlay_font_family: str = "Microsoft YaHei UI"
+    scale_overlay_font_size: int = 18
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
+    focus_stack_profile: str = FocusStackProfile.BALANCED
+    focus_stack_sharpen_strength: int = 35
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
@@ -195,6 +215,13 @@ class AppSettings:
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
+        normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
+        normalized.scale_overlay_style = self._normalize_scale_overlay_style(self.scale_overlay_style)
+        normalized.scale_overlay_length_ratio = self._normalize_scale_overlay_length_ratio(self.scale_overlay_length_ratio)
+        normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
+        normalized.text_font_size = self._normalize_font_size(self.text_font_size, minimum=8, maximum=144)
+        normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
+        normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
@@ -265,6 +292,52 @@ class AppSettings:
             return default_token
         return relative_token
 
+    @staticmethod
+    def _normalize_scale_overlay_style(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            ScaleOverlayStyle.LINE,
+            ScaleOverlayStyle.TICKS,
+            ScaleOverlayStyle.BAR,
+        }:
+            return token
+        return ScaleOverlayStyle.LINE
+
+    @staticmethod
+    def _normalize_scale_overlay_length_ratio(value: float | int | str | None) -> float:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            numeric = 0.18
+        return max(0.08, min(0.35, numeric))
+
+    @staticmethod
+    def _normalize_font_size(value: int | float | str | None, *, minimum: int, maximum: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = minimum
+        return max(minimum, min(maximum, numeric))
+
+    @staticmethod
+    def _normalize_focus_stack_profile(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            FocusStackProfile.SHARP,
+            FocusStackProfile.BALANCED,
+            FocusStackProfile.SOFT,
+        }:
+            return token
+        return FocusStackProfile.BALANCED
+
+    @staticmethod
+    def _normalize_focus_stack_sharpen_strength(value: int | float | str | None) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = 35
+        return max(0, min(100, numeric))
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -280,9 +353,17 @@ class AppSettings:
             "default_measurement_color": normalized.default_measurement_color,
             "open_image_view_mode": normalized.open_image_view_mode,
             "scale_overlay_placement_mode": normalized.scale_overlay_placement_mode,
+            "scale_overlay_style": normalized.scale_overlay_style,
+            "scale_overlay_length_ratio": normalized.scale_overlay_length_ratio,
+            "scale_overlay_color": normalized.scale_overlay_color,
+            "scale_overlay_text_color": normalized.scale_overlay_text_color,
+            "scale_overlay_font_family": normalized.scale_overlay_font_family,
+            "scale_overlay_font_size": normalized.scale_overlay_font_size,
             "text_font_family": normalized.text_font_family,
             "text_font_size": normalized.text_font_size,
             "text_color": normalized.text_color,
+            "focus_stack_profile": normalized.focus_stack_profile,
+            "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -296,7 +377,11 @@ class AppSettings:
         settings = cls()
         settings.show_measurement_labels = bool(payload.get("show_measurement_labels", settings.show_measurement_labels))
         settings.measurement_label_font_family = str(payload.get("measurement_label_font_family", settings.measurement_label_font_family))
-        settings.measurement_label_font_size = int(payload.get("measurement_label_font_size", settings.measurement_label_font_size))
+        settings.measurement_label_font_size = cls._normalize_font_size(
+            payload.get("measurement_label_font_size", settings.measurement_label_font_size),
+            minimum=8,
+            maximum=96,
+        )
         settings.measurement_label_color = str(payload.get("measurement_label_color", settings.measurement_label_color))
         settings.measurement_label_decimals = int(payload.get("measurement_label_decimals", settings.measurement_label_decimals))
         settings.measurement_label_parallel_to_line = bool(payload.get("measurement_label_parallel_to_line", settings.measurement_label_parallel_to_line))
@@ -305,9 +390,27 @@ class AppSettings:
         settings.default_measurement_color = str(payload.get("default_measurement_color", settings.default_measurement_color))
         settings.open_image_view_mode = str(payload.get("open_image_view_mode", settings.open_image_view_mode))
         settings.scale_overlay_placement_mode = str(payload.get("scale_overlay_placement_mode", settings.scale_overlay_placement_mode))
+        settings.scale_overlay_style = cls._normalize_scale_overlay_style(payload.get("scale_overlay_style", settings.scale_overlay_style))
+        settings.scale_overlay_length_ratio = cls._normalize_scale_overlay_length_ratio(payload.get("scale_overlay_length_ratio", settings.scale_overlay_length_ratio))
+        settings.scale_overlay_color = str(payload.get("scale_overlay_color", settings.scale_overlay_color))
+        settings.scale_overlay_text_color = str(payload.get("scale_overlay_text_color", settings.scale_overlay_text_color))
+        settings.scale_overlay_font_family = str(payload.get("scale_overlay_font_family", settings.scale_overlay_font_family))
+        settings.scale_overlay_font_size = cls._normalize_font_size(
+            payload.get("scale_overlay_font_size", settings.scale_overlay_font_size),
+            minimum=8,
+            maximum=96,
+        )
         settings.text_font_family = str(payload.get("text_font_family", settings.text_font_family))
-        settings.text_font_size = int(payload.get("text_font_size", settings.text_font_size))
+        settings.text_font_size = cls._normalize_font_size(
+            payload.get("text_font_size", settings.text_font_size),
+            minimum=8,
+            maximum=144,
+        )
         settings.text_color = str(payload.get("text_color", settings.text_color))
+        settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
+        settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
+            payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)
+        )
         mappings = payload.get("area_model_mappings", None)
         if isinstance(mappings, list):
             settings.area_model_mappings = [

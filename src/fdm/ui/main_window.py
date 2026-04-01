@@ -61,10 +61,22 @@ from fdm.models import (
     project_capture_root,
 )
 from fdm.project_io import ProjectIO
-from fdm.settings import AppSettings, AppSettingsIO, OpenImageViewMode, ScaleOverlayPlacementMode
+from fdm.settings import (
+    AppSettings,
+    AppSettingsIO,
+    FocusStackProfile,
+    OpenImageViewMode,
+    ScaleOverlayPlacementMode,
+)
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
-from fdm.services.preview_analysis import FocusStackFinalResult, FocusStackReport, MapBuildFinalResult, MapBuildReport
+from fdm.services.preview_analysis import (
+    FocusStackFinalResult,
+    FocusStackRenderConfig,
+    FocusStackReport,
+    MapBuildFinalResult,
+    MapBuildReport,
+)
 from fdm.services.prompt_segmentation import PromptSegmentationService
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
@@ -3537,6 +3549,25 @@ class MainWindow(QMainWindow):
             "map_build": "地图构建",
         }.get(mode, mode)
 
+    def _current_focus_stack_render_config(self) -> FocusStackRenderConfig:
+        return FocusStackRenderConfig(
+            profile=self._app_settings.focus_stack_profile or FocusStackProfile.BALANCED,
+            sharpen_strength=self._app_settings.focus_stack_sharpen_strength,
+        ).normalized_copy()
+
+    def _remember_focus_stack_render_config(self, render_config: FocusStackRenderConfig | None, *, save: bool) -> None:
+        if render_config is None:
+            return
+        normalized = render_config.normalized_copy()
+        changed = (
+            self._app_settings.focus_stack_profile != normalized.profile
+            or self._app_settings.focus_stack_sharpen_strength != normalized.sharpen_strength
+        )
+        self._app_settings.focus_stack_profile = normalized.profile
+        self._app_settings.focus_stack_sharpen_strength = normalized.sharpen_strength
+        if changed and save:
+            self._save_app_settings(context="景深合成默认值")
+
     def _toggle_preview_analysis_mode(self, mode: str, checked: bool) -> None:
         if not checked:
             if self._preview_analysis_mode == mode:
@@ -3559,11 +3590,14 @@ class MainWindow(QMainWindow):
         dialog = PreviewAnalysisDialog(
             self._analysis_mode_label(mode),
             intro_text=self._preview_analysis_intro_text(mode),
-            show_post_sharpen_option=(mode == "focus_stack"),
+            show_focus_stack_controls=(mode == "focus_stack"),
+            initial_render_config=self._current_focus_stack_render_config() if mode == "focus_stack" else None,
             parent=self,
         )
         dialog.finishRequested.connect(self._finalize_preview_analysis_session)
         dialog.cancelRequested.connect(lambda: self._cancel_preview_analysis_session())
+        if mode == "focus_stack":
+            dialog.renderConfigChanged.connect(self._on_focus_stack_render_config_changed)
         return dialog
 
     def _start_preview_analysis_session(self, mode: str) -> None:
@@ -3583,7 +3617,11 @@ class MainWindow(QMainWindow):
 
         thread = QThread(self)
         worker = (
-            FocusStackSessionWorker(device_id=selected.id, device_name=selected.name)
+            FocusStackSessionWorker(
+                device_id=selected.id,
+                device_name=selected.name,
+                render_config=self._current_focus_stack_render_config(),
+            )
             if mode == "focus_stack"
             else MapBuildSessionWorker(device_id=selected.id, device_name=selected.name)
         )
@@ -3608,6 +3646,9 @@ class MainWindow(QMainWindow):
         worker = self._preview_analysis_worker
         thread = self._preview_analysis_thread
         dialog = self._preview_analysis_dialog
+        mode = self._preview_analysis_mode
+        if mode == "focus_stack" and dialog is not None:
+            self._remember_focus_stack_render_config(dialog.render_config(), save=True)
         self._preview_analysis_worker = None
         self._preview_analysis_thread = None
         self._preview_analysis_dialog = None
@@ -3643,9 +3684,21 @@ class MainWindow(QMainWindow):
             and isinstance(self._preview_analysis_worker, FocusStackSessionWorker)
             and self._preview_analysis_dialog is not None
         ):
-            self._preview_analysis_worker.set_post_sharpen_enabled(self._preview_analysis_dialog.post_sharpen_enabled())
+            render_config = self._preview_analysis_dialog.render_config()
+            self._remember_focus_stack_render_config(render_config, save=True)
+            self._preview_analysis_worker.renderConfigSubmitted.emit(render_config)
         self._preview_analysis_worker.finalizeRequested.emit()
         self._update_action_states()
+
+    def _on_focus_stack_render_config_changed(self, render_config: object) -> None:
+        if (
+            self._preview_analysis_mode != "focus_stack"
+            or self._preview_analysis_worker is None
+            or not isinstance(self._preview_analysis_worker, FocusStackSessionWorker)
+            or not isinstance(render_config, FocusStackRenderConfig)
+        ):
+            return
+        self._preview_analysis_worker.renderConfigSubmitted.emit(render_config)
 
     def _request_preview_analysis_frame(self) -> None:
         if (
@@ -3902,7 +3955,7 @@ class MainWindow(QMainWindow):
                 scale_bg_width=scale_bg_width,
                 scale_fg_width=scale_fg_width,
                 font_px=font_px,
-                target_output_px=max(80.0, image.width() * 0.18),
+                render_mode=render_mode,
             )
 
         painter.end()

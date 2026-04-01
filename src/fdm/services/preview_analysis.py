@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 import math
 from typing import Any
@@ -8,6 +8,7 @@ from typing import Any
 from PySide6.QtGui import QImage
 
 from fdm.runtime_logging import append_runtime_log
+from fdm.settings import FocusStackProfile
 
 
 def _ensure_cv_numpy():
@@ -86,6 +87,24 @@ class MapBuildFinalResult:
 
 
 @dataclass(slots=True)
+class FocusStackRenderConfig:
+    profile: str = FocusStackProfile.BALANCED
+    sharpen_strength: int = 35
+
+    def normalized_copy(self) -> "FocusStackRenderConfig":
+        profile = self.profile if self.profile in {
+            FocusStackProfile.SHARP,
+            FocusStackProfile.BALANCED,
+            FocusStackProfile.SOFT,
+        } else FocusStackProfile.BALANCED
+        sharpen_strength = max(0, min(100, int(round(self.sharpen_strength))))
+        return FocusStackRenderConfig(
+            profile=profile,
+            sharpen_strength=sharpen_strength,
+        )
+
+
+@dataclass(slots=True)
 class _PreparedFrame:
     bgr: Any
     gray: Any
@@ -141,24 +160,26 @@ class FocusAccumulator:
         self.accepted_frames += 1
         return True
 
-    def preview_image(self) -> QImage:
+    def render_image(self, render_config: FocusStackRenderConfig | None = None) -> QImage:
         if not self._records:
             return QImage()
+        config = (render_config or FocusStackRenderConfig()).normalized_copy()
         if len(self._records) == 1:
-            return bgr_array_to_qimage(self._records[0].bgr)
-        blended = _focus_stack_fast([record.bgr for record in self._records], [record.focus_map for record in self._records])
+            blended = self._records[0].bgr.copy()
+        else:
+            blended = _focus_stack_render(
+                [record.bgr for record in self._records],
+                [record.focus_map for record in self._records],
+                config,
+            )
+        blended = _apply_sharpen_strength(blended, config.sharpen_strength)
         return bgr_array_to_qimage(blended)
 
-    def final_image(self) -> QImage:
-        if not self._records:
-            return QImage()
-        if len(self._records) == 1:
-            return bgr_array_to_qimage(self._records[0].bgr)
-        blended = _focus_stack_multiscale(
-            [record.bgr for record in self._records],
-            [record.focus_map for record in self._records],
-        )
-        return bgr_array_to_qimage(blended)
+    def preview_image(self, render_config: FocusStackRenderConfig | None = None) -> QImage:
+        return self.render_image(render_config)
+
+    def final_image(self, render_config: FocusStackRenderConfig | None = None) -> QImage:
+        return self.render_image(render_config)
 
     def latest_sharpness(self) -> float:
         if not self._records:
@@ -167,14 +188,21 @@ class FocusAccumulator:
 
 
 class FocusStackAnalyzer:
-    def __init__(self, *, device_id: str, device_name: str) -> None:
+    def __init__(
+        self,
+        *,
+        device_id: str,
+        device_name: str,
+        render_config: FocusStackRenderConfig | None = None,
+    ) -> None:
         self._device_id = device_id
         self._device_name = device_name
         self._accumulator = FocusAccumulator()
+        self._render_config = (render_config or FocusStackRenderConfig()).normalized_copy()
 
     def add_frame(self, image: QImage) -> FocusStackReport:
         accepted = self._accumulator.add_qimage(image)
-        preview = self._accumulator.preview_image()
+        preview = self._accumulator.preview_image(self._render_config)
         sampled = self._accumulator.sampled_frames
         accepted_count = self._accumulator.accepted_frames
         message = f"采样 {sampled} 帧 | 接受 {accepted_count} 帧"
@@ -188,12 +216,34 @@ class FocusStackAnalyzer:
             low_confidence=accepted_count < 2,
         )
 
-    def finalize(self, *, post_sharpen: bool = False) -> FocusStackFinalResult:
+    def refresh_preview(self) -> FocusStackReport:
+        sampled = self._accumulator.sampled_frames
+        accepted_count = self._accumulator.accepted_frames
+        preview = self._accumulator.preview_image(self._render_config)
+        message = f"采样 {sampled} 帧 | 接受 {accepted_count} 帧"
+        if accepted_count:
+            message += " | 预览参数已更新"
+        else:
+            message += " | 等待采样"
+        return FocusStackReport(
+            preview_image=preview,
+            sampled_frames=sampled,
+            accepted_frames=accepted_count,
+            message=message,
+            low_confidence=accepted_count < 2,
+        )
+
+    def set_render_config(self, render_config: FocusStackRenderConfig) -> None:
+        self._render_config = render_config.normalized_copy()
+
+    def current_render_config(self) -> FocusStackRenderConfig:
+        return self._render_config.normalized_copy()
+
+    def finalize(self, *, render_config: FocusStackRenderConfig | None = None) -> FocusStackFinalResult:
         if not self._accumulator.has_frames():
             raise RuntimeError("景深合成未收到有效采样帧。")
-        image = self._accumulator.final_image()
-        if post_sharpen and not image.isNull():
-            image = _apply_post_sharpen(image)
+        config = (render_config or self._render_config).normalized_copy()
+        image = self._accumulator.final_image(config)
         sampled = self._accumulator.sampled_frames
         accepted = self._accumulator.accepted_frames
         metadata = {
@@ -202,7 +252,9 @@ class FocusStackAnalyzer:
             "device_name": self._device_name,
             "sampled_frames": sampled,
             "accepted_frames": accepted,
-            "post_sharpen": bool(post_sharpen),
+            "post_sharpen": bool(config.sharpen_strength > 0),
+            "focus_stack_profile": config.profile,
+            "sharpen_strength": config.sharpen_strength,
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
         return FocusStackFinalResult(
@@ -217,6 +269,10 @@ class MapBuildAnalyzer:
     def __init__(self, *, device_id: str, device_name: str) -> None:
         self._device_id = device_id
         self._device_name = device_name
+        self._render_config = FocusStackRenderConfig(
+            profile=FocusStackProfile.BALANCED,
+            sharpen_strength=0,
+        )
         self._sampled_frames = 0
         self._accepted_frames = 0
         self._rejected_moving_frames = 0
@@ -346,8 +402,8 @@ class MapBuildAnalyzer:
             if (
                 candidate_response < self._stable_response_threshold
                 or _predicted_overlap_ratio(
-                    self._current_accumulator.preview_image().width() or frame.bgr.shape[1],
-                    self._current_accumulator.preview_image().height() or frame.bgr.shape[0],
+                    self._current_accumulator.preview_image(self._render_config).width() or frame.bgr.shape[1],
+                    self._current_accumulator.preview_image(self._render_config).height() or frame.bgr.shape[0],
                     candidate.bgr.shape[1],
                     candidate.bgr.shape[0],
                     candidate_dx,
@@ -413,7 +469,7 @@ class MapBuildAnalyzer:
     def _build_report(self) -> MapBuildReport:
         preview_tiles = list(self._tiles)
         if self._current_accumulator.has_frames():
-            current_preview = self._current_accumulator.preview_image()
+            current_preview = self._current_accumulator.preview_image(self._render_config)
             if not current_preview.isNull():
                 current_bgr = qimage_to_bgr_array(current_preview)
                 preview_tiles = preview_tiles + [
@@ -452,7 +508,7 @@ class MapBuildAnalyzer:
     def _finalize_current_tile(self) -> None:
         if not self._current_accumulator.has_frames():
             return
-        tile_image = self._current_accumulator.final_image()
+        tile_image = self._current_accumulator.final_image(self._render_config)
         if tile_image.isNull():
             return
         tile_bgr = qimage_to_bgr_array(tile_image)
@@ -667,31 +723,56 @@ def _focus_stack_fast(images: list, focus_maps: list):
     return image_stack[winner, rows, cols]
 
 
-def _focus_stack_multiscale(images: list, focus_maps: list):
+def _focus_stack_profile_params(profile: str) -> tuple[tuple[float, ...], float, float]:
+    if profile == FocusStackProfile.SHARP:
+        return (0.8, 1.6, 3.0), 1.65, 0.72
+    if profile == FocusStackProfile.SOFT:
+        return (1.8, 4.0, 7.0), 0.9, 0.15
+    return (1.0, 2.5, 5.0), 1.2, 0.42
+
+
+def _focus_stack_multiscale(images: list, focus_maps: list, *, profile: str = FocusStackProfile.BALANCED):
     cv2, np = _ensure_cv_numpy()
     image_stack = np.stack([image.astype(np.float32, copy=False) for image in images], axis=0)
-    weight_sum = np.zeros(focus_maps[0].shape, dtype=np.float32)
     total_weights = np.zeros((len(focus_maps),) + focus_maps[0].shape, dtype=np.float32)
-    sigmas = (1.0, 2.5, 5.0)
+    sigmas, focus_power, _hard_mix = _focus_stack_profile_params(profile)
     for sigma in sigmas:
         smoothed = np.stack([cv2.GaussianBlur(focus, (0, 0), sigmaX=sigma, sigmaY=sigma) for focus in focus_maps], axis=0)
+        smoothed = np.power(np.clip(smoothed, 1e-6, None), focus_power)
         smoothed += 1e-6
         smoothed /= smoothed.sum(axis=0, keepdims=True)
         total_weights += smoothed
-        weight_sum += smoothed.sum(axis=0)
     total_weights /= max(1.0, float(len(sigmas)))
     total_weights /= np.clip(total_weights.sum(axis=0, keepdims=True), 1e-6, None)
     fused = np.sum(image_stack * total_weights[..., None], axis=0)
     return np.clip(fused, 0, 255).astype(np.uint8)
 
 
-def _apply_post_sharpen(image: QImage) -> QImage:
+def _focus_stack_render(images: list, focus_maps: list, render_config: FocusStackRenderConfig):
+    _, np = _ensure_cv_numpy()
+    config = render_config.normalized_copy()
+    hard_mix = _focus_stack_profile_params(config.profile)[2]
+    hard = _focus_stack_fast(images, focus_maps).astype(np.float32, copy=False)
+    soft = _focus_stack_multiscale(images, focus_maps, profile=config.profile).astype(np.float32, copy=False)
+    blended = (soft * (1.0 - hard_mix)) + (hard * hard_mix)
+    return np.clip(blended, 0, 255).astype(np.uint8)
+
+
+def _apply_sharpen_strength(bgr, sharpen_strength: int):
     cv2, np = _ensure_cv_numpy()
-    bgr = qimage_to_bgr_array(image)
+    if sharpen_strength <= 0:
+        return np.clip(bgr, 0, 255).astype(np.uint8, copy=False)
+    amount = max(0.0, min(1.2, float(sharpen_strength) / 100.0))
     blurred = cv2.GaussianBlur(bgr, (0, 0), sigmaX=1.1, sigmaY=1.1)
-    sharpened = cv2.addWeighted(bgr, 1.35, blurred, -0.35, 0.0)
+    sharpened = cv2.addWeighted(
+        bgr.astype(np.float32, copy=False),
+        1.0 + amount,
+        blurred.astype(np.float32, copy=False),
+        -amount,
+        0.0,
+    )
     sharpened = np.clip(sharpened, 0, 255).astype(np.uint8, copy=False)
-    return bgr_array_to_qimage(sharpened)
+    return sharpened
 
 
 def _estimate_translation(gray_a, gray_b) -> tuple[float, float, float]:

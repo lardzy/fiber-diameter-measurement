@@ -17,6 +17,8 @@ from fdm.services.area_inference import normalize_area_result_label, parse_area_
 from fdm.settings import (
     AppSettings,
     AppSettingsIO,
+    FocusStackProfile,
+    ScaleOverlayStyle,
     application_root,
     bundle_resource_root,
     default_area_model_mappings,
@@ -253,8 +255,15 @@ class ModelsProjectIOTests(unittest.TestCase):
             measurement_label_parallel_to_line=True,
             measurement_label_background_enabled=False,
             measurement_endpoint_style="bar",
+            scale_overlay_style=ScaleOverlayStyle.TICKS,
+            scale_overlay_length_ratio=0.22,
+            scale_overlay_color="#ABCDEF",
+            scale_overlay_text_color="#654321",
+            scale_overlay_font_size=21,
             text_font_size=26,
             text_color="#123456",
+            focus_stack_profile=FocusStackProfile.SHARP,
+            focus_stack_sharpen_strength=60,
         )
 
         with TemporaryDirectory() as tmp_dir:
@@ -269,8 +278,41 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.measurement_label_parallel_to_line)
         self.assertFalse(loaded.measurement_label_background_enabled)
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
+        self.assertEqual(loaded.scale_overlay_style, ScaleOverlayStyle.TICKS)
+        self.assertAlmostEqual(loaded.scale_overlay_length_ratio, 0.22)
+        self.assertEqual(loaded.scale_overlay_color, "#ABCDEF")
+        self.assertEqual(loaded.scale_overlay_text_color, "#654321")
+        self.assertEqual(loaded.scale_overlay_font_size, 21)
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+        self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
+        self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
+
+    def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
+        settings = AppSettings.from_dict({})
+
+        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
+        self.assertAlmostEqual(settings.scale_overlay_length_ratio, 0.18)
+        self.assertEqual(settings.scale_overlay_font_size, 18)
+        self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
+        self.assertEqual(settings.focus_stack_sharpen_strength, 35)
+
+    def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
+        settings = AppSettings.from_dict(
+            {
+                "scale_overlay_style": "unknown",
+                "scale_overlay_length_ratio": 0.9,
+                "scale_overlay_font_size": 999,
+                "focus_stack_profile": "unknown",
+                "focus_stack_sharpen_strength": 1000,
+            }
+        )
+
+        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
+        self.assertAlmostEqual(settings.scale_overlay_length_ratio, 0.35)
+        self.assertEqual(settings.scale_overlay_font_size, 96)
+        self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
+        self.assertEqual(settings.focus_stack_sharpen_strength, 100)
 
     def test_app_settings_roundtrip_preserves_calibration_presets(self) -> None:
         settings = AppSettings(

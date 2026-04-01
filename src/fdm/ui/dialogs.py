@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QPlainTextEdit,
     QRadioButton,
+    QScrollArea,
     QSpinBox,
     QHeaderView,
     QTableWidget,
@@ -37,6 +38,7 @@ from fdm.settings import (
     AppSettings,
     MeasurementEndpointStyle,
     OpenImageViewMode,
+    ScaleOverlayStyle,
     ScaleOverlayPlacementMode,
     application_root,
     bundle_resource_root,
@@ -338,9 +340,11 @@ class SettingsDialog(QDialog):
         self._request_scale_anchor_pick = False
 
         self._tabs = QTabWidget()
-        self._tabs.addTab(self._build_app_settings_tab(settings), "应用设置")
+        self._tabs.addTab(self._build_measurement_tab(settings), "测量标注")
+        self._tabs.addTab(self._build_scale_overlay_tab(settings), "比例尺叠加")
+        self._tabs.addTab(self._build_text_tab(settings), "文字工具")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
-        self._tabs.addTab(self._build_current_image_tab(document), "当前图片样式")
+        self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
 
         self._button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -371,9 +375,17 @@ class SettingsDialog(QDialog):
             default_measurement_color=self._default_measurement_color.property("color_value") or self._initial_settings.default_measurement_color,
             open_image_view_mode=self._open_view_mode_combo.currentData(),
             scale_overlay_placement_mode=self._scale_overlay_mode_combo.currentData(),
+            scale_overlay_style=self._scale_overlay_style_combo.currentData(),
+            scale_overlay_length_ratio=self._scale_overlay_length_percent.value() / 100.0,
+            scale_overlay_color=self._scale_overlay_color.property("color_value") or self._initial_settings.scale_overlay_color,
+            scale_overlay_text_color=self._scale_overlay_text_color.property("color_value") or self._initial_settings.scale_overlay_text_color,
+            scale_overlay_font_family=self._scale_overlay_font.currentFont().family(),
+            scale_overlay_font_size=self._scale_overlay_font_size.value(),
             text_font_family=self._text_font.currentFont().family(),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
+            focus_stack_profile=self._initial_settings.focus_stack_profile,
+            focus_stack_sharpen_strength=self._initial_settings.focus_stack_sharpen_strength,
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -406,7 +418,14 @@ class SettingsDialog(QDialog):
     def wants_scale_anchor_pick(self) -> bool:
         return self._document is not None and self._request_scale_anchor_pick
 
-    def _build_app_settings_tab(self, settings: AppSettings) -> QWidget:
+    def _wrap_settings_page(self, content: QWidget) -> QScrollArea:
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidget(content)
+        return scroll
+
+    def _build_measurement_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
 
@@ -445,13 +464,20 @@ class SettingsDialog(QDialog):
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
-        behavior_group = QGroupBox("打开与导出")
-        behavior_form = QFormLayout(behavior_group)
-        self._open_view_mode_combo = QComboBox()
-        self._open_view_mode_combo.addItem("缺省", OpenImageViewMode.DEFAULT)
-        self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
-        self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
-        self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
+        measurement_hint = QLabel("测量结果文字和端点样式会同时影响画布显示与图片导出。")
+        measurement_hint.setWordWrap(True)
+
+        layout.addWidget(measurement_group)
+        layout.addWidget(measurement_hint)
+        layout.addStretch(1)
+        return self._wrap_settings_page(page)
+
+    def _build_scale_overlay_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        placement_group = QGroupBox("位置与长度")
+        placement_form = QFormLayout(placement_group)
         self._scale_overlay_mode_combo = QComboBox()
         self._scale_overlay_mode_combo.addItem("左上", ScaleOverlayPlacementMode.TOP_LEFT)
         self._scale_overlay_mode_combo.addItem("右上", ScaleOverlayPlacementMode.TOP_RIGHT)
@@ -459,8 +485,58 @@ class SettingsDialog(QDialog):
         self._scale_overlay_mode_combo.addItem("右下", ScaleOverlayPlacementMode.BOTTOM_RIGHT)
         self._scale_overlay_mode_combo.addItem("手动选定", ScaleOverlayPlacementMode.MANUAL)
         self._scale_overlay_mode_combo.setCurrentIndex(max(0, self._scale_overlay_mode_combo.findData(settings.scale_overlay_placement_mode)))
-        behavior_form.addRow("打开图片默认视图", self._open_view_mode_combo)
-        behavior_form.addRow("比例尺叠加位置", self._scale_overlay_mode_combo)
+        self._scale_overlay_length_percent = QSpinBox()
+        self._scale_overlay_length_percent.setRange(8, 35)
+        self._scale_overlay_length_percent.setSuffix("%")
+        self._scale_overlay_length_percent.setValue(int(round(settings.scale_overlay_length_ratio * 100)))
+        placement_form.addRow("比例尺叠加位置", self._scale_overlay_mode_combo)
+        placement_form.addRow("目标长度", self._scale_overlay_length_percent)
+
+        style_group = QGroupBox("线条样式")
+        style_form = QFormLayout(style_group)
+        self._scale_overlay_style_combo = QComboBox()
+        self._scale_overlay_style_combo.addItem("纯线", ScaleOverlayStyle.LINE)
+        self._scale_overlay_style_combo.addItem("端点刻度", ScaleOverlayStyle.TICKS)
+        self._scale_overlay_style_combo.addItem("粗条", ScaleOverlayStyle.BAR)
+        self._scale_overlay_style_combo.setCurrentIndex(max(0, self._scale_overlay_style_combo.findData(settings.scale_overlay_style)))
+        self._scale_overlay_color = self._create_color_button(settings.scale_overlay_color)
+        style_form.addRow("比例尺样式", self._scale_overlay_style_combo)
+        style_form.addRow("线条颜色", self._scale_overlay_color)
+
+        text_group = QGroupBox("文字样式")
+        text_form = QFormLayout(text_group)
+        self._scale_overlay_font = QFontComboBox()
+        self._scale_overlay_font.setCurrentFont(QFont(settings.scale_overlay_font_family))
+        self._scale_overlay_font_size = QSpinBox()
+        self._scale_overlay_font_size.setRange(8, 96)
+        self._scale_overlay_font_size.setValue(settings.scale_overlay_font_size)
+        self._scale_overlay_text_color = self._create_color_button(settings.scale_overlay_text_color)
+        text_form.addRow("文字字体", self._scale_overlay_font)
+        text_form.addRow("文字字号", self._scale_overlay_font_size)
+        text_form.addRow("文字颜色", self._scale_overlay_text_color)
+
+        display_group = QGroupBox("显示")
+        display_form = QFormLayout(display_group)
+        self._open_view_mode_combo = QComboBox()
+        self._open_view_mode_combo.addItem("缺省", OpenImageViewMode.DEFAULT)
+        self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
+        self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
+        self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
+        display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
+        display_hint = QLabel("比例尺线条与文字会自动补对比描边，尽量兼顾深浅底图的可读性。")
+        display_hint.setWordWrap(True)
+        display_form.addRow("", display_hint)
+
+        layout.addWidget(placement_group)
+        layout.addWidget(style_group)
+        layout.addWidget(text_group)
+        layout.addWidget(display_group)
+        layout.addStretch(1)
+        return self._wrap_settings_page(page)
+
+    def _build_text_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
 
         text_group = QGroupBox("文字工具")
         text_form = QFormLayout(text_group)
@@ -474,11 +550,9 @@ class SettingsDialog(QDialog):
         text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
 
-        layout.addWidget(measurement_group)
-        layout.addWidget(behavior_group)
         layout.addWidget(text_group)
         layout.addStretch(1)
-        return page
+        return self._wrap_settings_page(page)
 
     def _build_area_models_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
@@ -525,7 +599,7 @@ class SettingsDialog(QDialog):
 
         layout.addWidget(area_group)
         layout.addStretch(1)
-        return page
+        return self._wrap_settings_page(page)
 
     def _build_current_image_tab(self, document: ImageDocument | None) -> QWidget:
         page = QWidget()
@@ -533,7 +607,7 @@ class SettingsDialog(QDialog):
         if document is None:
             layout.addWidget(QLabel("当前没有打开的图片。"))
             layout.addStretch(1)
-            return page
+            return self._wrap_settings_page(page)
 
         group_box = QGroupBox("当前图片类别颜色")
         group_layout = QFormLayout(group_box)
@@ -562,7 +636,7 @@ class SettingsDialog(QDialog):
         layout.addWidget(group_box)
         layout.addWidget(scale_box)
         layout.addStretch(1)
-        return page
+        return self._wrap_settings_page(page)
 
     def _create_color_button(self, color_value: str) -> QPushButton:
         button = QPushButton(color_value)

@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor
-    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QSplitter
+    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QScrollArea, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -23,18 +23,20 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, TextAnnotation, new_id
-from fdm.settings import AppSettings, OpenImageViewMode
+from fdm.settings import AppSettings, FocusStackProfile, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
+    from fdm.services.preview_analysis import FocusStackRenderConfig
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 else:
+    FocusStackRenderConfig = object  # type: ignore[assignment]
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
@@ -408,14 +410,20 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(clear_calls, ["clear"])
 
-    def test_preview_analysis_dialog_enables_post_sharpen_by_default(self) -> None:
+    def test_preview_analysis_dialog_uses_focus_stack_defaults(self) -> None:
         dialog = PreviewAnalysisDialog(
             "景深合成",
             intro_text="测试",
-            show_post_sharpen_option=True,
+            show_focus_stack_controls=True,
+            initial_render_config=FocusStackRenderConfig(
+                profile=FocusStackProfile.BALANCED,
+                sharpen_strength=35,
+            ),
         )
         try:
-            self.assertTrue(dialog.post_sharpen_enabled())
+            render_config = dialog.render_config()
+            self.assertEqual(render_config.profile, FocusStackProfile.BALANCED)
+            self.assertEqual(render_config.sharpen_strength, 35)
         finally:
             dialog.close()
 
@@ -1279,6 +1287,54 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_scale_overlay_style_and_length_change_export_output(self) -> None:
+        window, document = self._create_main_window_fixture()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                line_path = Path(tmp_dir) / "scale_line.png"
+                bar_path = Path(tmp_dir) / "scale_bar.png"
+
+                window._app_settings.scale_overlay_style = "line"
+                window._app_settings.scale_overlay_length_ratio = 0.18
+                window._render_overlay_image(
+                    document,
+                    line_path,
+                    include_measurements=False,
+                    include_scale=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+
+                window._app_settings.scale_overlay_style = "bar"
+                window._app_settings.scale_overlay_length_ratio = 0.30
+                window._render_overlay_image(
+                    document,
+                    bar_path,
+                    include_measurements=False,
+                    include_scale=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+
+                line_image = QImage(str(line_path))
+                bar_image = QImage(str(bar_path))
+                self.assertGreater(self._count_diff_pixels(line_image, bar_image), 0)
+        finally:
+            window.close()
+
+    def test_settings_dialog_collects_scale_overlay_fields(self) -> None:
+        settings = AppSettings()
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
+            dialog._scale_overlay_length_percent.setValue(27)
+            dialog._scale_overlay_font_size.setValue(24)
+            updated = dialog.app_settings()
+
+            self.assertEqual(updated.scale_overlay_style, "ticks")
+            self.assertAlmostEqual(updated.scale_overlay_length_ratio, 0.27)
+            self.assertEqual(updated.scale_overlay_font_size, 24)
+        finally:
+            dialog.close()
+
     def test_combined_overlay_export_renders_measurements_and_scale_together(self) -> None:
         window, document = self._create_main_window_fixture()
         try:
@@ -1346,9 +1402,13 @@ class CanvasAndExportTests(unittest.TestCase):
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
-            self.assertEqual(dialog._tabs.count(), 3)
-            self.assertEqual(dialog._tabs.tabText(1), "面积识别")
+            self.assertEqual(dialog._tabs.count(), 5)
+            self.assertEqual(dialog._tabs.tabText(0), "测量标注")
+            self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
+            self.assertEqual(dialog._tabs.tabText(3), "面积识别")
             self.assertLessEqual(dialog.width(), 720)
+            self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
+            self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
