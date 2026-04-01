@@ -105,6 +105,8 @@
 
 这种拆分形成了清晰的职责边界：UI 负责流程编排，服务层负责能力实现，模型层负责状态管理。
 
+![实时预览与景深合成](docs/readme-assets/live-preview.jpg)
+
 ### 3. 智能能力的三条实现链路
 
 - 传统算法辅助测量
@@ -133,8 +135,6 @@
 - 运行时内置 `runtime/camera/microview/` DLL 与驱动资源。
 - `scripts/build_windows_onedir.py`、`packaging/pyinstaller/`、`packaging/inno-setup/` 都说明项目已经考虑 Windows 发行流程。
 - 面积自动识别 worker 当前桌面集成默认走 CPU 推理，符合“无独显也能跑”的目标。
-
-![实时预览与景深合成](docs/readme-assets/live-preview.jpg)
 
 ## 模块结构
 
@@ -293,8 +293,8 @@ python scripts/build_windows_onedir.py
 ## 当前状态与注意事项
 
 - 本项目名称虽然强调“直径测量”，但当前实际能力已经覆盖直径、面积、文字标注、实时预览分析和结果导出。
-- `地图构建` 相关分析器与测试已经存在，但主界面默认仍将其视为开发中能力。
-- 面积自动识别依赖额外 Python 包和模型权重，源码环境下不会自动帮你补齐这些文件。
+- `地图构建` 相关分析器与测试已经存在，但由于性能不稳定，暂时不启用。
+- 面积自动识别依赖额外 Python 包和模型权重，项目中将不提供。
 - 如果运行环境缺少 `QtMultimedia` 或 Microview 相关 DLL，实时预览能力会降级或不可用。
-- `sample_data/` 目前只放了最小示例说明和演示图片，不包含完整业务数据集。
+- `sample_data/` 目前只放了最小示例说明和演示图片，不包含完整业务逻辑。
 
