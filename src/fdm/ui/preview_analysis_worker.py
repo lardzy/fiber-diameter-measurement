@@ -8,7 +8,6 @@ from PySide6.QtGui import QImage
 from fdm.services.preview_analysis import (
     FocusStackAnalyzer,
     FocusStackFinalResult,
-    FocusStackRenderConfig,
     FocusStackReport,
     MapBuildAnalyzer,
     MapBuildFinalResult,
@@ -19,7 +18,6 @@ from fdm.services.preview_analysis import (
 
 class FocusStackSessionWorker(QObject):
     frameSubmitted = Signal(object)
-    renderConfigSubmitted = Signal(object)
     finalizeRequested = Signal()
     cancelRequested = Signal()
     previewUpdated = Signal(object)
@@ -41,7 +39,6 @@ class FocusStackSessionWorker(QObject):
         )
         self._cancelled = False
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
-        self.renderConfigSubmitted.connect(self.update_render_config, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
@@ -76,18 +73,6 @@ class FocusStackSessionWorker(QObject):
             self.failed.emit(str(exc))
             return
         self.finished.emit(result)
-
-    @Slot(object)
-    def update_render_config(self, render_config: object) -> None:
-        if self._cancelled or not isinstance(render_config, FocusStackRenderConfig):
-            return
-        try:
-            self._analyzer.set_render_config(render_config)
-            report = self._analyzer.refresh_preview()
-        except Exception as exc:  # noqa: BLE001
-            self.failed.emit(str(exc))
-            return
-        self.previewUpdated.emit(report)
 
     @Slot()
     def cancel(self) -> None:

@@ -36,6 +36,7 @@ from fdm.models import ImageDocument
 from fdm.settings import (
     AreaModelMapping,
     AppSettings,
+    FocusStackProfile,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayStyle,
@@ -384,8 +385,8 @@ class SettingsDialog(QDialog):
             text_font_family=self._text_font.currentFont().family(),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
-            focus_stack_profile=self._initial_settings.focus_stack_profile,
-            focus_stack_sharpen_strength=self._initial_settings.focus_stack_sharpen_strength,
+            focus_stack_profile=self._focus_stack_profile_combo.currentData(),
+            focus_stack_sharpen_strength=self._focus_stack_sharpen_spin.value(),
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -464,10 +465,31 @@ class SettingsDialog(QDialog):
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
+        focus_stack_group = QGroupBox("景深合成")
+        focus_stack_form = QFormLayout(focus_stack_group)
+        self._focus_stack_profile_combo = QComboBox()
+        self._focus_stack_profile_combo.addItem("锐利优先", FocusStackProfile.SHARP)
+        self._focus_stack_profile_combo.addItem("平衡", FocusStackProfile.BALANCED)
+        self._focus_stack_profile_combo.addItem("柔和", FocusStackProfile.SOFT)
+        self._focus_stack_profile_combo.setCurrentIndex(
+            max(0, self._focus_stack_profile_combo.findData(settings.focus_stack_profile))
+        )
+        self._focus_stack_sharpen_spin = QSpinBox()
+        self._focus_stack_sharpen_spin.setRange(0, 100)
+        self._focus_stack_sharpen_spin.setSuffix("%")
+        self._focus_stack_sharpen_spin.setSingleStep(5)
+        self._focus_stack_sharpen_spin.setValue(settings.focus_stack_sharpen_strength)
+        focus_stack_hint = QLabel("作为景深合成预览与最终导入的默认参数使用。")
+        focus_stack_hint.setWordWrap(True)
+        focus_stack_form.addRow("默认合成风格", self._focus_stack_profile_combo)
+        focus_stack_form.addRow("默认锐化强度", self._focus_stack_sharpen_spin)
+        focus_stack_form.addRow("", focus_stack_hint)
+
         measurement_hint = QLabel("测量结果文字和端点样式会同时影响画布显示与图片导出。")
         measurement_hint.setWordWrap(True)
 
         layout.addWidget(measurement_group)
+        layout.addWidget(focus_stack_group)
         layout.addWidget(measurement_hint)
         layout.addStretch(1)
         return self._wrap_settings_page(page)

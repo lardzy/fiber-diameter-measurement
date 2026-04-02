@@ -29,14 +29,12 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
-    from fdm.services.preview_analysis import FocusStackRenderConfig
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 else:
-    FocusStackRenderConfig = object  # type: ignore[assignment]
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
@@ -410,20 +408,14 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(clear_calls, ["clear"])
 
-    def test_preview_analysis_dialog_uses_focus_stack_defaults(self) -> None:
-        dialog = PreviewAnalysisDialog(
-            "景深合成",
-            intro_text="测试",
-            show_focus_stack_controls=True,
-            initial_render_config=FocusStackRenderConfig(
-                profile=FocusStackProfile.BALANCED,
-                sharpen_strength=35,
-            ),
-        )
+    def test_preview_analysis_dialog_has_finish_button(self) -> None:
+        dialog = PreviewAnalysisDialog("景深合成", intro_text="测试")
         try:
-            render_config = dialog.render_config()
-            self.assertEqual(render_config.profile, FocusStackProfile.BALANCED)
-            self.assertEqual(render_config.sharpen_strength, 35)
+            triggered: list[str] = []
+            dialog.finishRequested.connect(lambda: triggered.append("finish"))
+            dialog._finish_button.click()
+            self.assertEqual(triggered, ["finish"])
+            self.assertEqual(dialog._finish_button.text(), "结束")
         finally:
             dialog.close()
 
@@ -1327,11 +1319,15 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
             dialog._scale_overlay_length_percent.setValue(27)
             dialog._scale_overlay_font_size.setValue(24)
+            dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
+            dialog._focus_stack_sharpen_spin.setValue(65)
             updated = dialog.app_settings()
 
             self.assertEqual(updated.scale_overlay_style, "ticks")
             self.assertAlmostEqual(updated.scale_overlay_length_ratio, 0.27)
             self.assertEqual(updated.scale_overlay_font_size, 24)
+            self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
+            self.assertEqual(updated.focus_stack_sharpen_strength, 65)
         finally:
             dialog.close()
 
