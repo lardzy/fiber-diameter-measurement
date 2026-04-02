@@ -1320,7 +1320,7 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._scale_overlay_length_percent.setValue(27)
             dialog._scale_overlay_font_size.setValue(24)
             dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
-            dialog._focus_stack_sharpen_spin.setValue(65)
+            dialog._focus_stack_sharpen_slider.setValue(65)
             updated = dialog.app_settings()
 
             self.assertEqual(updated.scale_overlay_style, "ticks")
@@ -1328,6 +1328,34 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(updated.scale_overlay_font_size, 24)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_combobox_ignores_wheel_without_popup(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            combo = dialog._scale_overlay_style_combo
+            current_index = combo.currentIndex()
+            event = FakeIgnoredWheelEvent()
+
+            combo.wheelEvent(event)
+
+            self.assertEqual(combo.currentIndex(), current_index)
+            self.assertTrue(event.ignored)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_font_combobox_ignores_wheel_without_popup(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            combo = dialog._text_font
+            current_family = combo.currentFont().family()
+            event = FakeIgnoredWheelEvent()
+
+            combo.wheelEvent(event)
+
+            self.assertEqual(combo.currentFont().family(), current_family)
+            self.assertTrue(event.ignored)
         finally:
             dialog.close()
 

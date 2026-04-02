@@ -23,6 +23,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QRadioButton,
     QScrollArea,
+    QSlider,
     QSpinBox,
     QHeaderView,
     QTableWidget,
@@ -49,6 +50,22 @@ from fdm.settings import (
     to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+
+
+class NoWheelComboBox(QComboBox):
+    def wheelEvent(self, event) -> None:
+        if self.view().isVisible():
+            super().wheelEvent(event)
+            return
+        event.ignore()
+
+
+class NoWheelFontComboBox(QFontComboBox):
+    def wheelEvent(self, event) -> None:
+        if self.view().isVisible():
+            super().wheelEvent(event)
+            return
+        event.ignore()
 
 
 class CalibrationInputDialog(QDialog):
@@ -386,7 +403,7 @@ class SettingsDialog(QDialog):
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
-            focus_stack_sharpen_strength=self._focus_stack_sharpen_spin.value(),
+            focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -426,6 +443,9 @@ class SettingsDialog(QDialog):
         scroll.setWidget(content)
         return scroll
 
+    def _update_focus_stack_sharpen_label(self, value: int) -> None:
+        self._focus_stack_sharpen_value_label.setText(f"{value}%")
+
     def _build_measurement_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -434,7 +454,7 @@ class SettingsDialog(QDialog):
         measurement_form = QFormLayout(measurement_group)
         self._show_measurement_labels = QCheckBox("在测量线旁显示结果文字")
         self._show_measurement_labels.setChecked(settings.show_measurement_labels)
-        self._measurement_label_font = QFontComboBox()
+        self._measurement_label_font = NoWheelFontComboBox()
         self._measurement_label_font.setCurrentFont(QFont(settings.measurement_label_font_family))
         self._measurement_label_size = QSpinBox()
         self._measurement_label_size.setRange(8, 96)
@@ -447,7 +467,7 @@ class SettingsDialog(QDialog):
         self._measurement_label_parallel.setChecked(settings.measurement_label_parallel_to_line)
         self._measurement_label_background = QCheckBox("显示结果文字浅黑底")
         self._measurement_label_background.setChecked(settings.measurement_label_background_enabled)
-        self._endpoint_style_combo = QComboBox()
+        self._endpoint_style_combo = NoWheelComboBox()
         self._endpoint_style_combo.addItem("圆点", MeasurementEndpointStyle.CIRCLE)
         self._endpoint_style_combo.addItem("内侧箭头", MeasurementEndpointStyle.ARROW_INSIDE)
         self._endpoint_style_combo.addItem("外侧箭头", MeasurementEndpointStyle.ARROW_OUTSIDE)
@@ -467,22 +487,34 @@ class SettingsDialog(QDialog):
 
         focus_stack_group = QGroupBox("景深合成")
         focus_stack_form = QFormLayout(focus_stack_group)
-        self._focus_stack_profile_combo = QComboBox()
+        self._focus_stack_profile_combo = NoWheelComboBox()
         self._focus_stack_profile_combo.addItem("锐利优先", FocusStackProfile.SHARP)
         self._focus_stack_profile_combo.addItem("平衡", FocusStackProfile.BALANCED)
         self._focus_stack_profile_combo.addItem("柔和", FocusStackProfile.SOFT)
         self._focus_stack_profile_combo.setCurrentIndex(
             max(0, self._focus_stack_profile_combo.findData(settings.focus_stack_profile))
         )
-        self._focus_stack_sharpen_spin = QSpinBox()
-        self._focus_stack_sharpen_spin.setRange(0, 100)
-        self._focus_stack_sharpen_spin.setSuffix("%")
-        self._focus_stack_sharpen_spin.setSingleStep(5)
-        self._focus_stack_sharpen_spin.setValue(settings.focus_stack_sharpen_strength)
+        sharpen_row = QWidget()
+        sharpen_layout = QHBoxLayout(sharpen_row)
+        sharpen_layout.setContentsMargins(0, 0, 0, 0)
+        self._focus_stack_sharpen_slider = QSlider(Qt.Orientation.Horizontal)
+        self._focus_stack_sharpen_slider.setRange(0, 100)
+        self._focus_stack_sharpen_slider.setSingleStep(5)
+        self._focus_stack_sharpen_slider.setPageStep(10)
+        self._focus_stack_sharpen_slider.setTickInterval(5)
+        self._focus_stack_sharpen_slider.setTickPosition(QSlider.TickPosition.TicksBelow)
+        self._focus_stack_sharpen_slider.setValue(settings.focus_stack_sharpen_strength)
+        self._focus_stack_sharpen_value_label = QLabel()
+        self._focus_stack_sharpen_value_label.setMinimumWidth(44)
+        self._focus_stack_sharpen_value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._focus_stack_sharpen_slider.valueChanged.connect(self._update_focus_stack_sharpen_label)
+        self._update_focus_stack_sharpen_label(self._focus_stack_sharpen_slider.value())
+        sharpen_layout.addWidget(self._focus_stack_sharpen_slider, 1)
+        sharpen_layout.addWidget(self._focus_stack_sharpen_value_label)
         focus_stack_hint = QLabel("作为景深合成预览与最终导入的默认参数使用。")
         focus_stack_hint.setWordWrap(True)
         focus_stack_form.addRow("默认合成风格", self._focus_stack_profile_combo)
-        focus_stack_form.addRow("默认锐化强度", self._focus_stack_sharpen_spin)
+        focus_stack_form.addRow("默认锐化强度", sharpen_row)
         focus_stack_form.addRow("", focus_stack_hint)
 
         measurement_hint = QLabel("测量结果文字和端点样式会同时影响画布显示与图片导出。")
@@ -500,7 +532,7 @@ class SettingsDialog(QDialog):
 
         placement_group = QGroupBox("位置与长度")
         placement_form = QFormLayout(placement_group)
-        self._scale_overlay_mode_combo = QComboBox()
+        self._scale_overlay_mode_combo = NoWheelComboBox()
         self._scale_overlay_mode_combo.addItem("左上", ScaleOverlayPlacementMode.TOP_LEFT)
         self._scale_overlay_mode_combo.addItem("右上", ScaleOverlayPlacementMode.TOP_RIGHT)
         self._scale_overlay_mode_combo.addItem("左下", ScaleOverlayPlacementMode.BOTTOM_LEFT)
@@ -516,7 +548,7 @@ class SettingsDialog(QDialog):
 
         style_group = QGroupBox("线条样式")
         style_form = QFormLayout(style_group)
-        self._scale_overlay_style_combo = QComboBox()
+        self._scale_overlay_style_combo = NoWheelComboBox()
         self._scale_overlay_style_combo.addItem("纯线", ScaleOverlayStyle.LINE)
         self._scale_overlay_style_combo.addItem("端点刻度", ScaleOverlayStyle.TICKS)
         self._scale_overlay_style_combo.addItem("粗条", ScaleOverlayStyle.BAR)
@@ -527,7 +559,7 @@ class SettingsDialog(QDialog):
 
         text_group = QGroupBox("文字样式")
         text_form = QFormLayout(text_group)
-        self._scale_overlay_font = QFontComboBox()
+        self._scale_overlay_font = NoWheelFontComboBox()
         self._scale_overlay_font.setCurrentFont(QFont(settings.scale_overlay_font_family))
         self._scale_overlay_font_size = QSpinBox()
         self._scale_overlay_font_size.setRange(8, 96)
@@ -539,7 +571,7 @@ class SettingsDialog(QDialog):
 
         display_group = QGroupBox("显示")
         display_form = QFormLayout(display_group)
-        self._open_view_mode_combo = QComboBox()
+        self._open_view_mode_combo = NoWheelComboBox()
         self._open_view_mode_combo.addItem("缺省", OpenImageViewMode.DEFAULT)
         self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
         self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
@@ -562,7 +594,7 @@ class SettingsDialog(QDialog):
 
         text_group = QGroupBox("文字工具")
         text_form = QFormLayout(text_group)
-        self._text_font = QFontComboBox()
+        self._text_font = NoWheelFontComboBox()
         self._text_font.setCurrentFont(QFont(settings.text_font_family))
         self._text_size = QSpinBox()
         self._text_size.setRange(8, 144)
