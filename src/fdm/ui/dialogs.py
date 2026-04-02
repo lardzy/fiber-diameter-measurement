@@ -68,6 +68,16 @@ class NoWheelFontComboBox(QFontComboBox):
         event.ignore()
 
 
+class NoWheelSpinBox(QSpinBox):
+    def wheelEvent(self, event) -> None:
+        event.ignore()
+
+
+class NoWheelDoubleSpinBox(QDoubleSpinBox):
+    def wheelEvent(self, event) -> None:
+        event.ignore()
+
+
 class CalibrationInputDialog(QDialog):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -456,11 +466,11 @@ class SettingsDialog(QDialog):
         self._show_measurement_labels.setChecked(settings.show_measurement_labels)
         self._measurement_label_font = NoWheelFontComboBox()
         self._measurement_label_font.setCurrentFont(QFont(settings.measurement_label_font_family))
-        self._measurement_label_size = QSpinBox()
+        self._measurement_label_size = NoWheelSpinBox()
         self._measurement_label_size.setRange(8, 96)
         self._measurement_label_size.setValue(settings.measurement_label_font_size)
         self._measurement_label_color = self._create_color_button(settings.measurement_label_color)
-        self._measurement_label_decimals = QSpinBox()
+        self._measurement_label_decimals = NoWheelSpinBox()
         self._measurement_label_decimals.setRange(0, 8)
         self._measurement_label_decimals.setValue(settings.measurement_label_decimals)
         self._measurement_label_parallel = QCheckBox("结果文字与测量线平行")
@@ -539,7 +549,7 @@ class SettingsDialog(QDialog):
         self._scale_overlay_mode_combo.addItem("右下", ScaleOverlayPlacementMode.BOTTOM_RIGHT)
         self._scale_overlay_mode_combo.addItem("手动选定", ScaleOverlayPlacementMode.MANUAL)
         self._scale_overlay_mode_combo.setCurrentIndex(max(0, self._scale_overlay_mode_combo.findData(settings.scale_overlay_placement_mode)))
-        self._scale_overlay_length_percent = QSpinBox()
+        self._scale_overlay_length_percent = NoWheelSpinBox()
         self._scale_overlay_length_percent.setRange(8, 35)
         self._scale_overlay_length_percent.setSuffix("%")
         self._scale_overlay_length_percent.setValue(int(round(settings.scale_overlay_length_ratio * 100)))
@@ -561,7 +571,7 @@ class SettingsDialog(QDialog):
         text_form = QFormLayout(text_group)
         self._scale_overlay_font = NoWheelFontComboBox()
         self._scale_overlay_font.setCurrentFont(QFont(settings.scale_overlay_font_family))
-        self._scale_overlay_font_size = QSpinBox()
+        self._scale_overlay_font_size = NoWheelSpinBox()
         self._scale_overlay_font_size.setRange(8, 96)
         self._scale_overlay_font_size.setValue(settings.scale_overlay_font_size)
         self._scale_overlay_text_color = self._create_color_button(settings.scale_overlay_text_color)
@@ -596,7 +606,7 @@ class SettingsDialog(QDialog):
         text_form = QFormLayout(text_group)
         self._text_font = NoWheelFontComboBox()
         self._text_font.setCurrentFont(QFont(settings.text_font_family))
-        self._text_size = QSpinBox()
+        self._text_size = NoWheelSpinBox()
         self._text_size.setRange(8, 144)
         self._text_size.setValue(settings.text_font_size)
         self._text_color = self._create_color_button(settings.text_color)

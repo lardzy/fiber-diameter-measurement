@@ -1359,6 +1359,20 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_settings_dialog_spinbox_ignores_wheel(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            spinbox = dialog._scale_overlay_length_percent
+            current_value = spinbox.value()
+            event = FakeIgnoredWheelEvent()
+
+            spinbox.wheelEvent(event)
+
+            self.assertEqual(spinbox.value(), current_value)
+            self.assertTrue(event.ignored)
+        finally:
+            dialog.close()
+
     def test_combined_overlay_export_renders_measurements_and_scale_together(self) -> None:
         window, document = self._create_main_window_fixture()
         try:
