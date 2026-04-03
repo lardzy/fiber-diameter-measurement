@@ -31,7 +31,7 @@ from fdm.services.snap_service import SnapResult
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
-    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 else:
@@ -41,6 +41,7 @@ else:
     ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
+    qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
 
@@ -289,6 +290,42 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
+
+    def test_line_hit_test_keeps_tolerance_when_point_is_outside_exact_bounds(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        document.add_measurement(measurement)
+
+        hit_id = canvas._hit_test_measurement(Point(50, 24))
+
+        self.assertEqual(hit_id, measurement.id)
+
+    def test_area_hit_test_keeps_edge_tolerance_when_point_is_outside_exact_bounds(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="area",
+            polygon_px=[
+                Point(40, 40),
+                Point(90, 40),
+                Point(90, 90),
+                Point(40, 90),
+            ],
+        )
+        document.add_measurement(measurement)
+
+        hit_id = canvas._hit_test_area_measurement(Point(65, 94))
+
+        self.assertEqual(hit_id, measurement.id)
 
     def test_live_preview_frame_can_be_captured_as_project_asset_document(self) -> None:
         window = MainWindow()
@@ -1665,6 +1702,22 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(loaded_paths), 2)
             self.assertEqual(failed_paths, [str(missing_path)])
             self.assertEqual(finished_payloads, [(False, 2, 1, 1)])
+
+    def test_qimage_to_raster_drops_scanline_padding_and_preserves_python_int_pixels(self) -> None:
+        image = QImage(3, 2, QImage.Format.Format_RGB32)
+        values = [
+            [0, 32, 64],
+            [96, 128, 160],
+        ]
+        for y, row in enumerate(values):
+            for x, value in enumerate(row):
+                image.setPixelColor(x, y, QColor(value, value, value))
+
+        raster = qimage_to_raster(image)
+
+        self.assertEqual((raster.width, raster.height), (3, 2))
+        self.assertEqual(raster.pixels, [0, 32, 64, 96, 128, 160])
+        self.assertTrue(all(type(value) is int for value in raster.pixels))
 
     def test_full_resolution_metrics_scale_above_old_cap_for_large_images(self) -> None:
         window = MainWindow()

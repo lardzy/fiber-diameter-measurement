@@ -22,7 +22,7 @@ def qimage_to_raster(image: QImage) -> RasterImage:
     ptr = grayscale.constBits()
     bpl = grayscale.bytesPerLine()
     arr = np.frombuffer(ptr, dtype=np.uint8, count=height * bpl).reshape(height, bpl)
-    pixels = list(arr[:, :width].ravel())
+    pixels = arr[:, :width].astype(int).ravel().tolist()
     return RasterImage(width=width, height=height, pixels=pixels)
 
 
