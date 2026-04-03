@@ -15,7 +15,9 @@ from fdm.geometry import (
     line_length,
     nearest_endpoint,
     point_in_polygon,
+    point_near_bounds,
     point_to_polygon_edge_distance,
+    polygon_bounds,
     polygon_translate,
     snap_to_pixel_center,
 )
@@ -834,11 +836,17 @@ class DocumentCanvas(QWidget):
     def _hit_test_endpoint(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None:
             return None
+        tolerance = self._endpoint_tolerance()
         for measurement in reversed(self._document.measurements):
             if measurement.measurement_kind != "line":
                 continue
-            endpoint_name, endpoint_distance = nearest_endpoint(measurement.effective_line(), image_point)
-            if endpoint_distance <= self._endpoint_tolerance():
+            line = measurement.effective_line()
+            bounds = (min(line.start.x, line.end.x), min(line.start.y, line.end.y),
+                      max(line.start.x, line.end.x), max(line.start.y, line.end.y))
+            if not point_near_bounds(image_point, bounds, tolerance):
+                continue
+            endpoint_name, endpoint_distance = nearest_endpoint(line, image_point)
+            if endpoint_distance <= tolerance:
                 return measurement.id, endpoint_name
         return None
 
@@ -863,6 +871,9 @@ class DocumentCanvas(QWidget):
         for measurement in reversed(self._document.measurements):
             if measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
                 continue
+            bounds = polygon_bounds(measurement.polygon_px)
+            if not point_near_bounds(image_point, bounds, tolerance):
+                continue
             if point_in_polygon(image_point, measurement.polygon_px):
                 return measurement.id
             if point_to_polygon_edge_distance(image_point, measurement.polygon_px) <= tolerance:
@@ -876,7 +887,12 @@ class DocumentCanvas(QWidget):
         for measurement in reversed(self._document.measurements):
             if measurement.measurement_kind != "line":
                 continue
-            if self._point_to_segment_distance(image_point, measurement.effective_line()) <= tolerance:
+            line = measurement.effective_line()
+            bounds = (min(line.start.x, line.end.x), min(line.start.y, line.end.y),
+                      max(line.start.x, line.end.x), max(line.start.y, line.end.y))
+            if not point_near_bounds(image_point, bounds, tolerance):
+                continue
+            if self._point_to_segment_distance(image_point, line) <= tolerance:
                 return measurement.id
         return None
 

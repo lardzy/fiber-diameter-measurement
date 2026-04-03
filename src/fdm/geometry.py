@@ -134,6 +134,17 @@ def polygon_bounds(points: list[Point]) -> tuple[float, float, float, float]:
     return min(xs), min(ys), max(xs), max(ys)
 
 
+def point_near_bounds(point: Point, bounds: tuple[float, float, float, float], tolerance: float) -> bool:
+    """快速判断点是否在 (bounds ± tolerance) 的矩形区域内。用于跳过不可能命中的测量。"""
+    min_x, min_y, max_x, max_y = bounds
+    return (
+        point.x >= min_x - tolerance
+        and point.x <= max_x + tolerance
+        and point.y >= min_y - tolerance
+        and point.y <= max_y + tolerance
+    )
+
+
 def polygon_bounds_center(points: list[Point]) -> Point:
     min_x, min_y, max_x, max_y = polygon_bounds(points)
     return Point((min_x + max_x) / 2.0, (min_y + max_y) / 2.0)

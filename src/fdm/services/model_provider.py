@@ -90,13 +90,10 @@ class OnnxModelProvider(ModelProvider):
             prediction = prediction[0, 0]
         elif prediction.ndim == 3:
             prediction = prediction[0]
-        mask = RasterImage.blank(width, height, fill=0)
-        flat_prediction = prediction.reshape((height * width,))
-        confidence_sum = 0.0
-        for index, value in enumerate(flat_prediction.tolist()):
-            confidence_sum += float(value)
-            mask.pixels[index] = 255 if float(value) >= 0.5 else 0
-        confidence = confidence_sum / max(1, len(flat_prediction))
+        flat = prediction.reshape((height * width,))
+        confidence = float(flat.mean())
+        mask_pixels = np.where(flat >= 0.5, 255, 0).astype(int).tolist()
+        mask = RasterImage(width=width, height=height, pixels=mask_pixels)
         return ModelResult(
             mask=mask,
             confidence=confidence,
