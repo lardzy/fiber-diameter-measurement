@@ -404,7 +404,7 @@ class SettingsDialog(QDialog):
             open_image_view_mode=self._open_view_mode_combo.currentData(),
             scale_overlay_placement_mode=self._scale_overlay_mode_combo.currentData(),
             scale_overlay_style=self._scale_overlay_style_combo.currentData(),
-            scale_overlay_length_ratio=self._scale_overlay_length_percent.value() / 100.0,
+            scale_overlay_length_value=self._scale_overlay_length_spin.value(),
             scale_overlay_color=self._scale_overlay_color.property("color_value") or self._initial_settings.scale_overlay_color,
             scale_overlay_text_color=self._scale_overlay_text_color.property("color_value") or self._initial_settings.scale_overlay_text_color,
             scale_overlay_font_family=self._scale_overlay_font.currentFont().family(),
@@ -455,6 +455,10 @@ class SettingsDialog(QDialog):
 
     def _update_focus_stack_sharpen_label(self, value: int) -> None:
         self._focus_stack_sharpen_value_label.setText(f"{value}%")
+
+    def _scale_overlay_length_unit(self) -> str:
+        calibration = self._document.calibration if self._document is not None else None
+        return calibration.unit if calibration is not None else "px"
 
     def _build_measurement_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
@@ -549,12 +553,13 @@ class SettingsDialog(QDialog):
         self._scale_overlay_mode_combo.addItem("右下", ScaleOverlayPlacementMode.BOTTOM_RIGHT)
         self._scale_overlay_mode_combo.addItem("手动选定", ScaleOverlayPlacementMode.MANUAL)
         self._scale_overlay_mode_combo.setCurrentIndex(max(0, self._scale_overlay_mode_combo.findData(settings.scale_overlay_placement_mode)))
-        self._scale_overlay_length_percent = NoWheelSpinBox()
-        self._scale_overlay_length_percent.setRange(8, 35)
-        self._scale_overlay_length_percent.setSuffix("%")
-        self._scale_overlay_length_percent.setValue(int(round(settings.scale_overlay_length_ratio * 100)))
+        self._scale_overlay_length_spin = NoWheelDoubleSpinBox()
+        self._scale_overlay_length_spin.setDecimals(4)
+        self._scale_overlay_length_spin.setRange(0.01, 1_000_000.0)
+        self._scale_overlay_length_spin.setValue(settings.scale_overlay_length_value)
+        self._scale_overlay_length_spin.setSuffix(f" {self._scale_overlay_length_unit()}")
         placement_form.addRow("比例尺叠加位置", self._scale_overlay_mode_combo)
-        placement_form.addRow("目标长度", self._scale_overlay_length_percent)
+        placement_form.addRow("目标长度", self._scale_overlay_length_spin)
 
         style_group = QGroupBox("线条样式")
         style_form = QFormLayout(style_group)
@@ -587,7 +592,7 @@ class SettingsDialog(QDialog):
         self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
         self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
         display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
-        display_hint = QLabel("比例尺线条与文字会自动补对比描边，尽量兼顾深浅底图的可读性。")
+        display_hint = QLabel("目标长度按当前图片标定单位输入；未标定时按 px 输入。文字会自动补对比描边。")
         display_hint.setWordWrap(True)
         display_form.addRow("", display_hint)
 

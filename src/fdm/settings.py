@@ -196,7 +196,7 @@ class AppSettings:
     open_image_view_mode: str = OpenImageViewMode.DEFAULT
     scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_LEFT
     scale_overlay_style: str = ScaleOverlayStyle.LINE
-    scale_overlay_length_ratio: float = 0.18
+    scale_overlay_length_value: float = 100.0
     scale_overlay_color: str = "#FFFFFF"
     scale_overlay_text_color: str = "#FFFFFF"
     scale_overlay_font_family: str = "Microsoft YaHei UI"
@@ -217,7 +217,7 @@ class AppSettings:
         normalized = replace(self)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
         normalized.scale_overlay_style = self._normalize_scale_overlay_style(self.scale_overlay_style)
-        normalized.scale_overlay_length_ratio = self._normalize_scale_overlay_length_ratio(self.scale_overlay_length_ratio)
+        normalized.scale_overlay_length_value = self._normalize_scale_overlay_length_value(self.scale_overlay_length_value)
         normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
         normalized.text_font_size = self._normalize_font_size(self.text_font_size, minimum=8, maximum=144)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
@@ -304,12 +304,12 @@ class AppSettings:
         return ScaleOverlayStyle.LINE
 
     @staticmethod
-    def _normalize_scale_overlay_length_ratio(value: float | int | str | None) -> float:
+    def _normalize_scale_overlay_length_value(value: float | int | str | None) -> float:
         try:
             numeric = float(value)
         except (TypeError, ValueError):
-            numeric = 0.18
-        return max(0.08, min(0.35, numeric))
+            numeric = 100.0
+        return max(0.01, min(1_000_000.0, numeric))
 
     @staticmethod
     def _normalize_font_size(value: int | float | str | None, *, minimum: int, maximum: int) -> int:
@@ -354,7 +354,7 @@ class AppSettings:
             "open_image_view_mode": normalized.open_image_view_mode,
             "scale_overlay_placement_mode": normalized.scale_overlay_placement_mode,
             "scale_overlay_style": normalized.scale_overlay_style,
-            "scale_overlay_length_ratio": normalized.scale_overlay_length_ratio,
+            "scale_overlay_length_value": normalized.scale_overlay_length_value,
             "scale_overlay_color": normalized.scale_overlay_color,
             "scale_overlay_text_color": normalized.scale_overlay_text_color,
             "scale_overlay_font_family": normalized.scale_overlay_font_family,
@@ -391,7 +391,9 @@ class AppSettings:
         settings.open_image_view_mode = str(payload.get("open_image_view_mode", settings.open_image_view_mode))
         settings.scale_overlay_placement_mode = str(payload.get("scale_overlay_placement_mode", settings.scale_overlay_placement_mode))
         settings.scale_overlay_style = cls._normalize_scale_overlay_style(payload.get("scale_overlay_style", settings.scale_overlay_style))
-        settings.scale_overlay_length_ratio = cls._normalize_scale_overlay_length_ratio(payload.get("scale_overlay_length_ratio", settings.scale_overlay_length_ratio))
+        settings.scale_overlay_length_value = cls._normalize_scale_overlay_length_value(
+            payload.get("scale_overlay_length_value", settings.scale_overlay_length_value)
+        )
         settings.scale_overlay_color = str(payload.get("scale_overlay_color", settings.scale_overlay_color))
         settings.scale_overlay_text_color = str(payload.get("scale_overlay_text_color", settings.scale_overlay_text_color))
         settings.scale_overlay_font_family = str(payload.get("scale_overlay_font_family", settings.scale_overlay_font_family))
