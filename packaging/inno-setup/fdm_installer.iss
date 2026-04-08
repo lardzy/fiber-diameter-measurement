@@ -1,5 +1,5 @@
 #define MyAppName "Fiber Diameter Measurement"
-#define MyAppVersion "0.2.1"
+#define MyAppVersion "0.2.2"
 #define MyAppPublisher "LARD"
 #define MyAppExeName "FiberDiameterMeasurement.exe"
 #define MyAppShortcutName "特纤通用测量工具"
