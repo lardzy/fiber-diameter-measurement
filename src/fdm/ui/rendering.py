@@ -378,17 +378,13 @@ def _draw_scale_ticks(
     start_point: QPointF,
     end_point: QPointF,
     *,
-    outline_color: QColor,
     foreground_color: QColor,
-    bg_width: float,
     fg_width: float,
     tick_length: float,
 ) -> None:
     for anchor in (start_point, end_point):
         tick_start = QPointF(anchor.x(), anchor.y() - tick_length)
         tick_end = QPointF(anchor.x(), anchor.y() + tick_length)
-        painter.setPen(QPen(outline_color, bg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-        painter.drawLine(tick_start, tick_end)
         painter.setPen(QPen(foreground_color, fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
         painter.drawLine(tick_start, tick_end)
 
@@ -406,14 +402,16 @@ def draw_scale_overlay(
     font_px: float,
     render_mode: str,
 ) -> None:
-    target_output_px = max(48.0, image_width * settings.scale_overlay_length_ratio)
-    scale_value = nice_scale_value(document, target_output_px=target_output_px, image_to_output_scale=image_to_output_scale)
+    scale_value = resolve_scale_overlay_value(
+        document,
+        settings,
+        image_to_output_scale=image_to_output_scale,
+    )
     if scale_value is None:
         return
-    value, bar_px = scale_value
+    value, unit, bar_px = scale_value
     font, resolved_font_px = scale_overlay_font(settings, suggested_font_px=font_px, render_mode=render_mode)
     line_color = QColor(settings.scale_overlay_color)
-    line_outline = _overlay_outline_color(line_color)
     text_color = QColor(settings.scale_overlay_text_color)
     text_outline = _overlay_outline_color(text_color)
     start_point, draw_below = _scale_overlay_start(
@@ -433,8 +431,6 @@ def draw_scale_overlay(
         bg_width = max(bg_width * 2.2, fg_width * 2.0)
         fg_width = max(fg_width * 1.9, scale_fg_width + 1.5)
         cap_style = Qt.PenCapStyle.SquareCap
-    painter.setPen(QPen(line_outline, bg_width, Qt.PenStyle.SolidLine, cap_style))
-    painter.drawLine(start_point, end_point)
     painter.setPen(QPen(line_color, fg_width, Qt.PenStyle.SolidLine, cap_style))
     painter.drawLine(start_point, end_point)
     if settings.scale_overlay_style == ScaleOverlayStyle.TICKS:
@@ -443,43 +439,34 @@ def draw_scale_overlay(
             painter,
             start_point,
             end_point,
-            outline_color=line_outline,
             foreground_color=line_color,
-            bg_width=max(bg_width * 0.9, fg_width + 1.0),
             fg_width=max(1.0, fg_width * 0.8),
             tick_length=tick_length,
         )
     painter.setFont(font)
-    text_y = start_point.y() + max(resolved_font_px * 1.1, 18.0) if draw_below else start_point.y() - max(12.0, resolved_font_px * 0.55)
+    metrics = QFontMetricsF(font)
+    text = f"{value:g} {unit}"
+    text_top = start_point.y() + max(resolved_font_px * 0.45, 10.0) if draw_below else start_point.y() - metrics.height() - max(6.0, resolved_font_px * 0.18)
+    text_rect = QRectF(start_point.x(), text_top, bar_px, metrics.height())
     painter.setPen(QPen(text_outline, 3))
-    painter.drawText(QPointF(start_point.x(), text_y), f"{value:g} {document.calibration.unit}")
+    painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
     painter.setPen(QPen(text_color, 1))
-    painter.drawText(QPointF(start_point.x(), text_y), f"{value:g} {document.calibration.unit}")
+    painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
 
 
-def nice_scale_value(
+def resolve_scale_overlay_value(
     document: ImageDocument,
+    settings: AppSettings,
     *,
-    target_output_px: float,
     image_to_output_scale: float,
-) -> tuple[float, float] | None:
+) -> tuple[float, str, float] | None:
+    value = float(settings.scale_overlay_length_value)
+    if value <= 0:
+        return None
     calibration = document.calibration
     if calibration is None:
-        return None
-    scaled_pixels_per_unit = calibration.pixels_per_unit * max(image_to_output_scale, 1e-9)
-    raw_value = target_output_px / scaled_pixels_per_unit
-    if raw_value <= 0:
-        return None
-    exponent = math.floor(math.log10(raw_value))
-    base = raw_value / (10 ** exponent)
-    if base < 2:
-        nice_base = 1
-    elif base < 5:
-        nice_base = 2
-    else:
-        nice_base = 5
-    nice_value = nice_base * (10 ** exponent)
-    return nice_value, calibration.unit_to_px(nice_value) * image_to_output_scale
+        return value, "px", value * image_to_output_scale
+    return value, calibration.unit, calibration.unit_to_px(value) * image_to_output_scale
 
 
 def _scale_overlay_start(

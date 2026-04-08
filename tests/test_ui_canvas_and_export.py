@@ -31,7 +31,7 @@ from fdm.services.snap_service import SnapResult
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
-    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
+    from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 else:
@@ -41,6 +41,7 @@ else:
     ShortcutHelpDialog = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
+    qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
 
@@ -289,6 +290,42 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
+
+    def test_line_hit_test_keeps_tolerance_when_point_is_outside_exact_bounds(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        document.add_measurement(measurement)
+
+        hit_id = canvas._hit_test_measurement(Point(50, 24))
+
+        self.assertEqual(hit_id, measurement.id)
+
+    def test_area_hit_test_keeps_edge_tolerance_when_point_is_outside_exact_bounds(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="area",
+            polygon_px=[
+                Point(40, 40),
+                Point(90, 40),
+                Point(90, 90),
+                Point(40, 90),
+            ],
+        )
+        document.add_measurement(measurement)
+
+        hit_id = canvas._hit_test_area_measurement(Point(65, 94))
+
+        self.assertEqual(hit_id, measurement.id)
 
     def test_live_preview_frame_can_be_captured_as_project_asset_document(self) -> None:
         window = MainWindow()
@@ -1287,7 +1324,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 bar_path = Path(tmp_dir) / "scale_bar.png"
 
                 window._app_settings.scale_overlay_style = "line"
-                window._app_settings.scale_overlay_length_ratio = 0.18
+                window._app_settings.scale_overlay_length_value = 20.0
                 window._render_overlay_image(
                     document,
                     line_path,
@@ -1297,7 +1334,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 )
 
                 window._app_settings.scale_overlay_style = "bar"
-                window._app_settings.scale_overlay_length_ratio = 0.30
+                window._app_settings.scale_overlay_length_value = 30.0
                 window._render_overlay_image(
                     document,
                     bar_path,
@@ -1312,22 +1349,83 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_scale_overlay_renders_for_uncalibrated_document_using_pixel_length(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(260, 180, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/uncalibrated_scale.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            canvas = DocumentCanvas()
+            canvas.resize(340, 240)
+            canvas.set_document(document, image)
+            window._images[document.id] = image
+            window._canvases[document.id] = canvas
+            window._app_settings.scale_overlay_length_value = 48.0
+
+            with TemporaryDirectory() as tmp_dir:
+                baseline_path = Path(tmp_dir) / "baseline.png"
+                scale_path = Path(tmp_dir) / "scale.png"
+                window._render_overlay_image(
+                    document,
+                    baseline_path,
+                    include_measurements=False,
+                    include_scale=False,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+                window._render_overlay_image(
+                    document,
+                    scale_path,
+                    include_measurements=False,
+                    include_scale=True,
+                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                )
+
+                baseline_image = QImage(str(baseline_path))
+                scale_image = QImage(str(scale_path))
+                self.assertGreater(self._count_diff_pixels(baseline_image, scale_image), 0)
+        finally:
+            window.close()
+
     def test_settings_dialog_collects_scale_overlay_fields(self) -> None:
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
             dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
-            dialog._scale_overlay_length_percent.setValue(27)
+            dialog._scale_overlay_length_spin.setValue(27.5)
             dialog._scale_overlay_font_size.setValue(24)
             dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
             dialog._focus_stack_sharpen_slider.setValue(65)
             updated = dialog.app_settings()
 
             self.assertEqual(updated.scale_overlay_style, "ticks")
-            self.assertAlmostEqual(updated.scale_overlay_length_ratio, 0.27)
+            self.assertAlmostEqual(updated.scale_overlay_length_value, 27.5)
             self.assertEqual(updated.scale_overlay_font_size, 24)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_scale_overlay_length_uses_current_calibration_unit_suffix(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/scale_unit.png",
+            image_size=(200, 120),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="demo",
+        )
+        dialog = SettingsDialog(AppSettings(), document=document)
+        try:
+            self.assertTrue(dialog._scale_overlay_length_spin.suffix().endswith(" um"))
         finally:
             dialog.close()
 
@@ -1362,7 +1460,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_settings_dialog_spinbox_ignores_wheel(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
-            spinbox = dialog._scale_overlay_length_percent
+            spinbox = dialog._scale_overlay_length_spin
             current_value = spinbox.value()
             event = FakeIgnoredWheelEvent()
 
@@ -1665,6 +1763,22 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(loaded_paths), 2)
             self.assertEqual(failed_paths, [str(missing_path)])
             self.assertEqual(finished_payloads, [(False, 2, 1, 1)])
+
+    def test_qimage_to_raster_drops_scanline_padding_and_preserves_python_int_pixels(self) -> None:
+        image = QImage(3, 2, QImage.Format.Format_RGB32)
+        values = [
+            [0, 32, 64],
+            [96, 128, 160],
+        ]
+        for y, row in enumerate(values):
+            for x, value in enumerate(row):
+                image.setPixelColor(x, y, QColor(value, value, value))
+
+        raster = qimage_to_raster(image)
+
+        self.assertEqual((raster.width, raster.height), (3, 2))
+        self.assertEqual(raster.pixels, [0, 32, 64, 96, 128, 160])
+        self.assertTrue(all(type(value) is int for value in raster.pixels))
 
     def test_full_resolution_metrics_scale_above_old_cap_for_large_images(self) -> None:
         window = MainWindow()

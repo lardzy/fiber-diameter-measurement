@@ -256,7 +256,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             measurement_label_background_enabled=False,
             measurement_endpoint_style="bar",
             scale_overlay_style=ScaleOverlayStyle.TICKS,
-            scale_overlay_length_ratio=0.22,
+            scale_overlay_length_value=220.0,
             scale_overlay_color="#ABCDEF",
             scale_overlay_text_color="#654321",
             scale_overlay_font_size=21,
@@ -279,7 +279,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertFalse(loaded.measurement_label_background_enabled)
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
         self.assertEqual(loaded.scale_overlay_style, ScaleOverlayStyle.TICKS)
-        self.assertAlmostEqual(loaded.scale_overlay_length_ratio, 0.22)
+        self.assertAlmostEqual(loaded.scale_overlay_length_value, 220.0)
         self.assertEqual(loaded.scale_overlay_color, "#ABCDEF")
         self.assertEqual(loaded.scale_overlay_text_color, "#654321")
         self.assertEqual(loaded.scale_overlay_font_size, 21)
@@ -292,7 +292,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings.from_dict({})
 
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
-        self.assertAlmostEqual(settings.scale_overlay_length_ratio, 0.18)
+        self.assertAlmostEqual(settings.scale_overlay_length_value, 100.0)
         self.assertEqual(settings.scale_overlay_font_size, 18)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
@@ -301,7 +301,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings.from_dict(
             {
                 "scale_overlay_style": "unknown",
-                "scale_overlay_length_ratio": 0.9,
+                "scale_overlay_length_value": 0,
                 "scale_overlay_font_size": 999,
                 "focus_stack_profile": "unknown",
                 "focus_stack_sharpen_strength": 1000,
@@ -309,7 +309,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
 
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
-        self.assertAlmostEqual(settings.scale_overlay_length_ratio, 0.35)
+        self.assertAlmostEqual(settings.scale_overlay_length_value, 0.01)
         self.assertEqual(settings.scale_overlay_font_size, 96)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)

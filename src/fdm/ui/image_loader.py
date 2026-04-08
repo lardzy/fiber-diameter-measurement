@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+import numpy as np
 from PySide6.QtCore import QObject, Signal, Slot
-from PySide6.QtGui import QColor, QImage, QImageReader
+from PySide6.QtGui import QImage, QImageReader
 
 from fdm.raster import RasterImage
 
@@ -16,11 +17,13 @@ class ImageLoadRequest:
 
 def qimage_to_raster(image: QImage) -> RasterImage:
     grayscale = image.convertToFormat(QImage.Format.Format_Grayscale8)
-    raster = RasterImage.blank(grayscale.width(), grayscale.height(), fill=255)
-    for y in range(grayscale.height()):
-        for x in range(grayscale.width()):
-            raster.set(x, y, QColor(grayscale.pixel(x, y)).red())
-    return raster
+    width = grayscale.width()
+    height = grayscale.height()
+    ptr = grayscale.constBits()
+    bpl = grayscale.bytesPerLine()
+    arr = np.frombuffer(ptr, dtype=np.uint8, count=height * bpl).reshape(height, bpl)
+    pixels = arr[:, :width].astype(int).ravel().tolist()
+    return RasterImage(width=width, height=height, pixels=pixels)
 
 
 class ImageBatchLoaderWorker(QObject):
