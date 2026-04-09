@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+import sys
 from typing import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import QApplication, QStyle
+
+from fdm.settings import bundle_resource_root
 
 try:
     import qtawesome as qta
@@ -64,6 +68,26 @@ def themed_icon(name: str, *, color: str = "#F7F4EA", size: int = 18) -> QIcon:
     if standard is not None and QApplication.instance() is not None:
         return QApplication.style().standardIcon(standard)
     return QIcon()
+
+
+def application_icon() -> QIcon:
+    icon_candidates = [
+        bundle_resource_root() / "packaging" / "assets" / "icons" / "app-icon.ico",
+        bundle_resource_root() / "packaging" / "assets" / "icons" / "app-icon.svg",
+        Path(__file__).resolve().parents[3] / "packaging" / "assets" / "icons" / "app-icon.ico",
+        Path(__file__).resolve().parents[3] / "packaging" / "assets" / "icons" / "app-icon.svg",
+    ]
+    for path in icon_candidates:
+        if not path.exists():
+            continue
+        icon = QIcon(str(path))
+        if not icon.isNull():
+            return icon
+    if getattr(sys, "frozen", False):
+        executable_icon = QIcon(str(Path(sys.executable).resolve()))
+        if not executable_icon.isNull():
+            return executable_icon
+    return themed_icon("calibration", color="#F7F4EA", size=64)
 
 
 def _paint_icon(builder: Callable[[QPainter, QColor, QRectF], None], *, color: str, size: int) -> QIcon:

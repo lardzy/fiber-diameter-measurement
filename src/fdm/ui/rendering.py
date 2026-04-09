@@ -323,8 +323,14 @@ def _draw_overlay_arrow_head(painter: QPainter, start_point: QPointF, end_point:
     tail = QPointF(end_point.x() - axis[0] * arrow_length, end_point.y() - axis[1] * arrow_length)
     left = QPointF(tail.x() + side[0] * arrow_half_width, tail.y() + side[1] * arrow_half_width)
     right = QPointF(tail.x() - side[0] * arrow_half_width, tail.y() - side[1] * arrow_half_width)
+    pen = QPen(painter.pen())
+    pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.save()
+    painter.setPen(pen)
     painter.drawLine(end_point, left)
     painter.drawLine(end_point, right)
+    painter.restore()
 
 
 def _draw_overlay_handle(painter: QPainter, point: QPointF) -> None:

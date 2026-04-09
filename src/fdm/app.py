@@ -107,8 +107,10 @@ def main(argv: list[str] | None = None) -> int:
         app = QApplication(args)
         app.setApplicationName(APP_NAME)
         app.setOrganizationName("Codex")
+        from fdm.ui.icons import application_icon
         from fdm.ui.main_window import MainWindow
 
+        app.setWindowIcon(application_icon())
         window = MainWindow()
         window.show()
         return app.exec()

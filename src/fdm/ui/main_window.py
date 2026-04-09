@@ -92,7 +92,7 @@ from fdm.ui.dialogs import (
     ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
-from fdm.ui.icons import themed_icon
+from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
@@ -265,6 +265,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("纤维直径测量")
+        self.setWindowIcon(application_icon())
 
         self.project = ProjectState.empty()
         self._project_path: Path | None = None

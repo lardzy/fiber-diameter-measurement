@@ -34,6 +34,7 @@ def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str,
 datas = [
     (str(project_root / "README.md"), "."),
 ]
+datas += _collect_directory_files(project_root / "packaging" / "assets" / "icons", target_root="packaging/assets/icons")
 runtime_root = project_root / "runtime"
 if runtime_root.exists():
     for file_path in runtime_root.rglob("*"):

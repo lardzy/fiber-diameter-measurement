@@ -31,6 +31,7 @@ from fdm.services.snap_service import SnapResult
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
@@ -39,6 +40,7 @@ else:
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
+    application_icon = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
@@ -744,6 +746,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window.save_project_action.icon().isNull())
             self.assertIsNotNone(window._overlay_tool_button)
             self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
+        finally:
+            window.close()
+
+    def test_main_window_uses_application_icon(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertFalse(application_icon().isNull())
+            self.assertFalse(window.windowIcon().isNull())
         finally:
             window.close()
 
