@@ -99,7 +99,7 @@ from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
-from fdm.ui.widgets import MeasurementGroupComboBox
+from fdm.ui.widgets import MeasurementGroupComboBox, OverlayToolSplitButton
 
 try:
     from fdm.services.capture import CaptureDevice, CaptureSessionManager
@@ -284,7 +284,7 @@ class MainWindow(QMainWindow):
         self._table_rebuilding = False
         self._file_toolbar: QToolBar | None = None
         self._measure_toolbar: QToolBar | None = None
-        self._overlay_tool_button: QToolButton | None = None
+        self._overlay_tool_button: OverlayToolSplitButton | None = None
         self._overlay_tool_menu: QMenu | None = None
         self._overlay_subtool_actions: dict[str, QAction] = {}
         self._load_thread: QThread | None = None
@@ -631,12 +631,12 @@ class MainWindow(QMainWindow):
             """
             QToolBar {
                 spacing: 8px;
-                padding: 4px 0;
+                padding: 6px 0;
             }
             QToolButton {
-                min-height: 38px;
+                min-height: 40px;
                 padding: 6px 14px;
-                border-radius: 8px;
+                border-radius: 10px;
                 font-weight: 600;
             }
             QToolButton:checked {
@@ -749,8 +749,9 @@ class MainWindow(QMainWindow):
                 return label
         return "文字"
 
-    def _overlay_tool_icon(self) -> QIcon:
-        return themed_icon(self._overlay_tool_icon_name(self._overlay_tool_kind), color="#9C89B8")
+    def _overlay_tool_icon(self, *, active: bool = False) -> QIcon:
+        color = "#C9B3E5" if active else "#B79AD8"
+        return themed_icon(self._overlay_tool_icon_name(self._overlay_tool_kind), color=color)
 
     def _activate_overlay_tool(self, kind: str) -> None:
         if kind not in {item[0] for item in self._overlay_tool_definitions()}:
@@ -758,18 +759,48 @@ class MainWindow(QMainWindow):
         self._overlay_tool_kind = kind
         self.set_tool_mode("overlay", overlay_kind=kind)
 
-    def _build_overlay_tool_button(self) -> QToolButton:
-        button = QToolButton(self)
+    def _build_overlay_tool_button(self) -> OverlayToolSplitButton:
+        button = OverlayToolSplitButton(self)
         button.setText("叠加标注")
-        button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        button.setCheckable(True)
-        button.clicked.connect(lambda checked=False: self._activate_overlay_tool(self._overlay_tool_kind))
+        button.primaryTriggered.connect(lambda: self._activate_overlay_tool(self._overlay_tool_kind))
+
         menu = QMenu(button)
+        menu.setObjectName("overlayToolMenu")
+        menu.setStyleSheet(
+            """
+            QMenu#overlayToolMenu {
+                background: #23282E;
+                border: 1px solid rgba(255, 255, 255, 20);
+                border-radius: 12px;
+                padding: 8px;
+            }
+            QMenu#overlayToolMenu::item {
+                min-height: 38px;
+                margin: 2px 0;
+                padding: 0 14px 0 12px;
+                border-radius: 8px;
+                color: #F3F4F6;
+                font-weight: 600;
+            }
+            QMenu#overlayToolMenu::item:selected {
+                background: #2D343C;
+            }
+            QMenu#overlayToolMenu::item:checked {
+                background: rgba(183, 154, 216, 41);
+            }
+            QMenu#overlayToolMenu::icon {
+                padding-left: 2px;
+            }
+            QMenu#overlayToolMenu::indicator {
+                width: 0px;
+                height: 0px;
+            }
+            """
+        )
         for kind, label, icon_name in self._overlay_tool_definitions():
             action = QAction(label, menu)
             action.setCheckable(True)
-            action.setIcon(themed_icon(icon_name, color="#9C89B8"))
+            action.setIcon(themed_icon(icon_name, color="#B79AD8"))
             action.triggered.connect(lambda checked=False, overlay_kind=kind: self._activate_overlay_tool(overlay_kind))
             menu.addAction(action)
             self._overlay_subtool_actions[kind] = action
@@ -781,9 +812,9 @@ class MainWindow(QMainWindow):
     def _sync_overlay_tool_button(self) -> None:
         if self._overlay_tool_button is not None:
             self._overlay_tool_button.blockSignals(True)
-            self._overlay_tool_button.setIcon(self._overlay_tool_icon())
             self._overlay_tool_button.setChecked(self._tool_mode == "overlay")
-            self._overlay_tool_button.setToolTip(f"叠加标注: {self._overlay_tool_label(self._overlay_tool_kind)}")
+            self._overlay_tool_button.setCurrentTool(self._overlay_tool_kind, self._overlay_tool_icon(active=self._tool_mode == "overlay"))
+            self._overlay_tool_button.setToolTip(f"叠加标注（当前：{self._overlay_tool_label(self._overlay_tool_kind)}）")
             self._overlay_tool_button.blockSignals(False)
         overlay_action = self._mode_actions.get("overlay")
         if overlay_action is not None:

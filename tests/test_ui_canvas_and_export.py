@@ -35,6 +35,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
+    from fdm.ui.widgets import OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
@@ -46,6 +47,7 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    OverlayToolSplitButton = object  # type: ignore[assignment]
 
 
 class FakeWheelEvent:
@@ -744,8 +746,47 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
-            self.assertIsNotNone(window._overlay_tool_button)
+            self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
             self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
+            self.assertGreaterEqual(window._overlay_tool_button.minimumWidth(), 168)
+            self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 36)
+            self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.TEXT)
+        finally:
+            window.close()
+
+    def test_overlay_split_button_hit_areas_and_primary_click(self) -> None:
+        button = OverlayToolSplitButton()
+        button.resize(button.sizeHint())
+        triggered: list[str] = []
+        button.primaryTriggered.connect(lambda: triggered.append("primary"))
+        try:
+            primary_point = QPointF(button.primaryRect().center())
+            menu_point = QPointF(button.menuRect().center())
+            self.assertEqual(button._hit_part(primary_point.toPoint()), "primary")
+            self.assertEqual(button._hit_part(menu_point.toPoint()), "menu")
+
+            button.mousePressEvent(FakeMouseEvent(primary_point, button=Qt.MouseButton.LeftButton))
+            button.mouseReleaseEvent(FakeMouseEvent(primary_point, button=Qt.MouseButton.LeftButton))
+
+            self.assertEqual(triggered, ["primary"])
+            self.assertGreaterEqual(button.menuRect().width(), 36)
+        finally:
+            button.close()
+
+    def test_overlay_split_button_syncs_current_tool_and_disable_state(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
+            window.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.ARROW)
+
+            self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.ARROW)
+            self.assertIn("当前：箭头", window._overlay_tool_button.toolTip())
+            self.assertTrue(window._overlay_subtool_actions[OverlayAnnotationKind.ARROW].isChecked())
+
+            window._preview_active = True
+            window._update_action_states()
+
+            self.assertFalse(window._overlay_tool_button.isEnabled())
         finally:
             window.close()
 

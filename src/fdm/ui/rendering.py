@@ -185,7 +185,6 @@ def draw_overlay_annotations(
     text_metrics, _lines_template, _width, _height = _text_layout(font, " ")
     line_spacing = text_metrics.lineSpacing()
     line_color = QColor(settings.overlay_line_color)
-    outline_color = _overlay_outline_color(line_color)
     text_color = QColor(settings.text_color)
     text_outline = QColor("#101820")
     resolved_line_width = overlay_annotation_line_width(
@@ -220,7 +219,6 @@ def draw_overlay_annotations(
             annotation,
             image_to_output,
             color=line_color,
-            outline_color=outline_color,
             line_width=resolved_line_width * (1.12 if annotation.id == selected_overlay_id else 1.0),
             selected=annotation.id == selected_overlay_id,
             show_handles=show_handles and annotation.id == selected_overlay_id,
@@ -250,7 +248,6 @@ def _draw_shape_overlay_annotation(
     image_to_output,
     *,
     color: QColor,
-    outline_color: QColor,
     line_width: float,
     selected: bool,
     show_handles: bool,
@@ -264,18 +261,7 @@ def _draw_shape_overlay_annotation(
         max(1.0, abs(end_point.x() - start_point.x())),
         max(1.0, abs(end_point.y() - start_point.y())),
     )
-    outline_width = max(line_width * 1.8, line_width + 1.1)
     painter.setBrush(Qt.BrushStyle.NoBrush)
-    painter.setPen(
-        QPen(
-            outline_color,
-            outline_width,
-            Qt.PenStyle.SolidLine,
-            Qt.PenCapStyle.RoundCap,
-            Qt.PenJoinStyle.RoundJoin,
-        )
-    )
-    _draw_overlay_shape_geometry(painter, kind, start_point, end_point, rect)
     painter.setPen(
         QPen(
             color,
