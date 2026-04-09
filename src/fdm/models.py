@@ -8,6 +8,7 @@ import statistics
 import uuid
 
 from fdm.geometry import Line, Point, line_length, polygon_area, polygon_centroid
+from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
 UNCATEGORIZED_COLOR = "#98A2B3"
@@ -1109,7 +1110,7 @@ class ProjectState:
 
     @classmethod
     def empty(cls) -> "ProjectState":
-        return cls(version="0.1.0", documents=[])
+        return cls(version=__version__, documents=[])
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ProjectState":
@@ -1123,7 +1124,7 @@ class ProjectState:
             seen_template_labels.add(token)
             project_group_templates.append(template)
         return cls(
-            version=str(payload.get("version", "0.1.0")),
+            version=str(payload.get("version", __version__)),
             documents=[ImageDocument.from_dict(item) for item in payload.get("documents", [])],
             calibration_presets=[
                 CalibrationPreset.from_dict(item)

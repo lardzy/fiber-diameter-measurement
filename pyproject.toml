@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "fiber-diameter-measurement"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Offline desktop software for fiber diameter measurement."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -39,6 +39,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "fdm.version.__version__"}
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

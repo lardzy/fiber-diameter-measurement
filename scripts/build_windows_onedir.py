@@ -7,6 +7,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+from build_support import write_installer_version_include
+
 
 def check_area_runtime_dependencies() -> list[str]:
     missing: list[str] = []
@@ -77,6 +79,7 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
 
     dist_path.mkdir(parents=True, exist_ok=True)
     work_path.mkdir(parents=True, exist_ok=True)
+    installer_version_file = write_installer_version_include(root)
 
     command = [
         sys.executable,
@@ -106,6 +109,7 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
     print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
     print(f"Runtime assets: {app_dir / 'runtime'}")
+    print(f"Installer version include: {installer_version_file}")
     print("Use this directory as the source folder for your Inno Setup installer.")
     return 0
 

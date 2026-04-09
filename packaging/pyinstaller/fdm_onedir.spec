@@ -1,6 +1,7 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import os
+import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import (
@@ -12,6 +13,12 @@ from PyInstaller.utils.hooks import (
 
 project_root = Path(SPECPATH).resolve().parents[1]
 src_root = project_root / "src"
+scripts_root = project_root / "scripts"
+if str(scripts_root) not in sys.path:
+    sys.path.insert(0, str(scripts_root))
+
+from build_support import collect_runtime_datas
+
 entry_script = project_root / "src" / "fdm" / "app.py"
 worker_entry_script = project_root / "src" / "fdm" / "workers" / "area_worker.py"
 app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
@@ -35,14 +42,7 @@ datas = [
     (str(project_root / "README.md"), "."),
 ]
 datas += _collect_directory_files(project_root / "packaging" / "assets" / "icons", target_root="packaging/assets/icons")
-runtime_root = project_root / "runtime"
-if runtime_root.exists():
-    for file_path in runtime_root.rglob("*"):
-        if file_path.is_file():
-            if file_path.name == ".DS_Store" or file_path.name.startswith("._"):
-                continue
-            relative_dir = file_path.parent.relative_to(project_root)
-            datas.append((str(file_path), str(relative_dir)))
+datas += collect_runtime_datas(project_root)
 binaries = collect_dynamic_libs("onnxruntime")
 hiddenimports = [
     "onnxruntime",
