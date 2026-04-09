@@ -1259,29 +1259,97 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
-
-            strip.resize(1600, strip.sizeHint().height())
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
             window.set_tool_mode("magic_segment")
+            self.app.processEvents()
             self.assertTrue(strip.isMagicContextVisible())
             self.assertTrue(strip.isContextInline())
             self.assertFalse(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
 
-            strip.resize(420, strip.sizeHint().height())
-            strip._sync_auto_compact_mode()
+            window.resize(1000, 900)
+            self.app.processEvents()
             self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
 
-            strip.resize(1600, strip.sizeHint().height())
-            strip._sync_auto_compact_mode()
+            window.resize(1600, 900)
+            self.app.processEvents()
             self.assertTrue(strip.isContextInline())
 
+            window.set_tool_mode("select")
             window._preview_active = True
+            window._update_magic_segment_controls()
             window._update_preview_analysis_controls()
+            self.app.processEvents()
             self.assertTrue(strip.isPreviewContextVisible())
             self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isCompactMode())
 
-            strip.resize(420, strip.sizeHint().height())
-            strip._sync_auto_compact_mode()
+            window.resize(1000, 900)
+            self.app.processEvents()
             self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+
+            window.resize(692, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isPreviewContextVisible())
+            self.assertTrue(strip.isContextInline() or strip.isContextStacked())
+        finally:
+            window.close()
+
+    def test_stacked_context_row_has_visible_height_when_window_is_narrow(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(692, 755)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextStacked())
+            self.assertTrue(strip._context_host.isVisible())
+            self.assertGreater(strip._context_host.height(), 0)
+            self.assertGreater(strip._context_host.geometry().top(), strip._top_row.geometry().bottom())
+            self.assertTrue(window._magic_controls_widget.isVisible())
+        finally:
+            window.close()
+
+    def test_context_prefers_stacking_before_compacting_primary_tools(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1000, 900)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+        finally:
+            window.close()
+
+    def test_inline_context_keeps_full_width_without_clipping_buttons(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1280, 900)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextInline())
+            self.assertEqual(strip._context_host.width(), window._magic_controls_widget.sizeHint().width())
         finally:
             window.close()
 

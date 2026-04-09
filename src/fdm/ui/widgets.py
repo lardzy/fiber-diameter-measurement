@@ -656,7 +656,7 @@ class MeasurementToolStrip(QWidget):
         self._primary_row = QWidget(self)
         self._primary_row.setObjectName("measurementPrimaryRow")
         self._primary_row.setMinimumWidth(0)
-        self._primary_row.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
+        self._primary_row.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
         self._primary_row.setFixedHeight(ToolStripActionButton.HEIGHT + 2)
         self._primary_row_layout = QHBoxLayout(self._primary_row)
         self._primary_row_layout.setContentsMargins(0, 0, 0, 0)
@@ -783,11 +783,78 @@ class MeasurementToolStrip(QWidget):
         return self._current_context_size().width()
 
     def _current_context_size(self) -> QSize:
-        if self.isMagicContextVisible() and self._magic_context_widget is not None:
-            return self._magic_context_widget.sizeHint()
-        if self.isPreviewContextVisible() and self._preview_context_widget is not None:
-            return self._preview_context_widget.sizeHint()
+        widget = self._current_context_widget()
+        if widget is not None:
+            return widget.sizeHint()
         return QSize()
+
+    def _current_context_widget(self) -> QWidget | None:
+        if self.isMagicContextVisible() and self._magic_context_widget is not None:
+            return self._magic_context_widget
+        if self.isPreviewContextVisible() and self._preview_context_widget is not None:
+            return self._preview_context_widget
+        return None
+
+    def _context_height_for_width(self, width: int) -> int:
+        widget = self._current_context_widget()
+        if widget is None:
+            return 0
+        layout = widget.layout()
+        target_width = max(0, width)
+        if layout is not None:
+            if layout.hasHeightForWidth():
+                return max(widget.minimumSizeHint().height(), layout.heightForWidth(target_width))
+            return max(widget.minimumSizeHint().height(), layout.sizeHint().height())
+        if widget.hasHeightForWidth():
+            return max(widget.minimumSizeHint().height(), widget.heightForWidth(target_width))
+        return max(widget.minimumSizeHint().height(), widget.sizeHint().height())
+
+    def _update_context_host_metrics(self) -> None:
+        if self._context_placement == "hidden" or self._current_context_widget() is None:
+            self._context_host.setMinimumWidth(0)
+            self._context_host.setMaximumWidth(16777215)
+            self._context_host.setMinimumHeight(0)
+            self._context_host.setMaximumHeight(16777215)
+            return
+        if self._context_placement == "inline":
+            context_width = self._current_context_width()
+            self._context_host.setMinimumWidth(context_width)
+            self._context_host.setMaximumWidth(context_width)
+            self._context_host.setMinimumHeight(0)
+            self._context_host.setMaximumHeight(16777215)
+            return
+        self._context_host.setMinimumWidth(0)
+        self._context_host.setMaximumWidth(16777215)
+        layout = self.layout()
+        margins = layout.contentsMargins() if layout is not None else self.contentsMargins()
+        available_width = max(0, self.width() - margins.left() - margins.right())
+        context_height = self._context_height_for_width(available_width)
+        self._context_host.setMinimumHeight(context_height)
+        self._context_host.setMaximumHeight(context_height)
+
+    def _preferred_strip_height(self) -> int:
+        layout = self.layout()
+        margins = layout.contentsMargins() if layout is not None else self.contentsMargins()
+        height = margins.top() + (ToolStripActionButton.HEIGHT + 2) + margins.bottom()
+        if self._context_placement == "stacked" and self._current_context_widget() is not None:
+            available_width = max(0, self.width() - margins.left() - margins.right())
+            height += (layout.spacing() if layout is not None else 0) + self._context_height_for_width(available_width)
+        return height
+
+    def _apply_strip_height(self) -> None:
+        target_height = self._preferred_strip_height()
+        if self.height() != target_height or self.minimumHeight() != target_height or self.maximumHeight() != target_height:
+            self.setFixedHeight(target_height)
+
+    def _refresh_parent_layouts(self) -> None:
+        layout = self.layout()
+        if layout is not None:
+            layout.activate()
+        parent = self.parentWidget()
+        if parent is not None and parent.layout() is not None:
+            parent.layout().activate()
+            parent.updateGeometry()
+        self.updateGeometry()
 
     def _apply_context_placement(self) -> None:
         if self._context_placement == "hidden":
@@ -796,20 +863,26 @@ class MeasurementToolStrip(QWidget):
             self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
             self._context_host.setVisible(False)
             self.layout().insertWidget(1, self._context_host)
+            self._update_context_host_metrics()
+            self._apply_strip_height()
+            self._refresh_parent_layouts()
             return
         self._top_row_layout.removeWidget(self._context_host)
         self.layout().removeWidget(self._context_host)
         if self._context_placement == "inline":
-            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
             self._top_row_layout.addWidget(
                 self._context_host,
                 0,
                 Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
             )
         else:
-            self._context_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+            self._context_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
             self.layout().insertWidget(1, self._context_host)
         self._context_host.setVisible(True)
+        self._update_context_host_metrics()
+        self._apply_strip_height()
+        self._refresh_parent_layouts()
 
     def isContextInline(self) -> bool:
         return self._context_placement == "inline"
@@ -838,6 +911,12 @@ class MeasurementToolStrip(QWidget):
             self._apply_context_placement()
             return
 
+        if expanded_primary_width <= available_width:
+            self.setCompactMode(False)
+            self._context_placement = "stacked"
+            self._apply_context_placement()
+            return
+
         if compact_primary_width + inline_gap + context_width <= available_width:
             self.setCompactMode(True)
             self._context_placement = "inline"
@@ -851,14 +930,14 @@ class MeasurementToolStrip(QWidget):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._sync_auto_compact_mode()
+        self._update_context_host_metrics()
+        self._apply_strip_height()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._sync_auto_compact_mode()
+        self._update_context_host_metrics()
+        self._apply_strip_height()
 
     def minimumSizeHint(self) -> QSize:
-        margins = self.layout().contentsMargins()
-        height = margins.top() + (ToolStripActionButton.HEIGHT + 2) + margins.bottom()
-        if self._context_placement == "stacked" and self._context_host.isVisible():
-            height += self.layout().spacing() + self._context_host.height()
-        return QSize(0, height)
+        return QSize(0, self._preferred_strip_height())
