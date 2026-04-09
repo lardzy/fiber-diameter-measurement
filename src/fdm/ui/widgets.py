@@ -1,8 +1,19 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QVariantAnimation, Signal
-from PySide6.QtGui import QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
-from PySide6.QtWidgets import QComboBox, QMenu, QWidget
+from PySide6.QtGui import QAction, QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
+from PySide6.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QLayout,
+    QLayoutItem,
+    QMenu,
+    QSizePolicy,
+    QToolButton,
+    QVBoxLayout,
+    QWidget,
+    QWidgetItem,
+)
 
 
 def _mix_channel(left: int, right: int, progress: float) -> int:
@@ -24,6 +35,13 @@ def _alpha_scaled(color: QColor, factor: float) -> QColor:
     return scaled
 
 
+def _repolish(widget: QWidget) -> None:
+    style = widget.style()
+    style.unpolish(widget)
+    style.polish(widget)
+    widget.update()
+
+
 class MeasurementGroupComboBox(QComboBox):
     """Category combo used inside the measurement table.
 
@@ -43,14 +61,173 @@ class MeasurementGroupComboBox(QComboBox):
         event.ignore()
 
 
+class FlowLayout(QLayout):
+    def __init__(self, parent: QWidget | None = None, *, h_spacing: int = 6, v_spacing: int = 6) -> None:
+        super().__init__(parent)
+        self._items: list[QLayoutItem] = []
+        self._h_spacing = h_spacing
+        self._v_spacing = v_spacing
+        self.setContentsMargins(0, 0, 0, 0)
+
+    def __del__(self) -> None:
+        while self.count():
+            self.takeAt(0)
+
+    def addItem(self, item: QLayoutItem) -> None:
+        self._items.append(item)
+
+    def addWidget(self, widget: QWidget) -> None:
+        layout_parent = self.parentWidget()
+        if layout_parent is not None and widget.parent() is not layout_parent:
+            widget.setParent(layout_parent)
+        self.addItem(QWidgetItem(widget))
+
+    def count(self) -> int:
+        return len(self._items)
+
+    def itemAt(self, index: int) -> QLayoutItem | None:
+        if 0 <= index < len(self._items):
+            return self._items[index]
+        return None
+
+    def takeAt(self, index: int) -> QLayoutItem | None:
+        if 0 <= index < len(self._items):
+            return self._items.pop(index)
+        return None
+
+    def expandingDirections(self) -> Qt.Orientations:
+        return Qt.Orientations()
+
+    def hasHeightForWidth(self) -> bool:
+        return True
+
+    def heightForWidth(self, width: int) -> int:
+        return self._do_layout(QRect(0, 0, width, 0), test_only=True)
+
+    def setGeometry(self, rect: QRect) -> None:
+        super().setGeometry(rect)
+        self._do_layout(rect, test_only=False)
+
+    def sizeHint(self) -> QSize:
+        return self._preferred_size()
+
+    def minimumSize(self) -> QSize:
+        size = QSize()
+        for item in self._items:
+            widget = item.widget()
+            if widget is not None and widget.isHidden():
+                continue
+            size = size.expandedTo(item.minimumSize())
+        left, top, right, bottom = self.getContentsMargins()
+        size += QSize(left + right, top + bottom)
+        return size
+
+    def _preferred_size(self) -> QSize:
+        visible_items = [
+            item
+            for item in self._items
+            if item.widget() is None or not item.widget().isHidden()
+        ]
+        if not visible_items:
+            left, top, right, bottom = self.getContentsMargins()
+            return QSize(left + right, top + bottom)
+        total_width = 0
+        max_height = 0
+        for item in visible_items:
+            hint = item.sizeHint()
+            total_width += hint.width()
+            max_height = max(max_height, hint.height())
+        total_width += self._h_spacing * max(0, len(visible_items) - 1)
+        left, top, right, bottom = self.getContentsMargins()
+        return QSize(total_width + left + right, max_height + top + bottom)
+
+    def _do_layout(self, rect: QRect, *, test_only: bool) -> int:
+        left, top, right, bottom = self.getContentsMargins()
+        effective_rect = rect.adjusted(left, top, -right, -bottom)
+        x = effective_rect.x()
+        y = effective_rect.y()
+        line_height = 0
+
+        for item in self._items:
+            widget = item.widget()
+            if widget is not None and widget.isHidden():
+                continue
+            hint = item.sizeHint()
+            next_x = x + hint.width() + self._h_spacing
+            if line_height > 0 and next_x - self._h_spacing > effective_rect.right() + 1:
+                x = effective_rect.x()
+                y = y + line_height + self._v_spacing
+                next_x = x + hint.width() + self._h_spacing
+                line_height = 0
+            if not test_only:
+                item.setGeometry(QRect(QPoint(x, y), hint))
+            x = next_x
+            line_height = max(line_height, hint.height())
+
+        used_height = y + line_height - rect.y() + bottom
+        return max(0, used_height)
+
+
+class ToolStripActionButton(QToolButton):
+    HEIGHT = 40
+    COMPACT_WIDTH = 40
+    ICON_SIZE = 16
+
+    def __init__(self, action: QAction, parent=None) -> None:
+        super().__init__(parent)
+        self._full_text = action.text()
+        self._compact_mode = False
+        self.setDefaultAction(action)
+        self.setProperty("primaryTool", True)
+        self.setProperty("compactTool", False)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setIconSize(QSize(self.ICON_SIZE, self.ICON_SIZE))
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.setFixedHeight(self.HEIGHT)
+        self._expanded_width_hint = max(86, self._calculate_expanded_width())
+
+    def _calculate_expanded_width(self) -> int:
+        metrics = QFontMetrics(self.font())
+        return 14 + self.ICON_SIZE + 8 + metrics.horizontalAdvance(self._full_text) + 14
+
+    def expandedWidthHint(self) -> int:
+        return self._expanded_width_hint
+
+    def isCompactMode(self) -> bool:
+        return self._compact_mode
+
+    def setCompactMode(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if self._compact_mode == enabled:
+            return
+        self._compact_mode = enabled
+        self.setProperty("compactTool", enabled)
+        self.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonIconOnly if enabled else Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        self.setToolTip(self._full_text)
+        self.updateGeometry()
+        _repolish(self)
+
+    def sizeHint(self) -> QSize:
+        width = self.COMPACT_WIDTH if self._compact_mode else self._expanded_width_hint
+        return QSize(width, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(self.COMPACT_WIDTH, self.HEIGHT)
+
+
 class OverlayToolSplitButton(QWidget):
     primaryTriggered = Signal()
 
-    HEIGHT = 42
-    MIN_WIDTH = 168
-    MENU_WIDTH = 36
+    HEIGHT = ToolStripActionButton.HEIGHT
+    EXPANDED_MIN_WIDTH = 108
+    COMPACT_MIN_WIDTH = 56
+    MENU_WIDTH = 28
     RADIUS = 10
-    ICON_SIZE = 18
+    ICON_SIZE = ToolStripActionButton.ICON_SIZE
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -59,6 +236,7 @@ class OverlayToolSplitButton(QWidget):
         self._icon = QIcon()
         self._menu: QMenu | None = None
         self._checked = False
+        self._compact_mode = False
         self._hover_part = "none"
         self._pressed_part = "none"
         self._menu_visible = False
@@ -69,9 +247,9 @@ class OverlayToolSplitButton(QWidget):
         self._menu_hover_animation = self._build_scalar_animation("_menu_hover_strength")
         self._checked_animation = self._build_scalar_animation("_checked_strength")
         self.setMouseTracking(True)
-        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        self.setMinimumWidth(self.MIN_WIDTH)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         self.setFixedHeight(self.HEIGHT)
         self.setAccessibleName("叠加标注工具按钮")
 
@@ -137,7 +315,6 @@ class OverlayToolSplitButton(QWidget):
                 pass
         self._menu = menu
         if self._menu is not None:
-            self._menu.setParent(self)
             self._menu.aboutToShow.connect(self._on_menu_about_to_show)
             self._menu.aboutToHide.connect(self._on_menu_about_to_hide)
 
@@ -151,6 +328,25 @@ class OverlayToolSplitButton(QWidget):
         self._checked = checked
         self._animate_scalar(self._checked_animation, "_checked_strength", 1.0 if checked else 0.0)
 
+    def isCompactMode(self) -> bool:
+        return self._compact_mode
+
+    def setCompactMode(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if self._compact_mode == enabled:
+            return
+        self._compact_mode = enabled
+        self.updateGeometry()
+        self.update()
+
+    def expandedWidthHint(self) -> int:
+        metrics = QFontMetrics(self.font())
+        width = 10 + self.ICON_SIZE + 6 + metrics.horizontalAdvance(self._text) + 8 + self.MENU_WIDTH
+        return max(self.EXPANDED_MIN_WIDTH, width)
+
+    def compactWidthHint(self) -> int:
+        return self.COMPACT_MIN_WIDTH
+
     def menuAreaWidth(self) -> int:
         return self.MENU_WIDTH
 
@@ -160,6 +356,13 @@ class OverlayToolSplitButton(QWidget):
 
     def menuRect(self) -> QRect:
         return QRect(max(0, self.width() - self.MENU_WIDTH), 0, self.MENU_WIDTH, self.height())
+
+    def sizeHint(self) -> QSize:
+        width = self.compactWidthHint() if self._compact_mode else self.expandedWidthHint()
+        return QSize(width, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(self.compactWidthHint(), self.HEIGHT)
 
     def _point_from_event(self, event) -> QPoint:
         position = event.position()
@@ -207,23 +410,8 @@ class OverlayToolSplitButton(QWidget):
     def _popup_menu(self) -> None:
         if self._menu is None or not self.isEnabled():
             return
-        self._menu.setMinimumWidth(max(self.width() + 10, self._menu.sizeHint().width()))
+        self._menu.setMinimumWidth(max(self.width() + 8, self._menu.sizeHint().width()))
         self._menu.popup(self.mapToGlobal(QPoint(0, self.height() + 6)))
-
-    def sizeHint(self) -> QSize:
-        metrics = QFontMetrics(self.font())
-        width = (
-            14
-            + self.ICON_SIZE
-            + 8
-            + metrics.horizontalAdvance(self._text)
-            + 14
-            + self.MENU_WIDTH
-        )
-        return QSize(max(self.MIN_WIDTH, width), self.HEIGHT)
-
-    def minimumSizeHint(self) -> QSize:
-        return QSize(self.MIN_WIDTH, self.HEIGHT)
 
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
@@ -304,19 +492,14 @@ class OverlayToolSplitButton(QWidget):
         outer_path = QPainterPath()
         outer_path.addRoundedRect(outer_rect, self.RADIUS, self.RADIUS)
 
-        base_fill = QColor(255, 255, 255, 9)
-        checked_fill = QColor("#1A222A")
-        fill_color = _mix_color(base_fill, checked_fill, self._checked_strength)
-
-        base_border = QColor(255, 255, 255, 23)
-        checked_border = QColor(183, 154, 216, 128)
-        border_color = _mix_color(base_border, checked_border, self._checked_strength)
+        fill_color = _mix_color(QColor(255, 255, 255, 0), QColor("#12343B"), self._checked_strength)
+        border_color = _mix_color(QColor(255, 255, 255, 0), QColor("#2A9D8F"), self._checked_strength)
 
         painter.fillPath(outer_path, fill_color)
 
-        primary_hover_color = QColor(183, 154, 216, 26)
-        menu_hover_color = QColor(183, 154, 216, 21)
-        pressed_color = QColor(183, 154, 216, 40)
+        primary_hover_color = QColor(255, 255, 255, 14)
+        menu_hover_color = QColor(255, 255, 255, 14)
+        pressed_color = QColor(255, 255, 255, 20)
 
         painter.save()
         painter.setClipPath(outer_path)
@@ -333,40 +516,340 @@ class OverlayToolSplitButton(QWidget):
         painter.setPen(QPen(border_color, 1.0))
         painter.drawPath(outer_path)
 
-        divider_intensity = max(self._checked_strength, self._menu_hover_strength, self._primary_hover_strength * 0.5)
-        divider_color = _mix_color(QColor(255, 255, 255, 20), QColor(183, 154, 216, 74), divider_intensity)
+        divider_intensity = max(self._checked_strength * 0.9, self._menu_hover_strength)
+        divider_color = _mix_color(QColor(255, 255, 255, 0), QColor(255, 255, 255, 28), divider_intensity)
         divider_x = self.menuRect().left()
         painter.setPen(QPen(divider_color, 1.0))
         painter.drawLine(QPoint(divider_x, 8), QPoint(divider_x, self.height() - 8))
 
-        if self.hasFocus():
-            focus_color = QColor(183, 154, 216, 110)
-            painter.setPen(QPen(focus_color, 1.0))
-            painter.drawRoundedRect(outer_rect.adjusted(1.0, 1.0, -1.0, -1.0), self.RADIUS - 1, self.RADIUS - 1)
-
-        icon_rect = QRect(14, (self.height() - self.ICON_SIZE) // 2, self.ICON_SIZE, self.ICON_SIZE)
+        icon_size = self.ICON_SIZE
+        primary_rect = self.primaryRect()
+        icon_left = 10
+        icon_rect = QRect(icon_left, (self.height() - icon_size) // 2, icon_size, icon_size)
+        if self._compact_mode:
+            icon_rect.moveLeft(max(0, (primary_rect.width() - icon_size) // 2))
         if not self._icon.isNull():
             self._icon.paint(painter, icon_rect)
 
-        primary_rect = self.primaryRect()
-        text_left = icon_rect.right() + 8
-        text_right_padding = 14
-        text_rect = QRect(text_left, 0, max(0, primary_rect.right() - text_left - text_right_padding), self.height())
-        text_color = _mix_color(QColor("#F3F4F6"), QColor("#FBFAFD"), self._checked_strength * 0.8)
-        painter.setPen(text_color)
-        text = QFontMetrics(self.font()).elidedText(self._text, Qt.TextElideMode.ElideRight, text_rect.width())
-        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+        if not self._compact_mode:
+            text_left = icon_rect.right() + 6
+            text_right_padding = 8
+            text_rect = QRect(text_left, 0, max(0, primary_rect.right() - text_left - text_right_padding), self.height())
+            text_color = _mix_color(QColor("#F3F4F6"), QColor("#FBFAFD"), self._checked_strength * 0.55)
+            painter.setPen(text_color)
+            text = QFontMetrics(self.font()).elidedText(self._text, Qt.TextElideMode.ElideRight, text_rect.width())
+            painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
 
         menu_rect = self.menuRect()
-        chevron_color = _mix_color(QColor("#D7D9DE"), QColor("#C9B3E5"), max(self._menu_hover_strength, self._checked_strength))
+        chevron_color = _mix_color(QColor("#D7D9DE"), QColor("#F3F4F6"), self._checked_strength * 0.6)
+        chevron_color = _mix_color(chevron_color, QColor("#C9B3E5"), self._menu_hover_strength * 0.85)
         painter.setPen(QPen(chevron_color, 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         chevron_center_x = menu_rect.center().x()
         chevron_center_y = menu_rect.center().y() + 1
         painter.drawLine(
-            QPoint(chevron_center_x - 5, chevron_center_y - 2),
-            QPoint(chevron_center_x, chevron_center_y + 3),
+            QPoint(chevron_center_x - 4, chevron_center_y - 2),
+            QPoint(chevron_center_x, chevron_center_y + 2),
         )
         painter.drawLine(
-            QPoint(chevron_center_x, chevron_center_y + 3),
-            QPoint(chevron_center_x + 5, chevron_center_y - 2),
+            QPoint(chevron_center_x, chevron_center_y + 2),
+            QPoint(chevron_center_x + 4, chevron_center_y - 2),
         )
+
+
+class MeasurementToolStrip(QWidget):
+    def __init__(self, parent=None) -> None:
+        super().__init__(parent)
+        self._mode_buttons: dict[str, ToolStripActionButton] = {}
+        self._primary_order: list[str] = []
+        self._overlay_button: OverlayToolSplitButton | None = None
+        self._magic_context_widget: QWidget | None = None
+        self._preview_context_widget: QWidget | None = None
+        self._compact_mode = False
+        self._active_mode = "select"
+        self._context_placement = "hidden"
+        self.setObjectName("measurementToolStrip")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+        self.setMinimumWidth(0)
+        self.setStyleSheet(
+            """
+            QWidget#measurementToolStrip {
+                background: #34373C;
+                border-top: 1px solid rgba(255, 255, 255, 18);
+                border-bottom: 1px solid rgba(255, 255, 255, 18);
+            }
+            QToolButton[primaryTool="true"] {
+                min-height: 38px;
+                padding: 0 12px;
+                border-radius: 10px;
+                border: 1px solid transparent;
+                background: transparent;
+                color: #F3F4F6;
+                font-weight: 600;
+            }
+            QToolButton[primaryTool="true"]:hover {
+                background: rgba(255, 255, 255, 14);
+            }
+            QToolButton[primaryTool="true"]:pressed {
+                background: rgba(255, 255, 255, 20);
+            }
+            QToolButton[primaryTool="true"]:checked {
+                background: #12343B;
+                color: #F7F4EA;
+                border: 1px solid #2A9D8F;
+            }
+            QToolButton[primaryTool="true"][compactTool="true"] {
+                padding: 0;
+            }
+            QLabel[contextChip="true"] {
+                padding: 6px 10px;
+                border-radius: 8px;
+                background: #F6F1E8;
+                color: #182430;
+                font-weight: 600;
+            }
+            QLabel[contextHeader="true"] {
+                padding: 6px 10px;
+                border-radius: 8px;
+                background: #E8F1F2;
+                color: #12343B;
+                font-weight: 600;
+            }
+            QLabel[contextStatus="true"] {
+                color: #9C6B2F;
+                font-weight: 600;
+                padding: 8px 2px 0 2px;
+            }
+            QToolButton[contextTool="true"] {
+                min-height: 36px;
+                padding: 0 12px;
+                border-radius: 8px;
+                border: 1px solid rgba(255, 255, 255, 24);
+                background: rgba(255, 255, 255, 8);
+                color: #F3F4F6;
+                font-weight: 600;
+            }
+            QToolButton[contextTool="true"]:hover {
+                background: rgba(255, 255, 255, 16);
+            }
+            QToolButton[contextTool="true"]:pressed {
+                background: rgba(255, 255, 255, 20);
+            }
+            QToolButton[contextTool="true"]:checked {
+                background: #12343B;
+                color: #F7F4EA;
+                border: 1px solid #2A9D8F;
+            }
+            """
+        )
+        root_layout = QVBoxLayout(self)
+        root_layout.setContentsMargins(8, 8, 8, 12)
+        root_layout.setSpacing(6)
+
+        self._top_row = QWidget(self)
+        self._top_row.setMinimumWidth(0)
+        self._top_row_layout = QHBoxLayout(self._top_row)
+        self._top_row_layout.setContentsMargins(0, 0, 0, 0)
+        self._top_row_layout.setSpacing(12)
+
+        self._primary_row = QWidget(self)
+        self._primary_row.setObjectName("measurementPrimaryRow")
+        self._primary_row.setMinimumWidth(0)
+        self._primary_row.setSizePolicy(QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Policy.Fixed)
+        self._primary_row.setFixedHeight(ToolStripActionButton.HEIGHT + 2)
+        self._primary_row_layout = QHBoxLayout(self._primary_row)
+        self._primary_row_layout.setContentsMargins(0, 0, 0, 0)
+        self._primary_row_layout.setSpacing(6)
+        self._top_row_layout.addWidget(self._primary_row, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        self._top_row_layout.addStretch(1)
+        root_layout.addWidget(self._top_row)
+
+        self._context_host = QWidget(self)
+        self._context_host.setMinimumWidth(0)
+        self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+        self._context_layout = QVBoxLayout(self._context_host)
+        self._context_layout.setContentsMargins(0, 0, 0, 0)
+        self._context_layout.setSpacing(6)
+        self._context_host.setVisible(False)
+        root_layout.addWidget(self._context_host)
+
+    def addModeAction(self, mode: str, action: QAction) -> ToolStripActionButton:
+        button = ToolStripActionButton(action, self._primary_row)
+        self._mode_buttons[mode] = button
+        self._primary_order.append(mode)
+        self._primary_row_layout.addWidget(button)
+        return button
+
+    def buttonForMode(self, mode: str) -> ToolStripActionButton | None:
+        return self._mode_buttons.get(mode)
+
+    def primaryModeLabels(self) -> list[str]:
+        labels = [self._mode_buttons[mode].defaultAction().text() for mode in self._primary_order if mode in self._mode_buttons]
+        if self._overlay_button is not None:
+            labels.append(self._overlay_button.text())
+        return labels
+
+    def setOverlayButton(self, button: OverlayToolSplitButton) -> None:
+        self._overlay_button = button
+        self._primary_row_layout.addWidget(button)
+        self._sync_auto_compact_mode()
+
+    def setMagicContextWidget(self, widget: QWidget) -> None:
+        self._magic_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
+    def setPreviewContextWidget(self, widget: QWidget) -> None:
+        self._preview_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
+    def setActiveMode(self, mode: str) -> None:
+        self._active_mode = mode
+        if self._overlay_button is not None and mode != "overlay":
+            self._overlay_button.setChecked(False)
+
+    def setOverlayTool(self, kind: str, checked: bool, *, icon: QIcon | None = None, tooltip: str | None = None) -> None:
+        if self._overlay_button is None:
+            return
+        if icon is not None:
+            self._overlay_button.setCurrentTool(kind, icon)
+        self._overlay_button.setChecked(checked)
+        if tooltip is not None:
+            self._overlay_button.setToolTip(tooltip)
+
+    def isCompactMode(self) -> bool:
+        return self._compact_mode
+
+    def setCompactMode(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if self._compact_mode == enabled:
+            return
+        self._compact_mode = enabled
+        for button in self._mode_buttons.values():
+            button.setCompactMode(enabled)
+        if self._overlay_button is not None:
+            self._overlay_button.setCompactMode(enabled)
+        self.updateGeometry()
+
+    def setMagicContextVisible(self, visible: bool) -> None:
+        if self._magic_context_widget is not None:
+            self._magic_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isMagicContextVisible(self) -> bool:
+        return bool(self._magic_context_widget and not self._magic_context_widget.isHidden())
+
+    def setPreviewContextVisible(self, visible: bool) -> None:
+        if self._preview_context_widget is not None:
+            self._preview_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isPreviewContextVisible(self) -> bool:
+        return bool(self._preview_context_widget and not self._preview_context_widget.isHidden())
+
+    def _refresh_context_visibility(self) -> None:
+        visible = self.isMagicContextVisible() or self.isPreviewContextVisible()
+        if not visible:
+            self._context_placement = "hidden"
+            self._apply_context_placement()
+            self.updateGeometry()
+            return
+        self._sync_auto_compact_mode()
+        self.updateGeometry()
+
+    def _expanded_primary_width(self) -> int:
+        widths = [self._mode_buttons[mode].expandedWidthHint() for mode in self._primary_order if mode in self._mode_buttons]
+        if self._overlay_button is not None:
+            widths.append(self._overlay_button.expandedWidthHint())
+        if not widths:
+            return 0
+        spacing = self._primary_row_layout.spacing()
+        return sum(widths) + spacing * (len(widths) - 1)
+
+    def _compact_primary_width(self) -> int:
+        widths = [button.COMPACT_WIDTH for button in self._mode_buttons.values()]
+        if self._overlay_button is not None:
+            widths.append(self._overlay_button.compactWidthHint())
+        if not widths:
+            return 0
+        spacing = self._primary_row_layout.spacing()
+        return sum(widths) + spacing * (len(widths) - 1)
+
+    def _current_context_width(self) -> int:
+        return self._current_context_size().width()
+
+    def _current_context_size(self) -> QSize:
+        if self.isMagicContextVisible() and self._magic_context_widget is not None:
+            return self._magic_context_widget.sizeHint()
+        if self.isPreviewContextVisible() and self._preview_context_widget is not None:
+            return self._preview_context_widget.sizeHint()
+        return QSize()
+
+    def _apply_context_placement(self) -> None:
+        if self._context_placement == "hidden":
+            self._top_row_layout.removeWidget(self._context_host)
+            self.layout().removeWidget(self._context_host)
+            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+            self._context_host.setVisible(False)
+            self.layout().insertWidget(1, self._context_host)
+            return
+        self._top_row_layout.removeWidget(self._context_host)
+        self.layout().removeWidget(self._context_host)
+        if self._context_placement == "inline":
+            self._context_host.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Maximum)
+            self._top_row_layout.addWidget(
+                self._context_host,
+                0,
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            )
+        else:
+            self._context_host.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
+            self.layout().insertWidget(1, self._context_host)
+        self._context_host.setVisible(True)
+
+    def isContextInline(self) -> bool:
+        return self._context_placement == "inline"
+
+    def isContextStacked(self) -> bool:
+        return self._context_placement == "stacked"
+
+    def _sync_auto_compact_mode(self) -> None:
+        if self.width() <= 0:
+            return
+        available_width = max(0, self.contentsRect().width())
+        expanded_primary_width = self._expanded_primary_width()
+        compact_primary_width = self._compact_primary_width()
+        context_width = self._current_context_width()
+        inline_gap = self._top_row_layout.spacing() if context_width > 0 else 0
+
+        if context_width <= 0:
+            self.setCompactMode(expanded_primary_width > available_width)
+            self._context_placement = "hidden"
+            self._apply_context_placement()
+            return
+
+        if expanded_primary_width + inline_gap + context_width <= available_width:
+            self.setCompactMode(False)
+            self._context_placement = "inline"
+            self._apply_context_placement()
+            return
+
+        if compact_primary_width + inline_gap + context_width <= available_width:
+            self.setCompactMode(True)
+            self._context_placement = "inline"
+            self._apply_context_placement()
+            return
+
+        self.setCompactMode(expanded_primary_width > available_width)
+        self._context_placement = "stacked"
+        self._apply_context_placement()
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        self._sync_auto_compact_mode()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._sync_auto_compact_mode()
