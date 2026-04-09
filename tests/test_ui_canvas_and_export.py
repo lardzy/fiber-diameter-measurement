@@ -456,6 +456,63 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_preview_analysis_dialog_busy_state_disables_controls_and_shortcuts(self) -> None:
+        dialog = PreviewAnalysisDialog("景深合成", intro_text="测试")
+        try:
+            triggered: list[str] = []
+            cancelled: list[str] = []
+            dialog.finishRequested.connect(lambda: triggered.append("finish"))
+            dialog.cancelRequested.connect(lambda: cancelled.append("cancel"))
+
+            dialog.set_busy(True, "正在完成景深合成，请稍候…")
+            dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+            dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+
+            self.assertTrue(dialog._busy_overlay.isVisible())
+            self.assertEqual(dialog._busy_label.text(), "正在完成景深合成，请稍候…")
+            self.assertFalse(dialog._finish_button.isEnabled())
+            self.assertFalse(dialog._cancel_button.isEnabled())
+            self.assertEqual(triggered, [])
+            self.assertEqual(cancelled, [])
+        finally:
+            dialog.close_silently()
+
+    def test_finalize_preview_analysis_session_sets_busy_state_on_dialog(self) -> None:
+        window = MainWindow()
+        try:
+            busy_calls: list[tuple[bool, str]] = []
+            statuses: list[str] = []
+            finalize_calls: list[str] = []
+
+            class FakeSignal:
+                def emit(self) -> None:
+                    finalize_calls.append("finalize")
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.finalizeRequested = FakeSignal()
+
+            class FakeDialog:
+                def set_status(self, text: str) -> None:
+                    statuses.append(text)
+
+                def set_busy(self, active: bool, text: str) -> None:
+                    busy_calls.append((active, text))
+
+            window._preview_analysis_mode = "focus_stack"
+            window._preview_analysis_worker = FakeWorker()
+            window._preview_analysis_dialog = FakeDialog()  # type: ignore[assignment]
+            window._preview_analysis_finalizing = False
+
+            window._finalize_preview_analysis_session()
+
+            self.assertTrue(window._preview_analysis_finalizing)
+            self.assertEqual(finalize_calls, ["finalize"])
+            self.assertEqual(statuses, ["正在完成景深合成，请稍候…"])
+            self.assertEqual(busy_calls, [(True, "正在完成景深合成，请稍候…")])
+        finally:
+            window.close()
+
     def test_map_build_button_is_disabled_and_marked_developing(self) -> None:
         window = MainWindow()
         try:

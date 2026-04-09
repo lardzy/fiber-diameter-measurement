@@ -3549,6 +3549,11 @@ class MainWindow(QMainWindow):
             "map_build": "地图构建",
         }.get(mode, mode)
 
+    def _preview_analysis_finalize_message(self, mode: str) -> str:
+        if mode == "map_build":
+            return "正在完成地图构建，请稍候…"
+        return "正在完成景深合成，请稍候…"
+
     def _current_focus_stack_render_config(self) -> FocusStackRenderConfig:
         return FocusStackRenderConfig(
             profile=self._app_settings.focus_stack_profile or FocusStackProfile.BALANCED,
@@ -3659,6 +3664,10 @@ class MainWindow(QMainWindow):
         self._preview_analysis_finalizing = True
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        if self._preview_analysis_dialog is not None:
+            busy_message = self._preview_analysis_finalize_message(self._preview_analysis_mode)
+            self._preview_analysis_dialog.set_status(busy_message)
+            self._preview_analysis_dialog.set_busy(True, busy_message)
         self._preview_analysis_worker.finalizeRequested.emit()
         self._update_action_states()
 
