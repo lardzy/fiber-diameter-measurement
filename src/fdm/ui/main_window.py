@@ -656,10 +656,7 @@ class MainWindow(QMainWindow):
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
         container.setLayout(layout)
-
-        self._magic_prompt_label = QLabel("当前提示：正采样点")
-        self._magic_prompt_label.setProperty("contextChip", True)
-        layout.addWidget(self._magic_prompt_label)
+        self._magic_prompt_label = None
 
         self._magic_toggle_button = QToolButton(container)
         self._magic_toggle_button.setProperty("contextTool", True)

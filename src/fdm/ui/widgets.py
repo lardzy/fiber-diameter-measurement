@@ -184,6 +184,7 @@ class ToolStripActionButton(QToolButton):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setIconSize(QSize(self.ICON_SIZE, self.ICON_SIZE))
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.setMinimumWidth(self.COMPACT_WIDTH)
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setFixedHeight(self.HEIGHT)
         self._expanded_width_hint = max(86, self._calculate_expanded_width())
@@ -250,6 +251,7 @@ class OverlayToolSplitButton(QWidget):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        self.setMinimumWidth(self.COMPACT_MIN_WIDTH)
         self.setFixedHeight(self.HEIGHT)
         self.setAccessibleName("叠加标注工具按钮")
 
@@ -853,3 +855,10 @@ class MeasurementToolStrip(QWidget):
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._sync_auto_compact_mode()
+
+    def minimumSizeHint(self) -> QSize:
+        margins = self.layout().contentsMargins()
+        height = margins.top() + (ToolStripActionButton.HEIGHT + 2) + margins.bottom()
+        if self._context_placement == "stacked" and self._context_host.isVisible():
+            height += self.layout().spacing() + self._context_host.height()
+        return QSize(0, height)
