@@ -204,8 +204,12 @@ class AppSettings:
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
+    overlay_line_color: str = "#F7F4EA"
+    overlay_line_width: float = 2.5
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
+    main_window_geometry: str = ""
+    main_window_is_maximized: bool = False
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
@@ -220,6 +224,7 @@ class AppSettings:
         normalized.scale_overlay_length_value = self._normalize_scale_overlay_length_value(self.scale_overlay_length_value)
         normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
         normalized.text_font_size = self._normalize_font_size(self.text_font_size, minimum=8, maximum=144)
+        normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
@@ -338,6 +343,14 @@ class AppSettings:
             numeric = 35
         return max(0, min(100, numeric))
 
+    @staticmethod
+    def _normalize_overlay_line_width(value: int | float | str | None) -> float:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            numeric = 2.5
+        return max(0.5, min(24.0, numeric))
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -362,8 +375,12 @@ class AppSettings:
             "text_font_family": normalized.text_font_family,
             "text_font_size": normalized.text_font_size,
             "text_color": normalized.text_color,
+            "overlay_line_color": normalized.overlay_line_color,
+            "overlay_line_width": normalized.overlay_line_width,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
+            "main_window_geometry": normalized.main_window_geometry,
+            "main_window_is_maximized": normalized.main_window_is_maximized,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -409,10 +426,16 @@ class AppSettings:
             maximum=144,
         )
         settings.text_color = str(payload.get("text_color", settings.text_color))
+        settings.overlay_line_color = str(payload.get("overlay_line_color", settings.overlay_line_color))
+        settings.overlay_line_width = cls._normalize_overlay_line_width(
+            payload.get("overlay_line_width", settings.overlay_line_width)
+        )
         settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
             payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)
         )
+        settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
+        settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
         mappings = payload.get("area_model_mappings", None)
         if isinstance(mappings, list):
             settings.area_model_mappings = [

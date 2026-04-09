@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
@@ -346,6 +346,105 @@ class TextAnnotation:
             created_at=str(payload.get("created_at", utc_now_iso())),
         )
 
+    def to_overlay(self) -> "OverlayAnnotation":
+        return OverlayAnnotation(
+            id=self.id,
+            image_id=self.image_id,
+            kind=OverlayAnnotationKind.TEXT,
+            content=self.content,
+            anchor_px=self.anchor_px,
+            created_at=self.created_at,
+        )
+
+
+class OverlayAnnotationKind:
+    TEXT = "text"
+    RECT = "rect"
+    CIRCLE = "circle"
+    LINE = "line"
+    ARROW = "arrow"
+
+
+@dataclass(slots=True)
+class OverlayAnnotation:
+    id: str
+    image_id: str
+    kind: str
+    content: str = ""
+    anchor_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
+    start_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
+    end_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
+    created_at: str = field(default_factory=utc_now_iso)
+
+    def normalized_kind(self) -> str:
+        if self.kind in {
+            OverlayAnnotationKind.TEXT,
+            OverlayAnnotationKind.RECT,
+            OverlayAnnotationKind.CIRCLE,
+            OverlayAnnotationKind.LINE,
+            OverlayAnnotationKind.ARROW,
+        }:
+            return self.kind
+        return OverlayAnnotationKind.TEXT
+
+    def is_text(self) -> bool:
+        return self.normalized_kind() == OverlayAnnotationKind.TEXT
+
+    def clone(self, **changes) -> "OverlayAnnotation":
+        return replace(self, **changes)
+
+    def translated(self, dx: float, dy: float) -> "OverlayAnnotation":
+        if self.is_text():
+            return self.clone(anchor_px=Point(self.anchor_px.x + dx, self.anchor_px.y + dy))
+        return self.clone(
+            start_px=Point(self.start_px.x + dx, self.start_px.y + dy),
+            end_px=Point(self.end_px.x + dx, self.end_px.y + dy),
+        )
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {
+            "id": self.id,
+            "image_id": self.image_id,
+            "kind": self.normalized_kind(),
+            "created_at": self.created_at,
+        }
+        if self.is_text():
+            payload["content"] = self.content
+            payload["anchor_px"] = self.anchor_px.to_dict()
+        else:
+            payload["start_px"] = self.start_px.to_dict()
+            payload["end_px"] = self.end_px.to_dict()
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "OverlayAnnotation":
+        kind = str(payload.get("kind", OverlayAnnotationKind.TEXT)).strip() or OverlayAnnotationKind.TEXT
+        if kind not in {
+            OverlayAnnotationKind.TEXT,
+            OverlayAnnotationKind.RECT,
+            OverlayAnnotationKind.CIRCLE,
+            OverlayAnnotationKind.LINE,
+            OverlayAnnotationKind.ARROW,
+        }:
+            kind = OverlayAnnotationKind.TEXT
+        if kind == OverlayAnnotationKind.TEXT:
+            return cls(
+                id=str(payload["id"]),
+                image_id=str(payload["image_id"]),
+                kind=kind,
+                content=str(payload.get("content", "")),
+                anchor_px=Point.from_dict(payload.get("anchor_px", {"x": 0.0, "y": 0.0})),
+                created_at=str(payload.get("created_at", utc_now_iso())),
+            )
+        return cls(
+            id=str(payload["id"]),
+            image_id=str(payload["image_id"]),
+            kind=kind,
+            start_px=Point.from_dict(payload.get("start_px", {"x": 0.0, "y": 0.0})),
+            end_px=Point.from_dict(payload.get("end_px", {"x": 0.0, "y": 0.0})),
+            created_at=str(payload.get("created_at", utc_now_iso())),
+        )
+
 
 @dataclass(slots=True)
 class ImageViewState:
@@ -405,11 +504,11 @@ class ImageDocument:
     calibration: Calibration | None = None
     fiber_groups: list[FiberGroup] = field(default_factory=list)
     measurements: list[Measurement] = field(default_factory=list)
-    text_annotations: list[TextAnnotation] = field(default_factory=list)
+    overlay_annotations: list[OverlayAnnotation] = field(default_factory=list)
     view_state: ImageViewState = field(default_factory=ImageViewState)
     metadata: dict[str, Any] = field(default_factory=dict)
     active_group_id: str | None = None
-    selected_text_id: str | None = None
+    selected_overlay_id: str | None = None
     scale_overlay_anchor: Point | None = None
     suppressed_project_group_labels: list[str] = field(default_factory=list)
     sidecar_path: str | None = None
@@ -430,8 +529,8 @@ class ImageDocument:
         self.rebuild_group_memberships()
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
-        if self.selected_text_id and self.get_text_annotation(self.selected_text_id) is None:
-            self.selected_text_id = None
+        if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
+            self.selected_overlay_id = None
         if self._session_clean_snapshot is None:
             self.mark_session_saved()
         if self._calibration_clean_snapshot is None:
@@ -563,23 +662,52 @@ class ImageDocument:
                 return measurement
         return None
 
-    def get_text_annotation(self, text_id: str | None) -> TextAnnotation | None:
-        if text_id is None:
+    @property
+    def text_annotations(self) -> list[OverlayAnnotation]:
+        return [
+            annotation
+            for annotation in self.overlay_annotations
+            if annotation.normalized_kind() == OverlayAnnotationKind.TEXT
+        ]
+
+    @property
+    def selected_text_id(self) -> str | None:
+        annotation = self.get_overlay_annotation(self.selected_overlay_id)
+        if annotation is None or annotation.normalized_kind() != OverlayAnnotationKind.TEXT:
             return None
-        for annotation in self.text_annotations:
-            if annotation.id == text_id:
+        return annotation.id
+
+    @selected_text_id.setter
+    def selected_text_id(self, value: str | None) -> None:
+        self.selected_overlay_id = value
+
+    def get_overlay_annotation(self, overlay_id: str | None) -> OverlayAnnotation | None:
+        if overlay_id is None:
+            return None
+        for annotation in self.overlay_annotations:
+            if annotation.id == overlay_id:
                 return annotation
         return None
+
+    def get_text_annotation(self, text_id: str | None) -> OverlayAnnotation | None:
+        annotation = self.get_overlay_annotation(text_id)
+        if annotation is None or annotation.normalized_kind() != OverlayAnnotationKind.TEXT:
+            return None
+        return annotation
 
     def select_measurement(self, measurement_id: str | None) -> None:
         self.view_state.selected_measurement_id = measurement_id
         if measurement_id is not None:
-            self.selected_text_id = None
+            self.selected_overlay_id = None
+
+    def select_overlay_annotation(self, overlay_id: str | None) -> None:
+        self.selected_overlay_id = overlay_id
+        if overlay_id is not None:
+            self.view_state.selected_measurement_id = None
 
     def select_text_annotation(self, text_id: str | None) -> None:
-        self.selected_text_id = text_id
-        if text_id is not None:
-            self.view_state.selected_measurement_id = None
+        annotation = self.get_text_annotation(text_id)
+        self.select_overlay_annotation(annotation.id if annotation is not None else None)
 
     def add_measurement(self, measurement: Measurement) -> None:
         if measurement.fiber_group_id is None:
@@ -660,27 +788,63 @@ class ImageDocument:
         self.refresh_dirty_flags()
         return True
 
-    def add_text_annotation(self, annotation: TextAnnotation) -> None:
-        self.text_annotations.append(annotation)
-        self.select_text_annotation(annotation.id)
+    def add_overlay_annotation(self, annotation: OverlayAnnotation) -> None:
+        self.overlay_annotations.append(annotation)
+        self.select_overlay_annotation(annotation.id)
         self.refresh_dirty_flags()
+
+    def add_text_annotation(self, annotation: TextAnnotation) -> None:
+        self.add_overlay_annotation(annotation.to_overlay())
+
+    def replace_overlay_annotation(self, overlay_id: str, replacement: OverlayAnnotation) -> None:
+        for index, annotation in enumerate(self.overlay_annotations):
+            if annotation.id == overlay_id:
+                self.overlay_annotations[index] = replacement
+                self.select_overlay_annotation(replacement.id)
+                self.refresh_dirty_flags()
+                return
+
+    def move_overlay_annotation(self, overlay_id: str, dx: float, dy: float) -> None:
+        annotation = self.get_overlay_annotation(overlay_id)
+        if annotation is None:
+            return
+        self.replace_overlay_annotation(overlay_id, annotation.translated(dx, dy))
 
     def move_text_annotation(self, text_id: str, anchor_px: Point) -> None:
         annotation = self.get_text_annotation(text_id)
         if annotation is None:
             return
-        annotation.anchor_px = anchor_px
-        self.select_text_annotation(text_id)
+        self.replace_overlay_annotation(text_id, annotation.clone(anchor_px=anchor_px))
+
+    def remove_overlay_annotation(self, overlay_id: str) -> None:
+        self.overlay_annotations = [
+            annotation for annotation in self.overlay_annotations
+            if annotation.id != overlay_id
+        ]
+        if self.selected_overlay_id == overlay_id:
+            self.select_overlay_annotation(None)
         self.refresh_dirty_flags()
 
     def remove_text_annotation(self, text_id: str) -> None:
-        self.text_annotations = [
-            annotation for annotation in self.text_annotations
-            if annotation.id != text_id
-        ]
-        if self.selected_text_id == text_id:
-            self.select_text_annotation(None)
-        self.refresh_dirty_flags()
+        self.remove_overlay_annotation(text_id)
+
+    def update_overlay_annotation_geometry(
+        self,
+        overlay_id: str,
+        *,
+        anchor_px: Point | None = None,
+        start_px: Point | None = None,
+        end_px: Point | None = None,
+    ) -> None:
+        annotation = self.get_overlay_annotation(overlay_id)
+        if annotation is None:
+            return
+        replacement = annotation.clone(
+            anchor_px=anchor_px if anchor_px is not None else annotation.anchor_px,
+            start_px=start_px if start_px is not None else annotation.start_px,
+            end_px=end_px if end_px is not None else annotation.end_px,
+        )
+        self.replace_overlay_annotation(overlay_id, replacement)
 
     def remove_group_to_uncategorized(self, group_id: str) -> bool:
         group = self.get_group(group_id)
@@ -775,7 +939,7 @@ class ImageDocument:
         return {
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
-            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
+            "overlay_annotations": [annotation.to_dict() for annotation in self.overlay_annotations],
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
@@ -792,11 +956,11 @@ class ImageDocument:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
-            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
+            "overlay_annotations": [annotation.to_dict() for annotation in self.overlay_annotations],
             "metadata": dict(self.metadata),
             "active_group_id": self.active_group_id,
             "selected_measurement_id": self.view_state.selected_measurement_id,
-            "selected_text_id": self.selected_text_id,
+            "selected_overlay_id": self.selected_overlay_id,
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
@@ -811,14 +975,23 @@ class ImageDocument:
             Measurement.from_dict(item)
             for item in snapshot.get("measurements", [])
         ]
-        self.text_annotations = [
-            TextAnnotation.from_dict(item)
-            for item in snapshot.get("text_annotations", [])
-        ]
+        overlay_payload = snapshot.get("overlay_annotations")
+        if isinstance(overlay_payload, list):
+            self.overlay_annotations = [
+                OverlayAnnotation.from_dict(item)
+                for item in overlay_payload
+                if isinstance(item, dict)
+            ]
+        else:
+            self.overlay_annotations = [
+                TextAnnotation.from_dict(item).to_overlay()
+                for item in snapshot.get("text_annotations", [])
+                if isinstance(item, dict)
+            ]
         self.metadata = dict(snapshot.get("metadata", {}))
         self.active_group_id = snapshot.get("active_group_id")
         self.view_state.selected_measurement_id = snapshot.get("selected_measurement_id")
-        self.selected_text_id = snapshot.get("selected_text_id")
+        self.selected_overlay_id = snapshot.get("selected_overlay_id", snapshot.get("selected_text_id"))
         scale_overlay_anchor = snapshot.get("scale_overlay_anchor")
         self.scale_overlay_anchor = Point.from_dict(scale_overlay_anchor) if scale_overlay_anchor else None
         self.suppressed_project_group_labels = self._normalized_suppressed_project_group_labels(
@@ -829,8 +1002,8 @@ class ImageDocument:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
         if self.view_state.selected_measurement_id and self.get_measurement(self.view_state.selected_measurement_id) is None:
             self.view_state.selected_measurement_id = None
-        if self.selected_text_id and self.get_text_annotation(self.selected_text_id) is None:
-            self.selected_text_id = None
+        if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
+            self.selected_overlay_id = None
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -858,17 +1031,27 @@ class ImageDocument:
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
-            "text_annotations": [annotation.to_dict() for annotation in self.text_annotations],
+            "overlay_annotations": [annotation.to_dict() for annotation in self.overlay_annotations],
             "view_state": self.view_state.to_dict(),
             "metadata": self.metadata,
             "active_group_id": self.active_group_id,
-            "selected_text_id": self.selected_text_id,
+            "selected_overlay_id": self.selected_overlay_id,
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
+        overlay_payload = payload.get("overlay_annotations")
+        overlay_annotations = [
+            OverlayAnnotation.from_dict(item)
+            for item in overlay_payload
+            if isinstance(item, dict)
+        ] if isinstance(overlay_payload, list) else [
+            TextAnnotation.from_dict(item).to_overlay()
+            for item in payload.get("text_annotations", [])
+            if isinstance(item, dict)
+        ]
         image_document = cls(
             id=str(payload["id"]),
             path=str(payload["path"]),
@@ -880,11 +1063,11 @@ class ImageDocument:
                 for index, item in enumerate(payload.get("fiber_groups", []))
             ],
             measurements=[Measurement.from_dict(item) for item in payload.get("measurements", [])],
-            text_annotations=[TextAnnotation.from_dict(item) for item in payload.get("text_annotations", [])],
+            overlay_annotations=overlay_annotations,
             view_state=ImageViewState.from_dict(payload.get("view_state", {})),
             metadata=dict(payload.get("metadata", {})),
             active_group_id=payload.get("active_group_id"),
-            selected_text_id=payload.get("selected_text_id"),
+            selected_overlay_id=payload.get("selected_overlay_id", payload.get("selected_text_id")),
             scale_overlay_anchor=Point.from_dict(payload["scale_overlay_anchor"]) if payload.get("scale_overlay_anchor") else None,
             suppressed_project_group_labels=list(payload.get("suppressed_project_group_labels", [])),
         )

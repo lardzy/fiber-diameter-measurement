@@ -21,13 +21,15 @@ from fdm.geometry import (
     polygon_translate,
     snap_to_pixel_center,
 )
-from fdm.models import ImageDocument
+from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
 from fdm.settings import AppSettings
 from fdm.ui.rendering import (
     annotation_rect,
+    draw_overlay_annotations,
     draw_measurements,
     draw_preview_scale_anchor,
-    draw_text_annotations,
+    overlay_annotation_bounds,
+    overlay_annotation_handle_points,
 )
 
 
@@ -51,6 +53,9 @@ class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
+    overlayCreateRequested = Signal(str, object)
+    overlaySelected = Signal(str, object)
+    overlayEdited = Signal(str, str, object)
     textPlacementRequested = Signal(str, object)
     textSelected = Signal(str, object)
     textMoved = Signal(str, str, object)
@@ -65,6 +70,7 @@ class DocumentCanvas(QWidget):
         self._document: ImageDocument | None = None
         self._image: QImage | None = None
         self._tool_mode = "select"
+        self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._zoom = 1.0
         self._pan = Point(20.0, 20.0)
 
@@ -85,9 +91,13 @@ class DocumentCanvas(QWidget):
         self._drag_area_origin_points: list[Point] | None = None
         self._drag_area_press_point: Point | None = None
 
-        self._dragging_text_id: str | None = None
-        self._drag_text_offset = Point(0.0, 0.0)
-        self._drag_text_preview_anchor: Point | None = None
+        self._drawing_overlay_start: Point | None = None
+        self._drawing_overlay_end: Point | None = None
+        self._dragging_overlay_id: str | None = None
+        self._dragging_overlay_handle: tuple[str, str] | None = None
+        self._drag_overlay_press_point: Point | None = None
+        self._drag_overlay_origin: OverlayAnnotation | None = None
+        self._drag_overlay_preview: OverlayAnnotation | None = None
 
         self._panning = False
         self._pan_button: Qt.MouseButton | None = None
@@ -133,8 +143,13 @@ class DocumentCanvas(QWidget):
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
         self._drag_area_press_point = None
-        self._dragging_text_id = None
-        self._drag_text_preview_anchor = None
+        self._drawing_overlay_start = None
+        self._drawing_overlay_end = None
+        self._dragging_overlay_id = None
+        self._dragging_overlay_handle = None
+        self._drag_overlay_press_point = None
+        self._drag_overlay_origin = None
+        self._drag_overlay_preview = None
         self._magic_segment = PromptSegmentationSession()
         self.update()
 
@@ -145,8 +160,13 @@ class DocumentCanvas(QWidget):
             self._cancel_line_drawing()
             self._dragging_handle = None
             self._drag_preview_line = None
-            self._dragging_text_id = None
-            self._drag_text_preview_anchor = None
+            self._drawing_overlay_start = None
+            self._drawing_overlay_end = None
+            self._dragging_overlay_id = None
+            self._dragging_overlay_handle = None
+            self._drag_overlay_press_point = None
+            self._drag_overlay_origin = None
+            self._drag_overlay_preview = None
             self._scale_anchor_pick_active = False
         self._update_cursor()
         self.update()
@@ -155,13 +175,22 @@ class DocumentCanvas(QWidget):
         self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
 
-    def set_tool_mode(self, mode: str) -> None:
+    def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
         if mode != self._tool_mode:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
             if self._tool_mode == "magic_segment" or mode != "magic_segment":
                 self.clear_magic_segment_session()
+            self._cancel_overlay_interaction()
         self._tool_mode = mode
+        if overlay_kind in {
+            OverlayAnnotationKind.TEXT,
+            OverlayAnnotationKind.RECT,
+            OverlayAnnotationKind.CIRCLE,
+            OverlayAnnotationKind.LINE,
+            OverlayAnnotationKind.ARROW,
+        }:
+            self._overlay_tool_kind = overlay_kind
         self._update_cursor()
         self.update()
 
@@ -229,6 +258,12 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return
         self._document.select_measurement(measurement_id)
+        self.update()
+
+    def set_selected_overlay_annotation(self, overlay_id: str | None) -> None:
+        if self._document is None:
+            return
+        self._document.select_overlay_annotation(overlay_id)
         self.update()
 
     def set_selected_text_annotation(self, text_id: str | None) -> None:
@@ -389,8 +424,9 @@ class DocumentCanvas(QWidget):
             if not self._point_in_image(image_point):
                 return
             self._document.select_measurement(None)
-            self._document.select_text_annotation(None)
+            self._document.select_overlay_annotation(None)
             self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._magic_segment.prompt_type == "negative":
@@ -411,12 +447,28 @@ class DocumentCanvas(QWidget):
             self._emit_magic_segment_session_changed()
             return
 
-        if self._tool_mode == "text":
+        if self._tool_mode == "overlay":
             if self._point_in_image(image_point):
-                self.textPlacementRequested.emit(
-                    self._document.id,
-                    self._clamp_to_image(image_point, pixel_center=False),
-                )
+                if self._overlay_tool_kind == OverlayAnnotationKind.TEXT:
+                    anchor = self._clamp_to_image(image_point, pixel_center=False)
+                    self.overlayCreateRequested.emit(
+                        self._document.id,
+                        {
+                            "kind": OverlayAnnotationKind.TEXT,
+                            "anchor_px": anchor,
+                        },
+                    )
+                    self.textPlacementRequested.emit(self._document.id, anchor)
+                else:
+                    anchor = self._clamp_to_image(image_point, pixel_center=False)
+                    self._drawing_overlay_start = anchor
+                    self._drawing_overlay_end = anchor
+                    self._document.select_measurement(None)
+                    self._document.select_overlay_annotation(None)
+                    self.measurementSelected.emit(self._document.id, "")
+                    self.overlaySelected.emit(self._document.id, "")
+                    self.textSelected.emit(self._document.id, "")
+                    self.update()
             return
 
         if self._tool_mode == "polygon_area":
@@ -460,18 +512,37 @@ class DocumentCanvas(QWidget):
             return
 
         if self._tool_mode == "select":
-            text_hit = self._hit_test_text_annotation(event.position())
-            if text_hit is not None:
-                annotation = self._document.get_text_annotation(text_hit)
+            overlay_handle = self._hit_test_selected_overlay_handle(image_point)
+            if overlay_handle is not None:
+                annotation = self._document.get_overlay_annotation(overlay_handle[0])
                 if annotation is not None:
-                    self._document.select_text_annotation(text_hit)
-                    self.textSelected.emit(self._document.id, text_hit)
-                    self._dragging_text_id = text_hit
-                    self._drag_text_offset = Point(
-                        image_point.x - annotation.anchor_px.x,
-                        image_point.y - annotation.anchor_px.y,
-                    )
-                    self._drag_text_preview_anchor = annotation.anchor_px
+                    self._document.select_overlay_annotation(annotation.id)
+                    self.overlaySelected.emit(self._document.id, annotation.id)
+                    if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+                        self.textSelected.emit(self._document.id, annotation.id)
+                    else:
+                        self.textSelected.emit(self._document.id, "")
+                    self._dragging_overlay_handle = overlay_handle
+                    self._drag_overlay_press_point = image_point
+                    self._drag_overlay_origin = annotation.clone()
+                    self._drag_overlay_preview = annotation.clone()
+                    self.update()
+                    return
+
+            overlay_hit = self._hit_test_overlay_annotation(event.position(), image_point)
+            if overlay_hit is not None:
+                annotation = self._document.get_overlay_annotation(overlay_hit)
+                if annotation is not None:
+                    self._document.select_overlay_annotation(annotation.id)
+                    self.overlaySelected.emit(self._document.id, annotation.id)
+                    if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+                        self.textSelected.emit(self._document.id, annotation.id)
+                    else:
+                        self.textSelected.emit(self._document.id, "")
+                    self._dragging_overlay_id = annotation.id
+                    self._drag_overlay_press_point = image_point
+                    self._drag_overlay_origin = annotation.clone()
+                    self._drag_overlay_preview = annotation.clone()
                     self.update()
                     return
 
@@ -493,6 +564,7 @@ class DocumentCanvas(QWidget):
             if area_measurement_id is not None:
                 self._document.select_measurement(area_measurement_id)
                 self.measurementSelected.emit(self._document.id, area_measurement_id)
+                self.overlaySelected.emit(self._document.id, "")
                 self.textSelected.emit(self._document.id, "")
                 self.update()
                 return
@@ -503,14 +575,15 @@ class DocumentCanvas(QWidget):
                 self._drag_preview_line = self._measurement_line(handle[0])
                 self._document.select_measurement(handle[0])
                 self.measurementSelected.emit(self._document.id, handle[0])
+                self.overlaySelected.emit(self._document.id, "")
                 self.update()
                 return
 
             measurement_id = self._hit_test_measurement(image_point)
             self._document.select_measurement(measurement_id)
             self.measurementSelected.emit(self._document.id, measurement_id or "")
-            if measurement_id is None:
-                self.textSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
             self.update()
             return
 
@@ -561,13 +634,30 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
-        if self._dragging_text_id is not None:
-            self._drag_text_preview_anchor = self._clamp_to_image(
-                Point(
-                    image_point.x - self._drag_text_offset.x,
-                    image_point.y - self._drag_text_offset.y,
-                ),
-                pixel_center=False,
+        if self._drawing_overlay_start is not None:
+            self._drawing_overlay_end = self._clamp_to_image(image_point, pixel_center=False)
+            self.update()
+            return
+
+        if (
+            self._drag_overlay_origin is not None
+            and self._drag_overlay_press_point is not None
+            and self._dragging_overlay_id is not None
+        ):
+            dx = image_point.x - self._drag_overlay_press_point.x
+            dy = image_point.y - self._drag_overlay_press_point.y
+            self._drag_overlay_preview = self._translate_overlay_annotation(self._drag_overlay_origin, dx, dy)
+            self.update()
+            return
+
+        if (
+            self._drag_overlay_origin is not None
+            and self._dragging_overlay_handle is not None
+        ):
+            self._drag_overlay_preview = self._resize_overlay_annotation(
+                self._drag_overlay_origin,
+                self._dragging_overlay_handle[1],
+                self._clamp_to_image(image_point, pixel_center=False),
             )
             self.update()
             return
@@ -647,12 +737,46 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
-        if self._dragging_text_id is not None and self._drag_text_preview_anchor is not None:
-            text_id = self._dragging_text_id
-            preview_anchor = self._drag_text_preview_anchor
-            self._dragging_text_id = None
-            self._drag_text_preview_anchor = None
-            self.textMoved.emit(self._document.id, text_id, preview_anchor)
+        if self._drawing_overlay_start is not None and self._drawing_overlay_end is not None:
+            start_point = self._drawing_overlay_start
+            end_point = self._drawing_overlay_end
+            self._drawing_overlay_start = None
+            self._drawing_overlay_end = None
+            if self._overlay_geometry_visible(start_point, end_point):
+                self.overlayCreateRequested.emit(
+                    self._document.id,
+                    {
+                        "kind": self._overlay_tool_kind,
+                        "start_px": start_point,
+                        "end_px": end_point,
+                    },
+                )
+            if self._space_pressed:
+                self._temporary_grab_active = True
+                self._update_cursor()
+            self.update()
+            return
+
+        if self._dragging_overlay_id is not None and self._drag_overlay_preview is not None:
+            overlay_id = self._dragging_overlay_id
+            preview = self._drag_overlay_preview
+            self._cancel_overlay_interaction()
+            self.overlayEdited.emit(self._document.id, overlay_id, preview)
+            if preview.normalized_kind() == OverlayAnnotationKind.TEXT:
+                self.textMoved.emit(self._document.id, overlay_id, preview.anchor_px)
+            if self._space_pressed:
+                self._temporary_grab_active = True
+                self._update_cursor()
+            self.update()
+            return
+
+        if self._dragging_overlay_handle is not None and self._drag_overlay_preview is not None:
+            overlay_id, _handle = self._dragging_overlay_handle
+            preview = self._drag_overlay_preview
+            self._cancel_overlay_interaction()
+            self.overlayEdited.emit(self._document.id, overlay_id, preview)
+            if preview.normalized_kind() == OverlayAnnotationKind.TEXT:
+                self.textMoved.emit(self._document.id, overlay_id, preview.anchor_px)
             if self._space_pressed:
                 self._temporary_grab_active = True
                 self._update_cursor()
@@ -691,6 +815,7 @@ class DocumentCanvas(QWidget):
 
         self._dragging_handle = None
         self._drag_preview_line = None
+        self._cancel_overlay_interaction()
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
@@ -751,12 +876,14 @@ class DocumentCanvas(QWidget):
             show_area_fill=self._show_area_fill,
             show_area_handles=self._tool_mode == "select",
         )
-        draw_text_annotations(
+        draw_overlay_annotations(
             painter,
             self._document,
             self.image_to_widget,
             self._settings,
-            selected_text_id=self._document.selected_text_id,
+            selected_overlay_id=self._document.selected_overlay_id,
+            show_handles=self._tool_mode == "select",
+            render_mode="screen_scale_full_image",
         )
 
     def _draw_preview(self, painter: QPainter) -> None:
@@ -797,23 +924,36 @@ class DocumentCanvas(QWidget):
                 if len(self._drawing_polygon_points) >= 2:
                     painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
 
-        if self._dragging_text_id is not None and self._drag_text_preview_anchor is not None:
-            annotation = self._document.get_text_annotation(self._dragging_text_id) if self._document else None
-            if annotation is not None:
-                preview_annotation = type(annotation)(
-                    id=annotation.id,
-                    image_id=annotation.image_id,
-                    content=annotation.content,
-                    anchor_px=self._drag_text_preview_anchor,
-                    created_at=annotation.created_at,
-                )
-                draw_text_annotations(
-                    painter,
-                    type("PreviewDoc", (), {"text_annotations": [preview_annotation], "selected_text_id": annotation.id})(),
-                    self.image_to_widget,
-                    self._settings,
-                    selected_text_id=annotation.id,
-                )
+        preview_overlay = self._drag_overlay_preview
+        if preview_overlay is not None:
+            draw_overlay_annotations(
+                painter,
+                type("PreviewDoc", (), {"overlay_annotations": [preview_overlay], "selected_overlay_id": preview_overlay.id})(),
+                self.image_to_widget,
+                self._settings,
+                selected_overlay_id=preview_overlay.id,
+                show_handles=False,
+                render_mode="screen_scale_full_image",
+            )
+
+        if self._drawing_overlay_start is not None and self._drawing_overlay_end is not None:
+            preview_kind = self._overlay_tool_kind
+            preview_annotation = OverlayAnnotation(
+                id="preview_overlay",
+                image_id=self._document.id if self._document is not None else "",
+                kind=preview_kind,
+                start_px=self._drawing_overlay_start,
+                end_px=self._drawing_overlay_end,
+            )
+            draw_overlay_annotations(
+                painter,
+                type("PreviewDoc", (), {"overlay_annotations": [preview_annotation], "selected_overlay_id": preview_annotation.id})(),
+                self.image_to_widget,
+                self._settings,
+                selected_overlay_id=preview_annotation.id,
+                show_handles=False,
+                render_mode="screen_scale_full_image",
+            )
 
         if self._tool_mode == "magic_segment":
             self._draw_magic_segment_preview(painter)
@@ -902,12 +1042,30 @@ class DocumentCanvas(QWidget):
     def _endpoint_tolerance(self) -> float:
         return max(3.0, 6.0 / max(self._zoom, 0.001))
 
-    def _hit_test_text_annotation(self, widget_point: QPointF) -> str | None:
+    def _hit_test_selected_overlay_handle(self, image_point: Point) -> tuple[str, str] | None:
+        if self._document is None or self._document.selected_overlay_id is None:
+            return None
+        annotation = self._document.get_overlay_annotation(self._document.selected_overlay_id)
+        if annotation is None or annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+            return None
+        tolerance = self._selected_endpoint_tolerance()
+        for handle_name, handle_point in overlay_annotation_handle_points(annotation):
+            if distance(handle_point, image_point) <= tolerance:
+                return annotation.id, handle_name
+        return None
+
+    def _hit_test_overlay_annotation(self, widget_point: QPointF, image_point: Point) -> str | None:
         if self._document is None:
             return None
-        for annotation in reversed(self._document.text_annotations):
-            rect = annotation_rect(annotation, self._settings, self.image_to_widget)
-            if rect.contains(widget_point):
+        tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
+        for annotation in reversed(self._document.overlay_annotations):
+            kind = annotation.normalized_kind()
+            if kind == OverlayAnnotationKind.TEXT:
+                rect = annotation_rect(annotation, self._settings, self.image_to_widget)
+                if rect.contains(widget_point):
+                    return annotation.id
+                continue
+            if self._overlay_shape_hit(annotation, image_point, tolerance):
                 return annotation.id
         return None
 
@@ -924,6 +1082,94 @@ class DocumentCanvas(QWidget):
             y=line.start.y + (projection * vy),
         )
         return distance(point, closest)
+
+    def _overlay_shape_hit(self, annotation: OverlayAnnotation, image_point: Point, tolerance: float) -> bool:
+        kind = annotation.normalized_kind()
+        min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
+        bounds = (min_x, min_y, max_x, max_y)
+        if not point_near_bounds(image_point, bounds, tolerance):
+            return False
+        if kind == OverlayAnnotationKind.RECT:
+            inside = min_x <= image_point.x <= max_x and min_y <= image_point.y <= max_y
+            if inside:
+                return True
+            edges = [
+                Line(Point(min_x, min_y), Point(max_x, min_y)),
+                Line(Point(max_x, min_y), Point(max_x, max_y)),
+                Line(Point(max_x, max_y), Point(min_x, max_y)),
+                Line(Point(min_x, max_y), Point(min_x, min_y)),
+            ]
+            return any(self._point_to_segment_distance(image_point, edge) <= tolerance for edge in edges)
+        if kind == OverlayAnnotationKind.CIRCLE:
+            if max_x - min_x <= 1e-6 or max_y - min_y <= 1e-6:
+                return False
+            cx = (min_x + max_x) / 2.0
+            cy = (min_y + max_y) / 2.0
+            rx = max((max_x - min_x) / 2.0, 1e-6)
+            ry = max((max_y - min_y) / 2.0, 1e-6)
+            normalized = (((image_point.x - cx) / rx) ** 2) + (((image_point.y - cy) / ry) ** 2)
+            edge_tolerance = max(tolerance / max(rx, ry), 0.02)
+            return normalized <= 1.0 or abs(normalized - 1.0) <= edge_tolerance
+        segment = Line(annotation.start_px, annotation.end_px)
+        return self._point_to_segment_distance(image_point, segment) <= tolerance
+
+    def _overlay_annotation_clamped(self, annotation: OverlayAnnotation) -> OverlayAnnotation:
+        if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+            return annotation.clone(anchor_px=self._clamp_to_image(annotation.anchor_px, pixel_center=False))
+        return annotation.clone(
+            start_px=self._clamp_to_image(annotation.start_px, pixel_center=False),
+            end_px=self._clamp_to_image(annotation.end_px, pixel_center=False),
+        )
+
+    def _translate_overlay_annotation(self, annotation: OverlayAnnotation, dx: float, dy: float) -> OverlayAnnotation:
+        if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+            return self._overlay_annotation_clamped(annotation.translated(dx, dy))
+        if self._image is None:
+            return annotation.translated(dx, dy)
+        min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
+        dx = clamp(dx, -min_x, (self._image.width() - 1.0) - max_x)
+        dy = clamp(dy, -min_y, (self._image.height() - 1.0) - max_y)
+        return annotation.translated(dx, dy)
+
+    def _resize_overlay_annotation(
+        self,
+        annotation: OverlayAnnotation,
+        handle_name: str,
+        point: Point,
+    ) -> OverlayAnnotation:
+        point = self._clamp_to_image(point, pixel_center=False)
+        kind = annotation.normalized_kind()
+        if kind in {OverlayAnnotationKind.LINE, OverlayAnnotationKind.ARROW}:
+            if handle_name == "start":
+                return annotation.clone(start_px=point)
+            return annotation.clone(end_px=point)
+        min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
+        if handle_name == "top_left":
+            min_x, min_y = point.x, point.y
+        elif handle_name == "top_right":
+            max_x, min_y = point.x, point.y
+        elif handle_name == "bottom_left":
+            min_x, max_y = point.x, point.y
+        else:
+            max_x, max_y = point.x, point.y
+        return annotation.clone(
+            start_px=Point(min_x, min_y),
+            end_px=Point(max_x, max_y),
+        )
+
+    def _overlay_geometry_visible(self, start_point: Point, end_point: Point) -> bool:
+        if self._overlay_tool_kind in {OverlayAnnotationKind.LINE, OverlayAnnotationKind.ARROW}:
+            return distance(start_point, end_point) >= 1.0
+        return abs(end_point.x - start_point.x) >= 2.0 and abs(end_point.y - start_point.y) >= 2.0
+
+    def _cancel_overlay_interaction(self) -> None:
+        self._drawing_overlay_start = None
+        self._drawing_overlay_end = None
+        self._dragging_overlay_id = None
+        self._dragging_overlay_handle = None
+        self._drag_overlay_press_point = None
+        self._drag_overlay_origin = None
+        self._drag_overlay_preview = None
 
     def _apply_line_constraints(
         self,
@@ -1009,7 +1255,9 @@ class DocumentCanvas(QWidget):
             or self._drawing_freehand_active
             or self._dragging_handle is not None
             or self._dragging_area_handle is not None
-            or self._dragging_text_id is not None
+            or self._drawing_overlay_start is not None
+            or self._dragging_overlay_id is not None
+            or self._dragging_overlay_handle is not None
             or self._scale_anchor_pick_active
         )
 

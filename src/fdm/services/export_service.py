@@ -44,7 +44,7 @@ class ExportSelection:
     include_excel: bool = False
     include_csv: bool = False
     scope: str = ExportScope.CURRENT
-    render_mode: str = ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE
+    render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -56,7 +56,7 @@ class ExportSelection:
             include_excel=True,
             include_csv=True,
             scope=scope,
-            render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
         )
 
     def any_selected(self) -> bool:

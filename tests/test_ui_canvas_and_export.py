@@ -22,7 +22,7 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import AppSettings, FocusStackProfile, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -736,12 +736,14 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+                ["浏览", "手动测量", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定"],
             )
             visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            self.assertIsNotNone(window._overlay_tool_button)
+            self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
         finally:
             window.close()
 
@@ -1292,14 +1294,53 @@ class CanvasAndExportTests(unittest.TestCase):
             self._load_document_into_window(window, document, image)
 
             with patch("fdm.ui.main_window.QInputDialog.getMultiLineText", return_value=("说明文本", True)):
-                window._on_canvas_text_placement_requested(document.id, Point(24, 32))
+                window._on_canvas_overlay_create_requested(
+                    document.id,
+                    {"kind": OverlayAnnotationKind.TEXT, "anchor_px": Point(24, 32)},
+                )
 
-            self.assertEqual(len(document.text_annotations), 1)
-            self.assertEqual(document.text_annotations[0].content, "说明文本")
-            self.assertEqual(document.selected_text_id, document.text_annotations[0].id)
+            self.assertEqual(len(document.overlay_annotations), 1)
+            self.assertEqual(document.overlay_annotations[0].content, "说明文本")
+            self.assertEqual(document.selected_overlay_id, document.overlay_annotations[0].id)
 
             window.delete_selected_measurement()
-            self.assertEqual(len(document.text_annotations), 0)
+            self.assertEqual(len(document.overlay_annotations), 0)
+        finally:
+            window.close()
+
+    def test_overlay_shape_create_and_edit_roundtrip_through_main_window(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/overlay_shape.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window._on_canvas_overlay_create_requested(
+                document.id,
+                {
+                    "kind": OverlayAnnotationKind.RECT,
+                    "start_px": Point(20, 24),
+                    "end_px": Point(90, 84),
+                },
+            )
+
+            overlay = document.overlay_annotations[0]
+            self.assertEqual(overlay.kind, OverlayAnnotationKind.RECT)
+            self.assertAlmostEqual(overlay.start_px.x, 20.0)
+
+            edited = overlay.clone(start_px=Point(26, 30), end_px=Point(110, 92))
+            window._on_canvas_overlay_edited(document.id, overlay.id, edited)
+
+            updated = document.get_overlay_annotation(overlay.id)
+            self.assertIsNotNone(updated)
+            self.assertAlmostEqual(updated.start_px.x, 26.0)
+            self.assertAlmostEqual(updated.end_px.x, 110.0)
         finally:
             window.close()
 
@@ -1456,6 +1497,7 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
             dialog._scale_overlay_length_spin.setValue(27.5)
             dialog._scale_overlay_font_size.setValue(24)
+            dialog._overlay_line_width.setValue(4.5)
             dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
             dialog._focus_stack_sharpen_slider.setValue(65)
             updated = dialog.app_settings()
@@ -1463,6 +1505,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(updated.scale_overlay_style, "ticks")
             self.assertAlmostEqual(updated.scale_overlay_length_value, 27.5)
             self.assertEqual(updated.scale_overlay_font_size, 24)
+            self.assertAlmostEqual(updated.overlay_line_width, 4.5)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
         finally:
@@ -1599,6 +1642,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._tabs.count(), 5)
             self.assertEqual(dialog._tabs.tabText(0), "测量标注")
             self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
+            self.assertEqual(dialog._tabs.tabText(2), "叠加标注")
             self.assertEqual(dialog._tabs.tabText(3), "面积识别")
             self.assertLessEqual(dialog.width(), 720)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
@@ -1623,6 +1667,33 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog.maximum(), 1)
             self.assertEqual(dialog.value(), 0)
             dialog.close()
+        finally:
+            window.close()
+
+    def test_main_window_persist_window_geometry_updates_app_settings(self) -> None:
+        window = MainWindow()
+        try:
+            window.setGeometry(120, 140, 980, 720)
+            window._persist_window_geometry()
+
+            self.assertTrue(window._app_settings.main_window_geometry)
+            self.assertFalse(window._app_settings.main_window_is_maximized)
+        finally:
+            window.close()
+
+    def test_main_window_restores_saved_geometry_on_startup(self) -> None:
+        probe = MainWindow()
+        try:
+            probe.setGeometry(150, 170, 920, 680)
+            geometry_token = bytes(probe.saveGeometry().toBase64()).decode("ascii")
+        finally:
+            probe.close()
+
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings(main_window_geometry=geometry_token)):
+            window = MainWindow()
+        try:
+            self.assertGreaterEqual(window.width(), 880)
+            self.assertGreaterEqual(window.height(), 640)
         finally:
             window.close()
 
