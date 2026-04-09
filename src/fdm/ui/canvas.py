@@ -635,7 +635,11 @@ class DocumentCanvas(QWidget):
             return
 
         if self._drawing_overlay_start is not None:
-            self._drawing_overlay_end = self._clamp_to_image(image_point, pixel_center=False)
+            self._drawing_overlay_end = self._constrain_overlay_candidate(
+                self._drawing_overlay_start,
+                image_point,
+                event.modifiers(),
+            )
             self.update()
             return
 
@@ -658,6 +662,7 @@ class DocumentCanvas(QWidget):
                 self._drag_overlay_origin,
                 self._dragging_overlay_handle[1],
                 self._clamp_to_image(image_point, pixel_center=False),
+                event.modifiers(),
             )
             self.update()
             return
@@ -1136,6 +1141,7 @@ class DocumentCanvas(QWidget):
         annotation: OverlayAnnotation,
         handle_name: str,
         point: Point,
+        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifier.NoModifier,
     ) -> OverlayAnnotation:
         point = self._clamp_to_image(point, pixel_center=False)
         kind = annotation.normalized_kind()
@@ -1143,6 +1149,9 @@ class DocumentCanvas(QWidget):
             if handle_name == "start":
                 return annotation.clone(start_px=point)
             return annotation.clone(end_px=point)
+        if bool(modifiers & Qt.KeyboardModifier.ShiftModifier) and kind in {OverlayAnnotationKind.RECT, OverlayAnnotationKind.CIRCLE}:
+            opposite = self._overlay_opposite_corner(annotation, handle_name)
+            point = self._constrain_overlay_candidate(opposite, point, modifiers, kind=kind)
         min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
         if handle_name == "top_left":
             min_x, min_y = point.x, point.y
@@ -1161,6 +1170,50 @@ class DocumentCanvas(QWidget):
         if self._overlay_tool_kind in {OverlayAnnotationKind.LINE, OverlayAnnotationKind.ARROW}:
             return distance(start_point, end_point) >= 1.0
         return abs(end_point.x - start_point.x) >= 2.0 and abs(end_point.y - start_point.y) >= 2.0
+
+    def _constrain_overlay_candidate(
+        self,
+        anchor: Point,
+        candidate: Point,
+        modifiers: Qt.KeyboardModifiers,
+        *,
+        kind: str | None = None,
+    ) -> Point:
+        candidate = self._clamp_to_image(candidate, pixel_center=False)
+        if not bool(modifiers & Qt.KeyboardModifier.ShiftModifier):
+            return candidate
+        target_kind = kind or self._overlay_tool_kind
+        if target_kind not in {OverlayAnnotationKind.RECT, OverlayAnnotationKind.CIRCLE}:
+            return candidate
+        dx = candidate.x - anchor.x
+        dy = candidate.y - anchor.y
+        sign_x = -1.0 if dx < 0 else 1.0
+        sign_y = -1.0 if dy < 0 else 1.0
+        available_x = self._overlay_axis_room(anchor.x, sign_x, axis="x")
+        available_y = self._overlay_axis_room(anchor.y, sign_y, axis="y")
+        size = min(max(abs(dx), abs(dy)), available_x, available_y)
+        return Point(
+            anchor.x + (sign_x * size),
+            anchor.y + (sign_y * size),
+        )
+
+    def _overlay_axis_room(self, origin: float, sign: float, *, axis: str) -> float:
+        if self._image is None:
+            return float("inf")
+        limit = (self._image.width() - 1.0) if axis == "x" else (self._image.height() - 1.0)
+        if sign >= 0:
+            return max(0.0, limit - origin)
+        return max(0.0, origin)
+
+    def _overlay_opposite_corner(self, annotation: OverlayAnnotation, handle_name: str) -> Point:
+        min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
+        if handle_name == "top_left":
+            return Point(max_x, max_y)
+        if handle_name == "top_right":
+            return Point(min_x, max_y)
+        if handle_name == "bottom_left":
+            return Point(max_x, min_y)
+        return Point(min_x, min_y)
 
     def _cancel_overlay_interaction(self) -> None:
         self._drawing_overlay_start = None

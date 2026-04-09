@@ -45,7 +45,7 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
-from fdm.geometry import Line, line_length
+from fdm.geometry import Line, Point, line_length
 from fdm.models import (
     Calibration,
     CalibrationPreset,

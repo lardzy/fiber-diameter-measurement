@@ -1344,6 +1344,33 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_overlay_rect_and_circle_snap_to_square_with_shift(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        created: list[object] = []
+        canvas.overlayCreateRequested.connect(lambda document_id, payload: created.append(payload))
+
+        canvas.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.RECT)
+        start = canvas.image_to_widget(Point(20, 20))
+        end = canvas.image_to_widget(Point(80, 50))
+        canvas.mousePressEvent(FakeMouseEvent(start, button=Qt.MouseButton.LeftButton))
+        canvas.mouseMoveEvent(FakeMouseEvent(end, button=Qt.MouseButton.LeftButton, modifiers=Qt.KeyboardModifier.ShiftModifier))
+        canvas.mouseReleaseEvent(FakeMouseEvent(end, button=Qt.MouseButton.LeftButton))
+
+        rect_payload = created[0]
+        self.assertEqual(rect_payload["kind"], OverlayAnnotationKind.RECT)
+        self.assertAlmostEqual(abs(rect_payload["end_px"].x - rect_payload["start_px"].x), abs(rect_payload["end_px"].y - rect_payload["start_px"].y))
+
+        created.clear()
+        canvas.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.CIRCLE)
+        circle_end = canvas.image_to_widget(Point(55, 95))
+        canvas.mousePressEvent(FakeMouseEvent(start, button=Qt.MouseButton.LeftButton))
+        canvas.mouseMoveEvent(FakeMouseEvent(circle_end, button=Qt.MouseButton.LeftButton, modifiers=Qt.KeyboardModifier.ShiftModifier))
+        canvas.mouseReleaseEvent(FakeMouseEvent(circle_end, button=Qt.MouseButton.LeftButton))
+
+        circle_payload = created[0]
+        self.assertEqual(circle_payload["kind"], OverlayAnnotationKind.CIRCLE)
+        self.assertAlmostEqual(abs(circle_payload["end_px"].x - circle_payload["start_px"].x), abs(circle_payload["end_px"].y - circle_payload["start_px"].y))
+
     def test_open_image_view_mode_actual_is_applied_to_new_canvas(self) -> None:
         window = MainWindow()
         try:
