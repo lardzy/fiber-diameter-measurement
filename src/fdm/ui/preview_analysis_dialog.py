@@ -67,14 +67,16 @@ class PreviewAnalysisDialog(QDialog):
             "}"
         )
         busy_panel_layout = QVBoxLayout(self._busy_panel)
-        busy_panel_layout.setContentsMargins(22, 18, 22, 18)
-        busy_panel_layout.setSpacing(10)
+        busy_panel_layout.setContentsMargins(28, 22, 28, 22)
+        busy_panel_layout.setSpacing(12)
         self._busy_label = QLabel("正在完成景深合成，请稍候…")
         self._busy_label.setStyleSheet("color: #F7F4EA; font-weight: 600;")
+        self._busy_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._busy_label.setWordWrap(True)
         self._busy_progress = QProgressBar(self._busy_panel)
         self._busy_progress.setRange(0, 0)
         self._busy_progress.setTextVisible(False)
+        self._busy_progress.setMinimumHeight(14)
         busy_panel_layout.addWidget(self._busy_label)
         busy_panel_layout.addWidget(self._busy_progress)
         overlay_layout.addWidget(self._busy_panel, 0, Qt.AlignmentFlag.AlignCenter)
@@ -126,6 +128,8 @@ class PreviewAnalysisDialog(QDialog):
 
     def _sync_busy_overlay_geometry(self) -> None:
         self._busy_overlay.setGeometry(self.rect())
+        target_width = min(max(420, int(self.width() * 0.54)), 680)
+        self._busy_panel.setFixedWidth(target_width)
 
     def keyPressEvent(self, event) -> None:
         if self._busy:

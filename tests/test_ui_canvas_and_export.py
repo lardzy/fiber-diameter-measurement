@@ -470,6 +470,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertTrue(dialog._busy_overlay.isVisible())
             self.assertEqual(dialog._busy_label.text(), "正在完成景深合成，请稍候…")
+            self.assertGreaterEqual(dialog._busy_panel.minimumWidth(), 420)
             self.assertFalse(dialog._finish_button.isEnabled())
             self.assertFalse(dialog._cancel_button.isEnabled())
             self.assertEqual(triggered, [])
