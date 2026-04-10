@@ -605,6 +605,7 @@ class MeasurementToolStrip(QWidget):
         self._compact_mode = False
         self._active_mode = "select"
         self._context_placement = "hidden"
+        self._theme_updating = False
         self.setObjectName("measurementToolStrip")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.setMinimumWidth(0)
@@ -750,9 +751,15 @@ class MeasurementToolStrip(QWidget):
         """
 
     def _apply_theme_styles(self) -> None:
-        self.setStyleSheet(self._build_stylesheet())
-        if self._overlay_button is not None:
-            self._overlay_button.update()
+        if self._theme_updating:
+            return
+        self._theme_updating = True
+        try:
+            self.setStyleSheet(self._build_stylesheet())
+            if self._overlay_button is not None:
+                self._overlay_button.update()
+        finally:
+            self._theme_updating = False
 
     def addModeAction(self, mode: str, action: QAction) -> ToolStripActionButton:
         button = ToolStripActionButton(action, self._primary_row)
