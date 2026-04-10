@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QVariantAnimation, Signal
-from PySide6.QtGui import QAction, QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath, QPalette, QPen
+from PySide6.QtGui import QAction, QColor, QCursor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -574,8 +574,11 @@ class OverlayToolSplitButton(QWidget):
             text_right_padding = 8
             text_rect = QRect(text_left, 0, max(0, primary_rect.right() - text_left - text_right_padding), self.height())
             text_color = _mix_color(colors["text"], colors["checked_text"], self._checked_strength * 0.55)
+            font = QFont(self.font())
+            font.setWeight(QFont.Weight.DemiBold)
+            painter.setFont(font)
             painter.setPen(text_color)
-            text = QFontMetrics(self.font()).elidedText(self._text, Qt.TextElideMode.ElideRight, text_rect.width())
+            text = QFontMetrics(font).elidedText(self._text, Qt.TextElideMode.ElideRight, text_rect.width())
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
 
         menu_rect = self.menuRect()
