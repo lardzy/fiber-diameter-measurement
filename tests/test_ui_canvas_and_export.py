@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
-    from PySide6.QtGui import QImage, QColor
+    from PySide6.QtGui import QImage, QColor, QPalette
     from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QScrollArea, QSplitter
 
     PYSIDE_AVAILABLE = True
@@ -827,6 +827,21 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._overlay_tool_button.sizeHint().height(), manual_button.sizeHint().height())
         finally:
             window.close()
+
+    def test_measurement_tool_strip_uses_dark_text_in_light_palette(self) -> None:
+        strip = MeasurementToolStrip()
+        try:
+            palette = strip.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#F7F8FA"))
+            strip.setPalette(palette)
+            strip._apply_theme_styles()
+
+            stylesheet = strip.styleSheet()
+            self.assertIn("background: #F5F7FA;", stylesheet)
+            self.assertIn("color: #1F2933;", stylesheet)
+            self.assertIn("background: #DDF3EF;", stylesheet)
+        finally:
+            strip.close()
 
     def test_main_window_uses_application_icon(self) -> None:
         window = MainWindow()

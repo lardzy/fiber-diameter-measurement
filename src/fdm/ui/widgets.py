@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QVariantAnimation, Signal
-from PySide6.QtGui import QAction, QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath, QPen
+from PySide6.QtGui import QAction, QColor, QCursor, QFontMetrics, QIcon, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
     QComboBox,
     QHBoxLayout,
@@ -40,6 +40,10 @@ def _repolish(widget: QWidget) -> None:
     style.unpolish(widget)
     style.polish(widget)
     widget.update()
+
+
+def _is_dark_palette(widget: QWidget) -> bool:
+    return widget.palette().color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
 
 class MeasurementGroupComboBox(QComboBox):
@@ -415,11 +419,42 @@ class OverlayToolSplitButton(QWidget):
         self._menu.setMinimumWidth(max(self.width() + 8, self._menu.sizeHint().width()))
         self._menu.popup(self.mapToGlobal(QPoint(0, self.height() + 6)))
 
+    def _theme_colors(self) -> dict[str, QColor]:
+        if _is_dark_palette(self):
+            return {
+                "checked_fill": QColor("#12343B"),
+                "checked_border": QColor("#2A9D8F"),
+                "primary_hover": QColor(255, 255, 255, 14),
+                "menu_hover": QColor(255, 255, 255, 14),
+                "pressed": QColor(255, 255, 255, 20),
+                "divider": QColor(255, 255, 255, 28),
+                "text": QColor("#F3F4F6"),
+                "checked_text": QColor("#FBFAFD"),
+                "chevron": QColor("#D7D9DE"),
+                "checked_chevron": QColor("#F3F4F6"),
+                "hover_chevron": QColor("#C9B3E5"),
+            }
+        return {
+            "checked_fill": QColor("#DDF3EF"),
+            "checked_border": QColor("#2A9D8F"),
+            "primary_hover": QColor(22, 54, 61, 18),
+            "menu_hover": QColor(22, 54, 61, 18),
+            "pressed": QColor(22, 54, 61, 28),
+            "divider": QColor(22, 54, 61, 36),
+            "text": QColor("#1F2933"),
+            "checked_text": QColor("#16363D"),
+            "chevron": QColor("#51606F"),
+            "checked_chevron": QColor("#16363D"),
+            "hover_chevron": QColor("#8B6FB4"),
+        }
+
     def changeEvent(self, event) -> None:
         super().changeEvent(event)
         if event.type() == QEvent.Type.EnabledChange and not self.isEnabled():
             self._pressed_part = "none"
             self._set_hover_part("none", immediate=True)
+        elif event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
+            self.update()
 
     def enterEvent(self, event) -> None:
         super().enterEvent(event)
@@ -489,19 +524,20 @@ class OverlayToolSplitButton(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         if not self.isEnabled():
             painter.setOpacity(0.45)
+        colors = self._theme_colors()
 
         outer_rect = QRectF(self.rect()).adjusted(0.5, 0.5, -0.5, -0.5)
         outer_path = QPainterPath()
         outer_path.addRoundedRect(outer_rect, self.RADIUS, self.RADIUS)
 
-        fill_color = _mix_color(QColor(255, 255, 255, 0), QColor("#12343B"), self._checked_strength)
-        border_color = _mix_color(QColor(255, 255, 255, 0), QColor("#2A9D8F"), self._checked_strength)
+        fill_color = _mix_color(QColor(255, 255, 255, 0), colors["checked_fill"], self._checked_strength)
+        border_color = _mix_color(QColor(255, 255, 255, 0), colors["checked_border"], self._checked_strength)
 
         painter.fillPath(outer_path, fill_color)
 
-        primary_hover_color = QColor(255, 255, 255, 14)
-        menu_hover_color = QColor(255, 255, 255, 14)
-        pressed_color = QColor(255, 255, 255, 20)
+        primary_hover_color = colors["primary_hover"]
+        menu_hover_color = colors["menu_hover"]
+        pressed_color = colors["pressed"]
 
         painter.save()
         painter.setClipPath(outer_path)
@@ -519,7 +555,7 @@ class OverlayToolSplitButton(QWidget):
         painter.drawPath(outer_path)
 
         divider_intensity = max(self._checked_strength * 0.9, self._menu_hover_strength)
-        divider_color = _mix_color(QColor(255, 255, 255, 0), QColor(255, 255, 255, 28), divider_intensity)
+        divider_color = _mix_color(QColor(255, 255, 255, 0), colors["divider"], divider_intensity)
         divider_x = self.menuRect().left()
         painter.setPen(QPen(divider_color, 1.0))
         painter.drawLine(QPoint(divider_x, 8), QPoint(divider_x, self.height() - 8))
@@ -537,14 +573,14 @@ class OverlayToolSplitButton(QWidget):
             text_left = icon_rect.right() + 6
             text_right_padding = 8
             text_rect = QRect(text_left, 0, max(0, primary_rect.right() - text_left - text_right_padding), self.height())
-            text_color = _mix_color(QColor("#F3F4F6"), QColor("#FBFAFD"), self._checked_strength * 0.55)
+            text_color = _mix_color(colors["text"], colors["checked_text"], self._checked_strength * 0.55)
             painter.setPen(text_color)
             text = QFontMetrics(self.font()).elidedText(self._text, Qt.TextElideMode.ElideRight, text_rect.width())
             painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
 
         menu_rect = self.menuRect()
-        chevron_color = _mix_color(QColor("#D7D9DE"), QColor("#F3F4F6"), self._checked_strength * 0.6)
-        chevron_color = _mix_color(chevron_color, QColor("#C9B3E5"), self._menu_hover_strength * 0.85)
+        chevron_color = _mix_color(colors["chevron"], colors["checked_chevron"], self._checked_strength * 0.6)
+        chevron_color = _mix_color(chevron_color, colors["hover_chevron"], self._menu_hover_strength * 0.85)
         painter.setPen(QPen(chevron_color, 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         chevron_center_x = menu_rect.center().x()
         chevron_center_y = menu_rect.center().y() + 1
@@ -572,77 +608,7 @@ class MeasurementToolStrip(QWidget):
         self.setObjectName("measurementToolStrip")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum)
         self.setMinimumWidth(0)
-        self.setStyleSheet(
-            """
-            QWidget#measurementToolStrip {
-                background: #34373C;
-                border-top: 1px solid rgba(255, 255, 255, 18);
-                border-bottom: 1px solid rgba(255, 255, 255, 18);
-            }
-            QToolButton[primaryTool="true"] {
-                min-height: 38px;
-                padding: 0 12px;
-                border-radius: 10px;
-                border: 1px solid transparent;
-                background: transparent;
-                color: #F3F4F6;
-                font-weight: 600;
-            }
-            QToolButton[primaryTool="true"]:hover {
-                background: rgba(255, 255, 255, 14);
-            }
-            QToolButton[primaryTool="true"]:pressed {
-                background: rgba(255, 255, 255, 20);
-            }
-            QToolButton[primaryTool="true"]:checked {
-                background: #12343B;
-                color: #F7F4EA;
-                border: 1px solid #2A9D8F;
-            }
-            QToolButton[primaryTool="true"][compactTool="true"] {
-                padding: 0;
-            }
-            QLabel[contextChip="true"] {
-                padding: 6px 10px;
-                border-radius: 8px;
-                background: #F6F1E8;
-                color: #182430;
-                font-weight: 600;
-            }
-            QLabel[contextHeader="true"] {
-                padding: 6px 10px;
-                border-radius: 8px;
-                background: #E8F1F2;
-                color: #12343B;
-                font-weight: 600;
-            }
-            QLabel[contextStatus="true"] {
-                color: #9C6B2F;
-                font-weight: 600;
-                padding: 8px 2px 0 2px;
-            }
-            QToolButton[contextTool="true"] {
-                min-height: 36px;
-                padding: 0 12px;
-                border-radius: 8px;
-                border: 1px solid rgba(255, 255, 255, 24);
-                background: rgba(255, 255, 255, 8);
-                color: #F3F4F6;
-                font-weight: 600;
-            }
-            QToolButton[contextTool="true"]:hover {
-                background: rgba(255, 255, 255, 16);
-            }
-            QToolButton[contextTool="true"]:pressed {
-                background: rgba(255, 255, 255, 20);
-            }
-            QToolButton[contextTool="true"]:checked {
-                background: #12343B;
-                color: #F7F4EA;
-                border: 1px solid #2A9D8F;
-            }
-            """
-        )
+        self._apply_theme_styles()
         root_layout = QVBoxLayout(self)
         root_layout.setContentsMargins(8, 8, 8, 12)
         root_layout.setSpacing(6)
@@ -673,6 +639,120 @@ class MeasurementToolStrip(QWidget):
         self._context_layout.setSpacing(6)
         self._context_host.setVisible(False)
         root_layout.addWidget(self._context_host)
+
+    def _build_stylesheet(self) -> str:
+        if _is_dark_palette(self):
+            strip_background = "#34373C"
+            strip_border = "rgba(255, 255, 255, 18)"
+            primary_text = "#F3F4F6"
+            primary_hover = "rgba(255, 255, 255, 14)"
+            primary_pressed = "rgba(255, 255, 255, 20)"
+            primary_checked_background = "#12343B"
+            primary_checked_text = "#F7F4EA"
+            primary_checked_border = "#2A9D8F"
+            context_tool_border = "rgba(255, 255, 255, 24)"
+            context_tool_background = "rgba(255, 255, 255, 8)"
+            context_tool_text = "#F3F4F6"
+            context_tool_hover = "rgba(255, 255, 255, 16)"
+            context_tool_pressed = "rgba(255, 255, 255, 20)"
+            chip_background = "#F6F1E8"
+            chip_text = "#182430"
+            header_background = "#E8F1F2"
+            header_text = "#12343B"
+            status_text = "#9C6B2F"
+        else:
+            strip_background = "#F5F7FA"
+            strip_border = "rgba(17, 24, 39, 22)"
+            primary_text = "#1F2933"
+            primary_hover = "rgba(31, 41, 51, 10)"
+            primary_pressed = "rgba(31, 41, 51, 16)"
+            primary_checked_background = "#DDF3EF"
+            primary_checked_text = "#16363D"
+            primary_checked_border = "#2A9D8F"
+            context_tool_border = "rgba(17, 24, 39, 16)"
+            context_tool_background = "rgba(31, 41, 51, 4)"
+            context_tool_text = "#1F2933"
+            context_tool_hover = "rgba(31, 41, 51, 9)"
+            context_tool_pressed = "rgba(31, 41, 51, 14)"
+            chip_background = "#F5EFD9"
+            chip_text = "#4D3B1F"
+            header_background = "#E7F1F4"
+            header_text = "#204650"
+            status_text = "#8A5A1F"
+        return f"""
+            QWidget#measurementToolStrip {{
+                background: {strip_background};
+                border-top: 1px solid {strip_border};
+                border-bottom: 1px solid {strip_border};
+            }}
+            QToolButton[primaryTool="true"] {{
+                min-height: 38px;
+                padding: 0 12px;
+                border-radius: 10px;
+                border: 1px solid transparent;
+                background: transparent;
+                color: {primary_text};
+                font-weight: 600;
+            }}
+            QToolButton[primaryTool="true"]:hover {{
+                background: {primary_hover};
+            }}
+            QToolButton[primaryTool="true"]:pressed {{
+                background: {primary_pressed};
+            }}
+            QToolButton[primaryTool="true"]:checked {{
+                background: {primary_checked_background};
+                color: {primary_checked_text};
+                border: 1px solid {primary_checked_border};
+            }}
+            QToolButton[primaryTool="true"][compactTool="true"] {{
+                padding: 0;
+            }}
+            QLabel[contextChip="true"] {{
+                padding: 6px 10px;
+                border-radius: 8px;
+                background: {chip_background};
+                color: {chip_text};
+                font-weight: 600;
+            }}
+            QLabel[contextHeader="true"] {{
+                padding: 6px 10px;
+                border-radius: 8px;
+                background: {header_background};
+                color: {header_text};
+                font-weight: 600;
+            }}
+            QLabel[contextStatus="true"] {{
+                color: {status_text};
+                font-weight: 600;
+                padding: 8px 2px 0 2px;
+            }}
+            QToolButton[contextTool="true"] {{
+                min-height: 36px;
+                padding: 0 12px;
+                border-radius: 8px;
+                border: 1px solid {context_tool_border};
+                background: {context_tool_background};
+                color: {context_tool_text};
+                font-weight: 600;
+            }}
+            QToolButton[contextTool="true"]:hover {{
+                background: {context_tool_hover};
+            }}
+            QToolButton[contextTool="true"]:pressed {{
+                background: {context_tool_pressed};
+            }}
+            QToolButton[contextTool="true"]:checked {{
+                background: {primary_checked_background};
+                color: {primary_checked_text};
+                border: 1px solid {primary_checked_border};
+            }}
+        """
+
+    def _apply_theme_styles(self) -> None:
+        self.setStyleSheet(self._build_stylesheet())
+        if self._overlay_button is not None:
+            self._overlay_button.update()
 
     def addModeAction(self, mode: str, action: QAction) -> ToolStripActionButton:
         button = ToolStripActionButton(action, self._primary_row)
@@ -932,6 +1012,11 @@ class MeasurementToolStrip(QWidget):
         self._sync_auto_compact_mode()
         self._update_context_host_metrics()
         self._apply_strip_height()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
+            self._apply_theme_styles()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
