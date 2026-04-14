@@ -283,12 +283,14 @@ Windows 打包：
 
 ```bash
 python scripts/build_windows_onedir.py
+python scripts/build_windows_installer.py --sync-only
 ```
 
 相关文件：
 
 - `packaging/pyinstaller/fdm_onedir.spec`
 - `packaging/inno-setup/fdm_installer.iss`
+- `src/fdm/version.py` 是运行时与安装器的统一版本真源；`packaging/inno-setup/version.auto.iss` 会由脚本自动同步生成
 
 ## 开源协议
 
