@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QPointF, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtCore import QByteArray, QEvent, QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -323,6 +323,7 @@ class MainWindow(QMainWindow):
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
+        self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
         self._capture_devices: list[CaptureDevice] = []
@@ -375,6 +376,11 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._version_label = QLabel(f"v{__version__}")
+        self._version_label.setToolTip(f"{self.windowTitle()} {__version__}")
+        self._version_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.statusBar().addPermanentWidget(self._version_label, 0)
+        self._update_statusbar_aux_labels()
         self._create_actions()
         self._build_menus()
         self._build_toolbar()
@@ -1092,6 +1098,11 @@ class MainWindow(QMainWindow):
             return "#C8D3DD" if self._is_dark_palette() else "#4E5969"
         return self.palette().color(QPalette.ColorRole.WindowText).name()
 
+    def _update_statusbar_aux_labels(self) -> None:
+        if self._version_label is None:
+            return
+        self._version_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 0 4px;")
+
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         color_key = {
             "uncalibrated": "danger",
@@ -1147,6 +1158,12 @@ class MainWindow(QMainWindow):
             return
         self._microview_optimize_hints_shown.add(selected.id)
         self.statusBar().showMessage("如果预览出现横条撕裂，可尝试点击“优化采集参数”。", 7000)
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
+            self._update_statusbar_aux_labels()
+            self._update_image_resolution_label()
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -3390,6 +3407,7 @@ class MainWindow(QMainWindow):
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
+        self._update_statusbar_aux_labels()
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)

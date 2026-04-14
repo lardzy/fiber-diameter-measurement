@@ -851,6 +851,30 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_main_window_shows_persistent_version_label_in_status_bar(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._version_label)
+            self.assertEqual(window._version_label.text(), f"v{window.project.version}")
+            self.assertIs(window._version_label.parent(), window.statusBar())
+            self.assertIn(window._status_color("muted"), window._version_label.styleSheet())
+        finally:
+            window.close()
+
+    def test_status_bar_message_keeps_version_label_visible(self) -> None:
+        window = MainWindow()
+        try:
+            window.show()
+            self.app.processEvents()
+            window.statusBar().showMessage("测试消息", 1000)
+            self.app.processEvents()
+
+            self.assertIsNotNone(window._version_label)
+            self.assertTrue(window._version_label.isVisible())
+            self.assertEqual(window._version_label.text(), f"v{window.project.version}")
+        finally:
+            window.close()
+
     def test_right_panel_hides_onnx_status_and_keeps_area_auto_entry(self) -> None:
         window = MainWindow()
         try:
