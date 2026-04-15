@@ -790,6 +790,28 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             widget.close()
 
+    def test_fiber_group_item_uses_stable_light_palette_text_colors_even_when_inactive(self) -> None:
+        widget = FiberGroupListItemWidget("1 棉", 2, "#1F7A8C", selected=False)
+        try:
+            palette = widget.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#F5F7FA"))
+            palette.setColor(QPalette.ColorRole.ButtonText, QColor("#182430"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#000000"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("#223142"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Text, QColor("#000000"))
+            widget.setPalette(palette)
+
+            background, border, text_color, badge_background, badge_border, badge_text = widget._resolved_colors()
+
+            self.assertEqual(text_color.name(), "#182430")
+            self.assertEqual(badge_text.name(), "#223142")
+            self.assertGreater(background.alpha(), 0)
+            self.assertGreater(border.alpha(), 0)
+            self.assertGreater(badge_background.alpha(), 0)
+            self.assertGreater(badge_border.alpha(), 0)
+        finally:
+            widget.close()
+
     def test_measurement_table_prioritizes_group_and_result_columns(self) -> None:
         window = MainWindow()
         try:
@@ -2086,6 +2108,47 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertEqual(document.active_group_id, second_group.id)
             self.assertEqual(measurement.fiber_group_id, first_group.id)
+        finally:
+            window.close()
+
+    def test_number_hotkey_scrolls_selected_group_into_view(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_hotkey_scroll.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            for index in range(1, 9):
+                document.create_group(color=f"#{index:02X}7A8C", label=f"类别{index}")
+            document.set_active_group(document.get_group_by_number(1).id)
+
+            self._load_document_into_window(window, document, image)
+            window.resize(960, 700)
+            window.show()
+            self.app.processEvents()
+
+            window.group_list.setFixedHeight(120)
+            window._left_panel_splitter.setSizes([420, 220])
+            self.app.processEvents()
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_8))
+            self.app.processEvents()
+
+            target_group = document.get_group_by_number(8)
+            self.assertIsNotNone(target_group)
+            target_item = None
+            for index in range(window.group_list.count()):
+                item = window.group_list.item(index)
+                if item.data(Qt.ItemDataRole.UserRole) == target_group.id:
+                    target_item = item
+                    break
+            self.assertIsNotNone(target_item)
+            rect = window.group_list.visualItemRect(target_item)
+            self.assertGreater(window.group_list.verticalScrollBar().value(), 0)
+            self.assertTrue(window.group_list.viewport().rect().contains(rect.center()))
         finally:
             window.close()
 

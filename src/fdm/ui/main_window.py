@@ -902,7 +902,7 @@ class MainWindow(QMainWindow):
         splitter.addWidget(group_box)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
-        splitter.setSizes([380, 250])
+        splitter.setSizes([360, 320])
         layout.addWidget(splitter, 1)
         return container
 
@@ -3446,6 +3446,22 @@ class MainWindow(QMainWindow):
             if isinstance(widget, FiberGroupListItemWidget):
                 widget.setSelected(item.isSelected())
 
+    def _scroll_active_group_item_into_view(self) -> None:
+        target_item = None
+        selected_items = self.group_list.selectedItems()
+        if selected_items:
+            target_item = selected_items[0]
+        elif self.group_list.count() > 0:
+            document = self.current_document()
+            active_group_id = document.active_group_id if document is not None else None
+            for index in range(self.group_list.count()):
+                item = self.group_list.item(index)
+                if item.data(Qt.ItemDataRole.UserRole) == active_group_id:
+                    target_item = item
+                    break
+        if target_item is not None:
+            self.group_list.scrollToItem(target_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
         self._populate_group_list(document)
@@ -3643,6 +3659,7 @@ class MainWindow(QMainWindow):
             return False
         document.set_active_group(group.id)
         self._populate_group_list(document)
+        self._scroll_active_group_item_into_view()
         self._update_action_states()
         self._focus_current_canvas()
         return True
