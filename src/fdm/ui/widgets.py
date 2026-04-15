@@ -208,34 +208,41 @@ class FiberGroupListItemWidget(QWidget):
     def minimumSizeHint(self) -> QSize:
         return QSize(120, self.HEIGHT)
 
+    def _resolved_colors(self) -> tuple[QColor, QColor, QColor, QColor, QColor, QColor]:
+        dark_palette = _is_dark_palette(self)
+        if self._selected:
+            return (
+                QColor("#12343B"),
+                QColor("#00A6A6"),
+                QColor("#F4FBFF"),
+                QColor(255, 255, 255, 34),
+                QColor(255, 255, 255, 48),
+                QColor("#F4FBFF"),
+            )
+        if dark_palette:
+            return (
+                QColor(255, 255, 255, 20),
+                QColor(255, 255, 255, 34),
+                QColor("#E7ECF2"),
+                QColor(255, 255, 255, 18),
+                QColor(255, 255, 255, 28),
+                QColor("#D9E2EC"),
+            )
+        return (
+            QColor(15, 23, 42, 10),
+            QColor(15, 23, 42, 34),
+            QColor("#182430"),
+            QColor(15, 23, 42, 12),
+            QColor(15, 23, 42, 20),
+            QColor("#223142"),
+        )
+
     def paintEvent(self, event) -> None:
         del event
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = self.rect().adjusted(0, 0, -1, -1)
-        palette = self.palette()
-        dark_palette = _is_dark_palette(self)
-
-        if self._selected:
-            background = QColor("#12343B")
-            border = QColor("#00A6A6")
-            text_color = QColor("#F4FBFF")
-            badge_background = QColor(255, 255, 255, 34)
-            badge_border = QColor(255, 255, 255, 48)
-            badge_text = QColor("#F4FBFF")
-        else:
-            if dark_palette:
-                background = QColor(255, 255, 255, 20)
-                border = QColor(255, 255, 255, 34)
-                badge_background = QColor(255, 255, 255, 18)
-                badge_border = QColor(255, 255, 255, 28)
-            else:
-                background = QColor(15, 23, 42, 10)
-                border = QColor(15, 23, 42, 34)
-                badge_background = QColor(15, 23, 42, 12)
-                badge_border = QColor(15, 23, 42, 20)
-            text_color = palette.color(QPalette.ColorRole.ButtonText)
-            badge_text = palette.color(QPalette.ColorRole.Text)
+        background, border, text_color, badge_background, badge_border, badge_text = self._resolved_colors()
 
         painter.setPen(QPen(border, 1))
         painter.setBrush(background)

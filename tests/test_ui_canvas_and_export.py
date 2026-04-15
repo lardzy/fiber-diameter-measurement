@@ -768,6 +768,28 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_fiber_group_item_uses_stable_dark_palette_text_colors_even_when_inactive(self) -> None:
+        widget = FiberGroupListItemWidget("1 棉", 2, "#1F7A8C", selected=False)
+        try:
+            palette = widget.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#2B2B2B"))
+            palette.setColor(QPalette.ColorRole.ButtonText, QColor("#F0F4F8"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#000000"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("#D9E2EC"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Text, QColor("#000000"))
+            widget.setPalette(palette)
+
+            background, border, text_color, badge_background, badge_border, badge_text = widget._resolved_colors()
+
+            self.assertEqual(text_color.name(), "#e7ecf2")
+            self.assertEqual(badge_text.name(), "#d9e2ec")
+            self.assertGreater(background.alpha(), 0)
+            self.assertGreater(border.alpha(), 0)
+            self.assertGreater(badge_background.alpha(), 0)
+            self.assertGreater(badge_border.alpha(), 0)
+        finally:
+            widget.close()
+
     def test_measurement_table_prioritizes_group_and_result_columns(self) -> None:
         window = MainWindow()
         try:
