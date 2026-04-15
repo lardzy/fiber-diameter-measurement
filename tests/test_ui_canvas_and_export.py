@@ -698,7 +698,7 @@ class CanvasAndExportTests(unittest.TestCase):
             ungrouped_widget = window.group_list.itemWidget(window.group_list.item(0))
             self.assertIsInstance(ungrouped_widget, FiberGroupListItemWidget)
             self.assertEqual(ungrouped_widget.labelText(), "未分类")
-            self.assertEqual(ungrouped_widget.countText(), "0")
+            self.assertEqual(ungrouped_widget.countText(), "0/0")
 
             group = document.create_group(color="#1F7A8C", label="棉")
             document.set_active_group(group.id)
@@ -718,7 +718,7 @@ class CanvasAndExportTests(unittest.TestCase):
             widget = window.group_list.itemWidget(item)
             self.assertIsInstance(widget, FiberGroupListItemWidget)
             self.assertEqual(widget.labelText(), "1 棉")
-            self.assertEqual(widget.countText(), "1")
+            self.assertEqual(widget.countText(), "1/1")
             self.assertIs(window.group_list.parentWidget().parentWidget(), window._left_panel_splitter)
         finally:
             window.close()
@@ -761,15 +761,81 @@ class CanvasAndExportTests(unittest.TestCase):
             second_widget = window.group_list.itemWidget(window.group_list.item(1))
             self.assertIsInstance(first_widget, FiberGroupListItemWidget)
             self.assertIsInstance(second_widget, FiberGroupListItemWidget)
-            self.assertEqual(first_widget.countText(), "1")
-            self.assertEqual(second_widget.countText(), "1")
+            self.assertEqual(first_widget.countText(), "1/1")
+            self.assertEqual(second_widget.countText(), "1/1")
             self.assertIsNone(window.group_list.item(0).data(Qt.ItemDataRole.DisplayRole))
             self.assertGreaterEqual(window._add_group_button.minimumWidth(), 100)
         finally:
             window.close()
 
+    def test_group_list_header_and_project_counts_aggregate_across_documents(self) -> None:
+        window = MainWindow()
+        try:
+            current = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_project_counts_current.png",
+                image_size=(320, 240),
+            )
+            current.initialize_runtime_state()
+            cotton = current.create_group(color="#1F7A8C", label="棉")
+            current.set_active_group(cotton.id)
+            current.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=current.id,
+                    fiber_group_id=cotton.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(90, 10)),
+                )
+            )
+
+            other = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_project_counts_other.png",
+                image_size=(320, 240),
+            )
+            other.initialize_runtime_state()
+            other_cotton = other.create_group(color="#E07A5F", label="棉")
+            other.set_active_group(other_cotton.id)
+            other.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=other.id,
+                    fiber_group_id=other_cotton.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(90, 20)),
+                )
+            )
+            other.set_active_group(None)
+            other.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=other.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 30), Point(90, 30)),
+                )
+            )
+
+            window.project.documents = [current, other]
+            window._populate_group_list(current)
+
+            self.assertEqual([label.text() for label in window._group_header_labels], ["颜色", "类别", "（当前/总数）"])
+            cotton_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(cotton_widget, FiberGroupListItemWidget)
+            self.assertEqual(cotton_widget.countText(), "1/2")
+
+            current.set_active_group(None)
+            window._populate_group_list(current)
+            uncategorized_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(uncategorized_widget, FiberGroupListItemWidget)
+            self.assertEqual(uncategorized_widget.countText(), "0/1")
+        finally:
+            window.project.documents = []
+            window.close()
+
     def test_fiber_group_item_uses_stable_dark_palette_text_colors_even_when_inactive(self) -> None:
-        widget = FiberGroupListItemWidget("1 棉", 2, "#1F7A8C", selected=False)
+        widget = FiberGroupListItemWidget("1 棉", 2, 8, "#1F7A8C", selected=False)
         try:
             palette = widget.palette()
             palette.setColor(QPalette.ColorRole.Window, QColor("#2B2B2B"))
@@ -791,7 +857,7 @@ class CanvasAndExportTests(unittest.TestCase):
             widget.close()
 
     def test_fiber_group_item_uses_stable_light_palette_text_colors_even_when_inactive(self) -> None:
-        widget = FiberGroupListItemWidget("1 棉", 2, "#1F7A8C", selected=False)
+        widget = FiberGroupListItemWidget("1 棉", 2, 8, "#1F7A8C", selected=False)
         try:
             palette = widget.palette()
             palette.setColor(QPalette.ColorRole.Window, QColor("#F5F7FA"))
@@ -1529,8 +1595,12 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertTrue(window.tab_widget.usesScrollButtons())
             self.assertIsNotNone(window._left_panel_splitter)
-            self.assertGreaterEqual(window._left_panel.minimumWidth(), 220)
+            self.assertGreaterEqual(window._left_panel.minimumWidth(), 280)
             self.assertEqual(window._left_panel_splitter.orientation(), Qt.Orientation.Vertical)
+            window.resize(1280, 860)
+            window.show()
+            self.app.processEvents()
+            self.assertGreaterEqual(window._left_panel_splitter.sizes()[1], 340)
         finally:
             window.close()
 
@@ -2151,6 +2221,44 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window.group_list.viewport().rect().contains(rect.center()))
         finally:
             window.close()
+
+    def test_selected_area_handle_prefers_nearest_vertex_over_first_matching_vertex(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(28, 20), Point(28, 60), Point(20, 60)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        hit = canvas._hit_test_selected_area_handle(Point(26.5, 20))
+
+        self.assertEqual(hit, (measurement.id, "vertex", 1))
+
+    def test_selected_area_handle_uses_center_only_when_no_vertex_matches(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(60, 20), Point(60, 60), Point(20, 60)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        vertex_hit = canvas._hit_test_selected_area_handle(Point(23.4, 20.4))
+        center_hit = canvas._hit_test_selected_area_handle(Point(40, 40))
+
+        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
+        self.assertEqual(center_hit, (measurement.id, "center", None))
 
     def test_measurement_group_combo_ignores_wheel_without_popup(self) -> None:
         window = MainWindow()

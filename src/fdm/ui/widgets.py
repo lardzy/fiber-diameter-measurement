@@ -175,11 +175,23 @@ class FlowLayout(QLayout):
 class FiberGroupListItemWidget(QWidget):
     HEIGHT = 38
     DOT_SIZE = 10
+    COUNT_COLUMN_WIDTH = 76
+    RIGHT_MARGIN = 12
 
-    def __init__(self, label: str, count: int, color: str, *, selected: bool = False, parent=None) -> None:
+    def __init__(
+        self,
+        label: str,
+        current_count: int,
+        project_count: int,
+        color: str,
+        *,
+        selected: bool = False,
+        parent=None,
+    ) -> None:
         super().__init__(parent)
         self._label = label
-        self._count = max(0, int(count))
+        self._current_count = max(0, int(current_count))
+        self._project_count = max(0, int(project_count))
         self._color = QColor(color)
         self._selected = bool(selected)
         self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
@@ -196,17 +208,20 @@ class FiberGroupListItemWidget(QWidget):
     def labelText(self) -> str:
         return self._label
 
-    def countValue(self) -> int:
-        return self._count
+    def currentCountValue(self) -> int:
+        return self._current_count
+
+    def projectCountValue(self) -> int:
+        return self._project_count
 
     def countText(self) -> str:
-        return str(self._count)
+        return f"{self._current_count}/{self._project_count}"
 
     def sizeHint(self) -> QSize:
-        return QSize(210, self.HEIGHT)
+        return QSize(256, self.HEIGHT)
 
     def minimumSizeHint(self) -> QSize:
-        return QSize(120, self.HEIGHT)
+        return QSize(188, self.HEIGHT)
 
     def _resolved_colors(self) -> tuple[QColor, QColor, QColor, QColor, QColor, QColor]:
         dark_palette = _is_dark_palette(self)
@@ -256,9 +271,12 @@ class FiberGroupListItemWidget(QWidget):
 
         badge_font = QFont(self.font())
         badge_font.setPointSizeF(max(8.0, badge_font.pointSizeF() - 0.25))
-        badge_metrics = QFontMetrics(badge_font)
-        badge_width = max(28, badge_metrics.horizontalAdvance(self.countText()) + 16)
-        badge_rect = QRect(rect.right() - 12 - badge_width, rect.y() + 8, badge_width, rect.height() - 16)
+        badge_rect = QRect(
+            rect.right() - self.RIGHT_MARGIN - self.COUNT_COLUMN_WIDTH,
+            rect.y() + 8,
+            self.COUNT_COLUMN_WIDTH,
+            rect.height() - 16,
+        )
         painter.setPen(QPen(badge_border, 1))
         painter.setBrush(badge_background)
         painter.drawRoundedRect(QRectF(badge_rect), badge_rect.height() / 2, badge_rect.height() / 2)

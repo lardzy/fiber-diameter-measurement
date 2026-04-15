@@ -297,6 +297,7 @@ class MainWindow(QMainWindow):
         self._left_panel: QWidget | None = None
         self._left_panel_splitter: QSplitter | None = None
         self._right_panel: QWidget | None = None
+        self._group_header_labels: list[QLabel] = []
         self._load_thread: QThread | None = None
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
@@ -410,7 +411,7 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
-        splitter.setSizes([220, 930, 360])
+        splitter.setSizes([280, 870, 360])
         layout.addWidget(splitter, 1)
         self.setCentralWidget(container)
 
@@ -833,7 +834,7 @@ class MainWindow(QMainWindow):
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
         self._left_panel = container
-        container.setMinimumWidth(220)
+        container.setMinimumWidth(280)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
@@ -846,6 +847,23 @@ class MainWindow(QMainWindow):
 
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
+        header_row.setSpacing(0)
+        color_header = QLabel("颜色")
+        color_header.setFixedWidth(36)
+        name_header = QLabel("类别")
+        count_header = QLabel("当前/总数")
+        count_header.setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
+        count_header.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._group_header_labels = [color_header, name_header, count_header]
+        for label in self._group_header_labels:
+            label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        header_row.addWidget(color_header)
+        header_row.addSpacing(14)
+        header_row.addWidget(name_header, 1)
+        header_row.addWidget(count_header)
+        group_layout.addLayout(header_row)
         self.group_list = QListWidget()
         self.group_list.setViewMode(QListView.ViewMode.ListMode)
         self.group_list.setFlow(QListView.Flow.TopToBottom)
@@ -902,8 +920,9 @@ class MainWindow(QMainWindow):
         splitter.addWidget(group_box)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
-        splitter.setSizes([360, 320])
+        splitter.setSizes([280, 420])
         layout.addWidget(splitter, 1)
+        self._update_group_list_header_styles()
         return container
 
     def _build_center_panel(self) -> QWidget:
@@ -1128,6 +1147,13 @@ class MainWindow(QMainWindow):
             return
         self._version_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 0 4px;")
 
+    def _update_group_list_header_styles(self) -> None:
+        if not self._group_header_labels:
+            return
+        muted = self._status_color("muted")
+        for label in self._group_header_labels:
+            label.setStyleSheet(f"color: {muted}; padding: 0 0 2px 0;")
+
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         color_key = {
             "uncalibrated": "danger",
@@ -1189,6 +1215,7 @@ class MainWindow(QMainWindow):
         if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
+            self._update_group_list_header_styles()
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -3405,7 +3432,8 @@ class MainWindow(QMainWindow):
                 self._add_group_list_item(
                     label=UNCATEGORIZED_LABEL,
                     color=self._app_settings.default_measurement_color,
-                    count=document.uncategorized_measurement_count(),
+                    current_count=document.uncategorized_measurement_count(),
+                    project_count=self._project_uncategorized_measurement_count(document),
                     group_id=None,
                     selected=document.active_group_id is None,
                 )
@@ -3413,7 +3441,8 @@ class MainWindow(QMainWindow):
                 self._add_group_list_item(
                     label=group.display_name(),
                     color=group.color,
-                    count=len(group.measurement_ids),
+                    current_count=len(group.measurement_ids),
+                    project_count=self._project_measurement_count_for_group_label(group.label, document),
                     group_id=group.id,
                     selected=document.active_group_id == group.id,
                 )
@@ -3424,17 +3453,26 @@ class MainWindow(QMainWindow):
         *,
         label: str,
         color: str,
-        count: int,
+        current_count: int,
+        project_count: int,
         group_id: str | None,
         selected: bool,
     ) -> None:
         item = QListWidgetItem()
         item.setData(Qt.ItemDataRole.UserRole, group_id)
-        item.setData(Qt.ItemDataRole.UserRole + 1, count)
+        item.setData(Qt.ItemDataRole.UserRole + 1, current_count)
+        item.setData(Qt.ItemDataRole.UserRole + 3, project_count)
         item.setData(Qt.ItemDataRole.UserRole + 2, label)
         item.setSizeHint(QSize(0, FiberGroupListItemWidget.HEIGHT))
         self.group_list.addItem(item)
-        widget = FiberGroupListItemWidget(label, count, color, selected=selected, parent=self.group_list)
+        widget = FiberGroupListItemWidget(
+            label,
+            current_count,
+            project_count,
+            color,
+            selected=selected,
+            parent=self.group_list,
+        )
         self.group_list.setItemWidget(item, widget)
         if selected:
             item.setSelected(True)
@@ -3461,6 +3499,28 @@ class MainWindow(QMainWindow):
                     break
         if target_item is not None:
             self.group_list.scrollToItem(target_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def _documents_for_group_counts(self, current_document: ImageDocument | None) -> list[ImageDocument]:
+        documents = list(self.project.documents)
+        if current_document is not None and all(document.id != current_document.id for document in documents):
+            documents.append(current_document)
+        return documents
+
+    def _project_measurement_count_for_group_label(self, label: str, current_document: ImageDocument | None = None) -> int:
+        token = normalize_group_label(label)
+        total = 0
+        for document in self._documents_for_group_counts(current_document):
+            if token:
+                for group in document.groups_by_label(token):
+                    total += len(group.measurement_ids)
+            else:
+                for group in document.sorted_groups():
+                    if not normalize_group_label(group.label):
+                        total += len(group.measurement_ids)
+        return total
+
+    def _project_uncategorized_measurement_count(self, current_document: ImageDocument | None = None) -> int:
+        return sum(document.uncategorized_measurement_count() for document in self._documents_for_group_counts(current_document))
 
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
