@@ -336,6 +336,7 @@ class MainWindow(QMainWindow):
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
+        self._calibration_label_scroll: QScrollArea | None = None
         self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -991,8 +992,22 @@ class MainWindow(QMainWindow):
         self._preview_notice_label.hide()
         calibration_layout.addWidget(self._preview_notice_label)
         self.calibration_label = QLabel("当前图片未标定")
-        calibration_layout.addWidget(self.calibration_label)
+        self.calibration_label.setWordWrap(True)
+        self.calibration_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._calibration_label_scroll = QScrollArea()
+        self._calibration_label_scroll.setWidget(self.calibration_label)
+        self._calibration_label_scroll.setWidgetResizable(True)
+        self._calibration_label_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._calibration_label_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._calibration_label_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._calibration_label_scroll.setMinimumHeight(88)
+        self._calibration_label_scroll.setMaximumHeight(118)
+        calibration_layout.addWidget(self._calibration_label_scroll)
         self.preset_combo = QComboBox()
+        self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.preset_combo.setMinimumContentsLength(10)
+        self.preset_combo.currentTextChanged.connect(self._update_preset_combo_tooltip)
         calibration_layout.addWidget(self.preset_combo)
         preset_row = QHBoxLayout()
         self._add_preset_button = QPushButton("新增预设")
@@ -1161,7 +1176,11 @@ class MainWindow(QMainWindow):
             "preview": "muted",
         }.get(status, "default")
         self.calibration_label.setText(text)
+        self.calibration_label.setToolTip(text)
         self.calibration_label.setStyleSheet(f"color: {self._status_color(color_key)};")
+
+    def _update_preset_combo_tooltip(self, text: str) -> None:
+        self.preset_combo.setToolTip(text)
 
     def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
         if self._image_resolution_label is None:
@@ -3416,6 +3435,7 @@ class MainWindow(QMainWindow):
             self.preset_combo.setCurrentIndex(target_index)
         elif self.preset_combo.count() > 0:
             self.preset_combo.setCurrentIndex(0)
+        self._update_preset_combo_tooltip(self.preset_combo.currentText())
         has_preset = self.preset_combo.count() > 0
         if self._edit_preset_button is not None:
             self._edit_preset_button.setEnabled(has_preset)

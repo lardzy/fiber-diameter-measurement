@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor, QPalette
-    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QScrollArea, QSplitter
+    from PySide6.QtWidgets import QApplication, QComboBox, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -588,6 +588,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(window.calibration_label.text(), "当前图片未标定")
         self.assertIn(window._status_color("danger"), window.calibration_label.styleSheet())
+        self.assertIs(window._calibration_label_scroll.widget(), window.calibration_label)
 
     def test_calibration_label_uses_blue_for_calibrated_document(self) -> None:
         window = MainWindow()
@@ -613,6 +614,62 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIn("20x", window.calibration_label.text())
         self.assertIn(window._status_color("info"), window.calibration_label.styleSheet())
+
+    def test_calibration_label_is_scrollable_and_does_not_require_expanding_width_for_long_sidecar_name(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/calibrated_sidecar_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="image_scale",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="20x",
+        )
+        document.sidecar_path = "/tmp/this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json"
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+        )
+        document.sidecar_path = "/tmp/this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json"
+        window._update_calibration_panel(document)
+
+        self.assertTrue(window.calibration_label.wordWrap())
+        self.assertEqual(window.calibration_label.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
+        self.assertIn("侧车:", window.calibration_label.text())
+        self.assertIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window.calibration_label.toolTip())
+        self.assertIsNotNone(window._calibration_label_scroll)
+        self.assertEqual(window._calibration_label_scroll.verticalScrollBarPolicy(), Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.assertEqual(window._calibration_label_scroll.maximumHeight(), 118)
+
+    def test_preset_combo_uses_eliding_friendly_size_policy_for_long_names(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(
+                    name="激光共聚焦超长超长超长预设名称用于验证不会撑宽右侧边栏",
+                    pixels_per_unit=7.5,
+                    unit="um",
+                )
+            ]
+
+            window._refresh_preset_combo()
+
+            self.assertEqual(
+                window.preset_combo.sizeAdjustPolicy(),
+                QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon,
+            )
+            self.assertEqual(window.preset_combo.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
+            self.assertEqual(window.preset_combo.minimumContentsLength(), 10)
+            self.assertIn("激光共聚焦超长超长超长预设名称", window.preset_combo.toolTip())
+        finally:
+            window.close()
 
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
         window = MainWindow()
