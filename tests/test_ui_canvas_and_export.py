@@ -35,7 +35,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.widgets import MeasurementToolStrip, OverlayToolSplitButton
+    from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
@@ -47,6 +47,7 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
 
@@ -681,7 +682,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_group_list_keeps_color_icon_and_hides_uncategorized_after_first_group(self) -> None:
+    def test_group_list_moves_to_left_panel_and_shows_count_badges(self) -> None:
         window = MainWindow()
         try:
             document = ImageDocument(
@@ -694,18 +695,76 @@ class CanvasAndExportTests(unittest.TestCase):
             window._populate_group_list(document)
             self.assertEqual(window.group_list.viewMode(), QListView.ViewMode.ListMode)
             self.assertEqual(window.group_list.count(), 1)
-            self.assertFalse(window.group_list.item(0).icon().isNull())
+            ungrouped_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(ungrouped_widget, FiberGroupListItemWidget)
+            self.assertEqual(ungrouped_widget.labelText(), "未分类")
+            self.assertEqual(ungrouped_widget.countText(), "0")
 
             group = document.create_group(color="#1F7A8C", label="棉")
             document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
             window._populate_group_list(document)
 
             self.assertEqual(window.group_list.count(), 1)
             item = window.group_list.item(0)
-            self.assertIn("棉", item.text())
-            self.assertFalse(item.icon().isNull())
-            self.assertIn("background: #FFFDF8", window.group_list.styleSheet())
-            self.assertIn("color: #182430", window.group_list.styleSheet())
+            widget = window.group_list.itemWidget(item)
+            self.assertIsInstance(widget, FiberGroupListItemWidget)
+            self.assertEqual(widget.labelText(), "1 棉")
+            self.assertEqual(widget.countText(), "1")
+            self.assertIs(window.group_list.parentWidget().parentWidget(), window._left_panel_splitter)
+        finally:
+            window.close()
+
+    def test_group_list_counts_update_for_grouped_and_uncategorized_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_counts.png",
+                image_size=(320, 240),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(90, 10)),
+                )
+            )
+            document.set_active_group(None)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(90, 20)),
+                )
+            )
+
+            window._populate_group_list(document)
+
+            self.assertEqual(window.group_list.count(), 2)
+            first_widget = window.group_list.itemWidget(window.group_list.item(0))
+            second_widget = window.group_list.itemWidget(window.group_list.item(1))
+            self.assertIsInstance(first_widget, FiberGroupListItemWidget)
+            self.assertIsInstance(second_widget, FiberGroupListItemWidget)
+            self.assertEqual(first_widget.countText(), "1")
+            self.assertEqual(second_widget.countText(), "1")
+            self.assertIsNone(window.group_list.item(0).data(Qt.ItemDataRole.DisplayRole))
+            self.assertGreaterEqual(window._add_group_button.minimumWidth(), 100)
         finally:
             window.close()
 
@@ -1416,6 +1475,8 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             splitters = window.findChildren(QSplitter)
             self.assertTrue(any(splitter.orientation() == Qt.Orientation.Vertical for splitter in splitters))
+            right_titles = [box.title() for box in window._right_panel.findChildren(QGroupBox)]
+            self.assertNotIn("纤维类别", right_titles)
         finally:
             window.close()
 
@@ -1423,7 +1484,9 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             self.assertTrue(window.tab_widget.usesScrollButtons())
-            self.assertGreaterEqual(window.image_list.parentWidget().minimumWidth(), 180)
+            self.assertIsNotNone(window._left_panel_splitter)
+            self.assertGreaterEqual(window._left_panel.minimumWidth(), 220)
+            self.assertEqual(window._left_panel_splitter.orientation(), Qt.Orientation.Vertical)
         finally:
             window.close()
 

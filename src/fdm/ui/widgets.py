@@ -172,6 +172,104 @@ class FlowLayout(QLayout):
         return max(0, used_height)
 
 
+class FiberGroupListItemWidget(QWidget):
+    HEIGHT = 38
+    DOT_SIZE = 10
+
+    def __init__(self, label: str, count: int, color: str, *, selected: bool = False, parent=None) -> None:
+        super().__init__(parent)
+        self._label = label
+        self._count = max(0, int(count))
+        self._color = QColor(color)
+        self._selected = bool(selected)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFixedHeight(self.HEIGHT)
+
+    def setSelected(self, selected: bool) -> None:
+        selected = bool(selected)
+        if self._selected == selected:
+            return
+        self._selected = selected
+        self.update()
+
+    def labelText(self) -> str:
+        return self._label
+
+    def countValue(self) -> int:
+        return self._count
+
+    def countText(self) -> str:
+        return str(self._count)
+
+    def sizeHint(self) -> QSize:
+        return QSize(210, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(120, self.HEIGHT)
+
+    def paintEvent(self, event) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect().adjusted(0, 0, -1, -1)
+        palette = self.palette()
+        dark_palette = _is_dark_palette(self)
+
+        if self._selected:
+            background = QColor("#12343B")
+            border = QColor("#00A6A6")
+            text_color = QColor("#F4FBFF")
+            badge_background = QColor(255, 255, 255, 34)
+            badge_border = QColor(255, 255, 255, 48)
+            badge_text = QColor("#F4FBFF")
+        else:
+            if dark_palette:
+                background = QColor(255, 255, 255, 20)
+                border = QColor(255, 255, 255, 34)
+                badge_background = QColor(255, 255, 255, 18)
+                badge_border = QColor(255, 255, 255, 28)
+            else:
+                background = QColor(15, 23, 42, 10)
+                border = QColor(15, 23, 42, 34)
+                badge_background = QColor(15, 23, 42, 12)
+                badge_border = QColor(15, 23, 42, 20)
+            text_color = palette.color(QPalette.ColorRole.ButtonText)
+            badge_text = palette.color(QPalette.ColorRole.Text)
+
+        painter.setPen(QPen(border, 1))
+        painter.setBrush(background)
+        painter.drawRoundedRect(rect, 10, 10)
+
+        dot_x = rect.x() + 14
+        dot_y = rect.y() + (rect.height() - self.DOT_SIZE) // 2
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self._color if self._color.isValid() else QColor("#7BD389"))
+        painter.drawEllipse(QRectF(dot_x, dot_y, self.DOT_SIZE, self.DOT_SIZE))
+
+        badge_font = QFont(self.font())
+        badge_font.setPointSizeF(max(8.0, badge_font.pointSizeF() - 0.25))
+        badge_metrics = QFontMetrics(badge_font)
+        badge_width = max(28, badge_metrics.horizontalAdvance(self.countText()) + 16)
+        badge_rect = QRect(rect.right() - 12 - badge_width, rect.y() + 8, badge_width, rect.height() - 16)
+        painter.setPen(QPen(badge_border, 1))
+        painter.setBrush(badge_background)
+        painter.drawRoundedRect(QRectF(badge_rect), badge_rect.height() / 2, badge_rect.height() / 2)
+
+        text_font = QFont(self.font())
+        text_font.setWeight(QFont.Weight.DemiBold if self._selected else QFont.Weight.Medium)
+        painter.setFont(text_font)
+        painter.setPen(text_color)
+        text_left = dot_x + self.DOT_SIZE + 14
+        text_rect = QRect(text_left, rect.y(), max(0, badge_rect.left() - text_left - 10), rect.height())
+        text = QFontMetrics(text_font).elidedText(self._label, Qt.TextElideMode.ElideRight, text_rect.width())
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+
+        painter.setFont(badge_font)
+        painter.setPen(badge_text)
+        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, self.countText())
+
+
 class ToolStripActionButton(QToolButton):
     HEIGHT = 40
     COMPACT_WIDTH = 40
