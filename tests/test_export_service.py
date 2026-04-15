@@ -139,9 +139,9 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["多边形点数"], 4)
         self.assertIn('"x": 10', rows[0]["多边形顶点JSON"])
 
-    def test_all_enabled_export_selection_uses_screen_render_mode(self) -> None:
+    def test_all_enabled_export_selection_uses_full_resolution_render_mode(self) -> None:
         selection = ExportSelection.all_enabled()
-        self.assertEqual(selection.render_mode, ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE)
+        self.assertEqual(selection.render_mode, ExportImageRenderMode.FULL_RESOLUTION)
 
     def test_measurement_label_text_uses_configured_decimals_only_for_display(self) -> None:
         document = ImageDocument(

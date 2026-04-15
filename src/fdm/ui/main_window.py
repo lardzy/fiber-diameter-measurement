@@ -4,8 +4,8 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QPointF, QRectF, QSize, Qt, QThread, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
+from PySide6.QtCore import QByteArray, QEvent, QPointF, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -45,15 +45,16 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
-from fdm.geometry import Line, line_length
+from fdm.geometry import Line, Point, line_length
 from fdm.models import (
     Calibration,
     CalibrationPreset,
     ImageDocument,
     Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
     ProjectGroupTemplate,
     ProjectState,
-    TextAnnotation,
     UNCATEGORIZED_LABEL,
     normalize_group_label,
     new_id,
@@ -91,14 +92,14 @@ from fdm.ui.dialogs import (
     ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
-from fdm.ui.icons import themed_icon
+from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
-from fdm.ui.rendering import draw_measurements, draw_scale_overlay, draw_text_annotations, overlay_metrics
-from fdm.ui.widgets import MeasurementGroupComboBox
+from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
+from fdm.ui.widgets import FlowLayout, MeasurementGroupComboBox, MeasurementToolStrip, OverlayToolSplitButton
 
 try:
     from fdm.services.capture import CaptureDevice, CaptureSessionManager
@@ -264,7 +265,7 @@ class MainWindow(QMainWindow):
     def __init__(self) -> None:
         super().__init__()
         self.setWindowTitle("纤维直径测量")
-        self.resize(1520, 940)
+        self.setWindowIcon(application_icon())
 
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
@@ -278,10 +279,15 @@ class MainWindow(QMainWindow):
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
+        self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._group_list_rebuilding = False
         self._table_rebuilding = False
         self._file_toolbar: QToolBar | None = None
         self._measure_toolbar: QToolBar | None = None
+        self._measurement_tool_strip: MeasurementToolStrip | None = None
+        self._overlay_tool_button: OverlayToolSplitButton | None = None
+        self._overlay_tool_menu: QMenu | None = None
+        self._overlay_subtool_actions: dict[str, QAction] = {}
         self._load_thread: QThread | None = None
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
@@ -295,13 +301,11 @@ class MainWindow(QMainWindow):
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
         self._magic_controls_widget: QWidget | None = None
-        self._magic_controls_action: QAction | None = None
         self._magic_prompt_label: QLabel | None = None
         self._magic_toggle_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
         self._preview_analysis_widget: QWidget | None = None
-        self._preview_analysis_action: QAction | None = None
         self._focus_stack_button: QToolButton | None = None
         self._map_build_button: QToolButton | None = None
         self._map_build_status_label: QLabel | None = None
@@ -319,6 +323,7 @@ class MainWindow(QMainWindow):
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
+        self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
         self._capture_devices: list[CaptureDevice] = []
@@ -365,15 +370,27 @@ class MainWindow(QMainWindow):
         self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
         self._update_capture_device_ui()
+        self._restore_initial_window_geometry()
         self._update_ui_for_current_document()
         self._mark_project_saved()
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._version_label = QLabel(f"v{__version__}")
+        self._version_label.setToolTip(f"{self.windowTitle()} {__version__}")
+        self._version_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.statusBar().addPermanentWidget(self._version_label, 0)
+        self._update_statusbar_aux_labels()
         self._create_actions()
         self._build_menus()
         self._build_toolbar()
 
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
+        if self._measurement_tool_strip is not None:
+            layout.addWidget(self._measurement_tool_strip)
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(self._build_left_panel())
         splitter.addWidget(self._build_center_panel())
@@ -382,7 +399,8 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
         splitter.setSizes([220, 930, 360])
-        self.setCentralWidget(splitter)
+        layout.addWidget(splitter, 1)
+        self.setCentralWidget(container)
 
     def _create_actions(self) -> None:
         self.open_images_action = QAction("打开图片", self)
@@ -478,7 +496,7 @@ class MainWindow(QMainWindow):
                 "导出测量叠加图",
                 ExportSelection(
                     include_measurement_overlay=True,
-                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
                 ),
             )
         )
@@ -487,7 +505,7 @@ class MainWindow(QMainWindow):
                 "导出比例尺图",
                 ExportSelection(
                     include_scale_overlay=True,
-                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
                 ),
             )
         )
@@ -496,7 +514,7 @@ class MainWindow(QMainWindow):
                 "导出测量 + 比例尺叠加图",
                 ExportSelection(
                     include_combined_overlay=True,
-                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
                 ),
             )
         )
@@ -509,7 +527,7 @@ class MainWindow(QMainWindow):
                 ExportSelection(
                     include_measurement_overlay=True,
                     include_excel=True,
-                    render_mode=ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
                 ),
             )
         )
@@ -525,7 +543,7 @@ class MainWindow(QMainWindow):
             ("freehand_area", "自由形状面积"),
             ("magic_segment", "魔棒分割"),
             ("calibration", "比例尺标定"),
-            ("text", "文字"),
+            ("overlay", "叠加标注"),
         ]:
             action = QAction(label, self)
             action.setCheckable(True)
@@ -540,7 +558,7 @@ class MainWindow(QMainWindow):
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
         self._mode_actions["magic_segment"].setIcon(themed_icon("magic_segment", color="#D96C75"))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
-        self._mode_actions["text"].setIcon(themed_icon("rename", color="#9C89B8"))
+        self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
 
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("文件")
@@ -616,73 +634,50 @@ class MainWindow(QMainWindow):
         file_toolbar.addAction(self.capture_frame_action)
         file_toolbar.addAction(self.optimize_capture_signal_action)
 
-        self.addToolBarBreak()
-        measure_toolbar = QToolBar("测量工具")
-        measure_toolbar.setMovable(False)
-        measure_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        measure_toolbar.setIconSize(QSize(16, 16))
-        measure_toolbar.setStyleSheet(
-            """
-            QToolBar {
-                spacing: 8px;
-                padding: 4px 0;
-            }
-            QToolButton {
-                min-height: 38px;
-                padding: 6px 14px;
-                border-radius: 8px;
-                font-weight: 600;
-            }
-            QToolButton:checked {
-                background: #12343B;
-                color: #F7F4EA;
-                border: 1px solid #2A9D8F;
-            }
-            """
-        )
-        self.addToolBar(measure_toolbar)
-        self._measure_toolbar = measure_toolbar
-        measure_toolbar.addAction(self._mode_actions["select"])
-        measure_toolbar.addAction(self._mode_actions["manual"])
-        measure_toolbar.addAction(self._mode_actions["snap"])
-        measure_toolbar.addAction(self._mode_actions["polygon_area"])
-        measure_toolbar.addAction(self._mode_actions["freehand_area"])
-        measure_toolbar.addAction(self._mode_actions["magic_segment"])
-        measure_toolbar.addAction(self._mode_actions["calibration"])
-        measure_toolbar.addAction(self._mode_actions["text"])
-        measure_toolbar.addSeparator()
+        self._measure_toolbar = None
+        self._measurement_tool_strip = self._build_measurement_tool_strip()
+
+    def _build_measurement_tool_strip(self) -> MeasurementToolStrip:
+        strip = MeasurementToolStrip(self)
+        for mode in [
+            "select",
+            "manual",
+            "snap",
+            "polygon_area",
+            "freehand_area",
+            "magic_segment",
+            "calibration",
+        ]:
+            strip.addModeAction(mode, self._mode_actions[mode])
+        self._overlay_tool_button = self._build_overlay_tool_button()
+        strip.setOverlayButton(self._overlay_tool_button)
         self._magic_controls_widget = self._build_magic_segment_controls()
-        self._magic_controls_action = measure_toolbar.addWidget(self._magic_controls_widget)
-        self._magic_controls_widget.setVisible(False)
-        self._magic_controls_action.setVisible(False)
+        strip.setMagicContextWidget(self._magic_controls_widget)
         self._preview_analysis_widget = self._build_preview_analysis_controls()
-        self._preview_analysis_action = measure_toolbar.addWidget(self._preview_analysis_widget)
-        self._preview_analysis_widget.setVisible(False)
-        self._preview_analysis_action.setVisible(False)
+        strip.setPreviewContextWidget(self._preview_analysis_widget)
+        strip.setActiveMode(self._tool_mode)
+        return strip
 
     def _build_magic_segment_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(6, 0, 0, 0)
-        layout.setSpacing(6)
-
-        self._magic_prompt_label = QLabel("当前提示：正采样点")
-        self._magic_prompt_label.setStyleSheet(
-            "padding: 6px 10px; border-radius: 8px; background: #F6F1E8; color: #182430; font-weight: 600;"
-        )
-        layout.addWidget(self._magic_prompt_label)
+        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        container.setLayout(layout)
+        self._magic_prompt_label = None
 
         self._magic_toggle_button = QToolButton(container)
+        self._magic_toggle_button.setProperty("contextTool", True)
         self._magic_toggle_button.setText("切换正负 (R)")
         self._magic_toggle_button.clicked.connect(self._cycle_magic_segment_prompt_type)
         layout.addWidget(self._magic_toggle_button)
 
         self._magic_complete_button = QToolButton(container)
+        self._magic_complete_button.setProperty("contextTool", True)
         self._magic_complete_button.setText("完成 (Enter / F)")
         self._magic_complete_button.clicked.connect(self._commit_magic_segment_preview)
         layout.addWidget(self._magic_complete_button)
 
         self._magic_cancel_button = QToolButton(container)
+        self._magic_cancel_button.setProperty("contextTool", True)
         self._magic_cancel_button.setText("放弃 (Esc)")
         self._magic_cancel_button.clicked.connect(self._cancel_magic_segment_session)
         layout.addWidget(self._magic_cancel_button)
@@ -691,35 +686,137 @@ class MainWindow(QMainWindow):
 
     def _build_preview_analysis_controls(self) -> QWidget:
         container = QWidget(self)
-        layout = QHBoxLayout(container)
-        layout.setContentsMargins(6, 0, 0, 0)
-        layout.setSpacing(6)
+        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        container.setLayout(layout)
 
-        label = QLabel("预览分析")
-        label.setStyleSheet(
-            "padding: 6px 10px; border-radius: 8px; background: #E8F1F2; color: #12343B; font-weight: 600;"
-        )
-        layout.addWidget(label)
+        header_button = QToolButton(container)
+        header_button.setProperty("contextTool", True)
+        header_button.setText("预览分析")
+        header_button.setCursor(Qt.CursorShape.ArrowCursor)
+        header_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        header_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        layout.addWidget(header_button)
 
         self._focus_stack_button = QToolButton(container)
+        self._focus_stack_button.setProperty("contextTool", True)
         self._focus_stack_button.setText("景深合成")
         self._focus_stack_button.setCheckable(True)
         self._focus_stack_button.clicked.connect(lambda checked=False: self._toggle_preview_analysis_mode("focus_stack", checked))
         layout.addWidget(self._focus_stack_button)
 
         self._map_build_button = QToolButton(container)
+        self._map_build_button.setProperty("contextTool", True)
         self._map_build_button.setText("地图构建")
         self._map_build_button.setCheckable(True)
         self._map_build_button.clicked.connect(lambda checked=False: self._toggle_preview_analysis_mode("map_build", checked))
         layout.addWidget(self._map_build_button)
-
-        self._map_build_status_label = QLabel("开发中")
-        self._map_build_status_label.setStyleSheet("color: #9C6B2F; font-weight: 600;")
-        self._map_build_status_label.setToolTip("地图构建功能开发中，当前版本暂不可用。")
-        self._map_build_status_label.setVisible(not self.MAP_BUILD_AVAILABLE)
-        layout.addWidget(self._map_build_status_label)
+        self._map_build_status_label = None
 
         return container
+
+    def _overlay_tool_definitions(self) -> list[tuple[str, str, str]]:
+        return [
+            (OverlayAnnotationKind.TEXT, "文字", "rename"),
+            (OverlayAnnotationKind.RECT, "矩形", "overlay_rect"),
+            (OverlayAnnotationKind.CIRCLE, "圆形", "overlay_circle"),
+            (OverlayAnnotationKind.LINE, "直线", "overlay_line"),
+            (OverlayAnnotationKind.ARROW, "箭头", "overlay_arrow"),
+        ]
+
+    def _overlay_tool_icon_name(self, kind: str) -> str:
+        for overlay_kind, _label, icon_name in self._overlay_tool_definitions():
+            if overlay_kind == kind:
+                return icon_name
+        return "rename"
+
+    def _overlay_tool_label(self, kind: str) -> str:
+        for overlay_kind, label, _icon_name in self._overlay_tool_definitions():
+            if overlay_kind == kind:
+                return label
+        return "文字"
+
+    def _overlay_tool_icon(self, *, active: bool = False) -> QIcon:
+        color = "#C9B3E5" if active else "#B79AD8"
+        return themed_icon(self._overlay_tool_icon_name(self._overlay_tool_kind), color=color)
+
+    def _activate_overlay_tool(self, kind: str) -> None:
+        if kind not in {item[0] for item in self._overlay_tool_definitions()}:
+            kind = OverlayAnnotationKind.TEXT
+        self._overlay_tool_kind = kind
+        self.set_tool_mode("overlay", overlay_kind=kind)
+
+    def _build_overlay_tool_button(self) -> OverlayToolSplitButton:
+        button = OverlayToolSplitButton(self)
+        button.setText("叠加标注")
+        button.primaryTriggered.connect(lambda: self._activate_overlay_tool(self._overlay_tool_kind))
+
+        menu = QMenu(self)
+        menu.setObjectName("overlayToolMenu")
+        menu.setStyleSheet(
+            """
+            QMenu#overlayToolMenu {
+                background: #23282E;
+                border: 1px solid rgba(255, 255, 255, 20);
+                border-radius: 12px;
+                padding: 8px;
+            }
+            QMenu#overlayToolMenu::item {
+                min-height: 38px;
+                margin: 2px 0;
+                padding: 0 16px 0 12px;
+                border-radius: 8px;
+                color: #F3F4F6;
+                font-weight: 600;
+            }
+            QMenu#overlayToolMenu::item:selected {
+                background: #2D343C;
+            }
+            QMenu#overlayToolMenu::item:checked {
+                background: rgba(183, 154, 216, 41);
+            }
+            QMenu#overlayToolMenu::icon {
+                padding-left: 2px;
+            }
+            QMenu#overlayToolMenu::indicator {
+                width: 0px;
+                height: 0px;
+            }
+            """
+        )
+        for kind, label, icon_name in self._overlay_tool_definitions():
+            action = QAction(label, menu)
+            action.setCheckable(True)
+            action.setIcon(themed_icon(icon_name, color="#B79AD8"))
+            action.triggered.connect(lambda checked=False, overlay_kind=kind: self._activate_overlay_tool(overlay_kind))
+            menu.addAction(action)
+            self._overlay_subtool_actions[kind] = action
+        button.setMenu(menu)
+        self._overlay_tool_menu = menu
+        self._sync_overlay_tool_button()
+        return button
+
+    def _sync_overlay_tool_button(self) -> None:
+        tooltip = f"叠加标注（当前：{self._overlay_tool_label(self._overlay_tool_kind)}）"
+        icon = self._overlay_tool_icon(active=self._tool_mode == "overlay")
+        if self._overlay_tool_button is not None:
+            self._overlay_tool_button.blockSignals(True)
+            self._overlay_tool_button.setChecked(self._tool_mode == "overlay")
+            self._overlay_tool_button.setCurrentTool(self._overlay_tool_kind, icon)
+            self._overlay_tool_button.setToolTip(tooltip)
+            self._overlay_tool_button.blockSignals(False)
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip.setActiveMode(self._tool_mode)
+            self._measurement_tool_strip.setOverlayTool(
+                self._overlay_tool_kind,
+                self._tool_mode == "overlay",
+                icon=icon,
+                tooltip=tooltip,
+            )
+        overlay_action = self._mode_actions.get("overlay")
+        if overlay_action is not None:
+            overlay_action.setIcon(self._overlay_tool_icon())
+        for kind, action in self._overlay_subtool_actions.items():
+            action.setChecked(kind == self._overlay_tool_kind)
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
@@ -917,17 +1014,22 @@ class MainWindow(QMainWindow):
         action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
         return action
 
-    def set_tool_mode(self, mode: str) -> None:
+    def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
         if mode not in self._mode_actions:
             mode = "select"
+        if overlay_kind in {item[0] for item in self._overlay_tool_definitions()}:
+            self._overlay_tool_kind = overlay_kind
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
         for canvas in self._canvases.values():
-            canvas.set_tool_mode(mode)
+            canvas.set_tool_mode(mode, overlay_kind=self._overlay_tool_kind)
         if mode in self._mode_actions:
             self._mode_actions[mode].setChecked(True)
             self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip.setActiveMode(mode)
+        self._sync_overlay_tool_button()
         self._update_magic_segment_controls()
 
     def current_document(self) -> ImageDocument | None:
@@ -996,6 +1098,11 @@ class MainWindow(QMainWindow):
             return "#C8D3DD" if self._is_dark_palette() else "#4E5969"
         return self.palette().color(QPalette.ColorRole.WindowText).name()
 
+    def _update_statusbar_aux_labels(self) -> None:
+        if self._version_label is None:
+            return
+        self._version_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 0 4px;")
+
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         color_key = {
             "uncalibrated": "danger",
@@ -1051,6 +1158,12 @@ class MainWindow(QMainWindow):
             return
         self._microview_optimize_hints_shown.add(selected.id)
         self.statusBar().showMessage("如果预览出现横条撕裂，可尝试点击“优化采集参数”。", 7000)
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
+            self._update_statusbar_aux_labels()
+            self._update_image_resolution_label()
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -1365,6 +1478,49 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
             return False
         return True
+
+    def _restore_initial_window_geometry(self) -> None:
+        geometry_token = str(self._app_settings.main_window_geometry or "").strip()
+        restored = False
+        if geometry_token:
+            restored = self.restoreGeometry(QByteArray.fromBase64(geometry_token.encode("ascii")))
+            if restored and not self._window_geometry_intersects_available_screen(self.frameGeometry()):
+                restored = False
+        if not restored:
+            self._apply_default_window_geometry()
+        if restored and self._app_settings.main_window_is_maximized:
+            self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
+
+    def _available_screens(self):
+        return list(QGuiApplication.screens())
+
+    def _window_geometry_intersects_available_screen(self, geometry) -> bool:
+        for screen in self._available_screens():
+            if geometry.intersects(screen.availableGeometry()):
+                return True
+        return False
+
+    def _apply_default_window_geometry(self) -> None:
+        screen = self.screen() or QGuiApplication.primaryScreen()
+        if screen is None:
+            self.resize(1280, 860)
+            return
+        available = screen.availableGeometry()
+        width = min(int(round(available.width() * 0.84)), 1600)
+        height = min(int(round(available.height() * 0.84)), 1000)
+        width = max(720, min(width, available.width()))
+        height = max(520, min(height, available.height()))
+        left = available.x() + max(0, (available.width() - width) // 2)
+        top = available.y() + max(0, (available.height() - height) // 2)
+        self.setGeometry(left, top, width, height)
+
+    def _persist_window_geometry(self) -> None:
+        self._app_settings.main_window_geometry = bytes(self.saveGeometry().toBase64()).decode("ascii")
+        self._app_settings.main_window_is_maximized = bool(self.windowState() & Qt.WindowState.WindowMaximized)
+        try:
+            AppSettingsIO.save(self._app_settings)
+        except OSError:
+            return
 
     def _calibration_presets(self) -> list[CalibrationPreset]:
         return self._app_settings.calibration_presets
@@ -2131,14 +2287,14 @@ class MainWindow(QMainWindow):
         canvas = DocumentCanvas()
         canvas.set_document(document, image)
         canvas.set_settings(self._app_settings)
-        canvas.set_tool_mode(self._tool_mode)
+        canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
         canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
-        canvas.textPlacementRequested.connect(self._on_canvas_text_placement_requested)
-        canvas.textSelected.connect(self._on_canvas_text_selected)
-        canvas.textMoved.connect(self._on_canvas_text_moved)
+        canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
+        canvas.overlaySelected.connect(self._on_canvas_overlay_selected)
+        canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
@@ -2671,13 +2827,17 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None:
             return
-        if document.selected_text_id is not None:
-            text_id = document.selected_text_id
+        if document.selected_overlay_id is not None:
+            overlay_id = document.selected_overlay_id
+            overlay = document.get_overlay_annotation(overlay_id)
 
-            def mutate_text() -> None:
-                document.remove_text_annotation(text_id)
+            def mutate_overlay() -> None:
+                document.remove_overlay_annotation(overlay_id)
 
-            self._apply_document_change(document, "删除文字", mutate_text)
+            label = "删除标注"
+            if overlay is not None and overlay.normalized_kind() == OverlayAnnotationKind.TEXT:
+                label = "删除文字"
+            self._apply_document_change(document, label, mutate_overlay)
             self._focus_current_canvas()
             return
         if document.view_state.selected_measurement_id is None:
@@ -2942,7 +3102,7 @@ class MainWindow(QMainWindow):
         self._clear_magic_segment_sessions(except_document_id=current_document.id if current_document is not None else None)
         canvas = self.current_canvas()
         if canvas is not None:
-            canvas.set_tool_mode(self._tool_mode)
+            canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
             self._apply_open_view_mode(canvas)
         self._update_ui_for_current_document()
 
@@ -3021,7 +3181,7 @@ class MainWindow(QMainWindow):
             else:
                 return
             document.add_measurement(measurement)
-            document.select_text_annotation(None)
+            document.select_overlay_annotation(None)
 
         self._apply_document_change(document, "新增测量", mutate)
         if snap_result is not None:
@@ -3062,53 +3222,91 @@ class MainWindow(QMainWindow):
         self._apply_document_change(document, "编辑测量线", mutate)
         self._focus_current_canvas()
 
-    def _on_canvas_text_placement_requested(self, document_id: str, anchor: Point) -> None:
+    def _on_canvas_overlay_create_requested(self, document_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
-        if document is None:
+        if document is None or not isinstance(payload, dict):
             return
-        content, ok = QInputDialog.getMultiLineText(self, "新增文字", "文字内容")
-        if not ok:
+        kind = str(payload.get("kind", OverlayAnnotationKind.TEXT))
+        if kind == OverlayAnnotationKind.TEXT:
+            anchor = payload.get("anchor_px")
+            if not isinstance(anchor, Point):
+                self._focus_current_canvas()
+                return
+            content, ok = QInputDialog.getMultiLineText(self, "新增文字", "文字内容")
+            if not ok:
+                self._focus_current_canvas()
+                return
+            content = content.strip()
+            if not content:
+                self._focus_current_canvas()
+                return
+
+            def mutate_text() -> None:
+                document.add_overlay_annotation(
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id=document.id,
+                        kind=OverlayAnnotationKind.TEXT,
+                        content=content,
+                        anchor_px=anchor,
+                    )
+                )
+
+            self._apply_document_change(document, "新增文字", mutate_text)
+            self.statusBar().showMessage("已新增文字", 2500)
             self._focus_current_canvas()
             return
-        content = content.strip()
-        if not content:
+        start_point = payload.get("start_px")
+        end_point = payload.get("end_px")
+        if not isinstance(start_point, Point) or not isinstance(end_point, Point):
             self._focus_current_canvas()
             return
 
-        def mutate() -> None:
-            document.add_text_annotation(
-                TextAnnotation(
-                    id=new_id("text"),
+        def mutate_shape() -> None:
+            document.add_overlay_annotation(
+                OverlayAnnotation(
+                    id=new_id("overlay"),
                     image_id=document.id,
-                    content=content,
-                    anchor_px=anchor,
+                    kind=kind,
+                    start_px=start_point,
+                    end_px=end_point,
                 )
             )
 
-        self._apply_document_change(document, "新增文字", mutate)
-        self.statusBar().showMessage("已新增文字", 2500)
+        self._apply_document_change(document, "新增标注", mutate_shape)
+        self.statusBar().showMessage(f"已新增{self._overlay_tool_label(kind)}标注", 2500)
         self._focus_current_canvas()
 
-    def _on_canvas_text_selected(self, document_id: str, text_id: str | None) -> None:
+    def _on_canvas_overlay_selected(self, document_id: str, overlay_id: str | None) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
-        document.select_text_annotation(text_id or None)
-        if text_id:
+        document.select_overlay_annotation(overlay_id or None)
+        if overlay_id:
             document.select_measurement(None)
         self._sync_measurement_table_selection(document)
         self._update_action_states()
         self._focus_current_canvas()
 
-    def _on_canvas_text_moved(self, document_id: str, text_id: str, anchor: Point) -> None:
+    def _on_canvas_overlay_edited(self, document_id: str, overlay_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
-        if document is None:
+        if document is None or not isinstance(payload, OverlayAnnotation):
             return
 
         def mutate() -> None:
-            document.move_text_annotation(text_id, anchor)
+            current = document.get_overlay_annotation(overlay_id)
+            if current is None:
+                return
+            document.replace_overlay_annotation(
+                overlay_id,
+                payload.clone(id=current.id, image_id=current.image_id, created_at=current.created_at),
+            )
 
-        self._apply_document_change(document, "移动文字", mutate)
+        label = "编辑标注"
+        current = document.get_overlay_annotation(overlay_id)
+        if current is not None and current.normalized_kind() == OverlayAnnotationKind.TEXT:
+            label = "移动文字"
+        self._apply_document_change(document, label, mutate)
         self._focus_current_canvas()
 
     def _on_canvas_scale_anchor_picked(self, document_id: str, anchor: Point) -> None:
@@ -3209,6 +3407,7 @@ class MainWindow(QMainWindow):
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
+        self._update_statusbar_aux_labels()
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)
@@ -3423,7 +3622,7 @@ class MainWindow(QMainWindow):
             and self._tool_mode != "calibration"
             and (
                 document.view_state.selected_measurement_id is not None
-                or document.selected_text_id is not None
+                or document.selected_overlay_id is not None
             )
         )
         has_deletable_group_target = bool(
@@ -3465,18 +3664,20 @@ class MainWindow(QMainWindow):
         self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
+        if self._overlay_tool_button is not None:
+            self._overlay_tool_button.setEnabled(not preview_active)
         self._update_magic_segment_controls()
         self._update_preview_analysis_controls()
+        self._sync_overlay_tool_button()
 
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
         return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
 
     def _update_magic_segment_controls(self) -> None:
-        if self._magic_controls_widget is None or self._magic_controls_action is None:
+        if self._magic_controls_widget is None or self._measurement_tool_strip is None:
             return
         is_visible = self._tool_mode == "magic_segment" and not self._preview_active
-        self._magic_controls_action.setVisible(is_visible)
-        self._magic_controls_widget.setVisible(is_visible)
+        self._measurement_tool_strip.setMagicContextVisible(is_visible)
         if not is_visible:
             return
         canvas = self.current_canvas()
@@ -3514,11 +3715,10 @@ class MainWindow(QMainWindow):
             self._map_build_button.blockSignals(False)
 
     def _update_preview_analysis_controls(self) -> None:
-        if self._preview_analysis_widget is None or self._preview_analysis_action is None:
+        if self._preview_analysis_widget is None or self._measurement_tool_strip is None:
             return
         is_visible = self._preview_active
-        self._preview_analysis_widget.setVisible(is_visible)
-        self._preview_analysis_action.setVisible(is_visible)
+        self._measurement_tool_strip.setPreviewContextVisible(is_visible)
         selected = self._selected_capture_device()
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")
@@ -3527,15 +3727,15 @@ class MainWindow(QMainWindow):
         if self.MAP_BUILD_AVAILABLE and selected is not None and selected.backend_key == "microview":
             map_tooltip = "实时预览分析：地图构建"
         focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
-        map_enabled = is_visible and map_supported and not self._preview_analysis_finalizing
+        map_enabled = is_visible and not self._preview_analysis_finalizing and (
+            map_supported or not self.MAP_BUILD_AVAILABLE
+        )
         if self._focus_stack_button is not None:
             self._focus_stack_button.setEnabled(focus_enabled)
             self._focus_stack_button.setToolTip(focus_tooltip)
         if self._map_build_button is not None:
             self._map_build_button.setEnabled(map_enabled)
             self._map_build_button.setToolTip(map_tooltip)
-        if self._map_build_status_label is not None:
-            self._map_build_status_label.setVisible(is_visible and not self.MAP_BUILD_AVAILABLE)
         self._sync_preview_analysis_buttons()
 
     def _preview_analysis_intro_text(self, mode: str) -> str:
@@ -3899,12 +4099,13 @@ class MainWindow(QMainWindow):
             )
 
         if include_measurements or include_scale:
-            draw_text_annotations(
+            draw_overlay_annotations(
                 painter,
                 document,
                 image_to_output,
                 self._app_settings,
-                selected_text_id=None,
+                selected_overlay_id=None,
+                render_mode=render_mode,
             )
 
         if include_scale and document.calibration is not None:
@@ -4018,6 +4219,7 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
+        self._persist_window_geometry()
         self.stop_live_preview()
         self._clear_prompt_segmentation_cache()
         if self._prompt_seg_thread is not None:

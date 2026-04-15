@@ -6,8 +6,8 @@ import math
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen
 
-from fdm.geometry import Line, Point, direction, normal
-from fdm.models import ImageDocument, Measurement, TextAnnotation, format_measurement_label_value
+from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
+from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
 
 
@@ -69,11 +69,25 @@ def measurement_label_font(settings: AppSettings) -> QFont:
     return font
 
 
-def text_annotation_font(settings: AppSettings) -> QFont:
+def overlay_text_font(settings: AppSettings) -> QFont:
     font = QFont()
     font.setFamily(settings.text_font_family)
     font.setPixelSize(int(max(8, settings.text_font_size)))
     return font
+
+
+def overlay_annotation_line_width(
+    settings: AppSettings,
+    *,
+    suggested_line_width: float,
+    render_mode: str,
+) -> float:
+    base_width = float(max(0.5, settings.overlay_line_width))
+    if render_mode == "full_resolution":
+        return min(max(base_width, 1.0), 12.0)
+    lower_bound = max(1.2, suggested_line_width * 0.75)
+    upper_bound = max(lower_bound, suggested_line_width * 1.8)
+    return min(max(base_width, lower_bound), upper_bound)
 
 
 def scale_overlay_font(settings: AppSettings, *, suggested_font_px: float, render_mode: str) -> tuple[QFont, float]:
@@ -99,8 +113,46 @@ def _text_layout(font: QFont, content: str) -> tuple[QFontMetricsF, list[str], f
     return metrics, lines, width, height
 
 
-def annotation_rect(annotation: TextAnnotation, settings: AppSettings, image_to_output) -> QRectF:
-    font = text_annotation_font(settings)
+def overlay_annotation_bounds(annotation: OverlayAnnotation) -> tuple[float, float, float, float]:
+    if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
+        return (
+            annotation.anchor_px.x,
+            annotation.anchor_px.y,
+            annotation.anchor_px.x,
+            annotation.anchor_px.y,
+        )
+    min_x = min(annotation.start_px.x, annotation.end_px.x)
+    min_y = min(annotation.start_px.y, annotation.end_px.y)
+    max_x = max(annotation.start_px.x, annotation.end_px.x)
+    max_y = max(annotation.start_px.y, annotation.end_px.y)
+    return min_x, min_y, max_x, max_y
+
+
+def overlay_annotation_handle_points(annotation: OverlayAnnotation) -> list[tuple[str, Point]]:
+    kind = annotation.normalized_kind()
+    if kind in {OverlayAnnotationKind.LINE, OverlayAnnotationKind.ARROW}:
+        return [("start", annotation.start_px), ("end", annotation.end_px)]
+    if kind in {OverlayAnnotationKind.RECT, OverlayAnnotationKind.CIRCLE}:
+        min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
+        return [
+            ("top_left", Point(min_x, min_y)),
+            ("top_right", Point(max_x, min_y)),
+            ("bottom_left", Point(min_x, max_y)),
+            ("bottom_right", Point(max_x, max_y)),
+        ]
+    return []
+
+
+def overlay_annotation_rect(annotation: OverlayAnnotation, settings: AppSettings, image_to_output) -> QRectF:
+    if annotation.normalized_kind() != OverlayAnnotationKind.TEXT:
+        start = image_to_output(annotation.start_px)
+        end = image_to_output(annotation.end_px)
+        left = min(start.x(), end.x())
+        top = min(start.y(), end.y())
+        width = max(1.0, abs(end.x() - start.x()))
+        height = max(1.0, abs(end.y() - start.y()))
+        return QRectF(left, top, width, height)
+    font = overlay_text_font(settings)
     _metrics, _lines, width, height = _text_layout(font, annotation.content)
     top_left = image_to_output(annotation.anchor_px)
     padding_x = 6.0
@@ -113,6 +165,66 @@ def annotation_rect(annotation: TextAnnotation, settings: AppSettings, image_to_
     )
 
 
+def annotation_rect(annotation: TextAnnotation | OverlayAnnotation, settings: AppSettings, image_to_output) -> QRectF:
+    if isinstance(annotation, TextAnnotation):
+        return overlay_annotation_rect(annotation.to_overlay(), settings, image_to_output)
+    return overlay_annotation_rect(annotation, settings, image_to_output)
+
+
+def draw_overlay_annotations(
+    painter: QPainter,
+    document: ImageDocument,
+    image_to_output,
+    settings: AppSettings,
+    *,
+    selected_overlay_id: str | None = None,
+    show_handles: bool = False,
+    render_mode: str = "screen_scale_full_image",
+) -> None:
+    font = overlay_text_font(settings)
+    text_metrics, _lines_template, _width, _height = _text_layout(font, " ")
+    line_spacing = text_metrics.lineSpacing()
+    line_color = QColor(settings.overlay_line_color)
+    text_color = QColor(settings.text_color)
+    text_outline = QColor("#101820")
+    resolved_line_width = overlay_annotation_line_width(
+        settings,
+        suggested_line_width=2.2,
+        render_mode=render_mode,
+    )
+    annotations = list(getattr(document, "overlay_annotations", []))
+    for annotation in annotations:
+        kind = annotation.normalized_kind()
+        if kind == OverlayAnnotationKind.TEXT:
+            painter.setFont(font)
+            rect = overlay_annotation_rect(annotation, settings, image_to_output)
+            top_left = rect.topLeft() + QPointF(6.0, 4.0)
+            painter.setPen(QPen(text_outline, 3))
+            y = top_left.y() + text_metrics.ascent()
+            for line in annotation.content.splitlines() or [""]:
+                painter.drawText(QPointF(top_left.x(), y), line)
+                y += line_spacing
+            painter.setPen(QPen(text_color, 1))
+            y = top_left.y() + text_metrics.ascent()
+            for line in annotation.content.splitlines() or [""]:
+                painter.drawText(QPointF(top_left.x(), y), line)
+                y += line_spacing
+            if annotation.id == selected_overlay_id:
+                painter.setBrush(QColor(0, 0, 0, 0))
+                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine))
+                painter.drawRoundedRect(rect, 6.0, 6.0)
+            continue
+        _draw_shape_overlay_annotation(
+            painter,
+            annotation,
+            image_to_output,
+            color=line_color,
+            line_width=resolved_line_width * (1.12 if annotation.id == selected_overlay_id else 1.0),
+            selected=annotation.id == selected_overlay_id,
+            show_handles=show_handles and annotation.id == selected_overlay_id,
+        )
+
+
 def draw_text_annotations(
     painter: QPainter,
     document: ImageDocument,
@@ -121,27 +233,96 @@ def draw_text_annotations(
     *,
     selected_text_id: str | None = None,
 ) -> None:
-    font = text_annotation_font(settings)
-    painter.setFont(font)
-    metrics, _lines_template, _width, _height = _text_layout(font, " ")
-    line_spacing = metrics.lineSpacing()
-    for annotation in document.text_annotations:
-        rect = annotation_rect(annotation, settings, image_to_output)
-        top_left = rect.topLeft() + QPointF(6.0, 4.0)
-        painter.setPen(QPen(QColor("#101820"), 3))
-        y = top_left.y() + metrics.ascent()
-        for line in annotation.content.splitlines() or [""]:
-            painter.drawText(QPointF(top_left.x(), y), line)
-            y += line_spacing
-        painter.setPen(QPen(QColor(settings.text_color), 1))
-        y = top_left.y() + metrics.ascent()
-        for line in annotation.content.splitlines() or [""]:
-            painter.drawText(QPointF(top_left.x(), y), line)
-            y += line_spacing
-        if annotation.id == selected_text_id:
-            painter.setBrush(QColor(0, 0, 0, 0))
-            painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine))
-            painter.drawRoundedRect(rect, 6.0, 6.0)
+    draw_overlay_annotations(
+        painter,
+        document,
+        image_to_output,
+        settings,
+        selected_overlay_id=selected_text_id,
+    )
+
+
+def _draw_shape_overlay_annotation(
+    painter: QPainter,
+    annotation: OverlayAnnotation,
+    image_to_output,
+    *,
+    color: QColor,
+    line_width: float,
+    selected: bool,
+    show_handles: bool,
+) -> None:
+    kind = annotation.normalized_kind()
+    start_point = image_to_output(annotation.start_px)
+    end_point = image_to_output(annotation.end_px)
+    rect = QRectF(
+        min(start_point.x(), end_point.x()),
+        min(start_point.y(), end_point.y()),
+        max(1.0, abs(end_point.x() - start_point.x())),
+        max(1.0, abs(end_point.y() - start_point.y())),
+    )
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.setPen(
+        QPen(
+            color,
+            line_width,
+            Qt.PenStyle.SolidLine,
+            Qt.PenCapStyle.RoundCap,
+            Qt.PenJoinStyle.RoundJoin,
+        )
+    )
+    _draw_overlay_shape_geometry(painter, kind, start_point, end_point, rect)
+    if selected and kind in {OverlayAnnotationKind.RECT, OverlayAnnotationKind.CIRCLE}:
+        painter.setPen(QPen(QColor("#F4D35E"), 1.5, Qt.PenStyle.DashLine))
+        painter.drawRect(rect.adjusted(-3.0, -3.0, 3.0, 3.0))
+    if show_handles:
+        for _handle_name, handle_point in overlay_annotation_handle_points(annotation):
+            _draw_overlay_handle(painter, image_to_output(handle_point))
+
+
+def _draw_overlay_shape_geometry(
+    painter: QPainter,
+    kind: str,
+    start_point: QPointF,
+    end_point: QPointF,
+    rect: QRectF,
+) -> None:
+    if kind == OverlayAnnotationKind.RECT:
+        painter.drawRect(rect)
+        return
+    if kind == OverlayAnnotationKind.CIRCLE:
+        painter.drawEllipse(rect)
+        return
+    painter.drawLine(start_point, end_point)
+    if kind == OverlayAnnotationKind.ARROW:
+        _draw_overlay_arrow_head(painter, start_point, end_point)
+
+
+def _draw_overlay_arrow_head(painter: QPainter, start_point: QPointF, end_point: QPointF) -> None:
+    dx = end_point.x() - start_point.x()
+    dy = end_point.y() - start_point.y()
+    axis = _normalize(dx, dy)
+    side = _normal(axis)
+    pen_width = max(1.0, painter.pen().widthF())
+    arrow_length = max(10.0, pen_width * 4.8)
+    arrow_half_width = max(5.0, pen_width * 2.8)
+    tail = QPointF(end_point.x() - axis[0] * arrow_length, end_point.y() - axis[1] * arrow_length)
+    left = QPointF(tail.x() + side[0] * arrow_half_width, tail.y() + side[1] * arrow_half_width)
+    right = QPointF(tail.x() - side[0] * arrow_half_width, tail.y() - side[1] * arrow_half_width)
+    pen = QPen(painter.pen())
+    pen.setCapStyle(Qt.PenCapStyle.FlatCap)
+    pen.setJoinStyle(Qt.PenJoinStyle.MiterJoin)
+    painter.save()
+    painter.setPen(pen)
+    painter.drawLine(end_point, left)
+    painter.drawLine(end_point, right)
+    painter.restore()
+
+
+def _draw_overlay_handle(painter: QPainter, point: QPointF) -> None:
+    painter.setBrush(QColor("#FFFFFF"))
+    painter.setPen(QPen(QColor("#0B0B0B"), 1.3))
+    painter.drawEllipse(point, 4.2, 4.2)
 
 
 def draw_measurements(

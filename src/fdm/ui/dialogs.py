@@ -370,7 +370,7 @@ class SettingsDialog(QDialog):
         self._tabs = QTabWidget()
         self._tabs.addTab(self._build_measurement_tab(settings), "测量标注")
         self._tabs.addTab(self._build_scale_overlay_tab(settings), "比例尺叠加")
-        self._tabs.addTab(self._build_text_tab(settings), "文字工具")
+        self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
 
@@ -412,6 +412,8 @@ class SettingsDialog(QDialog):
             text_font_family=self._text_font.currentFont().family(),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
+            overlay_line_color=self._overlay_line_color.property("color_value") or self._initial_settings.overlay_line_color,
+            overlay_line_width=self._overlay_line_width.value(),
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
             focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
             area_model_mappings=self.area_model_mappings(),
@@ -419,6 +421,9 @@ class SettingsDialog(QDialog):
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
             area_worker_python=self._area_worker_python_edit.text().strip(),
             calibration_presets=list(self._initial_settings.calibration_presets),
+            selected_capture_device_id=self._initial_settings.selected_capture_device_id,
+            main_window_geometry=self._initial_settings.main_window_geometry,
+            main_window_is_maximized=self._initial_settings.main_window_is_maximized,
         )
 
     def area_model_mappings(self) -> list[AreaModelMapping]:
@@ -603,11 +608,11 @@ class SettingsDialog(QDialog):
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
-    def _build_text_tab(self, settings: AppSettings) -> QWidget:
+    def _build_overlay_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        text_group = QGroupBox("文字工具")
+        text_group = QGroupBox("文字默认样式")
         text_form = QFormLayout(text_group)
         self._text_font = NoWheelFontComboBox()
         self._text_font.setCurrentFont(QFont(settings.text_font_family))
@@ -619,7 +624,22 @@ class SettingsDialog(QDialog):
         text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
 
+        shape_group = QGroupBox("图形默认样式")
+        shape_form = QFormLayout(shape_group)
+        self._overlay_line_color = self._create_color_button(settings.overlay_line_color)
+        self._overlay_line_width = NoWheelDoubleSpinBox()
+        self._overlay_line_width.setDecimals(1)
+        self._overlay_line_width.setRange(0.5, 24.0)
+        self._overlay_line_width.setSingleStep(0.5)
+        self._overlay_line_width.setValue(settings.overlay_line_width)
+        shape_form.addRow("线条颜色", self._overlay_line_color)
+        shape_form.addRow("线条宽度", self._overlay_line_width)
+        shape_hint = QLabel("适用于矩形、圆形、直线和箭头，首版均为无填充描边。")
+        shape_hint.setWordWrap(True)
+        shape_form.addRow("", shape_hint)
+
         layout.addWidget(text_group)
+        layout.addWidget(shape_group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 

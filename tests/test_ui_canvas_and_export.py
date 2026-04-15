@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
-    from PySide6.QtGui import QImage, QColor
+    from PySide6.QtGui import QImage, QColor, QPalette
     from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QScrollArea, QSplitter
 
     PYSIDE_AVAILABLE = True
@@ -22,7 +22,7 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import AppSettings, FocusStackProfile, OpenImageViewMode
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -31,19 +31,24 @@ from fdm.services.snap_service import SnapResult
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
+    from fdm.ui.widgets import MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
+    application_icon = object  # type: ignore[assignment]
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    MeasurementToolStrip = object  # type: ignore[assignment]
+    OverlayToolSplitButton = object  # type: ignore[assignment]
 
 
 class FakeWheelEvent:
@@ -514,7 +519,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_map_build_button_is_disabled_and_marked_developing(self) -> None:
+    def test_map_build_button_shows_developing_message_when_unavailable(self) -> None:
         window = MainWindow()
         try:
             fake_device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
@@ -526,11 +531,14 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertIsNotNone(window._focus_stack_button)
             self.assertIsNotNone(window._map_build_button)
-            self.assertIsNotNone(window._map_build_status_label)
             self.assertTrue(window._focus_stack_button.isEnabled())
-            self.assertFalse(window._map_build_button.isEnabled())
-            self.assertEqual(window._map_build_status_label.text(), "开发中")
-            self.assertFalse(window._map_build_status_label.isHidden())
+            self.assertTrue(window._map_build_button.isEnabled())
+            self.assertIsNone(window._map_build_status_label)
+            with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok) as mock_information:
+                window._map_build_button.click()
+            mock_information.assert_called_once()
+            self.assertIn("开发中", mock_information.call_args.args[2])
+            self.assertFalse(window._map_build_button.isChecked())
         finally:
             window.close()
 
@@ -732,16 +740,138 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             self.assertIsNotNone(window._file_toolbar)
-            self.assertIsNotNone(window._measure_toolbar)
-            action_texts = [action.text() for action in window._measure_toolbar.actions() if action.text()]
+            self.assertIsNone(window._measure_toolbar)
+            self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
+            action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "文字"],
+                ["浏览", "手动测量", "边缘吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "叠加标注"],
             )
-            visible_actions = [action for action in window._measure_toolbar.actions() if action.text()]
+            visible_actions = [window._mode_actions[key] for key in ["select", "manual", "snap", "polygon_area", "freehand_area", "magic_segment", "calibration"]]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
+            self.assertLessEqual(window._overlay_tool_button.expandedWidthHint(), 120)
+            self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
+            self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.TEXT)
+            self.assertIs(window._overlay_tool_menu.parent(), window)
+        finally:
+            window.close()
+
+    def test_overlay_split_button_hit_areas_and_primary_click(self) -> None:
+        button = OverlayToolSplitButton()
+        button.resize(button.sizeHint())
+        triggered: list[str] = []
+        button.primaryTriggered.connect(lambda: triggered.append("primary"))
+        try:
+            primary_point = QPointF(button.primaryRect().center())
+            menu_point = QPointF(button.menuRect().center())
+            self.assertEqual(button._hit_part(primary_point.toPoint()), "primary")
+            self.assertEqual(button._hit_part(menu_point.toPoint()), "menu")
+
+            button.mousePressEvent(FakeMouseEvent(primary_point, button=Qt.MouseButton.LeftButton))
+            button.mouseReleaseEvent(FakeMouseEvent(primary_point, button=Qt.MouseButton.LeftButton))
+
+            self.assertEqual(triggered, ["primary"])
+            self.assertEqual(button.height(), 40)
+            self.assertGreaterEqual(button.menuRect().width(), 28)
+        finally:
+            button.close()
+
+    def test_overlay_split_button_syncs_current_tool_and_disable_state(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
+            window.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.ARROW)
+
+            self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.ARROW)
+            self.assertIn("当前：箭头", window._overlay_tool_button.toolTip())
+            self.assertTrue(window._overlay_subtool_actions[OverlayAnnotationKind.ARROW].isChecked())
+
+            window._preview_active = True
+            window._update_action_states()
+
+            self.assertFalse(window._overlay_tool_button.isEnabled())
+        finally:
+            window.close()
+
+    def test_measurement_tool_strip_compacts_when_width_is_small(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            self.assertEqual(strip.minimumWidth(), 0)
+            strip.resize(1200, strip.sizeHint().height())
+            strip._sync_auto_compact_mode()
+            self.assertFalse(strip.isCompactMode())
+
+            strip.resize(220, strip.sizeHint().height())
+            strip._sync_auto_compact_mode()
+
+            self.assertTrue(strip.isCompactMode())
+            self.assertEqual(strip.buttonForMode("manual").toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.assertTrue(window._overlay_tool_button.isCompactMode())
+            self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
+        finally:
+            window.close()
+
+    def test_overlay_button_matches_primary_button_height(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            manual_button = strip.buttonForMode("manual")
+            self.assertIsNotNone(manual_button)
+            self.assertEqual(window._overlay_tool_button.sizeHint().height(), manual_button.sizeHint().height())
+        finally:
+            window.close()
+
+    def test_measurement_tool_strip_uses_dark_text_in_light_palette(self) -> None:
+        strip = MeasurementToolStrip()
+        try:
+            palette = strip.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#F7F8FA"))
+            strip.setPalette(palette)
+            strip._apply_theme_styles()
+
+            stylesheet = strip.styleSheet()
+            self.assertIn("background: #F5F7FA;", stylesheet)
+            self.assertIn("color: #1F2933;", stylesheet)
+            self.assertIn("background: #DDF3EF;", stylesheet)
+        finally:
+            strip.close()
+
+    def test_main_window_uses_application_icon(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertFalse(application_icon().isNull())
+            self.assertFalse(window.windowIcon().isNull())
+        finally:
+            window.close()
+
+    def test_main_window_shows_persistent_version_label_in_status_bar(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._version_label)
+            self.assertEqual(window._version_label.text(), f"v{window.project.version}")
+            self.assertIs(window._version_label.parent(), window.statusBar())
+            self.assertIn(window._status_color("muted"), window._version_label.styleSheet())
+        finally:
+            window.close()
+
+    def test_status_bar_message_keeps_version_label_visible(self) -> None:
+        window = MainWindow()
+        try:
+            window.show()
+            self.app.processEvents()
+            window.statusBar().showMessage("测试消息", 1000)
+            self.app.processEvents()
+
+            self.assertIsNotNone(window._version_label)
+            self.assertTrue(window._version_label.isVisible())
+            self.assertEqual(window._version_label.text(), f"v{window.project.version}")
         finally:
             window.close()
 
@@ -1130,14 +1260,135 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             self.assertIsNotNone(window._magic_controls_widget)
-            self.assertIsNotNone(window._magic_controls_action)
-            self.assertFalse(window._magic_controls_action.isVisible())
+            self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
+            self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
 
+            window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
             window.set_tool_mode("magic_segment")
-            self.assertTrue(window._magic_controls_action.isVisible())
+            self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertTrue(window._measurement_tool_strip.isContextInline())
 
             window.set_tool_mode("select")
-            self.assertFalse(window._magic_controls_action.isVisible())
+            self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
+        finally:
+            window.close()
+
+    def test_preview_analysis_controls_live_in_context_row(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
+            self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
+
+            window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
+            window._preview_active = True
+            window._update_preview_analysis_controls()
+
+            self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+            self.assertTrue(window._measurement_tool_strip.isContextInline())
+
+            window._preview_active = False
+            window._update_preview_analysis_controls()
+
+            self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
+        finally:
+            window.close()
+
+    def test_measurement_tool_strip_stacks_context_only_when_width_is_insufficient(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+            self.assertTrue(strip.isMagicContextVisible())
+            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+
+            window.resize(1000, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+
+            window.resize(1600, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isContextInline())
+
+            window.set_tool_mode("select")
+            window._preview_active = True
+            window._update_magic_segment_controls()
+            window._update_preview_analysis_controls()
+            self.app.processEvents()
+            self.assertTrue(strip.isPreviewContextVisible())
+            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isCompactMode())
+
+            window.resize(1000, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+
+            window.resize(692, 900)
+            self.app.processEvents()
+            self.assertTrue(strip.isPreviewContextVisible())
+            self.assertTrue(strip.isContextInline() or strip.isContextStacked())
+        finally:
+            window.close()
+
+    def test_stacked_context_row_has_visible_height_when_window_is_narrow(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(692, 755)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextStacked())
+            self.assertTrue(strip._context_host.isVisible())
+            self.assertGreater(strip._context_host.height(), 0)
+            self.assertGreater(strip._context_host.geometry().top(), strip._top_row.geometry().bottom())
+            self.assertTrue(window._magic_controls_widget.isVisible())
+        finally:
+            window.close()
+
+    def test_context_prefers_stacking_before_compacting_primary_tools(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1000, 900)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextStacked())
+            self.assertFalse(strip.isCompactMode())
+        finally:
+            window.close()
+
+    def test_inline_context_keeps_full_width_without_clipping_buttons(self) -> None:
+        window = MainWindow()
+        try:
+            strip = window._measurement_tool_strip
+            self.assertIsInstance(strip, MeasurementToolStrip)
+            window.resize(1280, 900)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode("magic_segment")
+            self.app.processEvents()
+
+            self.assertTrue(strip.isContextInline())
+            self.assertEqual(strip._context_host.width(), window._magic_controls_widget.sizeHint().width())
         finally:
             window.close()
 
@@ -1292,16 +1543,82 @@ class CanvasAndExportTests(unittest.TestCase):
             self._load_document_into_window(window, document, image)
 
             with patch("fdm.ui.main_window.QInputDialog.getMultiLineText", return_value=("说明文本", True)):
-                window._on_canvas_text_placement_requested(document.id, Point(24, 32))
+                window._on_canvas_overlay_create_requested(
+                    document.id,
+                    {"kind": OverlayAnnotationKind.TEXT, "anchor_px": Point(24, 32)},
+                )
 
-            self.assertEqual(len(document.text_annotations), 1)
-            self.assertEqual(document.text_annotations[0].content, "说明文本")
-            self.assertEqual(document.selected_text_id, document.text_annotations[0].id)
+            self.assertEqual(len(document.overlay_annotations), 1)
+            self.assertEqual(document.overlay_annotations[0].content, "说明文本")
+            self.assertEqual(document.selected_overlay_id, document.overlay_annotations[0].id)
 
             window.delete_selected_measurement()
-            self.assertEqual(len(document.text_annotations), 0)
+            self.assertEqual(len(document.overlay_annotations), 0)
         finally:
             window.close()
+
+    def test_overlay_shape_create_and_edit_roundtrip_through_main_window(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/overlay_shape.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window._on_canvas_overlay_create_requested(
+                document.id,
+                {
+                    "kind": OverlayAnnotationKind.RECT,
+                    "start_px": Point(20, 24),
+                    "end_px": Point(90, 84),
+                },
+            )
+
+            overlay = document.overlay_annotations[0]
+            self.assertEqual(overlay.kind, OverlayAnnotationKind.RECT)
+            self.assertAlmostEqual(overlay.start_px.x, 20.0)
+
+            edited = overlay.clone(start_px=Point(26, 30), end_px=Point(110, 92))
+            window._on_canvas_overlay_edited(document.id, overlay.id, edited)
+
+            updated = document.get_overlay_annotation(overlay.id)
+            self.assertIsNotNone(updated)
+            self.assertAlmostEqual(updated.start_px.x, 26.0)
+            self.assertAlmostEqual(updated.end_px.x, 110.0)
+        finally:
+            window.close()
+
+    def test_overlay_rect_and_circle_snap_to_square_with_shift(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        created: list[object] = []
+        canvas.overlayCreateRequested.connect(lambda document_id, payload: created.append(payload))
+
+        canvas.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.RECT)
+        start = canvas.image_to_widget(Point(20, 20))
+        end = canvas.image_to_widget(Point(80, 50))
+        canvas.mousePressEvent(FakeMouseEvent(start, button=Qt.MouseButton.LeftButton))
+        canvas.mouseMoveEvent(FakeMouseEvent(end, button=Qt.MouseButton.LeftButton, modifiers=Qt.KeyboardModifier.ShiftModifier))
+        canvas.mouseReleaseEvent(FakeMouseEvent(end, button=Qt.MouseButton.LeftButton))
+
+        rect_payload = created[0]
+        self.assertEqual(rect_payload["kind"], OverlayAnnotationKind.RECT)
+        self.assertAlmostEqual(abs(rect_payload["end_px"].x - rect_payload["start_px"].x), abs(rect_payload["end_px"].y - rect_payload["start_px"].y))
+
+        created.clear()
+        canvas.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.CIRCLE)
+        circle_end = canvas.image_to_widget(Point(55, 95))
+        canvas.mousePressEvent(FakeMouseEvent(start, button=Qt.MouseButton.LeftButton))
+        canvas.mouseMoveEvent(FakeMouseEvent(circle_end, button=Qt.MouseButton.LeftButton, modifiers=Qt.KeyboardModifier.ShiftModifier))
+        canvas.mouseReleaseEvent(FakeMouseEvent(circle_end, button=Qt.MouseButton.LeftButton))
+
+        circle_payload = created[0]
+        self.assertEqual(circle_payload["kind"], OverlayAnnotationKind.CIRCLE)
+        self.assertAlmostEqual(abs(circle_payload["end_px"].x - circle_payload["start_px"].x), abs(circle_payload["end_px"].y - circle_payload["start_px"].y))
 
     def test_open_image_view_mode_actual_is_applied_to_new_canvas(self) -> None:
         window = MainWindow()
@@ -1456,6 +1773,7 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._scale_overlay_style_combo.setCurrentIndex(dialog._scale_overlay_style_combo.findData("ticks"))
             dialog._scale_overlay_length_spin.setValue(27.5)
             dialog._scale_overlay_font_size.setValue(24)
+            dialog._overlay_line_width.setValue(4.5)
             dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
             dialog._focus_stack_sharpen_slider.setValue(65)
             updated = dialog.app_settings()
@@ -1463,6 +1781,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(updated.scale_overlay_style, "ticks")
             self.assertAlmostEqual(updated.scale_overlay_length_value, 27.5)
             self.assertEqual(updated.scale_overlay_font_size, 24)
+            self.assertAlmostEqual(updated.overlay_line_width, 4.5)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
         finally:
@@ -1599,6 +1918,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._tabs.count(), 5)
             self.assertEqual(dialog._tabs.tabText(0), "测量标注")
             self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
+            self.assertEqual(dialog._tabs.tabText(2), "叠加标注")
             self.assertEqual(dialog._tabs.tabText(3), "面积识别")
             self.assertLessEqual(dialog.width(), 720)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
@@ -1623,6 +1943,33 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog.maximum(), 1)
             self.assertEqual(dialog.value(), 0)
             dialog.close()
+        finally:
+            window.close()
+
+    def test_main_window_persist_window_geometry_updates_app_settings(self) -> None:
+        window = MainWindow()
+        try:
+            window.setGeometry(120, 140, 980, 720)
+            window._persist_window_geometry()
+
+            self.assertTrue(window._app_settings.main_window_geometry)
+            self.assertFalse(window._app_settings.main_window_is_maximized)
+        finally:
+            window.close()
+
+    def test_main_window_restores_saved_geometry_on_startup(self) -> None:
+        probe = MainWindow()
+        try:
+            probe.setGeometry(150, 170, 920, 680)
+            geometry_token = bytes(probe.saveGeometry().toBase64()).decode("ascii")
+        finally:
+            probe.close()
+
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings(main_window_geometry=geometry_token)):
+            window = MainWindow()
+        try:
+            self.assertGreaterEqual(window.width(), 880)
+            self.assertGreaterEqual(window.height(), 640)
         finally:
             window.close()
 

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+import sys
 from typing import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import QApplication, QStyle
+
+from fdm.settings import bundle_resource_root
 
 try:
     import qtawesome as qta
@@ -41,6 +45,10 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "polygon_area": "mdi6.draw-polygon",
     "freehand_area": "mdi6.draw",
     "calibration": "mdi6.ruler",
+    "overlay_rect": "mdi6.rectangle-outline",
+    "overlay_circle": "mdi6.circle-outline",
+    "overlay_line": "mdi6.vector-line",
+    "overlay_arrow": "mdi6.arrow-top-right",
     "area_auto": "mdi6.image-filter-center-focus-strong",
 }
 
@@ -60,6 +68,26 @@ def themed_icon(name: str, *, color: str = "#F7F4EA", size: int = 18) -> QIcon:
     if standard is not None and QApplication.instance() is not None:
         return QApplication.style().standardIcon(standard)
     return QIcon()
+
+
+def application_icon() -> QIcon:
+    icon_candidates = [
+        bundle_resource_root() / "packaging" / "assets" / "icons" / "app-icon.ico",
+        bundle_resource_root() / "packaging" / "assets" / "icons" / "app-icon.svg",
+        Path(__file__).resolve().parents[3] / "packaging" / "assets" / "icons" / "app-icon.ico",
+        Path(__file__).resolve().parents[3] / "packaging" / "assets" / "icons" / "app-icon.svg",
+    ]
+    for path in icon_candidates:
+        if not path.exists():
+            continue
+        icon = QIcon(str(path))
+        if not icon.isNull():
+            return icon
+    if getattr(sys, "frozen", False):
+        executable_icon = QIcon(str(Path(sys.executable).resolve()))
+        if not executable_icon.isNull():
+            return executable_icon
+    return themed_icon("calibration", color="#F7F4EA", size=64)
 
 
 def _paint_icon(builder: Callable[[QPainter, QColor, QRectF], None], *, color: str, size: int) -> QIcon:
@@ -276,6 +304,33 @@ def _draw_apply(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.drawLine(QPointF(rect.left() + 8.0, rect.bottom() - 5.0), QPointF(rect.right() - 4.0, rect.top() + 5.0))
 
 
+def _draw_overlay_rect(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.6))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRect(rect.adjusted(3.0, 3.0, -3.0, -3.0))
+
+
+def _draw_overlay_circle(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.6))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawEllipse(rect.adjusted(3.0, 3.0, -3.0, -3.0))
+
+
+def _draw_overlay_line(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    _draw_manual(painter, color, rect)
+
+
+def _draw_overlay_arrow(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    start = QPointF(rect.left() + rect.width() * 0.18, rect.bottom() - rect.height() * 0.2)
+    end = QPointF(rect.right() - rect.width() * 0.2, rect.top() + rect.height() * 0.22)
+    painter.setPen(_pen(color, 1.8))
+    painter.drawLine(start, end)
+    left = QPointF(end.x() - rect.width() * 0.22, end.y() + rect.height() * 0.06)
+    right = QPointF(end.x() - rect.width() * 0.07, end.y() + rect.height() * 0.2)
+    painter.drawLine(end, left)
+    painter.drawLine(end, right)
+
+
 _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "select": _draw_select,
     "manual": _draw_manual,
@@ -298,6 +353,10 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "capture_device": _draw_images,
     "live_preview": _draw_apply,
     "capture_frame": _draw_images,
+    "overlay_rect": _draw_overlay_rect,
+    "overlay_circle": _draw_overlay_circle,
+    "overlay_line": _draw_overlay_line,
+    "overlay_arrow": _draw_overlay_arrow,
 }
 
 

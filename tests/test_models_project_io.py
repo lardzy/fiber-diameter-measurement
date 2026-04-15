@@ -10,7 +10,19 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id, project_assets_root
+from fdm.models import (
+    Calibration,
+    CalibrationPreset,
+    ImageDocument,
+    Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
+    ProjectGroupTemplate,
+    ProjectState,
+    TextAnnotation,
+    new_id,
+    project_assets_root,
+)
 from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
@@ -89,6 +101,71 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
+
+    def test_project_roundtrip_preserves_overlay_annotations(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/overlay_roundtrip.png",
+            image_size=(320, 240),
+        )
+        document.initialize_runtime_state()
+        document.add_overlay_annotation(
+            OverlayAnnotation(
+                id=new_id("overlay"),
+                image_id=document.id,
+                kind=OverlayAnnotationKind.RECT,
+                start_px=Point(10, 12),
+                end_px=Point(70, 82),
+            )
+        )
+        document.add_overlay_annotation(
+            OverlayAnnotation(
+                id=new_id("overlay"),
+                image_id=document.id,
+                kind=OverlayAnnotationKind.ARROW,
+                start_px=Point(40, 44),
+                end_px=Point(120, 84),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "overlay_demo.fdmproj"
+            ProjectIO.save(project, path)
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            loaded = ProjectIO.load(path)
+
+        self.assertIn("overlay_annotations", payload["documents"][0])
+        self.assertNotIn("text_annotations", payload["documents"][0])
+        loaded_document = loaded.documents[0]
+        self.assertEqual(
+            [annotation.kind for annotation in loaded_document.overlay_annotations],
+            [OverlayAnnotationKind.RECT, OverlayAnnotationKind.ARROW],
+        )
+
+    def test_image_document_loads_legacy_text_annotations_into_overlay_annotations(self) -> None:
+        payload = {
+            "id": new_id("image"),
+            "path": "/tmp/legacy_text.png",
+            "image_size": [200, 100],
+            "measurements": [],
+            "fiber_groups": [],
+            "text_annotations": [
+                {
+                    "id": "text_legacy",
+                    "image_id": "image_legacy",
+                    "content": "旧文字",
+                    "anchor_px": {"x": 18, "y": 22},
+                }
+            ],
+            "selected_text_id": "text_legacy",
+        }
+
+        document = ImageDocument.from_dict(payload)
+
+        self.assertEqual(len(document.overlay_annotations), 1)
+        self.assertEqual(document.overlay_annotations[0].kind, OverlayAnnotationKind.TEXT)
+        self.assertEqual(document.selected_overlay_id, "text_legacy")
 
     def test_project_roundtrip_preserves_project_asset_document_source_type(self) -> None:
         document = ImageDocument(
@@ -262,8 +339,12 @@ class ModelsProjectIOTests(unittest.TestCase):
             scale_overlay_font_size=21,
             text_font_size=26,
             text_color="#123456",
+            overlay_line_color="#FFAA00",
+            overlay_line_width=3.5,
             focus_stack_profile=FocusStackProfile.SHARP,
             focus_stack_sharpen_strength=60,
+            main_window_geometry="Zm9v",
+            main_window_is_maximized=True,
         )
 
         with TemporaryDirectory() as tmp_dir:
@@ -285,8 +366,12 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.scale_overlay_font_size, 21)
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+        self.assertEqual(loaded.overlay_line_color, "#FFAA00")
+        self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
+        self.assertEqual(loaded.main_window_geometry, "Zm9v")
+        self.assertTrue(loaded.main_window_is_maximized)
 
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
@@ -294,8 +379,12 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
         self.assertAlmostEqual(settings.scale_overlay_length_value, 100.0)
         self.assertEqual(settings.scale_overlay_font_size, 18)
+        self.assertEqual(settings.overlay_line_color, "#F7F4EA")
+        self.assertAlmostEqual(settings.overlay_line_width, 2.5)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
+        self.assertEqual(settings.main_window_geometry, "")
+        self.assertFalse(settings.main_window_is_maximized)
 
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(
@@ -303,6 +392,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 "scale_overlay_style": "unknown",
                 "scale_overlay_length_value": 0,
                 "scale_overlay_font_size": 999,
+                "overlay_line_width": 1000,
                 "focus_stack_profile": "unknown",
                 "focus_stack_sharpen_strength": 1000,
             }
@@ -311,6 +401,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
         self.assertAlmostEqual(settings.scale_overlay_length_value, 0.01)
         self.assertEqual(settings.scale_overlay_font_size, 96)
+        self.assertAlmostEqual(settings.overlay_line_width, 24.0)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
 
