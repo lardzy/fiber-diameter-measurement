@@ -777,6 +777,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(widget.labelText(), "1 棉")
             self.assertEqual(widget.countText(), "1/1")
             self.assertIs(window.group_list.parentWidget().parentWidget(), window._left_panel_splitter)
+            margins = window.group_list.viewportMargins()
+            self.assertGreaterEqual(margins.left(), 2)
+            self.assertGreaterEqual(margins.top(), 2)
         finally:
             window.close()
 
@@ -959,6 +962,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
             self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
+            self.assertEqual(window.measurement_table.columnWidth(window.TABLE_COL_GROUP), 150)
         finally:
             window.close()
 

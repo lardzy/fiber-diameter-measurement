@@ -875,6 +875,7 @@ class MainWindow(QMainWindow):
         self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.group_list.setSpacing(6)
         self.group_list.setFrameShape(QFrame.Shape.NoFrame)
+        self.group_list.setViewportMargins(2, 2, 2, 2)
         self.group_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self.group_list.setStyleSheet(
             """
@@ -1039,7 +1040,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 180)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 100)
         self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)

@@ -256,7 +256,9 @@ class FiberGroupListItemWidget(QWidget):
         del event
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = self.rect().adjusted(0, 0, -1, -1)
+        # Keep the rounded border off the widget edge so the left/top strokes
+        # do not get clipped by the list viewport on dense layouts.
+        rect = self.rect().adjusted(1, 1, -2, -2)
         background, border, text_color, badge_background, badge_border, badge_text = self._resolved_colors()
 
         painter.setPen(QPen(border, 1))
