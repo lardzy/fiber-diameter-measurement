@@ -270,7 +270,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("纤维直径测量")
+        self.setWindowTitle("显微测量工作台")
         self.setWindowIcon(application_icon())
 
         self.project = ProjectState.empty()
