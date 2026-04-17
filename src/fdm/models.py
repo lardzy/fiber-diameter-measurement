@@ -33,8 +33,6 @@ def project_capture_root(project_path: str | Path) -> Path:
 def format_measurement_label_value(value: float, unit: str, decimals: int) -> str:
     decimals = max(0, min(8, int(decimals)))
     formatted = f"{value:.{decimals}f}"
-    if decimals > 0:
-        formatted = formatted.rstrip("0").rstrip(".")
     if not formatted:
         formatted = "0"
     return f"{formatted} {unit}"

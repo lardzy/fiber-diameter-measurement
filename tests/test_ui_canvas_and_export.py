@@ -42,6 +42,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
+    from fdm.ui.rendering import measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
@@ -54,6 +55,7 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    measurement_display_text_with_settings = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
@@ -175,6 +177,13 @@ class CanvasAndExportTests(unittest.TestCase):
             ImageLoadRequest(path=document.path, document=document),
             image,
         )
+
+    def _group_titles_in_tab(self, dialog: SettingsDialog, index: int) -> list[str]:
+        tab = dialog._tabs.widget(index)
+        self.assertIsInstance(tab, QScrollArea)
+        content = tab.widget()
+        self.assertIsNotNone(content)
+        return [group.title() for group in content.findChildren(QGroupBox) if group.title()]
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
         self.assertEqual(left.size(), right.size())
@@ -2109,6 +2118,20 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_settings_dialog_focus_stack_slider_ignores_wheel(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            slider = dialog._focus_stack_sharpen_slider
+            current_value = slider.value()
+            event = FakeIgnoredWheelEvent()
+
+            slider.wheelEvent(event)
+
+            self.assertEqual(slider.value(), current_value)
+            self.assertTrue(event.ignored)
+        finally:
+            dialog.close()
+
     def test_combined_overlay_export_renders_measurements_and_scale_together(self) -> None:
         window, document = self._create_main_window_fixture()
         try:
@@ -2176,19 +2199,67 @@ class CanvasAndExportTests(unittest.TestCase):
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
-            self.assertEqual(dialog._tabs.count(), 5)
+            self.assertEqual(dialog._tabs.count(), 6)
             self.assertEqual(dialog._tabs.tabText(0), "测量标注")
             self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
-            self.assertEqual(dialog._tabs.tabText(2), "叠加标注")
-            self.assertEqual(dialog._tabs.tabText(3), "面积识别")
+            self.assertEqual(dialog._tabs.tabText(2), "图像处理")
+            self.assertEqual(dialog._tabs.tabText(3), "叠加标注")
+            self.assertEqual(dialog._tabs.tabText(4), "面积识别")
+            self.assertEqual(dialog._tabs.tabText(5), "当前图片")
             self.assertLessEqual(dialog.width(), 720)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
             self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
+            self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "测量线与端点"])
+            self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
+            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数"])
         finally:
             dialog.close()
+
+    def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/current_image_settings.png",
+            image_size=(240, 160),
+        )
+        document.initialize_runtime_state()
+
+        dialog = SettingsDialog(AppSettings(), document=document)
+        try:
+            self.assertEqual(self._group_titles_in_tab(dialog, 5), ["类别颜色", "比例尺锚点"])
+        finally:
+            dialog.close()
+
+    def test_measurement_display_text_preserves_trailing_zeroes(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/measurement_label_text.png",
+            image_size=(100, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=2.0,
+            unit="um",
+            source_label="demo",
+        )
+
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(0, 0), Point(20.0, 0)),
+        )
+        measurement.recalculate(document.calibration)
+        settings = AppSettings(measurement_label_decimals=4)
+        self.assertEqual(measurement_display_text_with_settings(measurement, document, settings), "10.0000 um")
+
+        measurement.line_px = Line(Point(0, 0), Point(22.246, 0))
+        measurement.recalculate(document.calibration)
+        self.assertEqual(measurement_display_text_with_settings(measurement, document, settings), "11.1230 um")
 
     def test_main_window_progress_dialog_uses_standard_qprogressdialog_with_width(self) -> None:
         window = MainWindow()

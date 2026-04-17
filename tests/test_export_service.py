@@ -170,6 +170,11 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(format_measurement_label_value(measurement.diameter_unit or 0.0, "um", settings.measurement_label_decimals), "5.12 um")
         self.assertAlmostEqual(measurement.diameter_unit or 0.0, 5.123)
 
+    def test_measurement_label_text_preserves_fixed_decimal_places(self) -> None:
+        self.assertEqual(format_measurement_label_value(10.0, "um", 4), "10.0000 um")
+        self.assertEqual(format_measurement_label_value(11.123, "um", 4), "11.1230 um")
+        self.assertEqual(format_measurement_label_value(10.0, "um", 0), "10 um")
+
 
 if __name__ == "__main__":
     unittest.main()
