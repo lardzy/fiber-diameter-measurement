@@ -1001,11 +1001,16 @@ class DocumentCanvas(QWidget):
         measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
         if measurement is None or measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
             return None
+        nearest_vertex: tuple[int, float] | None = None
         for index, point in enumerate(measurement.polygon_px):
-            if distance(point, image_point) <= self._selected_endpoint_tolerance():
-                return measurement.id, "vertex", index
+            vertex_distance = distance(point, image_point)
+            if vertex_distance <= self._selected_endpoint_tolerance():
+                if nearest_vertex is None or vertex_distance < nearest_vertex[1]:
+                    nearest_vertex = (index, vertex_distance)
+        if nearest_vertex is not None:
+            return measurement.id, "vertex", nearest_vertex[0]
         center = measurement.polygon_center()
-        if distance(center, image_point) <= max(5.0, 8.0 / max(self._zoom, 0.001)):
+        if distance(center, image_point) <= max(3.0, 5.0 / max(self._zoom, 0.001)):
             return measurement.id, "center", None
         return None
 

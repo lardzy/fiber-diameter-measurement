@@ -99,7 +99,13 @@ from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
-from fdm.ui.widgets import FlowLayout, MeasurementGroupComboBox, MeasurementToolStrip, OverlayToolSplitButton
+from fdm.ui.widgets import (
+    FiberGroupListItemWidget,
+    FlowLayout,
+    MeasurementGroupComboBox,
+    MeasurementToolStrip,
+    OverlayToolSplitButton,
+)
 
 try:
     from fdm.services.capture import CaptureDevice, CaptureSessionManager
@@ -264,7 +270,7 @@ class MainWindow(QMainWindow):
 
     def __init__(self) -> None:
         super().__init__()
-        self.setWindowTitle("纤维直径测量")
+        self.setWindowTitle("显微测量工作台")
         self.setWindowIcon(application_icon())
 
         self.project = ProjectState.empty()
@@ -288,6 +294,10 @@ class MainWindow(QMainWindow):
         self._overlay_tool_button: OverlayToolSplitButton | None = None
         self._overlay_tool_menu: QMenu | None = None
         self._overlay_subtool_actions: dict[str, QAction] = {}
+        self._left_panel: QWidget | None = None
+        self._left_panel_splitter: QSplitter | None = None
+        self._right_panel: QWidget | None = None
+        self._group_header_labels: list[QLabel] = []
         self._load_thread: QThread | None = None
         self._load_worker: ImageBatchLoaderWorker | None = None
         self._load_progress_dialog: QProgressDialog | None = None
@@ -314,6 +324,9 @@ class MainWindow(QMainWindow):
         self._delete_preset_button: QPushButton | None = None
         self._import_cu_preset_button: QPushButton | None = None
         self._apply_preset_button: QPushButton | None = None
+        self._add_group_button: QPushButton | None = None
+        self._rename_group_button: QPushButton | None = None
+        self.delete_group_button: QPushButton | None = None
         self._center_stack: QStackedWidget | None = None
         self._preview_page: QWidget | None = None
         self._preview_display_stack: QStackedWidget | None = None
@@ -323,6 +336,7 @@ class MainWindow(QMainWindow):
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
+        self._calibration_label_scroll: QScrollArea | None = None
         self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -398,7 +412,7 @@ class MainWindow(QMainWindow):
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
-        splitter.setSizes([220, 930, 360])
+        splitter.setSizes([280, 870, 360])
         layout.addWidget(splitter, 1)
         self.setCentralWidget(container)
 
@@ -820,14 +834,97 @@ class MainWindow(QMainWindow):
 
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
-        container.setMinimumWidth(180)
+        self._left_panel = container
+        container.setMinimumWidth(280)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
-        layout.addWidget(QLabel("已打开图片"))
+        layout.setSpacing(8)
 
+        image_box = QGroupBox("已打开图片")
+        image_layout = QVBoxLayout(image_box)
         self.image_list = QListWidget()
         self.image_list.currentRowChanged.connect(self._on_image_list_changed)
-        layout.addWidget(self.image_list)
+        image_layout.addWidget(self.image_list)
+
+        group_box = QGroupBox("纤维类别")
+        group_layout = QVBoxLayout(group_box)
+        header_row = QHBoxLayout()
+        header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
+        header_row.setSpacing(0)
+        color_header = QLabel("颜色")
+        color_header.setFixedWidth(36)
+        name_header = QLabel("类别")
+        count_header = QLabel("当前/总数")
+        count_header.setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
+        count_header.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._group_header_labels = [color_header, name_header, count_header]
+        for label in self._group_header_labels:
+            label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        header_row.addWidget(color_header)
+        header_row.addSpacing(14)
+        header_row.addWidget(name_header, 1)
+        header_row.addWidget(count_header)
+        group_layout.addLayout(header_row)
+        self.group_list = QListWidget()
+        self.group_list.setViewMode(QListView.ViewMode.ListMode)
+        self.group_list.setFlow(QListView.Flow.TopToBottom)
+        self.group_list.setWrapping(False)
+        self.group_list.setResizeMode(QListView.ResizeMode.Adjust)
+        self.group_list.setMovement(QListView.Movement.Static)
+        self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.group_list.setSpacing(6)
+        self.group_list.setFrameShape(QFrame.Shape.NoFrame)
+        self.group_list.setViewportMargins(2, 2, 2, 2)
+        self.group_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.group_list.setStyleSheet(
+            """
+            QListWidget {
+                background: transparent;
+                border: none;
+            }
+            QListWidget::item {
+                border: none;
+                padding: 0px;
+                margin: 0px;
+            }
+            QListWidget::item:selected {
+                background: transparent;
+                border: none;
+                outline: 0;
+            }
+            """
+        )
+        self.group_list.itemSelectionChanged.connect(self._on_group_selection_changed)
+        group_layout.addWidget(self.group_list, 1)
+        group_button_row = FlowLayout(h_spacing=8, v_spacing=8)
+        self._add_group_button = QPushButton("新增类别")
+        self._add_group_button.setIcon(themed_icon("add", color="#7BD389"))
+        self._add_group_button.clicked.connect(self.add_fiber_group)
+        self._add_group_button.setMinimumWidth(104)
+        self._rename_group_button = QPushButton("重命名")
+        self._rename_group_button.setIcon(themed_icon("rename", color="#D7E3FC"))
+        self._rename_group_button.clicked.connect(self.rename_active_group)
+        self._rename_group_button.setMinimumWidth(92)
+        self.delete_group_button = QPushButton("删除")
+        self.delete_group_button.setIcon(themed_icon("delete", color="#F28482"))
+        self.delete_group_button.clicked.connect(self.delete_active_group)
+        self.delete_group_button.setMinimumWidth(80)
+        group_button_row.addWidget(self._add_group_button)
+        group_button_row.addWidget(self._rename_group_button)
+        group_button_row.addWidget(self.delete_group_button)
+        group_layout.addLayout(group_button_row)
+
+        splitter = QSplitter(Qt.Orientation.Vertical)
+        self._left_panel_splitter = splitter
+        splitter.setChildrenCollapsible(False)
+        splitter.addWidget(image_box)
+        splitter.addWidget(group_box)
+        splitter.setStretchFactor(0, 1)
+        splitter.setStretchFactor(1, 0)
+        splitter.setSizes([280, 420])
+        layout.addWidget(splitter, 1)
+        self._update_group_list_header_styles()
         return container
 
     def _build_center_panel(self) -> QWidget:
@@ -872,6 +969,7 @@ class MainWindow(QMainWindow):
 
     def _build_right_panel(self) -> QWidget:
         container = QWidget()
+        self._right_panel = container
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
 
@@ -895,8 +993,22 @@ class MainWindow(QMainWindow):
         self._preview_notice_label.hide()
         calibration_layout.addWidget(self._preview_notice_label)
         self.calibration_label = QLabel("当前图片未标定")
-        calibration_layout.addWidget(self.calibration_label)
+        self.calibration_label.setWordWrap(True)
+        self.calibration_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._calibration_label_scroll = QScrollArea()
+        self._calibration_label_scroll.setWidget(self.calibration_label)
+        self._calibration_label_scroll.setWidgetResizable(True)
+        self._calibration_label_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._calibration_label_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._calibration_label_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._calibration_label_scroll.setMinimumHeight(88)
+        self._calibration_label_scroll.setMaximumHeight(118)
+        calibration_layout.addWidget(self._calibration_label_scroll)
         self.preset_combo = QComboBox()
+        self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.preset_combo.setMinimumContentsLength(10)
+        self.preset_combo.currentTextChanged.connect(self._update_preset_combo_tooltip)
         calibration_layout.addWidget(self.preset_combo)
         preset_row = QHBoxLayout()
         self._add_preset_button = QPushButton("新增预设")
@@ -922,65 +1034,13 @@ class MainWindow(QMainWindow):
         calibration_layout.addWidget(self._apply_preset_button)
         top_layout.addWidget(calibration_box)
 
-        group_box = QGroupBox("纤维类别")
-        group_layout = QVBoxLayout(group_box)
-        self.group_list = QListWidget()
-        self.group_list.setViewMode(QListView.ViewMode.ListMode)
-        self.group_list.setFlow(QListView.Flow.LeftToRight)
-        self.group_list.setWrapping(True)
-        self.group_list.setResizeMode(QListView.ResizeMode.Adjust)
-        self.group_list.setMovement(QListView.Movement.Static)
-        self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
-        self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.group_list.setIconSize(QSize(14, 14))
-        self.group_list.setSpacing(6)
-        self.group_list.setMaximumHeight(140)
-        self.group_list.setStyleSheet(
-            """
-            QListWidget {
-                background: transparent;
-                border: none;
-            }
-            QListWidget::item {
-                background: #F6F1E8;
-                color: #182430;
-                border: 1px solid #D7CEC0;
-                border-radius: 10px;
-                padding: 6px 10px;
-            }
-            QListWidget::item:selected {
-                background: #FFFDF8;
-                color: #182430;
-                border: 2px solid #12343B;
-                outline: 0;
-            }
-            """
-        )
-        self.group_list.itemSelectionChanged.connect(self._on_group_selection_changed)
-        group_layout.addWidget(self.group_list)
-        group_button_row = QHBoxLayout()
-        add_group_button = QPushButton("新增类别")
-        add_group_button.setIcon(themed_icon("add", color="#7BD389"))
-        add_group_button.clicked.connect(self.add_fiber_group)
-        rename_group_button = QPushButton("重命名")
-        rename_group_button.setIcon(themed_icon("rename", color="#D7E3FC"))
-        rename_group_button.clicked.connect(self.rename_active_group)
-        self.delete_group_button = QPushButton("删除")
-        self.delete_group_button.setIcon(themed_icon("delete", color="#F28482"))
-        self.delete_group_button.clicked.connect(self.delete_active_group)
-        group_button_row.addWidget(add_group_button)
-        group_button_row.addWidget(rename_group_button)
-        group_button_row.addWidget(self.delete_group_button)
-        group_layout.addLayout(group_button_row)
-        top_layout.addWidget(group_box)
-
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
         self.measurement_table = QTableWidget(0, 8)
         self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 180)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 100)
         self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)
@@ -1004,7 +1064,7 @@ class MainWindow(QMainWindow):
         right_splitter.addWidget(measurement_box)
         right_splitter.setStretchFactor(0, 0)
         right_splitter.setStretchFactor(1, 1)
-        right_splitter.setSizes([430, 360])
+        right_splitter.setSizes([310, 470])
         layout.addWidget(right_splitter)
 
         return container
@@ -1103,6 +1163,13 @@ class MainWindow(QMainWindow):
             return
         self._version_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 0 4px;")
 
+    def _update_group_list_header_styles(self) -> None:
+        if not self._group_header_labels:
+            return
+        muted = self._status_color("muted")
+        for label in self._group_header_labels:
+            label.setStyleSheet(f"color: {muted}; padding: 0 0 2px 0;")
+
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         color_key = {
             "uncalibrated": "danger",
@@ -1110,7 +1177,11 @@ class MainWindow(QMainWindow):
             "preview": "muted",
         }.get(status, "default")
         self.calibration_label.setText(text)
+        self.calibration_label.setToolTip(text)
         self.calibration_label.setStyleSheet(f"color: {self._status_color(color_key)};")
+
+    def _update_preset_combo_tooltip(self, text: str) -> None:
+        self.preset_combo.setToolTip(text)
 
     def _update_image_resolution_label(self, document: ImageDocument | None = None) -> None:
         if self._image_resolution_label is None:
@@ -1164,6 +1235,7 @@ class MainWindow(QMainWindow):
         if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
+            self._update_group_list_header_styles()
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -3364,6 +3436,7 @@ class MainWindow(QMainWindow):
             self.preset_combo.setCurrentIndex(target_index)
         elif self.preset_combo.count() > 0:
             self.preset_combo.setCurrentIndex(0)
+        self._update_preset_combo_tooltip(self.preset_combo.currentText())
         has_preset = self.preset_combo.count() > 0
         if self._edit_preset_button is not None:
             self._edit_preset_button.setEnabled(has_preset)
@@ -3377,29 +3450,98 @@ class MainWindow(QMainWindow):
         self.group_list.clear()
         if document is not None:
             if document.should_show_uncategorized_entry():
-                ungrouped_item = QListWidgetItem(self._group_chip_label(UNCATEGORIZED_LABEL, selected=document.active_group_id is None))
-                ungrouped_item.setData(Qt.ItemDataRole.UserRole, None)
-                ungrouped_item.setIcon(self._color_icon(self._app_settings.default_measurement_color, size=14))
-                ungrouped_item.setSizeHint(QSize(136, 36))
-                font = ungrouped_item.font()
-                font.setBold(document.active_group_id is None)
-                ungrouped_item.setFont(font)
-                self.group_list.addItem(ungrouped_item)
-                if document.active_group_id is None:
-                    ungrouped_item.setSelected(True)
+                self._add_group_list_item(
+                    label=UNCATEGORIZED_LABEL,
+                    color=self._app_settings.default_measurement_color,
+                    current_count=document.uncategorized_measurement_count(),
+                    project_count=self._project_uncategorized_measurement_count(document),
+                    group_id=None,
+                    selected=document.active_group_id is None,
+                )
             for group in document.sorted_groups():
-                selected = document.active_group_id == group.id
-                item = QListWidgetItem(self._group_chip_label(group.display_name(), selected=selected))
-                item.setData(Qt.ItemDataRole.UserRole, group.id)
-                item.setIcon(self._color_icon(group.color, size=14))
-                item.setSizeHint(QSize(132, 36))
-                font = item.font()
-                font.setBold(selected)
-                item.setFont(font)
-                self.group_list.addItem(item)
-                if selected:
-                    item.setSelected(True)
+                self._add_group_list_item(
+                    label=group.display_name(),
+                    color=group.color,
+                    current_count=len(group.measurement_ids),
+                    project_count=self._project_measurement_count_for_group_label(group.label, document),
+                    group_id=group.id,
+                    selected=document.active_group_id == group.id,
+                )
         self._group_list_rebuilding = False
+
+    def _add_group_list_item(
+        self,
+        *,
+        label: str,
+        color: str,
+        current_count: int,
+        project_count: int,
+        group_id: str | None,
+        selected: bool,
+    ) -> None:
+        item = QListWidgetItem()
+        item.setData(Qt.ItemDataRole.UserRole, group_id)
+        item.setData(Qt.ItemDataRole.UserRole + 1, current_count)
+        item.setData(Qt.ItemDataRole.UserRole + 3, project_count)
+        item.setData(Qt.ItemDataRole.UserRole + 2, label)
+        item.setSizeHint(QSize(0, FiberGroupListItemWidget.HEIGHT))
+        self.group_list.addItem(item)
+        widget = FiberGroupListItemWidget(
+            label,
+            current_count,
+            project_count,
+            color,
+            selected=selected,
+            parent=self.group_list,
+        )
+        self.group_list.setItemWidget(item, widget)
+        if selected:
+            item.setSelected(True)
+
+    def _sync_group_list_item_widgets(self) -> None:
+        for index in range(self.group_list.count()):
+            item = self.group_list.item(index)
+            widget = self.group_list.itemWidget(item)
+            if isinstance(widget, FiberGroupListItemWidget):
+                widget.setSelected(item.isSelected())
+
+    def _scroll_active_group_item_into_view(self) -> None:
+        target_item = None
+        selected_items = self.group_list.selectedItems()
+        if selected_items:
+            target_item = selected_items[0]
+        elif self.group_list.count() > 0:
+            document = self.current_document()
+            active_group_id = document.active_group_id if document is not None else None
+            for index in range(self.group_list.count()):
+                item = self.group_list.item(index)
+                if item.data(Qt.ItemDataRole.UserRole) == active_group_id:
+                    target_item = item
+                    break
+        if target_item is not None:
+            self.group_list.scrollToItem(target_item, QAbstractItemView.ScrollHint.PositionAtCenter)
+
+    def _documents_for_group_counts(self, current_document: ImageDocument | None) -> list[ImageDocument]:
+        documents = list(self.project.documents)
+        if current_document is not None and all(document.id != current_document.id for document in documents):
+            documents.append(current_document)
+        return documents
+
+    def _project_measurement_count_for_group_label(self, label: str, current_document: ImageDocument | None = None) -> int:
+        token = normalize_group_label(label)
+        total = 0
+        for document in self._documents_for_group_counts(current_document):
+            if token:
+                for group in document.groups_by_label(token):
+                    total += len(group.measurement_ids)
+            else:
+                for group in document.sorted_groups():
+                    if not normalize_group_label(group.label):
+                        total += len(group.measurement_ids)
+        return total
+
+    def _project_uncategorized_measurement_count(self, current_document: ImageDocument | None = None) -> int:
+        return sum(document.uncategorized_measurement_count() for document in self._documents_for_group_counts(current_document))
 
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
@@ -3565,6 +3707,7 @@ class MainWindow(QMainWindow):
         selected_items = self.group_list.selectedItems()
         if not selected_items:
             document.set_active_group(None)
+            self._sync_group_list_item_widgets()
             self._update_action_states()
             return
         document.set_active_group(selected_items[0].data(Qt.ItemDataRole.UserRole))
@@ -3597,6 +3740,7 @@ class MainWindow(QMainWindow):
             return False
         document.set_active_group(group.id)
         self._populate_group_list(document)
+        self._scroll_active_group_item_into_view()
         self._update_action_states()
         self._focus_current_canvas()
         return True
@@ -3631,14 +3775,20 @@ class MainWindow(QMainWindow):
                 or document.should_show_uncategorized_entry()
             )
         )
+        has_named_active_group = bool(document and document.get_group(document.active_group_id) is not None)
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
         self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
         self.add_group_action.setEnabled(has_document and not preview_active)
-        self.rename_group_action.setEnabled(has_document and not preview_active and document.get_group(document.active_group_id) is not None if document else False)
+        self.rename_group_action.setEnabled(has_named_active_group and not preview_active)
         self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
-        self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
+        if self._add_group_button is not None:
+            self._add_group_button.setEnabled(has_document and not preview_active)
+        if self._rename_group_button is not None:
+            self._rename_group_button.setEnabled(has_named_active_group and not preview_active)
+        if self.delete_group_button is not None:
+            self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
         has_preset = bool(self._calibration_presets())
         if self._add_preset_button is not None:
             self._add_preset_button.setEnabled(True)
@@ -3996,9 +4146,6 @@ class MainWindow(QMainWindow):
                 continue
             if canvas.has_magic_segment_session():
                 canvas.clear_magic_segment_session()
-
-    def _group_chip_label(self, text: str, *, selected: bool) -> str:
-        return f"✓ {text}" if selected else text
 
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
         metrics = overlay_metrics(width, height, render_mode)

@@ -172,6 +172,131 @@ class FlowLayout(QLayout):
         return max(0, used_height)
 
 
+class FiberGroupListItemWidget(QWidget):
+    HEIGHT = 38
+    DOT_SIZE = 10
+    COUNT_COLUMN_WIDTH = 76
+    RIGHT_MARGIN = 12
+
+    def __init__(
+        self,
+        label: str,
+        current_count: int,
+        project_count: int,
+        color: str,
+        *,
+        selected: bool = False,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self._label = label
+        self._current_count = max(0, int(current_count))
+        self._project_count = max(0, int(project_count))
+        self._color = QColor(color)
+        self._selected = bool(selected)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFixedHeight(self.HEIGHT)
+
+    def setSelected(self, selected: bool) -> None:
+        selected = bool(selected)
+        if self._selected == selected:
+            return
+        self._selected = selected
+        self.update()
+
+    def labelText(self) -> str:
+        return self._label
+
+    def currentCountValue(self) -> int:
+        return self._current_count
+
+    def projectCountValue(self) -> int:
+        return self._project_count
+
+    def countText(self) -> str:
+        return f"{self._current_count}/{self._project_count}"
+
+    def sizeHint(self) -> QSize:
+        return QSize(256, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(188, self.HEIGHT)
+
+    def _resolved_colors(self) -> tuple[QColor, QColor, QColor, QColor, QColor, QColor]:
+        dark_palette = _is_dark_palette(self)
+        if self._selected:
+            return (
+                QColor("#12343B"),
+                QColor("#00A6A6"),
+                QColor("#F4FBFF"),
+                QColor(255, 255, 255, 34),
+                QColor(255, 255, 255, 48),
+                QColor("#F4FBFF"),
+            )
+        if dark_palette:
+            return (
+                QColor(255, 255, 255, 20),
+                QColor(255, 255, 255, 34),
+                QColor("#E7ECF2"),
+                QColor(255, 255, 255, 18),
+                QColor(255, 255, 255, 28),
+                QColor("#D9E2EC"),
+            )
+        return (
+            QColor(15, 23, 42, 10),
+            QColor(15, 23, 42, 34),
+            QColor("#182430"),
+            QColor(15, 23, 42, 12),
+            QColor(15, 23, 42, 20),
+            QColor("#223142"),
+        )
+
+    def paintEvent(self, event) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        # Keep the rounded border off the widget edge so the left/top strokes
+        # do not get clipped by the list viewport on dense layouts.
+        rect = self.rect().adjusted(1, 1, -2, -2)
+        background, border, text_color, badge_background, badge_border, badge_text = self._resolved_colors()
+
+        painter.setPen(QPen(border, 1))
+        painter.setBrush(background)
+        painter.drawRoundedRect(rect, 10, 10)
+
+        dot_x = rect.x() + 14
+        dot_y = rect.y() + (rect.height() - self.DOT_SIZE) // 2
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self._color if self._color.isValid() else QColor("#7BD389"))
+        painter.drawEllipse(QRectF(dot_x, dot_y, self.DOT_SIZE, self.DOT_SIZE))
+
+        badge_font = QFont(self.font())
+        badge_font.setPointSizeF(max(8.0, badge_font.pointSizeF() - 0.25))
+        badge_rect = QRect(
+            rect.right() - self.RIGHT_MARGIN - self.COUNT_COLUMN_WIDTH,
+            rect.y() + 8,
+            self.COUNT_COLUMN_WIDTH,
+            rect.height() - 16,
+        )
+        painter.setPen(QPen(badge_border, 1))
+        painter.setBrush(badge_background)
+        painter.drawRoundedRect(QRectF(badge_rect), badge_rect.height() / 2, badge_rect.height() / 2)
+
+        text_font = QFont(self.font())
+        text_font.setWeight(QFont.Weight.DemiBold if self._selected else QFont.Weight.Medium)
+        painter.setFont(text_font)
+        painter.setPen(text_color)
+        text_left = dot_x + self.DOT_SIZE + 14
+        text_rect = QRect(text_left, rect.y(), max(0, badge_rect.left() - text_left - 10), rect.height())
+        text = QFontMetrics(text_font).elidedText(self._label, Qt.TextElideMode.ElideRight, text_rect.width())
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, text)
+
+        painter.setFont(badge_font)
+        painter.setPen(badge_text)
+        painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, self.countText())
+
+
 class ToolStripActionButton(QToolButton):
     HEIGHT = 40
     COMPACT_WIDTH = 40

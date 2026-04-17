@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt
     from PySide6.QtGui import QImage, QColor, QPalette
-    from PySide6.QtWidgets import QApplication, QGroupBox, QListView, QMessageBox, QScrollArea, QSplitter
+    from PySide6.QtWidgets import QApplication, QComboBox, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -35,7 +35,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.widgets import MeasurementToolStrip, OverlayToolSplitButton
+    from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
@@ -47,6 +47,7 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
 
@@ -587,6 +588,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(window.calibration_label.text(), "当前图片未标定")
         self.assertIn(window._status_color("danger"), window.calibration_label.styleSheet())
+        self.assertIs(window._calibration_label_scroll.widget(), window.calibration_label)
 
     def test_calibration_label_uses_blue_for_calibrated_document(self) -> None:
         window = MainWindow()
@@ -612,6 +614,62 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIn("20x", window.calibration_label.text())
         self.assertIn(window._status_color("info"), window.calibration_label.styleSheet())
+
+    def test_calibration_label_is_scrollable_and_does_not_require_expanding_width_for_long_sidecar_name(self) -> None:
+        window = MainWindow()
+        image = QImage(120, 80, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/calibrated_sidecar_label.png",
+            image_size=(120, 80),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="image_scale",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="20x",
+        )
+        document.sidecar_path = "/tmp/this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json"
+
+        window._add_loaded_document(
+            ImageLoadRequest(path=document.path, document=document),
+            image,
+        )
+        document.sidecar_path = "/tmp/this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json"
+        window._update_calibration_panel(document)
+
+        self.assertTrue(window.calibration_label.wordWrap())
+        self.assertEqual(window.calibration_label.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
+        self.assertIn("侧车:", window.calibration_label.text())
+        self.assertIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window.calibration_label.toolTip())
+        self.assertIsNotNone(window._calibration_label_scroll)
+        self.assertEqual(window._calibration_label_scroll.verticalScrollBarPolicy(), Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self.assertEqual(window._calibration_label_scroll.maximumHeight(), 118)
+
+    def test_preset_combo_uses_eliding_friendly_size_policy_for_long_names(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(
+                    name="激光共聚焦超长超长超长预设名称用于验证不会撑宽右侧边栏",
+                    pixels_per_unit=7.5,
+                    unit="um",
+                )
+            ]
+
+            window._refresh_preset_combo()
+
+            self.assertEqual(
+                window.preset_combo.sizeAdjustPolicy(),
+                QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon,
+            )
+            self.assertEqual(window.preset_combo.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
+            self.assertEqual(window.preset_combo.minimumContentsLength(), 10)
+            self.assertIn("激光共聚焦超长超长超长预设名称", window.preset_combo.toolTip())
+        finally:
+            window.close()
 
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
         window = MainWindow()
@@ -681,7 +739,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_group_list_keeps_color_icon_and_hides_uncategorized_after_first_group(self) -> None:
+    def test_group_list_moves_to_left_panel_and_shows_count_badges(self) -> None:
         window = MainWindow()
         try:
             document = ImageDocument(
@@ -694,20 +752,191 @@ class CanvasAndExportTests(unittest.TestCase):
             window._populate_group_list(document)
             self.assertEqual(window.group_list.viewMode(), QListView.ViewMode.ListMode)
             self.assertEqual(window.group_list.count(), 1)
-            self.assertFalse(window.group_list.item(0).icon().isNull())
+            ungrouped_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(ungrouped_widget, FiberGroupListItemWidget)
+            self.assertEqual(ungrouped_widget.labelText(), "未分类")
+            self.assertEqual(ungrouped_widget.countText(), "0/0")
 
             group = document.create_group(color="#1F7A8C", label="棉")
             document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
             window._populate_group_list(document)
 
             self.assertEqual(window.group_list.count(), 1)
             item = window.group_list.item(0)
-            self.assertIn("棉", item.text())
-            self.assertFalse(item.icon().isNull())
-            self.assertIn("background: #FFFDF8", window.group_list.styleSheet())
-            self.assertIn("color: #182430", window.group_list.styleSheet())
+            widget = window.group_list.itemWidget(item)
+            self.assertIsInstance(widget, FiberGroupListItemWidget)
+            self.assertEqual(widget.labelText(), "1 棉")
+            self.assertEqual(widget.countText(), "1/1")
+            self.assertIs(window.group_list.parentWidget().parentWidget(), window._left_panel_splitter)
+            margins = window.group_list.viewportMargins()
+            self.assertGreaterEqual(margins.left(), 2)
+            self.assertGreaterEqual(margins.top(), 2)
         finally:
             window.close()
+
+    def test_group_list_counts_update_for_grouped_and_uncategorized_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_counts.png",
+                image_size=(320, 240),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(90, 10)),
+                )
+            )
+            document.set_active_group(None)
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(90, 20)),
+                )
+            )
+
+            window._populate_group_list(document)
+
+            self.assertEqual(window.group_list.count(), 2)
+            first_widget = window.group_list.itemWidget(window.group_list.item(0))
+            second_widget = window.group_list.itemWidget(window.group_list.item(1))
+            self.assertIsInstance(first_widget, FiberGroupListItemWidget)
+            self.assertIsInstance(second_widget, FiberGroupListItemWidget)
+            self.assertEqual(first_widget.countText(), "1/1")
+            self.assertEqual(second_widget.countText(), "1/1")
+            self.assertIsNone(window.group_list.item(0).data(Qt.ItemDataRole.DisplayRole))
+            self.assertGreaterEqual(window._add_group_button.minimumWidth(), 100)
+        finally:
+            window.close()
+
+    def test_group_list_header_and_project_counts_aggregate_across_documents(self) -> None:
+        window = MainWindow()
+        try:
+            current = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_project_counts_current.png",
+                image_size=(320, 240),
+            )
+            current.initialize_runtime_state()
+            cotton = current.create_group(color="#1F7A8C", label="棉")
+            current.set_active_group(cotton.id)
+            current.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=current.id,
+                    fiber_group_id=cotton.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(90, 10)),
+                )
+            )
+
+            other = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_project_counts_other.png",
+                image_size=(320, 240),
+            )
+            other.initialize_runtime_state()
+            other_cotton = other.create_group(color="#E07A5F", label="棉")
+            other.set_active_group(other_cotton.id)
+            other.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=other.id,
+                    fiber_group_id=other_cotton.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(90, 20)),
+                )
+            )
+            other.set_active_group(None)
+            other.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=other.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 30), Point(90, 30)),
+                )
+            )
+
+            window.project.documents = [current, other]
+            window._populate_group_list(current)
+
+            self.assertEqual([label.text() for label in window._group_header_labels], ["颜色", "类别", "（当前/总数）"])
+            cotton_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(cotton_widget, FiberGroupListItemWidget)
+            self.assertEqual(cotton_widget.countText(), "1/2")
+
+            current.set_active_group(None)
+            window._populate_group_list(current)
+            uncategorized_widget = window.group_list.itemWidget(window.group_list.item(0))
+            self.assertIsInstance(uncategorized_widget, FiberGroupListItemWidget)
+            self.assertEqual(uncategorized_widget.countText(), "0/1")
+        finally:
+            window.project.documents = []
+            window.close()
+
+    def test_fiber_group_item_uses_stable_dark_palette_text_colors_even_when_inactive(self) -> None:
+        widget = FiberGroupListItemWidget("1 棉", 2, 8, "#1F7A8C", selected=False)
+        try:
+            palette = widget.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#2B2B2B"))
+            palette.setColor(QPalette.ColorRole.ButtonText, QColor("#F0F4F8"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#000000"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("#D9E2EC"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Text, QColor("#000000"))
+            widget.setPalette(palette)
+
+            background, border, text_color, badge_background, badge_border, badge_text = widget._resolved_colors()
+
+            self.assertEqual(text_color.name(), "#e7ecf2")
+            self.assertEqual(badge_text.name(), "#d9e2ec")
+            self.assertGreater(background.alpha(), 0)
+            self.assertGreater(border.alpha(), 0)
+            self.assertGreater(badge_background.alpha(), 0)
+            self.assertGreater(badge_border.alpha(), 0)
+        finally:
+            widget.close()
+
+    def test_fiber_group_item_uses_stable_light_palette_text_colors_even_when_inactive(self) -> None:
+        widget = FiberGroupListItemWidget("1 棉", 2, 8, "#1F7A8C", selected=False)
+        try:
+            palette = widget.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#F5F7FA"))
+            palette.setColor(QPalette.ColorRole.ButtonText, QColor("#182430"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.ButtonText, QColor("#000000"))
+            palette.setColor(QPalette.ColorRole.Text, QColor("#223142"))
+            palette.setColor(QPalette.ColorGroup.Inactive, QPalette.ColorRole.Text, QColor("#000000"))
+            widget.setPalette(palette)
+
+            background, border, text_color, badge_background, badge_border, badge_text = widget._resolved_colors()
+
+            self.assertEqual(text_color.name(), "#182430")
+            self.assertEqual(badge_text.name(), "#223142")
+            self.assertGreater(background.alpha(), 0)
+            self.assertGreater(border.alpha(), 0)
+            self.assertGreater(badge_background.alpha(), 0)
+            self.assertGreater(badge_border.alpha(), 0)
+        finally:
+            widget.close()
 
     def test_measurement_table_prioritizes_group_and_result_columns(self) -> None:
         window = MainWindow()
@@ -733,6 +962,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
             self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
+            self.assertEqual(window.measurement_table.columnWidth(window.TABLE_COL_GROUP), 150)
         finally:
             window.close()
 
@@ -1416,6 +1646,8 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             splitters = window.findChildren(QSplitter)
             self.assertTrue(any(splitter.orientation() == Qt.Orientation.Vertical for splitter in splitters))
+            right_titles = [box.title() for box in window._right_panel.findChildren(QGroupBox)]
+            self.assertNotIn("纤维类别", right_titles)
         finally:
             window.close()
 
@@ -1423,7 +1655,13 @@ class CanvasAndExportTests(unittest.TestCase):
         window = MainWindow()
         try:
             self.assertTrue(window.tab_widget.usesScrollButtons())
-            self.assertGreaterEqual(window.image_list.parentWidget().minimumWidth(), 180)
+            self.assertIsNotNone(window._left_panel_splitter)
+            self.assertGreaterEqual(window._left_panel.minimumWidth(), 280)
+            self.assertEqual(window._left_panel_splitter.orientation(), Qt.Orientation.Vertical)
+            window.resize(1280, 860)
+            window.show()
+            self.app.processEvents()
+            self.assertGreaterEqual(window._left_panel_splitter.sizes()[1], 340)
         finally:
             window.close()
 
@@ -2003,6 +2241,85 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(measurement.fiber_group_id, first_group.id)
         finally:
             window.close()
+
+    def test_number_hotkey_scrolls_selected_group_into_view(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/group_hotkey_scroll.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            for index in range(1, 9):
+                document.create_group(color=f"#{index:02X}7A8C", label=f"类别{index}")
+            document.set_active_group(document.get_group_by_number(1).id)
+
+            self._load_document_into_window(window, document, image)
+            window.resize(960, 700)
+            window.show()
+            self.app.processEvents()
+
+            window.group_list.setFixedHeight(120)
+            window._left_panel_splitter.setSizes([420, 220])
+            self.app.processEvents()
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_8))
+            self.app.processEvents()
+
+            target_group = document.get_group_by_number(8)
+            self.assertIsNotNone(target_group)
+            target_item = None
+            for index in range(window.group_list.count()):
+                item = window.group_list.item(index)
+                if item.data(Qt.ItemDataRole.UserRole) == target_group.id:
+                    target_item = item
+                    break
+            self.assertIsNotNone(target_item)
+            rect = window.group_list.visualItemRect(target_item)
+            self.assertGreater(window.group_list.verticalScrollBar().value(), 0)
+            self.assertTrue(window.group_list.viewport().rect().contains(rect.center()))
+        finally:
+            window.close()
+
+    def test_selected_area_handle_prefers_nearest_vertex_over_first_matching_vertex(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(28, 20), Point(28, 60), Point(20, 60)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        hit = canvas._hit_test_selected_area_handle(Point(26.5, 20))
+
+        self.assertEqual(hit, (measurement.id, "vertex", 1))
+
+    def test_selected_area_handle_uses_center_only_when_no_vertex_matches(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(60, 20), Point(60, 60), Point(20, 60)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        vertex_hit = canvas._hit_test_selected_area_handle(Point(23.4, 20.4))
+        center_hit = canvas._hit_test_selected_area_handle(Point(40, 40))
+
+        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
+        self.assertEqual(center_hit, (measurement.id, "center", None))
 
     def test_measurement_group_combo_ignores_wheel_without_popup(self) -> None:
         window = MainWindow()
