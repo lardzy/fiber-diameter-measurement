@@ -4255,7 +4255,7 @@ class MainWindow(QMainWindow):
                 render_mode=render_mode,
             )
 
-        if include_scale and document.calibration is not None:
+        if include_scale:
             if (
                 self._app_settings.scale_overlay_placement_mode == ScaleOverlayPlacementMode.MANUAL
                 and document.scale_overlay_anchor is None

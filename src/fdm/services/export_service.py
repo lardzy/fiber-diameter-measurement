@@ -135,7 +135,7 @@ class ExportService:
                     render_mode=selection.render_mode,
                 )
                 measurement_overlays.append(output_file)
-            if selection.include_scale_overlay and overlay_renderer is not None and document.calibration is not None:
+            if selection.include_scale_overlay and overlay_renderer is not None:
                 output_file = output_path / f"{base_name}_scale_{self._render_mode_suffix(selection.render_mode)}.png"
                 overlay_renderer(
                     document,

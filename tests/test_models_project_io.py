@@ -30,6 +30,9 @@ from fdm.settings import (
     AppSettings,
     AppSettingsIO,
     FocusStackProfile,
+    MeasurementEndpointStyle,
+    OpenImageViewMode,
+    ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
     application_root,
     bundle_resource_root,
@@ -376,8 +379,16 @@ class ModelsProjectIOTests(unittest.TestCase):
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
 
-        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
-        self.assertAlmostEqual(settings.scale_overlay_length_value, 100.0)
+        self.assertEqual(settings.measurement_label_color, "#00FF00")
+        self.assertEqual(settings.measurement_label_decimals, 2)
+        self.assertFalse(settings.measurement_label_background_enabled)
+        self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
+        self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)
+        self.assertEqual(settings.scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
+        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.TICKS)
+        self.assertAlmostEqual(settings.scale_overlay_length_value, 50.0)
+        self.assertEqual(settings.scale_overlay_color, "#FF0000")
+        self.assertEqual(settings.scale_overlay_text_color, "#FF0000")
         self.assertEqual(settings.scale_overlay_font_size, 18)
         self.assertEqual(settings.overlay_line_color, "#F7F4EA")
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)
@@ -389,6 +400,10 @@ class ModelsProjectIOTests(unittest.TestCase):
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(
             {
+                "measurement_label_decimals": 99,
+                "measurement_endpoint_style": "unknown",
+                "open_image_view_mode": "unknown",
+                "scale_overlay_placement_mode": "unknown",
                 "scale_overlay_style": "unknown",
                 "scale_overlay_length_value": 0,
                 "scale_overlay_font_size": 999,
@@ -398,7 +413,11 @@ class ModelsProjectIOTests(unittest.TestCase):
             }
         )
 
-        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.LINE)
+        self.assertEqual(settings.measurement_label_decimals, 8)
+        self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
+        self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)
+        self.assertEqual(settings.scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
+        self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.TICKS)
         self.assertAlmostEqual(settings.scale_overlay_length_value, 0.01)
         self.assertEqual(settings.scale_overlay_font_size, 96)
         self.assertAlmostEqual(settings.overlay_line_width, 24.0)

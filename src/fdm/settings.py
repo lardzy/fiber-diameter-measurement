@@ -187,18 +187,18 @@ class AppSettings:
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
-    measurement_label_color: str = "#FFFFFF"
-    measurement_label_decimals: int = 4
+    measurement_label_color: str = "#00FF00"
+    measurement_label_decimals: int = 2
     measurement_label_parallel_to_line: bool = False
-    measurement_label_background_enabled: bool = True
-    measurement_endpoint_style: str = MeasurementEndpointStyle.CIRCLE
+    measurement_label_background_enabled: bool = False
+    measurement_endpoint_style: str = MeasurementEndpointStyle.BAR
     default_measurement_color: str = "#E0FBFC"
-    open_image_view_mode: str = OpenImageViewMode.DEFAULT
-    scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_LEFT
-    scale_overlay_style: str = ScaleOverlayStyle.LINE
-    scale_overlay_length_value: float = 100.0
-    scale_overlay_color: str = "#FFFFFF"
-    scale_overlay_text_color: str = "#FFFFFF"
+    open_image_view_mode: str = OpenImageViewMode.FIT
+    scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_RIGHT
+    scale_overlay_style: str = ScaleOverlayStyle.TICKS
+    scale_overlay_length_value: float = 50.0
+    scale_overlay_color: str = "#FF0000"
+    scale_overlay_text_color: str = "#FF0000"
     scale_overlay_font_family: str = "Microsoft YaHei UI"
     scale_overlay_font_size: int = 18
     text_font_family: str = "Microsoft YaHei UI"
@@ -220,6 +220,10 @@ class AppSettings:
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
+        normalized.measurement_label_decimals = self._normalize_measurement_label_decimals(self.measurement_label_decimals)
+        normalized.measurement_endpoint_style = self._normalize_measurement_endpoint_style(self.measurement_endpoint_style)
+        normalized.open_image_view_mode = self._normalize_open_image_view_mode(self.open_image_view_mode)
+        normalized.scale_overlay_placement_mode = self._normalize_scale_overlay_placement_mode(self.scale_overlay_placement_mode)
         normalized.scale_overlay_style = self._normalize_scale_overlay_style(self.scale_overlay_style)
         normalized.scale_overlay_length_value = self._normalize_scale_overlay_length_value(self.scale_overlay_length_value)
         normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
@@ -306,14 +310,59 @@ class AppSettings:
             ScaleOverlayStyle.BAR,
         }:
             return token
-        return ScaleOverlayStyle.LINE
+        return ScaleOverlayStyle.TICKS
+
+    @staticmethod
+    def _normalize_measurement_label_decimals(value: int | float | str | None) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = 2
+        return max(0, min(8, numeric))
+
+    @staticmethod
+    def _normalize_measurement_endpoint_style(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            MeasurementEndpointStyle.CIRCLE,
+            MeasurementEndpointStyle.ARROW_INSIDE,
+            MeasurementEndpointStyle.ARROW_OUTSIDE,
+            MeasurementEndpointStyle.BAR,
+            MeasurementEndpointStyle.NONE,
+        }:
+            return token
+        return MeasurementEndpointStyle.BAR
+
+    @staticmethod
+    def _normalize_open_image_view_mode(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            OpenImageViewMode.DEFAULT,
+            OpenImageViewMode.FIT,
+            OpenImageViewMode.ACTUAL,
+        }:
+            return token
+        return OpenImageViewMode.FIT
+
+    @staticmethod
+    def _normalize_scale_overlay_placement_mode(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            ScaleOverlayPlacementMode.TOP_LEFT,
+            ScaleOverlayPlacementMode.TOP_RIGHT,
+            ScaleOverlayPlacementMode.BOTTOM_LEFT,
+            ScaleOverlayPlacementMode.BOTTOM_RIGHT,
+            ScaleOverlayPlacementMode.MANUAL,
+        }:
+            return token
+        return ScaleOverlayPlacementMode.BOTTOM_RIGHT
 
     @staticmethod
     def _normalize_scale_overlay_length_value(value: float | int | str | None) -> float:
         try:
             numeric = float(value)
         except (TypeError, ValueError):
-            numeric = 100.0
+            numeric = 50.0
         return max(0.01, min(1_000_000.0, numeric))
 
     @staticmethod
@@ -400,13 +449,21 @@ class AppSettings:
             maximum=96,
         )
         settings.measurement_label_color = str(payload.get("measurement_label_color", settings.measurement_label_color))
-        settings.measurement_label_decimals = int(payload.get("measurement_label_decimals", settings.measurement_label_decimals))
+        settings.measurement_label_decimals = cls._normalize_measurement_label_decimals(
+            payload.get("measurement_label_decimals", settings.measurement_label_decimals)
+        )
         settings.measurement_label_parallel_to_line = bool(payload.get("measurement_label_parallel_to_line", settings.measurement_label_parallel_to_line))
         settings.measurement_label_background_enabled = bool(payload.get("measurement_label_background_enabled", settings.measurement_label_background_enabled))
-        settings.measurement_endpoint_style = str(payload.get("measurement_endpoint_style", settings.measurement_endpoint_style))
+        settings.measurement_endpoint_style = cls._normalize_measurement_endpoint_style(
+            payload.get("measurement_endpoint_style", settings.measurement_endpoint_style)
+        )
         settings.default_measurement_color = str(payload.get("default_measurement_color", settings.default_measurement_color))
-        settings.open_image_view_mode = str(payload.get("open_image_view_mode", settings.open_image_view_mode))
-        settings.scale_overlay_placement_mode = str(payload.get("scale_overlay_placement_mode", settings.scale_overlay_placement_mode))
+        settings.open_image_view_mode = cls._normalize_open_image_view_mode(
+            payload.get("open_image_view_mode", settings.open_image_view_mode)
+        )
+        settings.scale_overlay_placement_mode = cls._normalize_scale_overlay_placement_mode(
+            payload.get("scale_overlay_placement_mode", settings.scale_overlay_placement_mode)
+        )
         settings.scale_overlay_style = cls._normalize_scale_overlay_style(payload.get("scale_overlay_style", settings.scale_overlay_style))
         settings.scale_overlay_length_value = cls._normalize_scale_overlay_length_value(
             payload.get("scale_overlay_length_value", settings.scale_overlay_length_value)

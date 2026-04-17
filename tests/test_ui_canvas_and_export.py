@@ -23,7 +23,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
-from fdm.settings import AppSettings, FocusStackProfile, OpenImageViewMode
+from fdm.settings import (
+    AppSettings,
+    FocusStackProfile,
+    MeasurementEndpointStyle,
+    OpenImageViewMode,
+    ScaleOverlayPlacementMode,
+    ScaleOverlayStyle,
+)
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -2022,6 +2029,22 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(updated.overlay_line_width, 4.5)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_uses_new_measurement_and_scale_defaults(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#00FF00")
+            self.assertEqual(dialog._measurement_label_decimals.value(), 2)
+            self.assertFalse(dialog._measurement_label_background.isChecked())
+            self.assertEqual(dialog._endpoint_style_combo.currentData(), MeasurementEndpointStyle.BAR)
+            self.assertEqual(dialog._open_view_mode_combo.currentData(), OpenImageViewMode.FIT)
+            self.assertEqual(dialog._scale_overlay_mode_combo.currentData(), ScaleOverlayPlacementMode.BOTTOM_RIGHT)
+            self.assertEqual(dialog._scale_overlay_style_combo.currentData(), ScaleOverlayStyle.TICKS)
+            self.assertAlmostEqual(dialog._scale_overlay_length_spin.value(), 50.0)
+            self.assertEqual(dialog._scale_overlay_color.property("color_value"), "#FF0000")
+            self.assertEqual(dialog._scale_overlay_text_color.property("color_value"), "#FF0000")
         finally:
             dialog.close()
 
