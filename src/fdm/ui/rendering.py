@@ -431,13 +431,14 @@ def draw_area_measurement(
         fill = QColor(color)
         fill.setAlpha(80 if not selected else 110)
         painter.setBrush(fill)
-    else:
-        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(Qt.PenStyle.NoPen)
+        if fill_path.elementCount() > 0:
+            painter.drawPath(fill_path)
+        else:
+            painter.drawPolygon(polygon)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.setPen(QPen(QColor("#0B0B0B"), max(outline_width * 1.9, outline_width + 1.0), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    if fill_path.elementCount() > 0:
-        painter.drawPath(fill_path)
-    else:
-        painter.drawPolygon(polygon)
+    painter.drawPolygon(polygon)
     painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
     painter.drawPolygon(polygon)
     if not show_handles:

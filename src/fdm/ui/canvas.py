@@ -1038,10 +1038,17 @@ class DocumentCanvas(QWidget):
             self._drag_area_preview_points = None
             self._drag_area_origin_points = None
             self._drag_area_press_point = None
+            # Vertex editing takes over from the high-fidelity magic-segment rings and
+            # turns the measurement into a regular hand-edited polygon area.
             self.measurementEdited.emit(
                 self._document.id,
                 measurement_id,
-                {"measurement_kind": "area", "polygon_px": preview},
+                {
+                    "measurement_kind": "area",
+                    "mode": "polygon_area",
+                    "polygon_px": preview,
+                    "area_rings_px": [],
+                },
             )
             if self._space_pressed:
                 self._temporary_grab_active = True
@@ -1635,14 +1642,14 @@ class DocumentCanvas(QWidget):
         polygon = QPolygonF([self.image_to_widget(point) for point in outline_points])
         if self._show_area_fill:
             painter.setBrush(fill_color)
-        else:
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        if path.elementCount() > 0:
-            painter.drawPath(path)
-        else:
-            painter.drawPolygon(polygon)
+            painter.setPen(Qt.PenStyle.NoPen)
+            if path.elementCount() > 0:
+                painter.drawPath(path)
+            else:
+                painter.drawPolygon(polygon)
         painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        painter.drawPolygon(polygon)
         painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         painter.drawPolygon(polygon)
 

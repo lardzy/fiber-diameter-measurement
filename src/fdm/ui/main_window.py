@@ -3318,6 +3318,9 @@ class MainWindow(QMainWindow):
                 measurement.polygon_px = list(payload.get("polygon_px", []))
                 measurement.area_rings_px = [list(ring) for ring in payload.get("area_rings_px", [])]
                 measurement.measurement_kind = "area"
+                payload_mode = payload.get("mode")
+                if isinstance(payload_mode, str) and payload_mode:
+                    measurement.mode = payload_mode
             elif isinstance(payload, Line):
                 measurement.snapped_line_px = payload
             else:

@@ -44,7 +44,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.rendering import measurement_display_text_with_settings
+    from fdm.ui.rendering import draw_area_measurement, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
@@ -58,10 +58,30 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    draw_area_measurement = object  # type: ignore[assignment]
     measurement_display_text_with_settings = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
+
+
+class RecordingPainter:
+    def __init__(self) -> None:
+        self.pen = None
+        self.brush = None
+        self.calls: list[tuple[str, object, object, int]] = []
+
+    def setPen(self, pen) -> None:
+        self.pen = pen
+
+    def setBrush(self, brush) -> None:
+        self.brush = brush
+
+    def drawPath(self, path) -> None:
+        self.calls.append(("path", self.pen, self.brush, path.elementCount()))
+
+    def drawPolygon(self, polygon) -> None:
+        self.calls.append(("polygon", self.pen, self.brush, polygon.size()))
 
 
 class FakeWheelEvent:
@@ -2645,6 +2665,72 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
         self.assertEqual(center_hit, (measurement.id, "center", None))
+
+    def test_area_measurement_draws_fill_path_without_second_outline_geometry(self) -> None:
+        document, _, _canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(24, 20), Point(84, 24), Point(78, 92), Point(18, 86)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        painter = RecordingPainter()
+
+        draw_area_measurement(
+            painter,
+            document,
+            measurement,
+            lambda point: QPointF(point.x, point.y),
+            AppSettings(),
+            line_width=2.0,
+            endpoint_radius=4.0,
+            selected=False,
+            show_fill=True,
+            show_handles=False,
+        )
+
+        self.assertEqual([call[0] for call in painter.calls], ["path", "polygon", "polygon"])
+        self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
+        self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
+        self.assertEqual(painter.calls[2][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+
+    def test_dragging_area_vertex_emits_polygon_payload_and_clears_magic_rings(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(24, 20), Point(84, 24), Point(78, 92), Point(18, 86)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+        payloads: list[object] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: payloads.append(payload))
+
+        preview = [Point(26, 18), Point(84, 24), Point(78, 92), Point(18, 86)]
+        canvas._dragging_area_handle = (measurement.id, "vertex", 0)
+        canvas._drag_area_preview_points = list(preview)
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(preview[0]), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(payloads), 1)
+        self.assertEqual(payloads[0]["measurement_kind"], "area")
+        self.assertEqual(payloads[0]["mode"], "polygon_area")
+        self.assertEqual(payloads[0]["area_rings_px"], [])
+        self.assertEqual(payloads[0]["polygon_px"], preview)
 
     def test_measurement_group_combo_ignores_wheel_without_popup(self) -> None:
         window = MainWindow()
