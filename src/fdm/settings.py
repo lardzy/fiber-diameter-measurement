@@ -214,6 +214,7 @@ class AppSettings:
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
+    magic_segment_fill_draft_holes_enabled: bool = False
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
@@ -446,6 +447,7 @@ class AppSettings:
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
+            "magic_segment_fill_draft_holes_enabled": normalized.magic_segment_fill_draft_holes_enabled,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
@@ -511,6 +513,12 @@ class AppSettings:
         )
         settings.magic_segment_model_variant = cls._normalize_magic_segment_model_variant(
             payload.get("magic_segment_model_variant", settings.magic_segment_model_variant)
+        )
+        settings.magic_segment_fill_draft_holes_enabled = bool(
+            payload.get(
+                "magic_segment_fill_draft_holes_enabled",
+                settings.magic_segment_fill_draft_holes_enabled,
+            )
         )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))

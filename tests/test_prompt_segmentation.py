@@ -16,6 +16,7 @@ try:
         PromptSegmentationService,
         edge_sam_model_paths,
         finalize_magic_subtraction_mask,
+        fill_magic_draft_internal_holes,
         magic_mask_to_geometry,
         normalize_magic_draft_mask,
         resolve_magic_segment_model_variant,
@@ -26,6 +27,7 @@ except ModuleNotFoundError:
     PromptSegmentationService = object  # type: ignore[assignment]
     edge_sam_model_paths = object  # type: ignore[assignment]
     finalize_magic_subtraction_mask = object  # type: ignore[assignment]
+    fill_magic_draft_internal_holes = object  # type: ignore[assignment]
     magic_mask_to_geometry = object  # type: ignore[assignment]
     normalize_magic_draft_mask = object  # type: ignore[assignment]
     resolve_magic_segment_model_variant = object  # type: ignore[assignment]
@@ -344,6 +346,22 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertGreaterEqual(len(polygon), 3)
         self.assertTrue(bool(selected_mask[44, 133]))
         self.assertFalse(bool(selected_mask[30, 30]))
+
+    def test_fill_magic_draft_internal_holes_fills_hole_without_cutting_to_boundary(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        mask = np.zeros((80, 90), dtype=bool)
+        mask[10:70, 12:74] = True
+        mask[28:52, 34:54] = False
+
+        filled = fill_magic_draft_internal_holes(mask)
+
+        self.assertIsNotNone(filled)
+        self.assertTrue(bool(filled[40, 44]))
+        self.assertTrue(bool(filled[20, 20]))
 
 
 if __name__ == "__main__":

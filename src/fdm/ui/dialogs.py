@@ -425,6 +425,7 @@ class SettingsDialog(QDialog):
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
             focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
             magic_segment_model_variant=self._magic_segment_model_variant_combo.currentData(),
+            magic_segment_fill_draft_holes_enabled=self._magic_segment_fill_draft_holes_checkbox.isChecked(),
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -565,9 +566,15 @@ class SettingsDialog(QDialog):
         self._magic_segment_model_variant_combo.setCurrentIndex(
             max(0, self._magic_segment_model_variant_combo.findData(settings.magic_segment_model_variant))
         )
+        self._magic_segment_fill_draft_holes_checkbox = QCheckBox("草稿阶段自动填充内部孔洞")
+        self._magic_segment_fill_draft_holes_checkbox.setChecked(settings.magic_segment_fill_draft_holes_enabled)
         magic_hint = QLabel("可在此切换标准 EdgeSAM 与高精度 EdgeSAM-3x；若缺失高精度模型文件，运行时会自动回退到标准模型。")
         magic_hint.setWordWrap(True)
+        fill_holes_hint = QLabel("开启后，第一形状与剔除形状草稿都会先填充内部孔洞；最终剔除确认结果仍按减法逻辑处理。")
+        fill_holes_hint.setWordWrap(True)
         magic_segment_form.addRow("分割模型", self._magic_segment_model_variant_combo)
+        magic_segment_form.addRow("", self._magic_segment_fill_draft_holes_checkbox)
+        magic_segment_form.addRow("", fill_holes_hint)
         magic_segment_form.addRow("", magic_hint)
 
         layout.addWidget(focus_stack_group)

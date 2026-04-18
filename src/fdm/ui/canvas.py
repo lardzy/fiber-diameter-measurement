@@ -29,6 +29,7 @@ from fdm.geometry import (
 from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
+    fill_magic_draft_internal_holes,
     magic_mask_to_geometry,
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
@@ -358,6 +359,12 @@ class DocumentCanvas(QWidget):
                 draft_rings = self._clone_magic_rings(selected_rings)
             if len(selected_polygon) >= 3:
                 draft_polygon = self._clone_magic_polygon(selected_polygon)
+        if draft_mask is not None and self._settings.magic_segment_fill_draft_holes_enabled:
+            filled_mask = fill_magic_draft_internal_holes(draft_mask)
+            selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(filled_mask)
+            draft_mask = selected_mask
+            draft_rings = self._clone_magic_rings(selected_rings)
+            draft_polygon = self._clone_magic_polygon(selected_polygon)
         if len(draft_polygon) < 3 and draft_rings:
             draft_polygon = self._clone_magic_polygon(draft_rings[0])
         if len(draft_polygon) < 3 and not draft_rings:

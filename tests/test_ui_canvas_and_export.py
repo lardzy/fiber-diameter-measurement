@@ -2409,6 +2409,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog._magic_segment_model_variant_combo.currentData(),
                 MagicSegmentModelVariant.EDGE_SAM_3X,
             )
+            self.assertFalse(dialog._magic_segment_fill_draft_holes_checkbox.isChecked())
         finally:
             dialog.close()
 
@@ -2421,12 +2422,32 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._magic_segment_model_variant_combo.setCurrentIndex(
                 dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
             )
+            dialog._magic_segment_fill_draft_holes_checkbox.setChecked(True)
 
             collected = dialog.app_settings()
 
             self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+            self.assertTrue(collected.magic_segment_fill_draft_holes_enabled)
         finally:
             dialog.close()
+
+    def test_magic_segment_draft_hole_fill_setting_only_applies_when_enabled(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        hole_mask = self._rect_mask(image.width(), image.height(), (24, 24, 112, 96))
+        hole_mask[46:72, 54:82] = False
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 2)
+
+        canvas.clear_magic_segment_session()
+        canvas.set_settings(AppSettings(magic_segment_fill_draft_holes_enabled=True))
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(2, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 1)
 
     def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
         document = ImageDocument(

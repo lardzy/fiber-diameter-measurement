@@ -180,6 +180,26 @@ def normalize_magic_draft_mask(mask):
     return working.copy()
 
 
+def fill_magic_draft_internal_holes(mask):
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    normalized = normalize_magic_draft_mask(mask)
+    if normalized is None:
+        return None
+    mask_uint8 = np.asarray(normalized, dtype=np.uint8) * 255
+    contours, hierarchy = cv2.findContours(mask_uint8.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_NONE)
+    if hierarchy is None or not contours:
+        return normalized
+    filled = mask_uint8.copy()
+    for index, relation in enumerate(hierarchy[0]):
+        if int(relation[3]) < 0:
+            continue
+        cv2.drawContours(filled, contours, index, 255, thickness=cv2.FILLED)
+    return filled.astype(bool)
+
+
 def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object | None, dict[str, object]]:
     try:
         import numpy as np
