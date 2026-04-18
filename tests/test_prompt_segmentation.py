@@ -15,16 +15,18 @@ try:
     from fdm.services.prompt_segmentation import (
         PromptSegmentationService,
         edge_sam_model_paths,
+        finalize_magic_subtraction_mask,
+        normalize_magic_draft_mask,
         resolve_magic_segment_model_variant,
-        sanitize_magic_session_mask,
     )
 
     PROMPT_SEGMENTATION_AVAILABLE = True
 except ModuleNotFoundError:
     PromptSegmentationService = object  # type: ignore[assignment]
     edge_sam_model_paths = object  # type: ignore[assignment]
+    finalize_magic_subtraction_mask = object  # type: ignore[assignment]
+    normalize_magic_draft_mask = object  # type: ignore[assignment]
     resolve_magic_segment_model_variant = object  # type: ignore[assignment]
-    sanitize_magic_session_mask = object  # type: ignore[assignment]
     PROMPT_SEGMENTATION_AVAILABLE = False
 
 
@@ -158,6 +160,41 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(service._encoder_session.received.dtype.name, "float32")
         self.assertEqual(service._encoder_session.received.shape[0], 1)
 
+    def test_run_encoder_normalizes_and_pads_fixed_square_float_model_input(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        class FakeEncoderSession:
+            def __init__(self) -> None:
+                self.received = None
+
+            def run(self, _outputs, inputs):
+                self.received = next(iter(inputs.values()))
+                return [object()]
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        service._encoder_session = FakeEncoderSession()
+        service._decoder_session = object()
+        service._encoder_input_name = "image"
+        service._encoder_input_type = "tensor(float)"
+        service._encoder_input_shape = (1, 3, 1024, 1024)
+        service._decoder_input_names = {}
+
+        image = np.zeros((24, 48, 3), dtype=np.uint8)
+        _embeddings, original_size = service._run_encoder(image)
+
+        self.assertEqual(original_size, (24, 48))
+        self.assertIsNotNone(service._encoder_session.received)
+        self.assertEqual(service._encoder_session.received.dtype.name, "float32")
+        self.assertEqual(service._encoder_session.received.shape, (1, 3, 1024, 1024))
+        top_left = service._encoder_session.received[0, :, 0, 0]
+        self.assertAlmostEqual(float(top_left[0]), -2.1179, places=3)
+        self.assertAlmostEqual(float(top_left[1]), -2.0357, places=3)
+        self.assertAlmostEqual(float(top_left[2]), -1.8044, places=3)
+        self.assertTrue(np.allclose(service._encoder_session.received[0, :, 700, 100], 0.0))
+
     def test_mask_to_polygon_prefers_largest_contour(self) -> None:
         try:
             import numpy as np
@@ -287,22 +324,83 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertTrue(result.metadata["auto_small_object_refined"])
         self.assertEqual(predict_mock.call_count, 2)
 
-    def test_sanitize_magic_session_mask_opens_holes_and_discards_smaller_fragments(self) -> None:
+    def test_normalize_magic_draft_mask_returns_none_for_empty_input(self) -> None:
         try:
             import numpy as np
         except ImportError as exc:  # pragma: no cover
             self.skipTest(f"numpy unavailable: {exc}")
 
+        self.assertIsNone(normalize_magic_draft_mask(None))
+
         mask = np.zeros((120, 140), dtype=bool)
-        mask[10:100, 12:118] = True
-        mask[36:74, 42:84] = False
-        mask[15:30, 122:134] = True
+        self.assertIsNone(normalize_magic_draft_mask(mask))
 
-        sanitized_mask, stats = sanitize_magic_session_mask(mask)
+    def test_finalize_magic_subtraction_mask_opens_internal_holes_for_fully_enclosed_subtract_mask(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
 
-        self.assertIsNotNone(sanitized_mask)
+        primary = np.zeros((120, 140), dtype=bool)
+        primary[10:100, 12:118] = True
+        subtract = np.zeros((120, 140), dtype=bool)
+        subtract[36:74, 42:84] = True
+
+        finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
+
+        self.assertIsNotNone(finalized_mask)
         self.assertGreater(int(stats["opened_holes"]), 0)
+        self.assertFalse(bool(stats["discarded_fragments"]))
+
+    def test_finalize_magic_subtraction_mask_discards_smaller_fragments_after_partial_overlap(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        primary = np.zeros((120, 140), dtype=bool)
+        primary[10:100, 12:118] = True
+        subtract = np.zeros((120, 140), dtype=bool)
+        subtract[10:100, 70:74] = True
+
+        finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
+
+        self.assertIsNotNone(finalized_mask)
+        self.assertEqual(int(stats["opened_holes"]), 0)
         self.assertTrue(bool(stats["discarded_fragments"]))
+
+    def test_finalize_magic_subtraction_mask_returns_empty_when_subtract_covers_primary(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        primary = np.zeros((80, 90), dtype=bool)
+        primary[10:50, 12:60] = True
+        subtract = np.zeros((80, 90), dtype=bool)
+        subtract[6:56, 8:66] = True
+
+        finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
+
+        self.assertIsNone(finalized_mask)
+        self.assertTrue(bool(stats["result_empty"]))
+
+    def test_finalize_magic_subtraction_mask_keeps_primary_when_masks_do_not_overlap(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        primary = np.zeros((80, 90), dtype=bool)
+        primary[10:40, 12:44] = True
+        subtract = np.zeros((80, 90), dtype=bool)
+        subtract[48:70, 56:82] = True
+
+        finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
+
+        self.assertIsNotNone(finalized_mask)
+        self.assertFalse(bool(stats["had_intersection"]))
+        self.assertFalse(bool(stats["discarded_fragments"]))
 
 
 if __name__ == "__main__":

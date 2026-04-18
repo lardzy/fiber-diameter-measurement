@@ -17,6 +17,8 @@ EDGE_SAM_DECODER_FILENAME = "edge_sam_decoder.onnx"
 EDGE_SAM_3X_ENCODER_FILENAME = "edge_sam_3x_encoder.onnx"
 EDGE_SAM_3X_DECODER_FILENAME = "edge_sam_3x_decoder.onnx"
 EDGE_SAM_TARGET_LENGTH = 1024
+EDGE_SAM_PIXEL_MEAN = (123.675, 116.28, 103.53)
+EDGE_SAM_PIXEL_STD = (58.395, 57.12, 57.375)
 
 AUTO_SMALL_OBJECT_AREA_RATIO_THRESHOLD = 0.05
 AUTO_SMALL_OBJECT_PROMPT_RATIO_THRESHOLD = 0.12
@@ -142,22 +144,55 @@ def magic_mask_to_polygon(mask) -> list[Point]:
     return polygon
 
 
-def sanitize_magic_session_mask(mask) -> tuple[object | None, dict[str, object]]:
+def normalize_magic_draft_mask(mask):
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
         raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
     if mask is None:
-        return None, {"opened_holes": 0, "discarded_fragments": False}
+        return None
     working = np.asarray(mask, dtype=bool)
     if not np.any(working):
-        return working, {"opened_holes": 0, "discarded_fragments": False}
-    working, opened_holes = _open_internal_holes(working)
-    working, discarded_fragments = _keep_largest_component(working)
-    return working, {
-        "opened_holes": opened_holes,
-        "discarded_fragments": discarded_fragments,
+        return None
+    return working.copy()
+
+
+def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object | None, dict[str, object]]:
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    primary = normalize_magic_draft_mask(primary_mask)
+    stats = {
+        "opened_holes": 0,
+        "discarded_fragments": False,
+        "result_empty": False,
+        "had_intersection": False,
     }
+    if primary is None:
+        stats["result_empty"] = True
+        return None, stats
+    subtract = normalize_magic_draft_mask(subtract_mask)
+    if subtract is None:
+        return primary.copy(), stats
+    intersection = primary & subtract
+    if not np.any(intersection):
+        return primary.copy(), stats
+    stats["had_intersection"] = True
+    result = primary & ~subtract
+    if not np.any(result):
+        stats["result_empty"] = True
+        return None, stats
+    subtract_inside_primary = not np.any(subtract & ~primary)
+    if subtract_inside_primary:
+        result, opened_holes = _open_internal_holes(result)
+        stats["opened_holes"] = opened_holes
+    result, discarded_fragments = _keep_largest_component(result)
+    stats["discarded_fragments"] = discarded_fragments
+    if not np.any(result):
+        stats["result_empty"] = True
+        return None, stats
+    return result, stats
 
 
 def _open_internal_holes(mask):
@@ -243,6 +278,7 @@ class PromptSegmentationService:
         self._decoder_session = None
         self._encoder_input_name = ""
         self._encoder_input_type = "tensor(uint8)"
+        self._encoder_input_shape: tuple[object, ...] = ()
         self._decoder_input_names: dict[str, str] = {}
         self._embedding_cache: OrderedDict[str, _EmbeddingEntry] = OrderedDict()
 
@@ -312,6 +348,7 @@ class PromptSegmentationService:
             raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} encoder 未暴露输入张量。")
         self._encoder_input_name = inputs[0].name
         self._encoder_input_type = str(getattr(inputs[0], "type", "") or "tensor(uint8)")
+        self._encoder_input_shape = tuple(getattr(inputs[0], "shape", ()) or ())
         self._decoder_input_names = {item.name: item.name for item in self._decoder_session.get_inputs()}
 
     def _image_to_rgb_array(self, image):
@@ -371,16 +408,50 @@ class PromptSegmentationService:
         except ImportError as exc:
             raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
         original_size = tuple(int(value) for value in cv_image.shape[:2])
-        target_h, target_w = self._get_preprocess_shape(original_size[0], original_size[1], self._target_length)
+        target_length = self._effective_target_length()
+        target_h, target_w = self._get_preprocess_shape(original_size[0], original_size[1], target_length)
         resized = cv2.resize(cv_image, (target_w, target_h))
         transformed = resized.transpose((2, 0, 1))
-        transformed = self._cast_encoder_input(transformed, np)
+        if self._requires_external_resize_norm_pad():
+            transformed = self._normalize_and_pad_encoder_input(
+                transformed,
+                np,
+                target_size=target_length,
+                input_size=(target_h, target_w),
+            )
+        else:
+            transformed = self._cast_encoder_input(transformed, np)
         transformed = transformed[None, ...]
         image_embeddings = self._encoder_session.run(
             None,
             {self._encoder_input_name: transformed},
         )[0]
         return image_embeddings, original_size
+
+    def _effective_target_length(self) -> int:
+        fixed_square_size = self._fixed_square_encoder_size()
+        if fixed_square_size is not None:
+            return fixed_square_size
+        return self._target_length
+
+    def _fixed_square_encoder_size(self) -> int | None:
+        if len(self._encoder_input_shape) < 4:
+            return None
+        height = self._encoder_input_shape[2]
+        width = self._encoder_input_shape[3]
+        if isinstance(height, int) and isinstance(width, int) and height > 0 and height == width:
+            return int(height)
+        return None
+
+    def _requires_external_resize_norm_pad(self) -> bool:
+        fixed_square_size = self._fixed_square_encoder_size()
+        input_type = str(self._encoder_input_type or "").strip().lower()
+        return fixed_square_size is not None and input_type in {
+            "tensor(float)",
+            "tensor(float16)",
+            "tensor(float32)",
+            "tensor(double)",
+        }
 
     def _cast_encoder_input(self, transformed, np):
         input_type = str(self._encoder_input_type or "").strip().lower()
@@ -397,6 +468,22 @@ class PromptSegmentationService:
         raise RuntimeError(
             f"{magic_segment_model_label(self._model_variant)} encoder 输入类型暂不支持: {self._encoder_input_type}"
         )
+
+    def _normalize_and_pad_encoder_input(
+        self,
+        transformed,
+        np,
+        *,
+        target_size: int,
+        input_size: tuple[int, int],
+    ):
+        normalized = transformed.astype(np.float32, copy=False)
+        mean = np.asarray(EDGE_SAM_PIXEL_MEAN, dtype=np.float32).reshape(3, 1, 1)
+        std = np.asarray(EDGE_SAM_PIXEL_STD, dtype=np.float32).reshape(3, 1, 1)
+        normalized = (normalized - mean) / std
+        padded = np.zeros((3, target_size, target_size), dtype=np.float32)
+        padded[:, : input_size[0], : input_size[1]] = normalized
+        return self._cast_encoder_input(padded, np)
 
     def _predict_with_optional_auto_crop(
         self,
@@ -605,7 +692,7 @@ class PromptSegmentationService:
         scores = self._calculate_stability_score(masks[0], 0.0, 1.0)
         max_score_index = int(scores.argmax())
         mask = masks[0, max_score_index]
-        input_size = self._get_preprocess_shape(*embedding.original_size, self._target_length)
+        input_size = self._get_preprocess_shape(*embedding.original_size, self._effective_target_length())
         return self._postprocess_masks(mask, input_size=input_size, original_size=embedding.original_size) > 0.0
 
     def _mask_to_polygon(self, mask) -> list[Point]:
@@ -629,7 +716,7 @@ class PromptSegmentationService:
 
     def _apply_coords(self, coords, original_size: tuple[int, int]):
         old_h, old_w = original_size
-        new_h, new_w = self._get_preprocess_shape(old_h, old_w, self._target_length)
+        new_h, new_w = self._get_preprocess_shape(old_h, old_w, self._effective_target_length())
         adjusted = coords.copy().astype(float)
         adjusted[..., 0] = adjusted[..., 0] * (new_w / old_w)
         adjusted[..., 1] = adjusted[..., 1] * (new_h / old_h)
@@ -650,7 +737,7 @@ class PromptSegmentationService:
         input_size: tuple[int, int],
         original_size: tuple[int, int],
     ):
-        img_size = self._target_length
+        img_size = self._effective_target_length()
         resized = cv2.resize(mask, (img_size, img_size))
         cropped = resized[..., : input_size[0], : input_size[1]]
         return cv2.resize(cropped, original_size[::-1])

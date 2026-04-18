@@ -33,6 +33,7 @@ from fdm.settings import (
     ScaleOverlayStyle,
 )
 from fdm.services.export_service import ExportImageRenderMode
+from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
@@ -1761,7 +1762,8 @@ class CanvasAndExportTests(unittest.TestCase):
         )
 
         self.assertTrue(canvas.has_magic_segment_preview())
-        self.assertTrue(canvas.commit_magic_segment_preview())
+        commit_result = canvas.commit_magic_segment_preview()
+        self.assertTrue(bool(commit_result["committed"]))
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
@@ -1788,22 +1790,27 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
             self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
-            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
-            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
             self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
+            self.assertIn("请先完成第一个形状草稿", window.statusBar().currentMessage())
 
             canvas._magic_segment.request_id = 1
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
             canvas.apply_magic_segment_result(
                 1,
                 self._rect_mask(image.width(), image.height(), (24, 24, 92, 80)),
             )
+
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].mode, "magic_segment")
 
             canvas.set_tool_mode("magic_segment")
-            canvas._magic_segment.positive_points = [Point(40, 40)]
+            canvas._magic_segment.primary_positive_points = [Point(40, 40)]
             self.assertTrue(canvas.has_magic_segment_session())
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
             self.assertFalse(canvas.has_magic_segment_session())
@@ -1811,11 +1818,14 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_magic_segment_subtract_mode_keeps_single_preview_polygon(self) -> None:
+    def test_magic_segment_subtract_stage_preserves_primary_draft_until_commit(self) -> None:
         document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
 
         canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
         canvas.apply_magic_segment_result(
             1,
             self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
@@ -1824,15 +1834,57 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
         canvas._magic_segment.request_id = 2
-        stats = canvas.apply_magic_segment_result(
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
             2,
             self._rect_mask(image.width(), image.height(), (56, 38, 108, 82)),
         )
 
-        self.assertIsInstance(stats, dict)
-        self.assertGreaterEqual(int(stats["opened_holes"]), 1)
         self.assertTrue(canvas.has_magic_segment_preview())
-        self.assertGreaterEqual(len(canvas._magic_segment.preview_polygon), 3)
+        self.assertIsNotNone(canvas._magic_segment.primary_mask)
+        self.assertIsNotNone(canvas._magic_segment.subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+
+    def test_magic_segment_inference_does_not_show_cleanup_messages_before_confirm(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_segment_status.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode("magic_segment")
+            canvas._magic_segment.request_id = 1
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+            window._on_prompt_segmentation_succeeded(
+                document.id,
+                1,
+                PromptSegmentationResult(
+                    mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+                    polygon_px=[],
+                    area_px=0.0,
+                    metadata={},
+                ),
+            )
+
+            self.assertNotIn("自动开缝", window.statusBar().currentMessage())
+            self.assertNotIn("仅保留最大连通区域", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()

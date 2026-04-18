@@ -3062,22 +3062,13 @@ class MainWindow(QMainWindow):
         if canvas is None:
             return
         if isinstance(result, PromptSegmentationResult):
-            stats = canvas.apply_magic_segment_result(request_id, result.mask)
-            if stats is None:
+            apply_result = canvas.apply_magic_segment_result(request_id, result.mask)
+            if apply_result is None:
                 self._update_magic_segment_controls()
                 return
-            messages: list[str] = []
             fallback_message = str(result.metadata.get("model_fallback_message", "")).strip()
             if fallback_message:
-                messages.append(fallback_message)
-            if isinstance(stats, dict):
-                opened_holes = int(stats.get("opened_holes", 0) or 0)
-                if opened_holes > 0:
-                    messages.append(f"结果中检测到闭环区域，已自动开缝 {opened_holes} 处。")
-                if bool(stats.get("discarded_fragments", False)):
-                    messages.append("结果中出现多个碎片，已仅保留最大连通区域。")
-            if messages:
-                self.statusBar().showMessage(" ".join(messages), 5000)
+                self.statusBar().showMessage(fallback_message, 5000)
         else:
             canvas.apply_magic_segment_result(request_id, None)
         self._update_magic_segment_controls()
@@ -3863,13 +3854,13 @@ class MainWindow(QMainWindow):
 
     def _magic_operation_label_text(self, operation_mode: str) -> str:
         if operation_mode == MagicSegmentOperationMode.SUBTRACT:
-            return "当前模式：剔除"
-        return "当前模式：添加"
+            return "当前编辑：剔除形状"
+        return "当前编辑：第一形状"
 
     def _magic_operation_button_text(self, operation_mode: str) -> str:
         if operation_mode == MagicSegmentOperationMode.SUBTRACT:
-            return "模式：剔除 (T)"
-        return "模式：添加 (T)"
+            return "编辑：剔除形状 (T)"
+        return "编辑：第一形状 (T)"
 
     def _update_magic_segment_controls(self) -> None:
         if self._magic_controls_widget is None or self._measurement_tool_strip is None:
@@ -4180,8 +4171,12 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or self._tool_mode != "magic_segment" or canvas.is_magic_segment_busy():
             return
+        before_mode = canvas.current_magic_segment_operation_mode()
         operation_mode = canvas.cycle_magic_segment_operation_mode()
-        self.statusBar().showMessage(self._magic_operation_label_text(operation_mode), 2500)
+        if before_mode == MagicSegmentOperationMode.ADD and operation_mode == MagicSegmentOperationMode.ADD:
+            self.statusBar().showMessage("请先完成第一个形状草稿", 2500)
+        else:
+            self.statusBar().showMessage(self._magic_operation_label_text(operation_mode), 2500)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
 
@@ -4189,9 +4184,22 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or self._tool_mode != "magic_segment" or canvas.is_magic_segment_busy():
             return False
-        committed = canvas.commit_magic_segment_preview()
+        commit_result = canvas.commit_magic_segment_preview()
+        committed = bool(commit_result.get("committed", False))
+        messages: list[str] = []
         if committed:
-            self.statusBar().showMessage("已创建魔棒分割面积", 2500)
+            messages.append("已创建魔棒分割面积")
+        elif bool(commit_result.get("result_empty", False)):
+            messages.append("剔除后无剩余区域")
+        elif str(commit_result.get("reason", "")) == "missing_primary":
+            messages.append("请先完成第一个形状草稿")
+        opened_holes = int(commit_result.get("opened_holes", 0) or 0)
+        if opened_holes > 0:
+            messages.append(f"结果中检测到闭环区域，已自动开缝 {opened_holes} 处。")
+        if bool(commit_result.get("discarded_fragments", False)):
+            messages.append("结果中出现多个碎片，已仅保留最大连通区域。")
+        if messages:
+            self.statusBar().showMessage(" ".join(messages), 4000)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
         return committed
