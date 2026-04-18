@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPen
+from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen, QPolygonF
 
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
@@ -67,6 +67,18 @@ def measurement_label_font(settings: AppSettings) -> QFont:
     font.setPixelSize(int(max(8, settings.measurement_label_font_size)))
     font.setBold(True)
     return font
+
+
+def area_rings_path(area_rings: list[list[Point]], image_to_output) -> QPainterPath:
+    path = QPainterPath()
+    path.setFillRule(Qt.FillRule.OddEvenFill)
+    for ring in area_rings:
+        if len(ring) < 3:
+            continue
+        polygon = QPolygonF([image_to_output(point) for point in ring])
+        if polygon.size() >= 3:
+            path.addPolygon(polygon)
+    return path
 
 
 def overlay_text_font(settings: AppSettings) -> QFont:
@@ -405,10 +417,15 @@ def draw_area_measurement(
     show_fill: bool,
     show_handles: bool,
 ) -> None:
-    if len(measurement.polygon_px) < 3:
+    outline_points = measurement.polygon_px
+    fill_rings = measurement.area_rings_px or ([measurement.polygon_px] if len(measurement.polygon_px) >= 3 else [])
+    if len(outline_points) < 3 and fill_rings:
+        outline_points = fill_rings[0]
+    if len(outline_points) < 3:
         return
     color = measurement_color(document, measurement, settings)
-    polygon = [image_to_output(point) for point in measurement.polygon_px]
+    polygon = QPolygonF([image_to_output(point) for point in outline_points])
+    fill_path = area_rings_path(fill_rings, image_to_output)
     outline_width = max(line_width * (1.65 if selected else 1.0), 1.8)
     if show_fill:
         fill = QColor(color)
@@ -417,7 +434,10 @@ def draw_area_measurement(
     else:
         painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.setPen(QPen(QColor("#0B0B0B"), max(outline_width * 1.9, outline_width + 1.0), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    painter.drawPolygon(polygon)
+    if fill_path.elementCount() > 0:
+        painter.drawPath(fill_path)
+    else:
+        painter.drawPolygon(polygon)
     painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
     painter.drawPolygon(polygon)
     if not show_handles:

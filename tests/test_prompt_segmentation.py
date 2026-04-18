@@ -16,6 +16,7 @@ try:
         PromptSegmentationService,
         edge_sam_model_paths,
         finalize_magic_subtraction_mask,
+        magic_mask_to_geometry,
         normalize_magic_draft_mask,
         resolve_magic_segment_model_variant,
     )
@@ -25,6 +26,7 @@ except ModuleNotFoundError:
     PromptSegmentationService = object  # type: ignore[assignment]
     edge_sam_model_paths = object  # type: ignore[assignment]
     finalize_magic_subtraction_mask = object  # type: ignore[assignment]
+    magic_mask_to_geometry = object  # type: ignore[assignment]
     normalize_magic_draft_mask = object  # type: ignore[assignment]
     resolve_magic_segment_model_variant = object  # type: ignore[assignment]
     PROMPT_SEGMENTATION_AVAILABLE = False
@@ -100,6 +102,7 @@ class PromptSegmentationTests(unittest.TestCase):
 
         self.assertIsNone(result.mask)
         self.assertEqual(result.polygon_px, [])
+        self.assertEqual(result.area_rings_px, [])
         self.assertEqual(result.area_px, 0.0)
         self.assertEqual(result.metadata["reason"], "missing_positive_prompt")
 
@@ -248,7 +251,7 @@ class PromptSegmentationTests(unittest.TestCase):
         mask = np.zeros((120, 140), dtype=bool)
         self.assertIsNone(normalize_magic_draft_mask(mask))
 
-    def test_finalize_magic_subtraction_mask_opens_internal_holes_for_fully_enclosed_subtract_mask(self) -> None:
+    def test_finalize_magic_subtraction_mask_preserves_internal_hole_for_bridge_stage(self) -> None:
         try:
             import numpy as np
         except ImportError as exc:  # pragma: no cover
@@ -260,10 +263,14 @@ class PromptSegmentationTests(unittest.TestCase):
         subtract[36:74, 42:84] = True
 
         finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
+        _selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(finalized_mask)
 
         self.assertIsNotNone(finalized_mask)
-        self.assertGreater(int(stats["opened_holes"]), 0)
+        self.assertEqual(int(stats["opened_holes"]), 0)
         self.assertFalse(bool(stats["discarded_fragments"]))
+        self.assertEqual(len(area_rings), 2)
+        self.assertGreaterEqual(len(polygon), 4)
+        self.assertGreater(int(geometry_stats["opened_holes"]), 0)
 
     def test_finalize_magic_subtraction_mask_discards_smaller_fragments_after_partial_overlap(self) -> None:
         try:
@@ -314,6 +321,29 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertIsNotNone(finalized_mask)
         self.assertFalse(bool(stats["had_intersection"]))
         self.assertFalse(bool(stats["discarded_fragments"]))
+
+    def test_magic_mask_to_geometry_prefers_component_hit_by_positive_prompt(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        mask = np.zeros((120, 160), dtype=bool)
+        mask[10:92, 10:108] = True
+        mask[36:52, 128:140] = True
+
+        selected_mask, area_rings, polygon, stats = magic_mask_to_geometry(
+            mask,
+            positive_points=[Point(133, 44)],
+            negative_points=[],
+        )
+
+        self.assertIsNotNone(selected_mask)
+        self.assertEqual(int(stats["selected_positive_hits"]), 1)
+        self.assertEqual(len(area_rings), 1)
+        self.assertGreaterEqual(len(polygon), 3)
+        self.assertTrue(bool(selected_mask[44, 133]))
+        self.assertFalse(bool(selected_mask[30, 30]))
 
 
 if __name__ == "__main__":

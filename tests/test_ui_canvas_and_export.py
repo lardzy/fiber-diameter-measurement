@@ -1764,6 +1764,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
+        self.assertEqual(len(commits[0][2]["area_rings_px"]), 1)
 
     def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
         window = MainWindow()
@@ -1874,6 +1875,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 PromptSegmentationResult(
                     mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
                     polygon_px=[],
+                    area_rings_px=[],
                     area_px=0.0,
                     metadata={},
                 ),
@@ -1921,6 +1923,55 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
         self.assertFalse(bool(commit_result["result_empty"]))
+
+    def test_magic_segment_commit_preserves_area_rings_for_hole_geometry(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        primary_mask = self._rect_mask(image.width(), image.height(), (20, 18, 150, 102))
+        subtract_mask = self._rect_mask(image.width(), image.height(), (56, 38, 108, 82))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, primary_mask)
+        canvas.cycle_magic_segment_operation_mode()
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(2, subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(len(commits), 1)
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 2)
+        self.assertGreaterEqual(len(payload["polygon_px"]), 3)
+
+    def test_area_hit_test_uses_area_rings_instead_of_simplified_polygon(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        area_measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=[Point(20, 20), Point(60, 20), Point(60, 120), Point(20, 120)],
+            area_rings_px=[
+                [
+                    Point(20, 20),
+                    Point(70, 20),
+                    Point(70, 60),
+                    Point(30, 60),
+                    Point(30, 120),
+                    Point(20, 120),
+                ]
+            ],
+        )
+        document.add_measurement(area_measurement)
+
+        self.assertEqual(canvas._hit_test_area_measurement(Point(64, 40)), area_measurement.id)
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()

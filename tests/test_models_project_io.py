@@ -699,6 +699,10 @@ class ModelsProjectIOTests(unittest.TestCase):
                 mode="polygon_area",
                 measurement_kind="area",
                 polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                area_rings_px=[
+                    [Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                    [Point(6, 2), Point(14, 2), Point(14, 8), Point(6, 8)],
+                ],
             )
         )
         project = ProjectState(version="0.1.0", documents=[document])
@@ -711,8 +715,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         measurement = loaded.documents[0].measurements[0]
         self.assertEqual(measurement.measurement_kind, "area")
         self.assertEqual(len(measurement.polygon_px), 4)
-        self.assertAlmostEqual(measurement.area_px or 0.0, 200.0)
-        self.assertAlmostEqual(measurement.area_unit or 0.0, 2.0)
+        self.assertEqual(len(measurement.area_rings_px), 2)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 152.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 1.52)
 
     def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
         self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])

@@ -7,7 +7,15 @@ from typing import Any
 import statistics
 import uuid
 
-from fdm.geometry import Line, Point, line_length, polygon_area, polygon_centroid
+from fdm.geometry import (
+    Line,
+    Point,
+    area_rings_area,
+    area_rings_centroid,
+    line_length,
+    polygon_area,
+    polygon_centroid,
+)
 from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
@@ -216,6 +224,7 @@ class Measurement:
     measurement_kind: str = "line"
     line_px: Line | None = None
     polygon_px: list[Point] = field(default_factory=list)
+    area_rings_px: list[list[Point]] = field(default_factory=list)
     snapped_line_px: Line | None = None
     diameter_px: float | None = None
     diameter_unit: float | None = None
@@ -249,11 +258,17 @@ class Measurement:
         )
 
     def polygon_center(self) -> Point:
+        if self.measurement_kind == "area" and self.area_rings_px:
+            return area_rings_centroid(self.area_rings_px)
         return polygon_centroid(self.polygon_px)
 
     def recalculate(self, calibration: Calibration | None) -> None:
         if self.measurement_kind == "area":
-            self.area_px = polygon_area(self.polygon_px)
+            self.area_px = (
+                area_rings_area(self.area_rings_px)
+                if self.area_rings_px
+                else polygon_area(self.polygon_px)
+            )
             if calibration is None:
                 self.area_unit = self.area_px
             else:
@@ -278,6 +293,10 @@ class Measurement:
             "mode": self.mode,
             "line_px": self.line_px.to_dict() if self.line_px else None,
             "polygon_px": [point.to_dict() for point in self.polygon_px],
+            "area_rings_px": [
+                [point.to_dict() for point in ring]
+                for ring in self.area_rings_px
+            ],
             "snapped_line_px": self.snapped_line_px.to_dict() if self.snapped_line_px else None,
             "diameter_px": self.diameter_px,
             "diameter_unit": self.diameter_unit,
@@ -305,6 +324,15 @@ class Measurement:
                 Point.from_dict(item)
                 for item in payload.get("polygon_px", [])
                 if isinstance(item, dict)
+            ],
+            area_rings_px=[
+                [
+                    Point.from_dict(item)
+                    for item in ring
+                    if isinstance(item, dict)
+                ]
+                for ring in payload.get("area_rings_px", [])
+                if isinstance(ring, list)
             ],
             snapped_line_px=Line.from_dict(snapped_line) if snapped_line else None,
             diameter_px=payload.get("diameter_px"),

@@ -12,12 +12,15 @@ from PySide6.QtWidgets import QWidget
 from fdm.geometry import (
     Line,
     Point,
+    area_rings_bounds,
     clamp,
     distance,
     line_length,
     nearest_endpoint,
+    point_in_area_rings,
     point_in_polygon,
     point_near_bounds,
+    point_to_area_rings_edge_distance,
     point_to_polygon_edge_distance,
     polygon_bounds,
     polygon_translate,
@@ -26,11 +29,13 @@ from fdm.geometry import (
 from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
+    magic_mask_to_geometry,
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
 )
 from fdm.settings import AppSettings
 from fdm.ui.rendering import (
+    area_rings_path,
     annotation_rect,
     draw_overlay_annotations,
     draw_measurements,
@@ -56,6 +61,8 @@ class PromptSegmentationSession:
     subtract_negative_points: list[Point] = field(default_factory=list)
     primary_polygon: list[Point] = field(default_factory=list)
     subtract_polygon: list[Point] = field(default_factory=list)
+    primary_rings: list[list[Point]] = field(default_factory=list)
+    subtract_rings: list[list[Point]] = field(default_factory=list)
     primary_mask: object | None = None
     subtract_mask: object | None = None
     request_id: int = 0
@@ -94,6 +101,11 @@ class PromptSegmentationSession:
             return self.subtract_polygon
         return self.primary_polygon
 
+    def rings_for_stage(self, stage: str) -> list[list[Point]]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_rings
+        return self.primary_rings
+
     def set_mask_for_stage(self, stage: str, mask) -> None:
         if stage == MagicSegmentOperationMode.SUBTRACT:
             self.subtract_mask = mask
@@ -106,6 +118,12 @@ class PromptSegmentationSession:
         else:
             self.primary_polygon = polygon
 
+    def set_rings_for_stage(self, stage: str, rings: list[list[Point]]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_rings = rings
+        else:
+            self.primary_rings = rings
+
     def has_points(self) -> bool:
         return bool(
             self.primary_positive_points
@@ -115,10 +133,10 @@ class PromptSegmentationSession:
         )
 
     def has_primary_preview(self) -> bool:
-        return len(self.primary_polygon) >= 3
+        return len(self.primary_polygon) >= 3 or (bool(self.primary_rings) and len(self.primary_rings[0]) >= 3)
 
     def has_any_preview(self) -> bool:
-        return len(self.primary_polygon) >= 3 or len(self.subtract_polygon) >= 3
+        return self.has_primary_preview() or len(self.subtract_polygon) >= 3 or (bool(self.subtract_rings) and len(self.subtract_rings[0]) >= 3)
 
 
 class DocumentCanvas(QWidget):
@@ -324,6 +342,7 @@ class DocumentCanvas(QWidget):
         request_id: int,
         mask,
         polygon_points: list[Point] | None = None,
+        area_rings_points: list[list[Point]] | None = None,
     ) -> dict[str, object] | None:
         if request_id != self._magic_segment.request_id:
             return None
@@ -331,20 +350,27 @@ class DocumentCanvas(QWidget):
         stage = self._magic_segment.pending_stage
         draft_mask = normalize_magic_draft_mask(mask)
         draft_polygon = self._normalize_magic_polygon(polygon_points)
-        if len(draft_polygon) < 3 and draft_mask is not None:
-            draft_polygon = magic_mask_to_polygon(draft_mask)
-        if len(draft_polygon) >= 3:
-            draft_mask = self._magic_polygon_to_mask(draft_polygon)
-        else:
+        draft_rings = self._normalize_magic_rings(area_rings_points)
+        if draft_mask is not None and (len(draft_polygon) < 3 or not draft_rings):
+            selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(draft_mask)
+            draft_mask = selected_mask
+            if selected_rings:
+                draft_rings = self._clone_magic_rings(selected_rings)
+            if len(selected_polygon) >= 3:
+                draft_polygon = self._clone_magic_polygon(selected_polygon)
+        if len(draft_polygon) < 3 and draft_rings:
+            draft_polygon = self._clone_magic_polygon(draft_rings[0])
+        if len(draft_polygon) < 3 and not draft_rings:
             draft_polygon = []
             draft_mask = None
         self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
+        self._magic_segment.set_rings_for_stage(stage, self._clone_magic_rings(draft_rings))
         self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
         self.update()
         self._emit_magic_segment_session_changed()
         return {
             "stage": stage,
-            "has_preview": len(self._magic_segment.polygon_for_stage(stage)) >= 3,
+            "has_preview": len(self._magic_segment.polygon_for_stage(stage)) >= 3 or bool(self._magic_segment.rings_for_stage(stage)),
         }
 
     def fail_magic_segment_result(self, request_id: int) -> None:
@@ -373,6 +399,8 @@ class DocumentCanvas(QWidget):
             result["reason"] = "missing_primary"
             return result
         polygon_points = primary_polygon
+        area_rings_points = self._clone_magic_rings(self._magic_segment.primary_rings)
+        final_mask = primary_mask.copy()
         subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
         if subtract_mask is not None:
             final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_mask)
@@ -380,7 +408,17 @@ class DocumentCanvas(QWidget):
             if final_mask is None:
                 self.clear_magic_segment_session()
                 return result
-            polygon_points = magic_mask_to_polygon(final_mask)
+        selected_mask, selected_rings, selected_polygon, geometry_stats = magic_mask_to_geometry(final_mask)
+        if selected_mask is None:
+            self.clear_magic_segment_session()
+            result["result_empty"] = True
+            return result
+        if selected_rings:
+            area_rings_points = self._clone_magic_rings(selected_rings)
+        if len(selected_polygon) >= 3:
+            polygon_points = self._clone_magic_polygon(selected_polygon)
+        result["opened_holes"] = int(geometry_stats.get("opened_holes", 0) or 0)
+        result["bridge_fallback"] = bool(geometry_stats.get("bridge_fallback", False))
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
             result["reason"] = "missing_polygon"
@@ -391,6 +429,7 @@ class DocumentCanvas(QWidget):
             {
                 "measurement_kind": "area",
                 "polygon_px": polygon_points,
+                "area_rings_px": area_rings_points,
             },
         )
         result["committed"] = True
@@ -404,10 +443,23 @@ class DocumentCanvas(QWidget):
     def _clone_magic_polygon(self, polygon_points: list[Point]) -> list[Point]:
         return [Point(float(point.x), float(point.y)) for point in polygon_points]
 
+    def _clone_magic_rings(self, area_rings: list[list[Point]]) -> list[list[Point]]:
+        return [self._clone_magic_polygon(ring) for ring in area_rings]
+
     def _normalize_magic_polygon(self, polygon_points: list[Point] | None) -> list[Point]:
         if not polygon_points:
             return []
         return self._clone_magic_polygon(list(polygon_points))
+
+    def _normalize_magic_rings(self, area_rings: list[list[Point]] | None) -> list[list[Point]]:
+        if not area_rings:
+            return []
+        normalized: list[list[Point]] = []
+        for ring in area_rings:
+            cloned = self._normalize_magic_polygon(ring)
+            if len(cloned) >= 3:
+                normalized.append(cloned)
+        return normalized
 
     def _magic_polygon_to_mask(self, polygon_points: list[Point]):
         if self._image is None or len(polygon_points) < 3:
@@ -1183,10 +1235,15 @@ class DocumentCanvas(QWidget):
         if self._document is None or self._document.view_state.selected_measurement_id is None:
             return None
         measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
-        if measurement is None or measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
+        if (
+            measurement is None
+            or measurement.measurement_kind != "area"
+            or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px)
+        ):
             return None
+        outline_points = measurement.polygon_px if len(measurement.polygon_px) >= 3 else measurement.area_rings_px[0]
         nearest_vertex: tuple[int, float] | None = None
-        for index, point in enumerate(measurement.polygon_px):
+        for index, point in enumerate(outline_points):
             vertex_distance = distance(point, image_point)
             if vertex_distance <= self._selected_endpoint_tolerance():
                 if nearest_vertex is None or vertex_distance < nearest_vertex[1]:
@@ -1203,10 +1260,16 @@ class DocumentCanvas(QWidget):
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
         for measurement in reversed(self._document.measurements):
-            if measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
+            if measurement.measurement_kind != "area" or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px):
                 continue
-            bounds = polygon_bounds(measurement.polygon_px)
+            bounds = area_rings_bounds(measurement.area_rings_px) if measurement.area_rings_px else polygon_bounds(measurement.polygon_px)
             if not point_near_bounds(image_point, bounds, tolerance):
+                continue
+            if measurement.area_rings_px:
+                if point_in_area_rings(image_point, measurement.area_rings_px):
+                    return measurement.id
+                if point_to_area_rings_edge_distance(image_point, measurement.area_rings_px) <= tolerance:
+                    return measurement.id
                 continue
             if point_in_polygon(image_point, measurement.polygon_px):
                 return measurement.id
@@ -1506,15 +1569,17 @@ class DocumentCanvas(QWidget):
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
             return
-        self._draw_magic_polygon_preview(
+        self._draw_magic_area_preview(
             painter,
             self._magic_segment.primary_polygon,
+            self._magic_segment.primary_rings,
             fill_color=QColor(52, 211, 153, 72),
             stroke_color=QColor("#34D399"),
         )
-        self._draw_magic_polygon_preview(
+        self._draw_magic_area_preview(
             painter,
             self._magic_segment.subtract_polygon,
+            self._magic_segment.subtract_rings,
             fill_color=QColor(248, 113, 113, 68),
             stroke_color=QColor("#F87171"),
         )
@@ -1547,25 +1612,29 @@ class DocumentCanvas(QWidget):
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
 
-    def _draw_magic_polygon_preview(
+    def _draw_magic_area_preview(
         self,
         painter: QPainter,
         polygon_points: list[Point],
+        area_rings: list[list[Point]],
         *,
         fill_color: QColor,
         stroke_color: QColor,
     ) -> None:
-        if len(polygon_points) < 3:
+        outline_points = polygon_points if len(polygon_points) >= 3 else (area_rings[0] if area_rings else [])
+        if len(outline_points) < 3:
             return
-        polygon = QPolygonF([self.image_to_widget(point) for point in polygon_points])
-        if polygon.size() < 3:
-            return
+        path = area_rings_path(area_rings or [outline_points], self.image_to_widget)
+        polygon = QPolygonF([self.image_to_widget(point) for point in outline_points])
         if self._show_area_fill:
             painter.setBrush(fill_color)
         else:
             painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawPolygon(polygon)
+        if path.elementCount() > 0:
+            painter.drawPath(path)
+        else:
+            painter.drawPolygon(polygon)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
         painter.drawPolygon(polygon)

@@ -100,13 +100,17 @@ def nearest_endpoint(line: Line, point: Point) -> tuple[str, float]:
 
 
 def polygon_area(points: list[Point]) -> float:
+    return abs(ring_signed_area(points))
+
+
+def ring_signed_area(points: list[Point]) -> float:
     if len(points) < 3:
         return 0.0
     area = 0.0
     for index, point in enumerate(points):
         next_point = points[(index + 1) % len(points)]
         area += (point.x * next_point.y) - (next_point.x * point.y)
-    return abs(area) / 2.0
+    return area / 2.0
 
 
 def polygon_centroid(points: list[Point]) -> Point:
@@ -132,6 +136,42 @@ def polygon_bounds(points: list[Point]) -> tuple[float, float, float, float]:
     xs = [point.x for point in points]
     ys = [point.y for point in points]
     return min(xs), min(ys), max(xs), max(ys)
+
+
+def area_rings_area(rings: list[list[Point]]) -> float:
+    if not rings or len(rings[0]) < 3:
+        return 0.0
+    outer_area = polygon_area(rings[0])
+    hole_area = sum(polygon_area(ring) for ring in rings[1:] if len(ring) >= 3)
+    return max(0.0, outer_area - hole_area)
+
+
+def area_rings_centroid(rings: list[list[Point]]) -> Point:
+    flattened = [point for ring in rings for point in ring]
+    if not flattened:
+        return Point(0.0, 0.0)
+    total_weight = 0.0
+    cx = 0.0
+    cy = 0.0
+    for index, ring in enumerate(rings):
+        if len(ring) < 3:
+            continue
+        area = polygon_area(ring)
+        if area <= 1e-9:
+            continue
+        centroid = polygon_centroid(ring)
+        weight = area if index == 0 else -area
+        total_weight += weight
+        cx += centroid.x * weight
+        cy += centroid.y * weight
+    if abs(total_weight) < 1e-9:
+        return polygon_bounds_center(flattened)
+    return Point(cx / total_weight, cy / total_weight)
+
+
+def area_rings_bounds(rings: list[list[Point]]) -> tuple[float, float, float, float]:
+    flattened = [point for ring in rings for point in ring]
+    return polygon_bounds(flattened)
 
 
 def point_near_bounds(point: Point, bounds: tuple[float, float, float, float], tolerance: float) -> bool:
@@ -168,6 +208,14 @@ def point_in_polygon(point: Point, polygon: list[Point]) -> bool:
     return inside
 
 
+def point_in_area_rings(point: Point, rings: list[list[Point]]) -> bool:
+    if not rings or len(rings[0]) < 3:
+        return False
+    if not point_in_polygon(point, rings[0]):
+        return False
+    return not any(point_in_polygon(point, ring) for ring in rings[1:] if len(ring) >= 3)
+
+
 def point_to_segment_distance(point: Point, start: Point, end: Point) -> float:
     vx = end.x - start.x
     vy = end.y - start.y
@@ -190,3 +238,43 @@ def point_to_polygon_edge_distance(point: Point, polygon: list[Point]) -> float:
         point_to_segment_distance(point, polygon[index], polygon[(index + 1) % len(polygon)])
         for index in range(len(polygon))
     )
+
+
+def point_to_area_rings_edge_distance(point: Point, rings: list[list[Point]]) -> float:
+    distances = [
+        point_to_polygon_edge_distance(point, ring)
+        for ring in rings
+        if len(ring) >= 2
+    ]
+    if not distances:
+        return float("inf")
+    return min(distances)
+
+
+def clean_ring(points: list[Point], *, collinear_epsilon: float = 1e-6) -> list[Point]:
+    if not points:
+        return []
+    deduped: list[Point] = []
+    for point in points:
+        if deduped and distance(deduped[-1], point) <= collinear_epsilon:
+            continue
+        deduped.append(Point(float(point.x), float(point.y)))
+    if len(deduped) >= 2 and distance(deduped[0], deduped[-1]) <= collinear_epsilon:
+        deduped.pop()
+    if len(deduped) < 3:
+        return deduped
+    cleaned: list[Point] = []
+    total = len(deduped)
+    for index, point in enumerate(deduped):
+        prev_point = deduped[(index - 1) % total]
+        next_point = deduped[(index + 1) % total]
+        cross = (
+            (point.x - prev_point.x) * (next_point.y - point.y)
+            - (point.y - prev_point.y) * (next_point.x - point.x)
+        )
+        if abs(cross) <= collinear_epsilon and point_to_segment_distance(point, prev_point, next_point) <= collinear_epsilon:
+            continue
+        cleaned.append(point)
+    if len(cleaned) < 3:
+        return deduped
+    return cleaned

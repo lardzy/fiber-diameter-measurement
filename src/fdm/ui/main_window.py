@@ -3061,7 +3061,12 @@ class MainWindow(QMainWindow):
         if canvas is None:
             return
         if isinstance(result, PromptSegmentationResult):
-            apply_result = canvas.apply_magic_segment_result(request_id, result.mask, result.polygon_px)
+            apply_result = canvas.apply_magic_segment_result(
+                request_id,
+                result.mask,
+                result.polygon_px,
+                result.area_rings_px,
+            )
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return
@@ -3253,6 +3258,7 @@ class MainWindow(QMainWindow):
                     mode=mode,
                     measurement_kind="area",
                     polygon_px=list(payload.get("polygon_px", [])),
+                    area_rings_px=[list(ring) for ring in payload.get("area_rings_px", [])],
                     confidence=1.0,
                     status="manual" if mode != "auto_instance" else "auto_instance",
                 )
@@ -3310,6 +3316,7 @@ class MainWindow(QMainWindow):
                 return
             if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
                 measurement.polygon_px = list(payload.get("polygon_px", []))
+                measurement.area_rings_px = [list(ring) for ring in payload.get("area_rings_px", [])]
                 measurement.measurement_kind = "area"
             elif isinstance(payload, Line):
                 measurement.snapped_line_px = payload
@@ -4195,6 +4202,8 @@ class MainWindow(QMainWindow):
         opened_holes = int(commit_result.get("opened_holes", 0) or 0)
         if opened_holes > 0:
             messages.append(f"结果中检测到闭环区域，已自动开缝 {opened_holes} 处。")
+        if bool(commit_result.get("bridge_fallback", False)):
+            messages.append("部分闭环桥接已回退到 1px 保底开缝。")
         if bool(commit_result.get("discarded_fragments", False)):
             messages.append("结果中出现多个碎片，已仅保留最大连通区域。")
         if messages:
