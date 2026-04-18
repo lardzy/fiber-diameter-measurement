@@ -424,7 +424,6 @@ class SettingsDialog(QDialog):
             overlay_line_width=self._overlay_line_width.value(),
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
             focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
-            magic_segment_auto_small_object_enabled=self._magic_segment_auto_small_object.isChecked(),
             magic_segment_model_variant=self._magic_segment_model_variant_combo.currentData(),
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
@@ -560,17 +559,14 @@ class SettingsDialog(QDialog):
 
         magic_segment_group = QGroupBox("魔棒分割")
         magic_segment_form = QFormLayout(magic_segment_group)
-        self._magic_segment_auto_small_object = QCheckBox("自动启用小物体增强")
-        self._magic_segment_auto_small_object.setChecked(settings.magic_segment_auto_small_object_enabled)
         self._magic_segment_model_variant_combo = NoWheelComboBox()
         self._magic_segment_model_variant_combo.addItem("标准 (EdgeSAM)", MagicSegmentModelVariant.EDGE_SAM)
         self._magic_segment_model_variant_combo.addItem("高精度 (EdgeSAM-3x)", MagicSegmentModelVariant.EDGE_SAM_3X)
         self._magic_segment_model_variant_combo.setCurrentIndex(
             max(0, self._magic_segment_model_variant_combo.findData(settings.magic_segment_model_variant))
         )
-        magic_hint = QLabel("小物体增强会在目标相对整图较小时自动进行二次局部裁剪推理；高精度模型优先使用 EdgeSAM-3x，缺失时运行时会自动回退。")
+        magic_hint = QLabel("可在此切换标准 EdgeSAM 与高精度 EdgeSAM-3x；若缺失高精度模型文件，运行时会自动回退到标准模型。")
         magic_hint.setWordWrap(True)
-        magic_segment_form.addRow("", self._magic_segment_auto_small_object)
         magic_segment_form.addRow("分割模型", self._magic_segment_model_variant_combo)
         magic_segment_form.addRow("", magic_hint)
 

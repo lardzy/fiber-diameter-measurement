@@ -213,7 +213,6 @@ class AppSettings:
     overlay_line_width: float = 2.5
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
-    magic_segment_auto_small_object_enabled: bool = True
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
@@ -446,7 +445,6 @@ class AppSettings:
             "overlay_line_width": normalized.overlay_line_width,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
-            "magic_segment_auto_small_object_enabled": normalized.magic_segment_auto_small_object_enabled,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
@@ -510,9 +508,6 @@ class AppSettings:
         settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
             payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)
-        )
-        settings.magic_segment_auto_small_object_enabled = bool(
-            payload.get("magic_segment_auto_small_object_enabled", settings.magic_segment_auto_small_object_enabled)
         )
         settings.magic_segment_model_variant = cls._normalize_magic_segment_model_variant(
             payload.get("magic_segment_model_variant", settings.magic_segment_model_variant)

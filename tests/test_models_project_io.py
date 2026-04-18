@@ -347,7 +347,6 @@ class ModelsProjectIOTests(unittest.TestCase):
             overlay_line_width=3.5,
             focus_stack_profile=FocusStackProfile.SHARP,
             focus_stack_sharpen_strength=60,
-            magic_segment_auto_small_object_enabled=False,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
             main_window_geometry="Zm9v",
             main_window_is_maximized=True,
@@ -376,7 +375,6 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
-        self.assertFalse(loaded.magic_segment_auto_small_object_enabled)
         self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
         self.assertTrue(loaded.main_window_is_maximized)
@@ -399,7 +397,6 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
-        self.assertTrue(settings.magic_segment_auto_small_object_enabled)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         self.assertEqual(settings.main_window_geometry, "")
         self.assertFalse(settings.main_window_is_maximized)

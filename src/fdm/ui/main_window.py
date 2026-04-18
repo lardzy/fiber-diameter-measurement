@@ -3047,7 +3047,6 @@ class MainWindow(QMainWindow):
                 positive_points=positive_points,
                 negative_points=negative_points,
                 model_variant=requested_variant,
-                auto_small_object_enabled=self._app_settings.magic_segment_auto_small_object_enabled,
             )
         )
         self._update_magic_segment_controls()
@@ -3062,7 +3061,7 @@ class MainWindow(QMainWindow):
         if canvas is None:
             return
         if isinstance(result, PromptSegmentationResult):
-            apply_result = canvas.apply_magic_segment_result(request_id, result.mask)
+            apply_result = canvas.apply_magic_segment_result(request_id, result.mask, result.polygon_px)
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return

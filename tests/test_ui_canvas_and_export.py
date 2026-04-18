@@ -1359,10 +1359,6 @@ class CanvasAndExportTests(unittest.TestCase):
                 fake_worker.requested.payload.model_variant,
                 window._app_settings.magic_segment_model_variant,
             )
-            self.assertEqual(
-                fake_worker.requested.payload.auto_small_object_enabled,
-                window._app_settings.magic_segment_auto_small_object_enabled,
-            )
         finally:
             window.close()
 
@@ -1762,6 +1758,7 @@ class CanvasAndExportTests(unittest.TestCase):
         )
 
         self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
         commit_result = canvas.commit_magic_segment_preview()
         self.assertTrue(bool(commit_result["committed"]))
         self.assertEqual(len(commits), 1)
@@ -1841,6 +1838,8 @@ class CanvasAndExportTests(unittest.TestCase):
         )
 
         self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
+        self.assertGreaterEqual(len(canvas._magic_segment.subtract_polygon), 3)
         self.assertIsNotNone(canvas._magic_segment.primary_mask)
         self.assertIsNotNone(canvas._magic_segment.subtract_mask)
 
@@ -1885,6 +1884,43 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window._reset_workspace()
             window.close()
+
+    def test_magic_segment_preview_uses_largest_polygon_instead_of_raw_mask_fragments(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+
+        fragmented_mask = self._rect_mask(image.width(), image.height(), (28, 24, 136, 92))
+        fragmented_mask[16:22, 164:170] = True
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+
+        canvas.apply_magic_segment_result(1, fragmented_mask)
+
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
+        self.assertIsNotNone(canvas._magic_segment.primary_mask)
+        self.assertFalse(bool(canvas._magic_segment.primary_mask[18, 166]))
+
+    def test_magic_segment_commit_opens_slit_for_enclosed_subtract_shape_even_with_raw_fragment_noise(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+
+        primary_mask = self._rect_mask(image.width(), image.height(), (20, 18, 150, 102))
+        subtract_mask = self._rect_mask(image.width(), image.height(), (56, 38, 108, 82))
+        subtract_mask[10:16, 170:176] = True
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, primary_mask)
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(2, subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
+        self.assertFalse(bool(commit_result["result_empty"]))
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()
@@ -2318,7 +2354,6 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "测量线与端点"])
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
-            self.assertTrue(dialog._magic_segment_auto_small_object.isChecked())
             self.assertEqual(
                 dialog._magic_segment_model_variant_combo.currentData(),
                 MagicSegmentModelVariant.EDGE_SAM_3X,
@@ -2328,19 +2363,16 @@ class CanvasAndExportTests(unittest.TestCase):
 
     def test_settings_dialog_roundtrips_magic_segment_controls(self) -> None:
         settings = AppSettings(
-            magic_segment_auto_small_object_enabled=False,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
         )
         dialog = SettingsDialog(settings, document=None)
         try:
-            dialog._magic_segment_auto_small_object.setChecked(True)
             dialog._magic_segment_model_variant_combo.setCurrentIndex(
                 dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
             )
 
             collected = dialog.app_settings()
 
-            self.assertTrue(collected.magic_segment_auto_small_object_enabled)
             self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         finally:
             dialog.close()

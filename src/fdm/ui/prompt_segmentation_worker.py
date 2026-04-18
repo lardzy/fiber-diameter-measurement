@@ -18,7 +18,6 @@ class PromptSegmentationRequest:
     positive_points: list[Point]
     negative_points: list[Point]
     model_variant: str
-    auto_small_object_enabled: bool
 
 
 class PromptSegmentationWorker(QObject):
@@ -46,7 +45,6 @@ class PromptSegmentationWorker(QObject):
                 cache_key=request.cache_key,
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
-                auto_small_object_enabled=bool(request.auto_small_object_enabled),
             )
             result.metadata["requested_model_variant"] = request.model_variant
             result.metadata["resolved_model_variant"] = resolved_variant

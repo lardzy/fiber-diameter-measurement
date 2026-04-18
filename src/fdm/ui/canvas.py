@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import time
 
+import cv2
+
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPainterPath, QPen, QPolygonF, QWheelEvent
+from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF, QWheelEvent
 from PySide6.QtWidgets import QWidget
 
 from fdm.geometry import (
@@ -52,6 +54,8 @@ class PromptSegmentationSession:
     primary_negative_points: list[Point] = field(default_factory=list)
     subtract_positive_points: list[Point] = field(default_factory=list)
     subtract_negative_points: list[Point] = field(default_factory=list)
+    primary_polygon: list[Point] = field(default_factory=list)
+    subtract_polygon: list[Point] = field(default_factory=list)
     primary_mask: object | None = None
     subtract_mask: object | None = None
     request_id: int = 0
@@ -85,11 +89,22 @@ class PromptSegmentationSession:
             return self.subtract_mask
         return self.primary_mask
 
+    def polygon_for_stage(self, stage: str) -> list[Point]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_polygon
+        return self.primary_polygon
+
     def set_mask_for_stage(self, stage: str, mask) -> None:
         if stage == MagicSegmentOperationMode.SUBTRACT:
             self.subtract_mask = mask
         else:
             self.primary_mask = mask
+
+    def set_polygon_for_stage(self, stage: str, polygon: list[Point]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_polygon = polygon
+        else:
+            self.primary_polygon = polygon
 
     def has_points(self) -> bool:
         return bool(
@@ -100,10 +115,10 @@ class PromptSegmentationSession:
         )
 
     def has_primary_preview(self) -> bool:
-        return self.primary_mask is not None
+        return len(self.primary_polygon) >= 3
 
     def has_any_preview(self) -> bool:
-        return self.primary_mask is not None or self.subtract_mask is not None
+        return len(self.primary_polygon) >= 3 or len(self.subtract_polygon) >= 3
 
 
 class DocumentCanvas(QWidget):
@@ -295,7 +310,7 @@ class DocumentCanvas(QWidget):
 
     def cycle_magic_segment_operation_mode(self) -> str:
         if self._magic_segment.active_stage == MagicSegmentOperationMode.ADD:
-            if self._magic_segment.primary_mask is None:
+            if not self._magic_segment.has_primary_preview():
                 return self._magic_segment.active_stage
             self._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
         else:
@@ -304,17 +319,32 @@ class DocumentCanvas(QWidget):
         self._emit_magic_segment_session_changed()
         return self._magic_segment.active_stage
 
-    def apply_magic_segment_result(self, request_id: int, mask) -> dict[str, object] | None:
+    def apply_magic_segment_result(
+        self,
+        request_id: int,
+        mask,
+        polygon_points: list[Point] | None = None,
+    ) -> dict[str, object] | None:
         if request_id != self._magic_segment.request_id:
             return None
         self._magic_segment.busy = False
         stage = self._magic_segment.pending_stage
-        self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(normalize_magic_draft_mask(mask)))
+        draft_mask = normalize_magic_draft_mask(mask)
+        draft_polygon = self._normalize_magic_polygon(polygon_points)
+        if len(draft_polygon) < 3 and draft_mask is not None:
+            draft_polygon = magic_mask_to_polygon(draft_mask)
+        if len(draft_polygon) >= 3:
+            draft_mask = self._magic_polygon_to_mask(draft_polygon)
+        else:
+            draft_polygon = []
+            draft_mask = None
+        self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
+        self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
         self.update()
         self._emit_magic_segment_session_changed()
         return {
             "stage": stage,
-            "has_mask": self._magic_segment.mask_for_stage(stage) is not None,
+            "has_preview": len(self._magic_segment.polygon_for_stage(stage)) >= 3,
         }
 
     def fail_magic_segment_result(self, request_id: int) -> None:
@@ -331,6 +361,7 @@ class DocumentCanvas(QWidget):
 
     def commit_magic_segment_preview(self) -> dict[str, object]:
         document_id = self._document.id if self._document is not None else None
+        primary_polygon = self._clone_magic_polygon(self._magic_segment.primary_polygon)
         primary_mask = normalize_magic_draft_mask(self._magic_segment.primary_mask)
         result: dict[str, object] = {
             "committed": False,
@@ -338,10 +369,10 @@ class DocumentCanvas(QWidget):
             "discarded_fragments": False,
             "result_empty": False,
         }
-        if document_id is None or primary_mask is None:
+        if document_id is None or len(primary_polygon) < 3 or primary_mask is None:
             result["reason"] = "missing_primary"
             return result
-        final_mask = self._clone_magic_mask(primary_mask)
+        polygon_points = primary_polygon
         subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
         if subtract_mask is not None:
             final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_mask)
@@ -349,7 +380,7 @@ class DocumentCanvas(QWidget):
             if final_mask is None:
                 self.clear_magic_segment_session()
                 return result
-        polygon_points = magic_mask_to_polygon(final_mask)
+            polygon_points = magic_mask_to_polygon(final_mask)
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
             result["reason"] = "missing_polygon"
@@ -369,6 +400,39 @@ class DocumentCanvas(QWidget):
         if mask is None:
             return None
         return mask.copy()
+
+    def _clone_magic_polygon(self, polygon_points: list[Point]) -> list[Point]:
+        return [Point(float(point.x), float(point.y)) for point in polygon_points]
+
+    def _normalize_magic_polygon(self, polygon_points: list[Point] | None) -> list[Point]:
+        if not polygon_points:
+            return []
+        return self._clone_magic_polygon(list(polygon_points))
+
+    def _magic_polygon_to_mask(self, polygon_points: list[Point]):
+        if self._image is None or len(polygon_points) < 3:
+            return None
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover - dependency is required by the app
+            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+        mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
+        contour = np.array(
+            [
+                [
+                    int(clamp(round(point.x), 0, self._image.width() - 1)),
+                    int(clamp(round(point.y), 0, self._image.height() - 1)),
+                ]
+                for point in polygon_points
+            ],
+            dtype=np.int32,
+        )
+        if contour.shape[0] < 3:
+            return None
+        cv2.fillPoly(mask, [contour], 1)
+        if not mask.any():
+            return None
+        return mask.astype(bool)
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
@@ -1442,15 +1506,15 @@ class DocumentCanvas(QWidget):
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
             return
-        self._draw_magic_mask_path(
+        self._draw_magic_polygon_preview(
             painter,
-            self._magic_mask_to_path(self._magic_segment.primary_mask),
+            self._magic_segment.primary_polygon,
             fill_color=QColor(52, 211, 153, 72),
             stroke_color=QColor("#34D399"),
         )
-        self._draw_magic_mask_path(
+        self._draw_magic_polygon_preview(
             painter,
-            self._magic_mask_to_path(self._magic_segment.subtract_mask),
+            self._magic_segment.subtract_polygon,
             fill_color=QColor(248, 113, 113, 68),
             stroke_color=QColor("#F87171"),
         )
@@ -1483,49 +1547,28 @@ class DocumentCanvas(QWidget):
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
 
-    def _draw_magic_mask_path(
+    def _draw_magic_polygon_preview(
         self,
         painter: QPainter,
-        path: QPainterPath,
+        polygon_points: list[Point],
         *,
         fill_color: QColor,
         stroke_color: QColor,
     ) -> None:
-        if path.isEmpty():
+        if len(polygon_points) < 3:
+            return
+        polygon = QPolygonF([self.image_to_widget(point) for point in polygon_points])
+        if polygon.size() < 3:
             return
         if self._show_area_fill:
             painter.setBrush(fill_color)
         else:
             painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawPath(path)
+        painter.drawPolygon(polygon)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawPath(path)
-
-    def _magic_mask_to_path(self, mask) -> QPainterPath:
-        path = QPainterPath()
-        path.setFillRule(Qt.FillRule.OddEvenFill)
-        if mask is None:
-            return path
-        try:
-            import numpy as np
-        except ImportError as exc:  # pragma: no cover - dependency is required by the app
-            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        import cv2
-
-        mask_uint8 = np.asarray(mask, dtype=np.uint8) * 255
-        contours, _hierarchy = cv2.findContours(mask_uint8.copy(), cv2.RETR_CCOMP, cv2.CHAIN_APPROX_SIMPLE)
-        for contour in contours:
-            points = contour.reshape(-1, 2)
-            if len(points) < 3:
-                continue
-            polygon = QPolygonF(
-                [self.image_to_widget(Point(float(point[0]), float(point[1]))) for point in points]
-            )
-            if polygon.size() >= 3:
-                path.addPolygon(polygon)
-        return path
+        painter.drawPolygon(polygon)
 
     def _draw_magic_prompt_points(
         self,

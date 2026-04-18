@@ -20,11 +20,6 @@ EDGE_SAM_TARGET_LENGTH = 1024
 EDGE_SAM_PIXEL_MEAN = (123.675, 116.28, 103.53)
 EDGE_SAM_PIXEL_STD = (58.395, 57.12, 57.375)
 
-AUTO_SMALL_OBJECT_AREA_RATIO_THRESHOLD = 0.05
-AUTO_SMALL_OBJECT_PROMPT_RATIO_THRESHOLD = 0.12
-AUTO_SMALL_OBJECT_PADDING_RATIO = 0.20
-AUTO_SMALL_OBJECT_MIN_SIDE_PX = 256
-
 
 @dataclass(slots=True)
 class PromptSegmentationResult:
@@ -104,24 +99,6 @@ def magic_mask_area_px(mask) -> float:
     if mask is None:
         return 0.0
     return float(np.count_nonzero(mask))
-
-
-def magic_mask_bounds(mask) -> tuple[int, int, int, int] | None:
-    try:
-        import numpy as np
-    except ImportError as exc:  # pragma: no cover - dependency is required by the app
-        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-    if mask is None:
-        return None
-    ys, xs = np.nonzero(mask)
-    if xs.size == 0 or ys.size == 0:
-        return None
-    return (
-        int(xs.min()),
-        int(ys.min()),
-        int(xs.max()) + 1,
-        int(ys.max()) + 1,
-    )
 
 
 def magic_mask_to_polygon(mask) -> list[Point]:
@@ -297,7 +274,6 @@ class PromptSegmentationService:
         cache_key: str,
         positive_points: list[Point],
         negative_points: list[Point],
-        auto_small_object_enabled: bool = True,
     ) -> PromptSegmentationResult:
         if not positive_points:
             return PromptSegmentationResult(
@@ -307,19 +283,24 @@ class PromptSegmentationService:
                 metadata={"reason": "missing_positive_prompt"},
             )
         cv_image = self._image_to_rgb_array(image)
-        mask, metadata = self._predict_with_optional_auto_crop(
-            cv_image,
-            cache_key=cache_key,
+        embedding = self._embedding_for_rgb_array(cv_image, cache_key=cache_key)
+        mask = self._predict_mask_from_embedding(
+            embedding,
             positive_points=positive_points,
             negative_points=negative_points,
-            auto_small_object_enabled=auto_small_object_enabled,
         )
         polygon = magic_mask_to_polygon(mask)
         return PromptSegmentationResult(
             mask=mask.copy() if mask is not None else None,
             polygon_px=polygon,
             area_px=magic_mask_area_px(mask),
-            metadata=metadata,
+            metadata={
+                "positive_points": len(positive_points),
+                "negative_points": len(negative_points),
+                "cache_size": len(self._embedding_cache),
+                "cache_key": cache_key,
+                "model_variant": self._model_variant,
+            },
         )
 
     def _ensure_sessions(self) -> None:
@@ -484,178 +465,6 @@ class PromptSegmentationService:
         padded = np.zeros((3, target_size, target_size), dtype=np.float32)
         padded[:, : input_size[0], : input_size[1]] = normalized
         return self._cast_encoder_input(padded, np)
-
-    def _predict_with_optional_auto_crop(
-        self,
-        cv_image,
-        *,
-        cache_key: str,
-        positive_points: list[Point],
-        negative_points: list[Point],
-        auto_small_object_enabled: bool,
-    ):
-        try:
-            import numpy as np
-        except ImportError as exc:
-            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        embedding = self._embedding_for_rgb_array(cv_image, cache_key=cache_key)
-        full_mask = self._predict_mask_from_embedding(
-            embedding,
-            positive_points=positive_points,
-            negative_points=negative_points,
-        )
-        metadata: dict[str, object] = {
-            "positive_points": len(positive_points),
-            "negative_points": len(negative_points),
-            "cache_size": len(self._embedding_cache),
-            "cache_key": cache_key,
-            "model_variant": self._model_variant,
-            "auto_small_object_refined": False,
-        }
-        if not auto_small_object_enabled:
-            return full_mask, metadata
-        crop_rect = self._auto_small_object_crop_rect(
-            full_mask,
-            positive_points=positive_points,
-            negative_points=negative_points,
-            image_size=(cv_image.shape[0], cv_image.shape[1]),
-        )
-        if crop_rect is None:
-            return full_mask, metadata
-        x1, y1, x2, y2 = crop_rect
-        if x1 == 0 and y1 == 0 and x2 == cv_image.shape[1] and y2 == cv_image.shape[0]:
-            return full_mask, metadata
-        cropped_image = cv_image[y1:y2, x1:x2].copy()
-        cropped_embedding = self._embedding_for_rgb_array(
-            cropped_image,
-            cache_key=f"{cache_key}:crop:{x1}:{y1}:{x2}:{y2}",
-        )
-        cropped_mask = self._predict_mask_from_embedding(
-            cropped_embedding,
-            positive_points=[Point(point.x - x1, point.y - y1) for point in positive_points],
-            negative_points=[Point(point.x - x1, point.y - y1) for point in negative_points],
-        )
-        refined_mask = np.zeros((cv_image.shape[0], cv_image.shape[1]), dtype=bool)
-        refined_mask[y1:y2, x1:x2] = cropped_mask
-        metadata.update(
-            {
-                "auto_small_object_refined": True,
-                "auto_small_object_crop_rect": [x1, y1, x2, y2],
-            }
-        )
-        return refined_mask, metadata
-
-    def _auto_small_object_crop_rect(
-        self,
-        mask,
-        *,
-        positive_points: list[Point],
-        negative_points: list[Point],
-        image_size: tuple[int, int],
-    ) -> tuple[int, int, int, int] | None:
-        mask_bounds = magic_mask_bounds(mask)
-        prompt_bounds = self._prompt_bounds(positive_points + negative_points)
-        image_area = max(1, image_size[0] * image_size[1])
-        if mask_bounds is not None:
-            x1, y1, x2, y2 = mask_bounds
-            bbox_area = max(1, (x2 - x1) * (y2 - y1))
-            if (bbox_area / image_area) > AUTO_SMALL_OBJECT_AREA_RATIO_THRESHOLD:
-                return None
-            base_bounds = self._merge_bounds(mask_bounds, prompt_bounds)
-            return self._expand_crop_rect(base_bounds, image_size=image_size)
-        prompt_ratio = self._prompt_span_ratio(positive_points + negative_points, image_size=image_size)
-        if prompt_ratio > AUTO_SMALL_OBJECT_PROMPT_RATIO_THRESHOLD:
-            return None
-        if prompt_bounds is None:
-            return None
-        return self._expand_crop_rect(prompt_bounds, image_size=image_size)
-
-    def _prompt_bounds(self, points: list[Point]) -> tuple[int, int, int, int] | None:
-        if not points:
-            return None
-        xs = [point.x for point in points]
-        ys = [point.y for point in points]
-        return (
-            int(min(xs)),
-            int(min(ys)),
-            int(max(xs)) + 1,
-            int(max(ys)) + 1,
-        )
-
-    @staticmethod
-    def _merge_bounds(
-        left: tuple[int, int, int, int] | None,
-        right: tuple[int, int, int, int] | None,
-    ) -> tuple[int, int, int, int] | None:
-        if left is None:
-            return right
-        if right is None:
-            return left
-        return (
-            min(left[0], right[0]),
-            min(left[1], right[1]),
-            max(left[2], right[2]),
-            max(left[3], right[3]),
-        )
-
-    def _expand_crop_rect(
-        self,
-        bounds: tuple[int, int, int, int] | None,
-        *,
-        image_size: tuple[int, int],
-    ) -> tuple[int, int, int, int] | None:
-        if bounds is None:
-            return None
-        image_h, image_w = image_size
-        x1, y1, x2, y2 = bounds
-        width = max(1, x2 - x1)
-        height = max(1, y2 - y1)
-        target_width = max(
-            AUTO_SMALL_OBJECT_MIN_SIDE_PX,
-            int(round(width * (1.0 + (AUTO_SMALL_OBJECT_PADDING_RATIO * 2.0)))),
-        )
-        target_height = max(
-            AUTO_SMALL_OBJECT_MIN_SIDE_PX,
-            int(round(height * (1.0 + (AUTO_SMALL_OBJECT_PADDING_RATIO * 2.0)))),
-        )
-        center_x = (x1 + x2) / 2.0
-        center_y = (y1 + y2) / 2.0
-        crop_x1 = int(round(center_x - (target_width / 2.0)))
-        crop_y1 = int(round(center_y - (target_height / 2.0)))
-        crop_x2 = crop_x1 + target_width
-        crop_y2 = crop_y1 + target_height
-        if crop_x1 < 0:
-            crop_x2 -= crop_x1
-            crop_x1 = 0
-        if crop_y1 < 0:
-            crop_y2 -= crop_y1
-            crop_y1 = 0
-        if crop_x2 > image_w:
-            crop_x1 -= crop_x2 - image_w
-            crop_x2 = image_w
-        if crop_y2 > image_h:
-            crop_y1 -= crop_y2 - image_h
-            crop_y2 = image_h
-        crop_x1 = max(0, crop_x1)
-        crop_y1 = max(0, crop_y1)
-        crop_x2 = min(image_w, crop_x2)
-        crop_y2 = min(image_h, crop_y2)
-        if crop_x2 - crop_x1 <= 0 or crop_y2 - crop_y1 <= 0:
-            return None
-        return crop_x1, crop_y1, crop_x2, crop_y2
-
-    def _prompt_span_ratio(
-        self,
-        points: list[Point],
-        *,
-        image_size: tuple[int, int],
-    ) -> float:
-        if not points:
-            return float("inf")
-        span_x = max(point.x for point in points) - min(point.x for point in points)
-        span_y = max(point.y for point in points) - min(point.y for point in points)
-        long_side = float(max(image_size[0], image_size[1], 1))
-        return max(span_x, span_y) / long_side
 
     def _predict_mask_from_embedding(
         self,
