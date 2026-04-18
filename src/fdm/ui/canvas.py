@@ -22,6 +22,7 @@ from fdm.geometry import (
     snap_to_pixel_center,
 )
 from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
+from fdm.services.prompt_segmentation import magic_mask_to_polygon, sanitize_magic_session_mask
 from fdm.settings import AppSettings
 from fdm.ui.rendering import (
     annotation_rect,
@@ -33,12 +34,20 @@ from fdm.ui.rendering import (
 )
 
 
+class MagicSegmentOperationMode:
+    ADD = "add"
+    SUBTRACT = "subtract"
+
+
 @dataclass(slots=True)
 class PromptSegmentationSession:
     prompt_type: str = "positive"
+    operation_mode: str = MagicSegmentOperationMode.ADD
     positive_points: list[Point] = field(default_factory=list)
     negative_points: list[Point] = field(default_factory=list)
     preview_polygon: list[Point] = field(default_factory=list)
+    preview_mask: object | None = None
+    last_result_mask: object | None = None
     request_id: int = 0
     busy: bool = False
 
@@ -205,11 +214,22 @@ class DocumentCanvas(QWidget):
     def current_magic_segment_prompt_type(self) -> str:
         return self._magic_segment.prompt_type
 
+    def current_magic_segment_operation_mode(self) -> str:
+        return self._magic_segment.operation_mode
+
     def has_magic_segment_session(self) -> bool:
-        return self._magic_segment.has_points() or self._magic_segment.has_preview()
+        return bool(
+            self._magic_segment.has_points()
+            or self._magic_segment.has_preview()
+            or self._magic_segment.preview_mask is not None
+            or self._magic_segment.last_result_mask is not None
+        )
 
     def has_magic_segment_preview(self) -> bool:
         return self._magic_segment.has_preview()
+
+    def is_magic_segment_busy(self) -> bool:
+        return self._magic_segment.busy
 
     def set_magic_segment_prompt_type(self, prompt_type: str) -> None:
         self._magic_segment.prompt_type = "negative" if prompt_type == "negative" else "positive"
@@ -220,18 +240,32 @@ class DocumentCanvas(QWidget):
         self._emit_magic_segment_session_changed()
         return self._magic_segment.prompt_type
 
-    def apply_magic_segment_result(self, request_id: int, polygon_points: list[Point]) -> None:
-        if request_id != self._magic_segment.request_id:
-            return
-        self._magic_segment.busy = False
-        self._magic_segment.preview_polygon = list(polygon_points)
+    def cycle_magic_segment_operation_mode(self) -> str:
+        if self._magic_segment.last_result_mask is not None or self._magic_segment.has_points():
+            self._commit_magic_segment_candidate()
+        self._magic_segment.operation_mode = (
+            MagicSegmentOperationMode.SUBTRACT
+            if self._magic_segment.operation_mode == MagicSegmentOperationMode.ADD
+            else MagicSegmentOperationMode.ADD
+        )
         self._emit_magic_segment_session_changed()
+        return self._magic_segment.operation_mode
+
+    def apply_magic_segment_result(self, request_id: int, mask) -> dict[str, object] | None:
+        if request_id != self._magic_segment.request_id:
+            return None
+        self._magic_segment.busy = False
+        self._magic_segment.last_result_mask = self._clone_magic_mask(mask)
+        stats = self._refresh_magic_segment_preview()
+        self._emit_magic_segment_session_changed()
+        return stats
 
     def fail_magic_segment_result(self, request_id: int) -> None:
         if request_id != self._magic_segment.request_id:
             return
         self._magic_segment.busy = False
-        self._magic_segment.preview_polygon = []
+        self._magic_segment.last_result_mask = None
+        self._refresh_magic_segment_preview()
         self._emit_magic_segment_session_changed()
 
     def clear_magic_segment_session(self) -> None:
@@ -240,6 +274,7 @@ class DocumentCanvas(QWidget):
 
     def commit_magic_segment_preview(self) -> bool:
         document_id = self._document.id if self._document is not None else None
+        self._commit_magic_segment_candidate()
         polygon_points = list(self._magic_segment.preview_polygon)
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
@@ -253,6 +288,47 @@ class DocumentCanvas(QWidget):
             },
         )
         return True
+
+    def _commit_magic_segment_candidate(self) -> None:
+        effective_mask = self._effective_magic_segment_mask()
+        sanitized_mask, _stats = sanitize_magic_session_mask(effective_mask)
+        self._magic_segment.preview_mask = self._clone_magic_mask(sanitized_mask)
+        self._magic_segment.last_result_mask = None
+        self._magic_segment.positive_points.clear()
+        self._magic_segment.negative_points.clear()
+        self._refresh_magic_segment_preview()
+
+    def _effective_magic_segment_mask(self):
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover - dependency is required by the app
+            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+        base_mask = self._magic_segment.preview_mask
+        candidate_mask = self._magic_segment.last_result_mask
+        if base_mask is None and candidate_mask is None:
+            return None
+        if candidate_mask is None:
+            return self._clone_magic_mask(base_mask)
+        candidate = np.asarray(candidate_mask, dtype=bool)
+        if base_mask is None:
+            if self._magic_segment.operation_mode == MagicSegmentOperationMode.SUBTRACT:
+                return np.zeros(candidate.shape, dtype=bool)
+            return candidate.copy()
+        base = np.asarray(base_mask, dtype=bool)
+        if self._magic_segment.operation_mode == MagicSegmentOperationMode.SUBTRACT:
+            return base & ~candidate
+        return base | candidate
+
+    def _refresh_magic_segment_preview(self) -> dict[str, object]:
+        effective_mask = self._effective_magic_segment_mask()
+        sanitized_mask, stats = sanitize_magic_session_mask(effective_mask)
+        self._magic_segment.preview_polygon = magic_mask_to_polygon(sanitized_mask)
+        return stats
+
+    def _clone_magic_mask(self, mask):
+        if mask is None:
+            return None
+        return mask.copy()
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
@@ -435,7 +511,6 @@ class DocumentCanvas(QWidget):
                 self._magic_segment.positive_points.append(point)
             self._magic_segment.request_id += 1
             self._magic_segment.busy = True
-            self._magic_segment.preview_polygon = []
             self.magicSegmentRequested.emit(
                 self._document.id,
                 {
@@ -1337,12 +1412,13 @@ class DocumentCanvas(QWidget):
         self._draw_magic_prompt_points(painter, self._magic_segment.negative_points, QColor("#F87171"), positive=False)
 
         prompt_text = "当前提示：负采样点" if self._magic_segment.prompt_type == "negative" else "当前提示：正采样点"
+        operation_text = "当前模式：剔除" if self._magic_segment.operation_mode == MagicSegmentOperationMode.SUBTRACT else "当前模式：添加"
         if self._magic_segment.busy:
             prompt_text += " / 推理中..."
-        rect = QRectF(14.0, 14.0, 240.0, 32.0)
+        rect = QRectF(14.0, 14.0, 340.0, 32.0)
         painter.fillRect(rect, QColor(16, 24, 32, 188))
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, prompt_text)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
 
     def _draw_magic_prompt_points(
         self,

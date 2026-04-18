@@ -6,7 +6,7 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QImage
 
 from fdm.geometry import Point
-from fdm.services.prompt_segmentation import PromptSegmentationService
+from fdm.services.prompt_segmentation import PromptSegmentationService, resolve_magic_segment_model_variant
 
 
 @dataclass(slots=True)
@@ -17,6 +17,8 @@ class PromptSegmentationRequest:
     request_id: int
     positive_points: list[Point]
     negative_points: list[Point]
+    model_variant: str
+    auto_small_object_enabled: bool
 
 
 class PromptSegmentationWorker(QObject):
@@ -27,26 +29,34 @@ class PromptSegmentationWorker(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._service: PromptSegmentationService | None = None
+        self._services: dict[str, PromptSegmentationService] = {}
         self.requested.connect(self.infer, Qt.ConnectionType.QueuedConnection)
         self.clearRequested.connect(self.clear_cache, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def infer(self, request: PromptSegmentationRequest) -> None:
         try:
-            if self._service is None:
-                self._service = PromptSegmentationService()
-            result = self._service.predict_polygon(
+            resolved_variant, fallback_message = resolve_magic_segment_model_variant(request.model_variant)
+            service = self._services.get(resolved_variant)
+            if service is None:
+                service = PromptSegmentationService(model_variant=resolved_variant)
+                self._services[resolved_variant] = service
+            result = service.predict_polygon(
                 image=request.image,
                 cache_key=request.cache_key,
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
+                auto_small_object_enabled=bool(request.auto_small_object_enabled),
             )
-            self.succeeded.emit(request.document_id, request.request_id, result.polygon_px)
+            result.metadata["requested_model_variant"] = request.model_variant
+            result.metadata["resolved_model_variant"] = resolved_variant
+            if fallback_message:
+                result.metadata["model_fallback_message"] = fallback_message
+            self.succeeded.emit(request.document_id, request.request_id, result)
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(request.document_id, request.request_id, str(exc))
 
     @Slot()
     def clear_cache(self) -> None:
-        if self._service is not None:
-            self._service.clear_cache()
+        for service in self._services.values():
+            service.clear_cache()

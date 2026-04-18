@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from tempfile import TemporaryDirectory
 import sys
 import unittest
 from unittest.mock import patch
@@ -8,14 +9,22 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Point
+from fdm.settings import MagicSegmentModelVariant
 
 try:
-    from fdm.services.prompt_segmentation import PromptSegmentationService, edge_sam_model_paths
+    from fdm.services.prompt_segmentation import (
+        PromptSegmentationService,
+        edge_sam_model_paths,
+        resolve_magic_segment_model_variant,
+        sanitize_magic_session_mask,
+    )
 
     PROMPT_SEGMENTATION_AVAILABLE = True
 except ModuleNotFoundError:
     PromptSegmentationService = object  # type: ignore[assignment]
     edge_sam_model_paths = object  # type: ignore[assignment]
+    resolve_magic_segment_model_variant = object  # type: ignore[assignment]
+    sanitize_magic_session_mask = object  # type: ignore[assignment]
     PROMPT_SEGMENTATION_AVAILABLE = False
 
 
@@ -23,11 +32,16 @@ except ModuleNotFoundError:
 class PromptSegmentationTests(unittest.TestCase):
     def test_edge_sam_model_paths_point_to_runtime_directory(self) -> None:
         encoder_path, decoder_path = edge_sam_model_paths()
+        encoder_3x_path, decoder_3x_path = edge_sam_model_paths(MagicSegmentModelVariant.EDGE_SAM_3X)
 
         self.assertEqual(encoder_path.name, "edge_sam_encoder.onnx")
         self.assertEqual(decoder_path.name, "edge_sam_decoder.onnx")
         self.assertIn("runtime/segment-anything/edge_sam", encoder_path.as_posix())
         self.assertIn("runtime/segment-anything/edge_sam", decoder_path.as_posix())
+        self.assertEqual(encoder_3x_path.name, "edge_sam_3x_encoder.onnx")
+        self.assertEqual(decoder_3x_path.name, "edge_sam_3x_decoder.onnx")
+        self.assertIn("runtime/segment-anything/edge_sam_3x", encoder_3x_path.as_posix())
+        self.assertIn("runtime/segment-anything/edge_sam_3x", decoder_3x_path.as_posix())
 
     def test_embedding_cache_reuses_encoder_result_for_same_image(self) -> None:
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
@@ -82,6 +96,7 @@ class PromptSegmentationTests(unittest.TestCase):
             negative_points=[Point(12, 18)],
         )
 
+        self.assertIsNone(result.mask)
         self.assertEqual(result.polygon_px, [])
         self.assertEqual(result.area_px, 0.0)
         self.assertEqual(result.metadata["reason"], "missing_positive_prompt")
@@ -114,6 +129,35 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(service._encoder_session.received.dtype.name, "uint8")
         self.assertEqual(service._encoder_session.received.shape[0], 1)
 
+    def test_run_encoder_uses_float32_input_tensor_when_model_requires_float(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        class FakeEncoderSession:
+            def __init__(self) -> None:
+                self.received = None
+
+            def run(self, _outputs, inputs):
+                self.received = next(iter(inputs.values()))
+                return [object()]
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        service._encoder_session = FakeEncoderSession()
+        service._decoder_session = object()
+        service._encoder_input_name = "input_image"
+        service._encoder_input_type = "tensor(float)"
+        service._decoder_input_names = {}
+
+        image = np.zeros((24, 48, 3), dtype=np.uint8)
+        _embeddings, original_size = service._run_encoder(image)
+
+        self.assertEqual(original_size, (24, 48))
+        self.assertIsNotNone(service._encoder_session.received)
+        self.assertEqual(service._encoder_session.received.dtype.name, "float32")
+        self.assertEqual(service._encoder_session.received.shape[0], 1)
+
     def test_mask_to_polygon_prefers_largest_contour(self) -> None:
         try:
             import numpy as np
@@ -134,6 +178,131 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertGreaterEqual(min(ys), 24.0)
         self.assertLessEqual(max(xs), 88.0)
         self.assertLessEqual(max(ys), 68.0)
+
+    def test_resolve_magic_segment_model_variant_falls_back_to_standard_model(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            runtime_root = Path(tmp_dir)
+            standard_encoder = runtime_root / "edge_sam_encoder.onnx"
+            standard_decoder = runtime_root / "edge_sam_decoder.onnx"
+            standard_encoder.write_bytes(b"demo")
+            standard_decoder.write_bytes(b"demo")
+
+            def fake_model_paths(model_variant: str = MagicSegmentModelVariant.EDGE_SAM):
+                if model_variant == MagicSegmentModelVariant.EDGE_SAM_3X:
+                    return runtime_root / "missing_3x_encoder.onnx", runtime_root / "missing_3x_decoder.onnx"
+                return standard_encoder, standard_decoder
+
+            with patch("fdm.services.prompt_segmentation.edge_sam_model_paths", side_effect=fake_model_paths):
+                resolved_variant, fallback_message = resolve_magic_segment_model_variant(
+                    MagicSegmentModelVariant.EDGE_SAM_3X
+                )
+
+        self.assertEqual(resolved_variant, MagicSegmentModelVariant.EDGE_SAM)
+        self.assertIn("回退到标准 EdgeSAM", str(fallback_message))
+
+    def test_auto_small_object_refinement_runs_second_pass_for_small_mask(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        image = np.zeros((400, 400, 3), dtype=np.uint8)
+        first_mask = np.zeros((400, 400), dtype=bool)
+        first_mask[18:42, 24:48] = True
+        second_mask = np.zeros((256, 256), dtype=bool)
+        second_mask[40:104, 52:116] = True
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=image),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=[object(), object()]),
+            patch.object(service, "_predict_mask_from_embedding", side_effect=[first_mask, second_mask]) as predict_mock,
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="demo",
+                positive_points=[Point(30, 30)],
+                negative_points=[],
+                auto_small_object_enabled=True,
+            )
+
+        self.assertTrue(result.metadata["auto_small_object_refined"])
+        self.assertEqual(predict_mock.call_count, 2)
+        self.assertIsNotNone(result.mask)
+        self.assertEqual(result.mask.shape, (400, 400))
+        self.assertGreater(result.area_px, 0.0)
+
+    def test_auto_small_object_refinement_can_be_disabled(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        image = np.zeros((400, 400, 3), dtype=np.uint8)
+        first_mask = np.zeros((400, 400), dtype=bool)
+        first_mask[18:42, 24:48] = True
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=image),
+            patch.object(service, "_embedding_for_rgb_array", return_value=object()),
+            patch.object(service, "_predict_mask_from_embedding", return_value=first_mask) as predict_mock,
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="demo",
+                positive_points=[Point(30, 30)],
+                negative_points=[],
+                auto_small_object_enabled=False,
+            )
+
+        self.assertFalse(result.metadata["auto_small_object_refined"])
+        self.assertEqual(predict_mock.call_count, 1)
+
+    def test_auto_small_object_refinement_uses_prompt_span_when_first_pass_is_empty(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        image = np.zeros((400, 400, 3), dtype=np.uint8)
+        first_mask = np.zeros((400, 400), dtype=bool)
+        second_mask = np.zeros((256, 256), dtype=bool)
+        second_mask[110:160, 118:170] = True
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=image),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=[object(), object()]),
+            patch.object(service, "_predict_mask_from_embedding", side_effect=[first_mask, second_mask]) as predict_mock,
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="demo",
+                positive_points=[Point(26, 32)],
+                negative_points=[Point(34, 38)],
+                auto_small_object_enabled=True,
+            )
+
+        self.assertTrue(result.metadata["auto_small_object_refined"])
+        self.assertEqual(predict_mock.call_count, 2)
+
+    def test_sanitize_magic_session_mask_opens_holes_and_discards_smaller_fragments(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        mask = np.zeros((120, 140), dtype=bool)
+        mask[10:100, 12:118] = True
+        mask[36:74, 42:84] = False
+        mask[15:30, 122:134] = True
+
+        sanitized_mask, stats = sanitize_magic_session_mask(mask)
+
+        self.assertIsNotNone(sanitized_mask)
+        self.assertGreater(int(stats["opened_holes"]), 0)
+        self.assertTrue(bool(stats["discarded_fragments"]))
 
 
 if __name__ == "__main__":

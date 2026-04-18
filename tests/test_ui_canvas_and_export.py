@@ -26,6 +26,7 @@ from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measuremen
 from fdm.settings import (
     AppSettings,
     FocusStackProfile,
+    MagicSegmentModelVariant,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
@@ -36,7 +37,7 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas
+    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -46,6 +47,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    MagicSegmentOperationMode = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
@@ -184,6 +186,16 @@ class CanvasAndExportTests(unittest.TestCase):
         content = tab.widget()
         self.assertIsNotNone(content)
         return [group.title() for group in content.findChildren(QGroupBox) if group.title()]
+
+    def _rect_mask(self, width: int, height: int, rect: tuple[int, int, int, int]):
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+        mask = np.zeros((height, width), dtype=bool)
+        x1, y1, x2, y2 = rect
+        mask[y1:y2, x1:x2] = True
+        return mask
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
         self.assertEqual(left.size(), right.size())
@@ -534,7 +546,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(statuses, ["正在完成景深合成，请稍候…"])
             self.assertEqual(busy_calls, [(True, "正在完成景深合成，请稍候…")])
         finally:
-            window.close()
+            window._reset_workspace()
+            window.deleteLater()
+            self.app.processEvents()
 
     def test_map_build_button_shows_developing_message_when_unavailable(self) -> None:
         window = MainWindow()
@@ -1340,6 +1354,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 7)
             self.assertTrue(fake_worker.requested.payload.cache_key.startswith(f"{document.id}:"))
+            self.assertEqual(
+                fake_worker.requested.payload.model_variant,
+                window._app_settings.magic_segment_model_variant,
+            )
+            self.assertEqual(
+                fake_worker.requested.payload.auto_small_object_enabled,
+                window._app_settings.magic_segment_auto_small_object_enabled,
+            )
         finally:
             window.close()
 
@@ -1651,6 +1673,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 window.open_shortcut_help_dialog()
             self.assertEqual(len(dialogs), 1)
             self.assertIn("R", dialogs[0]._content.toPlainText())
+            self.assertIn("T", dialogs[0]._content.toPlainText())
             self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
         finally:
             for dialog in dialogs:
@@ -1717,7 +1740,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
 
     def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
-        document, _, canvas = self._create_canvas_document()
+        document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
         requests: list[tuple[str, object]] = []
         commits: list[tuple[str, str, object]] = []
@@ -1734,7 +1757,7 @@ class CanvasAndExportTests(unittest.TestCase):
         request_id = requests[0][1]["request_id"]
         canvas.apply_magic_segment_result(
             request_id,
-            [Point(20, 20), Point(90, 18), Point(92, 76), Point(24, 80)],
+            self._rect_mask(image.width(), image.height(), (20, 20, 92, 80)),
         )
 
         self.assertTrue(canvas.has_magic_segment_preview())
@@ -1763,11 +1786,16 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(canvas.current_magic_segment_prompt_type(), "positive")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
             self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
 
             canvas._magic_segment.request_id = 1
             canvas.apply_magic_segment_result(
                 1,
-                [Point(24, 24), Point(88, 22), Point(92, 76), Point(26, 80)],
+                self._rect_mask(image.width(), image.height(), (24, 24, 92, 80)),
             )
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
 
@@ -1782,6 +1810,29 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window._reset_workspace()
             window.close()
+
+    def test_magic_segment_subtract_mode_keeps_single_preview_polygon(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+
+        canvas._magic_segment.request_id = 1
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+        )
+        self.assertTrue(canvas.has_magic_segment_preview())
+
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+        canvas._magic_segment.request_id = 2
+        stats = canvas.apply_magic_segment_result(
+            2,
+            self._rect_mask(image.width(), image.height(), (56, 38, 108, 82)),
+        )
+
+        self.assertIsInstance(stats, dict)
+        self.assertGreaterEqual(int(stats["opened_holes"]), 1)
+        self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertGreaterEqual(len(canvas._magic_segment.preview_polygon), 3)
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()
@@ -2214,7 +2265,31 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
             self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "测量线与端点"])
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
-            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数"])
+            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
+            self.assertTrue(dialog._magic_segment_auto_small_object.isChecked())
+            self.assertEqual(
+                dialog._magic_segment_model_variant_combo.currentData(),
+                MagicSegmentModelVariant.EDGE_SAM_3X,
+            )
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_roundtrips_magic_segment_controls(self) -> None:
+        settings = AppSettings(
+            magic_segment_auto_small_object_enabled=False,
+            magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
+        )
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            dialog._magic_segment_auto_small_object.setChecked(True)
+            dialog._magic_segment_model_variant_combo.setCurrentIndex(
+                dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
+            )
+
+            collected = dialog.app_settings()
+
+            self.assertTrue(collected.magic_segment_auto_small_object_enabled)
+            self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         finally:
             dialog.close()
 

@@ -78,10 +78,16 @@ from fdm.services.preview_analysis import (
     MapBuildFinalResult,
     MapBuildReport,
 )
-from fdm.services.prompt_segmentation import PromptSegmentationService
+from fdm.services.prompt_segmentation import (
+    PromptSegmentationResult,
+    PromptSegmentationService,
+    edge_sam_runtime_root,
+    magic_segment_model_label,
+    resolve_magic_segment_model_variant,
+)
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
-from fdm.ui.canvas import DocumentCanvas
+from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
@@ -683,6 +689,12 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button.setText("切换正负 (R)")
         self._magic_toggle_button.clicked.connect(self._cycle_magic_segment_prompt_type)
         layout.addWidget(self._magic_toggle_button)
+
+        self._magic_operation_button = QToolButton(container)
+        self._magic_operation_button.setProperty("contextTool", True)
+        self._magic_operation_button.setText("模式：添加 (T)")
+        self._magic_operation_button.clicked.connect(self._cycle_magic_segment_operation_mode)
+        layout.addWidget(self._magic_operation_button)
 
         self._magic_complete_button = QToolButton(container)
         self._magic_complete_button.setProperty("contextTool", True)
@@ -2998,7 +3010,7 @@ class MainWindow(QMainWindow):
         positive_points = list(payload.get("positive_points", []))
         negative_points = list(payload.get("negative_points", []))
         if not positive_points:
-            canvas.apply_magic_segment_result(request_id, [])
+            canvas.apply_magic_segment_result(request_id, None)
             self._update_magic_segment_controls()
             return
         if image is None or image.isNull():
@@ -3006,13 +3018,19 @@ class MainWindow(QMainWindow):
             self._update_magic_segment_controls()
             QMessageBox.warning(self, "魔棒分割", "当前图片还未完成加载，暂时无法进行魔棒分割。")
             return
-        if not PromptSegmentationService.models_ready():
+        requested_variant = self._app_settings.magic_segment_model_variant
+        resolved_variant, _fallback_message = resolve_magic_segment_model_variant(requested_variant)
+        if not PromptSegmentationService.models_ready(resolved_variant):
             canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
+            runtime_root = edge_sam_runtime_root(resolved_variant)
             QMessageBox.warning(
                 self,
                 "魔棒分割",
-                "未找到 EdgeSAM 模型文件，请确认 runtime/segment-anything/edge_sam 中存在 encoder/decoder ONNX。",
+                (
+                    f"未找到 {magic_segment_model_label(resolved_variant)} 模型文件，"
+                    f"请确认 {runtime_root.as_posix()} 中存在 encoder/decoder ONNX。"
+                ),
             )
             return
         self._ensure_prompt_segmentation_worker()
@@ -3028,6 +3046,8 @@ class MainWindow(QMainWindow):
                 request_id=request_id,
                 positive_points=positive_points,
                 negative_points=negative_points,
+                model_variant=requested_variant,
+                auto_small_object_enabled=self._app_settings.magic_segment_auto_small_object_enabled,
             )
         )
         self._update_magic_segment_controls()
@@ -3037,11 +3057,29 @@ class MainWindow(QMainWindow):
         if current_document is not None and current_document.id == document_id:
             self._update_magic_segment_controls()
 
-    def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, polygon: object) -> None:
+    def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
-        canvas.apply_magic_segment_result(request_id, list(polygon) if isinstance(polygon, list) else [])
+        if isinstance(result, PromptSegmentationResult):
+            stats = canvas.apply_magic_segment_result(request_id, result.mask)
+            if stats is None:
+                self._update_magic_segment_controls()
+                return
+            messages: list[str] = []
+            fallback_message = str(result.metadata.get("model_fallback_message", "")).strip()
+            if fallback_message:
+                messages.append(fallback_message)
+            if isinstance(stats, dict):
+                opened_holes = int(stats.get("opened_holes", 0) or 0)
+                if opened_holes > 0:
+                    messages.append(f"结果中检测到闭环区域，已自动开缝 {opened_holes} 处。")
+                if bool(stats.get("discarded_fragments", False)):
+                    messages.append("结果中出现多个碎片，已仅保留最大连通区域。")
+            if messages:
+                self.statusBar().showMessage(" ".join(messages), 5000)
+        else:
+            canvas.apply_magic_segment_result(request_id, None)
         self._update_magic_segment_controls()
 
     def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None:
@@ -3823,6 +3861,16 @@ class MainWindow(QMainWindow):
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
         return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
 
+    def _magic_operation_label_text(self, operation_mode: str) -> str:
+        if operation_mode == MagicSegmentOperationMode.SUBTRACT:
+            return "当前模式：剔除"
+        return "当前模式：添加"
+
+    def _magic_operation_button_text(self, operation_mode: str) -> str:
+        if operation_mode == MagicSegmentOperationMode.SUBTRACT:
+            return "模式：剔除 (T)"
+        return "模式：添加 (T)"
+
     def _update_magic_segment_controls(self) -> None:
         if self._magic_controls_widget is None or self._measurement_tool_strip is None:
             return
@@ -3833,12 +3881,21 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         has_document = canvas is not None and canvas.document_id is not None
         prompt_type = canvas.current_magic_segment_prompt_type() if canvas is not None else "positive"
+        operation_mode = (
+            canvas.current_magic_segment_operation_mode()
+            if canvas is not None
+            else MagicSegmentOperationMode.ADD
+        )
+        busy = bool(canvas and canvas.is_magic_segment_busy())
         if self._magic_prompt_label is not None:
             self._magic_prompt_label.setText(self._magic_prompt_label_text(prompt_type))
         if self._magic_toggle_button is not None:
-            self._magic_toggle_button.setEnabled(has_document)
+            self._magic_toggle_button.setEnabled(has_document and not busy)
+        if self._magic_operation_button is not None:
+            self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
+            self._magic_operation_button.setEnabled(has_document and not busy)
         if self._magic_complete_button is not None:
-            self._magic_complete_button.setEnabled(bool(canvas and canvas.has_magic_segment_preview()))
+            self._magic_complete_button.setEnabled(bool(canvas and canvas.has_magic_segment_preview() and not busy))
         if self._magic_cancel_button is not None:
             self._magic_cancel_button.setEnabled(bool(canvas and canvas.has_magic_segment_session()))
 
@@ -4113,15 +4170,24 @@ class MainWindow(QMainWindow):
 
     def _cycle_magic_segment_prompt_type(self) -> None:
         canvas = self.current_canvas()
-        if canvas is None or self._tool_mode != "magic_segment":
+        if canvas is None or self._tool_mode != "magic_segment" or canvas.is_magic_segment_busy():
             return
         prompt_type = canvas.cycle_magic_segment_prompt_type()
         self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
         self._focus_current_canvas()
 
+    def _cycle_magic_segment_operation_mode(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or self._tool_mode != "magic_segment" or canvas.is_magic_segment_busy():
+            return
+        operation_mode = canvas.cycle_magic_segment_operation_mode()
+        self.statusBar().showMessage(self._magic_operation_label_text(operation_mode), 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+
     def _commit_magic_segment_preview(self) -> bool:
         canvas = self.current_canvas()
-        if canvas is None or self._tool_mode != "magic_segment":
+        if canvas is None or self._tool_mode != "magic_segment" or canvas.is_magic_segment_busy():
             return False
         committed = canvas.commit_magic_segment_preview()
         if committed:
@@ -4309,6 +4375,10 @@ class MainWindow(QMainWindow):
         if self._tool_mode == "magic_segment" and event.modifiers() == Qt.KeyboardModifier.NoModifier:
             if event.key() == Qt.Key.Key_R:
                 self._cycle_magic_segment_prompt_type()
+                event.accept()
+                return
+            if event.key() == Qt.Key.Key_T:
+                self._cycle_magic_segment_operation_mode()
                 event.accept()
                 return
             if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):

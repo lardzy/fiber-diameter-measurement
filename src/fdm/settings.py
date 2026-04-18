@@ -43,6 +43,11 @@ class FocusStackProfile:
     SOFT = "soft"
 
 
+class MagicSegmentModelVariant:
+    EDGE_SAM = "edge_sam"
+    EDGE_SAM_3X = "edge_sam_3x"
+
+
 @dataclass(slots=True)
 class AreaModelMapping:
     model_name: str
@@ -208,6 +213,8 @@ class AppSettings:
     overlay_line_width: float = 2.5
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
+    magic_segment_auto_small_object_enabled: bool = True
+    magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
@@ -231,6 +238,7 @@ class AppSettings:
         normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
+        normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
@@ -393,6 +401,16 @@ class AppSettings:
         return max(0, min(100, numeric))
 
     @staticmethod
+    def _normalize_magic_segment_model_variant(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            MagicSegmentModelVariant.EDGE_SAM,
+            MagicSegmentModelVariant.EDGE_SAM_3X,
+        }:
+            return token
+        return MagicSegmentModelVariant.EDGE_SAM_3X
+
+    @staticmethod
     def _normalize_overlay_line_width(value: int | float | str | None) -> float:
         try:
             numeric = float(value)
@@ -428,6 +446,8 @@ class AppSettings:
             "overlay_line_width": normalized.overlay_line_width,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
+            "magic_segment_auto_small_object_enabled": normalized.magic_segment_auto_small_object_enabled,
+            "magic_segment_model_variant": normalized.magic_segment_model_variant,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
@@ -490,6 +510,12 @@ class AppSettings:
         settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
             payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)
+        )
+        settings.magic_segment_auto_small_object_enabled = bool(
+            payload.get("magic_segment_auto_small_object_enabled", settings.magic_segment_auto_small_object_enabled)
+        )
+        settings.magic_segment_model_variant = cls._normalize_magic_segment_model_variant(
+            payload.get("magic_segment_model_variant", settings.magic_segment_model_variant)
         )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
