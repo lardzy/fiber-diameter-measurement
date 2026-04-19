@@ -45,6 +45,7 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
+from fdm.area_display import ensure_measurement_display_geometry, invalidate_measurement_display_geometry
 from fdm.geometry import Line, Point, line_length
 from fdm.models import (
     Calibration,
@@ -3636,6 +3637,8 @@ class MainWindow(QMainWindow):
                     confidence=1.0,
                     status="manual" if mode != "auto_instance" else "auto_instance",
                 )
+                if mode == "magic_segment":
+                    ensure_measurement_display_geometry(measurement)
             elif mode == "manual" and isinstance(payload, Line):
                 measurement = Measurement(
                     id=new_id("meas"),
@@ -3695,12 +3698,15 @@ class MainWindow(QMainWindow):
                 payload_mode = payload.get("mode")
                 if isinstance(payload_mode, str) and payload_mode:
                     measurement.mode = payload_mode
+                invalidate_measurement_display_geometry(measurement)
             elif isinstance(payload, Line):
                 measurement.snapped_line_px = payload
             else:
                 return
             measurement.status = "edited"
             measurement.recalculate(document.calibration)
+            if measurement.measurement_kind == "area" and measurement.mode == "magic_segment":
+                ensure_measurement_display_geometry(measurement)
             document.select_measurement(measurement.id)
 
         self._apply_document_change(document, "编辑测量线", mutate)

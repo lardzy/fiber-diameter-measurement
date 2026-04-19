@@ -234,6 +234,9 @@ class Measurement:
     status: str = "ready"
     created_at: str = field(default_factory=utc_now_iso)
     debug_payload: dict[str, Any] = field(default_factory=dict)
+    display_polygon_px: list[Point] = field(default_factory=list, repr=False)
+    display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
+    display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
 
     def effective_line(self) -> Line:
         if self.line_px is None:

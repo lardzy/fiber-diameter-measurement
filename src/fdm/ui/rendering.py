@@ -6,6 +6,7 @@ import math
 from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen, QPolygonF
 
+from fdm.area_display import area_geometry_for_display
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
@@ -417,10 +418,7 @@ def draw_area_measurement(
     show_fill: bool,
     show_handles: bool,
 ) -> None:
-    outline_points = measurement.polygon_px
-    fill_rings = measurement.area_rings_px or ([measurement.polygon_px] if len(measurement.polygon_px) >= 3 else [])
-    if len(outline_points) < 3 and fill_rings:
-        outline_points = fill_rings[0]
+    outline_points, fill_rings, _bounds = area_geometry_for_display(measurement, selected=selected)
     if len(outline_points) < 3:
         return
     color = measurement_color(document, measurement, settings)

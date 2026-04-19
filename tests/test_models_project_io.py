@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from fdm.area_display import ensure_measurement_display_geometry
 from fdm.geometry import Line, Point
 from fdm.models import (
     Calibration,
@@ -766,6 +767,47 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(len(measurement.area_rings_px), 2)
         self.assertAlmostEqual(measurement.area_px or 0.0, 152.0)
         self.assertAlmostEqual(measurement.area_unit or 0.0, 1.52)
+
+    def test_magic_segment_display_geometry_cache_is_not_persisted(self) -> None:
+        dense_outer = [
+            Point(0, 0),
+            Point(5, 0),
+            Point(10, 0),
+            Point(15, 0),
+            Point(20, 0),
+            Point(20, 5),
+            Point(20, 10),
+            Point(20, 15),
+            Point(20, 20),
+            Point(15, 20),
+            Point(10, 20),
+            Point(5, 20),
+            Point(0, 20),
+            Point(0, 15),
+            Point(0, 10),
+            Point(0, 5),
+        ]
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id="image_1",
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=list(dense_outer),
+            area_rings_px=[list(dense_outer)],
+        )
+        ensure_measurement_display_geometry(measurement)
+
+        payload = measurement.to_dict()
+        roundtrip = Measurement.from_dict(payload)
+
+        self.assertNotIn("display_polygon_px", payload)
+        self.assertNotIn("display_area_rings_px", payload)
+        self.assertNotIn("display_bounds_px", payload)
+        self.assertLess(len(measurement.display_polygon_px), len(measurement.polygon_px))
+        self.assertEqual(roundtrip.display_polygon_px, [])
+        self.assertEqual(roundtrip.display_area_rings_px, [])
+        self.assertIsNone(roundtrip.display_bounds_px)
 
     def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
         self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])

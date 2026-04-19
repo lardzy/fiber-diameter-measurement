@@ -9,10 +9,10 @@ from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF, QWheelEvent
 from PySide6.QtWidgets import QWidget
 
+from fdm.area_display import area_geometry_for_display
 from fdm.geometry import (
     Line,
     Point,
-    area_rings_bounds,
     clamp,
     distance,
     line_length,
@@ -22,7 +22,6 @@ from fdm.geometry import (
     point_near_bounds,
     point_to_area_rings_edge_distance,
     point_to_polygon_edge_distance,
-    polygon_bounds,
     polygon_translate,
     snap_to_pixel_center,
 )
@@ -1471,21 +1470,27 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
+        selected_measurement_id = self._document.view_state.selected_measurement_id
         for measurement in reversed(self._document.measurements):
-            if measurement.measurement_kind != "area" or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px):
+            outline_points, fill_rings, bounds = area_geometry_for_display(
+                measurement,
+                selected=measurement.id == selected_measurement_id,
+            )
+            if measurement.measurement_kind != "area" or (len(outline_points) < 3 and not fill_rings):
                 continue
-            bounds = area_rings_bounds(measurement.area_rings_px) if measurement.area_rings_px else polygon_bounds(measurement.polygon_px)
+            if bounds is None:
+                continue
             if not point_near_bounds(image_point, bounds, tolerance):
                 continue
-            if measurement.area_rings_px:
-                if point_in_area_rings(image_point, measurement.area_rings_px):
+            if fill_rings:
+                if point_in_area_rings(image_point, fill_rings):
                     return measurement.id
-                if point_to_area_rings_edge_distance(image_point, measurement.area_rings_px) <= tolerance:
+                if point_to_area_rings_edge_distance(image_point, fill_rings) <= tolerance:
                     return measurement.id
                 continue
-            if point_in_polygon(image_point, measurement.polygon_px):
+            if point_in_polygon(image_point, outline_points):
                 return measurement.id
-            if point_to_polygon_edge_distance(image_point, measurement.polygon_px) <= tolerance:
+            if point_to_polygon_edge_distance(image_point, outline_points) <= tolerance:
                 return measurement.id
         return None
 
