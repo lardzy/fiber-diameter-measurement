@@ -727,6 +727,7 @@ class MeasurementToolStrip(QWidget):
         super().__init__(parent)
         self._mode_buttons: dict[str, ToolStripActionButton] = {}
         self._primary_order: list[str] = []
+        self._magic_tool_button: OverlayToolSplitButton | None = None
         self._overlay_button: OverlayToolSplitButton | None = None
         self._magic_context_widget: QWidget | None = None
         self._preview_context_widget: QWidget | None = None
@@ -900,10 +901,32 @@ class MeasurementToolStrip(QWidget):
         return self._mode_buttons.get(mode)
 
     def primaryModeLabels(self) -> list[str]:
-        labels = [self._mode_buttons[mode].defaultAction().text() for mode in self._primary_order if mode in self._mode_buttons]
+        labels: list[str] = []
+        for mode in self._primary_order:
+            if mode == "__magic_tool__":
+                if self._magic_tool_button is not None:
+                    labels.append(self._magic_tool_button.text())
+                continue
+            if mode in self._mode_buttons:
+                labels.append(self._mode_buttons[mode].defaultAction().text())
         if self._overlay_button is not None:
             labels.append(self._overlay_button.text())
         return labels
+
+    def setMagicToolButton(self, button: OverlayToolSplitButton) -> None:
+        self._magic_tool_button = button
+        self._primary_order.append("__magic_tool__")
+        self._primary_row_layout.addWidget(button)
+        self._sync_auto_compact_mode()
+
+    def setMagicTool(self, kind: str, checked: bool, *, icon: QIcon | None = None, tooltip: str | None = None) -> None:
+        if self._magic_tool_button is None:
+            return
+        if icon is not None:
+            self._magic_tool_button.setCurrentTool(kind, icon)
+        self._magic_tool_button.setChecked(checked)
+        if tooltip is not None:
+            self._magic_tool_button.setToolTip(tooltip)
 
     def setOverlayButton(self, button: OverlayToolSplitButton) -> None:
         self._overlay_button = button
@@ -924,6 +947,8 @@ class MeasurementToolStrip(QWidget):
 
     def setActiveMode(self, mode: str) -> None:
         self._active_mode = mode
+        if self._magic_tool_button is not None and mode not in {"magic_segment", "reference_propagation"}:
+            self._magic_tool_button.setChecked(False)
         if self._overlay_button is not None and mode != "overlay":
             self._overlay_button.setChecked(False)
 
@@ -946,6 +971,8 @@ class MeasurementToolStrip(QWidget):
         self._compact_mode = enabled
         for button in self._mode_buttons.values():
             button.setCompactMode(enabled)
+        if self._magic_tool_button is not None:
+            self._magic_tool_button.setCompactMode(enabled)
         if self._overlay_button is not None:
             self._overlay_button.setCompactMode(enabled)
         self.updateGeometry()
@@ -978,6 +1005,8 @@ class MeasurementToolStrip(QWidget):
 
     def _expanded_primary_width(self) -> int:
         widths = [self._mode_buttons[mode].expandedWidthHint() for mode in self._primary_order if mode in self._mode_buttons]
+        if self._magic_tool_button is not None:
+            widths.append(self._magic_tool_button.expandedWidthHint())
         if self._overlay_button is not None:
             widths.append(self._overlay_button.expandedWidthHint())
         if not widths:
@@ -987,6 +1016,8 @@ class MeasurementToolStrip(QWidget):
 
     def _compact_primary_width(self) -> int:
         widths = [button.COMPACT_WIDTH for button in self._mode_buttons.values()]
+        if self._magic_tool_button is not None:
+            widths.append(self._magic_tool_button.compactWidthHint())
         if self._overlay_button is not None:
             widths.append(self._overlay_button.compactWidthHint())
         if not widths:

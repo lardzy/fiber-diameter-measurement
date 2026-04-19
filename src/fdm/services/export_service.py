@@ -495,6 +495,7 @@ class ExportService:
             "freehand_area": "自由形状面积",
             "magic_segment": "魔棒分割",
             "auto_instance": "实例分割",
+            "reference_instance": "同类扩选",
         }.get(mode, mode)
 
     def _format_measurement_kind(self, kind: str) -> str:
@@ -514,4 +515,5 @@ class ExportService:
             "edge_pair_not_found": "未找到有效边缘",
             "component_not_found": "未找到目标区域",
             "boundary_not_found": "未找到边界",
+            "reference_instance": "同类扩选",
         }.get(status, status)

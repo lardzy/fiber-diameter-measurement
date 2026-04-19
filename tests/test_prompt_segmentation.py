@@ -9,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Point
-from fdm.settings import MagicSegmentModelVariant
+from fdm.settings import ComplexMagicSegmentModelVariant, MagicSegmentModelVariant
 
 try:
     from fdm.services.prompt_segmentation import (
@@ -17,8 +17,12 @@ try:
         edge_sam_model_paths,
         finalize_magic_subtraction_mask,
         fill_magic_draft_internal_holes,
+        interactive_segmentation_model_label,
+        interactive_segmentation_model_paths,
+        interactive_segmentation_runtime_root,
         magic_mask_to_geometry,
         normalize_magic_draft_mask,
+        resolve_interactive_segmentation_backend,
         resolve_magic_segment_model_variant,
     )
 
@@ -28,8 +32,12 @@ except ModuleNotFoundError:
     edge_sam_model_paths = object  # type: ignore[assignment]
     finalize_magic_subtraction_mask = object  # type: ignore[assignment]
     fill_magic_draft_internal_holes = object  # type: ignore[assignment]
+    interactive_segmentation_model_label = object  # type: ignore[assignment]
+    interactive_segmentation_model_paths = object  # type: ignore[assignment]
+    interactive_segmentation_runtime_root = object  # type: ignore[assignment]
     magic_mask_to_geometry = object  # type: ignore[assignment]
     normalize_magic_draft_mask = object  # type: ignore[assignment]
+    resolve_interactive_segmentation_backend = object  # type: ignore[assignment]
     resolve_magic_segment_model_variant = object  # type: ignore[assignment]
     PROMPT_SEGMENTATION_AVAILABLE = False
 
@@ -48,6 +56,20 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(decoder_3x_path.name, "edge_sam_3x_decoder.onnx")
         self.assertIn("runtime/segment-anything/edge_sam_3x", encoder_3x_path.as_posix())
         self.assertIn("runtime/segment-anything/edge_sam_3x", decoder_3x_path.as_posix())
+
+    def test_interactive_segmentation_paths_cover_complex_backends(self) -> None:
+        light_hq_path = interactive_segmentation_model_paths(ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM)
+        efficientsam_path = interactive_segmentation_model_paths(ComplexMagicSegmentModelVariant.EFFICIENTSAM_S)
+
+        self.assertEqual(len(light_hq_path), 1)
+        self.assertEqual(light_hq_path[0].name, "sam_hq_vit_tiny.pth")
+        self.assertIn("runtime/segment-anything/light_hq_sam", light_hq_path[0].as_posix())
+        self.assertEqual(len(efficientsam_path), 1)
+        self.assertEqual(efficientsam_path[0].name, "efficient_sam_vits.pt")
+        self.assertIn("runtime/segment-anything/efficient_sam_s", efficientsam_path[0].as_posix())
+        self.assertIn("runtime/segment-anything/light_hq_sam", interactive_segmentation_runtime_root(ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM).as_posix())
+        self.assertEqual(interactive_segmentation_model_label(ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM), "Light HQ-SAM")
+        self.assertEqual(interactive_segmentation_model_label(ComplexMagicSegmentModelVariant.EFFICIENTSAM_S), "EfficientSAM-S")
 
     def test_embedding_cache_reuses_encoder_result_for_same_image(self) -> None:
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
@@ -231,16 +253,34 @@ class PromptSegmentationTests(unittest.TestCase):
 
             def fake_model_paths(model_variant: str = MagicSegmentModelVariant.EDGE_SAM):
                 if model_variant == MagicSegmentModelVariant.EDGE_SAM_3X:
-                    return runtime_root / "missing_3x_encoder.onnx", runtime_root / "missing_3x_decoder.onnx"
-                return standard_encoder, standard_decoder
+                    return (runtime_root / "missing_3x_encoder.onnx", runtime_root / "missing_3x_decoder.onnx")
+                return (standard_encoder, standard_decoder)
 
-            with patch("fdm.services.prompt_segmentation.edge_sam_model_paths", side_effect=fake_model_paths):
+            with patch("fdm.services.prompt_segmentation.interactive_segmentation_model_paths", side_effect=fake_model_paths):
                 resolved_variant, fallback_message = resolve_magic_segment_model_variant(
                     MagicSegmentModelVariant.EDGE_SAM_3X
                 )
 
         self.assertEqual(resolved_variant, MagicSegmentModelVariant.EDGE_SAM)
         self.assertIn("回退到标准 EdgeSAM", str(fallback_message))
+
+    def test_resolve_interactive_segmentation_backend_does_not_fallback_complex_models(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            runtime_root = Path(tmp_dir)
+            missing_light_hq = runtime_root / "sam_hq_vit_tiny.pth"
+
+            def fake_model_paths(model_variant: str = MagicSegmentModelVariant.EDGE_SAM):
+                if model_variant == ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM:
+                    return (missing_light_hq,)
+                return (runtime_root / "edge_sam_encoder.onnx", runtime_root / "edge_sam_decoder.onnx")
+
+            with patch("fdm.services.prompt_segmentation.interactive_segmentation_model_paths", side_effect=fake_model_paths):
+                resolved_variant, fallback_message = resolve_interactive_segmentation_backend(
+                    ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM
+                )
+
+        self.assertEqual(resolved_variant, ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM)
+        self.assertIsNone(fallback_message)
 
     def test_normalize_magic_draft_mask_returns_none_for_empty_input(self) -> None:
         try:

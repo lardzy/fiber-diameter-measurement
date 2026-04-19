@@ -34,7 +34,13 @@ from fdm.services.prompt_segmentation import (
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
 )
-from fdm.settings import AppSettings
+from fdm.settings import (
+    AppSettings,
+    MagicSegmentToolMode,
+    is_magic_segment_tool_mode,
+    is_magic_toolbar_tool_mode,
+    is_reference_propagation_tool_mode,
+)
 from fdm.ui.rendering import (
     area_rings_path,
     annotation_rect,
@@ -140,6 +146,34 @@ class PromptSegmentationSession:
         return self.has_primary_preview() or len(self.subtract_polygon) >= 3 or (bool(self.subtract_rings) and len(self.subtract_rings[0]) >= 3)
 
 
+@dataclass(slots=True)
+class ReferenceInstancePreviewCandidate:
+    polygon_px: list[Point] = field(default_factory=list)
+    area_rings_px: list[list[Point]] = field(default_factory=list)
+    confidence: float = 0.0
+
+
+@dataclass(slots=True)
+class ReferenceInstanceSession:
+    drag_start: Point | None = None
+    drag_end: Point | None = None
+    dragging: bool = False
+    busy: bool = False
+    request_id: int = 0
+    reference_polygon: list[Point] = field(default_factory=list)
+    reference_rings: list[list[Point]] = field(default_factory=list)
+    preview_candidates: list[ReferenceInstancePreviewCandidate] = field(default_factory=list)
+
+    def has_reference_geometry(self) -> bool:
+        return len(self.reference_polygon) >= 3 or bool(self.reference_rings)
+
+    def has_preview(self) -> bool:
+        return bool(self.preview_candidates)
+
+    def has_session(self) -> bool:
+        return self.dragging or self.busy or self.has_reference_geometry() or self.has_preview()
+
+
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
@@ -201,6 +235,7 @@ class DocumentCanvas(QWidget):
         self._scale_anchor_preview_point: Point | None = None
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
         self._read_only = False
         self._fit_alignment = "center"
 
@@ -212,6 +247,7 @@ class DocumentCanvas(QWidget):
         self._document = document
         self._image = image
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -242,6 +278,7 @@ class DocumentCanvas(QWidget):
         self._drag_overlay_origin = None
         self._drag_overlay_preview = None
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -270,8 +307,10 @@ class DocumentCanvas(QWidget):
         if mode != self._tool_mode:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
-            if self._tool_mode == "magic_segment" or mode != "magic_segment":
+            if is_magic_segment_tool_mode(self._tool_mode) or not is_magic_segment_tool_mode(mode):
                 self.clear_magic_segment_session()
+            if is_reference_propagation_tool_mode(self._tool_mode) or not is_reference_propagation_tool_mode(mode):
+                self.clear_reference_instance_session()
             self._cancel_overlay_interaction()
         self._tool_mode = mode
         if overlay_kind in {
@@ -311,6 +350,15 @@ class DocumentCanvas(QWidget):
 
     def is_magic_segment_busy(self) -> bool:
         return self._magic_segment.busy
+
+    def has_reference_instance_session(self) -> bool:
+        return self._reference_instance.has_session()
+
+    def has_reference_instance_preview(self) -> bool:
+        return self._reference_instance.has_preview()
+
+    def is_reference_instance_busy(self) -> bool:
+        return self._reference_instance.busy
 
     def set_magic_segment_prompt_type(self, prompt_type: str) -> None:
         self._magic_segment.set_prompt_type_for_stage(self._magic_segment.active_stage, prompt_type)
@@ -359,7 +407,11 @@ class DocumentCanvas(QWidget):
                 draft_rings = self._clone_magic_rings(selected_rings)
             if len(selected_polygon) >= 3:
                 draft_polygon = self._clone_magic_polygon(selected_polygon)
-        if draft_mask is not None and self._settings.magic_segment_fill_draft_holes_enabled:
+        if (
+            draft_mask is not None
+            and self._tool_mode == MagicSegmentToolMode.STANDARD
+            and self._settings.magic_segment_fill_draft_holes_enabled
+        ):
             filled_mask = fill_magic_draft_internal_holes(draft_mask)
             selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(filled_mask)
             draft_mask = selected_mask
@@ -391,6 +443,79 @@ class DocumentCanvas(QWidget):
         self._magic_segment = PromptSegmentationSession()
         self.update()
         self._emit_magic_segment_session_changed()
+
+    def apply_reference_instance_result(
+        self,
+        request_id: int,
+        *,
+        reference_polygon_points: list[Point] | None = None,
+        reference_area_rings_points: list[list[Point]] | None = None,
+        candidates: list[ReferenceInstancePreviewCandidate] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._reference_instance.request_id:
+            return None
+        self._reference_instance.busy = False
+        self._reference_instance.dragging = False
+        self._reference_instance.drag_start = None
+        self._reference_instance.drag_end = None
+        self._reference_instance.reference_polygon = self._normalize_magic_polygon(reference_polygon_points)
+        self._reference_instance.reference_rings = self._normalize_magic_rings(reference_area_rings_points)
+        if len(self._reference_instance.reference_polygon) < 3 and self._reference_instance.reference_rings:
+            self._reference_instance.reference_polygon = self._clone_magic_polygon(self._reference_instance.reference_rings[0])
+        normalized_candidates: list[ReferenceInstancePreviewCandidate] = []
+        for candidate in candidates or []:
+            polygon = self._normalize_magic_polygon(candidate.polygon_px)
+            rings = self._normalize_magic_rings(candidate.area_rings_px)
+            if len(polygon) < 3 and rings:
+                polygon = self._clone_magic_polygon(rings[0])
+            if len(polygon) < 3 and not rings:
+                continue
+            normalized_candidates.append(
+                ReferenceInstancePreviewCandidate(
+                    polygon_px=polygon,
+                    area_rings_px=rings,
+                    confidence=float(candidate.confidence),
+                )
+            )
+        self._reference_instance.preview_candidates = normalized_candidates
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "candidate_count": len(normalized_candidates),
+            "has_reference": self._reference_instance.has_reference_geometry(),
+        }
+
+    def fail_reference_instance_result(self, request_id: int) -> None:
+        if request_id != self._reference_instance.request_id:
+            return
+        self._reference_instance.busy = False
+        self._reference_instance.dragging = False
+        self._reference_instance.drag_start = None
+        self._reference_instance.drag_end = None
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def clear_reference_instance_session(self) -> None:
+        self._reference_instance = ReferenceInstanceSession()
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def commit_reference_instance_preview(self) -> dict[str, object]:
+        candidates = [
+            {
+                "polygon_px": self._clone_magic_polygon(candidate.polygon_px),
+                "area_rings_px": self._clone_magic_rings(candidate.area_rings_px),
+                "confidence": float(candidate.confidence),
+            }
+            for candidate in self._reference_instance.preview_candidates
+            if len(candidate.polygon_px) >= 3 or candidate.area_rings_px
+        ]
+        committed = bool(candidates)
+        self.clear_reference_instance_session()
+        return {
+            "committed": committed,
+            "candidates": candidates,
+        }
 
     def commit_magic_segment_preview(self) -> dict[str, object]:
         document_id = self._document.id if self._document is not None else None
@@ -566,7 +691,7 @@ class DocumentCanvas(QWidget):
             self.set_temporary_grab_pressed(True)
             event.accept()
             return
-        if event.key() == Qt.Key.Key_Escape and self._tool_mode == "magic_segment" and self.has_magic_segment_session():
+        if event.key() == Qt.Key.Key_Escape and is_magic_segment_tool_mode(self._tool_mode) and self.has_magic_segment_session():
             self.clear_magic_segment_session()
             event.accept()
             return
@@ -659,7 +784,7 @@ class DocumentCanvas(QWidget):
                 self.scaleAnchorPicked.emit(self._document.id, self._scale_anchor_preview_point)
             return
 
-        if self._tool_mode == "magic_segment":
+        if is_magic_segment_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
                 return
             if self._magic_segment.busy:
@@ -684,8 +809,45 @@ class DocumentCanvas(QWidget):
                     "request_id": self._magic_segment.request_id,
                     "positive_points": list(self._magic_segment.positive_points_for_stage(active_stage)),
                     "negative_points": list(self._magic_segment.negative_points_for_stage(active_stage)),
+                    "tool_mode": self._tool_mode,
+                    "active_stage": active_stage,
                 },
             )
+            self.update()
+            self._emit_magic_segment_session_changed()
+            return
+
+        if is_reference_propagation_tool_mode(self._tool_mode):
+            if not self._point_in_image(image_point):
+                return
+            if self._reference_instance.busy:
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            measurement_id = self._hit_test_area_measurement(point)
+            if measurement_id is not None:
+                self._reference_instance = ReferenceInstanceSession()
+                self._reference_instance.request_id += 1
+                self._reference_instance.busy = True
+                self.magicSegmentRequested.emit(
+                    self._document.id,
+                    {
+                        "request_id": self._reference_instance.request_id,
+                        "tool_mode": self._tool_mode,
+                        "reference_measurement_id": measurement_id,
+                    },
+                )
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return
+            self._reference_instance = ReferenceInstanceSession()
+            self._reference_instance.dragging = True
+            self._reference_instance.drag_start = point
+            self._reference_instance.drag_end = point
             self.update()
             self._emit_magic_segment_session_changed()
             return
@@ -855,6 +1017,11 @@ class DocumentCanvas(QWidget):
 
         image_point = self.widget_to_image(event.position())
 
+        if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
+            self._reference_instance.drag_end = self._clamp_to_image(image_point, pixel_center=False)
+            self.update()
+            return
+
         if self._tool_mode == "polygon_area" and self._drawing_polygon_points:
             self._area_hover_point = self._clamp_to_image(image_point, pixel_center=False)
             self.update()
@@ -962,6 +1129,35 @@ class DocumentCanvas(QWidget):
             return
         if self._read_only:
             self._update_cursor()
+            return
+
+        if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
+            start = self._reference_instance.drag_start
+            end = self._reference_instance.drag_end
+            self._reference_instance.dragging = False
+            self._reference_instance.drag_start = None
+            self._reference_instance.drag_end = None
+            if start is not None and end is not None:
+                width = abs(end.x - start.x)
+                height = abs(end.y - start.y)
+                if width >= 8.0 and height >= 8.0:
+                    self._reference_instance.request_id += 1
+                    self._reference_instance.busy = True
+                    self.magicSegmentRequested.emit(
+                        self._document.id,
+                        {
+                            "request_id": self._reference_instance.request_id,
+                            "tool_mode": self._tool_mode,
+                            "reference_box": {
+                                "start": start,
+                                "end": end,
+                            },
+                        },
+                    )
+                else:
+                    self._reference_instance = ReferenceInstanceSession()
+            self.update()
+            self._emit_magic_segment_session_changed()
             return
 
         if self._drawing_freehand_active:
@@ -1210,8 +1406,10 @@ class DocumentCanvas(QWidget):
                 render_mode="screen_scale_full_image",
             )
 
-        if self._tool_mode == "magic_segment":
+        if is_magic_segment_tool_mode(self._tool_mode):
             self._draw_magic_segment_preview(painter)
+        elif is_reference_propagation_tool_mode(self._tool_mode) or self._reference_instance.has_session():
+            self._draw_reference_instance_preview(painter)
 
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
@@ -1578,6 +1776,7 @@ class DocumentCanvas(QWidget):
             or self._dragging_overlay_id is not None
             or self._dragging_overlay_handle is not None
             or self._scale_anchor_pick_active
+            or self._reference_instance.dragging
         )
 
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
@@ -1626,6 +1825,42 @@ class DocumentCanvas(QWidget):
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
 
+    def _draw_reference_instance_preview(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        if self._reference_instance.dragging and self._reference_instance.drag_start is not None and self._reference_instance.drag_end is not None:
+            rect = QRectF(
+                self.image_to_widget(self._reference_instance.drag_start),
+                self.image_to_widget(self._reference_instance.drag_end),
+            ).normalized()
+            painter.setBrush(QColor(96, 165, 250, 40))
+            painter.setPen(QPen(QColor("#60A5FA"), 1.8, Qt.PenStyle.DashLine))
+            painter.drawRect(rect)
+        self._draw_magic_area_preview(
+            painter,
+            self._reference_instance.reference_polygon,
+            self._reference_instance.reference_rings,
+            fill_color=QColor(96, 165, 250, 54),
+            stroke_color=QColor("#60A5FA"),
+        )
+        for candidate in self._reference_instance.preview_candidates:
+            self._draw_magic_area_preview(
+                painter,
+                candidate.polygon_px,
+                candidate.area_rings_px,
+                fill_color=QColor(52, 211, 153, 56),
+                stroke_color=QColor("#34D399"),
+            )
+        label_text = "拖框或点已确认面积作为参考"
+        if self._reference_instance.busy:
+            label_text = "同类扩选推理中..."
+        elif self._reference_instance.preview_candidates:
+            label_text = f"已找到 {len(self._reference_instance.preview_candidates)} 个候选，按 Enter / F 加入当前类别"
+        rect = QRectF(14.0, 14.0, 420.0, 32.0)
+        painter.fillRect(rect, QColor(16, 24, 32, 188))
+        painter.setPen(QPen(QColor("#FFFFFF"), 1))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)
+
     def _draw_magic_area_preview(
         self,
         painter: QPainter,
@@ -1636,22 +1871,28 @@ class DocumentCanvas(QWidget):
         stroke_color: QColor,
     ) -> None:
         outline_points = polygon_points if len(polygon_points) >= 3 else (area_rings[0] if area_rings else [])
-        if len(outline_points) < 3:
+        if len(outline_points) < 3 and not area_rings:
             return
-        path = area_rings_path(area_rings or [outline_points], self.image_to_widget)
-        polygon = QPolygonF([self.image_to_widget(point) for point in outline_points])
+        preview_rings = area_rings or [outline_points]
+        path = area_rings_path(preview_rings, self.image_to_widget)
         if self._show_area_fill:
             painter.setBrush(fill_color)
             painter.setPen(Qt.PenStyle.NoPen)
             if path.elementCount() > 0:
                 painter.drawPath(path)
             else:
-                painter.drawPolygon(polygon)
+                painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in outline_points]))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawPolygon(polygon)
+        for ring in preview_rings:
+            if len(ring) < 3:
+                continue
+            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
         painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        painter.drawPolygon(polygon)
+        for ring in preview_rings:
+            if len(ring) < 3:
+                continue
+            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
 
     def _draw_magic_prompt_points(
         self,

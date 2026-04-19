@@ -433,6 +433,17 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
 
+    def test_app_settings_from_dict_ignores_legacy_complex_magic_segment_field(self) -> None:
+        settings = AppSettings.from_dict(
+            {
+                "magic_segment_model_variant": MagicSegmentModelVariant.EDGE_SAM,
+                "complex_magic_segment_model_variant": "light_hq_sam",
+            }
+        )
+
+        self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
+        self.assertFalse(hasattr(settings, "complex_magic_segment_model_variant"))
+
     def test_app_settings_roundtrip_preserves_calibration_presets(self) -> None:
         settings = AppSettings(
             calibration_presets=[
@@ -466,6 +477,40 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded = AppSettingsIO.load(saved_path)
 
         self.assertEqual(loaded.selected_capture_device_id, "microview:1")
+
+    def test_remove_auto_area_measurements_preserves_reference_instance_areas(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/reference_instance_preserve.png",
+            image_size=(320, 240),
+        )
+        group = document.ensure_default_group()
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="auto_instance",
+                measurement_kind="area",
+                polygon_px=[Point(10, 10), Point(40, 10), Point(40, 40), Point(10, 40)],
+                status="auto_instance",
+            )
+        )
+        reference_measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=group.id,
+            mode="reference_instance",
+            measurement_kind="area",
+            polygon_px=[Point(60, 10), Point(90, 10), Point(90, 40), Point(60, 40)],
+            status="reference_instance",
+        )
+        document.add_measurement(reference_measurement)
+
+        document.remove_auto_area_measurements()
+
+        self.assertEqual([measurement.id for measurement in document.measurements], [reference_measurement.id])
 
     def test_project_roundtrip_persists_project_default_calibration_without_writing_legacy_presets(self) -> None:
         project = ProjectState(

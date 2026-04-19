@@ -11,7 +11,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
-    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtCore import QPoint, QPointF, Qt, QThread
     from PySide6.QtGui import QImage, QColor, QPalette
     from PySide6.QtWidgets import QApplication, QComboBox, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
 
@@ -27,18 +27,20 @@ from fdm.settings import (
     AppSettings,
     FocusStackProfile,
     MagicSegmentModelVariant,
+    MagicSegmentToolMode,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
 )
+from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode
+    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -49,6 +51,7 @@ if PYSIDE_AVAILABLE:
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     MagicSegmentOperationMode = object  # type: ignore[assignment]
+    ReferenceInstancePreviewCandidate = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
@@ -129,6 +132,18 @@ class FakeKeyEvent:
 
     def accept(self) -> None:
         self.accepted = True
+
+
+class FakeCloseEvent:
+    def __init__(self) -> None:
+        self.accepted = False
+        self.ignored = False
+
+    def accept(self) -> None:
+        self.accepted = True
+
+    def ignore(self) -> None:
+        self.ignored = True
 
 
 class FakeIgnoredWheelEvent:
@@ -217,6 +232,16 @@ class CanvasAndExportTests(unittest.TestCase):
         x1, y1, x2, y2 = rect
         mask[y1:y2, x1:x2] = True
         return mask
+
+    def _area_instance(self, label: str, polygon: list[Point] | None = None) -> AreaInstanceResult:
+        shape = polygon or [Point(10, 10), Point(30, 10), Point(30, 30), Point(10, 30)]
+        return AreaInstanceResult(
+            class_name=label,
+            score=0.95,
+            bbox=[10, 10, 30, 30],
+            polygon_px=list(shape),
+            area_px=400.0,
+        )
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
         self.assertEqual(left.size(), right.size())
@@ -592,6 +617,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIn("开发中", mock_information.call_args.args[2])
             self.assertFalse(window._map_build_button.isChecked())
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
@@ -720,6 +746,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window.preset_combo.minimumContentsLength(), 10)
             self.assertIn("激光共聚焦超长超长超长预设名称", window.preset_combo.toolTip())
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
@@ -1026,12 +1053,28 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "边缘吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "叠加标注"],
+                ["浏览", "手动测量", "边缘吸附", "多边形面积", "自由形状面积", "标准魔棒", "比例尺标定", "叠加标注"],
             )
-            visible_actions = [window._mode_actions[key] for key in ["select", "manual", "snap", "polygon_area", "freehand_area", "magic_segment", "calibration"]]
+            visible_actions = [
+                window._mode_actions[key]
+                for key in [
+                    "select",
+                    "manual",
+                    "snap",
+                    "polygon_area",
+                    "freehand_area",
+                    MagicSegmentToolMode.STANDARD,
+                    MagicSegmentToolMode.REFERENCE,
+                    "calibration",
+                ]
+            ]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            self.assertIsInstance(window._magic_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._magic_tool_button.text(), "标准魔棒")
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.STANDARD)
+            self.assertIs(window._magic_tool_menu.parent(), window)
             self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
             self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
             self.assertLessEqual(window._overlay_tool_button.expandedWidthHint(), 120)
@@ -1329,6 +1372,176 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_area_auto_recognition_uses_shared_project_group_order_across_documents(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_order_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_order_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first.create_group(color="#E07A5F", label="莱赛尔")
+            first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#E07A5F", label="莱赛尔")
+            second.create_group(color="#1F7A8C", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            global_labels: list[str] = []
+            instances = [self._area_instance("棉"), self._area_instance("莱赛尔")]
+            window._apply_area_inference_result(first, instances, global_group_labels=global_labels, model_name="棉-莱赛尔")
+            window._apply_area_inference_result(second, instances, global_group_labels=global_labels, model_name="棉-莱赛尔")
+
+            self.assertEqual(global_labels, ["棉", "莱赛尔"])
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉", "莱赛尔"])
+            self.assertEqual([group.label for group in first.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertEqual([group.label for group in second.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertEqual(first.get_group_by_number(1).label, "棉")
+            self.assertEqual(second.get_group_by_number(1).label, "棉")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_reorders_existing_groups_without_losing_manual_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_manual_keep.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            hemp = document.create_group(color="#6B7280", label="麻")
+            lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            manual = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton.id,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(80, 20)),
+            )
+            document.add_measurement(manual)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉", "莱赛尔", "麻"])
+            self.assertEqual(document.get_group(cotton.id).number, 1)
+            self.assertEqual(document.get_measurement(manual.id).fiber_group_id, cotton.id)
+            self.assertEqual(document.get_group(hemp.id).number, 3)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_merges_duplicate_same_label_groups_before_import(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_merge_dupes.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            cotton_a = document.create_group(color="#1F7A8C", label="棉")
+            document.create_group(color="#6B7280", label="麻")
+            cotton_b = document.create_group(color="#7DD3FC", label="棉")
+            manual = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton_b.id,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(80, 20)),
+            )
+            document.add_measurement(manual)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉",
+            )
+
+            cotton_groups = document.groups_by_label("棉")
+            self.assertEqual(len(cotton_groups), 1)
+            self.assertEqual(cotton_groups[0].id, cotton_a.id)
+            self.assertEqual(document.get_measurement(manual.id).fiber_group_id, cotton_a.id)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_restores_suppressed_project_label_when_model_hits_it(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/area_unsuppress.png",
+                image_size=(220, 140),
+                suppressed_project_group_labels=["棉"],
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertFalse(document.is_project_group_label_suppressed("棉"))
+            self.assertIsNotNone(document.find_group_by_label("棉"))
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉", "莱赛尔"])
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_empty_result_clears_auto_instances_without_reordering_groups(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_empty.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            auto_area = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton.id,
+                mode="auto_instance",
+                measurement_kind="area",
+                polygon_px=[Point(10, 10), Point(30, 10), Point(30, 30), Point(10, 30)],
+            )
+            document.add_measurement(auto_area)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["莱赛尔", "棉"])
+            self.assertEqual(document.get_group(lyocell.id).number, 1)
+            self.assertEqual(document.get_group(cotton.id).number, 2)
+            self.assertFalse(
+                any(measurement.mode == "auto_instance" for measurement in document.measurements)
+            )
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_magic_segment_request_uses_in_memory_image_and_cache_key(self) -> None:
         window = MainWindow()
         try:
@@ -1357,9 +1570,11 @@ class CanvasAndExportTests(unittest.TestCase):
             fake_worker = FakeWorker()
             window._prompt_seg_worker = fake_worker
 
-            with patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None), patch(
-                "fdm.ui.main_window.PromptSegmentationService.models_ready",
-                return_value=True,
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
             ):
                 window._on_canvas_magic_segment_requested(
                     document.id,
@@ -1367,10 +1582,13 @@ class CanvasAndExportTests(unittest.TestCase):
                         "request_id": 7,
                         "positive_points": [Point(20, 20)],
                         "negative_points": [Point(30, 30)],
+                        "tool_mode": MagicSegmentToolMode.STANDARD,
+                        "active_stage": MagicSegmentOperationMode.ADD,
                     },
                 )
 
             self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
             self.assertIs(fake_worker.requested.payload.image, image)
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 7)
@@ -1379,7 +1597,133 @@ class CanvasAndExportTests(unittest.TestCase):
                 fake_worker.requested.payload.model_variant,
                 window._app_settings.magic_segment_model_variant,
             )
+            self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.STANDARD)
+            self.assertEqual(fake_worker.requested.payload.active_stage, MagicSegmentOperationMode.ADD)
         finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_reference_instance_request_uses_reference_worker_for_existing_area_seed(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/reference_existing_area.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            group = document.ensure_default_group()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=[Point(22, 18), Point(90, 18), Point(90, 72), Point(22, 72)],
+                status="ready",
+            )
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._reference_instance_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_reference_instance_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 9,
+                        "tool_mode": MagicSegmentToolMode.REFERENCE,
+                        "reference_measurement_id": measurement.id,
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 9)
+            self.assertEqual(fake_worker.requested.payload.model_variant, window._app_settings.magic_segment_model_variant)
+            self.assertEqual(fake_worker.requested.payload.reference_box, None)
+            self.assertEqual(fake_worker.requested.payload.reference_polygon_px, measurement.polygon_px)
+            self.assertEqual(fake_worker.requested.payload.reference_area_rings_px, measurement.area_rings_px)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_reference_instance_request_uses_reference_worker_for_drag_box_seed(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/reference_drag_box.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._reference_instance_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_reference_instance_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 8,
+                        "tool_mode": MagicSegmentToolMode.REFERENCE,
+                        "reference_box": {
+                            "start": Point(24, 28),
+                            "end": Point(96, 104),
+                        },
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 8)
+            self.assertEqual(fake_worker.requested.payload.reference_box, (Point(24, 28), Point(96, 104)))
+            self.assertEqual(fake_worker.requested.payload.reference_polygon_px, [])
+            self.assertEqual(fake_worker.requested.payload.reference_area_rings_px, [])
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_add_fiber_group_global_syncs_existing_documents(self) -> None:
@@ -1547,11 +1891,17 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._magic_controls_widget)
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertIsNotNone(window._magic_prompt_label)
 
             window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
-            window.set_tool_mode("magic_segment")
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
             self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
             self.assertTrue(window._measurement_tool_strip.isContextInline())
+            self.assertTrue(window._magic_prompt_label.isHidden())
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+            self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.REFERENCE)
+            self.assertFalse(window._magic_prompt_label.isHidden())
 
             window.set_tool_mode("select")
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
@@ -2468,6 +2818,78 @@ class CanvasAndExportTests(unittest.TestCase):
         canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
         canvas.apply_magic_segment_result(2, hole_mask)
         self.assertEqual(len(canvas._magic_segment.primary_rings), 1)
+
+        canvas.clear_magic_segment_session()
+        canvas.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+        canvas._magic_segment.request_id = 3
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(3, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 2)
+
+    def test_reference_instance_commit_adds_measurements_with_reference_mode_labels(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/reference_instance_commit.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            reference_polygon = [Point(20, 18), Point(88, 18), Point(88, 72), Point(20, 72)]
+            candidate_polygon = [Point(112, 18), Point(180, 18), Point(180, 72), Point(112, 72)]
+            canvas._reference_instance.request_id = 1
+            canvas._reference_instance.reference_polygon = list(reference_polygon)
+            canvas._reference_instance.preview_candidates = [
+                ReferenceInstancePreviewCandidate(
+                    polygon_px=list(candidate_polygon),
+                    area_rings_px=[],
+                    confidence=0.91,
+                )
+            ]
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+
+            committed = window._commit_reference_instance_preview()
+
+            self.assertTrue(committed)
+            self.assertEqual(len(document.measurements), 1)
+            measurement = document.measurements[0]
+            self.assertEqual(measurement.mode, "reference_instance")
+            self.assertEqual(measurement.status, "reference_instance")
+            self.assertIsNotNone(measurement.fiber_group_id)
+
+            window._populate_measurement_table(document)
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_MODE).text(), "同类扩选")
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_STATUS).text(), "同类扩选")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_close_event_stops_idle_prompt_and_reference_threads(self) -> None:
+        window = MainWindow()
+        try:
+            prompt_thread = QThread(window)
+            prompt_thread.start()
+            reference_thread = QThread(window)
+            reference_thread.start()
+            window._prompt_seg_thread = prompt_thread
+            window._reference_instance_thread = reference_thread
+            event = FakeCloseEvent()
+
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.closeEvent(event)
+
+            self.assertTrue(event.accepted)
+            self.assertFalse(event.ignored)
+            self.assertFalse(prompt_thread.isRunning())
+            self.assertFalse(reference_thread.isRunning())
+        finally:
+            window.close()
 
     def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
         document = ImageDocument(

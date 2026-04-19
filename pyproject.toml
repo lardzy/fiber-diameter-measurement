@@ -27,6 +27,12 @@ area-infer = [
   "torch>=2.4",
   "torchvision>=0.19",
 ]
+interactive-seg = [
+  "torch>=2.4",
+  "torchvision>=0.19",
+  "timm>=1.0",
+  "segment-anything-hq",
+]
 packaging = [
   "pyinstaller>=6.0",
 ]

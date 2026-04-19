@@ -6,27 +6,23 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QImage
 
 from fdm.geometry import Point
-from fdm.services.prompt_segmentation import (
-    PromptSegmentationService,
-    create_interactive_segmentation_service,
-    resolve_interactive_segmentation_backend,
-)
+from fdm.services.prompt_segmentation import resolve_magic_segment_model_variant
+from fdm.services.reference_instance_propagation import ReferenceInstancePropagationService
 
 
 @dataclass(slots=True)
-class PromptSegmentationRequest:
+class ReferenceInstancePropagationRequest:
     document_id: str
     image: QImage
     cache_key: str
     request_id: int
-    positive_points: list[Point]
-    negative_points: list[Point]
-    tool_mode: str
-    active_stage: str
     model_variant: str
+    reference_box: tuple[Point, Point] | None = None
+    reference_polygon_px: list[Point] | None = None
+    reference_area_rings_px: list[list[Point]] | None = None
 
 
-class PromptSegmentationWorker(QObject):
+class ReferenceInstancePropagationWorker(QObject):
     requested = Signal(object)
     clearRequested = Signal()
     succeeded = Signal(str, int, object)
@@ -34,26 +30,25 @@ class PromptSegmentationWorker(QObject):
 
     def __init__(self) -> None:
         super().__init__()
-        self._services: dict[str, PromptSegmentationService] = {}
+        self._services: dict[str, ReferenceInstancePropagationService] = {}
         self.requested.connect(self.infer, Qt.ConnectionType.QueuedConnection)
         self.clearRequested.connect(self.clear_cache, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
-    def infer(self, request: PromptSegmentationRequest) -> None:
+    def infer(self, request: ReferenceInstancePropagationRequest) -> None:
         try:
-            resolved_variant, fallback_message = resolve_interactive_segmentation_backend(request.model_variant)
+            resolved_variant, fallback_message = resolve_magic_segment_model_variant(request.model_variant)
             service = self._services.get(resolved_variant)
             if service is None:
-                service = create_interactive_segmentation_service(resolved_variant)
+                service = ReferenceInstancePropagationService(model_variant=resolved_variant)
                 self._services[resolved_variant] = service
-            result = service.predict_polygon(
+            result = service.propagate_from_reference(
                 image=request.image,
                 cache_key=request.cache_key,
-                positive_points=list(request.positive_points),
-                negative_points=list(request.negative_points),
+                reference_box=request.reference_box,
+                reference_polygon_px=list(request.reference_polygon_px or []),
+                reference_area_rings_px=[list(ring) for ring in (request.reference_area_rings_px or [])],
             )
-            result.metadata["tool_mode"] = request.tool_mode
-            result.metadata["active_stage"] = request.active_stage
             result.metadata["requested_model_variant"] = request.model_variant
             result.metadata["resolved_model_variant"] = resolved_variant
             if fallback_message:

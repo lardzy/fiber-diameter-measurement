@@ -48,6 +48,32 @@ class MagicSegmentModelVariant:
     EDGE_SAM_3X = "edge_sam_3x"
 
 
+class ComplexMagicSegmentModelVariant:
+    LIGHT_HQ_SAM = "light_hq_sam"
+    EFFICIENTSAM_S = "efficientsam_s"
+
+
+class MagicSegmentToolMode:
+    STANDARD = "magic_segment"
+    REFERENCE = "reference_propagation"
+    COMPLEX = REFERENCE
+
+
+def is_magic_segment_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.STANDARD
+
+
+def is_reference_propagation_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.REFERENCE
+
+
+def is_magic_toolbar_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() in {
+        MagicSegmentToolMode.STANDARD,
+        MagicSegmentToolMode.REFERENCE,
+    }
+
+
 @dataclass(slots=True)
 class AreaModelMapping:
     model_name: str

@@ -9,13 +9,19 @@ import cv2
 
 from fdm.geometry import Point, clean_ring, distance, point_in_polygon, ring_signed_area
 from fdm.runtime_logging import append_runtime_log
-from fdm.settings import MagicSegmentModelVariant, bundle_resource_root
+from fdm.settings import (
+    ComplexMagicSegmentModelVariant,
+    MagicSegmentModelVariant,
+    bundle_resource_root,
+)
 
 
 EDGE_SAM_ENCODER_FILENAME = "edge_sam_encoder.onnx"
 EDGE_SAM_DECODER_FILENAME = "edge_sam_decoder.onnx"
 EDGE_SAM_3X_ENCODER_FILENAME = "edge_sam_3x_encoder.onnx"
 EDGE_SAM_3X_DECODER_FILENAME = "edge_sam_3x_decoder.onnx"
+LIGHT_HQ_SAM_CHECKPOINT_FILENAME = "sam_hq_vit_tiny.pth"
+EFFICIENTSAM_S_CHECKPOINT_FILENAME = "efficient_sam_vits.pt"
 EDGE_SAM_TARGET_LENGTH = 1024
 EDGE_SAM_PIXEL_MEAN = (123.675, 116.28, 103.53)
 EDGE_SAM_PIXEL_STD = (58.395, 57.12, 57.375)
@@ -36,8 +42,90 @@ class _EmbeddingEntry:
     original_size: tuple[int, int]
 
 
-def _normalize_model_variant(model_variant: str | None) -> str:
+@dataclass(slots=True)
+class _TorchImageEntry:
+    image_embeddings: object
+    original_size: tuple[int, int]
+    input_size: tuple[int, int]
+    interm_features: object | None = None
+
+
+def _normalize_backend_id(model_variant: str | None) -> str:
     token = str(model_variant or "").strip()
+    if token in {
+        MagicSegmentModelVariant.EDGE_SAM,
+        MagicSegmentModelVariant.EDGE_SAM_3X,
+        ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM,
+        ComplexMagicSegmentModelVariant.EFFICIENTSAM_S,
+    }:
+        return token
+    return MagicSegmentModelVariant.EDGE_SAM
+
+
+def interactive_segmentation_runtime_root(model_variant: str = MagicSegmentModelVariant.EDGE_SAM) -> Path:
+    normalized = _normalize_backend_id(model_variant)
+    folder = {
+        MagicSegmentModelVariant.EDGE_SAM: "edge_sam",
+        MagicSegmentModelVariant.EDGE_SAM_3X: "edge_sam_3x",
+        ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM: "light_hq_sam",
+        ComplexMagicSegmentModelVariant.EFFICIENTSAM_S: "efficient_sam_s",
+    }.get(normalized, "edge_sam")
+    return bundle_resource_root() / "runtime" / "segment-anything" / folder
+
+
+def interactive_segmentation_model_paths(model_variant: str = MagicSegmentModelVariant.EDGE_SAM) -> tuple[Path, ...]:
+    normalized = _normalize_backend_id(model_variant)
+    runtime_root = interactive_segmentation_runtime_root(normalized)
+    if normalized == MagicSegmentModelVariant.EDGE_SAM_3X:
+        return (
+            runtime_root / EDGE_SAM_3X_ENCODER_FILENAME,
+            runtime_root / EDGE_SAM_3X_DECODER_FILENAME,
+        )
+    if normalized == MagicSegmentModelVariant.EDGE_SAM:
+        return (
+            runtime_root / EDGE_SAM_ENCODER_FILENAME,
+            runtime_root / EDGE_SAM_DECODER_FILENAME,
+        )
+    if normalized == ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM:
+        return (runtime_root / LIGHT_HQ_SAM_CHECKPOINT_FILENAME,)
+    return (runtime_root / EFFICIENTSAM_S_CHECKPOINT_FILENAME,)
+
+
+def interactive_segmentation_model_label(model_variant: str) -> str:
+    normalized = _normalize_backend_id(model_variant)
+    if normalized == MagicSegmentModelVariant.EDGE_SAM_3X:
+        return "EdgeSAM-3x"
+    if normalized == ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM:
+        return "Light HQ-SAM"
+    if normalized == ComplexMagicSegmentModelVariant.EFFICIENTSAM_S:
+        return "EfficientSAM-S"
+    return "EdgeSAM"
+
+
+def interactive_segmentation_models_ready(model_variant: str = MagicSegmentModelVariant.EDGE_SAM) -> bool:
+    return all(path.exists() for path in interactive_segmentation_model_paths(model_variant))
+
+
+def resolve_interactive_segmentation_backend(
+    requested_variant: str | None,
+) -> tuple[str, str | None]:
+    normalized = _normalize_backend_id(requested_variant)
+    requested_paths = interactive_segmentation_model_paths(normalized)
+    if all(path.exists() for path in requested_paths):
+        return normalized, None
+    if normalized != MagicSegmentModelVariant.EDGE_SAM_3X:
+        return normalized, None
+    fallback_paths = interactive_segmentation_model_paths(MagicSegmentModelVariant.EDGE_SAM)
+    if all(path.exists() for path in fallback_paths):
+        return (
+            MagicSegmentModelVariant.EDGE_SAM,
+            "未找到 EdgeSAM-3x 模型文件，已自动回退到标准 EdgeSAM。",
+        )
+    return normalized, None
+
+
+def _normalize_model_variant(model_variant: str | None) -> str:
+    token = _normalize_backend_id(model_variant)
     if token in {
         MagicSegmentModelVariant.EDGE_SAM,
         MagicSegmentModelVariant.EDGE_SAM_3X,
@@ -48,48 +136,31 @@ def _normalize_model_variant(model_variant: str | None) -> str:
 
 def edge_sam_runtime_root(model_variant: str = MagicSegmentModelVariant.EDGE_SAM) -> Path:
     normalized = _normalize_model_variant(model_variant)
-    folder = "edge_sam_3x" if normalized == MagicSegmentModelVariant.EDGE_SAM_3X else "edge_sam"
-    return bundle_resource_root() / "runtime" / "segment-anything" / folder
+    return interactive_segmentation_runtime_root(normalized)
 
 
 def edge_sam_model_paths(
     model_variant: str = MagicSegmentModelVariant.EDGE_SAM,
 ) -> tuple[Path, Path]:
     normalized = _normalize_model_variant(model_variant)
-    runtime_root = edge_sam_runtime_root(normalized)
-    if normalized == MagicSegmentModelVariant.EDGE_SAM_3X:
-        return (
-            runtime_root / EDGE_SAM_3X_ENCODER_FILENAME,
-            runtime_root / EDGE_SAM_3X_DECODER_FILENAME,
-        )
-    return (
-        runtime_root / EDGE_SAM_ENCODER_FILENAME,
-        runtime_root / EDGE_SAM_DECODER_FILENAME,
-    )
+    paths = interactive_segmentation_model_paths(normalized)
+    return paths[0], paths[1]
 
 
 def magic_segment_model_label(model_variant: str) -> str:
-    normalized = _normalize_model_variant(model_variant)
-    if normalized == MagicSegmentModelVariant.EDGE_SAM_3X:
-        return "EdgeSAM-3x"
-    return "EdgeSAM"
+    return interactive_segmentation_model_label(model_variant)
 
 
 def resolve_magic_segment_model_variant(
     requested_variant: str | None,
 ) -> tuple[str, str | None]:
-    normalized = _normalize_model_variant(requested_variant)
-    requested_paths = edge_sam_model_paths(normalized)
-    if all(path.exists() for path in requested_paths):
-        return normalized, None
-    if normalized != MagicSegmentModelVariant.EDGE_SAM:
-        fallback_paths = edge_sam_model_paths(MagicSegmentModelVariant.EDGE_SAM)
-        if all(path.exists() for path in fallback_paths):
-            return (
-                MagicSegmentModelVariant.EDGE_SAM,
-                "未找到 EdgeSAM-3x 模型文件，已自动回退到标准 EdgeSAM。",
-            )
-    return normalized, None
+    normalized, message = resolve_interactive_segmentation_backend(requested_variant)
+    if normalized not in {
+        MagicSegmentModelVariant.EDGE_SAM,
+        MagicSegmentModelVariant.EDGE_SAM_3X,
+    }:
+        return MagicSegmentModelVariant.EDGE_SAM, None
+    return normalized, message
 
 
 def magic_mask_area_px(mask) -> float:
@@ -100,6 +171,22 @@ def magic_mask_area_px(mask) -> float:
     if mask is None:
         return 0.0
     return float(np.count_nonzero(mask))
+
+
+def qimage_to_rgb_array(image):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    from PySide6.QtGui import QImage
+
+    if image is None or not hasattr(image, "isNull") or image.isNull():
+        raise RuntimeError("无法读取图片: 当前图像为空。")
+    rgb = image.convertToFormat(QImage.Format.Format_RGB888)
+    buffer = rgb.constBits()
+    array = np.frombuffer(buffer, dtype=np.uint8, count=rgb.sizeInBytes())
+    array = array.reshape((rgb.height(), rgb.bytesPerLine()))
+    return array[:, : rgb.width() * 3].reshape((rgb.height(), rgb.width(), 3)).copy()
 
 
 def magic_mask_to_polygon(
@@ -691,19 +778,7 @@ class PromptSegmentationService:
         self._decoder_input_names = {item.name: item.name for item in self._decoder_session.get_inputs()}
 
     def _image_to_rgb_array(self, image):
-        try:
-            import numpy as np
-        except ImportError as exc:
-            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        from PySide6.QtGui import QImage
-
-        if image is None or not hasattr(image, "isNull") or image.isNull():
-            raise RuntimeError("无法读取图片: 当前图像为空。")
-        rgb = image.convertToFormat(QImage.Format.Format_RGB888)
-        buffer = rgb.constBits()
-        array = np.frombuffer(buffer, dtype=np.uint8, count=rgb.sizeInBytes())
-        array = array.reshape((rgb.height(), rgb.bytesPerLine()))
-        return array[:, : rgb.width() * 3].reshape((rgb.height(), rgb.width(), 3)).copy()
+        return qimage_to_rgb_array(image)
 
     def _embedding_for_image(self, image, *, cache_key: str) -> _EmbeddingEntry:
         key = str(cache_key)
@@ -908,3 +983,321 @@ class PromptSegmentationService:
         resized = cv2.resize(mask, (img_size, img_size))
         cropped = resized[..., : input_size[0], : input_size[1]]
         return cv2.resize(cropped, original_size[::-1])
+
+
+def _clone_torch_cache_value(value):
+    try:
+        import torch
+    except ImportError:
+        return value
+    if torch.is_tensor(value):
+        return value.detach().cpu().clone()
+    if isinstance(value, list):
+        return [_clone_torch_cache_value(item) for item in value]
+    if isinstance(value, tuple):
+        return tuple(_clone_torch_cache_value(item) for item in value)
+    return value
+
+
+class LightHQSamPromptSegmentationService:
+    def __init__(
+        self,
+        *,
+        checkpoint_path: str | Path | None = None,
+        max_cache_entries: int = 2,
+    ) -> None:
+        default_checkpoint = interactive_segmentation_model_paths(ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM)[0]
+        self._model_variant = ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM
+        self._checkpoint_path = Path(checkpoint_path) if checkpoint_path is not None else default_checkpoint
+        self._max_cache_entries = max(1, int(max_cache_entries))
+        self._model = None
+        self._predictor = None
+        self._embedding_cache: OrderedDict[str, _TorchImageEntry] = OrderedDict()
+
+    @staticmethod
+    def models_ready(model_variant: str = ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM) -> bool:
+        return interactive_segmentation_models_ready(model_variant)
+
+    def clear_cache(self) -> None:
+        self._embedding_cache.clear()
+
+    def predict_polygon(
+        self,
+        *,
+        image,
+        cache_key: str,
+        positive_points: list[Point],
+        negative_points: list[Point],
+    ) -> PromptSegmentationResult:
+        if not positive_points:
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata={"reason": "missing_positive_prompt"},
+            )
+        try:
+            import numpy as np
+        except ImportError as exc:
+            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+        predictor = self._ensure_predictor()
+        cache_entry = self._embedding_for_rgb_array(qimage_to_rgb_array(image), cache_key=cache_key)
+        self._restore_predictor_cache_entry(predictor, cache_entry)
+        prompt_points = np.array(
+            [[point.x, point.y] for point in positive_points + negative_points],
+            dtype=np.float32,
+        )
+        prompt_labels = np.array(
+            [1] * len(positive_points) + [0] * len(negative_points),
+            dtype=np.int32,
+        )
+        started_at = perf_counter()
+        masks, scores, _logits = predictor.predict(
+            point_coords=prompt_points,
+            point_labels=prompt_labels,
+            multimask_output=True,
+            hq_token_only=True,
+        )
+        inference_ms = (perf_counter() - started_at) * 1000.0
+        mask_index = int(scores.argmax()) if len(scores) else 0
+        mask = np.asarray(masks[mask_index], dtype=bool)
+        selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+            mask,
+            positive_points=positive_points,
+            negative_points=negative_points,
+        )
+        return PromptSegmentationResult(
+            mask=selected_mask.copy() if selected_mask is not None else None,
+            polygon_px=polygon,
+            area_rings_px=area_rings,
+            area_px=magic_mask_area_px(selected_mask),
+            metadata={
+                "positive_points": len(positive_points),
+                "negative_points": len(negative_points),
+                "cache_size": len(self._embedding_cache),
+                "cache_key": cache_key,
+                "model_variant": self._model_variant,
+                "inference_ms": inference_ms,
+                **geometry_stats,
+            },
+        )
+
+    def _ensure_predictor(self):
+        if self._predictor is not None:
+            return self._predictor
+        try:
+            import torch
+            from segment_anything_hq import SamPredictor, sam_model_registry
+        except ImportError as exc:
+            raise RuntimeError("segment-anything-hq、timm、torch 和 torchvision 是复杂孔洞魔棒所必需的依赖。") from exc
+        if not self._checkpoint_path.exists():
+            raise FileNotFoundError(
+                f"未找到 {interactive_segmentation_model_label(self._model_variant)} 模型文件，请确认 {self._checkpoint_path.as_posix()} 存在。"
+            )
+        model = sam_model_registry["vit_tiny"](checkpoint=None)
+        state_dict = torch.load(str(self._checkpoint_path), map_location=torch.device("cpu"), weights_only=False)
+        model.load_state_dict(state_dict)
+        model.to(device=torch.device("cpu"))
+        model.eval()
+        self._model = model
+        self._predictor = SamPredictor(model)
+        return self._predictor
+
+    def _embedding_for_rgb_array(self, cv_image, *, cache_key: str) -> _TorchImageEntry:
+        key = str(cache_key)
+        cached = self._embedding_cache.get(key)
+        if cached is not None:
+            self._embedding_cache.move_to_end(key)
+            return cached
+        predictor = self._ensure_predictor()
+        started_at = perf_counter()
+        predictor.set_image(cv_image)
+        cached = _TorchImageEntry(
+            image_embeddings=_clone_torch_cache_value(getattr(predictor, "features", None)),
+            original_size=tuple(int(value) for value in getattr(predictor, "original_size", cv_image.shape[:2])),
+            input_size=tuple(int(value) for value in getattr(predictor, "input_size", cv_image.shape[:2])),
+            interm_features=_clone_torch_cache_value(getattr(predictor, "interm_features", None)),
+        )
+        self._embedding_cache[key] = cached
+        self._embedding_cache.move_to_end(key)
+        while len(self._embedding_cache) > self._max_cache_entries:
+            self._embedding_cache.popitem(last=False)
+        elapsed_ms = (perf_counter() - started_at) * 1000.0
+        if elapsed_ms >= 80.0:
+            append_runtime_log(
+                "Magic segmentation preprocess",
+                (
+                    f"elapsed_ms={elapsed_ms:.2f}, "
+                    f"cache_size={len(self._embedding_cache)}, "
+                    f"image_size={cached.original_size[1]}x{cached.original_size[0]}, "
+                    f"model_variant={self._model_variant}"
+                ),
+            )
+        return cached
+
+    @staticmethod
+    def _restore_predictor_cache_entry(predictor, entry: _TorchImageEntry) -> None:
+        predictor.features = _clone_torch_cache_value(entry.image_embeddings)
+        predictor.interm_features = _clone_torch_cache_value(entry.interm_features)
+        predictor.original_size = tuple(entry.original_size)
+        predictor.input_size = tuple(entry.input_size)
+        predictor.is_image_set = True
+
+
+class EfficientSamSPromptSegmentationService:
+    def __init__(
+        self,
+        *,
+        checkpoint_path: str | Path | None = None,
+        max_cache_entries: int = 2,
+    ) -> None:
+        default_checkpoint = interactive_segmentation_model_paths(ComplexMagicSegmentModelVariant.EFFICIENTSAM_S)[0]
+        self._model_variant = ComplexMagicSegmentModelVariant.EFFICIENTSAM_S
+        self._checkpoint_path = Path(checkpoint_path) if checkpoint_path is not None else default_checkpoint
+        self._max_cache_entries = max(1, int(max_cache_entries))
+        self._model = None
+        self._embedding_cache: OrderedDict[str, _TorchImageEntry] = OrderedDict()
+
+    @staticmethod
+    def models_ready(model_variant: str = ComplexMagicSegmentModelVariant.EFFICIENTSAM_S) -> bool:
+        return interactive_segmentation_models_ready(model_variant)
+
+    def clear_cache(self) -> None:
+        self._embedding_cache.clear()
+
+    def predict_polygon(
+        self,
+        *,
+        image,
+        cache_key: str,
+        positive_points: list[Point],
+        negative_points: list[Point],
+    ) -> PromptSegmentationResult:
+        if not positive_points:
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata={"reason": "missing_positive_prompt"},
+            )
+        try:
+            import numpy as np
+            import torch
+        except ImportError as exc:
+            raise RuntimeError("numpy 和 torch 是复杂孔洞魔棒所必需的依赖。") from exc
+        model = self._ensure_model()
+        cache_entry = self._embedding_for_rgb_array(qimage_to_rgb_array(image), cache_key=cache_key)
+        prompt_points = torch.tensor(
+            [[[[point.x, point.y] for point in positive_points + negative_points]]],
+            dtype=torch.float32,
+        )
+        prompt_labels = torch.tensor(
+            [[[1] * len(positive_points) + [0] * len(negative_points)]],
+            dtype=torch.float32,
+        )
+        started_at = perf_counter()
+        with torch.no_grad():
+            predicted_logits, predicted_iou = model.predict_masks(
+                cache_entry.image_embeddings,
+                prompt_points,
+                prompt_labels,
+                multimask_output=True,
+                input_h=cache_entry.original_size[0],
+                input_w=cache_entry.original_size[1],
+                output_h=cache_entry.original_size[0],
+                output_w=cache_entry.original_size[1],
+            )
+        inference_ms = (perf_counter() - started_at) * 1000.0
+        scores = predicted_iou[0, 0]
+        mask_index = int(torch.argmax(scores).item()) if int(scores.numel()) > 0 else 0
+        mask = torch.ge(predicted_logits[0, 0, mask_index], 0).cpu().numpy().astype(bool)
+        selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+            mask,
+            positive_points=positive_points,
+            negative_points=negative_points,
+        )
+        return PromptSegmentationResult(
+            mask=selected_mask.copy() if selected_mask is not None else None,
+            polygon_px=polygon,
+            area_rings_px=area_rings,
+            area_px=magic_mask_area_px(selected_mask),
+            metadata={
+                "positive_points": len(positive_points),
+                "negative_points": len(negative_points),
+                "cache_size": len(self._embedding_cache),
+                "cache_key": cache_key,
+                "model_variant": self._model_variant,
+                "inference_ms": inference_ms,
+                **geometry_stats,
+            },
+        )
+
+    def _ensure_model(self):
+        if self._model is not None:
+            return self._model
+        try:
+            import torch
+            from fdm._vendor.efficient_sam.efficient_sam import build_efficient_sam
+        except ImportError as exc:
+            raise RuntimeError("torch 是 EfficientSAM-S 复杂孔洞魔棒所必需的依赖。") from exc
+        if not self._checkpoint_path.exists():
+            raise FileNotFoundError(
+                f"未找到 {interactive_segmentation_model_label(self._model_variant)} 模型文件，请确认 {self._checkpoint_path.as_posix()} 存在。"
+            )
+        model = build_efficient_sam(
+            encoder_patch_embed_dim=384,
+            encoder_num_heads=6,
+            checkpoint=str(self._checkpoint_path),
+        )
+        model.to(device=torch.device("cpu"))
+        model.eval()
+        self._model = model
+        return model
+
+    def _embedding_for_rgb_array(self, cv_image, *, cache_key: str) -> _TorchImageEntry:
+        key = str(cache_key)
+        cached = self._embedding_cache.get(key)
+        if cached is not None:
+            self._embedding_cache.move_to_end(key)
+            return cached
+        try:
+            import torch
+        except ImportError as exc:
+            raise RuntimeError("torch 是 EfficientSAM-S 复杂孔洞魔棒所必需的依赖。") from exc
+        model = self._ensure_model()
+        image_tensor = torch.from_numpy(cv_image).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+        started_at = perf_counter()
+        with torch.no_grad():
+            image_embeddings = model.get_image_embeddings(image_tensor)
+        cached = _TorchImageEntry(
+            image_embeddings=_clone_torch_cache_value(image_embeddings),
+            original_size=(int(cv_image.shape[0]), int(cv_image.shape[1])),
+            input_size=(int(cv_image.shape[0]), int(cv_image.shape[1])),
+        )
+        self._embedding_cache[key] = cached
+        self._embedding_cache.move_to_end(key)
+        while len(self._embedding_cache) > self._max_cache_entries:
+            self._embedding_cache.popitem(last=False)
+        elapsed_ms = (perf_counter() - started_at) * 1000.0
+        if elapsed_ms >= 80.0:
+            append_runtime_log(
+                "Magic segmentation preprocess",
+                (
+                    f"elapsed_ms={elapsed_ms:.2f}, "
+                    f"cache_size={len(self._embedding_cache)}, "
+                    f"image_size={cached.original_size[1]}x{cached.original_size[0]}, "
+                    f"model_variant={self._model_variant}"
+                ),
+            )
+        return cached
+
+
+def create_interactive_segmentation_service(model_variant: str):
+    normalized = _normalize_backend_id(model_variant)
+    if normalized == ComplexMagicSegmentModelVariant.LIGHT_HQ_SAM:
+        return LightHQSamPromptSegmentationService()
+    if normalized == ComplexMagicSegmentModelVariant.EFFICIENTSAM_S:
+        return EfficientSamSPromptSegmentationService()
+    return PromptSegmentationService(model_variant=normalized)

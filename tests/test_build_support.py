@@ -50,6 +50,11 @@ class BuildSupportTests(unittest.TestCase):
             runtime_root / "area-infer" / "vendor" / "yolact" / "train.py",
             runtime_root / "area-infer" / "vendor" / "yolact" / "eval.py",
             runtime_root / "area-infer" / "vendor" / "yolact" / "run_coco_eval.py",
+            runtime_root / "area-models" / "b_c1_1.3(++).pth",
+            runtime_root / "area-models" / "b_c1_1.3(old).pth",
+            runtime_root / "segment-anything" / "light_hq_sam" / "sam_hq_vit_tiny.pth",
+            runtime_root / "segment-anything" / "efficient_sam_s" / "efficient_sam_vits.pt",
+            runtime_root / "reference-instance" / "matcher" / "models" / "sam_vit_h_4b8939.pth",
         ]
         included = [
             runtime_root / "area-infer" / "app" / "engine.py",
@@ -57,6 +62,7 @@ class BuildSupportTests(unittest.TestCase):
             runtime_root / "area-infer" / "vendor" / "yolact" / "data" / "grid.npy",
             runtime_root / "area-models" / "b_v1_1.3.pth",
             runtime_root / "segment-anything" / "edge_sam" / "edge_sam_encoder.onnx",
+            runtime_root / "segment-anything" / "edge_sam_3x" / "edge_sam_3x_encoder.onnx",
         ]
 
         for path in excluded:
@@ -70,11 +76,16 @@ class BuildSupportTests(unittest.TestCase):
 
         self.assertIn((PROJECT_ROOT / "runtime" / "area-infer" / "app" / "engine.py").resolve(), collected)
         self.assertIn((PROJECT_ROOT / "runtime" / "segment-anything" / "edge_sam" / "edge_sam_encoder.onnx").resolve(), collected)
+        self.assertIn((PROJECT_ROOT / "runtime" / "segment-anything" / "edge_sam_3x" / "edge_sam_3x_encoder.onnx").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-infer" / ".dockerignore").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-infer" / "Dockerfile").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-infer" / "tests" / "test_engine_device.py").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-infer" / "vendor" / "yolact" / "train.py").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-infer" / "vendor" / "yolact" / "eval.py").resolve(), collected)
+        self.assertNotIn((PROJECT_ROOT / "runtime" / "segment-anything" / "light_hq_sam" / "sam_hq_vit_tiny.pth").resolve(), collected)
+        self.assertNotIn((PROJECT_ROOT / "runtime" / "segment-anything" / "efficient_sam_s" / "efficient_sam_vits.pt").resolve(), collected)
+        self.assertNotIn((PROJECT_ROOT / "runtime" / "reference-instance" / "matcher" / "models" / "sam_vit_h_4b8939.pth").resolve(), collected)
+        self.assertNotIn((PROJECT_ROOT / "runtime" / "area-models" / "b_c1_1.3(++).pth").resolve(), collected)
 
 
 if __name__ == "__main__":

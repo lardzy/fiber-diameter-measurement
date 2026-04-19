@@ -21,6 +21,25 @@ _AREA_INFER_SKIP_NAMES = {
     "run_coco_eval.py",
     "train.py",
 }
+PACKAGED_AREA_MODEL_FILENAMES = frozenset(
+    {
+        "b_v1_1.3.pth",
+        "b_cv_1.3.pth",
+        "b_c1_1.3.pth",
+        "b_cm_1.3.pth",
+        "b_cc_1.3.pth",
+        "b_cvlm_1.3.pth",
+    }
+)
+PACKAGED_SEGMENT_ANYTHING_DIRS = frozenset({"edge_sam", "edge_sam_3x"})
+PACKAGED_SEGMENT_ANYTHING_FILENAMES = frozenset(
+    {
+        "edge_sam_encoder.onnx",
+        "edge_sam_decoder.onnx",
+        "edge_sam_3x_encoder.onnx",
+        "edge_sam_3x_decoder.onnx",
+    }
+)
 
 
 def read_app_version(project_root: Path) -> str:
@@ -84,6 +103,22 @@ def _should_include_area_infer(relative_path: Path) -> bool:
     return relative_path.suffix in {".py", ".pyx", ".npy"}
 
 
+def _should_include_segment_anything(relative_path: Path) -> bool:
+    parts = relative_path.parts
+    if len(parts) != 3:
+        return False
+    if parts[1] not in PACKAGED_SEGMENT_ANYTHING_DIRS:
+        return False
+    return relative_path.name in PACKAGED_SEGMENT_ANYTHING_FILENAMES
+
+
+def _should_include_area_model(relative_path: Path) -> bool:
+    parts = relative_path.parts
+    if len(parts) != 2:
+        return False
+    return relative_path.name in PACKAGED_AREA_MODEL_FILENAMES
+
+
 def should_include_runtime_file(file_path: Path, runtime_root: Path) -> bool:
     if _should_skip_common(file_path):
         return False
@@ -92,6 +127,12 @@ def should_include_runtime_file(file_path: Path, runtime_root: Path) -> bool:
         return False
     if relative_path.parts[0] == "area-infer":
         return _should_include_area_infer(relative_path)
+    if relative_path.parts[0] == "segment-anything":
+        return _should_include_segment_anything(relative_path)
+    if relative_path.parts[0] == "area-models":
+        return _should_include_area_model(relative_path)
+    if relative_path.parts[0] == "reference-instance":
+        return False
     return True
 
 
