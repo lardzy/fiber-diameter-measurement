@@ -77,6 +77,33 @@ class FiberQuickGeometryTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.service.measure_from_mask(mask)
 
+    def test_prefers_non_border_region_when_mask_touches_image_edge(self) -> None:
+        mask = self._blank_mask(220, 160).astype(np.uint8)
+        points = np.array(
+            [
+                [0, 120],
+                [40, 90],
+                [100, 55],
+                [170, 30],
+                [219, 18],
+                [219, 42],
+                [168, 54],
+                [95, 82],
+                [36, 118],
+                [0, 148],
+            ],
+            dtype=np.int32,
+        )
+        cv2.fillPoly(mask, [points], 1)
+
+        result = self.service.measure_from_mask(mask.astype(bool))
+
+        self.assertIsNotNone(result.line_px)
+        midpoint_x = (result.line_px.start.x + result.line_px.end.x) / 2.0
+        midpoint_y = (result.line_px.start.y + result.line_px.end.y) / 2.0
+        self.assertGreater(midpoint_x, 12.0)
+        self.assertGreater(midpoint_y, 12.0)
+
     def test_draw_block_circle_supports_bool_masks(self) -> None:
         mask = self._blank_mask(32, 32)
         mask[8:24, 8:24] = True

@@ -77,7 +77,6 @@ from fdm.settings import (
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
-from fdm.services.fiber_quick_geometry import FiberQuickDiameterGeometryService
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -406,7 +405,6 @@ class MainWindow(QMainWindow):
         self.export_service = ExportService()
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
-        self._fiber_quick_geometry_service = FiberQuickDiameterGeometryService()
 
         self._build_ui()
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
@@ -3420,22 +3418,15 @@ class MainWindow(QMainWindow):
         if isinstance(result, PromptSegmentationResult):
             tool_mode = str(result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
             if is_fiber_quick_tool_mode(tool_mode):
-                try:
-                    geometry_result = self._fiber_quick_geometry_service.measure_from_mask(
-                        result.mask,
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    canvas.fail_fiber_quick_result(request_id)
-                    self.statusBar().showMessage(f"快速测径失败: {exc}", 5000)
-                    self._update_magic_segment_controls()
-                    return
                 apply_result = canvas.apply_fiber_quick_result(
                     request_id,
-                    preview_line=geometry_result.line_px,
-                    preview_polygon_points=geometry_result.preview_polygon_px,
-                    preview_area_rings_points=geometry_result.preview_area_rings_px,
-                    confidence=geometry_result.confidence,
-                    debug_payload=geometry_result.debug_payload,
+                    preview_line=result.metadata.get("fiber_quick_line_px") if isinstance(result.metadata.get("fiber_quick_line_px"), Line) else None,
+                    preview_polygon_points=result.polygon_px,
+                    preview_area_rings_points=result.area_rings_px,
+                    confidence=float(result.metadata.get("fiber_quick_confidence", 0.0) or 0.0),
+                    debug_payload=dict(result.metadata.get("fiber_quick_debug_payload", {}))
+                    if isinstance(result.metadata.get("fiber_quick_debug_payload", {}), dict)
+                    else {},
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()

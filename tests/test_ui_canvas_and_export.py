@@ -2401,6 +2401,48 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNotNone(canvas._magic_segment.primary_mask)
         self.assertFalse(bool(canvas._magic_segment.primary_mask[18, 166]))
 
+    def test_fiber_quick_prompt_success_uses_worker_geometry_metadata(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_prompt.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.request_id = 1
+
+            window._on_prompt_segmentation_succeeded(
+                document.id,
+                1,
+                PromptSegmentationResult(
+                    mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+                    polygon_px=[Point(20, 18), Point(150, 18), Point(150, 102), Point(20, 102)],
+                    area_rings_px=[],
+                    area_px=0.0,
+                    metadata={
+                        "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
+                        "fiber_quick_line_px": Line(Point(68, 30), Point(68, 92)),
+                        "fiber_quick_confidence": 0.81,
+                        "fiber_quick_debug_payload": {"candidate_count": 9},
+                    },
+                ),
+            )
+
+            self.assertTrue(canvas.has_fiber_quick_preview())
+            self.assertEqual(canvas._fiber_quick.preview_line, Line(Point(68, 30), Point(68, 92)))
+            self.assertIn("快速测径已生成代表线", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_magic_segment_commit_opens_slit_for_enclosed_subtract_shape_even_with_raw_fragment_noise(self) -> None:
         document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from time import perf_counter
 
 import cv2
 
@@ -35,6 +36,7 @@ class FiberQuickDiameterGeometryService:
         except ImportError as exc:  # pragma: no cover - dependency is required by the app
             raise RuntimeError("快速测径需要 numpy 依赖。") from exc
 
+        started_at = perf_counter()
         normalized = normalize_magic_draft_mask(mask)
         if normalized is None or not np.any(normalized):
             raise RuntimeError("未找到目标纤维区域。")
@@ -54,32 +56,38 @@ class FiberQuickDiameterGeometryService:
         if min(bbox_width, bbox_height) < 6:
             raise RuntimeError("未找到可靠直径线。")
 
-        skeleton = _zhang_suen_thinning(selected_mask)
-        distance_map = cv2.distanceTransform(selected_mask.astype(np.uint8), cv2.DIST_L2, 5)
-        branch_points = _branch_points(skeleton)
-        end_points = _end_points(skeleton)
+        roi_mask, roi_origin = _crop_mask_roi(selected_mask)
+        skeleton = _zhang_suen_thinning(roi_mask)
+        distance_map = cv2.distanceTransform(roi_mask.astype(np.uint8), cv2.DIST_L2, 5)
+        branch_points = _branch_points(skeleton, origin=roi_origin)
+        end_points = _end_points(skeleton, origin=roi_origin)
         candidate_points = _select_candidate_points(
-            selected_mask=selected_mask,
+            selected_mask=roi_mask,
             skeleton=skeleton,
             distance_map=distance_map,
             branch_points=branch_points,
             end_points=end_points,
+            origin=roi_origin,
+            full_shape=selected_mask.shape[:2],
         )
         if not candidate_points:
             raise RuntimeError("未找到可靠直径线。")
 
         candidates: list[_CandidateLine] = []
         for center_x, center_y in candidate_points:
-            center = Point(float(center_x), float(center_y))
-            tangent = _estimate_tangent(selected_mask, skeleton, center, distance_map)
+            local_center = Point(float(center_x), float(center_y))
+            tangent = _estimate_tangent(roi_mask, skeleton, local_center, distance_map)
             if tangent is None:
                 continue
+            center = Point(float(center_x + roi_origin[0]), float(center_y + roi_origin[1]))
             candidate = _measure_candidate_line(
                 selected_mask=selected_mask,
                 center=center,
+                local_center=local_center,
                 tangent=tangent,
                 distance_map=distance_map,
                 branch_points=branch_points,
+                image_shape=selected_mask.shape[:2],
             )
             if candidate is not None:
                 candidates.append(candidate)
@@ -102,6 +110,7 @@ class FiberQuickDiameterGeometryService:
                 "end_point_count": len(end_points),
                 "component_area_px": int(np.count_nonzero(selected_mask)),
                 "opened_holes": int(geometry_stats.get("opened_holes", 0) or 0),
+                "geometry_ms": (perf_counter() - started_at) * 1000.0,
             },
         )
 
@@ -132,7 +141,16 @@ def _prepare_target_mask(mask):
     return (labels == best_label)
 
 
-def _select_candidate_points(*, selected_mask, skeleton, distance_map, branch_points: list[Point], end_points: list[Point]) -> list[tuple[int, int]]:
+def _select_candidate_points(
+    *,
+    selected_mask,
+    skeleton,
+    distance_map,
+    branch_points: list[Point],
+    end_points: list[Point],
+    origin: tuple[int, int],
+    full_shape: tuple[int, int],
+) -> list[tuple[int, int]]:
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -145,10 +163,15 @@ def _select_candidate_points(*, selected_mask, skeleton, distance_map, branch_po
     if not np.any(candidate_map):
         candidate_map = source
 
-    for point in [*branch_points, *end_points]:
-        _draw_block_circle(candidate_map, point, radius=4 if point in branch_points else 3, value=0)
+    working = candidate_map.astype(np.uint8)
+    for point in branch_points:
+        local_point = Point(point.x - origin[0], point.y - origin[1])
+        _draw_block_circle(working, local_point, radius=4, value=0)
+    for point in end_points:
+        local_point = Point(point.x - origin[0], point.y - origin[1])
+        _draw_block_circle(working, local_point, radius=3, value=0)
 
-    ys, xs = np.where(candidate_map)
+    ys, xs = np.where(working > 0)
     if len(xs) == 0:
         return []
     scored = sorted(
@@ -159,8 +182,19 @@ def _select_candidate_points(*, selected_mask, skeleton, distance_map, branch_po
     for _score, x, y in scored:
         if any(abs(x - prev_x) <= 4 and abs(y - prev_y) <= 4 for prev_x, prev_y in chosen):
             continue
+        global_x = x + origin[0]
+        global_y = y + origin[1]
+        border_clearance = min(
+            global_x,
+            global_y,
+            full_shape[1] - 1 - global_x,
+            full_shape[0] - 1 - global_y,
+        )
+        local_radius = float(distance_map[y, x]) if 0 <= y < distance_map.shape[0] and 0 <= x < distance_map.shape[1] else 0.0
+        if border_clearance < max(8.0, local_radius * 1.75):
+            continue
         chosen.append((x, y))
-        if len(chosen) >= 48:
+        if len(chosen) >= 20:
             break
     return chosen
 
@@ -195,38 +229,56 @@ def _estimate_tangent(selected_mask, skeleton, center: Point, distance_map):
     return float(tangent[0] / norm), float(tangent[1] / norm)
 
 
-def _measure_candidate_line(*, selected_mask, center: Point, tangent: tuple[float, float], distance_map, branch_points: list[Point]) -> _CandidateLine | None:
+def _measure_candidate_line(
+    *,
+    selected_mask,
+    center: Point,
+    local_center: Point,
+    tangent: tuple[float, float],
+    distance_map,
+    branch_points: list[Point],
+    image_shape: tuple[int, int],
+) -> _CandidateLine | None:
     normal = (-tangent[1], tangent[0])
-    line = _measure_line(selected_mask, center, normal)
-    if line is None:
+    line, hit_image_border = _measure_line(selected_mask, center, normal)
+    if line is None or hit_image_border:
         return None
     line_length_px = distance(line.start, line.end)
     if line_length_px < 3.0:
         return None
-    radius = max(2.0, _sample_image(distance_map, center))
+    radius = max(2.0, _sample_image(distance_map, local_center))
+    border_clearance = min(
+        center.x,
+        center.y,
+        image_shape[1] - 1 - center.x,
+        image_shape[0] - 1 - center.y,
+    )
+    if border_clearance < max(8.0, radius * 1.75):
+        return None
     offset = max(2.0, min(radius * 0.8, 6.0))
     offset_a = Point(center.x + (tangent[0] * offset), center.y + (tangent[1] * offset))
     offset_b = Point(center.x - (tangent[0] * offset), center.y - (tangent[1] * offset))
     sample_widths = [line_length_px]
     for offset_center in (offset_a, offset_b):
-        offset_line = _measure_line(selected_mask, offset_center, normal)
-        if offset_line is not None:
+        offset_line, offset_hit_border = _measure_line(selected_mask, offset_center, normal)
+        if offset_line is not None and not offset_hit_border:
             sample_widths.append(distance(offset_line.start, offset_line.end))
     stability = 1.0 - min(_coefficient_of_variation(sample_widths), 1.0)
     symmetry = min(distance(center, line.start), distance(center, line.end)) / max(distance(center, line.start), distance(center, line.end), 1e-6)
     branch_clearance = min((distance(center, branch) for branch in branch_points), default=999.0)
     branch_score = min(branch_clearance / 24.0, 1.0)
     radius_score = min(radius / 18.0, 1.0)
-    score = (0.35 * symmetry) + (0.25 * stability) + (0.25 * branch_score) + (0.15 * radius_score)
+    border_score = min(border_clearance / max(12.0, radius * 2.5), 1.0)
+    score = (0.28 * symmetry) + (0.24 * stability) + (0.20 * branch_score) + (0.10 * radius_score) + (0.18 * border_score)
     return _CandidateLine(line=line, width_px=line_length_px, score=float(score))
 
 
-def _measure_line(selected_mask, center: Point, normal: tuple[float, float]) -> Line | None:
-    left = _walk_to_boundary(selected_mask, center, normal, direction_sign=-1.0)
-    right = _walk_to_boundary(selected_mask, center, normal, direction_sign=1.0)
+def _measure_line(selected_mask, center: Point, normal: tuple[float, float]) -> tuple[Line | None, bool]:
+    left, left_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=-1.0)
+    right, right_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=1.0)
     if left is None or right is None:
-        return None
-    return Line(start=left, end=right)
+        return None, left_hit_border or right_hit_border
+    return Line(start=left, end=right), left_hit_border or right_hit_border
 
 
 def _pick_representative_candidate(candidates: list[_CandidateLine]) -> _CandidateLine | None:
@@ -263,22 +315,24 @@ def _coefficient_of_variation(values: list[float]) -> float:
     return (variance ** 0.5) / mean
 
 
-def _walk_to_boundary(selected_mask, center: Point, axis: tuple[float, float], *, direction_sign: float, step: float = 0.5) -> Point | None:
+def _walk_to_boundary(selected_mask, center: Point, axis: tuple[float, float], *, direction_sign: float, step: float = 1.0) -> tuple[Point | None, bool]:
     height, width = selected_mask.shape[:2]
     last_inside = None
+    hit_image_border = False
     x = float(center.x)
     y = float(center.y)
     for _ in range(480):
         ix = int(round(x))
         iy = int(round(y))
         if ix < 0 or iy < 0 or ix >= width or iy >= height:
+            hit_image_border = True
             break
         if not bool(selected_mask[iy, ix]):
             break
         last_inside = Point(x, y)
         x += axis[0] * step * direction_sign
         y += axis[1] * step * direction_sign
-    return last_inside
+    return last_inside, hit_image_border
 
 
 def _sample_image(image, point: Point) -> float:
@@ -298,7 +352,7 @@ def _draw_block_circle(image, point: Point, *, radius: int, value: int) -> None:
     cv2.circle(image, center, radius, int(value), thickness=-1)
 
 
-def _branch_points(skeleton) -> list[Point]:
+def _branch_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]:
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -306,20 +360,14 @@ def _branch_points(skeleton) -> list[Point]:
 
     if skeleton is None or not np.any(skeleton):
         return []
-    padded = np.pad(skeleton.astype(np.uint8), 1, mode="constant")
-    branches: list[Point] = []
-    for y in range(1, padded.shape[0] - 1):
-        for x in range(1, padded.shape[1] - 1):
-            if padded[y, x] == 0:
-                continue
-            neighborhood = padded[y - 1 : y + 2, x - 1 : x + 2]
-            neighbors = int(neighborhood.sum()) - 1
-            if neighbors > 2:
-                branches.append(Point(float(x - 1), float(y - 1)))
-    return branches
+    skeleton_u8 = skeleton.astype(np.uint8)
+    kernel = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], dtype=np.uint8)
+    neighbors = cv2.filter2D(skeleton_u8, cv2.CV_16S, kernel, borderType=cv2.BORDER_CONSTANT)
+    ys, xs = np.where((skeleton_u8 > 0) & (neighbors > 2))
+    return [Point(float(x + origin[0]), float(y + origin[1])) for y, x in zip(ys, xs, strict=False)]
 
 
-def _end_points(skeleton) -> list[Point]:
+def _end_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]:
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -327,17 +375,11 @@ def _end_points(skeleton) -> list[Point]:
 
     if skeleton is None or not np.any(skeleton):
         return []
-    padded = np.pad(skeleton.astype(np.uint8), 1, mode="constant")
-    endpoints: list[Point] = []
-    for y in range(1, padded.shape[0] - 1):
-        for x in range(1, padded.shape[1] - 1):
-            if padded[y, x] == 0:
-                continue
-            neighborhood = padded[y - 1 : y + 2, x - 1 : x + 2]
-            neighbors = int(neighborhood.sum()) - 1
-            if neighbors == 1:
-                endpoints.append(Point(float(x - 1), float(y - 1)))
-    return endpoints
+    skeleton_u8 = skeleton.astype(np.uint8)
+    kernel = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], dtype=np.uint8)
+    neighbors = cv2.filter2D(skeleton_u8, cv2.CV_16S, kernel, borderType=cv2.BORDER_CONSTANT)
+    ys, xs = np.where((skeleton_u8 > 0) & (neighbors == 1))
+    return [Point(float(x + origin[0]), float(y + origin[1])) for y, x in zip(ys, xs, strict=False)]
 
 
 def _zhang_suen_thinning(mask):
@@ -345,6 +387,9 @@ def _zhang_suen_thinning(mask):
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
         raise RuntimeError("快速测径需要 numpy 依赖。") from exc
+
+    if hasattr(cv2, "ximgproc") and hasattr(cv2.ximgproc, "thinning"):
+        return cv2.ximgproc.thinning(mask.astype(np.uint8) * 255) > 0
 
     image = mask.astype(np.uint8).copy()
     changed = True
@@ -395,3 +440,17 @@ def _zhang_suen_thinning(mask):
                 for y, x in to_remove:
                     image[y, x] = 0
     return image.astype(bool)
+
+
+def _crop_mask_roi(mask, *, padding: int = 12):
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("快速测径需要 numpy 依赖。") from exc
+
+    ys, xs = np.where(mask)
+    min_x = max(0, int(xs.min()) - padding)
+    max_x = min(mask.shape[1], int(xs.max()) + padding + 1)
+    min_y = max(0, int(ys.min()) - padding)
+    max_y = min(mask.shape[0], int(ys.max()) + padding + 1)
+    return mask[min_y:max_y, min_x:max_x].copy(), (min_x, min_y)
