@@ -36,6 +36,7 @@ from fdm.services.prompt_segmentation import (
 from fdm.settings import (
     AppSettings,
     MagicSegmentToolMode,
+    is_fiber_quick_tool_mode,
     is_magic_segment_tool_mode,
     is_magic_toolbar_tool_mode,
     is_reference_propagation_tool_mode,
@@ -173,6 +174,29 @@ class ReferenceInstanceSession:
         return self.dragging or self.busy or self.has_reference_geometry() or self.has_preview()
 
 
+@dataclass(slots=True)
+class FiberQuickDiameterSession:
+    prompt_type: str = "positive"
+    positive_points: list[Point] = field(default_factory=list)
+    negative_points: list[Point] = field(default_factory=list)
+    preview_line: Line | None = None
+    preview_polygon: list[Point] = field(default_factory=list)
+    preview_rings: list[list[Point]] = field(default_factory=list)
+    confidence: float = 0.0
+    request_id: int = 0
+    busy: bool = False
+    debug_payload: dict[str, object] = field(default_factory=dict)
+
+    def has_points(self) -> bool:
+        return bool(self.positive_points or self.negative_points)
+
+    def has_preview(self) -> bool:
+        return self.preview_line is not None
+
+    def has_session(self) -> bool:
+        return self.has_points() or self.has_preview() or self.busy
+
+
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
@@ -235,6 +259,7 @@ class DocumentCanvas(QWidget):
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
         self._read_only = False
         self._fit_alignment = "center"
 
@@ -247,6 +272,7 @@ class DocumentCanvas(QWidget):
         self._image = image
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -278,6 +304,7 @@ class DocumentCanvas(QWidget):
         self._drag_overlay_preview = None
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -310,6 +337,8 @@ class DocumentCanvas(QWidget):
                 self.clear_magic_segment_session()
             if is_reference_propagation_tool_mode(self._tool_mode) or not is_reference_propagation_tool_mode(mode):
                 self.clear_reference_instance_session()
+            if is_fiber_quick_tool_mode(self._tool_mode) or not is_fiber_quick_tool_mode(mode):
+                self.clear_fiber_quick_session()
             self._cancel_overlay_interaction()
         self._tool_mode = mode
         if overlay_kind in {
@@ -358,6 +387,24 @@ class DocumentCanvas(QWidget):
 
     def is_reference_instance_busy(self) -> bool:
         return self._reference_instance.busy
+
+    def current_fiber_quick_prompt_type(self) -> str:
+        return self._fiber_quick.prompt_type
+
+    def has_fiber_quick_session(self) -> bool:
+        return self._fiber_quick.has_session()
+
+    def has_fiber_quick_preview(self) -> bool:
+        return self._fiber_quick.has_preview()
+
+    def is_fiber_quick_busy(self) -> bool:
+        return self._fiber_quick.busy
+
+    def cycle_fiber_quick_prompt_type(self) -> str:
+        self._fiber_quick.prompt_type = "negative" if self._fiber_quick.prompt_type == "positive" else "positive"
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return self._fiber_quick.prompt_type
 
     def set_magic_segment_prompt_type(self, prompt_type: str) -> None:
         self._magic_segment.set_prompt_type_for_stage(self._magic_segment.active_stage, prompt_type)
@@ -498,6 +545,60 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self.update()
         self._emit_magic_segment_session_changed()
+
+    def apply_fiber_quick_result(
+        self,
+        request_id: int,
+        *,
+        preview_line: Line | None = None,
+        preview_polygon_points: list[Point] | None = None,
+        preview_area_rings_points: list[list[Point]] | None = None,
+        confidence: float = 0.0,
+        debug_payload: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._fiber_quick.request_id:
+            return None
+        self._fiber_quick.busy = False
+        self._fiber_quick.preview_line = preview_line
+        self._fiber_quick.preview_polygon = self._normalize_magic_polygon(preview_polygon_points)
+        self._fiber_quick.preview_rings = self._normalize_magic_rings(preview_area_rings_points)
+        self._fiber_quick.confidence = float(confidence)
+        self._fiber_quick.debug_payload = dict(debug_payload or {})
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "has_preview": self._fiber_quick.has_preview(),
+        }
+
+    def fail_fiber_quick_result(self, request_id: int) -> None:
+        if request_id != self._fiber_quick.request_id:
+            return
+        self._fiber_quick.busy = False
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def clear_fiber_quick_session(self) -> None:
+        self._fiber_quick = FiberQuickDiameterSession()
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def commit_fiber_quick_preview(self) -> dict[str, object]:
+        document_id = self._document.id if self._document is not None else None
+        preview_line = self._fiber_quick.preview_line
+        payload = {
+            "measurement_kind": "line",
+            "line_px": preview_line,
+            "confidence": float(self._fiber_quick.confidence),
+            "status": "fiber_quick",
+            "debug_payload": dict(self._fiber_quick.debug_payload),
+        }
+        committed = document_id is not None and preview_line is not None
+        self.clear_fiber_quick_session()
+        if committed:
+            self.lineCommitted.emit(document_id, "fiber_quick", payload)
+        return {
+            "committed": committed,
+        }
 
     def commit_reference_instance_preview(self) -> dict[str, object]:
         candidates = [
@@ -694,6 +795,10 @@ class DocumentCanvas(QWidget):
             self.clear_magic_segment_session()
             event.accept()
             return
+        if event.key() == Qt.Key.Key_Escape and is_fiber_quick_tool_mode(self._tool_mode) and self.has_fiber_quick_session():
+            self.clear_fiber_quick_session()
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_Escape and self._drawing_anchor_raw is not None:
             self._cancel_line_drawing()
             self.update()
@@ -810,6 +915,40 @@ class DocumentCanvas(QWidget):
                     "negative_points": list(self._magic_segment.negative_points_for_stage(active_stage)),
                     "tool_mode": self._tool_mode,
                     "active_stage": active_stage,
+                },
+            )
+            self.update()
+            self._emit_magic_segment_session_changed()
+            return
+
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            if not self._point_in_image(image_point):
+                return
+            if self._fiber_quick.busy:
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            if self._fiber_quick.prompt_type == "negative":
+                self._fiber_quick.negative_points.append(point)
+            else:
+                self._fiber_quick.positive_points.append(point)
+            if not self._fiber_quick.positive_points:
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return
+            self._fiber_quick.request_id += 1
+            self._fiber_quick.busy = True
+            self.magicSegmentRequested.emit(
+                self._document.id,
+                {
+                    "request_id": self._fiber_quick.request_id,
+                    "positive_points": list(self._fiber_quick.positive_points),
+                    "negative_points": list(self._fiber_quick.negative_points),
+                    "tool_mode": self._tool_mode,
                 },
             )
             self.update()
@@ -1407,6 +1546,8 @@ class DocumentCanvas(QWidget):
 
         if is_magic_segment_tool_mode(self._tool_mode):
             self._draw_magic_segment_preview(painter)
+        elif is_fiber_quick_tool_mode(self._tool_mode):
+            self._draw_fiber_quick_preview(painter)
         elif is_reference_propagation_tool_mode(self._tool_mode) or self._reference_instance.has_session():
             self._draw_reference_instance_preview(painter)
 
@@ -1862,6 +2003,48 @@ class DocumentCanvas(QWidget):
         elif self._reference_instance.preview_candidates:
             label_text = f"已找到 {len(self._reference_instance.preview_candidates)} 个候选，按 Enter / F 加入当前类别"
         rect = QRectF(14.0, 14.0, 420.0, 32.0)
+        painter.fillRect(rect, QColor(16, 24, 32, 188))
+        painter.setPen(QPen(QColor("#FFFFFF"), 1))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)
+
+    def _draw_fiber_quick_preview(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        self._draw_magic_area_preview(
+            painter,
+            self._fiber_quick.preview_polygon,
+            self._fiber_quick.preview_rings,
+            fill_color=QColor(80, 180, 255, 52),
+            stroke_color=QColor("#60A5FA"),
+        )
+        if self._fiber_quick.preview_line is not None:
+            painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._fiber_quick.preview_line.start),
+                self.image_to_widget(self._fiber_quick.preview_line.end),
+            )
+            painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._fiber_quick.preview_line.start),
+                self.image_to_widget(self._fiber_quick.preview_line.end),
+            )
+        self._draw_magic_prompt_points(
+            painter,
+            self._fiber_quick.positive_points,
+            QColor("#34D399"),
+            positive=True,
+        )
+        self._draw_magic_prompt_points(
+            painter,
+            self._fiber_quick.negative_points,
+            QColor("#F87171"),
+            positive=False,
+        )
+        prompt_text = "当前提示：负采样点" if self._fiber_quick.prompt_type == "negative" else "当前提示：正采样点"
+        label_text = prompt_text
+        if self._fiber_quick.busy:
+            label_text += " / 测径中..."
+        rect = QRectF(14.0, 14.0, 360.0, 32.0)
         painter.fillRect(rect, QColor(16, 24, 32, 188))
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)

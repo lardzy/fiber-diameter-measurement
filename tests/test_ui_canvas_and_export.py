@@ -1065,6 +1065,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     "freehand_area",
                     MagicSegmentToolMode.STANDARD,
                     MagicSegmentToolMode.REFERENCE,
+                    MagicSegmentToolMode.FIBER_QUICK,
                     "calibration",
                 ]
             ]
@@ -1726,6 +1727,59 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
+    def test_fiber_quick_request_uses_prompt_segmentation_worker(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/fiber_quick.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._prompt_seg_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 11,
+                        "positive_points": [Point(48, 52)],
+                        "negative_points": [Point(74, 56)],
+                        "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 11)
+            self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.FIBER_QUICK)
+            self.assertEqual(fake_worker.requested.payload.positive_points, [Point(48, 52)])
+            self.assertEqual(fake_worker.requested.payload.negative_points, [Point(74, 56)])
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_add_fiber_group_global_syncs_existing_documents(self) -> None:
         window = MainWindow()
         dialogs: list[FiberGroupDialog] = []
@@ -1902,6 +1956,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
             self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.REFERENCE)
             self.assertFalse(window._magic_prompt_label.isHidden())
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.FIBER_QUICK)
+            self.assertTrue(window._magic_prompt_label.isHidden())
 
             window.set_tool_mode("select")
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
@@ -2182,6 +2240,77 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(canvas.has_magic_segment_session())
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
             self.assertFalse(canvas.has_magic_segment_session())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_fiber_quick_tool_emits_request_and_commits_preview(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        commits: list[tuple[str, str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.FIBER_QUICK)
+
+        request_id = requests[0][1]["request_id"]
+        canvas.apply_fiber_quick_result(
+            request_id,
+            preview_line=Line(Point(28, 46), Point(68, 46)),
+            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
+            confidence=0.83,
+            debug_payload={"candidate_count": 7},
+        )
+
+        self.assertTrue(canvas.has_fiber_quick_preview())
+        commit_result = canvas.commit_fiber_quick_preview()
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "fiber_quick")
+        self.assertEqual(commits[0][2]["measurement_kind"], "line")
+        self.assertEqual(commits[0][2]["status"], "fiber_quick")
+
+    def test_fiber_quick_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_shortcuts.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+
+            self.assertEqual(canvas.current_fiber_quick_prompt_type(), "positive")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
+            self.assertEqual(canvas.current_fiber_quick_prompt_type(), "negative")
+
+            canvas._fiber_quick.request_id = 1
+            canvas.apply_fiber_quick_result(
+                1,
+                preview_line=Line(Point(60, 40), Point(92, 40)),
+                confidence=0.91,
+                debug_payload={"candidate_count": 5},
+            )
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "fiber_quick")
+
+            canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.positive_points = [Point(44, 44)]
+            self.assertTrue(canvas.has_fiber_quick_session())
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+            self.assertFalse(canvas.has_fiber_quick_session())
         finally:
             window._reset_workspace()
             window.close()

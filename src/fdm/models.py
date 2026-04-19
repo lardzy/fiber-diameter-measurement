@@ -316,12 +316,18 @@ class Measurement:
         snapped_line = payload.get("snapped_line_px")
         line_payload = payload.get("line_px")
         kind = str(payload.get("measurement_kind", "line"))
+        mode = str(payload.get("mode", "manual"))
+        if mode == "fiber_auto":
+            mode = "fiber_quick"
+        status = str(payload.get("status", "ready"))
+        if status == "fiber_auto":
+            status = "fiber_quick"
         return cls(
             id=str(payload["id"]),
             image_id=str(payload["image_id"]),
             fiber_group_id=payload.get("fiber_group_id"),
             measurement_kind=kind,
-            mode=str(payload["mode"]),
+            mode=mode,
             line_px=Line.from_dict(line_payload) if line_payload else None,
             polygon_px=[
                 Point.from_dict(item)
@@ -343,7 +349,7 @@ class Measurement:
             area_px=payload.get("area_px"),
             area_unit=payload.get("area_unit"),
             confidence=float(payload.get("confidence", 0.0)),
-            status=str(payload.get("status", "ready")),
+            status=status,
             created_at=str(payload.get("created_at", utc_now_iso())),
             debug_payload=dict(payload.get("debug_payload", {})),
         )

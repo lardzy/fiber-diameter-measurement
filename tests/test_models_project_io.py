@@ -445,6 +445,24 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
         self.assertFalse(hasattr(settings, "complex_magic_segment_model_variant"))
 
+    def test_measurement_from_dict_maps_legacy_fiber_auto_mode_to_fiber_quick(self) -> None:
+        measurement = Measurement.from_dict(
+            {
+                "id": new_id("meas"),
+                "image_id": new_id("image"),
+                "mode": "fiber_auto",
+                "measurement_kind": "line",
+                "status": "fiber_auto",
+                "line_px": {
+                    "start": {"x": 10, "y": 20},
+                    "end": {"x": 30, "y": 20},
+                },
+            }
+        )
+
+        self.assertEqual(measurement.mode, "fiber_quick")
+        self.assertEqual(measurement.status, "fiber_quick")
+
     def test_app_settings_roundtrip_preserves_calibration_presets(self) -> None:
         settings = AppSettings(
             calibration_presets=[

@@ -56,6 +56,7 @@ class ComplexMagicSegmentModelVariant:
 class MagicSegmentToolMode:
     STANDARD = "magic_segment"
     REFERENCE = "reference_propagation"
+    FIBER_QUICK = "fiber_quick"
     COMPLEX = REFERENCE
 
 
@@ -67,10 +68,15 @@ def is_reference_propagation_tool_mode(value: str | None) -> bool:
     return str(value or "").strip() == MagicSegmentToolMode.REFERENCE
 
 
+def is_fiber_quick_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.FIBER_QUICK
+
+
 def is_magic_toolbar_tool_mode(value: str | None) -> bool:
     return str(value or "").strip() in {
         MagicSegmentToolMode.STANDARD,
         MagicSegmentToolMode.REFERENCE,
+        MagicSegmentToolMode.FIBER_QUICK,
     }
 
 

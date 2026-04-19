@@ -70,12 +70,14 @@ from fdm.settings import (
     MagicSegmentToolMode,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
+    is_fiber_quick_tool_mode,
     is_magic_toolbar_tool_mode,
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
+from fdm.services.fiber_quick_geometry import FiberQuickDiameterGeometryService
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -404,6 +406,7 @@ class MainWindow(QMainWindow):
         self.export_service = ExportService()
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
+        self._fiber_quick_geometry_service = FiberQuickDiameterGeometryService()
 
         self._build_ui()
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
@@ -588,6 +591,7 @@ class MainWindow(QMainWindow):
             ("freehand_area", "自由形状面积"),
             (MagicSegmentToolMode.STANDARD, "标准魔棒"),
             (MagicSegmentToolMode.REFERENCE, "同类扩选"),
+            (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
             ("calibration", "比例尺标定"),
             ("overlay", "叠加标注"),
         ]:
@@ -604,6 +608,7 @@ class MainWindow(QMainWindow):
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
         self._mode_actions[MagicSegmentToolMode.STANDARD].setIcon(self._magic_tool_icon(MagicSegmentToolMode.STANDARD))
         self._mode_actions[MagicSegmentToolMode.REFERENCE].setIcon(self._magic_tool_icon(MagicSegmentToolMode.REFERENCE))
+        self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
 
@@ -717,7 +722,7 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button = QToolButton(container)
         self._magic_toggle_button.setProperty("contextTool", True)
         self._magic_toggle_button.setText("切换正负 (R)")
-        self._magic_toggle_button.clicked.connect(self._cycle_magic_segment_prompt_type)
+        self._magic_toggle_button.clicked.connect(self._cycle_active_magic_prompt_type)
         layout.addWidget(self._magic_toggle_button)
 
         self._magic_operation_button = QToolButton(container)
@@ -729,13 +734,13 @@ class MainWindow(QMainWindow):
         self._magic_complete_button = QToolButton(container)
         self._magic_complete_button.setProperty("contextTool", True)
         self._magic_complete_button.setText("完成 (Enter / F)")
-        self._magic_complete_button.clicked.connect(self._commit_magic_segment_preview)
+        self._magic_complete_button.clicked.connect(self._commit_active_magic_preview)
         layout.addWidget(self._magic_complete_button)
 
         self._magic_cancel_button = QToolButton(container)
         self._magic_cancel_button.setProperty("contextTool", True)
         self._magic_cancel_button.setText("放弃 (Esc)")
-        self._magic_cancel_button.clicked.connect(self._cancel_magic_segment_session)
+        self._magic_cancel_button.clicked.connect(self._cancel_active_magic_session)
         layout.addWidget(self._magic_cancel_button)
 
         return container
@@ -783,6 +788,7 @@ class MainWindow(QMainWindow):
         return [
             (MagicSegmentToolMode.STANDARD, "标准魔棒"),
             (MagicSegmentToolMode.REFERENCE, "同类扩选"),
+            (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
         ]
 
     def _magic_tool_label(self, tool_mode: str) -> str:
@@ -794,6 +800,8 @@ class MainWindow(QMainWindow):
     def _magic_tool_icon(self, tool_mode: str, *, active: bool = False) -> QIcon:
         if tool_mode == MagicSegmentToolMode.REFERENCE:
             color = "#7FD6E0" if active else "#5CB9C9"
+        elif tool_mode == MagicSegmentToolMode.FIBER_QUICK:
+            color = "#F7C948" if active else "#D9A72A"
         else:
             color = "#F08B95" if active else "#D96C75"
         return themed_icon("magic_segment", color=color)
@@ -876,6 +884,7 @@ class MainWindow(QMainWindow):
             )
         self._mode_actions[MagicSegmentToolMode.STANDARD].setIcon(self._magic_tool_icon(MagicSegmentToolMode.STANDARD))
         self._mode_actions[MagicSegmentToolMode.REFERENCE].setIcon(self._magic_tool_icon(MagicSegmentToolMode.REFERENCE))
+        self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         for tool_mode, action in self._magic_subtool_actions.items():
             action.setChecked(tool_mode == active_mode)
 
@@ -3298,11 +3307,14 @@ class MainWindow(QMainWindow):
         if image is None or image.isNull():
             if is_reference_propagation_tool_mode(tool_mode):
                 canvas.fail_reference_instance_result(request_id)
+            elif is_fiber_quick_tool_mode(tool_mode):
+                canvas.fail_fiber_quick_result(request_id)
             else:
                 canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
             QMessageBox.warning(self, tool_label, "当前图片还未完成加载，暂时无法进行分割。")
             return
+        cache_key = f"{document_id}:{int(image.cacheKey())}"
         requested_variant = self._app_settings.magic_segment_model_variant
         resolved_variant, _fallback_message = resolve_interactive_segmentation_backend(requested_variant)
         if not interactive_segmentation_models_ready(resolved_variant):
@@ -3326,7 +3338,6 @@ class MainWindow(QMainWindow):
                 ),
             )
             return
-        cache_key = f"{document_id}:{int(image.cacheKey())}"
         if is_reference_propagation_tool_mode(tool_mode):
             reference_box_payload = payload.get("reference_box")
             reference_box = None
@@ -3368,12 +3379,18 @@ class MainWindow(QMainWindow):
         negative_points = list(payload.get("negative_points", []))
         active_stage = str(payload.get("active_stage", MagicSegmentOperationMode.ADD) or MagicSegmentOperationMode.ADD)
         if not positive_points:
-            canvas.apply_magic_segment_result(request_id, None)
+            if is_fiber_quick_tool_mode(tool_mode):
+                canvas.fail_fiber_quick_result(request_id)
+            else:
+                canvas.apply_magic_segment_result(request_id, None)
             self._update_magic_segment_controls()
             return
         self._ensure_prompt_segmentation_worker()
         if self._prompt_seg_worker is None:
-            canvas.fail_magic_segment_result(request_id)
+            if is_fiber_quick_tool_mode(tool_mode):
+                canvas.fail_fiber_quick_result(request_id)
+            else:
+                canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
             return
         self._prompt_seg_worker.requested.emit(
@@ -3401,12 +3418,39 @@ class MainWindow(QMainWindow):
         if canvas is None:
             return
         if isinstance(result, PromptSegmentationResult):
-            apply_result = canvas.apply_magic_segment_result(
-                request_id,
-                result.mask,
-                result.polygon_px,
-                result.area_rings_px,
-            )
+            tool_mode = str(result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
+            if is_fiber_quick_tool_mode(tool_mode):
+                try:
+                    geometry_result = self._fiber_quick_geometry_service.measure_from_mask(
+                        result.mask,
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    canvas.fail_fiber_quick_result(request_id)
+                    self.statusBar().showMessage(f"快速测径失败: {exc}", 5000)
+                    self._update_magic_segment_controls()
+                    return
+                apply_result = canvas.apply_fiber_quick_result(
+                    request_id,
+                    preview_line=geometry_result.line_px,
+                    preview_polygon_points=geometry_result.preview_polygon_px,
+                    preview_area_rings_points=geometry_result.preview_area_rings_px,
+                    confidence=geometry_result.confidence,
+                    debug_payload=geometry_result.debug_payload,
+                )
+                if apply_result is None:
+                    self._update_magic_segment_controls()
+                    return
+                self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
+            else:
+                apply_result = canvas.apply_magic_segment_result(
+                    request_id,
+                    result.mask,
+                    result.polygon_px,
+                    result.area_rings_px,
+                )
+                if apply_result is None:
+                    self._update_magic_segment_controls()
+                    return
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return
@@ -3414,15 +3458,19 @@ class MainWindow(QMainWindow):
             if fallback_message:
                 self.statusBar().showMessage(fallback_message, 5000)
         else:
-            canvas.apply_magic_segment_result(request_id, None)
+            canvas.fail_magic_segment_result(request_id)
         self._update_magic_segment_controls()
 
     def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None:
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
-        canvas.fail_magic_segment_result(request_id)
-        self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            canvas.fail_fiber_quick_result(request_id)
+            self.statusBar().showMessage(f"快速测径失败: {reason}", 5000)
+        else:
+            canvas.fail_magic_segment_result(request_id)
+            self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
         self._update_magic_segment_controls()
 
     def _on_reference_instance_succeeded(self, document_id: str, request_id: int, result: object) -> None:
@@ -3660,6 +3708,17 @@ class MainWindow(QMainWindow):
                     confidence=snap_result.confidence,
                     status=snap_result.status,
                     debug_payload=dict(snap_result.debug_payload),
+                )
+            elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode="fiber_quick",
+                    line_px=payload["line_px"],
+                    confidence=float(payload.get("confidence", 0.0)),
+                    status=str(payload.get("status", "fiber_quick") or "fiber_quick"),
+                    debug_payload=dict(payload.get("debug_payload", {})),
                 )
             else:
                 return
@@ -4021,6 +4080,8 @@ class MainWindow(QMainWindow):
         return {
             "manual": "手动线段",
             "snap": "边缘吸附",
+            "fiber_auto": "快速测径",
+            "fiber_quick": "快速测径",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
             "magic_segment": "魔棒分割",
@@ -4039,7 +4100,10 @@ class MainWindow(QMainWindow):
             "profile_too_flat": "灰度变化不足",
             "edge_pair_not_found": "未找到有效边缘",
             "component_not_found": "未找到目标区域",
+            "centerline_not_found": "未找到可靠中心线",
             "boundary_not_found": "未找到边界",
+            "fiber_auto": "快速测径",
+            "fiber_quick": "快速测径",
             "auto_instance": "自动识别",
             "reference_instance": "同类扩选",
         }.get(status, status)
@@ -4266,6 +4330,7 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         has_document = canvas is not None and canvas.document_id is not None
         standard_mode = is_magic_segment_tool_mode(self._tool_mode)
+        fiber_quick_mode = is_fiber_quick_tool_mode(self._tool_mode)
         if standard_mode:
             prompt_type = canvas.current_magic_segment_prompt_type() if canvas is not None else "positive"
             operation_mode = (
@@ -4274,30 +4339,46 @@ class MainWindow(QMainWindow):
                 else MagicSegmentOperationMode.ADD
             )
             busy = bool(canvas and canvas.is_magic_segment_busy())
+        elif fiber_quick_mode:
+            prompt_type = canvas.current_fiber_quick_prompt_type() if canvas is not None else "positive"
+            operation_mode = MagicSegmentOperationMode.ADD
+            busy = bool(canvas and canvas.is_fiber_quick_busy())
         else:
             prompt_type = "positive"
             operation_mode = MagicSegmentOperationMode.ADD
             busy = bool(canvas and canvas.is_reference_instance_busy())
         if self._magic_prompt_label is not None:
-            self._magic_prompt_label.setVisible(not standard_mode)
-            if not standard_mode and canvas is not None and canvas.has_reference_instance_preview():
+            self._magic_prompt_label.setVisible(not standard_mode and not fiber_quick_mode)
+            if not standard_mode and not fiber_quick_mode and canvas is not None and canvas.has_reference_instance_preview():
                 self._magic_prompt_label.setText("候选预览")
-            elif not standard_mode:
+            elif not standard_mode and not fiber_quick_mode:
                 self._magic_prompt_label.setText("拖框或点已确认面积作为参考")
         if self._magic_toggle_button is not None:
-            self._magic_toggle_button.setVisible(standard_mode)
-            self._magic_toggle_button.setEnabled(has_document and standard_mode and not busy)
+            self._magic_toggle_button.setVisible(standard_mode or fiber_quick_mode)
+            self._magic_toggle_button.setEnabled(has_document and (standard_mode or fiber_quick_mode) and not busy)
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
             self._magic_operation_button.setEnabled(has_document and standard_mode and not busy)
         if self._magic_complete_button is not None:
-            self._magic_complete_button.setText("完成 (Enter / F)" if standard_mode else "加入当前类别 (Enter / F)")
+            self._magic_complete_button.setText(
+                "完成 (Enter / F)"
+                if standard_mode
+                else ("确认线段 (Enter / F)" if fiber_quick_mode else "加入当前类别 (Enter / F)")
+            )
             self._magic_complete_button.setEnabled(
                 bool(
                     canvas
                     and (
-                        (canvas.has_magic_segment_preview() if standard_mode else canvas.has_reference_instance_preview())
+                        (
+                            canvas.has_magic_segment_preview()
+                            if standard_mode
+                            else (
+                                canvas.has_fiber_quick_preview()
+                                if fiber_quick_mode
+                                else canvas.has_reference_instance_preview()
+                            )
+                        )
                     )
                     and not busy
                 )
@@ -4309,7 +4390,11 @@ class MainWindow(QMainWindow):
                     and (
                         canvas.has_magic_segment_session()
                         if standard_mode
-                        else canvas.has_reference_instance_session()
+                        else (
+                            canvas.has_fiber_quick_session()
+                            if fiber_quick_mode
+                            else canvas.has_reference_instance_session()
+                        )
                     )
                 )
             )
@@ -4591,6 +4676,22 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
         self._focus_current_canvas()
 
+    def _cycle_active_magic_prompt_type(self) -> None:
+        if is_magic_segment_tool_mode(self._tool_mode):
+            self._cycle_magic_segment_prompt_type()
+            return
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            self._cycle_fiber_quick_prompt_type()
+
+    def _cycle_fiber_quick_prompt_type(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode) or canvas.is_fiber_quick_busy():
+            return
+        prompt_type = canvas.cycle_fiber_quick_prompt_type()
+        self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+
     def _cycle_magic_segment_operation_mode(self) -> None:
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
@@ -4629,6 +4730,15 @@ class MainWindow(QMainWindow):
         self._update_magic_segment_controls()
         self._focus_current_canvas()
         return committed
+
+    def _commit_active_magic_preview(self) -> bool:
+        if is_magic_segment_tool_mode(self._tool_mode):
+            return self._commit_magic_segment_preview()
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            return self._commit_fiber_quick_preview()
+        if is_reference_propagation_tool_mode(self._tool_mode):
+            return self._commit_reference_instance_preview()
+        return False
 
     def _commit_reference_instance_preview(self) -> bool:
         canvas = self.current_canvas()
@@ -4699,6 +4809,20 @@ class MainWindow(QMainWindow):
         self._focus_current_canvas()
         return added_count > 0
 
+    def _commit_fiber_quick_preview(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode) or canvas.is_fiber_quick_busy():
+            return False
+        commit_result = canvas.commit_fiber_quick_preview()
+        committed = bool(commit_result.get("committed", False))
+        if committed:
+            self.statusBar().showMessage("已创建快速测径线段", 4000)
+        else:
+            self.statusBar().showMessage("当前没有可确认的快速测径结果。", 3000)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+        return committed
+
     def _cancel_magic_segment_session(self) -> None:
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode):
@@ -4708,6 +4832,16 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
+
+    def _cancel_active_magic_session(self) -> None:
+        if is_magic_segment_tool_mode(self._tool_mode):
+            self._cancel_magic_segment_session()
+            return
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            self._cancel_fiber_quick_session()
+            return
+        if is_reference_propagation_tool_mode(self._tool_mode):
+            self._cancel_reference_instance_session()
 
     def _cancel_reference_instance_session(self) -> None:
         canvas = self.current_canvas()
@@ -4719,6 +4853,16 @@ class MainWindow(QMainWindow):
         self._update_magic_segment_controls()
         self._focus_current_canvas()
 
+    def _cancel_fiber_quick_session(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode):
+            return
+        if canvas.has_fiber_quick_session():
+            canvas.clear_fiber_quick_session()
+            self.statusBar().showMessage("已放弃当前快速测径", 2500)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+
     def _clear_magic_segment_sessions(self, *, except_document_id: str | None = None) -> None:
         for document_id, canvas in self._canvases.items():
             if document_id == except_document_id:
@@ -4727,6 +4871,8 @@ class MainWindow(QMainWindow):
                 canvas.clear_magic_segment_session()
             if canvas.has_reference_instance_session():
                 canvas.clear_reference_instance_session()
+            if canvas.has_fiber_quick_session():
+                canvas.clear_fiber_quick_session()
 
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
         metrics = overlay_metrics(width, height, render_mode)
@@ -4903,6 +5049,19 @@ class MainWindow(QMainWindow):
                     return
                 if event.key() == Qt.Key.Key_Escape:
                     self._cancel_magic_segment_session()
+                    event.accept()
+                    return
+            elif is_fiber_quick_tool_mode(self._tool_mode):
+                if event.key() == Qt.Key.Key_R:
+                    self._cycle_fiber_quick_prompt_type()
+                    event.accept()
+                    return
+                if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                    self._commit_fiber_quick_preview()
+                    event.accept()
+                    return
+                if event.key() == Qt.Key.Key_Escape:
+                    self._cancel_fiber_quick_session()
                     event.accept()
                     return
             elif is_reference_propagation_tool_mode(self._tool_mode):

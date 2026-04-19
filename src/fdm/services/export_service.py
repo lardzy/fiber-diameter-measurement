@@ -491,6 +491,8 @@ class ExportService:
         return {
             "manual": "手动测量",
             "snap": "边缘吸附",
+            "fiber_auto": "快速测径",
+            "fiber_quick": "快速测径",
             "polygon_area": "多边形面积",
             "freehand_area": "自由形状面积",
             "magic_segment": "魔棒分割",
@@ -514,6 +516,9 @@ class ExportService:
             "profile_too_flat": "灰度变化不足",
             "edge_pair_not_found": "未找到有效边缘",
             "component_not_found": "未找到目标区域",
+            "centerline_not_found": "未找到可靠中心线",
             "boundary_not_found": "未找到边界",
+            "fiber_auto": "快速测径",
+            "fiber_quick": "快速测径",
             "reference_instance": "同类扩选",
         }.get(status, status)

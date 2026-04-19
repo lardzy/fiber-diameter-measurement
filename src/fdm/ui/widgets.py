@@ -947,7 +947,7 @@ class MeasurementToolStrip(QWidget):
 
     def setActiveMode(self, mode: str) -> None:
         self._active_mode = mode
-        if self._magic_tool_button is not None and mode not in {"magic_segment", "reference_propagation"}:
+        if self._magic_tool_button is not None and mode not in {"magic_segment", "reference_propagation", "fiber_quick"}:
             self._magic_tool_button.setChecked(False)
         if self._overlay_button is not None and mode != "overlay":
             self._overlay_button.setChecked(False)
