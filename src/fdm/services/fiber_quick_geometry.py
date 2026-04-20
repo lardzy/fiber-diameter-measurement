@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from time import perf_counter
+from typing import Callable
 
 import cv2
 
@@ -30,6 +31,9 @@ class FiberQuickDiameterGeometryService:
         *,
         positive_points: list[Point] | None = None,
         negative_points: list[Point] | None = None,
+        preview_polygon_points: list[Point] | None = None,
+        preview_area_rings_points: list[list[Point]] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> FiberQuickDiameterGeometryResult:
         try:
             import numpy as np
@@ -37,15 +41,24 @@ class FiberQuickDiameterGeometryService:
             raise RuntimeError("快速测径需要 numpy 依赖。") from exc
 
         started_at = perf_counter()
+        _raise_if_cancelled(cancel_check)
         normalized = normalize_magic_draft_mask(mask)
         if normalized is None or not np.any(normalized):
             raise RuntimeError("未找到目标纤维区域。")
         prepared_mask = _prepare_target_mask(normalized)
-        selected_mask, preview_rings, preview_polygon, geometry_stats = magic_mask_to_geometry(
-            prepared_mask,
-            positive_points=positive_points or [],
-            negative_points=negative_points or [],
-        )
+        selected_mask = prepared_mask.astype(bool, copy=False)
+        preview_polygon = [Point(point.x, point.y) for point in (preview_polygon_points or [])]
+        preview_rings = [
+            [Point(point.x, point.y) for point in ring]
+            for ring in (preview_area_rings_points or [])
+        ]
+        geometry_stats: dict[str, object] = {"opened_holes": 0}
+        if len(preview_polygon) < 3 and not preview_rings:
+            selected_mask, preview_rings, preview_polygon, geometry_stats = magic_mask_to_geometry(
+                prepared_mask,
+                positive_points=positive_points or [],
+                negative_points=negative_points or [],
+            )
         if selected_mask is None or not np.any(selected_mask):
             raise RuntimeError("未找到目标纤维区域。")
         ys, xs = np.where(selected_mask)
@@ -57,29 +70,53 @@ class FiberQuickDiameterGeometryService:
             raise RuntimeError("未找到可靠直径线。")
 
         roi_mask, roi_origin = _crop_mask_roi(selected_mask)
-        skeleton = _zhang_suen_thinning(roi_mask)
-        distance_map = cv2.distanceTransform(roi_mask.astype(np.uint8), cv2.DIST_L2, 5)
-        branch_points = _branch_points(skeleton, origin=roi_origin)
-        end_points = _end_points(skeleton, origin=roi_origin)
+        touch_left = roi_origin[0] == 0 and bool(np.any(roi_mask[:, 0]))
+        touch_top = roi_origin[1] == 0 and bool(np.any(roi_mask[0, :]))
+        touch_right = (roi_origin[0] + roi_mask.shape[1]) >= selected_mask.shape[1] and bool(np.any(roi_mask[:, -1]))
+        touch_bottom = (roi_origin[1] + roi_mask.shape[0]) >= selected_mask.shape[0] and bool(np.any(roi_mask[-1, :]))
+        working_mask, roi_scale = _resize_mask_for_geometry(roi_mask)
+        _raise_if_cancelled(cancel_check)
+        skeleton = _compute_skeleton(working_mask)
+        distance_map = cv2.distanceTransform(working_mask.astype(np.uint8), cv2.DIST_L2, 5)
+        branch_points = _branch_points(skeleton, origin=roi_origin, scale=roi_scale)
+        end_points = _end_points(skeleton, origin=roi_origin, scale=roi_scale)
+        forbidden_mask, border_seed_count = _border_forbidden_zone(
+            working_mask=working_mask,
+            skeleton=skeleton,
+            distance_map=distance_map,
+            touch_left=touch_left,
+            touch_top=touch_top,
+            touch_right=touch_right,
+            touch_bottom=touch_bottom,
+            cancel_check=cancel_check,
+        )
+        aspect_ratio = max(bbox_width, bbox_height) / max(1.0, min(bbox_width, bbox_height))
+        max_candidates = 16 if aspect_ratio >= 3.0 else 12
         candidate_points = _select_candidate_points(
-            selected_mask=roi_mask,
+            selected_mask=working_mask,
             skeleton=skeleton,
             distance_map=distance_map,
             branch_points=branch_points,
             end_points=end_points,
+            forbidden_mask=forbidden_mask,
             origin=roi_origin,
             full_shape=selected_mask.shape[:2],
+            scale=roi_scale,
+            max_candidates=max_candidates,
         )
         if not candidate_points:
             raise RuntimeError("未找到可靠直径线。")
+        if border_seed_count > 0 and _effective_skeleton_length(skeleton, forbidden_mask=forbidden_mask) < 24:
+            raise RuntimeError("目标在视野边缘不完整。")
 
         candidates: list[_CandidateLine] = []
         for center_x, center_y in candidate_points:
+            _raise_if_cancelled(cancel_check)
             local_center = Point(float(center_x), float(center_y))
-            tangent = _estimate_tangent(roi_mask, skeleton, local_center, distance_map)
+            tangent = _estimate_tangent(working_mask, skeleton, local_center, distance_map)
             if tangent is None:
                 continue
-            center = Point(float(center_x + roi_origin[0]), float(center_y + roi_origin[1]))
+            center = Point(float((center_x * roi_scale) + roi_origin[0]), float((center_y * roi_scale) + roi_origin[1]))
             candidate = _measure_candidate_line(
                 selected_mask=selected_mask,
                 center=center,
@@ -88,6 +125,7 @@ class FiberQuickDiameterGeometryService:
                 distance_map=distance_map,
                 branch_points=branch_points,
                 image_shape=selected_mask.shape[:2],
+                scale=roi_scale,
             )
             if candidate is not None:
                 candidates.append(candidate)
@@ -110,7 +148,11 @@ class FiberQuickDiameterGeometryService:
                 "end_point_count": len(end_points),
                 "component_area_px": int(np.count_nonzero(selected_mask)),
                 "opened_holes": int(geometry_stats.get("opened_holes", 0) or 0),
+                "segmentation_roi_round": geometry_stats.get("segmentation_roi_round"),
+                "segmentation_used_full_image": geometry_stats.get("segmentation_used_full_image"),
                 "geometry_ms": (perf_counter() - started_at) * 1000.0,
+                "roi_size": (int(working_mask.shape[1]), int(working_mask.shape[0])),
+                "border_forbidden_seed_count": int(border_seed_count),
             },
         )
 
@@ -148,8 +190,11 @@ def _select_candidate_points(
     distance_map,
     branch_points: list[Point],
     end_points: list[Point],
+    forbidden_mask,
     origin: tuple[int, int],
     full_shape: tuple[int, int],
+    scale: float,
+    max_candidates: int,
 ) -> list[tuple[int, int]]:
     try:
         import numpy as np
@@ -164,11 +209,13 @@ def _select_candidate_points(
         candidate_map = source
 
     working = candidate_map.astype(np.uint8)
+    if forbidden_mask is not None and np.any(forbidden_mask):
+        working[forbidden_mask.astype(bool)] = 0
     for point in branch_points:
-        local_point = Point(point.x - origin[0], point.y - origin[1])
+        local_point = Point((point.x - origin[0]) / max(scale, 1e-6), (point.y - origin[1]) / max(scale, 1e-6))
         _draw_block_circle(working, local_point, radius=4, value=0)
     for point in end_points:
-        local_point = Point(point.x - origin[0], point.y - origin[1])
+        local_point = Point((point.x - origin[0]) / max(scale, 1e-6), (point.y - origin[1]) / max(scale, 1e-6))
         _draw_block_circle(working, local_point, radius=3, value=0)
 
     ys, xs = np.where(working > 0)
@@ -182,8 +229,8 @@ def _select_candidate_points(
     for _score, x, y in scored:
         if any(abs(x - prev_x) <= 4 and abs(y - prev_y) <= 4 for prev_x, prev_y in chosen):
             continue
-        global_x = x + origin[0]
-        global_y = y + origin[1]
+        global_x = (x * scale) + origin[0]
+        global_y = (y * scale) + origin[1]
         border_clearance = min(
             global_x,
             global_y,
@@ -191,10 +238,11 @@ def _select_candidate_points(
             full_shape[0] - 1 - global_y,
         )
         local_radius = float(distance_map[y, x]) if 0 <= y < distance_map.shape[0] and 0 <= x < distance_map.shape[1] else 0.0
-        if border_clearance < max(8.0, local_radius * 1.75):
+        radius_px = local_radius * scale
+        if border_clearance < max(8.0, radius_px * 1.75):
             continue
         chosen.append((x, y))
-        if len(chosen) >= 20:
+        if len(chosen) >= max_candidates:
             break
     return chosen
 
@@ -238,6 +286,7 @@ def _measure_candidate_line(
     distance_map,
     branch_points: list[Point],
     image_shape: tuple[int, int],
+    scale: float,
 ) -> _CandidateLine | None:
     normal = (-tangent[1], tangent[0])
     line, hit_image_border = _measure_line(selected_mask, center, normal)
@@ -246,7 +295,7 @@ def _measure_candidate_line(
     line_length_px = distance(line.start, line.end)
     if line_length_px < 3.0:
         return None
-    radius = max(2.0, _sample_image(distance_map, local_center))
+    radius = max(2.0, _sample_image(distance_map, local_center) * scale)
     border_clearance = min(
         center.x,
         center.y,
@@ -352,7 +401,7 @@ def _draw_block_circle(image, point: Point, *, radius: int, value: int) -> None:
     cv2.circle(image, center, radius, int(value), thickness=-1)
 
 
-def _branch_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]:
+def _branch_points(skeleton, *, origin: tuple[int, int] = (0, 0), scale: float = 1.0) -> list[Point]:
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -364,10 +413,10 @@ def _branch_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]
     kernel = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], dtype=np.uint8)
     neighbors = cv2.filter2D(skeleton_u8, cv2.CV_16S, kernel, borderType=cv2.BORDER_CONSTANT)
     ys, xs = np.where((skeleton_u8 > 0) & (neighbors > 2))
-    return [Point(float(x + origin[0]), float(y + origin[1])) for y, x in zip(ys, xs, strict=False)]
+    return [Point(float((x * scale) + origin[0]), float((y * scale) + origin[1])) for y, x in zip(ys, xs, strict=False)]
 
 
-def _end_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]:
+def _end_points(skeleton, *, origin: tuple[int, int] = (0, 0), scale: float = 1.0) -> list[Point]:
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -379,7 +428,17 @@ def _end_points(skeleton, *, origin: tuple[int, int] = (0, 0)) -> list[Point]:
     kernel = np.array([[1, 1, 1], [1, 0, 1], [1, 1, 1]], dtype=np.uint8)
     neighbors = cv2.filter2D(skeleton_u8, cv2.CV_16S, kernel, borderType=cv2.BORDER_CONSTANT)
     ys, xs = np.where((skeleton_u8 > 0) & (neighbors == 1))
-    return [Point(float(x + origin[0]), float(y + origin[1])) for y, x in zip(ys, xs, strict=False)]
+    return [Point(float((x * scale) + origin[0]), float((y * scale) + origin[1])) for y, x in zip(ys, xs, strict=False)]
+
+
+def _compute_skeleton(mask):
+    try:
+        from skimage.morphology import skeletonize
+    except ImportError:
+        skeletonize = None
+    if skeletonize is not None:
+        return skeletonize(mask.astype(bool))
+    return _zhang_suen_thinning(mask)
 
 
 def _zhang_suen_thinning(mask):
@@ -454,3 +513,80 @@ def _crop_mask_roi(mask, *, padding: int = 12):
     min_y = max(0, int(ys.min()) - padding)
     max_y = min(mask.shape[0], int(ys.max()) + padding + 1)
     return mask[min_y:max_y, min_x:max_x].copy(), (min_x, min_y)
+
+
+def _resize_mask_for_geometry(mask, *, max_long_side: int = 640):
+    height, width = mask.shape[:2]
+    long_side = max(height, width)
+    if long_side <= max_long_side:
+        return mask.copy(), 1.0
+    scale = long_side / float(max_long_side)
+    target_w = max(1, int(round(width / scale)))
+    target_h = max(1, int(round(height / scale)))
+    resized = cv2.resize(mask.astype("uint8"), (target_w, target_h), interpolation=cv2.INTER_NEAREST) > 0
+    return resized, float(scale)
+
+
+def _border_forbidden_zone(
+    *,
+    working_mask,
+    skeleton,
+    distance_map,
+    touch_left: bool,
+    touch_top: bool,
+    touch_right: bool,
+    touch_bottom: bool,
+    cancel_check: Callable[[], bool] | None,
+):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("快速测径需要 numpy 依赖。") from exc
+
+    border_touch = np.zeros_like(working_mask, dtype=bool)
+    if touch_left:
+        border_touch[:, 0] = working_mask[:, 0]
+    if touch_top:
+        border_touch[0, :] = working_mask[0, :]
+    if touch_right:
+        border_touch[:, -1] = working_mask[:, -1]
+    if touch_bottom:
+        border_touch[-1, :] = working_mask[-1, :]
+    if not np.any(border_touch) or not np.any(skeleton):
+        return np.zeros_like(working_mask, dtype=bool), 0
+
+    _raise_if_cancelled(cancel_check)
+    dist_to_border = cv2.distanceTransform((~border_touch).astype("uint8"), cv2.DIST_L2, 5)
+    seed_map = skeleton.astype(bool) & (dist_to_border <= 6.0)
+    seed_count = int(np.count_nonzero(seed_map))
+    if seed_count == 0:
+        return np.zeros_like(working_mask, dtype=bool), 0
+
+    seed_radii = distance_map[seed_map]
+    median_radius = float(np.median(seed_radii)) if seed_radii.size else 0.0
+    expand_steps = int(round(min(48.0, max(16.0, 3.0 * median_radius))))
+    forbidden = seed_map.astype("uint8")
+    skeleton_u8 = skeleton.astype("uint8")
+    kernel = np.ones((3, 3), dtype=np.uint8)
+    for _ in range(max(1, expand_steps)):
+        _raise_if_cancelled(cancel_check)
+        forbidden = cv2.dilate(forbidden, kernel, iterations=1)
+        forbidden = cv2.bitwise_and(forbidden, skeleton_u8)
+    return forbidden.astype(bool), seed_count
+
+
+def _effective_skeleton_length(skeleton, *, forbidden_mask) -> int:
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("快速测径需要 numpy 依赖。") from exc
+    if skeleton is None or not np.any(skeleton):
+        return 0
+    if forbidden_mask is None or not np.any(forbidden_mask):
+        return int(np.count_nonzero(skeleton))
+    return int(np.count_nonzero(skeleton.astype(bool) & (~forbidden_mask.astype(bool))))
+
+
+def _raise_if_cancelled(cancel_check: Callable[[], bool] | None) -> None:
+    if cancel_check is not None and cancel_check():
+        raise RuntimeError("请求已取消。")

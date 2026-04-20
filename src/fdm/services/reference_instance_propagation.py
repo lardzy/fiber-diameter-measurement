@@ -7,6 +7,7 @@ import cv2
 
 from fdm.geometry import Point, area_rings_bounds, polygon_bounds
 from fdm.services.prompt_segmentation import PromptSegmentationService, magic_mask_area_px, qimage_to_rgb_array
+from fdm.settings import MagicSegmentToolMode
 
 
 TEMPLATE_MATCH_SCALES = (0.75, 0.9, 1.0, 1.1, 1.25)
@@ -254,6 +255,7 @@ class ReferenceInstancePropagationService:
             cache_key=cache_key,
             positive_points=positive_points,
             negative_points=negative_points,
+            tool_mode=MagicSegmentToolMode.REFERENCE,
         )
 
     def _refine_candidate(
@@ -274,6 +276,7 @@ class ReferenceInstancePropagationService:
             cache_key=cache_key,
             positive_points=positive_points,
             negative_points=negative_points,
+            tool_mode=MagicSegmentToolMode.REFERENCE,
         )
         if result.mask is None or len(result.polygon_px) < 3:
             return None

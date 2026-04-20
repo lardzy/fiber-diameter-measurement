@@ -1568,6 +1568,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
 
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
             fake_worker = FakeWorker()
             window._prompt_seg_worker = fake_worker
 
@@ -1639,6 +1642,9 @@ class CanvasAndExportTests(unittest.TestCase):
             class FakeWorker:
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
 
             fake_worker = FakeWorker()
             window._reference_instance_worker = fake_worker
@@ -1751,6 +1757,10 @@ class CanvasAndExportTests(unittest.TestCase):
             class FakeWorker:
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
+                    self.requests: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.requests.append((document_id, request_id))
 
             fake_worker = FakeWorker()
             window._prompt_seg_worker = fake_worker
@@ -1776,6 +1786,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.FIBER_QUICK)
             self.assertEqual(fake_worker.requested.payload.positive_points, [Point(48, 52)])
             self.assertEqual(fake_worker.requested.payload.negative_points, [Point(74, 56)])
+            self.assertEqual(fake_worker.requests, [(document.id, 11)])
         finally:
             window._reset_workspace()
             window.close()
@@ -2258,10 +2269,15 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.FIBER_QUICK)
 
         request_id = requests[0][1]["request_id"]
-        canvas.apply_fiber_quick_result(
+        canvas.apply_fiber_quick_segmentation_result(
+            request_id,
+            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
+            debug_payload={"candidate_count": 7},
+        )
+        canvas.begin_fiber_quick_geometry(request_id)
+        canvas.apply_fiber_quick_geometry_result(
             request_id,
             preview_line=Line(Point(28, 46), Point(68, 46)),
-            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
             confidence=0.83,
             debug_payload={"candidate_count": 7},
         )
@@ -2295,12 +2311,13 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(canvas.current_fiber_quick_prompt_type(), "negative")
 
             canvas._fiber_quick.request_id = 1
-            canvas.apply_fiber_quick_result(
+            canvas.apply_fiber_quick_segmentation_result(
                 1,
-                preview_line=Line(Point(60, 40), Point(92, 40)),
-                confidence=0.91,
+                preview_polygon_points=[Point(40, 20), Point(112, 20), Point(112, 80), Point(40, 80)],
                 debug_payload={"candidate_count": 5},
             )
+            canvas.begin_fiber_quick_geometry(1)
+            canvas.apply_fiber_quick_geometry_result(1, preview_line=Line(Point(60, 40), Point(92, 40)), confidence=0.91)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
 
             self.assertEqual(len(document.measurements), 1)
@@ -2401,7 +2418,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNotNone(canvas._magic_segment.primary_mask)
         self.assertFalse(bool(canvas._magic_segment.primary_mask[18, 166]))
 
-    def test_fiber_quick_prompt_success_uses_worker_geometry_metadata(self) -> None:
+    def test_fiber_quick_prompt_success_dispatches_async_geometry_worker(self) -> None:
         window = MainWindow()
         try:
             image = QImage(220, 140, QImage.Format.Format_RGB32)
@@ -2419,26 +2436,43 @@ class CanvasAndExportTests(unittest.TestCase):
             window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
             canvas._fiber_quick.request_id = 1
 
-            window._on_prompt_segmentation_succeeded(
-                document.id,
-                1,
-                PromptSegmentationResult(
-                    mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
-                    polygon_px=[Point(20, 18), Point(150, 18), Point(150, 102), Point(20, 102)],
-                    area_rings_px=[],
-                    area_px=0.0,
-                    metadata={
-                        "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
-                        "fiber_quick_line_px": Line(Point(68, 30), Point(68, 92)),
-                        "fiber_quick_confidence": 0.81,
-                        "fiber_quick_debug_payload": {"candidate_count": 9},
-                    },
-                ),
-            )
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
 
-            self.assertTrue(canvas.has_fiber_quick_preview())
-            self.assertEqual(canvas._fiber_quick.preview_line, Line(Point(68, 30), Point(68, 92)))
-            self.assertIn("快速测径已生成代表线", window.statusBar().currentMessage())
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeGeometryWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
+            fake_worker = FakeGeometryWorker()
+            window._fiber_quick_geometry_worker = fake_worker
+
+            with patch.object(window, "_ensure_fiber_quick_geometry_worker", return_value=None):
+                window._on_prompt_segmentation_succeeded(
+                    document.id,
+                    1,
+                    PromptSegmentationResult(
+                        mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+                        polygon_px=[Point(20, 18), Point(150, 18), Point(150, 102), Point(20, 102)],
+                        area_rings_px=[],
+                        area_px=0.0,
+                        metadata={
+                            "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
+                        },
+                    ),
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertTrue(canvas._fiber_quick.geometry_busy)
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 1)
+            self.assertIn("正在异步计算直径线", window.statusBar().currentMessage())
         finally:
             window._reset_workspace()
             window.close()
@@ -3041,14 +3075,17 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_close_event_stops_idle_prompt_and_reference_threads(self) -> None:
+    def test_close_event_stops_idle_prompt_reference_and_fiber_quick_threads(self) -> None:
         window = MainWindow()
         try:
             prompt_thread = QThread(window)
             prompt_thread.start()
+            geometry_thread = QThread(window)
+            geometry_thread.start()
             reference_thread = QThread(window)
             reference_thread.start()
             window._prompt_seg_thread = prompt_thread
+            window._fiber_quick_geometry_thread = geometry_thread
             window._reference_instance_thread = reference_thread
             event = FakeCloseEvent()
 
@@ -3058,6 +3095,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(event.accepted)
             self.assertFalse(event.ignored)
             self.assertFalse(prompt_thread.isRunning())
+            self.assertFalse(geometry_thread.isRunning())
             self.assertFalse(reference_thread.isRunning())
         finally:
             window.close()

@@ -184,7 +184,8 @@ class FiberQuickDiameterSession:
     preview_rings: list[list[Point]] = field(default_factory=list)
     confidence: float = 0.0
     request_id: int = 0
-    busy: bool = False
+    segmentation_busy: bool = False
+    geometry_busy: bool = False
     debug_payload: dict[str, object] = field(default_factory=dict)
 
     def has_points(self) -> bool:
@@ -194,7 +195,7 @@ class FiberQuickDiameterSession:
         return self.preview_line is not None
 
     def has_session(self) -> bool:
-        return self.has_points() or self.has_preview() or self.busy
+        return self.has_points() or self.has_preview() or self.segmentation_busy or self.geometry_busy
 
 
 class DocumentCanvas(QWidget):
@@ -398,7 +399,7 @@ class DocumentCanvas(QWidget):
         return self._fiber_quick.has_preview()
 
     def is_fiber_quick_busy(self) -> bool:
-        return self._fiber_quick.busy
+        return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
 
     def cycle_fiber_quick_prompt_type(self) -> str:
         self._fiber_quick.prompt_type = "negative" if self._fiber_quick.prompt_type == "positive" else "positive"
@@ -546,34 +547,67 @@ class DocumentCanvas(QWidget):
         self.update()
         self._emit_magic_segment_session_changed()
 
-    def apply_fiber_quick_result(
+    def apply_fiber_quick_segmentation_result(
+        self,
+        request_id: int,
+        *,
+        preview_polygon_points: list[Point] | None = None,
+        preview_area_rings_points: list[list[Point]] | None = None,
+        debug_payload: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._fiber_quick.request_id:
+            return None
+        self._fiber_quick.segmentation_busy = False
+        self._fiber_quick.preview_polygon = self._normalize_magic_polygon(preview_polygon_points)
+        self._fiber_quick.preview_rings = self._normalize_magic_rings(preview_area_rings_points)
+        self._fiber_quick.debug_payload = dict(debug_payload or {})
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "has_shape_preview": bool(self._fiber_quick.preview_polygon or self._fiber_quick.preview_rings),
+        }
+
+    def begin_fiber_quick_geometry(self, request_id: int) -> bool:
+        if request_id != self._fiber_quick.request_id:
+            return False
+        self._fiber_quick.geometry_busy = True
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return True
+
+    def apply_fiber_quick_geometry_result(
         self,
         request_id: int,
         *,
         preview_line: Line | None = None,
-        preview_polygon_points: list[Point] | None = None,
-        preview_area_rings_points: list[list[Point]] | None = None,
         confidence: float = 0.0,
         debug_payload: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         if request_id != self._fiber_quick.request_id:
             return None
-        self._fiber_quick.busy = False
+        self._fiber_quick.geometry_busy = False
         self._fiber_quick.preview_line = preview_line
-        self._fiber_quick.preview_polygon = self._normalize_magic_polygon(preview_polygon_points)
-        self._fiber_quick.preview_rings = self._normalize_magic_rings(preview_area_rings_points)
         self._fiber_quick.confidence = float(confidence)
-        self._fiber_quick.debug_payload = dict(debug_payload or {})
+        if debug_payload:
+            merged_payload = dict(self._fiber_quick.debug_payload)
+            merged_payload.update(debug_payload)
+            self._fiber_quick.debug_payload = merged_payload
         self.update()
         self._emit_magic_segment_session_changed()
         return {
             "has_preview": self._fiber_quick.has_preview(),
         }
 
-    def fail_fiber_quick_result(self, request_id: int) -> None:
+    def fail_fiber_quick_result(self, request_id: int, *, stage: str = "all") -> None:
         if request_id != self._fiber_quick.request_id:
             return
-        self._fiber_quick.busy = False
+        if stage in {"segmentation", "all"}:
+            self._fiber_quick.segmentation_busy = False
+            self._fiber_quick.preview_polygon = []
+            self._fiber_quick.preview_rings = []
+        if stage in {"geometry", "all"}:
+            self._fiber_quick.geometry_busy = False
+            self._fiber_quick.preview_line = None
         self.update()
         self._emit_magic_segment_session_changed()
 
@@ -924,8 +958,6 @@ class DocumentCanvas(QWidget):
         if is_fiber_quick_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
                 return
-            if self._fiber_quick.busy:
-                return
             self._document.select_measurement(None)
             self._document.select_overlay_annotation(None)
             self.measurementSelected.emit(self._document.id, "")
@@ -941,7 +973,12 @@ class DocumentCanvas(QWidget):
                 self._emit_magic_segment_session_changed()
                 return
             self._fiber_quick.request_id += 1
-            self._fiber_quick.busy = True
+            self._fiber_quick.segmentation_busy = True
+            self._fiber_quick.geometry_busy = False
+            self._fiber_quick.preview_line = None
+            self._fiber_quick.preview_polygon = []
+            self._fiber_quick.preview_rings = []
+            self._fiber_quick.debug_payload = {}
             self.magicSegmentRequested.emit(
                 self._document.id,
                 {
@@ -2042,7 +2079,9 @@ class DocumentCanvas(QWidget):
         )
         prompt_text = "当前提示：负采样点" if self._fiber_quick.prompt_type == "negative" else "当前提示：正采样点"
         label_text = prompt_text
-        if self._fiber_quick.busy:
+        if self._fiber_quick.segmentation_busy:
+            label_text += " / 分割中..."
+        elif self._fiber_quick.geometry_busy:
             label_text += " / 测径中..."
         rect = QRectF(14.0, 14.0, 360.0, 32.0)
         painter.fillRect(rect, QColor(16, 24, 32, 188))

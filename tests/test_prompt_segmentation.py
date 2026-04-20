@@ -9,7 +9,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Point
-from fdm.settings import ComplexMagicSegmentModelVariant, MagicSegmentModelVariant
+from fdm.settings import ComplexMagicSegmentModelVariant, MagicSegmentModelVariant, MagicSegmentToolMode
 
 try:
     from fdm.services.prompt_segmentation import (
@@ -129,6 +129,80 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(result.area_rings_px, [])
         self.assertEqual(result.area_px, 0.0)
         self.assertEqual(result.metadata["reason"], "missing_positive_prompt")
+
+    def test_predict_polygon_standard_mode_uses_auto_roi_expansion(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+
+        def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
+            height, width = crop_image.shape[:2]
+            mask = np.zeros((height, width), dtype=bool)
+            if width < 500:
+                mask[4 : height - 4, 4 : width - 4] = True
+            else:
+                mask[height // 2 - 20 : height // 2 + 20, width // 2 - 60 : width // 2 + 60] = True
+            return type("R", (), {
+                "mask": mask,
+                "polygon_px": [],
+                "area_rings_px": [],
+                "area_px": float(mask.sum()),
+                "metadata": dict(metadata_extra),
+            })()
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((1200, 1200, 3), dtype=np.uint8)),
+            patch.object(service, "_predict_polygon_for_rgb_array", side_effect=fake_predict),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="roi-demo",
+                positive_points=[Point(600, 600)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+            )
+
+        self.assertIsNotNone(result.mask)
+        self.assertGreaterEqual(int(result.metadata["segmentation_roi_round"]), 2)
+        self.assertFalse(bool(result.metadata["segmentation_used_full_image"]))
+
+    def test_predict_polygon_fiber_quick_fails_when_roi_remains_unstable(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+
+        def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
+            height, width = crop_image.shape[:2]
+            mask = np.zeros((height, width), dtype=bool)
+            mask[2 : height - 2, 2 : width - 2] = True
+            return type("R", (), {
+                "mask": mask,
+                "polygon_px": [],
+                "area_rings_px": [],
+                "area_px": float(mask.sum()),
+                "metadata": dict(metadata_extra),
+            })()
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((1600, 1600, 3), dtype=np.uint8)),
+            patch.object(service, "_predict_polygon_for_rgb_array", side_effect=fake_predict),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="roi-fail",
+                positive_points=[Point(800, 800)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.FIBER_QUICK,
+            )
+
+        self.assertIsNone(result.mask)
+        self.assertEqual(result.metadata["reason"], "roi_unstable")
 
     def test_run_encoder_uses_uint8_input_tensor(self) -> None:
         try:

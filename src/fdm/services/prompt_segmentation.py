@@ -4,6 +4,7 @@ from collections import OrderedDict
 from dataclasses import dataclass
 from pathlib import Path
 from time import perf_counter
+from typing import Callable
 
 import cv2
 
@@ -11,6 +12,7 @@ from fdm.geometry import Point, clean_ring, distance, point_in_polygon, ring_sig
 from fdm.runtime_logging import append_runtime_log
 from fdm.settings import (
     ComplexMagicSegmentModelVariant,
+    MagicSegmentToolMode,
     MagicSegmentModelVariant,
     bundle_resource_root,
 )
@@ -25,6 +27,12 @@ EFFICIENTSAM_S_CHECKPOINT_FILENAME = "efficient_sam_vits.pt"
 EDGE_SAM_TARGET_LENGTH = 1024
 EDGE_SAM_PIXEL_MEAN = (123.675, 116.28, 103.53)
 EDGE_SAM_PIXEL_STD = (58.395, 57.12, 57.375)
+ROI_CROP_MIN_SIDE = 256
+ROI_CROP_MAX_INITIAL_SIDE = 768
+ROI_CROP_SCALE_FACTOR = 1.8
+ROI_CROP_STANDARD_MAX_ROUNDS = 4
+ROI_CROP_FIBER_QUICK_MAX_ROUNDS = 3
+ROI_CROP_ACCEPT_AREA_RATIO = 0.70
 
 
 @dataclass(slots=True)
@@ -171,6 +179,93 @@ def magic_mask_area_px(mask) -> float:
     if mask is None:
         return 0.0
     return float(np.count_nonzero(mask))
+
+
+def _tool_mode_uses_auto_roi(tool_mode: str | None) -> bool:
+    token = str(tool_mode or "").strip()
+    return token in {
+        MagicSegmentToolMode.STANDARD,
+        MagicSegmentToolMode.FIBER_QUICK,
+    }
+
+
+def _prompt_centroid(points: list[Point]) -> Point | None:
+    if not points:
+        return None
+    total_x = sum(point.x for point in points)
+    total_y = sum(point.y for point in points)
+    return Point(total_x / len(points), total_y / len(points))
+
+
+def _prompt_bbox_long_side(positive_points: list[Point], negative_points: list[Point]) -> float:
+    points = list(positive_points) + list(negative_points)
+    if not points:
+        return 1.0
+    xs = [point.x for point in points]
+    ys = [point.y for point in points]
+    return max(1.0, max(max(xs) - min(xs), max(ys) - min(ys)))
+
+
+def _centered_square_crop(
+    *,
+    center: Point,
+    side: int,
+    image_size: tuple[int, int],
+) -> tuple[int, int, int, int]:
+    image_h, image_w = image_size
+    crop_side = max(1, min(int(side), image_h, image_w))
+    half = crop_side / 2.0
+    x0 = int(round(center.x - half))
+    y0 = int(round(center.y - half))
+    x0 = max(0, min(x0, image_w - crop_side))
+    y0 = max(0, min(y0, image_h - crop_side))
+    return x0, y0, x0 + crop_side, y0 + crop_side
+
+
+def _crop_points_to_local(points: list[Point], crop_box: tuple[int, int, int, int]) -> list[Point]:
+    x0, y0, _x1, _y1 = crop_box
+    return [Point(point.x - x0, point.y - y0) for point in points]
+
+
+def _expand_mask_from_crop(crop_mask, *, crop_box: tuple[int, int, int, int], image_shape: tuple[int, int]):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    full_mask = np.zeros(image_shape, dtype=bool)
+    if crop_mask is None:
+        return full_mask
+    x0, y0, x1, y1 = crop_box
+    full_mask[y0:y1, x0:x1] = crop_mask.astype(bool, copy=False)
+    return full_mask
+
+
+def _component_bounds(mask) -> tuple[int, int, int, int] | None:
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    if mask is None or not np.any(mask):
+        return None
+    ys, xs = np.where(mask)
+    return int(xs.min()), int(ys.min()), int(xs.max()), int(ys.max())
+
+
+def _roi_result_needs_expansion(
+    selected_mask,
+    *,
+    crop_box: tuple[int, int, int, int],
+) -> bool:
+    bounds = _component_bounds(selected_mask)
+    if bounds is None:
+        return True
+    x0, y0, x1, y1 = crop_box
+    min_x, min_y, max_x, max_y = bounds
+    touch_count = int(min_x <= x0) + int(min_y <= y0) + int(max_x >= (x1 - 1)) + int(max_y >= (y1 - 1))
+    if touch_count >= 2:
+        return True
+    crop_area = max(1, (x1 - x0) * (y1 - y0))
+    return (magic_mask_area_px(selected_mask) / crop_area) >= ROI_CROP_ACCEPT_AREA_RATIO
 
 
 def qimage_to_rgb_array(image):
@@ -712,6 +807,8 @@ class PromptSegmentationService:
         cache_key: str,
         positive_points: list[Point],
         negative_points: list[Point],
+        tool_mode: str = MagicSegmentToolMode.STANDARD,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
             return PromptSegmentationResult(
@@ -722,6 +819,120 @@ class PromptSegmentationService:
                 metadata={"reason": "missing_positive_prompt"},
             )
         cv_image = self._image_to_rgb_array(image)
+        if _tool_mode_uses_auto_roi(tool_mode):
+            return self._predict_polygon_auto_roi(
+                cv_image,
+                cache_key=cache_key,
+                positive_points=positive_points,
+                negative_points=negative_points,
+                tool_mode=tool_mode,
+                cancel_check=cancel_check,
+            )
+        return self._predict_polygon_for_rgb_array(
+            cv_image,
+            cache_key=cache_key,
+            positive_points=positive_points,
+            negative_points=negative_points,
+            metadata_extra={},
+        )
+
+    def _predict_polygon_auto_roi(
+        self,
+        cv_image,
+        *,
+        cache_key: str,
+        positive_points: list[Point],
+        negative_points: list[Point],
+        tool_mode: str,
+        cancel_check: Callable[[], bool] | None,
+    ) -> PromptSegmentationResult:
+        image_h, image_w = cv_image.shape[:2]
+        image_long_side = max(image_h, image_w)
+        latest_positive = positive_points[-1] if positive_points else _prompt_centroid(positive_points)
+        center = latest_positive or _prompt_centroid(positive_points) or Point(image_w / 2.0, image_h / 2.0)
+        prompt_long_side = _prompt_bbox_long_side(positive_points, negative_points)
+        initial_side = int(round(max(ROI_CROP_MIN_SIDE, 4.0 * prompt_long_side)))
+        initial_side = max(ROI_CROP_MIN_SIDE, min(initial_side, ROI_CROP_MAX_INITIAL_SIDE))
+        max_rounds = ROI_CROP_STANDARD_MAX_ROUNDS if tool_mode == MagicSegmentToolMode.STANDARD else ROI_CROP_FIBER_QUICK_MAX_ROUNDS
+        max_side = image_long_side if tool_mode == MagicSegmentToolMode.STANDARD else min(1024, int(round(image_long_side * 0.6)))
+        last_result = PromptSegmentationResult(mask=None, polygon_px=[], area_rings_px=[], area_px=0.0, metadata={})
+        used_full_image = False
+
+        for round_idx in range(max_rounds):
+            if cancel_check is not None and cancel_check():
+                raise RuntimeError("请求已取消。")
+            requested_side = int(round(initial_side * (ROI_CROP_SCALE_FACTOR**round_idx)))
+            crop_side = max(ROI_CROP_MIN_SIDE, min(requested_side, max_side, image_h, image_w))
+            if tool_mode == MagicSegmentToolMode.STANDARD and (round_idx == max_rounds - 1 or crop_side >= image_long_side):
+                crop_box = (0, 0, image_w, image_h)
+                used_full_image = True
+            else:
+                crop_box = _centered_square_crop(center=center, side=crop_side, image_size=(image_h, image_w))
+            x0, y0, x1, y1 = crop_box
+            crop_image = cv_image[y0:y1, x0:x1].copy()
+            crop_positive = _crop_points_to_local(positive_points, crop_box)
+            crop_negative = _crop_points_to_local(negative_points, crop_box)
+            roi_signature = f"{x0}:{y0}:{x1}:{y1}"
+            crop_result = self._predict_polygon_for_rgb_array(
+                crop_image,
+                cache_key=f"{cache_key}|roi={roi_signature}",
+                positive_points=crop_positive,
+                negative_points=crop_negative,
+                metadata_extra={
+                    "segmentation_roi_round": round_idx + 1,
+                    "segmentation_used_full_image": used_full_image,
+                    "segmentation_crop_box": crop_box,
+                },
+            )
+            expanded_mask = _expand_mask_from_crop(crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w))
+            selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+                expanded_mask,
+                positive_points=positive_points,
+                negative_points=negative_points,
+            )
+            last_result = PromptSegmentationResult(
+                mask=selected_mask.copy() if selected_mask is not None else None,
+                polygon_px=polygon,
+                area_rings_px=area_rings,
+                area_px=magic_mask_area_px(selected_mask),
+                metadata={
+                    **crop_result.metadata,
+                    **geometry_stats,
+                    "segmentation_roi_round": round_idx + 1,
+                    "segmentation_used_full_image": used_full_image,
+                    "segmentation_crop_box": crop_box,
+                },
+            )
+            if selected_mask is not None and not _roi_result_needs_expansion(selected_mask, crop_box=crop_box):
+                return last_result
+            if used_full_image:
+                break
+        if last_result.mask is None or _roi_result_needs_expansion(
+            last_result.mask,
+            crop_box=last_result.metadata.get("segmentation_crop_box", (0, 0, image_w, image_h)),
+        ):
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata={
+                    "reason": "roi_unstable",
+                    "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
+                    "segmentation_used_full_image": bool(last_result.metadata.get("segmentation_used_full_image", False)),
+                },
+            )
+        return last_result
+
+    def _predict_polygon_for_rgb_array(
+        self,
+        cv_image,
+        *,
+        cache_key: str,
+        positive_points: list[Point],
+        negative_points: list[Point],
+        metadata_extra: dict[str, object],
+    ) -> PromptSegmentationResult:
         embedding = self._embedding_for_rgb_array(cv_image, cache_key=cache_key)
         mask = self._predict_mask_from_embedding(
             embedding,
@@ -744,6 +955,7 @@ class PromptSegmentationService:
                 "cache_size": len(self._embedding_cache),
                 "cache_key": cache_key,
                 "model_variant": self._model_variant,
+                **metadata_extra,
                 **geometry_stats,
             },
         )
@@ -800,8 +1012,14 @@ class PromptSegmentationService:
         cached = _EmbeddingEntry(image_embeddings=image_embeddings, original_size=original_size)
         self._embedding_cache[key] = cached
         self._embedding_cache.move_to_end(key)
-        while len(self._embedding_cache) > self._max_cache_entries:
-            self._embedding_cache.popitem(last=False)
+        roi_keys = [item_key for item_key in self._embedding_cache.keys() if "|roi=" in item_key]
+        while len(roi_keys) > 4:
+            oldest_roi_key = roi_keys.pop(0)
+            self._embedding_cache.pop(oldest_roi_key, None)
+        non_roi_keys = [item_key for item_key in self._embedding_cache.keys() if "|roi=" not in item_key]
+        while len(non_roi_keys) > self._max_cache_entries:
+            oldest_key = non_roi_keys.pop(0)
+            self._embedding_cache.pop(oldest_key, None)
         elapsed_ms = (perf_counter() - started_at) * 1000.0
         if elapsed_ms >= 80.0:
             append_runtime_log(
@@ -1028,6 +1246,8 @@ class LightHQSamPromptSegmentationService:
         cache_key: str,
         positive_points: list[Point],
         negative_points: list[Point],
+        tool_mode: str = MagicSegmentToolMode.STANDARD,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
             return PromptSegmentationResult(
@@ -1173,6 +1393,8 @@ class EfficientSamSPromptSegmentationService:
         cache_key: str,
         positive_points: list[Point],
         negative_points: list[Point],
+        tool_mode: str = MagicSegmentToolMode.STANDARD,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
             return PromptSegmentationResult(

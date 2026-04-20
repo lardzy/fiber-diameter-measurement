@@ -120,6 +120,7 @@ from fdm.ui.reference_instance_worker import (
     ReferenceInstancePropagationRequest,
     ReferenceInstancePropagationWorker,
 )
+from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest, FiberQuickGeometryWorker
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
 from fdm.ui.widgets import (
     FiberGroupListItemWidget,
@@ -336,8 +337,12 @@ class MainWindow(QMainWindow):
         self._area_infer_state: AreaInferenceBatchState | None = None
         self._prompt_seg_thread: QThread | None = None
         self._prompt_seg_worker: PromptSegmentationWorker | None = None
+        self._fiber_quick_geometry_thread: QThread | None = None
+        self._fiber_quick_geometry_worker: FiberQuickGeometryWorker | None = None
         self._reference_instance_thread: QThread | None = None
         self._reference_instance_worker: ReferenceInstancePropagationWorker | None = None
+        self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
+        self._fiber_quick_geometry_request_ids: set[tuple[str, int]] = set()
         self._interactive_segmentation_services: dict[str, object] = {}
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
@@ -2493,6 +2498,19 @@ class MainWindow(QMainWindow):
         self._prompt_seg_thread = thread
         self._prompt_seg_worker = worker
 
+    def _ensure_fiber_quick_geometry_worker(self) -> None:
+        if self._fiber_quick_geometry_thread is not None and self._fiber_quick_geometry_worker is not None:
+            return
+        thread = QThread(self)
+        worker = FiberQuickGeometryWorker()
+        worker.moveToThread(thread)
+        worker.succeeded.connect(self._on_fiber_quick_geometry_succeeded)
+        worker.failed.connect(self._on_fiber_quick_geometry_failed)
+        thread.finished.connect(worker.deleteLater)
+        thread.start()
+        self._fiber_quick_geometry_thread = thread
+        self._fiber_quick_geometry_worker = worker
+
     def _ensure_reference_instance_worker(self) -> None:
         if self._reference_instance_thread is not None and self._reference_instance_worker is not None:
             return
@@ -3318,6 +3336,8 @@ class MainWindow(QMainWindow):
         if not interactive_segmentation_models_ready(resolved_variant):
             if is_reference_propagation_tool_mode(tool_mode):
                 canvas.fail_reference_instance_result(request_id)
+            elif is_fiber_quick_tool_mode(tool_mode):
+                canvas.fail_fiber_quick_result(request_id)
             else:
                 canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
@@ -3383,6 +3403,8 @@ class MainWindow(QMainWindow):
                 canvas.apply_magic_segment_result(request_id, None)
             self._update_magic_segment_controls()
             return
+        if is_fiber_quick_tool_mode(tool_mode) and self._fiber_quick_geometry_worker is not None:
+            self._fiber_quick_geometry_worker.cancel_document(document_id)
         self._ensure_prompt_segmentation_worker()
         if self._prompt_seg_worker is None:
             if is_fiber_quick_tool_mode(tool_mode):
@@ -3391,6 +3413,8 @@ class MainWindow(QMainWindow):
                 canvas.fail_magic_segment_result(request_id)
             self._update_magic_segment_controls()
             return
+        self._prompt_request_tool_modes[(document_id, request_id)] = tool_mode
+        self._prompt_seg_worker.register_request(document_id, request_id)
         self._prompt_seg_worker.requested.emit(
             PromptSegmentationRequest(
                 document_id=document_id,
@@ -3415,23 +3439,54 @@ class MainWindow(QMainWindow):
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
+        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), None)
         if isinstance(result, PromptSegmentationResult):
-            tool_mode = str(result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
+            tool_mode = str(tool_mode or result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
             if is_fiber_quick_tool_mode(tool_mode):
-                apply_result = canvas.apply_fiber_quick_result(
+                apply_result = canvas.apply_fiber_quick_segmentation_result(
                     request_id,
-                    preview_line=result.metadata.get("fiber_quick_line_px") if isinstance(result.metadata.get("fiber_quick_line_px"), Line) else None,
                     preview_polygon_points=result.polygon_px,
                     preview_area_rings_points=result.area_rings_px,
-                    confidence=float(result.metadata.get("fiber_quick_confidence", 0.0) or 0.0),
-                    debug_payload=dict(result.metadata.get("fiber_quick_debug_payload", {}))
-                    if isinstance(result.metadata.get("fiber_quick_debug_payload", {}), dict)
-                    else {},
+                    debug_payload={
+                        "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
+                        "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
+                        "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
+                        "component_area_px": result.metadata.get("component_area_px"),
+                    },
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()
                     return
-                self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
+                if result.mask is None or len(result.polygon_px) < 3:
+                    canvas.fail_fiber_quick_result(request_id, stage="segmentation")
+                    self.statusBar().showMessage("快速测径失败: 未找到目标纤维区域。", 5000)
+                    self._update_magic_segment_controls()
+                    return
+                self._ensure_fiber_quick_geometry_worker()
+                if self._fiber_quick_geometry_worker is None:
+                    canvas.fail_fiber_quick_result(request_id, stage="geometry")
+                    self.statusBar().showMessage("快速测径失败: 几何线程初始化失败。", 5000)
+                    self._update_magic_segment_controls()
+                    return
+                canvas.begin_fiber_quick_geometry(request_id)
+                self._fiber_quick_geometry_request_ids.add((document_id, request_id))
+                self._fiber_quick_geometry_worker.register_request(document_id, request_id)
+                self._fiber_quick_geometry_worker.requested.emit(
+                    FiberQuickGeometryRequest(
+                        document_id=document_id,
+                        request_id=request_id,
+                        mask=result.mask,
+                        preview_polygon_px=list(result.polygon_px),
+                        preview_area_rings_px=[list(ring) for ring in result.area_rings_px],
+                        positive_points=list(result.metadata.get("positive_points_px", []))
+                        if isinstance(result.metadata.get("positive_points_px"), list)
+                        else [],
+                        negative_points=list(result.metadata.get("negative_points_px", []))
+                        if isinstance(result.metadata.get("negative_points_px"), list)
+                        else [],
+                    )
+                )
+                self.statusBar().showMessage("快速测径已完成分割，正在异步计算直径线。", 5000)
             else:
                 apply_result = canvas.apply_magic_segment_result(
                     request_id,
@@ -3456,12 +3511,45 @@ class MainWindow(QMainWindow):
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
-        if is_fiber_quick_tool_mode(self._tool_mode):
-            canvas.fail_fiber_quick_result(request_id)
+        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), self._tool_mode)
+        if is_fiber_quick_tool_mode(tool_mode):
+            canvas.fail_fiber_quick_result(request_id, stage="segmentation")
             self.statusBar().showMessage(f"快速测径失败: {reason}", 5000)
         else:
             canvas.fail_magic_segment_result(request_id)
             self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
+        self._update_magic_segment_controls()
+
+    def _on_fiber_quick_geometry_succeeded(self, document_id: str, request_id: int, result: object) -> None:
+        self._fiber_quick_geometry_request_ids.discard((document_id, request_id))
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        if hasattr(result, "line_px"):
+            apply_result = canvas.apply_fiber_quick_geometry_result(
+                request_id,
+                preview_line=result.line_px if isinstance(result.line_px, Line) else None,
+                confidence=float(getattr(result, "confidence", 0.0) or 0.0),
+                debug_payload=dict(getattr(result, "debug_payload", {}))
+                if isinstance(getattr(result, "debug_payload", {}), dict)
+                else {},
+            )
+            if apply_result is not None and apply_result.get("has_preview"):
+                self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
+            else:
+                self.statusBar().showMessage("快速测径失败: 未找到可靠直径线。", 5000)
+        else:
+            canvas.fail_fiber_quick_result(request_id, stage="geometry")
+            self.statusBar().showMessage("快速测径失败: 未找到可靠直径线。", 5000)
+        self._update_magic_segment_controls()
+
+    def _on_fiber_quick_geometry_failed(self, document_id: str, request_id: int, reason: str) -> None:
+        self._fiber_quick_geometry_request_ids.discard((document_id, request_id))
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        canvas.fail_fiber_quick_result(request_id, stage="geometry")
+        self.statusBar().showMessage(f"快速测径失败: {reason}", 5000)
         self._update_magic_segment_controls()
 
     def _on_reference_instance_succeeded(self, document_id: str, request_id: int, result: object) -> None:
@@ -4346,7 +4434,11 @@ class MainWindow(QMainWindow):
                 self._magic_prompt_label.setText("拖框或点已确认面积作为参考")
         if self._magic_toggle_button is not None:
             self._magic_toggle_button.setVisible(standard_mode or fiber_quick_mode)
-            self._magic_toggle_button.setEnabled(has_document and (standard_mode or fiber_quick_mode) and not busy)
+            self._magic_toggle_button.setEnabled(
+                has_document
+                and (standard_mode or fiber_quick_mode)
+                and (fiber_quick_mode or not busy)
+            )
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
@@ -4371,7 +4463,11 @@ class MainWindow(QMainWindow):
                             )
                         )
                     )
-                    and not busy
+                    and (
+                        not busy
+                        if not fiber_quick_mode
+                        else not bool(canvas and canvas._fiber_quick.segmentation_busy)  # noqa: SLF001
+                    )
                 )
             )
         if self._magic_cancel_button is not None:
@@ -4676,7 +4772,7 @@ class MainWindow(QMainWindow):
 
     def _cycle_fiber_quick_prompt_type(self) -> None:
         canvas = self.current_canvas()
-        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode) or canvas.is_fiber_quick_busy():
+        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode):
             return
         prompt_type = canvas.cycle_fiber_quick_prompt_type()
         self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
@@ -4802,7 +4898,17 @@ class MainWindow(QMainWindow):
 
     def _commit_fiber_quick_preview(self) -> bool:
         canvas = self.current_canvas()
-        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode) or canvas.is_fiber_quick_busy():
+        if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode):
+            return False
+        if canvas._fiber_quick.segmentation_busy:  # noqa: SLF001
+            self.statusBar().showMessage("分割尚未完成，请稍候。", 2500)
+            self._update_magic_segment_controls()
+            self._focus_current_canvas()
+            return False
+        if canvas._fiber_quick.geometry_busy and not canvas.has_fiber_quick_preview():  # noqa: SLF001
+            self.statusBar().showMessage("直径计算尚未完成。", 2500)
+            self._update_magic_segment_controls()
+            self._focus_current_canvas()
             return False
         commit_result = canvas.commit_fiber_quick_preview()
         committed = bool(commit_result.get("committed", False))
@@ -4848,6 +4954,10 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or not is_fiber_quick_tool_mode(self._tool_mode):
             return
+        if self._fiber_quick_geometry_worker is not None and canvas.document_id is not None:
+            self._fiber_quick_geometry_worker.cancel_document(canvas.document_id)
+        if self._prompt_seg_worker is not None and canvas.document_id is not None:
+            self._prompt_seg_worker.cancel_document(canvas.document_id)
         if canvas.has_fiber_quick_session():
             canvas.clear_fiber_quick_session()
             self.statusBar().showMessage("已放弃当前快速测径", 2500)
@@ -4863,6 +4973,10 @@ class MainWindow(QMainWindow):
             if canvas.has_reference_instance_session():
                 canvas.clear_reference_instance_session()
             if canvas.has_fiber_quick_session():
+                if self._fiber_quick_geometry_worker is not None:
+                    self._fiber_quick_geometry_worker.cancel_document(document_id)
+                if self._prompt_seg_worker is not None:
+                    self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_fiber_quick_session()
 
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
@@ -5143,11 +5257,25 @@ class MainWindow(QMainWindow):
         self._area_infer_progress_dialog = None
         self._area_infer_state = None
 
+        if self._fiber_quick_geometry_worker is not None:
+            for document_id in list(self._canvases.keys()):
+                self._fiber_quick_geometry_worker.cancel_document(document_id)
+        if self._fiber_quick_geometry_thread is not None:
+            self._fiber_quick_geometry_thread.quit()
+            self._fiber_quick_geometry_thread.wait(2000)
+        self._fiber_quick_geometry_thread = None
+        self._fiber_quick_geometry_worker = None
+        self._fiber_quick_geometry_request_ids.clear()
+
+        if self._prompt_seg_worker is not None:
+            for document_id in list(self._canvases.keys()):
+                self._prompt_seg_worker.cancel_document(document_id)
         if self._prompt_seg_thread is not None:
             self._prompt_seg_thread.quit()
-            self._prompt_seg_thread.wait(1500)
+            self._prompt_seg_thread.wait(2000)
         self._prompt_seg_thread = None
         self._prompt_seg_worker = None
+        self._prompt_request_tool_modes.clear()
 
         if self._reference_instance_thread is not None:
             self._reference_instance_thread.quit()
