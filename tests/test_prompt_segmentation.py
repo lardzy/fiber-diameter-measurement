@@ -153,7 +153,7 @@ class PromptSegmentationTests(unittest.TestCase):
         predict_mock.assert_called_once()
         self.assertIs(result, predict_mock.return_value)
 
-    def test_predict_polygon_fiber_quick_fails_when_roi_remains_unstable(self) -> None:
+    def test_predict_polygon_fiber_quick_falls_back_to_full_image_when_roi_remains_unstable(self) -> None:
         try:
             import numpy as np
         except ImportError as exc:  # pragma: no cover
@@ -164,7 +164,10 @@ class PromptSegmentationTests(unittest.TestCase):
         def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
             height, width = crop_image.shape[:2]
             mask = np.zeros((height, width), dtype=bool)
-            mask[2 : height - 2, 2 : width - 2] = True
+            if "|roi=" in cache_key:
+                mask[2 : height - 2, 2 : width - 2] = True
+            else:
+                mask[height // 4 : (height * 3) // 4, width // 4 : (width * 3) // 4] = True
             return type("R", (), {
                 "mask": mask,
                 "polygon_px": [],
@@ -185,8 +188,9 @@ class PromptSegmentationTests(unittest.TestCase):
                 tool_mode=MagicSegmentToolMode.FIBER_QUICK,
             )
 
-        self.assertIsNone(result.mask)
-        self.assertEqual(result.metadata["reason"], "roi_unstable")
+        self.assertIsNotNone(result.mask)
+        self.assertTrue(bool(result.metadata["segmentation_used_full_image"]))
+        self.assertTrue(bool(result.metadata["segmentation_fallback_from_roi"]))
 
     def test_run_encoder_uses_uint8_input_tensor(self) -> None:
         try:

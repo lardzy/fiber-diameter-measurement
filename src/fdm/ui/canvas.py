@@ -75,7 +75,9 @@ class PromptSegmentationSession:
     primary_debug_payload: dict[str, object] = field(default_factory=dict)
     subtract_debug_payload: dict[str, object] = field(default_factory=dict)
     request_id: int = 0
+    inflight_request_id: int = 0
     pending_stage: str = MagicSegmentOperationMode.ADD
+    pending_recompute: bool = False
     busy: bool = False
 
     def prompt_type_for_stage(self, stage: str) -> str:
@@ -197,6 +199,8 @@ class FiberQuickDiameterSession:
     preview_rings: list[list[Point]] = field(default_factory=list)
     confidence: float = 0.0
     request_id: int = 0
+    inflight_request_id: int = 0
+    pending_recompute: bool = False
     segmentation_busy: bool = False
     geometry_busy: bool = False
     debug_payload: dict[str, object] = field(default_factory=dict)
@@ -413,6 +417,56 @@ class DocumentCanvas(QWidget):
 
     def is_fiber_quick_busy(self) -> bool:
         return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
+
+    def _begin_magic_segment_request(self, stage: str) -> dict[str, object] | None:
+        positive_points = list(self._magic_segment.positive_points_for_stage(stage))
+        if not positive_points:
+            return None
+        self._magic_segment.request_id += 1
+        self._magic_segment.inflight_request_id = self._magic_segment.request_id
+        self._magic_segment.pending_stage = stage
+        self._magic_segment.pending_recompute = False
+        self._magic_segment.busy = True
+        return {
+            "request_id": self._magic_segment.request_id,
+            "positive_points": positive_points,
+            "negative_points": list(self._magic_segment.negative_points_for_stage(stage)),
+            "tool_mode": self._tool_mode,
+            "active_stage": stage,
+        }
+
+    def dequeue_pending_magic_segment_request(self, completed_request_id: int) -> dict[str, object] | None:
+        if completed_request_id != self._magic_segment.inflight_request_id:
+            return None
+        self._magic_segment.inflight_request_id = 0
+        if not self._magic_segment.pending_recompute:
+            return None
+        return self._begin_magic_segment_request(self._magic_segment.pending_stage)
+
+    def _begin_fiber_quick_request(self) -> dict[str, object] | None:
+        positive_points = list(self._fiber_quick.positive_points)
+        if not positive_points:
+            return None
+        self._fiber_quick.request_id += 1
+        self._fiber_quick.inflight_request_id = self._fiber_quick.request_id
+        self._fiber_quick.pending_recompute = False
+        self._fiber_quick.segmentation_busy = True
+        self._fiber_quick.geometry_busy = False
+        self._fiber_quick.preview_line = None
+        return {
+            "request_id": self._fiber_quick.request_id,
+            "positive_points": positive_points,
+            "negative_points": list(self._fiber_quick.negative_points),
+            "tool_mode": self._tool_mode,
+        }
+
+    def dequeue_pending_fiber_quick_request(self, completed_request_id: int) -> dict[str, object] | None:
+        if completed_request_id != self._fiber_quick.inflight_request_id:
+            return None
+        self._fiber_quick.inflight_request_id = 0
+        if not self._fiber_quick.pending_recompute:
+            return None
+        return self._begin_fiber_quick_request()
 
     def cycle_fiber_quick_prompt_type(self) -> str:
         self._fiber_quick.prompt_type = "negative" if self._fiber_quick.prompt_type == "positive" else "positive"
@@ -631,8 +685,6 @@ class DocumentCanvas(QWidget):
             return
         if stage in {"segmentation", "all"}:
             self._fiber_quick.segmentation_busy = False
-            self._fiber_quick.preview_polygon = []
-            self._fiber_quick.preview_rings = []
             if stage == "segmentation":
                 self._fiber_quick.debug_payload = dict(self._fiber_quick.debug_payload)
         if stage in {"geometry", "all"}:
@@ -966,19 +1018,13 @@ class DocumentCanvas(QWidget):
                 self._magic_segment.negative_points_for_stage(active_stage).append(point)
             else:
                 self._magic_segment.positive_points_for_stage(active_stage).append(point)
-            self._magic_segment.request_id += 1
-            self._magic_segment.pending_stage = active_stage
-            self._magic_segment.busy = True
-            self.magicSegmentRequested.emit(
-                self._document.id,
-                {
-                    "request_id": self._magic_segment.request_id,
-                    "positive_points": list(self._magic_segment.positive_points_for_stage(active_stage)),
-                    "negative_points": list(self._magic_segment.negative_points_for_stage(active_stage)),
-                    "tool_mode": self._tool_mode,
-                    "active_stage": active_stage,
-                },
-            )
+            if self._magic_segment.busy:
+                self._magic_segment.pending_stage = active_stage
+                self._magic_segment.pending_recompute = True
+            else:
+                payload = self._begin_magic_segment_request(active_stage)
+                if payload is not None:
+                    self.magicSegmentRequested.emit(self._document.id, payload)
             self.update()
             self._emit_magic_segment_session_changed()
             return
@@ -1000,22 +1046,13 @@ class DocumentCanvas(QWidget):
                 self.update()
                 self._emit_magic_segment_session_changed()
                 return
-            self._fiber_quick.request_id += 1
-            self._fiber_quick.segmentation_busy = True
-            self._fiber_quick.geometry_busy = False
-            self._fiber_quick.preview_line = None
-            self._fiber_quick.preview_polygon = []
-            self._fiber_quick.preview_rings = []
-            self._fiber_quick.debug_payload = {}
-            self.magicSegmentRequested.emit(
-                self._document.id,
-                {
-                    "request_id": self._fiber_quick.request_id,
-                    "positive_points": list(self._fiber_quick.positive_points),
-                    "negative_points": list(self._fiber_quick.negative_points),
-                    "tool_mode": self._tool_mode,
-                },
-            )
+            if self._fiber_quick.segmentation_busy:
+                self._fiber_quick.pending_recompute = True
+            else:
+                self._fiber_quick.debug_payload = {}
+                payload = self._begin_fiber_quick_request()
+                if payload is not None:
+                    self.magicSegmentRequested.emit(self._document.id, payload)
             self.update()
             self._emit_magic_segment_session_changed()
             return

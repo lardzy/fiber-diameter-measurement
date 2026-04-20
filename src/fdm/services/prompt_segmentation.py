@@ -928,6 +928,20 @@ class PromptSegmentationService:
             last_result.mask,
             crop_box=last_result.metadata.get("segmentation_crop_box", (0, 0, image_w, image_h)),
         ):
+            fallback_result = self._predict_polygon_for_rgb_array(
+                cv_image,
+                cache_key=cache_key,
+                positive_points=positive_points,
+                negative_points=negative_points,
+                metadata_extra={
+                    "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
+                    "segmentation_used_full_image": True,
+                    "segmentation_crop_box": (0, 0, image_w, image_h),
+                    "segmentation_fallback_from_roi": True,
+                },
+            )
+            if fallback_result.mask is not None:
+                return fallback_result
             return PromptSegmentationResult(
                 mask=None,
                 polygon_px=[],
@@ -936,7 +950,8 @@ class PromptSegmentationService:
                 metadata={
                     "reason": "roi_unstable",
                     "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                    "segmentation_used_full_image": bool(last_result.metadata.get("segmentation_used_full_image", False)),
+                    "segmentation_used_full_image": True,
+                    "segmentation_fallback_from_roi": True,
                 },
             )
         return last_result

@@ -1230,10 +1230,20 @@ class MainWindow(QMainWindow):
         return action
 
     def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
+        previous_mode = self._tool_mode
         if mode not in self._mode_actions:
             mode = "select"
         if overlay_kind in {item[0] for item in self._overlay_tool_definitions()}:
             self._overlay_tool_kind = overlay_kind
+        current_canvas = self.current_canvas()
+        current_document_id = current_canvas.document_id if current_canvas is not None else None
+        if current_document_id is not None and mode != previous_mode:
+            if self._prompt_seg_worker is not None and (
+                is_magic_segment_tool_mode(previous_mode) or is_fiber_quick_tool_mode(previous_mode)
+            ):
+                self._prompt_seg_worker.cancel_document(current_document_id)
+            if self._fiber_quick_geometry_worker is not None and is_fiber_quick_tool_mode(previous_mode):
+                self._fiber_quick_geometry_worker.cancel_document(current_document_id)
         if is_magic_toolbar_tool_mode(mode):
             self._magic_tool_mode = mode
         if mode != "select":
@@ -3444,6 +3454,26 @@ class MainWindow(QMainWindow):
         if current_document is not None and current_document.id == document_id:
             self._update_magic_segment_controls()
 
+    def _dispatch_pending_magic_segment_request(self, document_id: str, completed_request_id: int) -> bool:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return False
+        payload = canvas.dequeue_pending_magic_segment_request(completed_request_id)
+        if payload is None:
+            return False
+        self._on_canvas_magic_segment_requested(document_id, payload)
+        return True
+
+    def _dispatch_pending_fiber_quick_request(self, document_id: str, completed_request_id: int) -> bool:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return False
+        payload = canvas.dequeue_pending_fiber_quick_request(completed_request_id)
+        if payload is None:
+            return False
+        self._on_canvas_magic_segment_requested(document_id, payload)
+        return True
+
     def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
         canvas = self._canvases.get(document_id)
         if canvas is None:
@@ -3452,23 +3482,31 @@ class MainWindow(QMainWindow):
         if isinstance(result, PromptSegmentationResult):
             tool_mode = str(tool_mode or result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
             if is_fiber_quick_tool_mode(tool_mode):
+                debug_payload = {
+                    "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
+                    "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
+                    "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
+                    "component_area_px": result.metadata.get("component_area_px"),
+                }
+                if bool(debug_payload.get("segmentation_used_full_image")):
+                    debug_payload.pop("segmentation_crop_box", None)
                 apply_result = canvas.apply_fiber_quick_segmentation_result(
                     request_id,
                     preview_polygon_points=result.polygon_px,
                     preview_area_rings_points=result.area_rings_px,
-                    debug_payload={
-                        "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
-                        "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
-                        "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
-                        "component_area_px": result.metadata.get("component_area_px"),
-                    },
+                    debug_payload=debug_payload,
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()
                     return
                 if result.mask is None or len(result.polygon_px) < 3:
                     canvas.fail_fiber_quick_result(request_id, stage="segmentation")
+                    self._dispatch_pending_fiber_quick_request(document_id, request_id)
                     self.statusBar().showMessage("快速测径失败: 未找到目标纤维区域。", 5000)
+                    self._update_magic_segment_controls()
+                    return
+                if self._dispatch_pending_fiber_quick_request(document_id, request_id):
+                    self.statusBar().showMessage("快速测径已更新分割结果，继续精修中。", 5000)
                     self._update_magic_segment_controls()
                     return
                 self._ensure_fiber_quick_geometry_worker()
@@ -3515,6 +3553,7 @@ class MainWindow(QMainWindow):
                     return
                 if result.mask is None or not bool(apply_result.get("has_preview", False)):
                     self.statusBar().showMessage("魔棒分割失败: 未找到稳定目标区域。", 5000)
+                self._dispatch_pending_magic_segment_request(document_id, request_id)
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return
@@ -3532,9 +3571,11 @@ class MainWindow(QMainWindow):
         tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), self._tool_mode)
         if is_fiber_quick_tool_mode(tool_mode):
             canvas.fail_fiber_quick_result(request_id, stage="segmentation")
+            self._dispatch_pending_fiber_quick_request(document_id, request_id)
             self.statusBar().showMessage(f"快速测径失败: {reason}", 5000)
         else:
             canvas.fail_magic_segment_result(request_id)
+            self._dispatch_pending_magic_segment_request(document_id, request_id)
             self.statusBar().showMessage(f"魔棒分割失败: {reason}", 5000)
         self._update_magic_segment_controls()
 
@@ -4942,6 +4983,8 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode):
             return
+        if self._prompt_seg_worker is not None and canvas.document_id is not None:
+            self._prompt_seg_worker.cancel_document(canvas.document_id)
         if canvas.has_magic_segment_session():
             canvas.clear_magic_segment_session()
             self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
@@ -4987,6 +5030,8 @@ class MainWindow(QMainWindow):
             if document_id == except_document_id:
                 continue
             if canvas.has_magic_segment_session():
+                if self._prompt_seg_worker is not None:
+                    self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_magic_segment_session()
             if canvas.has_reference_instance_session():
                 canvas.clear_reference_instance_session()

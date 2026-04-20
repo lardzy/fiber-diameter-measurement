@@ -2204,20 +2204,55 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
 
-    def test_magic_segment_tool_allows_new_clicks_while_busy(self) -> None:
+    def test_magic_segment_tool_queues_refinement_while_busy(self) -> None:
         document, _image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
         requests: list[tuple[str, object]] = []
         canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
 
-        canvas._magic_segment.busy = True
         canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(46, 52)), button=Qt.MouseButton.LeftButton))
 
         self.assertEqual(len(requests), 1)
         self.assertEqual(requests[0][0], document.id)
         self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.STANDARD)
         self.assertEqual(requests[0][1]["request_id"], 1)
         self.assertTrue(canvas._magic_segment.busy)
+        self.assertTrue(canvas._magic_segment.pending_recompute)
+
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(220, 140, (20, 20, 92, 80)),
+        )
+        followup = canvas.dequeue_pending_magic_segment_request(1)
+
+        self.assertIsNotNone(followup)
+        self.assertEqual(followup["request_id"], 2)
+        self.assertEqual(len(followup["positive_points"]), 2)
+
+    def test_fiber_quick_tool_queues_refinement_while_segmentation_busy(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(44, 48)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertTrue(canvas._fiber_quick.segmentation_busy)
+        self.assertTrue(canvas._fiber_quick.pending_recompute)
+
+        canvas.apply_fiber_quick_segmentation_result(
+            1,
+            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
+            debug_payload={"candidate_count": 7},
+        )
+        followup = canvas.dequeue_pending_fiber_quick_request(1)
+
+        self.assertIsNotNone(followup)
+        self.assertEqual(followup["request_id"], 2)
+        self.assertEqual(len(followup["positive_points"]), 2)
 
     def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
         window = MainWindow()

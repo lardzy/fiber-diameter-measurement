@@ -36,7 +36,6 @@ class PromptSegmentationWorker(QObject):
     def __init__(self) -> None:
         super().__init__()
         self._services: dict[str, PromptSegmentationService] = {}
-        self._latest_request_ids: dict[str, int] = {}
         self._cancelled_documents: set[str] = set()
         self._lock = Lock()
         self.requested.connect(self.infer, Qt.ConnectionType.QueuedConnection)
@@ -44,22 +43,19 @@ class PromptSegmentationWorker(QObject):
 
     def register_request(self, document_id: str, request_id: int) -> None:
         with self._lock:
-            self._latest_request_ids[document_id] = max(int(request_id), int(self._latest_request_ids.get(document_id, 0)))
             self._cancelled_documents.discard(document_id)
 
     def cancel_document(self, document_id: str) -> None:
         with self._lock:
             self._cancelled_documents.add(document_id)
 
-    def _is_request_stale(self, document_id: str, request_id: int) -> bool:
+    def _is_request_cancelled(self, document_id: str) -> bool:
         with self._lock:
-            if document_id in self._cancelled_documents:
-                return True
-            return int(request_id) < int(self._latest_request_ids.get(document_id, request_id))
+            return document_id in self._cancelled_documents
 
     @Slot(object)
     def infer(self, request: PromptSegmentationRequest) -> None:
-        if self._is_request_stale(request.document_id, request.request_id):
+        if self._is_request_cancelled(request.document_id):
             return
         try:
             resolved_variant, fallback_message = resolve_interactive_segmentation_backend(request.model_variant)
@@ -73,9 +69,9 @@ class PromptSegmentationWorker(QObject):
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
                 tool_mode=request.tool_mode,
-                cancel_check=lambda: self._is_request_stale(request.document_id, request.request_id),
+                cancel_check=lambda: self._is_request_cancelled(request.document_id),
             )
-            if self._is_request_stale(request.document_id, request.request_id):
+            if self._is_request_cancelled(request.document_id):
                 return
             result.metadata["tool_mode"] = request.tool_mode
             result.metadata["active_stage"] = request.active_stage
@@ -87,7 +83,7 @@ class PromptSegmentationWorker(QObject):
                 result.metadata["model_fallback_message"] = fallback_message
             self.succeeded.emit(request.document_id, request.request_id, result)
         except Exception as exc:  # noqa: BLE001
-            if self._is_request_stale(request.document_id, request.request_id):
+            if self._is_request_cancelled(request.document_id):
                 return
             self.failed.emit(request.document_id, request.request_id, str(exc))
 
