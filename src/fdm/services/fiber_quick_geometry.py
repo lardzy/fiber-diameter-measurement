@@ -465,24 +465,61 @@ def _apply_line_extension(
         return line
     unit_x = (line.end.x - line.start.x) / length
     unit_y = (line.end.y - line.start.y) / length
-    center = Point((line.start.x + line.end.x) / 2.0, (line.start.y + line.end.y) / 2.0)
-    current_half = length / 2.0
-    max_line, hit_border = _measure_line(
-        selected_mask,
-        center,
-        (unit_x, unit_y),
-        cancel_check=cancel_check,
-        deadline_at=deadline_at,
-    )
-    max_half = current_half
-    if max_line is not None and not hit_border:
-        max_half = distance(max_line.start, max_line.end) / 2.0
-    target_half = max(1.0, current_half + float(extension_px))
-    if float(extension_px) > 0:
-        target_half = min(target_half, max_half)
-    start = Point(center.x - (unit_x * target_half), center.y - (unit_y * target_half))
-    end = Point(center.x + (unit_x * target_half), center.y + (unit_y * target_half))
+    extension = float(extension_px)
+    if extension > 0:
+        start = _advance_endpoint_within_mask(
+            selected_mask,
+            line.start,
+            direction=(-unit_x, -unit_y),
+            max_distance=extension,
+            cancel_check=cancel_check,
+            deadline_at=deadline_at,
+        )
+        end = _advance_endpoint_within_mask(
+            selected_mask,
+            line.end,
+            direction=(unit_x, unit_y),
+            max_distance=extension,
+            cancel_check=cancel_check,
+            deadline_at=deadline_at,
+        )
+        return Line(start=start, end=end)
+    shrink = min(abs(extension), max(0.0, (length / 2.0) - 1.0))
+    start = Point(line.start.x + (unit_x * shrink), line.start.y + (unit_y * shrink))
+    end = Point(line.end.x - (unit_x * shrink), line.end.y - (unit_y * shrink))
     return Line(start=start, end=end)
+
+
+def _advance_endpoint_within_mask(
+    selected_mask,
+    endpoint: Point,
+    *,
+    direction: tuple[float, float],
+    max_distance: float,
+    cancel_check: Callable[[], bool] | None,
+    deadline_at: float | None,
+    step: float = 0.5,
+) -> Point:
+    height, width = selected_mask.shape[:2]
+    last_inside = Point(float(endpoint.x), float(endpoint.y))
+    traveled = 0.0
+    x = float(endpoint.x)
+    y = float(endpoint.y)
+    dir_x, dir_y = float(direction[0]), float(direction[1])
+    while traveled < max_distance:
+        _raise_if_cancelled(cancel_check, deadline_at)
+        travel_step = min(step, max_distance - traveled)
+        x += dir_x * travel_step
+        y += dir_y * travel_step
+        traveled += travel_step
+        ix = int(round(x))
+        iy = int(round(y))
+        if ix < 0 or iy < 0 or ix >= width or iy >= height:
+            break
+        if not bool(selected_mask[iy, ix]):
+            break
+        last_inside = Point(x, y)
+    return last_inside
 
 
 def _coefficient_of_variation(values: list[float]) -> float:

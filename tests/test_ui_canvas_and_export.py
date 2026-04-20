@@ -3254,6 +3254,32 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_magic_context_reflows_when_switching_modes_without_document(self) -> None:
+        window = MainWindow()
+        try:
+            window.resize(980, 720)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+            self.app.processEvents()
+            reference_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            self.app.processEvents()
+            standard_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            self.app.processEvents()
+            fiber_quick_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            self.assertGreater(standard_width, reference_width)
+            self.assertGreater(fiber_quick_width, reference_width)
+            self.assertFalse(window._magic_toggle_button.isHidden())  # noqa: SLF001
+            self.assertFalse(window._magic_roi_button.isHidden())  # noqa: SLF001
+        finally:
+            window.close()
+
     def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
         document = ImageDocument(
             id=new_id("image"),

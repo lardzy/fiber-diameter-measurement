@@ -4619,6 +4619,14 @@ class MainWindow(QMainWindow):
                     )
                 )
             )
+        self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
+        layout = self._magic_controls_widget.layout()
+        if layout is not None:
+            layout.invalidate()
+            layout.activate()
+        self._magic_controls_widget.updateGeometry()
+        self._magic_controls_widget.adjustSize()
+        self._measurement_tool_strip.updateGeometry()
 
     def _preview_analysis_supported(self, mode: str | None = None) -> bool:
         selected = self._selected_capture_device()

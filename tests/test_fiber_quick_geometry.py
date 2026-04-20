@@ -13,8 +13,8 @@ except ImportError:  # pragma: no cover
 
 import cv2
 
-from fdm.geometry import Point, distance
-from fdm.services.fiber_quick_geometry import FiberQuickDiameterGeometryService, _draw_block_circle
+from fdm.geometry import Line, Point, distance
+from fdm.services.fiber_quick_geometry import FiberQuickDiameterGeometryService, _apply_line_extension, _draw_block_circle
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryWorker
 
 
@@ -128,6 +128,24 @@ class FiberQuickGeometryTests(unittest.TestCase):
         self.assertIsNotNone(shrunk.line_px)
         self.assertLess(distance(shrunk.line_px.start, shrunk.line_px.end), distance(baseline.line_px.start, baseline.line_px.end))
         self.assertAlmostEqual(float(shrunk.debug_payload.get("line_extension_px", 0.0) or 0.0), -5.0)
+
+    def test_positive_line_extension_extends_endpoints_along_line_direction(self) -> None:
+        mask = self._blank_mask(120, 120)
+        mask[40:80, 30:90] = True
+        line = Line(Point(40, 60), Point(80, 60))
+
+        extended = _apply_line_extension(
+            mask,
+            line,
+            extension_px=4.0,
+            cancel_check=None,
+            deadline_at=None,
+        )
+
+        self.assertLess(extended.start.x, line.start.x)
+        self.assertGreater(extended.end.x, line.end.x)
+        self.assertAlmostEqual(extended.start.y, line.start.y)
+        self.assertAlmostEqual(extended.end.y, line.end.y)
 
     def test_draw_block_circle_supports_bool_masks(self) -> None:
         mask = self._blank_mask(32, 32)
