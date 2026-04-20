@@ -2339,6 +2339,22 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(commits[0][2]["measurement_kind"], "line")
         self.assertEqual(commits[0][2]["status"], "fiber_quick")
 
+    def test_fiber_quick_request_ids_do_not_reset_after_clear(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        first_request_id = requests[-1][1]["request_id"]
+
+        canvas.clear_fiber_quick_session()
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(40, 45)), button=Qt.MouseButton.LeftButton))
+        second_request_id = requests[-1][1]["request_id"]
+
+        self.assertGreater(second_request_id, first_request_id)
+
     def test_fiber_quick_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
         window = MainWindow()
         try:
@@ -2522,6 +2538,54 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 1)
             self.assertIn("正在异步计算直径线", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_fiber_quick_can_confirm_shape_before_geometry_finishes(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_pending_commit.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.request_id = 1
+            canvas.apply_fiber_quick_segmentation_result(
+                1,
+                preview_polygon_points=[Point(40, 20), Point(112, 20), Point(112, 80), Point(40, 80)],
+                debug_payload={"candidate_count": 5},
+            )
+            canvas.begin_fiber_quick_geometry(1)
+
+            self.assertTrue(window._commit_fiber_quick_preview())
+            self.assertEqual(len(document.measurements), 0)
+            self.assertTrue(canvas._fiber_quick.commit_pending)  # noqa: SLF001
+
+            window._on_fiber_quick_geometry_succeeded(
+                document.id,
+                1,
+                type(
+                    "Result",
+                    (),
+                    {
+                        "line_px": Line(Point(60, 40), Point(92, 40)),
+                        "confidence": 0.9,
+                        "debug_payload": {},
+                    },
+                )(),
+            )
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "fiber_quick")
         finally:
             window._reset_workspace()
             window.close()

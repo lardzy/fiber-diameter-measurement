@@ -77,7 +77,7 @@ class FiberQuickGeometryTests(unittest.TestCase):
         with self.assertRaises(RuntimeError):
             self.service.measure_from_mask(mask)
 
-    def test_prefers_non_border_region_when_mask_touches_image_edge(self) -> None:
+    def test_fails_when_mask_touches_image_edge_across_large_span(self) -> None:
         mask = self._blank_mask(220, 160).astype(np.uint8)
         points = np.array(
             [
@@ -96,13 +96,22 @@ class FiberQuickGeometryTests(unittest.TestCase):
         )
         cv2.fillPoly(mask, [points], 1)
 
-        result = self.service.measure_from_mask(mask.astype(bool))
+        with self.assertRaisesRegex(RuntimeError, "视野边缘不完整"):
+            self.service.measure_from_mask(mask.astype(bool))
 
-        self.assertIsNotNone(result.line_px)
-        midpoint_x = (result.line_px.start.x + result.line_px.end.x) / 2.0
-        midpoint_y = (result.line_px.start.y + result.line_px.end.y) / 2.0
-        self.assertGreater(midpoint_x, 12.0)
-        self.assertGreater(midpoint_y, 12.0)
+    def test_fails_fast_for_border_touching_mask(self) -> None:
+        mask = self._blank_mask(220, 160)
+        mask[40:120, 0:58] = True
+
+        with self.assertRaisesRegex(RuntimeError, "视野边缘不完整"):
+            self.service.measure_from_mask(mask)
+
+    def test_fails_fast_for_overlarge_mask(self) -> None:
+        mask = self._blank_mask(220, 160)
+        mask[16:148, 20:200] = True
+
+        with self.assertRaisesRegex(RuntimeError, "范围过大"):
+            self.service.measure_from_mask(mask)
 
     def test_draw_block_circle_supports_bool_masks(self) -> None:
         mask = self._blank_mask(32, 32)

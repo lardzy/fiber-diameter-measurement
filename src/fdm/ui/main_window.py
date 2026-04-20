@@ -3594,7 +3594,14 @@ class MainWindow(QMainWindow):
                 else {},
             )
             if apply_result is not None and apply_result.get("has_preview"):
-                self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
+                if bool(canvas._fiber_quick.commit_pending):  # noqa: SLF001
+                    commit_result = canvas.commit_fiber_quick_preview()
+                    if bool(commit_result.get("committed", False)):
+                        self.statusBar().showMessage("已创建快速测径线段", 4000)
+                    else:
+                        self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
+                else:
+                    self.statusBar().showMessage("快速测径已生成代表线。按 Enter / F 确认。", 5000)
             else:
                 self.statusBar().showMessage("快速测径失败: 未找到可靠直径线。", 5000)
         else:
@@ -4516,7 +4523,7 @@ class MainWindow(QMainWindow):
                             canvas.has_magic_segment_preview()
                             if standard_mode
                             else (
-                                canvas.has_fiber_quick_preview()
+                                canvas.has_fiber_quick_shape_preview()
                                 if fiber_quick_mode
                                 else canvas.has_reference_instance_preview()
                             )
@@ -4964,20 +4971,18 @@ class MainWindow(QMainWindow):
             self._update_magic_segment_controls()
             self._focus_current_canvas()
             return False
-        if canvas._fiber_quick.geometry_busy and not canvas.has_fiber_quick_preview():  # noqa: SLF001
-            self.statusBar().showMessage("直径计算尚未完成。", 2500)
-            self._update_magic_segment_controls()
-            self._focus_current_canvas()
-            return False
         commit_result = canvas.commit_fiber_quick_preview()
         committed = bool(commit_result.get("committed", False))
+        pending = bool(commit_result.get("pending", False))
         if committed:
             self.statusBar().showMessage("已创建快速测径线段", 4000)
+        elif pending:
+            self.statusBar().showMessage("已确认当前分割，直径线计算完成后将自动写入。", 3000)
         else:
             self.statusBar().showMessage("当前没有可确认的快速测径结果。", 3000)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
-        return committed
+        return committed or pending
 
     def _cancel_magic_segment_session(self) -> None:
         canvas = self.current_canvas()

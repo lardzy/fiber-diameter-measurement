@@ -34,6 +34,7 @@ class FiberQuickDiameterGeometryService:
         preview_polygon_points: list[Point] | None = None,
         preview_area_rings_points: list[list[Point]] | None = None,
         cancel_check: Callable[[], bool] | None = None,
+        timeout_ms: float = 900.0,
     ) -> FiberQuickDiameterGeometryResult:
         try:
             import numpy as np
@@ -41,7 +42,8 @@ class FiberQuickDiameterGeometryService:
             raise RuntimeError("快速测径需要 numpy 依赖。") from exc
 
         started_at = perf_counter()
-        _raise_if_cancelled(cancel_check)
+        deadline_at = started_at + max(50.0, float(timeout_ms)) / 1000.0
+        _raise_if_cancelled(cancel_check, deadline_at)
         normalized = normalize_magic_draft_mask(mask)
         if normalized is None or not np.any(normalized):
             raise RuntimeError("未找到目标纤维区域。")
@@ -64,10 +66,27 @@ class FiberQuickDiameterGeometryService:
         ys, xs = np.where(selected_mask)
         if len(xs) < 64:
             raise RuntimeError("未找到可靠直径线。")
+        image_h, image_w = selected_mask.shape[:2]
+        image_area = max(1, image_h * image_w)
+        mask_area = int(np.count_nonzero(selected_mask))
         bbox_width = int(xs.max() - xs.min() + 1)
         bbox_height = int(ys.max() - ys.min() + 1)
         if min(bbox_width, bbox_height) < 6:
             raise RuntimeError("未找到可靠直径线。")
+        bbox_area = bbox_width * bbox_height
+        touches_border = bool(np.any(selected_mask[:, 0])) or bool(np.any(selected_mask[:, -1])) or bool(np.any(selected_mask[0, :])) or bool(np.any(selected_mask[-1, :]))
+        bbox_area_ratio = bbox_area / image_area
+        mask_area_ratio = mask_area / image_area
+        bbox_long_ratio = max(bbox_width, bbox_height) / max(image_h, image_w)
+        border_touch_count = int(np.count_nonzero(selected_mask[:, 0])) + int(np.count_nonzero(selected_mask[:, -1])) + int(np.count_nonzero(selected_mask[0, :])) + int(np.count_nonzero(selected_mask[-1, :]))
+        if touches_border and (bbox_long_ratio >= 0.55 or border_touch_count >= 24):
+            raise RuntimeError("目标在视野边缘不完整。")
+        if (
+            bbox_area_ratio >= 0.70
+            or mask_area_ratio >= 0.40
+            or bbox_long_ratio >= 0.97
+        ):
+            raise RuntimeError("目标分割范围过大。")
 
         roi_mask, roi_origin = _crop_mask_roi(selected_mask)
         touch_left = roi_origin[0] == 0 and bool(np.any(roi_mask[:, 0]))
@@ -75,8 +94,8 @@ class FiberQuickDiameterGeometryService:
         touch_right = (roi_origin[0] + roi_mask.shape[1]) >= selected_mask.shape[1] and bool(np.any(roi_mask[:, -1]))
         touch_bottom = (roi_origin[1] + roi_mask.shape[0]) >= selected_mask.shape[0] and bool(np.any(roi_mask[-1, :]))
         working_mask, roi_scale = _resize_mask_for_geometry(roi_mask)
-        _raise_if_cancelled(cancel_check)
-        skeleton = _compute_skeleton(working_mask)
+        _raise_if_cancelled(cancel_check, deadline_at)
+        skeleton = _compute_skeleton(working_mask, cancel_check=cancel_check, deadline_at=deadline_at)
         distance_map = cv2.distanceTransform(working_mask.astype(np.uint8), cv2.DIST_L2, 5)
         branch_points = _branch_points(skeleton, origin=roi_origin, scale=roi_scale)
         end_points = _end_points(skeleton, origin=roi_origin, scale=roi_scale)
@@ -89,6 +108,7 @@ class FiberQuickDiameterGeometryService:
             touch_right=touch_right,
             touch_bottom=touch_bottom,
             cancel_check=cancel_check,
+            deadline_at=deadline_at,
         )
         aspect_ratio = max(bbox_width, bbox_height) / max(1.0, min(bbox_width, bbox_height))
         max_candidates = 16 if aspect_ratio >= 3.0 else 12
@@ -111,7 +131,7 @@ class FiberQuickDiameterGeometryService:
 
         candidates: list[_CandidateLine] = []
         for center_x, center_y in candidate_points:
-            _raise_if_cancelled(cancel_check)
+            _raise_if_cancelled(cancel_check, deadline_at)
             local_center = Point(float(center_x), float(center_y))
             tangent = _estimate_tangent(working_mask, skeleton, local_center, distance_map)
             if tangent is None:
@@ -126,6 +146,8 @@ class FiberQuickDiameterGeometryService:
                 branch_points=branch_points,
                 image_shape=selected_mask.shape[:2],
                 scale=roi_scale,
+                cancel_check=cancel_check,
+                deadline_at=deadline_at,
             )
             if candidate is not None:
                 candidates.append(candidate)
@@ -146,7 +168,7 @@ class FiberQuickDiameterGeometryService:
                 "candidate_count": len(candidates),
                 "branch_point_count": len(branch_points),
                 "end_point_count": len(end_points),
-                "component_area_px": int(np.count_nonzero(selected_mask)),
+                "component_area_px": mask_area,
                 "opened_holes": int(geometry_stats.get("opened_holes", 0) or 0),
                 "segmentation_roi_round": geometry_stats.get("segmentation_roi_round"),
                 "segmentation_used_full_image": geometry_stats.get("segmentation_used_full_image"),
@@ -287,9 +309,11 @@ def _measure_candidate_line(
     branch_points: list[Point],
     image_shape: tuple[int, int],
     scale: float,
+    cancel_check: Callable[[], bool] | None,
+    deadline_at: float | None,
 ) -> _CandidateLine | None:
     normal = (-tangent[1], tangent[0])
-    line, hit_image_border = _measure_line(selected_mask, center, normal)
+    line, hit_image_border = _measure_line(selected_mask, center, normal, cancel_check=cancel_check, deadline_at=deadline_at)
     if line is None or hit_image_border:
         return None
     line_length_px = distance(line.start, line.end)
@@ -309,7 +333,8 @@ def _measure_candidate_line(
     offset_b = Point(center.x - (tangent[0] * offset), center.y - (tangent[1] * offset))
     sample_widths = [line_length_px]
     for offset_center in (offset_a, offset_b):
-        offset_line, offset_hit_border = _measure_line(selected_mask, offset_center, normal)
+        _raise_if_cancelled(cancel_check, deadline_at)
+        offset_line, offset_hit_border = _measure_line(selected_mask, offset_center, normal, cancel_check=cancel_check, deadline_at=deadline_at)
         if offset_line is not None and not offset_hit_border:
             sample_widths.append(distance(offset_line.start, offset_line.end))
     stability = 1.0 - min(_coefficient_of_variation(sample_widths), 1.0)
@@ -322,9 +347,16 @@ def _measure_candidate_line(
     return _CandidateLine(line=line, width_px=line_length_px, score=float(score))
 
 
-def _measure_line(selected_mask, center: Point, normal: tuple[float, float]) -> tuple[Line | None, bool]:
-    left, left_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=-1.0)
-    right, right_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=1.0)
+def _measure_line(
+    selected_mask,
+    center: Point,
+    normal: tuple[float, float],
+    *,
+    cancel_check: Callable[[], bool] | None = None,
+    deadline_at: float | None = None,
+) -> tuple[Line | None, bool]:
+    left, left_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=-1.0, cancel_check=cancel_check, deadline_at=deadline_at)
+    right, right_hit_border = _walk_to_boundary(selected_mask, center, normal, direction_sign=1.0, cancel_check=cancel_check, deadline_at=deadline_at)
     if left is None or right is None:
         return None, left_hit_border or right_hit_border
     return Line(start=left, end=right), left_hit_border or right_hit_border
@@ -364,13 +396,23 @@ def _coefficient_of_variation(values: list[float]) -> float:
     return (variance ** 0.5) / mean
 
 
-def _walk_to_boundary(selected_mask, center: Point, axis: tuple[float, float], *, direction_sign: float, step: float = 1.0) -> tuple[Point | None, bool]:
+def _walk_to_boundary(
+    selected_mask,
+    center: Point,
+    axis: tuple[float, float],
+    *,
+    direction_sign: float,
+    step: float = 1.0,
+    cancel_check: Callable[[], bool] | None = None,
+    deadline_at: float | None = None,
+) -> tuple[Point | None, bool]:
     height, width = selected_mask.shape[:2]
     last_inside = None
     hit_image_border = False
     x = float(center.x)
     y = float(center.y)
     for _ in range(480):
+        _raise_if_cancelled(cancel_check, deadline_at)
         ix = int(round(x))
         iy = int(round(y))
         if ix < 0 or iy < 0 or ix >= width or iy >= height:
@@ -431,17 +473,17 @@ def _end_points(skeleton, *, origin: tuple[int, int] = (0, 0), scale: float = 1.
     return [Point(float((x * scale) + origin[0]), float((y * scale) + origin[1])) for y, x in zip(ys, xs, strict=False)]
 
 
-def _compute_skeleton(mask):
+def _compute_skeleton(mask, *, cancel_check: Callable[[], bool] | None = None, deadline_at: float | None = None):
     try:
         from skimage.morphology import skeletonize
     except ImportError:
         skeletonize = None
     if skeletonize is not None:
         return skeletonize(mask.astype(bool))
-    return _zhang_suen_thinning(mask)
+    return _zhang_suen_thinning(mask, cancel_check=cancel_check, deadline_at=deadline_at)
 
 
-def _zhang_suen_thinning(mask):
+def _zhang_suen_thinning(mask, *, cancel_check: Callable[[], bool] | None = None, deadline_at: float | None = None):
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -453,10 +495,13 @@ def _zhang_suen_thinning(mask):
     image = mask.astype(np.uint8).copy()
     changed = True
     while changed:
+        _raise_if_cancelled(cancel_check, deadline_at)
         changed = False
         for step in (0, 1):
             to_remove: list[tuple[int, int]] = []
             for y in range(1, image.shape[0] - 1):
+                if y % 8 == 0:
+                    _raise_if_cancelled(cancel_check, deadline_at)
                 for x in range(1, image.shape[1] - 1):
                     if image[y, x] == 0:
                         continue
@@ -537,6 +582,7 @@ def _border_forbidden_zone(
     touch_right: bool,
     touch_bottom: bool,
     cancel_check: Callable[[], bool] | None,
+    deadline_at: float | None,
 ):
     try:
         import numpy as np
@@ -555,7 +601,7 @@ def _border_forbidden_zone(
     if not np.any(border_touch) or not np.any(skeleton):
         return np.zeros_like(working_mask, dtype=bool), 0
 
-    _raise_if_cancelled(cancel_check)
+    _raise_if_cancelled(cancel_check, deadline_at)
     dist_to_border = cv2.distanceTransform((~border_touch).astype("uint8"), cv2.DIST_L2, 5)
     seed_map = skeleton.astype(bool) & (dist_to_border <= 6.0)
     seed_count = int(np.count_nonzero(seed_map))
@@ -569,7 +615,7 @@ def _border_forbidden_zone(
     skeleton_u8 = skeleton.astype("uint8")
     kernel = np.ones((3, 3), dtype=np.uint8)
     for _ in range(max(1, expand_steps)):
-        _raise_if_cancelled(cancel_check)
+        _raise_if_cancelled(cancel_check, deadline_at)
         forbidden = cv2.dilate(forbidden, kernel, iterations=1)
         forbidden = cv2.bitwise_and(forbidden, skeleton_u8)
     return forbidden.astype(bool), seed_count
@@ -587,6 +633,8 @@ def _effective_skeleton_length(skeleton, *, forbidden_mask) -> int:
     return int(np.count_nonzero(skeleton.astype(bool) & (~forbidden_mask.astype(bool))))
 
 
-def _raise_if_cancelled(cancel_check: Callable[[], bool] | None) -> None:
+def _raise_if_cancelled(cancel_check: Callable[[], bool] | None, deadline_at: float | None = None) -> None:
     if cancel_check is not None and cancel_check():
         raise RuntimeError("请求已取消。")
+    if deadline_at is not None and perf_counter() >= deadline_at:
+        raise RuntimeError("直径计算超时。")

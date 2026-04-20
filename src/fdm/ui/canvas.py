@@ -201,6 +201,7 @@ class FiberQuickDiameterSession:
     request_id: int = 0
     inflight_request_id: int = 0
     pending_recompute: bool = False
+    commit_pending: bool = False
     segmentation_busy: bool = False
     geometry_busy: bool = False
     debug_payload: dict[str, object] = field(default_factory=dict)
@@ -208,11 +209,14 @@ class FiberQuickDiameterSession:
     def has_points(self) -> bool:
         return bool(self.positive_points or self.negative_points)
 
+    def has_shape_preview(self) -> bool:
+        return bool(self.preview_polygon or self.preview_rings)
+
     def has_preview(self) -> bool:
         return self.preview_line is not None
 
     def has_session(self) -> bool:
-        return self.has_points() or self.has_preview() or self.segmentation_busy or self.geometry_busy
+        return self.has_points() or self.has_shape_preview() or self.has_preview() or self.segmentation_busy or self.geometry_busy
 
 
 class DocumentCanvas(QWidget):
@@ -278,6 +282,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
 
@@ -291,6 +296,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -323,6 +329,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -415,6 +422,9 @@ class DocumentCanvas(QWidget):
     def has_fiber_quick_preview(self) -> bool:
         return self._fiber_quick.has_preview()
 
+    def has_fiber_quick_shape_preview(self) -> bool:
+        return self._fiber_quick.has_shape_preview()
+
     def is_fiber_quick_busy(self) -> bool:
         return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
 
@@ -447,9 +457,11 @@ class DocumentCanvas(QWidget):
         positive_points = list(self._fiber_quick.positive_points)
         if not positive_points:
             return None
-        self._fiber_quick.request_id += 1
+        self._fiber_quick_request_serial += 1
+        self._fiber_quick.request_id = self._fiber_quick_request_serial
         self._fiber_quick.inflight_request_id = self._fiber_quick.request_id
         self._fiber_quick.pending_recompute = False
+        self._fiber_quick.commit_pending = False
         self._fiber_quick.segmentation_busy = True
         self._fiber_quick.geometry_busy = False
         self._fiber_quick.preview_line = None
@@ -685,11 +697,14 @@ class DocumentCanvas(QWidget):
             return
         if stage in {"segmentation", "all"}:
             self._fiber_quick.segmentation_busy = False
+            self._fiber_quick.commit_pending = False
             if stage == "segmentation":
                 self._fiber_quick.debug_payload = dict(self._fiber_quick.debug_payload)
         if stage in {"geometry", "all"}:
             self._fiber_quick.geometry_busy = False
             self._fiber_quick.preview_line = None
+            if stage == "geometry":
+                self._fiber_quick.commit_pending = False
         self.update()
         self._emit_magic_segment_session_changed()
 
@@ -701,6 +716,14 @@ class DocumentCanvas(QWidget):
     def commit_fiber_quick_preview(self) -> dict[str, object]:
         document_id = self._document.id if self._document is not None else None
         preview_line = self._fiber_quick.preview_line
+        if preview_line is None and self._fiber_quick.has_shape_preview():
+            self._fiber_quick.commit_pending = True
+            self.update()
+            self._emit_magic_segment_session_changed()
+            return {
+                "committed": False,
+                "pending": True,
+            }
         payload = {
             "measurement_kind": "line",
             "line_px": preview_line,
