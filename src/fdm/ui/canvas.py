@@ -72,6 +72,8 @@ class PromptSegmentationSession:
     subtract_rings: list[list[Point]] = field(default_factory=list)
     primary_mask: object | None = None
     subtract_mask: object | None = None
+    primary_debug_payload: dict[str, object] = field(default_factory=dict)
+    subtract_debug_payload: dict[str, object] = field(default_factory=dict)
     request_id: int = 0
     pending_stage: str = MagicSegmentOperationMode.ADD
     busy: bool = False
@@ -130,6 +132,17 @@ class PromptSegmentationSession:
             self.subtract_rings = rings
         else:
             self.primary_rings = rings
+
+    def debug_payload_for_stage(self, stage: str) -> dict[str, object]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_debug_payload
+        return self.primary_debug_payload
+
+    def set_debug_payload_for_stage(self, stage: str, payload: dict[str, object]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_debug_payload = dict(payload)
+        else:
+            self.primary_debug_payload = dict(payload)
 
     def has_points(self) -> bool:
         return bool(
@@ -439,6 +452,7 @@ class DocumentCanvas(QWidget):
         mask,
         polygon_points: list[Point] | None = None,
         area_rings_points: list[list[Point]] | None = None,
+        debug_payload: dict[str, object] | None = None,
     ) -> dict[str, object] | None:
         if request_id != self._magic_segment.request_id:
             return None
@@ -472,6 +486,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
         self._magic_segment.set_rings_for_stage(stage, self._clone_magic_rings(draft_rings))
         self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
+        self._magic_segment.set_debug_payload_for_stage(stage, dict(debug_payload or {}))
         self.update()
         self._emit_magic_segment_session_changed()
         return {
@@ -567,6 +582,18 @@ class DocumentCanvas(QWidget):
             "has_shape_preview": bool(self._fiber_quick.preview_polygon or self._fiber_quick.preview_rings),
         }
 
+    def set_fiber_quick_pending_roi(self, request_id: int, crop_box: tuple[int, int, int, int] | None) -> bool:
+        if request_id != self._fiber_quick.request_id:
+            return False
+        self._fiber_quick.debug_payload = {
+            **dict(self._fiber_quick.debug_payload),
+            "segmentation_crop_box": crop_box,
+            "segmentation_pending": True,
+        }
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return True
+
     def begin_fiber_quick_geometry(self, request_id: int) -> bool:
         if request_id != self._fiber_quick.request_id:
             return False
@@ -591,6 +618,7 @@ class DocumentCanvas(QWidget):
         if debug_payload:
             merged_payload = dict(self._fiber_quick.debug_payload)
             merged_payload.update(debug_payload)
+            merged_payload.pop("segmentation_pending", None)
             self._fiber_quick.debug_payload = merged_payload
         self.update()
         self._emit_magic_segment_session_changed()
@@ -605,6 +633,8 @@ class DocumentCanvas(QWidget):
             self._fiber_quick.segmentation_busy = False
             self._fiber_quick.preview_polygon = []
             self._fiber_quick.preview_rings = []
+            if stage == "segmentation":
+                self._fiber_quick.debug_payload = dict(self._fiber_quick.debug_payload)
         if stage in {"geometry", "all"}:
             self._fiber_quick.geometry_busy = False
             self._fiber_quick.preview_line = None
@@ -924,8 +954,6 @@ class DocumentCanvas(QWidget):
 
         if is_magic_segment_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
-                return
-            if self._magic_segment.busy:
                 return
             self._document.select_measurement(None)
             self._document.select_overlay_annotation(None)
@@ -1993,6 +2021,11 @@ class DocumentCanvas(QWidget):
             QColor("#F87171"),
             positive=False,
         )
+        self._draw_roi_debug_box(
+            painter,
+            self._magic_segment.debug_payload_for_stage(active_stage).get("segmentation_crop_box"),
+            stroke_color=QColor("#F4D35E"),
+        )
 
         prompt_type = self._magic_segment.prompt_type_for_stage(active_stage)
         prompt_text = "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
@@ -2077,6 +2110,11 @@ class DocumentCanvas(QWidget):
             QColor("#F87171"),
             positive=False,
         )
+        self._draw_roi_debug_box(
+            painter,
+            self._fiber_quick.debug_payload.get("segmentation_crop_box"),
+            stroke_color=QColor("#F4D35E" if self._fiber_quick.debug_payload.get("segmentation_pending") else "#60A5FA"),
+        )
         prompt_text = "当前提示：负采样点" if self._fiber_quick.prompt_type == "negative" else "当前提示：正采样点"
         label_text = prompt_text
         if self._fiber_quick.segmentation_busy:
@@ -2146,6 +2184,25 @@ class DocumentCanvas(QWidget):
                     QPointF(widget_point.x(), widget_point.y() - 2.4),
                     QPointF(widget_point.x(), widget_point.y() + 2.4),
                 )
+
+    def _draw_roi_debug_box(self, painter: QPainter, crop_box, *, stroke_color: QColor) -> None:
+        if self._image is None or not isinstance(crop_box, (tuple, list)) or len(crop_box) != 4:
+            return
+        try:
+            x0, y0, x1, y1 = (float(crop_box[0]), float(crop_box[1]), float(crop_box[2]), float(crop_box[3]))
+        except (TypeError, ValueError):
+            return
+        rect = QRectF(
+            self.image_to_widget(Point(x0, y0)),
+            self.image_to_widget(Point(x1, y1)),
+        ).normalized()
+        if rect.width() < 2.0 or rect.height() < 2.0:
+            return
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor("#0B0B0B"), 3.0, Qt.PenStyle.SolidLine))
+        painter.drawRect(rect)
+        painter.setPen(QPen(stroke_color, 1.4, Qt.PenStyle.DashLine))
+        painter.drawRect(rect)
 
     def _cancel_area_drawing(self) -> None:
         self._drawing_polygon_points = []

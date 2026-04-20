@@ -87,6 +87,7 @@ from fdm.services.preview_analysis import (
 from fdm.services.prompt_segmentation import (
     PromptSegmentationResult,
     create_interactive_segmentation_service,
+    initial_interactive_segmentation_crop_box,
     interactive_segmentation_model_label,
     interactive_segmentation_model_paths,
     interactive_segmentation_models_ready,
@@ -3403,6 +3404,14 @@ class MainWindow(QMainWindow):
                 canvas.apply_magic_segment_result(request_id, None)
             self._update_magic_segment_controls()
             return
+        if is_fiber_quick_tool_mode(tool_mode):
+            pending_crop_box = initial_interactive_segmentation_crop_box(
+                image_size=(image.height(), image.width()),
+                positive_points=positive_points,
+                negative_points=negative_points,
+                tool_mode=tool_mode,
+            )
+            canvas.set_fiber_quick_pending_roi(request_id, pending_crop_box)
         if is_fiber_quick_tool_mode(tool_mode) and self._fiber_quick_geometry_worker is not None:
             self._fiber_quick_geometry_worker.cancel_document(document_id)
         self._ensure_prompt_segmentation_worker()
@@ -3493,10 +3502,19 @@ class MainWindow(QMainWindow):
                     result.mask,
                     result.polygon_px,
                     result.area_rings_px,
+                    {
+                        "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
+                        "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
+                        "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
+                        "component_area_px": result.metadata.get("component_area_px"),
+                        "reason": result.metadata.get("reason"),
+                    },
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()
                     return
+                if result.mask is None or not bool(apply_result.get("has_preview", False)):
+                    self.statusBar().showMessage("魔棒分割失败: 未找到稳定目标区域。", 5000)
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return

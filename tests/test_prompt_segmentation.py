@@ -130,7 +130,7 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(result.area_px, 0.0)
         self.assertEqual(result.metadata["reason"], "missing_positive_prompt")
 
-    def test_predict_polygon_standard_mode_uses_auto_roi_expansion(self) -> None:
+    def test_predict_polygon_standard_mode_uses_full_image_path(self) -> None:
         try:
             import numpy as np
         except ImportError as exc:  # pragma: no cover
@@ -138,24 +138,9 @@ class PromptSegmentationTests(unittest.TestCase):
 
         service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
 
-        def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
-            height, width = crop_image.shape[:2]
-            mask = np.zeros((height, width), dtype=bool)
-            if width < 500:
-                mask[4 : height - 4, 4 : width - 4] = True
-            else:
-                mask[height // 2 - 20 : height // 2 + 20, width // 2 - 60 : width // 2 + 60] = True
-            return type("R", (), {
-                "mask": mask,
-                "polygon_px": [],
-                "area_rings_px": [],
-                "area_px": float(mask.sum()),
-                "metadata": dict(metadata_extra),
-            })()
-
         with (
             patch.object(service, "_image_to_rgb_array", return_value=np.zeros((1200, 1200, 3), dtype=np.uint8)),
-            patch.object(service, "_predict_polygon_for_rgb_array", side_effect=fake_predict),
+            patch.object(service, "_predict_polygon_for_rgb_array") as predict_mock,
         ):
             result = service.predict_polygon(
                 image=object(),
@@ -165,9 +150,8 @@ class PromptSegmentationTests(unittest.TestCase):
                 tool_mode=MagicSegmentToolMode.STANDARD,
             )
 
-        self.assertIsNotNone(result.mask)
-        self.assertGreaterEqual(int(result.metadata["segmentation_roi_round"]), 2)
-        self.assertFalse(bool(result.metadata["segmentation_used_full_image"]))
+        predict_mock.assert_called_once()
+        self.assertIs(result, predict_mock.return_value)
 
     def test_predict_polygon_fiber_quick_fails_when_roi_remains_unstable(self) -> None:
         try:

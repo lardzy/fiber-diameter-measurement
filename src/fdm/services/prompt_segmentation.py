@@ -183,10 +183,7 @@ def magic_mask_area_px(mask) -> float:
 
 def _tool_mode_uses_auto_roi(tool_mode: str | None) -> bool:
     token = str(tool_mode or "").strip()
-    return token in {
-        MagicSegmentToolMode.STANDARD,
-        MagicSegmentToolMode.FIBER_QUICK,
-    }
+    return token == MagicSegmentToolMode.FIBER_QUICK
 
 
 def _prompt_centroid(points: list[Point]) -> Point | None:
@@ -220,6 +217,26 @@ def _centered_square_crop(
     x0 = max(0, min(x0, image_w - crop_side))
     y0 = max(0, min(y0, image_h - crop_side))
     return x0, y0, x0 + crop_side, y0 + crop_side
+
+
+def initial_interactive_segmentation_crop_box(
+    *,
+    image_size: tuple[int, int],
+    positive_points: list[Point],
+    negative_points: list[Point],
+    tool_mode: str,
+) -> tuple[int, int, int, int] | None:
+    if not _tool_mode_uses_auto_roi(tool_mode) or not positive_points:
+        return None
+    image_h, image_w = image_size
+    latest_positive = positive_points[-1] if positive_points else _prompt_centroid(positive_points)
+    center = latest_positive or _prompt_centroid(positive_points) or Point(image_w / 2.0, image_h / 2.0)
+    prompt_long_side = _prompt_bbox_long_side(positive_points, negative_points)
+    initial_side = int(round(max(ROI_CROP_MIN_SIDE, 4.0 * prompt_long_side)))
+    initial_side = max(ROI_CROP_MIN_SIDE, min(initial_side, ROI_CROP_MAX_INITIAL_SIDE))
+    max_side = min(1024, int(round(max(image_h, image_w) * 0.6)))
+    crop_side = max(ROI_CROP_MIN_SIDE, min(initial_side, max_side, image_h, image_w))
+    return _centered_square_crop(center=center, side=crop_side, image_size=image_size)
 
 
 def _crop_points_to_local(points: list[Point], crop_box: tuple[int, int, int, int]) -> list[Point]:

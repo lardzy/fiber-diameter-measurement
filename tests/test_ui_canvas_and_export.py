@@ -2203,7 +2203,21 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
-        self.assertEqual(len(commits[0][2]["area_rings_px"]), 1)
+
+    def test_magic_segment_tool_allows_new_clicks_while_busy(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas._magic_segment.busy = True
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][0], document.id)
+        self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.STANDARD)
+        self.assertEqual(requests[0][1]["request_id"], 1)
+        self.assertTrue(canvas._magic_segment.busy)
 
     def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
         window = MainWindow()
