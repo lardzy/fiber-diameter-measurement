@@ -247,6 +247,10 @@ class AppSettings:
     focus_stack_sharpen_strength: int = 35
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
     magic_segment_fill_draft_holes_enabled: bool = False
+    magic_segment_standard_roi_enabled: bool = False
+    fiber_quick_roi_enabled: bool = True
+    fiber_quick_edge_trim_enabled: bool = True
+    fiber_quick_line_extension_px: float = 0.0
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
@@ -271,6 +275,7 @@ class AppSettings:
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
+        normalized.fiber_quick_line_extension_px = self._normalize_fiber_quick_line_extension_px(self.fiber_quick_line_extension_px)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
@@ -443,6 +448,14 @@ class AppSettings:
         return MagicSegmentModelVariant.EDGE_SAM_3X
 
     @staticmethod
+    def _normalize_fiber_quick_line_extension_px(value: int | float | str | None) -> float:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            numeric = 0.0
+        return max(-20.0, min(20.0, numeric))
+
+    @staticmethod
     def _normalize_overlay_line_width(value: int | float | str | None) -> float:
         try:
             numeric = float(value)
@@ -480,6 +493,10 @@ class AppSettings:
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
             "magic_segment_fill_draft_holes_enabled": normalized.magic_segment_fill_draft_holes_enabled,
+            "magic_segment_standard_roi_enabled": normalized.magic_segment_standard_roi_enabled,
+            "fiber_quick_roi_enabled": normalized.fiber_quick_roi_enabled,
+            "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
+            "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
@@ -550,6 +567,30 @@ class AppSettings:
             payload.get(
                 "magic_segment_fill_draft_holes_enabled",
                 settings.magic_segment_fill_draft_holes_enabled,
+            )
+        )
+        settings.magic_segment_standard_roi_enabled = bool(
+            payload.get(
+                "magic_segment_standard_roi_enabled",
+                settings.magic_segment_standard_roi_enabled,
+            )
+        )
+        settings.fiber_quick_roi_enabled = bool(
+            payload.get(
+                "fiber_quick_roi_enabled",
+                settings.fiber_quick_roi_enabled,
+            )
+        )
+        settings.fiber_quick_edge_trim_enabled = bool(
+            payload.get(
+                "fiber_quick_edge_trim_enabled",
+                settings.fiber_quick_edge_trim_enabled,
+            )
+        )
+        settings.fiber_quick_line_extension_px = cls._normalize_fiber_quick_line_extension_px(
+            payload.get(
+                "fiber_quick_line_extension_px",
+                settings.fiber_quick_line_extension_px,
             )
         )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()

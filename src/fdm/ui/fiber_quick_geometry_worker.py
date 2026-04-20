@@ -18,6 +18,9 @@ class FiberQuickGeometryRequest:
     preview_area_rings_px: list[list[Point]]
     positive_points: list[Point]
     negative_points: list[Point]
+    edge_trim_enabled: bool = True
+    line_extension_px: float = 0.0
+    timeout_ms: float = 1000.0
 
 
 class FiberQuickGeometryWorker(QObject):
@@ -25,9 +28,10 @@ class FiberQuickGeometryWorker(QObject):
     succeeded = Signal(str, int, object)
     failed = Signal(str, int, str)
 
-    def __init__(self) -> None:
+    def __init__(self, *, coalesce_latest: bool = True) -> None:
         super().__init__()
         self._service = FiberQuickDiameterGeometryService()
+        self._coalesce_latest = bool(coalesce_latest)
         self._latest_request_ids: dict[str, int] = {}
         self._cancelled_documents: set[str] = set()
         self._lock = Lock()
@@ -46,6 +50,8 @@ class FiberQuickGeometryWorker(QObject):
         with self._lock:
             if document_id in self._cancelled_documents:
                 return True
+            if not self._coalesce_latest:
+                return False
             return int(request_id) < int(self._latest_request_ids.get(document_id, request_id))
 
     @Slot(object)
@@ -59,7 +65,10 @@ class FiberQuickGeometryWorker(QObject):
                 negative_points=list(request.negative_points),
                 preview_polygon_points=list(request.preview_polygon_px),
                 preview_area_rings_points=[list(ring) for ring in request.preview_area_rings_px],
+                edge_trim_enabled=bool(request.edge_trim_enabled),
+                line_extension_px=float(request.line_extension_px),
                 cancel_check=lambda: self._is_request_stale(request.document_id, request.request_id),
+                timeout_ms=float(request.timeout_ms),
             )
             if self._is_request_stale(request.document_id, request.request_id):
                 return

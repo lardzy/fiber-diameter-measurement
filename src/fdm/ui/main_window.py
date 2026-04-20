@@ -318,6 +318,8 @@ class MainWindow(QMainWindow):
         self._measure_toolbar: QToolBar | None = None
         self._measurement_tool_strip: MeasurementToolStrip | None = None
         self._magic_tool_mode = MagicSegmentToolMode.STANDARD
+        self._magic_standard_roi_enabled = bool(self._app_settings.magic_segment_standard_roi_enabled)
+        self._fiber_quick_roi_enabled = bool(self._app_settings.fiber_quick_roi_enabled)
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._magic_tool_menu: QMenu | None = None
         self._magic_subtool_actions: dict[str, QAction] = {}
@@ -340,16 +342,21 @@ class MainWindow(QMainWindow):
         self._prompt_seg_worker: PromptSegmentationWorker | None = None
         self._fiber_quick_geometry_thread: QThread | None = None
         self._fiber_quick_geometry_worker: FiberQuickGeometryWorker | None = None
+        self._fiber_quick_commit_geometry_thread: QThread | None = None
+        self._fiber_quick_commit_geometry_worker: FiberQuickGeometryWorker | None = None
         self._reference_instance_thread: QThread | None = None
         self._reference_instance_worker: ReferenceInstancePropagationWorker | None = None
         self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
         self._fiber_quick_geometry_request_ids: set[tuple[str, int]] = set()
+        self._fiber_quick_background_job_serial = 0
+        self._fiber_quick_background_jobs: dict[tuple[str, int], dict[str, object]] = {}
         self._interactive_segmentation_services: dict[str, object] = {}
         self._show_area_fill = True
         self._area_auto_button: QPushButton | None = None
         self._magic_controls_widget: QWidget | None = None
         self._magic_prompt_label: QLabel | None = None
         self._magic_toggle_button: QToolButton | None = None
+        self._magic_roi_button: QToolButton | None = None
         self._magic_operation_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
@@ -728,6 +735,13 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button.setText("切换正负 (R)")
         self._magic_toggle_button.clicked.connect(self._cycle_active_magic_prompt_type)
         layout.addWidget(self._magic_toggle_button)
+
+        self._magic_roi_button = QToolButton(container)
+        self._magic_roi_button.setProperty("contextTool", True)
+        self._magic_roi_button.setCheckable(True)
+        self._magic_roi_button.setText("ROI: 开 (Y)")
+        self._magic_roi_button.clicked.connect(self._toggle_active_magic_roi)
+        layout.addWidget(self._magic_roi_button)
 
         self._magic_operation_button = QToolButton(container)
         self._magic_operation_button.setProperty("contextTool", True)
@@ -2522,6 +2536,19 @@ class MainWindow(QMainWindow):
         self._fiber_quick_geometry_thread = thread
         self._fiber_quick_geometry_worker = worker
 
+    def _ensure_fiber_quick_commit_geometry_worker(self) -> None:
+        if self._fiber_quick_commit_geometry_thread is not None and self._fiber_quick_commit_geometry_worker is not None:
+            return
+        thread = QThread(self)
+        worker = FiberQuickGeometryWorker(coalesce_latest=False)
+        worker.moveToThread(thread)
+        worker.succeeded.connect(self._on_fiber_quick_commit_geometry_succeeded)
+        worker.failed.connect(self._on_fiber_quick_commit_geometry_failed)
+        thread.finished.connect(worker.deleteLater)
+        thread.start()
+        self._fiber_quick_commit_geometry_thread = thread
+        self._fiber_quick_commit_geometry_worker = worker
+
     def _ensure_reference_instance_worker(self) -> None:
         if self._reference_instance_thread is not None and self._reference_instance_worker is not None:
             return
@@ -2838,6 +2865,8 @@ class MainWindow(QMainWindow):
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
         new_settings = dialog.app_settings()
         self._app_settings = new_settings
+        self._magic_standard_roi_enabled = bool(new_settings.magic_segment_standard_roi_enabled)
+        self._fiber_quick_roi_enabled = bool(new_settings.fiber_quick_roi_enabled)
         self._save_app_settings(context="设置")
         self._refresh_preset_combo()
         self._refresh_canvases_for_settings()
@@ -3407,6 +3436,7 @@ class MainWindow(QMainWindow):
         positive_points = list(payload.get("positive_points", []))
         negative_points = list(payload.get("negative_points", []))
         active_stage = str(payload.get("active_stage", MagicSegmentOperationMode.ADD) or MagicSegmentOperationMode.ADD)
+        roi_enabled = self._current_magic_roi_enabled(tool_mode)
         if not positive_points:
             if is_fiber_quick_tool_mode(tool_mode):
                 canvas.fail_fiber_quick_result(request_id)
@@ -3414,12 +3444,13 @@ class MainWindow(QMainWindow):
                 canvas.apply_magic_segment_result(request_id, None)
             self._update_magic_segment_controls()
             return
-        if is_fiber_quick_tool_mode(tool_mode):
+        if is_fiber_quick_tool_mode(tool_mode) and roi_enabled:
             pending_crop_box = initial_interactive_segmentation_crop_box(
                 image_size=(image.height(), image.width()),
                 positive_points=positive_points,
                 negative_points=negative_points,
                 tool_mode=tool_mode,
+                roi_enabled=roi_enabled,
             )
             canvas.set_fiber_quick_pending_roi(request_id, pending_crop_box)
         if is_fiber_quick_tool_mode(tool_mode) and self._fiber_quick_geometry_worker is not None:
@@ -3445,6 +3476,7 @@ class MainWindow(QMainWindow):
                 tool_mode=tool_mode,
                 active_stage=active_stage,
                 model_variant=requested_variant,
+                roi_enabled=roi_enabled,
             )
         )
         self._update_magic_segment_controls()
@@ -3492,6 +3524,7 @@ class MainWindow(QMainWindow):
                     debug_payload.pop("segmentation_crop_box", None)
                 apply_result = canvas.apply_fiber_quick_segmentation_result(
                     request_id,
+                    mask=result.mask,
                     preview_polygon_points=result.polygon_px,
                     preview_area_rings_points=result.area_rings_px,
                     debug_payload=debug_payload,
@@ -3531,6 +3564,9 @@ class MainWindow(QMainWindow):
                         negative_points=list(result.metadata.get("negative_points_px", []))
                         if isinstance(result.metadata.get("negative_points_px"), list)
                         else [],
+                        edge_trim_enabled=bool(self._app_settings.fiber_quick_edge_trim_enabled),
+                        line_extension_px=float(self._app_settings.fiber_quick_line_extension_px),
+                        timeout_ms=1000.0,
                     )
                 )
                 self.statusBar().showMessage("快速测径已完成分割，正在异步计算直径线。", 5000)
@@ -3593,7 +3629,10 @@ class MainWindow(QMainWindow):
                 if isinstance(getattr(result, "debug_payload", {}), dict)
                 else {},
             )
-            if apply_result is not None and apply_result.get("has_preview"):
+            if apply_result is None:
+                self._update_magic_segment_controls()
+                return
+            if apply_result.get("has_preview"):
                 if bool(canvas._fiber_quick.commit_pending):  # noqa: SLF001
                     commit_result = canvas.commit_fiber_quick_preview()
                     if bool(commit_result.get("committed", False)):
@@ -3613,6 +3652,8 @@ class MainWindow(QMainWindow):
         self._fiber_quick_geometry_request_ids.discard((document_id, request_id))
         canvas = self._canvases.get(document_id)
         if canvas is None:
+            return
+        if request_id != canvas._fiber_quick.request_id:  # noqa: SLF001
             return
         canvas.fail_fiber_quick_result(request_id, stage="geometry")
         self.statusBar().showMessage(f"快速测径失败: {reason}", 5000)
@@ -4465,6 +4506,28 @@ class MainWindow(QMainWindow):
             return "编辑：剔除形状 (T)"
         return "编辑：第一形状 (T)"
 
+    def _current_magic_roi_enabled(self, tool_mode: str | None = None) -> bool:
+        active_mode = str(tool_mode or self._tool_mode or "").strip()
+        if is_fiber_quick_tool_mode(active_mode):
+            return bool(self._fiber_quick_roi_enabled)
+        if is_magic_segment_tool_mode(active_mode):
+            return bool(self._magic_standard_roi_enabled)
+        return False
+
+    def _set_magic_roi_enabled(self, tool_mode: str, enabled: bool) -> None:
+        if is_fiber_quick_tool_mode(tool_mode):
+            self._fiber_quick_roi_enabled = bool(enabled)
+        elif is_magic_segment_tool_mode(tool_mode):
+            self._magic_standard_roi_enabled = bool(enabled)
+
+    def _toggle_active_magic_roi(self) -> None:
+        if not (is_magic_segment_tool_mode(self._tool_mode) or is_fiber_quick_tool_mode(self._tool_mode)):
+            return
+        self._set_magic_roi_enabled(self._tool_mode, not self._current_magic_roi_enabled())
+        state_text = "启用" if self._current_magic_roi_enabled() else "关闭"
+        self.statusBar().showMessage(f"已{state_text}ROI局部分割", 2500)
+        self._update_magic_segment_controls()
+
     def _update_magic_segment_controls(self) -> None:
         if self._magic_controls_widget is None or self._measurement_tool_strip is None:
             return
@@ -4505,6 +4568,11 @@ class MainWindow(QMainWindow):
                 and (standard_mode or fiber_quick_mode)
                 and (fiber_quick_mode or not busy)
             )
+        if self._magic_roi_button is not None:
+            self._magic_roi_button.setVisible(standard_mode or fiber_quick_mode)
+            self._magic_roi_button.setChecked(self._current_magic_roi_enabled())
+            self._magic_roi_button.setText(f"ROI：{'开' if self._current_magic_roi_enabled() else '关'} (Y)")
+            self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
@@ -4977,12 +5045,82 @@ class MainWindow(QMainWindow):
         if committed:
             self.statusBar().showMessage("已创建快速测径线段", 4000)
         elif pending:
+            snapshot = commit_result.get("snapshot")
+            if isinstance(snapshot, dict):
+                self._enqueue_fiber_quick_background_job(canvas.document_id, snapshot)
             self.statusBar().showMessage("已确认当前分割，直径线计算完成后将自动写入。", 3000)
         else:
             self.statusBar().showMessage("当前没有可确认的快速测径结果。", 3000)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
         return committed or pending
+
+    def _enqueue_fiber_quick_background_job(self, document_id: str | None, snapshot: dict[str, object]) -> None:
+        if not document_id:
+            return
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+        if self._fiber_quick_geometry_worker is not None:
+            self._fiber_quick_geometry_worker.cancel_document(document_id)
+        self._ensure_fiber_quick_commit_geometry_worker()
+        if self._fiber_quick_commit_geometry_worker is None:
+            return
+        self._fiber_quick_background_job_serial += 1
+        job_id = self._fiber_quick_background_job_serial
+        self._fiber_quick_background_jobs[(document_id, job_id)] = {
+            "fiber_group_id": document.active_group_id,
+            "debug_payload": dict(snapshot.get("debug_payload", {})),
+        }
+        self._fiber_quick_commit_geometry_worker.register_request(document_id, job_id)
+        self._fiber_quick_commit_geometry_worker.requested.emit(
+            FiberQuickGeometryRequest(
+                document_id=document_id,
+                request_id=job_id,
+                mask=snapshot.get("mask"),
+                preview_polygon_px=list(snapshot.get("polygon_px", [])) if isinstance(snapshot.get("polygon_px"), list) else [],
+                preview_area_rings_px=[list(ring) for ring in snapshot.get("area_rings_px", [])] if isinstance(snapshot.get("area_rings_px"), list) else [],
+                positive_points=list(snapshot.get("positive_points", [])) if isinstance(snapshot.get("positive_points"), list) else [],
+                negative_points=list(snapshot.get("negative_points", [])) if isinstance(snapshot.get("negative_points"), list) else [],
+                edge_trim_enabled=bool(self._app_settings.fiber_quick_edge_trim_enabled),
+                line_extension_px=float(self._app_settings.fiber_quick_line_extension_px),
+                timeout_ms=1000.0,
+            )
+        )
+
+    def _on_fiber_quick_commit_geometry_succeeded(self, document_id: str, request_id: int, result: object) -> None:
+        job_meta = self._fiber_quick_background_jobs.pop((document_id, request_id), None)
+        if job_meta is None or not hasattr(result, "line_px") or not isinstance(getattr(result, "line_px", None), Line):
+            return
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+        merged_debug_payload = dict(job_meta.get("debug_payload", {}))
+        if isinstance(getattr(result, "debug_payload", None), dict):
+            merged_debug_payload.update(getattr(result, "debug_payload", {}))
+
+        def mutate() -> None:
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=job_meta.get("fiber_group_id"),
+                mode="fiber_quick",
+                line_px=result.line_px,
+                confidence=float(getattr(result, "confidence", 0.0) or 0.0),
+                status=str(getattr(result, "status", "fiber_quick") or "fiber_quick"),
+                debug_payload=merged_debug_payload,
+            )
+            document.add_measurement(measurement)
+            document.select_overlay_annotation(None)
+
+        self._apply_document_change(document, "新增测量", mutate)
+        self.statusBar().showMessage("快速测径已在后台完成并写入。", 3000)
+
+    def _on_fiber_quick_commit_geometry_failed(self, document_id: str, request_id: int, reason: str) -> None:
+        job_meta = self._fiber_quick_background_jobs.pop((document_id, request_id), None)
+        if job_meta is None:
+            return
+        self.statusBar().showMessage(f"快速测径后台失败: {reason}", 4000)
 
     def _cancel_magic_segment_session(self) -> None:
         canvas = self.current_canvas()
@@ -5212,6 +5350,10 @@ class MainWindow(QMainWindow):
                     self._cycle_magic_segment_prompt_type()
                     event.accept()
                     return
+                if event.key() == Qt.Key.Key_Y:
+                    self._toggle_active_magic_roi()
+                    event.accept()
+                    return
                 if event.key() == Qt.Key.Key_T:
                     self._cycle_magic_segment_operation_mode()
                     event.accept()
@@ -5227,6 +5369,10 @@ class MainWindow(QMainWindow):
             elif is_fiber_quick_tool_mode(self._tool_mode):
                 if event.key() == Qt.Key.Key_R:
                     self._cycle_fiber_quick_prompt_type()
+                    event.accept()
+                    return
+                if event.key() == Qt.Key.Key_Y:
+                    self._toggle_active_magic_roi()
                     event.accept()
                     return
                 if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
@@ -5334,6 +5480,18 @@ class MainWindow(QMainWindow):
         self._fiber_quick_geometry_thread = None
         self._fiber_quick_geometry_worker = None
         self._fiber_quick_geometry_request_ids.clear()
+
+        if self._fiber_quick_commit_geometry_worker is not None:
+            document_ids = {document_id for document_id, _request_id in self._fiber_quick_background_jobs.keys()}
+            document_ids.update(self._canvases.keys())
+            for document_id in document_ids:
+                self._fiber_quick_commit_geometry_worker.cancel_document(document_id)
+        if self._fiber_quick_commit_geometry_thread is not None:
+            self._fiber_quick_commit_geometry_thread.quit()
+            self._fiber_quick_commit_geometry_thread.wait(2000)
+        self._fiber_quick_commit_geometry_thread = None
+        self._fiber_quick_commit_geometry_worker = None
+        self._fiber_quick_background_jobs.clear()
 
         if self._prompt_seg_worker is not None:
             for document_id in list(self._canvases.keys()):

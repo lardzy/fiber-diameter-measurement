@@ -195,6 +195,7 @@ class FiberQuickDiameterSession:
     positive_points: list[Point] = field(default_factory=list)
     negative_points: list[Point] = field(default_factory=list)
     preview_line: Line | None = None
+    preview_mask: object | None = None
     preview_polygon: list[Point] = field(default_factory=list)
     preview_rings: list[list[Point]] = field(default_factory=list)
     confidence: float = 0.0
@@ -632,6 +633,7 @@ class DocumentCanvas(QWidget):
         self,
         request_id: int,
         *,
+        mask=None,
         preview_polygon_points: list[Point] | None = None,
         preview_area_rings_points: list[list[Point]] | None = None,
         debug_payload: dict[str, object] | None = None,
@@ -639,6 +641,7 @@ class DocumentCanvas(QWidget):
         if request_id != self._fiber_quick.request_id:
             return None
         self._fiber_quick.segmentation_busy = False
+        self._fiber_quick.preview_mask = normalize_magic_draft_mask(mask)
         self._fiber_quick.preview_polygon = self._normalize_magic_polygon(preview_polygon_points)
         self._fiber_quick.preview_rings = self._normalize_magic_rings(preview_area_rings_points)
         self._fiber_quick.debug_payload = dict(debug_payload or {})
@@ -698,6 +701,8 @@ class DocumentCanvas(QWidget):
         if stage in {"segmentation", "all"}:
             self._fiber_quick.segmentation_busy = False
             self._fiber_quick.commit_pending = False
+            if stage == "all":
+                self._fiber_quick.preview_mask = None
             if stage == "segmentation":
                 self._fiber_quick.debug_payload = dict(self._fiber_quick.debug_payload)
         if stage in {"geometry", "all"}:
@@ -717,12 +722,21 @@ class DocumentCanvas(QWidget):
         document_id = self._document.id if self._document is not None else None
         preview_line = self._fiber_quick.preview_line
         if preview_line is None and self._fiber_quick.has_shape_preview():
-            self._fiber_quick.commit_pending = True
-            self.update()
-            self._emit_magic_segment_session_changed()
+            snapshot = {
+                "measurement_kind": "line",
+                "mode": "fiber_quick",
+                "mask": self._clone_magic_mask(self._fiber_quick.preview_mask),
+                "polygon_px": self._clone_magic_polygon(self._fiber_quick.preview_polygon),
+                "area_rings_px": self._clone_magic_rings(self._fiber_quick.preview_rings),
+                "positive_points": list(self._fiber_quick.positive_points),
+                "negative_points": list(self._fiber_quick.negative_points),
+                "debug_payload": dict(self._fiber_quick.debug_payload),
+            }
+            self.clear_fiber_quick_session()
             return {
                 "committed": False,
                 "pending": True,
+                "snapshot": snapshot,
             }
         payload = {
             "measurement_kind": "line",

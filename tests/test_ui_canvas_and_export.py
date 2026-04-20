@@ -1786,6 +1786,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.FIBER_QUICK)
             self.assertEqual(fake_worker.requested.payload.positive_points, [Point(48, 52)])
             self.assertEqual(fake_worker.requested.payload.negative_points, [Point(74, 56)])
+            self.assertTrue(fake_worker.requested.payload.roi_enabled)
             self.assertEqual(fake_worker.requests, [(document.id, 11)])
         finally:
             window._reset_workspace()
@@ -2559,18 +2560,42 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(canvas)
             window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
             canvas._fiber_quick.request_id = 1
+            canvas._fiber_quick.positive_points = [Point(70, 40)]
             canvas.apply_fiber_quick_segmentation_result(
                 1,
+                mask=self._rect_mask(image.width(), image.height(), (40, 20, 112, 80)),
                 preview_polygon_points=[Point(40, 20), Point(112, 20), Point(112, 80), Point(40, 80)],
                 debug_payload={"candidate_count": 5},
             )
             canvas.begin_fiber_quick_geometry(1)
 
-            self.assertTrue(window._commit_fiber_quick_preview())
-            self.assertEqual(len(document.measurements), 0)
-            self.assertTrue(canvas._fiber_quick.commit_pending)  # noqa: SLF001
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
 
-            window._on_fiber_quick_geometry_succeeded(
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeCommitWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+                    self.requests: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.requests.append((document_id, request_id))
+
+            fake_worker = FakeCommitWorker()
+            window._fiber_quick_commit_geometry_worker = fake_worker
+
+            with patch.object(window, "_ensure_fiber_quick_commit_geometry_worker", return_value=None):
+                self.assertTrue(window._commit_fiber_quick_preview())
+
+            self.assertEqual(len(document.measurements), 0)
+            self.assertFalse(canvas.has_fiber_quick_session())
+            self.assertEqual(fake_worker.requests, [(document.id, 1)])
+            self.assertIsNotNone(fake_worker.requested.payload)
+
+            window._on_fiber_quick_commit_geometry_succeeded(
                 document.id,
                 1,
                 type(
@@ -3098,6 +3123,10 @@ class CanvasAndExportTests(unittest.TestCase):
                 MagicSegmentModelVariant.EDGE_SAM_3X,
             )
             self.assertFalse(dialog._magic_segment_fill_draft_holes_checkbox.isChecked())
+            self.assertFalse(dialog._magic_segment_standard_roi_checkbox.isChecked())
+            self.assertTrue(dialog._fiber_quick_roi_checkbox.isChecked())
+            self.assertTrue(dialog._fiber_quick_edge_trim_checkbox.isChecked())
+            self.assertAlmostEqual(dialog._fiber_quick_line_extension_spin.value(), 0.0)
         finally:
             dialog.close()
 
@@ -3111,11 +3140,19 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
             )
             dialog._magic_segment_fill_draft_holes_checkbox.setChecked(True)
+            dialog._magic_segment_standard_roi_checkbox.setChecked(True)
+            dialog._fiber_quick_roi_checkbox.setChecked(False)
+            dialog._fiber_quick_edge_trim_checkbox.setChecked(False)
+            dialog._fiber_quick_line_extension_spin.setValue(3.5)
 
             collected = dialog.app_settings()
 
             self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
             self.assertTrue(collected.magic_segment_fill_draft_holes_enabled)
+            self.assertTrue(collected.magic_segment_standard_roi_enabled)
+            self.assertFalse(collected.fiber_quick_roi_enabled)
+            self.assertFalse(collected.fiber_quick_edge_trim_enabled)
+            self.assertAlmostEqual(collected.fiber_quick_line_extension_px, 3.5)
         finally:
             dialog.close()
 
@@ -3195,10 +3232,13 @@ class CanvasAndExportTests(unittest.TestCase):
             prompt_thread.start()
             geometry_thread = QThread(window)
             geometry_thread.start()
+            commit_geometry_thread = QThread(window)
+            commit_geometry_thread.start()
             reference_thread = QThread(window)
             reference_thread.start()
             window._prompt_seg_thread = prompt_thread
             window._fiber_quick_geometry_thread = geometry_thread
+            window._fiber_quick_commit_geometry_thread = commit_geometry_thread
             window._reference_instance_thread = reference_thread
             event = FakeCloseEvent()
 
@@ -3209,6 +3249,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(event.ignored)
             self.assertFalse(prompt_thread.isRunning())
             self.assertFalse(geometry_thread.isRunning())
+            self.assertFalse(commit_geometry_thread.isRunning())
             self.assertFalse(reference_thread.isRunning())
         finally:
             window.close()

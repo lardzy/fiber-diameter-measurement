@@ -33,8 +33,10 @@ class FiberQuickDiameterGeometryService:
         negative_points: list[Point] | None = None,
         preview_polygon_points: list[Point] | None = None,
         preview_area_rings_points: list[list[Point]] | None = None,
+        edge_trim_enabled: bool = True,
+        line_extension_px: float = 0.0,
         cancel_check: Callable[[], bool] | None = None,
-        timeout_ms: float = 900.0,
+        timeout_ms: float = 1000.0,
     ) -> FiberQuickDiameterGeometryResult:
         try:
             import numpy as np
@@ -48,6 +50,14 @@ class FiberQuickDiameterGeometryService:
         if normalized is None or not np.any(normalized):
             raise RuntimeError("未找到目标纤维区域。")
         prepared_mask = _prepare_target_mask(normalized)
+        if edge_trim_enabled:
+            prepared_mask, trimmed_pixels, border_band_px = _trim_border_connected_region(
+                prepared_mask,
+                positive_points=positive_points or [],
+            )
+        else:
+            trimmed_pixels = 0
+            border_band_px = 0
         selected_mask = prepared_mask.astype(bool, copy=False)
         preview_polygon = [Point(point.x, point.y) for point in (preview_polygon_points or [])]
         preview_rings = [
@@ -74,13 +84,9 @@ class FiberQuickDiameterGeometryService:
         if min(bbox_width, bbox_height) < 6:
             raise RuntimeError("未找到可靠直径线。")
         bbox_area = bbox_width * bbox_height
-        touches_border = bool(np.any(selected_mask[:, 0])) or bool(np.any(selected_mask[:, -1])) or bool(np.any(selected_mask[0, :])) or bool(np.any(selected_mask[-1, :]))
         bbox_area_ratio = bbox_area / image_area
         mask_area_ratio = mask_area / image_area
         bbox_long_ratio = max(bbox_width, bbox_height) / max(image_h, image_w)
-        border_touch_count = int(np.count_nonzero(selected_mask[:, 0])) + int(np.count_nonzero(selected_mask[:, -1])) + int(np.count_nonzero(selected_mask[0, :])) + int(np.count_nonzero(selected_mask[-1, :]))
-        if touches_border and (bbox_long_ratio >= 0.55 or border_touch_count >= 24):
-            raise RuntimeError("目标在视野边缘不完整。")
         if (
             bbox_area_ratio >= 0.70
             or mask_area_ratio >= 0.40
@@ -157,9 +163,16 @@ class FiberQuickDiameterGeometryService:
         representative = _pick_representative_candidate(candidates)
         if representative is None:
             raise RuntimeError("未找到可靠直径线。")
+        output_line = _apply_line_extension(
+            selected_mask,
+            representative.line,
+            extension_px=float(line_extension_px),
+            cancel_check=cancel_check,
+            deadline_at=deadline_at,
+        )
 
         return FiberQuickDiameterGeometryResult(
-            line_px=representative.line,
+            line_px=output_line,
             confidence=max(0.0, min(1.0, representative.score)),
             status="fiber_quick",
             preview_polygon_px=preview_polygon,
@@ -175,6 +188,10 @@ class FiberQuickDiameterGeometryService:
                 "geometry_ms": (perf_counter() - started_at) * 1000.0,
                 "roi_size": (int(working_mask.shape[1]), int(working_mask.shape[0])),
                 "border_forbidden_seed_count": int(border_seed_count),
+                "edge_trim_enabled": bool(edge_trim_enabled),
+                "edge_trim_pixels": int(trimmed_pixels),
+                "edge_trim_band_px": int(border_band_px),
+                "line_extension_px": float(line_extension_px),
             },
         )
 
@@ -203,6 +220,53 @@ def _prepare_target_mask(mask):
         return working.astype(bool)
     best_label = max(range(1, num_labels), key=lambda label: int(stats[label, cv2.CC_STAT_AREA]))
     return (labels == best_label)
+
+
+def _trim_border_connected_region(mask, *, positive_points: list[Point]):
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("快速测径需要 numpy 依赖。") from exc
+
+    working = np.asarray(mask, dtype=bool).copy()
+    if not np.any(working):
+        return working, 0, 0
+    image_h, image_w = working.shape[:2]
+    band_px = int(max(4, min(12, round(max(image_h, image_w) * 0.005))))
+    border_band = np.zeros_like(working, dtype=bool)
+    border_band[:band_px, :] = True
+    border_band[-band_px:, :] = True
+    border_band[:, :band_px] = True
+    border_band[:, -band_px:] = True
+    touched = bool(np.any(working & border_band))
+    if not touched:
+        return working, 0, band_px
+    removed = int(np.count_nonzero(working & border_band))
+    trimmed = working.copy()
+    trimmed[border_band] = False
+    if not np.any(trimmed):
+        return trimmed, removed, band_px
+    num_labels, labels, stats, centroids = cv2.connectedComponentsWithStats(trimmed.astype("uint8"), connectivity=8)
+    if num_labels <= 1:
+        return trimmed, removed, band_px
+    target_center = None
+    if positive_points:
+        total_x = sum(point.x for point in positive_points)
+        total_y = sum(point.y for point in positive_points)
+        target_center = (total_x / len(positive_points), total_y / len(positive_points))
+    best_label = 1
+    best_key = None
+    for label in range(1, num_labels):
+        area = int(stats[label, cv2.CC_STAT_AREA])
+        centroid_x, centroid_y = centroids[label]
+        dist = 0.0
+        if target_center is not None:
+            dist = ((float(centroid_x) - target_center[0]) ** 2 + (float(centroid_y) - target_center[1]) ** 2) ** 0.5
+        key = (dist, -area)
+        if best_key is None or key < best_key:
+            best_key = key
+            best_label = label
+    return labels == best_label, removed, band_px
 
 
 def _select_candidate_points(
@@ -384,6 +448,41 @@ def _pick_representative_candidate(candidates: list[_CandidateLine]) -> _Candida
     if best.score < 0.22:
         return None
     return best
+
+
+def _apply_line_extension(
+    selected_mask,
+    line: Line,
+    *,
+    extension_px: float,
+    cancel_check: Callable[[], bool] | None,
+    deadline_at: float | None,
+) -> Line:
+    if abs(float(extension_px)) <= 1e-6:
+        return line
+    length = distance(line.start, line.end)
+    if length <= 1e-6:
+        return line
+    unit_x = (line.end.x - line.start.x) / length
+    unit_y = (line.end.y - line.start.y) / length
+    center = Point((line.start.x + line.end.x) / 2.0, (line.start.y + line.end.y) / 2.0)
+    current_half = length / 2.0
+    max_line, hit_border = _measure_line(
+        selected_mask,
+        center,
+        (unit_x, unit_y),
+        cancel_check=cancel_check,
+        deadline_at=deadline_at,
+    )
+    max_half = current_half
+    if max_line is not None and not hit_border:
+        max_half = distance(max_line.start, max_line.end) / 2.0
+    target_half = max(1.0, current_half + float(extension_px))
+    if float(extension_px) > 0:
+        target_half = min(target_half, max_half)
+    start = Point(center.x - (unit_x * target_half), center.y - (unit_y * target_half))
+    end = Point(center.x + (unit_x * target_half), center.y + (unit_y * target_half))
+    return Line(start=start, end=end)
 
 
 def _coefficient_of_variation(values: list[float]) -> float:

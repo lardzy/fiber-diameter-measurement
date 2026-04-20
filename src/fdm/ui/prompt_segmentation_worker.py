@@ -25,6 +25,7 @@ class PromptSegmentationRequest:
     tool_mode: str
     active_stage: str
     model_variant: str
+    roi_enabled: bool
 
 
 class PromptSegmentationWorker(QObject):
@@ -69,6 +70,7 @@ class PromptSegmentationWorker(QObject):
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
                 tool_mode=request.tool_mode,
+                roi_enabled=bool(request.roi_enabled),
                 cancel_check=lambda: self._is_request_cancelled(request.document_id),
             )
             if self._is_request_cancelled(request.document_id):

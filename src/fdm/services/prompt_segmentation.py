@@ -181,9 +181,14 @@ def magic_mask_area_px(mask) -> float:
     return float(np.count_nonzero(mask))
 
 
-def _tool_mode_uses_auto_roi(tool_mode: str | None) -> bool:
+def _tool_mode_uses_auto_roi(tool_mode: str | None, *, roi_enabled: bool = False) -> bool:
     token = str(tool_mode or "").strip()
-    return token == MagicSegmentToolMode.FIBER_QUICK
+    if not roi_enabled:
+        return False
+    return token in {
+        MagicSegmentToolMode.STANDARD,
+        MagicSegmentToolMode.FIBER_QUICK,
+    }
 
 
 def _prompt_centroid(points: list[Point]) -> Point | None:
@@ -225,8 +230,9 @@ def initial_interactive_segmentation_crop_box(
     positive_points: list[Point],
     negative_points: list[Point],
     tool_mode: str,
+    roi_enabled: bool = False,
 ) -> tuple[int, int, int, int] | None:
-    if not _tool_mode_uses_auto_roi(tool_mode) or not positive_points:
+    if not _tool_mode_uses_auto_roi(tool_mode, roi_enabled=roi_enabled) or not positive_points:
         return None
     image_h, image_w = image_size
     latest_positive = positive_points[-1] if positive_points else _prompt_centroid(positive_points)
@@ -825,6 +831,7 @@ class PromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str = MagicSegmentToolMode.STANDARD,
+        roi_enabled: bool = False,
         cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
@@ -836,7 +843,7 @@ class PromptSegmentationService:
                 metadata={"reason": "missing_positive_prompt"},
             )
         cv_image = self._image_to_rgb_array(image)
-        if _tool_mode_uses_auto_roi(tool_mode):
+        if _tool_mode_uses_auto_roi(tool_mode, roi_enabled=roi_enabled):
             return self._predict_polygon_auto_roi(
                 cv_image,
                 cache_key=cache_key,

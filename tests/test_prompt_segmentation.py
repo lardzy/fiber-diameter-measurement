@@ -186,6 +186,7 @@ class PromptSegmentationTests(unittest.TestCase):
                 positive_points=[Point(800, 800)],
                 negative_points=[],
                 tool_mode=MagicSegmentToolMode.FIBER_QUICK,
+                roi_enabled=True,
             )
 
         self.assertIsNotNone(result.mask)

@@ -350,6 +350,10 @@ class ModelsProjectIOTests(unittest.TestCase):
             focus_stack_sharpen_strength=60,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
             magic_segment_fill_draft_holes_enabled=True,
+            magic_segment_standard_roi_enabled=True,
+            fiber_quick_roi_enabled=False,
+            fiber_quick_edge_trim_enabled=False,
+            fiber_quick_line_extension_px=3.5,
             main_window_geometry="Zm9v",
             main_window_is_maximized=True,
         )
@@ -379,6 +383,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
         self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
         self.assertTrue(loaded.magic_segment_fill_draft_holes_enabled)
+        self.assertTrue(loaded.magic_segment_standard_roi_enabled)
+        self.assertFalse(loaded.fiber_quick_roi_enabled)
+        self.assertFalse(loaded.fiber_quick_edge_trim_enabled)
+        self.assertAlmostEqual(loaded.fiber_quick_line_extension_px, 3.5)
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
         self.assertTrue(loaded.main_window_is_maximized)
 
@@ -402,6 +410,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         self.assertFalse(settings.magic_segment_fill_draft_holes_enabled)
+        self.assertFalse(settings.magic_segment_standard_roi_enabled)
+        self.assertTrue(settings.fiber_quick_roi_enabled)
+        self.assertTrue(settings.fiber_quick_edge_trim_enabled)
+        self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 0.0)
         self.assertEqual(settings.main_window_geometry, "")
         self.assertFalse(settings.main_window_is_maximized)
 
@@ -419,6 +431,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 "focus_stack_profile": "unknown",
                 "focus_stack_sharpen_strength": 1000,
                 "magic_segment_model_variant": "unknown",
+                "fiber_quick_line_extension_px": 999,
             }
         )
 
@@ -433,6 +446,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+        self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 20.0)
 
     def test_app_settings_from_dict_ignores_legacy_complex_magic_segment_field(self) -> None:
         settings = AppSettings.from_dict(
