@@ -233,6 +233,7 @@ class Measurement:
     snapped_line_px: Line | None = None
     diameter_px: float | None = None
     diameter_unit: float | None = None
+    exact_area_px: float | None = None
     area_px: float | None = None
     area_unit: float | None = None
     confidence: float = 0.0
@@ -288,9 +289,13 @@ class Measurement:
     def recalculate(self, calibration: Calibration | None) -> None:
         if self.measurement_kind == "area":
             self.area_px = (
-                area_rings_area(self.area_rings_px)
-                if self.area_rings_px
-                else polygon_area(self.polygon_px)
+                float(self.exact_area_px)
+                if self.exact_area_px is not None
+                else (
+                    area_rings_area(self.area_rings_px)
+                    if self.area_rings_px
+                    else polygon_area(self.polygon_px)
+                )
             )
             if calibration is None:
                 self.area_unit = self.area_px
@@ -334,6 +339,7 @@ class Measurement:
             "snapped_line_px": self.snapped_line_px.to_dict() if self.snapped_line_px else None,
             "diameter_px": self.diameter_px,
             "diameter_unit": self.diameter_unit,
+            "exact_area_px": self.exact_area_px,
             "area_px": self.area_px,
             "area_unit": self.area_unit,
             "confidence": self.confidence,
@@ -385,6 +391,7 @@ class Measurement:
             snapped_line_px=Line.from_dict(snapped_line) if snapped_line else None,
             diameter_px=payload.get("diameter_px"),
             diameter_unit=payload.get("diameter_unit"),
+            exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
             area_px=payload.get("area_px"),
             area_unit=payload.get("area_unit"),
             confidence=float(payload.get("confidence", 0.0)),

@@ -356,7 +356,7 @@ class PromptSegmentationTests(unittest.TestCase):
         mask = np.zeros((120, 140), dtype=bool)
         self.assertIsNone(normalize_magic_draft_mask(mask))
 
-    def test_finalize_magic_subtraction_mask_preserves_internal_hole_for_bridge_stage(self) -> None:
+    def test_finalize_magic_subtraction_mask_preserves_internal_hole_without_bridge_slit(self) -> None:
         try:
             import numpy as np
         except ImportError as exc:  # pragma: no cover
@@ -371,11 +371,10 @@ class PromptSegmentationTests(unittest.TestCase):
         _selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(finalized_mask)
 
         self.assertIsNotNone(finalized_mask)
-        self.assertEqual(int(stats["opened_holes"]), 0)
         self.assertFalse(bool(stats["discarded_fragments"]))
         self.assertEqual(len(area_rings), 2)
-        self.assertGreaterEqual(len(polygon), 4)
-        self.assertGreater(int(geometry_stats["opened_holes"]), 0)
+        self.assertEqual(len(polygon), 4)
+        self.assertEqual(int(geometry_stats["hole_count"]), 1)
 
     def test_finalize_magic_subtraction_mask_discards_smaller_fragments_after_partial_overlap(self) -> None:
         try:
@@ -391,7 +390,6 @@ class PromptSegmentationTests(unittest.TestCase):
         finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract)
 
         self.assertIsNotNone(finalized_mask)
-        self.assertEqual(int(stats["opened_holes"]), 0)
         self.assertTrue(bool(stats["discarded_fragments"]))
 
     def test_finalize_magic_subtraction_mask_returns_empty_when_subtract_covers_primary(self) -> None:
@@ -426,6 +424,31 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertIsNotNone(finalized_mask)
         self.assertFalse(bool(stats["had_intersection"]))
         self.assertFalse(bool(stats["discarded_fragments"]))
+
+    def test_finalize_magic_subtraction_mask_preserves_all_holes_inside_largest_component(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        primary = np.zeros((200, 240), dtype=bool)
+        primary[20:180, 20:220] = True
+        subtract_masks = []
+        for rect in [(40, 40, 60, 60), (70, 70, 95, 95), (105, 45, 130, 72), (145, 90, 168, 118), (180, 50, 205, 78)]:
+            x0, y0, x1, y1 = rect
+            subtract = np.zeros_like(primary)
+            subtract[y0:y1, x0:x1] = True
+            subtract_masks.append(subtract)
+
+        finalized_mask, stats = finalize_magic_subtraction_mask(primary, subtract_masks)
+        _selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(finalized_mask, select_prompt_component=False)
+
+        self.assertIsNotNone(finalized_mask)
+        self.assertEqual(int(stats["subtract_shape_count"]), 5)
+        self.assertFalse(bool(stats["discarded_fragments"]))
+        self.assertEqual(len(area_rings), 6)
+        self.assertEqual(int(geometry_stats["hole_count"]), 5)
+        self.assertEqual(len(polygon), 4)
 
     def test_magic_mask_to_geometry_prefers_component_hit_by_positive_prompt(self) -> None:
         try:

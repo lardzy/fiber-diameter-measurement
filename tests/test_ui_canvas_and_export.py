@@ -2639,9 +2639,11 @@ class CanvasAndExportTests(unittest.TestCase):
         commit_result = canvas.commit_magic_segment_preview()
 
         self.assertTrue(bool(commit_result["committed"]))
-        self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 2)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
 
     def test_magic_segment_commit_supports_multiple_confirmed_subtract_shapes(self) -> None:
         document, image, canvas = self._create_canvas_document()
@@ -2680,7 +2682,9 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 0)
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
-        self.assertGreaterEqual(int(commit_result["opened_holes"]), 2)
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 3)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
 
     def test_magic_segment_inference_does_not_show_cleanup_messages_before_confirm(self) -> None:
         window = MainWindow()
@@ -2864,9 +2868,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_magic_segment_commit_opens_slit_for_enclosed_subtract_shape_even_with_raw_fragment_noise(self) -> None:
+    def test_magic_segment_commit_preserves_enclosed_hole_even_with_raw_fragment_noise(self) -> None:
         document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
 
         primary_mask = self._rect_mask(image.width(), image.height(), (20, 18, 150, 102))
         subtract_mask = self._rect_mask(image.width(), image.height(), (56, 38, 108, 82))
@@ -2883,8 +2889,10 @@ class CanvasAndExportTests(unittest.TestCase):
 
         commit_result = canvas.commit_magic_segment_preview()
 
-        self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
+        self.assertTrue(bool(commit_result["committed"]))
         self.assertFalse(bool(commit_result["result_empty"]))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(len(commits[0][2]["area_rings_px"]), 2)
 
     def test_magic_segment_commit_preserves_area_rings_for_hole_geometry(self) -> None:
         document, image, canvas = self._create_canvas_document()
@@ -2910,6 +2918,7 @@ class CanvasAndExportTests(unittest.TestCase):
         payload = commits[0][2]
         self.assertEqual(len(payload["area_rings_px"]), 2)
         self.assertGreaterEqual(len(payload["polygon_px"]), 3)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
 
     def test_area_hit_test_uses_area_rings_instead_of_simplified_polygon(self) -> None:
         document, _image, canvas = self._create_canvas_document()
@@ -3873,7 +3882,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
         self.assertEqual(center_hit, (measurement.id, "center", None))
 
-    def test_area_measurement_draws_fill_path_without_second_outline_geometry(self) -> None:
+    def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
         document, _, _canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -3903,10 +3912,10 @@ class CanvasAndExportTests(unittest.TestCase):
             show_handles=False,
         )
 
-        self.assertEqual([call[0] for call in painter.calls], ["path", "polygon", "polygon"])
+        self.assertEqual([call[0] for call in painter.calls], ["path", "polygon", "polygon", "polygon", "polygon"])
         self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
         self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
-        self.assertEqual(painter.calls[2][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+        self.assertEqual(painter.calls[3][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
 
     def test_unselected_magic_segment_area_draws_with_simplified_display_geometry(self) -> None:
         document, _, _canvas = self._create_canvas_document()

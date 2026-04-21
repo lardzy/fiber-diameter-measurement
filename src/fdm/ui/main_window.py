@@ -3773,6 +3773,7 @@ class MainWindow(QMainWindow):
                     mode="auto_instance",
                     measurement_kind="area",
                     polygon_px=list(instance.polygon_px),
+                    exact_area_px=float(instance.area_px),
                     confidence=float(instance.score),
                     status="auto_instance",
                 )
@@ -4329,6 +4330,7 @@ class MainWindow(QMainWindow):
                     measurement_kind="area",
                     polygon_px=list(payload.get("polygon_px", [])),
                     area_rings_px=[list(ring) for ring in payload.get("area_rings_px", [])],
+                    exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
                     confidence=1.0,
                     status="manual" if mode != "auto_instance" else "auto_instance",
                 )
@@ -4422,6 +4424,7 @@ class MainWindow(QMainWindow):
             if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
                 measurement.polygon_px = list(payload.get("polygon_px", []))
                 measurement.area_rings_px = [list(ring) for ring in payload.get("area_rings_px", [])]
+                measurement.exact_area_px = float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None
                 measurement.measurement_kind = "area"
                 payload_mode = payload.get("mode")
                 if isinstance(payload_mode, str) and payload_mode:
@@ -5577,13 +5580,8 @@ class MainWindow(QMainWindow):
             messages.append("剔除后无剩余区域")
         elif str(commit_result.get("reason", "")) == "missing_primary":
             messages.append("请先完成第一个形状草稿")
-        opened_holes = int(commit_result.get("opened_holes", 0) or 0)
-        if opened_holes > 0:
-            messages.append(f"结果中检测到闭环区域，已自动开缝 {opened_holes} 处。")
-        if bool(commit_result.get("bridge_fallback", False)):
-            messages.append("部分闭环桥接已回退到 1px 保底开缝。")
         if bool(commit_result.get("discarded_fragments", False)):
-            messages.append("结果中出现多个碎片，已仅保留最大连通区域。")
+            messages.append("结果裂成多个独立块，已按规则仅保留最大连通区域。")
         if messages:
             self.statusBar().showMessage(" ".join(messages), 4000)
         self._update_magic_segment_controls()

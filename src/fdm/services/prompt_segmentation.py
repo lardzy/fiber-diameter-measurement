@@ -340,6 +340,7 @@ def magic_mask_to_geometry(
     *,
     positive_points: list[Point] | None = None,
     negative_points: list[Point] | None = None,
+    select_prompt_component: bool = True,
 ) -> tuple[object | None, list[list[Point]], list[Point], dict[str, object]]:
     try:
         import numpy as np
@@ -350,25 +351,32 @@ def magic_mask_to_geometry(
         "component_count": 0,
         "selected_positive_hits": 0,
         "selected_negative_hits": 0,
+        "hole_count": 0,
         "opened_holes": 0,
         "bridge_fallback": False,
         "bridge_method": "none",
     }
     if normalized is None or not np.any(normalized):
         return None, [], [], stats
-    selected_mask, component_stats = _select_prompt_component(
-        normalized,
-        positive_points=positive_points or [],
-        negative_points=negative_points or [],
-    )
-    stats.update(component_stats)
+    if select_prompt_component:
+        selected_mask, component_stats = _select_prompt_component(
+            normalized,
+            positive_points=positive_points or [],
+            negative_points=negative_points or [],
+        )
+        stats.update(component_stats)
+    else:
+        selected_mask = normalized
+        stats["component_count"] = _mask_component_count(normalized)
     if selected_mask is None or not np.any(selected_mask):
         return None, [], [], stats
     rings = _mask_to_area_rings(selected_mask)
     if not rings:
         return selected_mask, [], [], stats
-    polygon, bridge_stats = _bridge_area_rings_to_polygon(rings, fallback_mask=selected_mask)
-    stats.update(bridge_stats)
+    stats["hole_count"] = max(0, len(rings) - 1)
+    polygon = _simplify_polygon_outline(rings[0])
+    if len(polygon) < 3:
+        polygon = [Point(point.x, point.y) for point in rings[0]]
     return selected_mask, rings, polygon, stats
 
 
@@ -507,6 +515,16 @@ def _mask_contains_point(mask, point: Point) -> bool:
     x = int(min(max(round(point.x), 0), width - 1))
     y = int(min(max(round(point.y), 0), height - 1))
     return bool(mask[y, x])
+
+
+def _mask_component_count(mask) -> int:
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    mask_uint8 = np.asarray(mask, dtype=np.uint8)
+    component_count, _labels, _stats, _centroids = cv2.connectedComponentsWithStats(mask_uint8, connectivity=8)
+    return max(0, int(component_count) - 1)
 
 
 def _point_cloud_centroid(points: list[Point]) -> Point | None:

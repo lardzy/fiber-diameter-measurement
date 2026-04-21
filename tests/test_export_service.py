@@ -140,6 +140,35 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["多边形点数"], 4)
         self.assertIn('"x": 10', rows[0]["多边形顶点JSON"])
 
+    def test_area_measurement_rows_use_exact_mask_area_when_available(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_area_exact.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(mode="preset", pixels_per_unit=10.0, unit="um", source_label="demo")
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                area_rings_px=[
+                    [Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                    [Point(6, 2), Point(14, 2), Point(14, 8), Point(6, 8)],
+                ],
+                exact_area_px=180.0,
+            )
+        )
+
+        rows = ExportService().build_measurement_rows([document])
+
+        self.assertEqual(rows[0]["结果"], 1.8)
+        self.assertEqual(rows[0]["面积(px²)"], 180.0)
+
     def test_measurement_rows_include_polyline_and_count_fields(self) -> None:
         document = ImageDocument(
             id=new_id("image"),

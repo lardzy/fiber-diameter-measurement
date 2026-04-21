@@ -528,6 +528,7 @@ def draw_area_measurement(
         return
     color = measurement_color(document, measurement, settings)
     polygon = QPolygonF([image_to_output(point) for point in outline_points])
+    outline_rings = fill_rings or ([outline_points] if len(outline_points) >= 3 else [])
     fill_path = area_rings_path(fill_rings, image_to_output)
     outline_width = max(line_width * (1.65 if selected else 1.0), 1.8)
     if show_fill:
@@ -536,14 +537,20 @@ def draw_area_measurement(
         painter.setBrush(fill)
         painter.setPen(Qt.PenStyle.NoPen)
         if fill_path.elementCount() > 0:
-            painter.drawPath(fill_path)
+                painter.drawPath(fill_path)
         else:
             painter.drawPolygon(polygon)
     painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.setPen(QPen(QColor("#0B0B0B"), max(outline_width * 1.9, outline_width + 1.0), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    painter.drawPolygon(polygon)
+    for ring in outline_rings:
+        if len(ring) < 3:
+            continue
+        painter.drawPolygon(QPolygonF([image_to_output(point) for point in ring]))
     painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    painter.drawPolygon(polygon)
+    for ring in outline_rings:
+        if len(ring) < 3:
+            continue
+        painter.drawPolygon(QPolygonF([image_to_output(point) for point in ring]))
     if not show_handles:
         return
     for point in polygon:

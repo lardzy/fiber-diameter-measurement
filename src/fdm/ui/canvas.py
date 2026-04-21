@@ -30,6 +30,7 @@ from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
     fill_magic_draft_internal_holes,
+    magic_mask_area_px,
     magic_mask_to_geometry,
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
@@ -863,7 +864,7 @@ class DocumentCanvas(QWidget):
         primary_mask = normalize_magic_draft_mask(self._magic_segment.primary_mask)
         result: dict[str, object] = {
             "committed": False,
-            "opened_holes": 0,
+            "hole_count": 0,
             "discarded_fragments": False,
             "result_empty": False,
         }
@@ -883,7 +884,10 @@ class DocumentCanvas(QWidget):
             if final_mask is None:
                 self.clear_magic_segment_session()
                 return result
-        selected_mask, selected_rings, selected_polygon, geometry_stats = magic_mask_to_geometry(final_mask)
+        selected_mask, selected_rings, selected_polygon, geometry_stats = magic_mask_to_geometry(
+            final_mask,
+            select_prompt_component=False,
+        )
         if selected_mask is None:
             self.clear_magic_segment_session()
             result["result_empty"] = True
@@ -892,8 +896,7 @@ class DocumentCanvas(QWidget):
             area_rings_points = self._clone_magic_rings(selected_rings)
         if len(selected_polygon) >= 3:
             polygon_points = self._clone_magic_polygon(selected_polygon)
-        result["opened_holes"] = int(geometry_stats.get("opened_holes", 0) or 0)
-        result["bridge_fallback"] = bool(geometry_stats.get("bridge_fallback", False))
+        result["hole_count"] = int(geometry_stats.get("hole_count", 0) or 0)
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
             result["reason"] = "missing_polygon"
@@ -905,6 +908,7 @@ class DocumentCanvas(QWidget):
                 "measurement_kind": "area",
                 "polygon_px": polygon_points,
                 "area_rings_px": area_rings_points,
+                "exact_area_px": magic_mask_area_px(selected_mask),
             },
         )
         result["committed"] = True
