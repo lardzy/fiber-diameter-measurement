@@ -124,6 +124,7 @@ from fdm.ui.reference_instance_worker import (
 )
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest, FiberQuickGeometryWorker
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
+from fdm.ui.theme import apply_application_theme
 from fdm.ui.widgets import (
     FiberGroupListItemWidget,
     FlowLayout,
@@ -303,6 +304,9 @@ class MainWindow(QMainWindow):
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
         self._app_settings = AppSettingsIO.load()
+        app = QApplication.instance()
+        if app is not None:
+            self._app_settings.theme_mode = apply_application_theme(app, self._app_settings.theme_mode)
         try:
             AppSettingsIO.save(self._app_settings)
         except OSError:
@@ -934,10 +938,20 @@ class MainWindow(QMainWindow):
         self.set_tool_mode(tool_mode)
 
     def _build_split_menu_stylesheet(self, object_name: str, checked_rgba: str) -> str:
+        if self._is_dark_palette():
+            background = "#23282E"
+            border = "rgba(255, 255, 255, 20)"
+            text = "#F3F4F6"
+            selected = "#2D343C"
+        else:
+            background = "#FFFFFF"
+            border = "rgba(17, 24, 39, 16)"
+            text = "#1F2933"
+            selected = "#EAF2F4"
         return f"""
             QMenu#{object_name} {{
-                background: #23282E;
-                border: 1px solid rgba(255, 255, 255, 20);
+                background: {background};
+                border: 1px solid {border};
                 border-radius: 12px;
                 padding: 8px;
             }}
@@ -946,11 +960,11 @@ class MainWindow(QMainWindow):
                 margin: 2px 0;
                 padding: 0 16px 0 12px;
                 border-radius: 8px;
-                color: #F3F4F6;
+                color: {text};
                 font-weight: 600;
             }}
             QMenu#{object_name}::item:selected {{
-                background: #2D343C;
+                background: {selected};
             }}
             QMenu#{object_name}::item:checked {{
                 background: {checked_rgba};
@@ -1107,37 +1121,7 @@ class MainWindow(QMainWindow):
 
         menu = QMenu(self)
         menu.setObjectName("overlayToolMenu")
-        menu.setStyleSheet(
-            """
-            QMenu#overlayToolMenu {
-                background: #23282E;
-                border: 1px solid rgba(255, 255, 255, 20);
-                border-radius: 12px;
-                padding: 8px;
-            }
-            QMenu#overlayToolMenu::item {
-                min-height: 38px;
-                margin: 2px 0;
-                padding: 0 16px 0 12px;
-                border-radius: 8px;
-                color: #F3F4F6;
-                font-weight: 600;
-            }
-            QMenu#overlayToolMenu::item:selected {
-                background: #2D343C;
-            }
-            QMenu#overlayToolMenu::item:checked {
-                background: rgba(183, 154, 216, 41);
-            }
-            QMenu#overlayToolMenu::icon {
-                padding-left: 2px;
-            }
-            QMenu#overlayToolMenu::indicator {
-                width: 0px;
-                height: 0px;
-            }
-            """
-        )
+        menu.setStyleSheet(self._build_split_menu_stylesheet("overlayToolMenu", "rgba(183, 154, 216, 41)"))
         for kind, label, icon_name in self._overlay_tool_definitions():
             action = QAction(label, menu)
             action.setCheckable(True)
@@ -1619,6 +1603,24 @@ class MainWindow(QMainWindow):
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
             self._update_group_list_header_styles()
+            self._apply_tool_menu_stylesheets()
+
+    def _apply_tool_menu_stylesheets(self) -> None:
+        menu_specs = (
+            (self._manual_tool_menu, "manualToolMenu", "rgba(217, 167, 42, 41)"),
+            (self._area_tool_menu, "areaToolMenu", "rgba(90, 174, 105, 41)"),
+            (self._magic_tool_menu, "magicToolMenu", "rgba(217, 108, 117, 41)"),
+            (self._overlay_tool_menu, "overlayToolMenu", "rgba(183, 154, 216, 41)"),
+        )
+        for menu, object_name, checked_rgba in menu_specs:
+            if menu is not None:
+                menu.setStyleSheet(self._build_split_menu_stylesheet(object_name, checked_rgba))
+
+    def _apply_theme_mode(self) -> None:
+        app = QApplication.instance()
+        if app is None:
+            return
+        self._app_settings.theme_mode = apply_application_theme(app, self._app_settings.theme_mode)
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -3179,6 +3181,7 @@ class MainWindow(QMainWindow):
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
         new_settings = dialog.app_settings()
         self._app_settings = new_settings
+        self._apply_theme_mode()
         self._magic_standard_roi_enabled = bool(new_settings.magic_segment_standard_roi_enabled)
         self._fiber_quick_roi_enabled = bool(new_settings.fiber_quick_roi_enabled)
         self._save_app_settings(context="设置")

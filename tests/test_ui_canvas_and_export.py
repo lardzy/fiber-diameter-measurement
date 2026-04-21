@@ -24,6 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import (
+    AppThemeMode,
     AppSettings,
     FocusStackProfile,
     MagicSegmentModelVariant,
@@ -3402,6 +3403,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_settings_dialog_uses_new_measurement_and_scale_defaults(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
+            self.assertEqual(dialog._theme_mode_combo.currentData(), AppThemeMode.DARK)
             self.assertEqual(dialog._measurement_label_color.property("color_value"), "#00FF00")
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
             self.assertFalse(dialog._measurement_label_background.isChecked())
@@ -3608,6 +3610,17 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(collected.fiber_quick_roi_enabled)
             self.assertFalse(collected.fiber_quick_edge_trim_enabled)
             self.assertAlmostEqual(collected.fiber_quick_line_extension_px, 3.5)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_roundtrips_theme_mode(self) -> None:
+        dialog = SettingsDialog(AppSettings(theme_mode=AppThemeMode.DARK), document=None)
+        try:
+            dialog._theme_mode_combo.setCurrentIndex(dialog._theme_mode_combo.findData(AppThemeMode.LIGHT))
+
+            collected = dialog.app_settings()
+
+            self.assertEqual(collected.theme_mode, AppThemeMode.LIGHT)
         finally:
             dialog.close()
 

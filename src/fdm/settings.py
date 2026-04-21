@@ -37,6 +37,23 @@ class ScaleOverlayStyle:
     BAR = "bar"
 
 
+class AppThemeMode:
+    SYSTEM = "system"
+    DARK = "dark"
+    LIGHT = "light"
+
+
+def normalize_theme_mode(value: str | None) -> str:
+    token = str(value or "").strip().lower()
+    if token in {
+        AppThemeMode.SYSTEM,
+        AppThemeMode.DARK,
+        AppThemeMode.LIGHT,
+    }:
+        return token
+    return AppThemeMode.DARK
+
+
 class FocusStackProfile:
     SHARP = "sharp"
     BALANCED = "balanced"
@@ -221,6 +238,7 @@ def default_area_model_mappings() -> list[AreaModelMapping]:
 
 @dataclass(slots=True)
 class AppSettings:
+    theme_mode: str = AppThemeMode.DARK
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
@@ -264,6 +282,7 @@ class AppSettings:
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
+        normalized.theme_mode = normalize_theme_mode(self.theme_mode)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
         normalized.measurement_label_decimals = self._normalize_measurement_label_decimals(self.measurement_label_decimals)
         normalized.measurement_endpoint_style = self._normalize_measurement_endpoint_style(self.measurement_endpoint_style)
@@ -485,6 +504,7 @@ class AppSettings:
         normalized = self.normalized_copy()
         return {
             "version": 1,
+            "theme_mode": normalized.theme_mode,
             "show_measurement_labels": normalized.show_measurement_labels,
             "measurement_label_font_family": normalized.measurement_label_font_family,
             "measurement_label_font_size": normalized.measurement_label_font_size,
@@ -530,6 +550,7 @@ class AppSettings:
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
+        settings.theme_mode = normalize_theme_mode(payload.get("theme_mode", settings.theme_mode))
         settings.show_measurement_labels = bool(payload.get("show_measurement_labels", settings.show_measurement_labels))
         settings.measurement_label_font_family = str(payload.get("measurement_label_font_family", settings.measurement_label_font_family))
         settings.measurement_label_font_size = cls._normalize_font_size(

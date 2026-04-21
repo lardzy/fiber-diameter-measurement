@@ -28,6 +28,7 @@ from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
+    AppThemeMode,
     AppSettings,
     AppSettingsIO,
     FocusStackProfile,
@@ -331,6 +332,7 @@ class ModelsProjectIOTests(unittest.TestCase):
 
     def test_app_settings_roundtrip_uses_user_writable_path(self) -> None:
         settings = AppSettings(
+            theme_mode=AppThemeMode.LIGHT,
             show_measurement_labels=False,
             measurement_label_font_size=22,
             measurement_label_decimals=2,
@@ -364,6 +366,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded = AppSettingsIO.load(saved_path)
 
         self.assertEqual(saved_path, path)
+        self.assertEqual(loaded.theme_mode, AppThemeMode.LIGHT)
         self.assertFalse(loaded.show_measurement_labels)
         self.assertEqual(loaded.measurement_label_font_size, 22)
         self.assertEqual(loaded.measurement_label_decimals, 2)
@@ -393,6 +396,7 @@ class ModelsProjectIOTests(unittest.TestCase):
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
 
+        self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
         self.assertEqual(settings.measurement_label_color, "#00FF00")
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertFalse(settings.measurement_label_background_enabled)
@@ -420,6 +424,7 @@ class ModelsProjectIOTests(unittest.TestCase):
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(
             {
+                "theme_mode": "unknown",
                 "measurement_label_decimals": 99,
                 "measurement_endpoint_style": "unknown",
                 "open_image_view_mode": "unknown",
@@ -435,6 +440,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             }
         )
 
+        self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
         self.assertEqual(settings.measurement_label_decimals, 8)
         self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
         self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)

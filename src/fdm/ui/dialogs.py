@@ -35,6 +35,7 @@ from PySide6.QtWidgets import (
 
 from fdm.models import ImageDocument
 from fdm.settings import (
+    AppThemeMode,
     AreaModelMapping,
     AppSettings,
     FocusStackProfile,
@@ -431,6 +432,7 @@ class SettingsDialog(QDialog):
 
     def app_settings(self) -> AppSettings:
         return AppSettings(
+            theme_mode=self._theme_mode_combo.currentData(),
             show_measurement_labels=self._show_measurement_labels.isChecked(),
             measurement_label_font_family=self._measurement_label_font.currentFont().family(),
             measurement_label_font_size=self._measurement_label_size.value(),
@@ -650,7 +652,13 @@ class SettingsDialog(QDialog):
         self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
         self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
         self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
+        self._theme_mode_combo = NoWheelComboBox()
+        self._theme_mode_combo.addItem("跟随系统", AppThemeMode.SYSTEM)
+        self._theme_mode_combo.addItem("深色", AppThemeMode.DARK)
+        self._theme_mode_combo.addItem("浅色", AppThemeMode.LIGHT)
+        self._theme_mode_combo.setCurrentIndex(max(0, self._theme_mode_combo.findData(settings.theme_mode)))
         display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
+        display_form.addRow("界面主题", self._theme_mode_combo)
 
         placement_group = QGroupBox("位置与长度")
         placement_form = QFormLayout(placement_group)
