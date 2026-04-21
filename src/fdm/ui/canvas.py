@@ -272,9 +272,11 @@ class DocumentCanvas(QWidget):
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
 
-        self._dragging_area_handle: tuple[str, str, int | None] | None = None
+        self._dragging_area_handle: tuple[str, str, int | None, int | None] | None = None
         self._drag_area_preview_points: list[Point] | None = None
         self._drag_area_origin_points: list[Point] | None = None
+        self._drag_area_preview_rings: list[list[Point]] | None = None
+        self._drag_area_origin_rings: list[list[Point]] | None = None
         self._drag_area_press_point: Point | None = None
 
         self._drawing_overlay_start: Point | None = None
@@ -338,6 +340,8 @@ class DocumentCanvas(QWidget):
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
+        self._drag_area_preview_rings = None
+        self._drag_area_origin_rings = None
         self._drag_area_press_point = None
         self._drawing_overlay_start = None
         self._drawing_overlay_end = None
@@ -1506,15 +1510,29 @@ class DocumentCanvas(QWidget):
             and self._drag_area_origin_points is not None
             and self._drag_area_press_point is not None
         ):
-            _measurement_id, handle_kind, point_index = self._dragging_area_handle
+            _measurement_id, handle_kind, ring_index, point_index = self._dragging_area_handle
             if handle_kind == "center":
                 dx = image_point.x - self._drag_area_press_point.x
                 dy = image_point.y - self._drag_area_press_point.y
                 self._drag_area_preview_points = polygon_translate(self._drag_area_origin_points, dx, dy)
+                if self._drag_area_origin_rings is not None:
+                    self._drag_area_preview_rings = [
+                        polygon_translate(ring, dx, dy)
+                        for ring in self._drag_area_origin_rings
+                    ]
+                    if self._drag_area_preview_rings:
+                        self._drag_area_preview_points = list(self._drag_area_preview_rings[0])
             elif point_index is not None:
                 preview = list(self._drag_area_origin_points)
                 preview[point_index] = self._clamp_to_image(image_point, pixel_center=False)
                 self._drag_area_preview_points = preview
+                if self._drag_area_origin_rings is not None and ring_index is not None:
+                    preview_rings = self._clone_magic_rings(self._drag_area_origin_rings)
+                    if 0 <= ring_index < len(preview_rings) and 0 <= point_index < len(preview_rings[ring_index]):
+                        preview_rings[ring_index][point_index] = self._clamp_to_image(image_point, pixel_center=False)
+                    self._drag_area_preview_rings = preview_rings
+                    if preview_rings:
+                        self._drag_area_preview_points = list(preview_rings[0])
             self.update()
             return
 
@@ -1652,22 +1670,26 @@ class DocumentCanvas(QWidget):
             return
 
         if self._dragging_area_handle is not None and self._drag_area_preview_points is not None:
-            measurement_id, _handle_kind, _index = self._dragging_area_handle
-            preview = list(self._drag_area_preview_points)
+            measurement_id, _handle_kind, _ring_index, _index = self._dragging_area_handle
+            preview_polygon = list(self._drag_area_preview_points)
+            preview_rings = self._clone_magic_rings(self._drag_area_preview_rings) if self._drag_area_preview_rings is not None else []
+            if preview_rings:
+                preview_polygon = list(preview_rings[0])
             self._dragging_area_handle = None
             self._drag_area_preview_points = None
             self._drag_area_origin_points = None
+            self._drag_area_preview_rings = None
+            self._drag_area_origin_rings = None
             self._drag_area_press_point = None
-            # Vertex editing takes over from the high-fidelity magic-segment rings and
-            # turns the measurement into a regular hand-edited polygon area.
             self.measurementEdited.emit(
                 self._document.id,
                 measurement_id,
                 {
                     "measurement_kind": "area",
                     "mode": "polygon_area",
-                    "polygon_px": preview,
-                    "area_rings_px": [],
+                    "polygon_px": preview_polygon,
+                    "area_rings_px": preview_rings,
+                    "exact_area_px": None,
                 },
             )
             if self._space_pressed:
@@ -1694,6 +1716,8 @@ class DocumentCanvas(QWidget):
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
+        self._drag_area_preview_rings = None
+        self._drag_area_origin_rings = None
         self._drag_area_press_point = None
         self._update_cursor()
 
@@ -1782,26 +1806,49 @@ class DocumentCanvas(QWidget):
             painter.drawEllipse(self.image_to_widget(preview_line.end), 6, 6)
 
         preview_points = self._drag_area_preview_points or self._drawing_polygon_points
+        preview_rings = self._drag_area_preview_rings or []
         if preview_points:
-            polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
-            if self._show_area_fill and len(preview_points) >= 3:
-                painter.setBrush(QColor(244, 211, 94, 56))
-            else:
+            if self._drag_area_preview_points is not None and preview_rings:
+                fill_path = area_rings_path(preview_rings, self.image_to_widget)
+                if self._show_area_fill:
+                    painter.setBrush(QColor(244, 211, 94, 56))
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    if fill_path.elementCount() > 0:
+                        painter.drawPath(fill_path)
                 painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                painter.drawPolygon(polygon)
+                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                for ring in preview_rings:
+                    if len(ring) >= 3:
+                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                for ring in preview_rings:
+                    if len(ring) >= 3:
+                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+                painter.setBrush(QColor("#F4D35E"))
+                painter.setPen(QPen(QColor("#0B0B0B"), 1))
+                for ring in preview_rings:
+                    for point in ring:
+                        painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
             else:
-                painter.drawPolyline(polygon)
-            painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                painter.drawPolygon(polygon)
-            else:
-                painter.drawPolyline(polygon)
-            painter.setBrush(QColor("#F4D35E"))
-            painter.setPen(QPen(QColor("#0B0B0B"), 1))
-            for point in preview_points:
-                painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
+                polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
+                if self._show_area_fill and len(preview_points) >= 3:
+                    painter.setBrush(QColor(244, 211, 94, 56))
+                else:
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                    painter.drawPolygon(polygon)
+                else:
+                    painter.drawPolyline(polygon)
+                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                    painter.drawPolygon(polygon)
+                else:
+                    painter.drawPolyline(polygon)
+                painter.setBrush(QColor("#F4D35E"))
+                painter.setPen(QPen(QColor("#0B0B0B"), 1))
+                for point in preview_points:
+                    painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
             if self._tool_mode in {"polygon_area", "continuous_manual"} and self._area_hover_point is not None and self._drawing_polygon_points:
                 painter.setPen(QPen(QColor("#F4D35E"), 1.2, Qt.PenStyle.DashLine))
                 painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
@@ -1878,7 +1925,7 @@ class DocumentCanvas(QWidget):
                 return measurement.id, endpoint_name
         return None
 
-    def _hit_test_selected_area_handle(self, image_point: Point) -> tuple[str, str, int | None] | None:
+    def _hit_test_selected_area_handle(self, image_point: Point) -> tuple[str, str, int | None, int | None] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
             return None
         measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
@@ -1888,18 +1935,19 @@ class DocumentCanvas(QWidget):
             or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px)
         ):
             return None
-        outline_points = measurement.polygon_px if len(measurement.polygon_px) >= 3 else measurement.area_rings_px[0]
-        nearest_vertex: tuple[int, float] | None = None
-        for index, point in enumerate(outline_points):
-            vertex_distance = distance(point, image_point)
-            if vertex_distance <= self._selected_endpoint_tolerance():
-                if nearest_vertex is None or vertex_distance < nearest_vertex[1]:
-                    nearest_vertex = (index, vertex_distance)
+        editable_rings = measurement.area_rings_px or ([measurement.polygon_px] if len(measurement.polygon_px) >= 3 else [])
+        nearest_vertex: tuple[int, int, float] | None = None
+        for ring_index, ring in enumerate(editable_rings):
+            for point_index, point in enumerate(ring):
+                vertex_distance = distance(point, image_point)
+                if vertex_distance <= self._selected_endpoint_tolerance():
+                    if nearest_vertex is None or vertex_distance < nearest_vertex[2]:
+                        nearest_vertex = (ring_index, point_index, vertex_distance)
         if nearest_vertex is not None:
-            return measurement.id, "vertex", nearest_vertex[0]
+            return measurement.id, "vertex", nearest_vertex[0], nearest_vertex[1]
         center = measurement.polygon_center()
         if distance(center, image_point) <= max(3.0, 5.0 / max(self._zoom, 0.001)):
-            return measurement.id, "center", None
+            return measurement.id, "center", None, None
         return None
 
     def _hit_test_area_measurement(self, image_point: Point) -> str | None:
@@ -2521,7 +2569,7 @@ class DocumentCanvas(QWidget):
             },
         )
 
-    def _begin_area_drag(self, handle: tuple[str, str, int | None], image_point: Point) -> None:
+    def _begin_area_drag(self, handle: tuple[str, str, int | None, int | None], image_point: Point) -> None:
         if self._document is None:
             return
         measurement = self._document.get_measurement(handle[0])
@@ -2530,8 +2578,15 @@ class DocumentCanvas(QWidget):
         self._document.select_measurement(measurement.id)
         self.measurementSelected.emit(self._document.id, measurement.id)
         self._dragging_area_handle = handle
-        self._drag_area_origin_points = list(measurement.polygon_px)
-        self._drag_area_preview_points = list(measurement.polygon_px)
+        self._drag_area_origin_rings = self._clone_magic_rings(measurement.area_rings_px) if measurement.area_rings_px else None
+        if self._drag_area_origin_rings:
+            self._drag_area_origin_points = list(self._drag_area_origin_rings[0])
+            self._drag_area_preview_points = list(self._drag_area_origin_rings[0])
+            self._drag_area_preview_rings = self._clone_magic_rings(self._drag_area_origin_rings)
+        else:
+            self._drag_area_origin_points = list(measurement.polygon_px)
+            self._drag_area_preview_points = list(measurement.polygon_px)
+            self._drag_area_preview_rings = None
         self._drag_area_press_point = image_point
 
     def _emit_magic_segment_session_changed(self) -> None:

@@ -3860,7 +3860,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         hit = canvas._hit_test_selected_area_handle(Point(26.5, 20))
 
-        self.assertEqual(hit, (measurement.id, "vertex", 1))
+        self.assertEqual(hit, (measurement.id, "vertex", 0, 1))
 
     def test_selected_area_handle_uses_center_only_when_no_vertex_matches(self) -> None:
         document, _, canvas = self._create_canvas_document()
@@ -3879,8 +3879,8 @@ class CanvasAndExportTests(unittest.TestCase):
         vertex_hit = canvas._hit_test_selected_area_handle(Point(23.4, 20.4))
         center_hit = canvas._hit_test_selected_area_handle(Point(40, 40))
 
-        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
-        self.assertEqual(center_hit, (measurement.id, "center", None))
+        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0, 0))
+        self.assertEqual(center_hit, (measurement.id, "center", None, None))
 
     def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
         document, _, _canvas = self._create_canvas_document()
@@ -3994,7 +3994,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertLess(unselected_painter.calls[0][3], len(dense_ring))
         self.assertEqual(selected_painter.calls[0][3], len(dense_ring))
 
-    def test_dragging_area_vertex_emits_polygon_payload_and_clears_magic_rings(self) -> None:
+    def test_dragging_area_vertex_preserves_magic_rings_and_clears_exact_area(self) -> None:
         document, _image, canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -4014,16 +4014,43 @@ class CanvasAndExportTests(unittest.TestCase):
         payloads: list[object] = []
         canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: payloads.append(payload))
 
-        preview = [Point(26, 18), Point(84, 24), Point(78, 92), Point(18, 86)]
-        canvas._dragging_area_handle = (measurement.id, "vertex", 0)
-        canvas._drag_area_preview_points = list(preview)
-        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(preview[0]), button=Qt.MouseButton.LeftButton))
+        preview_rings = [
+            [Point(26, 18), Point(88, 20), Point(88, 88), Point(20, 88)],
+            [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+        ]
+        canvas._dragging_area_handle = (measurement.id, "vertex", 0, 0)
+        canvas._drag_area_preview_points = list(preview_rings[0])
+        canvas._drag_area_preview_rings = [list(ring) for ring in preview_rings]
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(preview_rings[0][0]), button=Qt.MouseButton.LeftButton))
 
         self.assertEqual(len(payloads), 1)
         self.assertEqual(payloads[0]["measurement_kind"], "area")
         self.assertEqual(payloads[0]["mode"], "polygon_area")
-        self.assertEqual(payloads[0]["area_rings_px"], [])
-        self.assertEqual(payloads[0]["polygon_px"], preview)
+        self.assertEqual(payloads[0]["area_rings_px"], preview_rings)
+        self.assertEqual(payloads[0]["polygon_px"], preview_rings[0])
+        self.assertIsNone(payloads[0]["exact_area_px"])
+
+    def test_selected_area_handle_can_hit_hole_vertex(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        hit = canvas._hit_test_selected_area_handle(Point(42.5, 42.5))
+
+        self.assertEqual(hit, (measurement.id, "vertex", 1, 0))
 
     def test_unselected_magic_segment_hit_test_uses_simplified_geometry_until_selected(self) -> None:
         document, _image, canvas = self._create_canvas_document()

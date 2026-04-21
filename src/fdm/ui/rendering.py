@@ -553,8 +553,10 @@ def draw_area_measurement(
         painter.drawPolygon(QPolygonF([image_to_output(point) for point in ring]))
     if not show_handles:
         return
-    for point in polygon:
-        _draw_circle_endpoint(painter, point, color, endpoint_radius * 0.95)
+    handle_rings = fill_rings or ([outline_points] if len(outline_points) >= 3 else [])
+    for ring in handle_rings:
+        for point in ring:
+            _draw_circle_endpoint(painter, image_to_output(point), color, endpoint_radius * 0.95)
     center_point = image_to_output(measurement.polygon_center())
     painter.setBrush(QColor("#FFFFFF"))
     painter.setPen(QPen(QColor("#0B0B0B"), 1.6))
