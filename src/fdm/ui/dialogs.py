@@ -191,18 +191,25 @@ class FiberGroupDialog(QDialog):
         *,
         title: str = "新增类别",
         initial_label: str = "",
+        initial_color: str = "#1F7A8C",
         apply_to_project_default: bool = True,
+        show_apply_to_project: bool = True,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
+        self._show_apply_to_project = show_apply_to_project
         self._label_edit = QLineEdit()
         self._label_edit.setPlaceholderText("类别名称")
         self._label_edit.setText(initial_label)
         self._apply_to_project = QCheckBox("应用到当前项目全局")
         self._apply_to_project.setChecked(apply_to_project_default)
+        self._color_button = QPushButton()
+        self._color_button.clicked.connect(self._choose_color)
+        self._apply_button_color(initial_color)
 
         form = QFormLayout()
         form.addRow("类别名称", self._label_edit)
+        form.addRow("类别颜色", self._color_button)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -210,11 +217,33 @@ class FiberGroupDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(self._apply_to_project)
+        if self._show_apply_to_project:
+            layout.addWidget(self._apply_to_project)
         layout.addWidget(buttons)
 
-    def values(self) -> tuple[str, bool]:
-        return self._label_edit.text().strip(), self._apply_to_project.isChecked()
+    def _apply_button_color(self, color_value: str) -> None:
+        color = QColor(color_value)
+        normalized = color.name() if color.isValid() else color_value
+        text_color = "#111111" if color.isValid() and color.lightnessF() > 0.7 else "#FFFFFF"
+        self._color_button.setText(normalized)
+        self._color_button.setStyleSheet(
+            f"QPushButton {{ background: {normalized}; color: {text_color}; min-height: 28px; border-radius: 6px; }}"
+        )
+        self._color_button.setProperty("color_value", normalized)
+
+    def _choose_color(self) -> None:
+        initial = QColor(str(self._color_button.property("color_value") or "#1F7A8C"))
+        color = QColorDialog.getColor(initial, self, "选择颜色")
+        if not color.isValid():
+            return
+        self._apply_button_color(color.name())
+
+    def values(self) -> tuple[str, str, bool]:
+        return (
+            self._label_edit.text().strip(),
+            str(self._color_button.property("color_value") or "#1F7A8C"),
+            self._apply_to_project.isChecked() if self._show_apply_to_project else False,
+        )
 
 
 class ExportOptionsDialog(QDialog):

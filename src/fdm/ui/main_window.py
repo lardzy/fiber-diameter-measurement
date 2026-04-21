@@ -541,7 +541,7 @@ class MainWindow(QMainWindow):
         self.add_group_action.setIcon(themed_icon("add", color="#7BD389"))
         self.add_group_action.triggered.connect(self.add_fiber_group)
 
-        self.rename_group_action = QAction("重命名当前类别", self)
+        self.rename_group_action = QAction("编辑当前类别", self)
         self.rename_group_action.setIcon(themed_icon("rename", color="#D7E3FC"))
         self.rename_group_action.triggered.connect(self.rename_active_group)
 
@@ -1243,7 +1243,7 @@ class MainWindow(QMainWindow):
         self._add_group_button.setIcon(themed_icon("add", color="#7BD389"))
         self._add_group_button.clicked.connect(self.add_fiber_group)
         self._add_group_button.setMinimumWidth(104)
-        self._rename_group_button = QPushButton("重命名")
+        self._rename_group_button = QPushButton("编辑")
         self._rename_group_button.setIcon(themed_icon("rename", color="#D7E3FC"))
         self._rename_group_button.clicked.connect(self.rename_active_group)
         self._rename_group_button.setMinimumWidth(92)
@@ -3377,17 +3377,21 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None:
             return
-        dialog = FiberGroupDialog(self, title="新增类别")
+        dialog = FiberGroupDialog(
+            self,
+            title="新增类别",
+            initial_color=self._next_group_color(document),
+        )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        label, apply_to_project = dialog.values()
+        label, selected_color, apply_to_project = dialog.values()
         token = normalize_group_label(label)
         if apply_to_project and not token:
             QMessageBox.warning(self, "新增类别", "应用到当前项目全局时，类别名称不能为空。")
             return
 
         existing_group = document.find_group_by_label(token) if token else None
-        color = existing_group.color if existing_group is not None else self._next_group_color(document)
+        color = existing_group.color if existing_group is not None else selected_color
         template_added = False
         if apply_to_project:
             template_added = self._ensure_project_group_template(label=token, color=color)
@@ -3430,12 +3434,24 @@ class MainWindow(QMainWindow):
         group = document.get_group(document.active_group_id)
         if group is None:
             return
-        label, ok = QInputDialog.getText(self, "重命名类别", "类别名称（可留空）", text=group.label)
-        if not ok:
+        dialog = FiberGroupDialog(
+            self,
+            title="编辑类别",
+            initial_label=group.label,
+            initial_color=group.color,
+            apply_to_project_default=False,
+            show_apply_to_project=False,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
             return
+        label, selected_color, _apply_to_project = dialog.values()
         target_label = normalize_group_label(label)
+        selected_qcolor = QColor(selected_color)
+        target_color = selected_qcolor.name() if selected_qcolor.isValid() else selected_color.strip() or group.color
         current_label = normalize_group_label(group.label)
-        if target_label == current_label:
+        current_qcolor = QColor(group.color)
+        current_color = current_qcolor.name() if current_qcolor.isValid() else group.color
+        if target_label == current_label and target_color == current_color:
             return
         merge_target = document.find_group_by_label(target_label) if target_label else None
         if merge_target is not None and merge_target.id != group.id:
@@ -3473,14 +3489,15 @@ class MainWindow(QMainWindow):
                 return
             original_label = normalize_group_label(target.label)
             target.label = target_label
+            target.color = target_color
             if original_label and original_label != target_label and self._project_group_template_for_label(original_label) is not None:
                 document.suppress_project_group_label(original_label)
             if self._project_group_template_for_label(target_label) is not None:
                 document.unsuppress_project_group_label(target_label)
 
-        changed = self._apply_document_change(document, "重命名类别", mutate_rename)
+        changed = self._apply_document_change(document, "编辑类别", mutate_rename)
         if changed:
-            self.statusBar().showMessage("类别已重命名", 3000)
+            self.statusBar().showMessage("类别已更新", 3000)
 
     def delete_active_group(self) -> None:
         document = self.current_document()

@@ -1943,7 +1943,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 return dialog_self.DialogCode.Accepted
 
             def fake_values(dialog_self):
-                return ("棉", True)
+                return ("棉", "#1F7A8C", True)
 
             with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
                 window.add_fiber_group()
@@ -1973,7 +1973,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 return dialog_self.DialogCode.Accepted
 
             def fake_values(dialog_self):
-                return ("棉", False)
+                return ("棉", "#1F7A8C", False)
 
             with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
                 window.add_fiber_group()
@@ -1985,8 +1985,48 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog.close()
             window.close()
 
-    def test_rename_group_to_existing_merges_measurements(self) -> None:
+    def test_group_action_button_uses_edit_label(self) -> None:
         window = MainWindow()
+        try:
+            self.assertEqual(window._rename_group_button.text(), "编辑")
+            self.assertEqual(window.rename_group_action.text(), "编辑当前类别")
+        finally:
+            window.close()
+
+    def test_edit_group_updates_name_and_color(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_edit_color.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉花", "#E07A5F", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            updated = document.get_group(group.id)
+            self.assertIsNotNone(updated)
+            self.assertEqual(updated.label, "棉花")
+            self.assertEqual(updated.color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_edit_group_to_existing_merges_measurements(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
         try:
             image = QImage(220, 140, QImage.Format.Format_RGB32)
             image.fill(QColor("#FFFFFF"))
@@ -2006,7 +2046,14 @@ class CanvasAndExportTests(unittest.TestCase):
             document.set_active_group(hemp.id)
             self._load_document_into_window(window, document, image)
 
-            with patch("fdm.ui.main_window.QInputDialog.getText", return_value=("棉", True)), patch(
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values), patch(
                 "fdm.ui.main_window.QMessageBox.question",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
@@ -2015,7 +2062,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
             self.assertEqual(document.measurements[0].fiber_group_id, cotton.id)
             self.assertEqual(document.active_group_id, cotton.id)
+            self.assertEqual(document.get_group(cotton.id).color, "#1F7A8C")
         finally:
+            for dialog in dialogs:
+                dialog.close()
             window.close()
 
     def test_delete_project_global_group_adds_local_suppression(self) -> None:
