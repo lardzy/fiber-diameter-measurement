@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPalette
-    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -1292,12 +1292,18 @@ class CanvasAndExportTests(unittest.TestCase):
             palette = strip.palette()
             palette.setColor(QPalette.ColorRole.Window, QColor("#F7F8FA"))
             strip.setPalette(palette)
+            action = QAction("浏览", strip)
+            primary_button = strip.addModeAction("select", action)
+            context_button = QToolButton(strip)
+            context_button.setProperty("contextTool", True)
             strip._apply_theme_styles()
 
             stylesheet = strip.styleSheet()
             self.assertIn("background: #F5F7FA;", stylesheet)
             self.assertIn("color: #1F2933;", stylesheet)
             self.assertIn("background: #DDF3EF;", stylesheet)
+            self.assertEqual(primary_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
+            self.assertEqual(context_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
         finally:
             strip.close()
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
+    QApplication,
     QComboBox,
     QHBoxLayout,
     QLayout,
@@ -44,6 +45,15 @@ def _repolish(widget: QWidget) -> None:
 
 def _is_dark_palette(widget: QWidget) -> bool:
     return widget.palette().color(QPalette.ColorRole.Window).lightnessF() < 0.5
+
+
+def _application_palette(widget: QWidget) -> QPalette:
+    app = QApplication.instance()
+    return app.palette() if app is not None else widget.palette()
+
+
+def _application_palette_is_dark(widget: QWidget) -> bool:
+    return _application_palette(widget).color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
 
 class MeasurementGroupComboBox(QComboBox):
@@ -545,7 +555,7 @@ class OverlayToolSplitButton(QWidget):
         self._menu.popup(self.mapToGlobal(QPoint(0, self.height() + 6)))
 
     def _theme_colors(self) -> dict[str, QColor]:
-        if _is_dark_palette(self):
+        if _application_palette_is_dark(self):
             return {
                 "checked_fill": QColor("#12343B"),
                 "checked_border": QColor("#2A9D8F"),
@@ -774,10 +784,11 @@ class MeasurementToolStrip(QWidget):
         root_layout.addWidget(self._context_host)
 
     def _build_stylesheet(self) -> str:
-        if _is_dark_palette(self):
+        if _application_palette_is_dark(self):
             strip_background = "#34373C"
             strip_border = "rgba(255, 255, 255, 18)"
             primary_text = "#F3F4F6"
+            primary_disabled_text = "#9AA5B1"
             primary_hover = "rgba(255, 255, 255, 14)"
             primary_pressed = "rgba(255, 255, 255, 20)"
             primary_checked_background = "#12343B"
@@ -786,6 +797,7 @@ class MeasurementToolStrip(QWidget):
             context_tool_border = "rgba(255, 255, 255, 24)"
             context_tool_background = "rgba(255, 255, 255, 8)"
             context_tool_text = "#F3F4F6"
+            context_tool_disabled_text = "#9AA5B1"
             context_tool_hover = "rgba(255, 255, 255, 16)"
             context_tool_pressed = "rgba(255, 255, 255, 20)"
             chip_background = "#F6F1E8"
@@ -797,6 +809,7 @@ class MeasurementToolStrip(QWidget):
             strip_background = "#F5F7FA"
             strip_border = "rgba(17, 24, 39, 22)"
             primary_text = "#1F2933"
+            primary_disabled_text = "#51606F"
             primary_hover = "rgba(31, 41, 51, 10)"
             primary_pressed = "rgba(31, 41, 51, 16)"
             primary_checked_background = "#DDF3EF"
@@ -805,6 +818,7 @@ class MeasurementToolStrip(QWidget):
             context_tool_border = "rgba(17, 24, 39, 16)"
             context_tool_background = "rgba(31, 41, 51, 4)"
             context_tool_text = "#1F2933"
+            context_tool_disabled_text = "#51606F"
             context_tool_hover = "rgba(31, 41, 51, 9)"
             context_tool_pressed = "rgba(31, 41, 51, 14)"
             chip_background = "#F5EFD9"
@@ -837,6 +851,9 @@ class MeasurementToolStrip(QWidget):
                 background: {primary_checked_background};
                 color: {primary_checked_text};
                 border: 1px solid {primary_checked_border};
+            }}
+            QToolButton[primaryTool="true"]:disabled {{
+                color: {primary_disabled_text};
             }}
             QToolButton[primaryTool="true"][compactTool="true"] {{
                 padding: 0;
@@ -880,7 +897,32 @@ class MeasurementToolStrip(QWidget):
                 color: {primary_checked_text};
                 border: 1px solid {primary_checked_border};
             }}
+            QToolButton[contextTool="true"]:disabled {{
+                color: {context_tool_disabled_text};
+            }}
         """
+
+    def _apply_button_palette(self, button: QToolButton) -> None:
+        dark_theme = _application_palette_is_dark(self)
+        if button.property("primaryTool"):
+            normal_color = "#F3F4F6" if dark_theme else "#1F2933"
+            disabled_color = "#9AA5B1" if dark_theme else "#51606F"
+        elif button.property("contextTool"):
+            normal_color = "#F3F4F6" if dark_theme else "#1F2933"
+            disabled_color = "#9AA5B1" if dark_theme else "#51606F"
+        else:
+            return
+
+        palette = QPalette(button.palette())
+        for role in (
+            QPalette.ColorRole.ButtonText,
+            QPalette.ColorRole.WindowText,
+            QPalette.ColorRole.Text,
+        ):
+            palette.setColor(QPalette.ColorGroup.Active, role, QColor(normal_color))
+            palette.setColor(QPalette.ColorGroup.Inactive, role, QColor(normal_color))
+            palette.setColor(QPalette.ColorGroup.Disabled, role, QColor(disabled_color))
+        button.setPalette(palette)
 
     def _apply_theme_styles(self) -> None:
         if self._theme_updating:
@@ -889,6 +931,7 @@ class MeasurementToolStrip(QWidget):
         try:
             self.setStyleSheet(self._build_stylesheet())
             for button in self.findChildren(QToolButton):
+                self._apply_button_palette(button)
                 _repolish(button)
             for button in self._mode_buttons.values():
                 button.update()

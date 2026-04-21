@@ -1515,7 +1515,9 @@ class MainWindow(QMainWindow):
         return text or "0"
 
     def _is_dark_palette(self) -> bool:
-        return self.palette().color(QPalette.ColorRole.Window).lightnessF() < 0.5
+        app = QApplication.instance()
+        palette = app.palette() if app is not None else self.palette()
+        return palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
     def _status_color(self, kind: str) -> str:
         if kind == "danger":
@@ -3242,6 +3244,7 @@ class MainWindow(QMainWindow):
         self._app_settings = new_settings
         self._apply_theme_mode()
         refresh_widget_theme(dialog)
+        self._refresh_theme_sensitive_icons()
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip._apply_theme_styles()
         self._apply_tool_menu_stylesheets()
