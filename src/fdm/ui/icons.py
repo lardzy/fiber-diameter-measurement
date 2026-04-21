@@ -40,6 +40,8 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "preset_apply": "fa5s.check",
     "select": "fa5s.mouse-pointer",
     "manual": "mdi6.vector-line",
+    "continuous_manual": "mdi6.polyline",
+    "count": "mdi6.circle-small",
     "snap": "mdi6.magnet",
     "magic_segment": "fa5s.magic",
     "polygon_area": "mdi6.draw-polygon",
@@ -146,6 +148,40 @@ def _draw_snap(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.drawEllipse(center, 3.0, 3.0)
     painter.drawLine(QPointF(center.x() - 4.6, center.y()), QPointF(center.x() + 4.6, center.y()))
     painter.drawLine(QPointF(center.x(), center.y() - 4.6), QPointF(center.x(), center.y() + 4.6))
+
+
+def _draw_continuous_manual(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    points = [
+        QPointF(rect.left() + rect.width() * 0.16, rect.bottom() - rect.height() * 0.22),
+        QPointF(rect.left() + rect.width() * 0.38, rect.top() + rect.height() * 0.28),
+        QPointF(rect.left() + rect.width() * 0.58, rect.center().y()),
+        QPointF(rect.right() - rect.width() * 0.16, rect.top() + rect.height() * 0.22),
+    ]
+    painter.setPen(_pen(QColor("#0B0B0B"), 3.0))
+    painter.drawPolyline(QPolygonF(points))
+    painter.setPen(_pen(color, 1.9))
+    painter.drawPolyline(QPolygonF(points))
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor("#0B0B0B"))
+    for point in points:
+        painter.drawEllipse(point, 2.8, 2.8)
+    painter.setBrush(color)
+    for point in points:
+        painter.drawEllipse(point, 1.7, 1.7)
+
+
+def _draw_count(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    center = rect.center()
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor("#0B0B0B"))
+    painter.drawEllipse(center, 5.2, 5.2)
+    painter.setBrush(QColor("#FFFFFF"))
+    painter.drawEllipse(center, 3.8, 3.8)
+    painter.setBrush(color)
+    painter.drawEllipse(center, 2.5, 2.5)
+    painter.setPen(_pen(color, 1.4))
+    painter.drawLine(QPointF(center.x() + 3.8, center.y() - 5.2), QPointF(center.x() + 3.8, center.y() - 0.8))
+    painter.drawLine(QPointF(center.x() + 1.6, center.y() - 3.0), QPointF(center.x() + 6.0, center.y() - 3.0))
 
 
 def _draw_calibration(painter: QPainter, color: QColor, rect: QRectF) -> None:
@@ -334,6 +370,8 @@ def _draw_overlay_arrow(painter: QPainter, color: QColor, rect: QRectF) -> None:
 _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "select": _draw_select,
     "manual": _draw_manual,
+    "continuous_manual": _draw_continuous_manual,
+    "count": _draw_count,
     "snap": _draw_snap,
     "magic_segment": _draw_magic_segment,
     "polygon_area": _draw_polygon_area,

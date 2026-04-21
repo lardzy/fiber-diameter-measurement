@@ -800,6 +800,76 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(measurement.area_px or 0.0, 152.0)
         self.assertAlmostEqual(measurement.area_unit or 0.0, 1.52)
 
+    def test_polyline_and_count_measurements_roundtrip_keep_new_geometry(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_polyline_roundtrip.png",
+            image_size=(200, 160),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=[Point(0, 0), Point(30, 0), Point(30, 40)],
+                status="continuous_manual",
+            )
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="count",
+                measurement_kind="count",
+                point_px=Point(12, 18),
+                status="count",
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "polyline_roundtrip.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        polyline = loaded.documents[0].measurements[0]
+        count = loaded.documents[0].measurements[1]
+        self.assertEqual(polyline.measurement_kind, "polyline")
+        self.assertEqual(polyline.mode, "continuous_manual")
+        self.assertEqual(len(polyline.polyline_px), 3)
+        self.assertAlmostEqual(polyline.diameter_px or 0.0, 70.0)
+        self.assertEqual(count.measurement_kind, "count")
+        self.assertEqual(count.mode, "count")
+        self.assertIsNotNone(count.point_px)
+        self.assertAlmostEqual(count.point_px.x, 12.0)
+        self.assertAlmostEqual(count.point_px.y, 18.0)
+
+    def test_measurement_from_dict_is_backward_compatible_without_polyline_or_point_fields(self) -> None:
+        measurement = Measurement.from_dict(
+            {
+                "id": "meas_legacy",
+                "image_id": "image_1",
+                "fiber_group_id": None,
+                "measurement_kind": "line",
+                "mode": "continuous",
+                "line_px": {"start": {"x": 1.0, "y": 2.0}, "end": {"x": 5.0, "y": 2.0}},
+            }
+        )
+
+        self.assertEqual(measurement.mode, "continuous_manual")
+        self.assertEqual(measurement.polyline_px, [])
+        self.assertIsNone(measurement.point_px)
+
     def test_magic_segment_display_geometry_cache_is_not_persisted(self) -> None:
         dense_outer = [
             Point(0, 0),

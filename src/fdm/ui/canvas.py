@@ -21,6 +21,7 @@ from fdm.geometry import (
     point_in_polygon,
     point_near_bounds,
     point_to_area_rings_edge_distance,
+    point_to_polyline_distance,
     point_to_polygon_edge_distance,
     polygon_translate,
     snap_to_pixel_center,
@@ -224,6 +225,7 @@ class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
+    pathSessionChanged = Signal(str)
     overlayCreateRequested = Signal(str, object)
     overlaySelected = Signal(str, object)
     overlayEdited = Signal(str, str, object)
@@ -294,6 +296,8 @@ class DocumentCanvas(QWidget):
     def set_document(self, document: ImageDocument, image: QImage) -> None:
         self._document = document
         self._image = image
+        self._cancel_area_drawing()
+        self._cancel_line_drawing()
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
@@ -311,9 +315,11 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        document_id = self.document_id
         self._document = None
         self._image = None
         self._cancel_line_drawing()
+        self._cancel_area_drawing()
         self._dragging_handle = None
         self._drag_preview_line = None
         self._dragging_area_handle = None
@@ -331,6 +337,8 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        if document_id is not None:
+            self.pathSessionChanged.emit(document_id)
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -428,6 +436,35 @@ class DocumentCanvas(QWidget):
 
     def is_fiber_quick_busy(self) -> bool:
         return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
+
+    def has_pending_path_drawing(self) -> bool:
+        return bool(self._drawing_polygon_points or self._drawing_freehand_active)
+
+    def can_commit_pending_path(self) -> bool:
+        if self._drawing_freehand_active:
+            return False
+        if self._tool_mode == "polygon_area":
+            return len(self._drawing_polygon_points) >= 3
+        if self._tool_mode == "continuous_manual":
+            return len(self._drawing_polygon_points) >= 2
+        return False
+
+    def commit_pending_path(self) -> bool:
+        if not self.can_commit_pending_path():
+            return False
+        if self._tool_mode == "polygon_area":
+            self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
+            return True
+        if self._tool_mode == "continuous_manual":
+            self._complete_continuous_measurement(list(self._drawing_polygon_points))
+            return True
+        return False
+
+    def cancel_pending_path(self) -> bool:
+        if not self.has_pending_path_drawing():
+            return False
+        self._cancel_area_drawing()
+        return True
 
     def _begin_magic_segment_request(self, stage: str) -> dict[str, object] | None:
         positive_points = list(self._magic_segment.positive_points_for_stage(stage))
@@ -944,6 +981,13 @@ class DocumentCanvas(QWidget):
             self.set_temporary_grab_pressed(True)
             event.accept()
             return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F)
+            and self.commit_pending_path()
+        ):
+            event.accept()
+            return
         if event.key() == Qt.Key.Key_Escape and is_magic_segment_tool_mode(self._tool_mode) and self.has_magic_segment_session():
             self.clear_magic_segment_session()
             event.accept()
@@ -957,8 +1001,7 @@ class DocumentCanvas(QWidget):
             self.update()
             event.accept()
             return
-        if event.key() == Qt.Key.Key_Escape and (self._drawing_polygon_points or self._drawing_freehand_active):
-            self._cancel_area_drawing()
+        if event.key() == Qt.Key.Key_Escape and self.cancel_pending_path():
             event.accept()
             return
         super().keyPressEvent(event)
@@ -1156,23 +1199,70 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "polygon_area":
             if not self._point_in_image(image_point):
                 return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._can_close_polygon_with_point(point):
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 return
             self._drawing_polygon_points.append(point)
             self._area_hover_point = point
+            self.pathSessionChanged.emit(self._document.id)
+            self.update()
+            return
+
+        if self._tool_mode == "continuous_manual":
+            if not self._point_in_image(image_point):
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            if self._drawing_polygon_points and distance(self._drawing_polygon_points[-1], point) < 1.0:
+                return
+            self._drawing_polygon_points.append(point)
+            self._area_hover_point = point
+            self.pathSessionChanged.emit(self._document.id)
             self.update()
             return
 
         if self._tool_mode == "freehand_area":
             if not self._point_in_image(image_point):
                 return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             self._drawing_polygon_points = [point]
             self._area_hover_point = point
             self._drawing_freehand_active = True
             self._freehand_last_sample_at = time.monotonic()
+            self.pathSessionChanged.emit(self._document.id)
+            self.update()
+            return
+
+        if self._tool_mode == "count":
+            if not self._point_in_image(image_point):
+                return
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            self._document.select_overlay_annotation(None)
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            self.lineCommitted.emit(
+                self._document.id,
+                "count",
+                {
+                    "measurement_kind": "count",
+                    "point_px": point,
+                },
+            )
             self.update()
             return
 
@@ -1299,7 +1389,7 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
-        if self._tool_mode == "polygon_area" and self._drawing_polygon_points:
+        if self._tool_mode in {"polygon_area", "continuous_manual"} and self._drawing_polygon_points:
             self._area_hover_point = self._clamp_to_image(image_point, pixel_center=False)
             self.update()
             return
@@ -1555,12 +1645,21 @@ class DocumentCanvas(QWidget):
             return
         if self._read_only:
             return
-        if event.button() == Qt.MouseButton.LeftButton and self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and self._tool_mode in {"polygon_area", "continuous_manual"}
+            and len(self._drawing_polygon_points) >= 1
+        ):
             point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
             if distance(point, self._drawing_polygon_points[-1]) > 1.0:
                 self._drawing_polygon_points.append(point)
-            if len(self._drawing_polygon_points) >= 3:
+                self.pathSessionChanged.emit(self._document.id)
+            if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 3:
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
+                event.accept()
+                return
+            if self._tool_mode == "continuous_manual" and len(self._drawing_polygon_points) >= 2:
+                self._complete_continuous_measurement(list(self._drawing_polygon_points))
                 event.accept()
                 return
         super().mouseDoubleClickEvent(event)
@@ -1646,10 +1745,10 @@ class DocumentCanvas(QWidget):
             painter.setPen(QPen(QColor("#0B0B0B"), 1))
             for point in preview_points:
                 painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
-            if self._tool_mode == "polygon_area" and self._area_hover_point is not None and self._drawing_polygon_points:
+            if self._tool_mode in {"polygon_area", "continuous_manual"} and self._area_hover_point is not None and self._drawing_polygon_points:
                 painter.setPen(QPen(QColor("#F4D35E"), 1.2, Qt.PenStyle.DashLine))
                 painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
-                if len(self._drawing_polygon_points) >= 2:
+                if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
                     painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
 
         preview_overlay = self._drag_overlay_preview
@@ -1779,15 +1878,31 @@ class DocumentCanvas(QWidget):
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
         for measurement in reversed(self._document.measurements):
-            if measurement.measurement_kind != "line":
+            if measurement.measurement_kind == "line":
+                line = measurement.effective_line()
+                bounds = (
+                    min(line.start.x, line.end.x),
+                    min(line.start.y, line.end.y),
+                    max(line.start.x, line.end.x),
+                    max(line.start.y, line.end.y),
+                )
+                if not point_near_bounds(image_point, bounds, tolerance):
+                    continue
+                if self._point_to_segment_distance(image_point, line) <= tolerance:
+                    return measurement.id
                 continue
-            line = measurement.effective_line()
-            bounds = (min(line.start.x, line.end.x), min(line.start.y, line.end.y),
-                      max(line.start.x, line.end.x), max(line.start.y, line.end.y))
-            if not point_near_bounds(image_point, bounds, tolerance):
+            if measurement.measurement_kind == "polyline" and len(measurement.polyline_px) >= 2:
+                xs = [point.x for point in measurement.polyline_px]
+                ys = [point.y for point in measurement.polyline_px]
+                bounds = (min(xs), min(ys), max(xs), max(ys))
+                if not point_near_bounds(image_point, bounds, tolerance):
+                    continue
+                if point_to_polyline_distance(image_point, measurement.polyline_px) <= tolerance:
+                    return measurement.id
                 continue
-            if self._point_to_segment_distance(image_point, line) <= tolerance:
-                return measurement.id
+            if measurement.measurement_kind == "count" and measurement.point_px is not None:
+                if distance(image_point, measurement.point_px) <= tolerance:
+                    return measurement.id
         return None
 
     def _selected_endpoint_tolerance(self) -> float:
@@ -2279,6 +2394,7 @@ class DocumentCanvas(QWidget):
         painter.drawRect(rect)
 
     def _cancel_area_drawing(self) -> None:
+        document_id = self.document_id
         self._drawing_polygon_points = []
         self._area_hover_point = None
         self._drawing_freehand_active = False
@@ -2287,6 +2403,8 @@ class DocumentCanvas(QWidget):
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
         self._drag_area_press_point = None
+        if document_id is not None:
+            self.pathSessionChanged.emit(document_id)
         self.update()
 
     def _append_freehand_point(self, point: Point) -> None:
@@ -2316,6 +2434,20 @@ class DocumentCanvas(QWidget):
             {
                 "measurement_kind": "area",
                 "polygon_px": polygon_points,
+            },
+        )
+
+    def _complete_continuous_measurement(self, polyline_points: list[Point]) -> None:
+        document_id = self._document.id if self._document is not None else None
+        self._cancel_area_drawing()
+        if document_id is None or len(polyline_points) < 2:
+            return
+        self.lineCommitted.emit(
+            document_id,
+            "continuous_manual",
+            {
+                "measurement_kind": "polyline",
+                "polyline_px": polyline_points,
             },
         )
 

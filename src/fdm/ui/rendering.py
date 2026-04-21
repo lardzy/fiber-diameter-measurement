@@ -365,6 +365,29 @@ def draw_measurements(
                 show_handles=show_area_handles and measurement.id == selected_measurement_id,
             )
             continue
+        if measurement.measurement_kind == "polyline":
+            draw_polyline_measurement(
+                painter,
+                document,
+                measurement,
+                image_to_output,
+                settings,
+                line_width=line_width,
+                endpoint_radius=endpoint_radius,
+                selected=measurement.id == selected_measurement_id,
+            )
+            continue
+        if measurement.measurement_kind == "count":
+            draw_count_measurement(
+                painter,
+                document,
+                measurement,
+                image_to_output,
+                settings,
+                endpoint_radius=endpoint_radius,
+                selected=measurement.id == selected_measurement_id,
+            )
+            continue
         line = measurement.effective_line()
         start_point = image_to_output(line.start)
         end_point = image_to_output(line.end)
@@ -403,6 +426,88 @@ def draw_measurements(
         )
         if settings.show_measurement_labels:
             draw_measurement_label(painter, measurement, document, settings, start_point, end_point)
+
+
+def draw_polyline_measurement(
+    painter: QPainter,
+    document: ImageDocument,
+    measurement: Measurement,
+    image_to_output,
+    settings: AppSettings,
+    *,
+    line_width: float,
+    endpoint_radius: float,
+    selected: bool,
+) -> None:
+    if len(measurement.polyline_px) < 2:
+        return
+    path_points = [image_to_output(point) for point in measurement.polyline_px]
+    color = measurement_color(document, measurement, settings)
+    actual_width = line_width * (1.55 if selected else 1.0)
+    outline_width = max(actual_width * 1.75, actual_width + 1.0)
+    painter.setPen(
+        QPen(
+            QColor("#0B0B0B"),
+            outline_width,
+            Qt.PenStyle.SolidLine,
+            Qt.PenCapStyle.RoundCap,
+            Qt.PenJoinStyle.RoundJoin,
+        )
+    )
+    painter.drawPolyline(QPolygonF(path_points))
+    painter.setPen(
+        QPen(
+            color,
+            actual_width,
+            Qt.PenStyle.SolidLine,
+            Qt.PenCapStyle.RoundCap,
+            Qt.PenJoinStyle.RoundJoin,
+        )
+    )
+    painter.drawPolyline(QPolygonF(path_points))
+    if selected:
+        painter.setBrush(QColor("#FFFFFF"))
+        painter.setPen(QPen(QColor("#0B0B0B"), 1.2))
+        for point in path_points:
+            painter.drawEllipse(point, endpoint_radius * 0.72, endpoint_radius * 0.72)
+    if settings.show_measurement_labels:
+        draw_polyline_measurement_label(
+            painter,
+            measurement,
+            document,
+            settings,
+            path_points,
+            image_to_output,
+        )
+
+
+def draw_count_measurement(
+    painter: QPainter,
+    document: ImageDocument,
+    measurement: Measurement,
+    image_to_output,
+    settings: AppSettings,
+    *,
+    endpoint_radius: float,
+    selected: bool,
+) -> None:
+    if measurement.point_px is None:
+        return
+    point = image_to_output(measurement.point_px)
+    color = measurement_color(document, measurement, settings)
+    outline_radius = endpoint_radius * (1.7 if selected else 1.35)
+    inner_radius = endpoint_radius * (1.1 if selected else 0.9)
+    painter.setBrush(QColor("#0B0B0B"))
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.drawEllipse(point, outline_radius, outline_radius)
+    if selected:
+        painter.setBrush(QColor("#FFFFFF"))
+        painter.drawEllipse(point, inner_radius * 1.02, inner_radius * 1.02)
+        painter.setBrush(color)
+        painter.drawEllipse(point, inner_radius * 0.72, inner_radius * 0.72)
+        return
+    painter.setBrush(color)
+    painter.drawEllipse(point, inner_radius, inner_radius)
 
 
 def draw_area_measurement(
@@ -508,6 +613,41 @@ def draw_measurement_label(
         painter.drawText(parallel_rect, Qt.AlignmentFlag.AlignCenter, text)
         painter.restore()
         return
+    if settings.measurement_label_background_enabled:
+        painter.fillRect(rect, QColor(16, 24, 32, 168))
+    painter.setPen(QPen(QColor("#101820"), 3))
+    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+    painter.setPen(QPen(QColor(settings.measurement_label_color), 1))
+    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+
+
+def draw_polyline_measurement_label(
+    painter: QPainter,
+    measurement: Measurement,
+    document: ImageDocument,
+    settings: AppSettings,
+    path_points: list[QPointF],
+    image_to_output,
+) -> None:
+    if len(path_points) < 2:
+        return
+    font = measurement_label_font(settings)
+    painter.setFont(font)
+    metrics = QFontMetricsF(font)
+    text = measurement_display_text_with_settings(measurement, document, settings)
+    text_width = metrics.horizontalAdvance(text)
+    text_height = metrics.height()
+    center_point = measurement.geometry_center()
+    center = image_to_output(center_point)
+    axis = _normalize(path_points[-1].x() - path_points[0].x(), path_points[-1].y() - path_points[0].y())
+    normal_axis = _normal(axis)
+    offset = max(12.0, text_height * 0.75)
+    rect = QRectF(
+        center.x() - (text_width / 2.0) - 6.0 + (normal_axis[0] * offset),
+        center.y() - (text_height / 2.0) - 3.0 + (normal_axis[1] * offset),
+        text_width + 12.0,
+        text_height + 6.0,
+    )
     if settings.measurement_label_background_enabled:
         painter.fillRect(rect, QColor(16, 24, 32, 168))
     painter.setPen(QPen(QColor("#101820"), 3))

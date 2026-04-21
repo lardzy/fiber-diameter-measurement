@@ -27,6 +27,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QProgressDialog,
     QPushButton,
+    QRadioButton,
     QScrollArea,
     QSizePolicy,
     QSplitter,
@@ -311,6 +312,8 @@ class MainWindow(QMainWindow):
         self._canvases: dict[str, DocumentCanvas] = {}
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
+        self._manual_tool_mode = "manual"
+        self._area_tool_mode = "polygon_area"
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._group_list_rebuilding = False
         self._table_rebuilding = False
@@ -323,6 +326,12 @@ class MainWindow(QMainWindow):
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._magic_tool_menu: QMenu | None = None
         self._magic_subtool_actions: dict[str, QAction] = {}
+        self._manual_tool_button: OverlayToolSplitButton | None = None
+        self._manual_tool_menu: QMenu | None = None
+        self._manual_subtool_actions: dict[str, QAction] = {}
+        self._area_tool_button: OverlayToolSplitButton | None = None
+        self._area_tool_menu: QMenu | None = None
+        self._area_subtool_actions: dict[str, QAction] = {}
         self._overlay_tool_button: OverlayToolSplitButton | None = None
         self._overlay_tool_menu: QMenu | None = None
         self._overlay_subtool_actions: dict[str, QAction] = {}
@@ -361,6 +370,9 @@ class MainWindow(QMainWindow):
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
         self._preview_analysis_widget: QWidget | None = None
+        self._path_controls_widget: QWidget | None = None
+        self._path_complete_button: QToolButton | None = None
+        self._path_cancel_button: QToolButton | None = None
         self._focus_stack_button: QToolButton | None = None
         self._map_build_button: QToolButton | None = None
         self._map_build_status_label: QLabel | None = None
@@ -372,6 +384,8 @@ class MainWindow(QMainWindow):
         self._add_group_button: QPushButton | None = None
         self._rename_group_button: QPushButton | None = None
         self.delete_group_button: QPushButton | None = None
+        self._delete_group_measurements_button: QPushButton | None = None
+        self._delete_all_measurements_button: QPushButton | None = None
         self._center_stack: QStackedWidget | None = None
         self._preview_page: QWidget | None = None
         self._preview_display_stack: QStackedWidget | None = None
@@ -596,7 +610,9 @@ class MainWindow(QMainWindow):
         self._mode_actions: dict[str, QAction] = {}
         for mode, label in [
             ("select", "浏览"),
-            ("manual", "手动测量"),
+            ("manual", "手动线段"),
+            ("continuous_manual", "连续测量"),
+            ("count", "计数"),
             ("snap", "边缘吸附"),
             ("polygon_area", "多边形面积"),
             ("freehand_area", "自由形状面积"),
@@ -614,6 +630,8 @@ class MainWindow(QMainWindow):
         self._mode_actions["select"].setChecked(True)
         self._mode_actions["select"].setIcon(themed_icon("select", color="#D4D8DD"))
         self._mode_actions["manual"].setIcon(themed_icon("manual", color="#F4D35E"))
+        self._mode_actions["continuous_manual"].setIcon(themed_icon("continuous_manual", color="#F4D35E"))
+        self._mode_actions["count"].setIcon(themed_icon("count", color="#F08B95"))
         self._mode_actions["snap"].setIcon(themed_icon("snap", color="#7BD389"))
         self._mode_actions["polygon_area"].setIcon(themed_icon("polygon_area", color="#7BD389"))
         self._mode_actions["freehand_area"].setIcon(themed_icon("freehand_area", color="#9C89B8"))
@@ -702,14 +720,13 @@ class MainWindow(QMainWindow):
 
     def _build_measurement_tool_strip(self) -> MeasurementToolStrip:
         strip = MeasurementToolStrip(self)
-        for mode in [
-            "select",
-            "manual",
-            "snap",
-            "polygon_area",
-            "freehand_area",
-        ]:
-            strip.addModeAction(mode, self._mode_actions[mode])
+        strip.addModeAction("select", self._mode_actions["select"])
+        self._manual_tool_button = self._build_manual_tool_button()
+        strip.addSplitModeButton("manual", self._manual_tool_button, aliases=["continuous_manual"])
+        strip.addModeAction("count", self._mode_actions["count"])
+        strip.addModeAction("snap", self._mode_actions["snap"])
+        self._area_tool_button = self._build_area_tool_button()
+        strip.addSplitModeButton("polygon_area", self._area_tool_button, aliases=["freehand_area"])
         self._magic_tool_button = self._build_magic_tool_button()
         strip.setMagicToolButton(self._magic_tool_button)
         strip.addModeAction("calibration", self._mode_actions["calibration"])
@@ -719,6 +736,8 @@ class MainWindow(QMainWindow):
         strip.setMagicContextWidget(self._magic_controls_widget)
         self._preview_analysis_widget = self._build_preview_analysis_controls()
         strip.setPreviewContextWidget(self._preview_analysis_widget)
+        self._path_controls_widget = self._build_path_drawing_controls()
+        strip.setPathContextWidget(self._path_controls_widget)
         strip.setActiveMode(self._tool_mode)
         return strip
 
@@ -793,6 +812,45 @@ class MainWindow(QMainWindow):
 
         return container
 
+    def _build_path_drawing_controls(self) -> QWidget:
+        container = QWidget(self)
+        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        container.setLayout(layout)
+
+        header_button = QToolButton(container)
+        header_button.setProperty("contextTool", True)
+        header_button.setText("路径测量")
+        header_button.setCursor(Qt.CursorShape.ArrowCursor)
+        header_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        header_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        layout.addWidget(header_button)
+
+        self._path_complete_button = QToolButton(container)
+        self._path_complete_button.setProperty("contextTool", True)
+        self._path_complete_button.setText("完成 (Enter / F)")
+        self._path_complete_button.clicked.connect(self._commit_active_path_drawing)
+        layout.addWidget(self._path_complete_button)
+
+        self._path_cancel_button = QToolButton(container)
+        self._path_cancel_button.setProperty("contextTool", True)
+        self._path_cancel_button.setText("取消 (Esc)")
+        self._path_cancel_button.clicked.connect(self._cancel_active_path_drawing)
+        layout.addWidget(self._path_cancel_button)
+
+        return container
+
+    def _manual_tool_definitions(self) -> list[tuple[str, str]]:
+        return [
+            ("manual", "手动线段"),
+            ("continuous_manual", "连续测量"),
+        ]
+
+    def _area_tool_definitions(self) -> list[tuple[str, str]]:
+        return [
+            ("polygon_area", "多边形面积"),
+            ("freehand_area", "自由形状面积"),
+        ]
+
     def _overlay_tool_definitions(self) -> list[tuple[str, str, str]]:
         return [
             (OverlayAnnotationKind.TEXT, "文字", "rename"),
@@ -808,6 +866,43 @@ class MainWindow(QMainWindow):
             (MagicSegmentToolMode.REFERENCE, "同类扩选"),
             (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
         ]
+
+    def _manual_tool_label(self, tool_mode: str) -> str:
+        for mode, label in self._manual_tool_definitions():
+            if mode == tool_mode:
+                return label
+        return "手动线段"
+
+    def _manual_tool_icon(self, tool_mode: str, *, active: bool = False) -> QIcon:
+        color = "#F7C948" if active else "#D9A72A"
+        if tool_mode == "continuous_manual":
+            return themed_icon("continuous_manual", color=color)
+        return themed_icon("manual", color=color)
+
+    def _activate_manual_tool(self, tool_mode: str) -> None:
+        if tool_mode not in {item[0] for item in self._manual_tool_definitions()}:
+            tool_mode = "manual"
+        self._manual_tool_mode = tool_mode
+        self.set_tool_mode(tool_mode)
+
+    def _area_tool_label(self, tool_mode: str) -> str:
+        for mode, label in self._area_tool_definitions():
+            if mode == tool_mode:
+                return label
+        return "多边形面积"
+
+    def _area_tool_icon(self, tool_mode: str, *, active: bool = False) -> QIcon:
+        if tool_mode == "freehand_area":
+            color = "#C2A1E6" if active else "#9C89B8"
+            return themed_icon("freehand_area", color=color)
+        color = "#7BD389" if active else "#5AAE69"
+        return themed_icon("polygon_area", color=color)
+
+    def _activate_area_tool(self, tool_mode: str) -> None:
+        if tool_mode not in {item[0] for item in self._area_tool_definitions()}:
+            tool_mode = "polygon_area"
+        self._area_tool_mode = tool_mode
+        self.set_tool_mode(tool_mode)
 
     def _magic_tool_label(self, tool_mode: str) -> str:
         for mode, label in self._magic_tool_definitions():
@@ -830,6 +925,105 @@ class MainWindow(QMainWindow):
         self._magic_tool_mode = tool_mode
         self.set_tool_mode(tool_mode)
 
+    def _build_split_menu_stylesheet(self, object_name: str, checked_rgba: str) -> str:
+        return f"""
+            QMenu#{object_name} {{
+                background: #23282E;
+                border: 1px solid rgba(255, 255, 255, 20);
+                border-radius: 12px;
+                padding: 8px;
+            }}
+            QMenu#{object_name}::item {{
+                min-height: 38px;
+                margin: 2px 0;
+                padding: 0 16px 0 12px;
+                border-radius: 8px;
+                color: #F3F4F6;
+                font-weight: 600;
+            }}
+            QMenu#{object_name}::item:selected {{
+                background: #2D343C;
+            }}
+            QMenu#{object_name}::item:checked {{
+                background: {checked_rgba};
+            }}
+            QMenu#{object_name}::icon {{
+                padding-left: 2px;
+            }}
+            QMenu#{object_name}::indicator {{
+                width: 0px;
+                height: 0px;
+            }}
+        """
+
+    def _build_manual_tool_button(self) -> OverlayToolSplitButton:
+        button = OverlayToolSplitButton(self)
+        button.setText("手动测量")
+        button.primaryTriggered.connect(lambda: self._activate_manual_tool(self._manual_tool_mode))
+
+        menu = QMenu(self)
+        menu.setObjectName("manualToolMenu")
+        menu.setStyleSheet(self._build_split_menu_stylesheet("manualToolMenu", "rgba(217, 167, 42, 41)"))
+        for tool_mode, label in self._manual_tool_definitions():
+            action = QAction(label, menu)
+            action.setCheckable(True)
+            action.setIcon(self._manual_tool_icon(tool_mode))
+            action.triggered.connect(lambda checked=False, manual_mode=tool_mode: self._activate_manual_tool(manual_mode))
+            menu.addAction(action)
+            self._manual_subtool_actions[tool_mode] = action
+        button.setMenu(menu)
+        self._manual_tool_menu = menu
+        self._sync_manual_tool_button()
+        return button
+
+    def _sync_manual_tool_button(self) -> None:
+        active_mode = self._tool_mode if self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()} else self._manual_tool_mode
+        icon = self._manual_tool_icon(active_mode, active=self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()})
+        tooltip = f"手动测量（当前：{self._manual_tool_label(active_mode)}）"
+        if self._manual_tool_button is not None:
+            self._manual_tool_button.blockSignals(True)
+            self._manual_tool_button.setChecked(self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()})
+            self._manual_tool_button.setCurrentTool(active_mode, icon)
+            self._manual_tool_button.setToolTip(tooltip)
+            self._manual_tool_button.blockSignals(False)
+        for tool_mode, action in self._manual_subtool_actions.items():
+            action.setChecked(tool_mode == active_mode)
+            action.setIcon(self._manual_tool_icon(tool_mode))
+
+    def _build_area_tool_button(self) -> OverlayToolSplitButton:
+        button = OverlayToolSplitButton(self)
+        button.setText("面积测量")
+        button.primaryTriggered.connect(lambda: self._activate_area_tool(self._area_tool_mode))
+
+        menu = QMenu(self)
+        menu.setObjectName("areaToolMenu")
+        menu.setStyleSheet(self._build_split_menu_stylesheet("areaToolMenu", "rgba(90, 174, 105, 41)"))
+        for tool_mode, label in self._area_tool_definitions():
+            action = QAction(label, menu)
+            action.setCheckable(True)
+            action.setIcon(self._area_tool_icon(tool_mode))
+            action.triggered.connect(lambda checked=False, area_mode=tool_mode: self._activate_area_tool(area_mode))
+            menu.addAction(action)
+            self._area_subtool_actions[tool_mode] = action
+        button.setMenu(menu)
+        self._area_tool_menu = menu
+        self._sync_area_tool_button()
+        return button
+
+    def _sync_area_tool_button(self) -> None:
+        active_mode = self._tool_mode if self._tool_mode in {mode for mode, _ in self._area_tool_definitions()} else self._area_tool_mode
+        icon = self._area_tool_icon(active_mode, active=self._tool_mode in {mode for mode, _ in self._area_tool_definitions()})
+        tooltip = f"面积测量（当前：{self._area_tool_label(active_mode)}）"
+        if self._area_tool_button is not None:
+            self._area_tool_button.blockSignals(True)
+            self._area_tool_button.setChecked(self._tool_mode in {mode for mode, _ in self._area_tool_definitions()})
+            self._area_tool_button.setCurrentTool(active_mode, icon)
+            self._area_tool_button.setToolTip(tooltip)
+            self._area_tool_button.blockSignals(False)
+        for tool_mode, action in self._area_subtool_actions.items():
+            action.setChecked(tool_mode == active_mode)
+            action.setIcon(self._area_tool_icon(tool_mode))
+
     def _build_magic_tool_button(self) -> OverlayToolSplitButton:
         button = OverlayToolSplitButton(self)
         button.setText(self._magic_tool_label(self._magic_tool_mode))
@@ -837,37 +1031,7 @@ class MainWindow(QMainWindow):
 
         menu = QMenu(self)
         menu.setObjectName("magicToolMenu")
-        menu.setStyleSheet(
-            """
-            QMenu#magicToolMenu {
-                background: #23282E;
-                border: 1px solid rgba(255, 255, 255, 20);
-                border-radius: 12px;
-                padding: 8px;
-            }
-            QMenu#magicToolMenu::item {
-                min-height: 38px;
-                margin: 2px 0;
-                padding: 0 16px 0 12px;
-                border-radius: 8px;
-                color: #F3F4F6;
-                font-weight: 600;
-            }
-            QMenu#magicToolMenu::item:selected {
-                background: #2D343C;
-            }
-            QMenu#magicToolMenu::item:checked {
-                background: rgba(217, 108, 117, 41);
-            }
-            QMenu#magicToolMenu::icon {
-                padding-left: 2px;
-            }
-            QMenu#magicToolMenu::indicator {
-                width: 0px;
-                height: 0px;
-            }
-            """
-        )
+        menu.setStyleSheet(self._build_split_menu_stylesheet("magicToolMenu", "rgba(217, 108, 117, 41)"))
         for tool_mode, label in self._magic_tool_definitions():
             action = QAction(label, menu)
             action.setCheckable(True)
@@ -1209,7 +1373,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         header = self.measurement_table.horizontalHeader()
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 100)
+        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 150)
         self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 80)
         self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 120)
         self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 70)
@@ -1220,6 +1384,7 @@ class MainWindow(QMainWindow):
         self.measurement_table.verticalHeader().setVisible(False)
         self.measurement_table.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.measurement_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self.measurement_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
@@ -1227,6 +1392,14 @@ class MainWindow(QMainWindow):
         self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
         measurement_layout.addWidget(self.delete_measurement_button)
+        self._delete_group_measurements_button = QPushButton("删除指定类别")
+        self._delete_group_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
+        self._delete_group_measurements_button.clicked.connect(self.delete_measurements_by_category)
+        measurement_layout.addWidget(self._delete_group_measurements_button)
+        self._delete_all_measurements_button = QPushButton("删除全部测量")
+        self._delete_all_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
+        self._delete_all_measurements_button.clicked.connect(self.delete_all_measurements)
+        measurement_layout.addWidget(self._delete_all_measurements_button)
 
         right_splitter = QSplitter(Qt.Orientation.Vertical)
         right_splitter.addWidget(top_container)
@@ -1260,6 +1433,10 @@ class MainWindow(QMainWindow):
                 self._fiber_quick_geometry_worker.cancel_document(current_document_id)
         if is_magic_toolbar_tool_mode(mode):
             self._magic_tool_mode = mode
+        if mode in {item[0] for item in self._manual_tool_definitions()}:
+            self._manual_tool_mode = mode
+        if mode in {item[0] for item in self._area_tool_definitions()}:
+            self._area_tool_mode = mode
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
@@ -1270,9 +1447,12 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip.setActiveMode(mode)
+        self._sync_manual_tool_button()
+        self._sync_area_tool_button()
         self._sync_magic_tool_button()
         self._sync_overlay_tool_button()
         self._update_magic_segment_controls()
+        self._update_path_drawing_controls()
 
     def current_document(self) -> ImageDocument | None:
         if self._preview_active:
@@ -1435,6 +1615,59 @@ class MainWindow(QMainWindow):
                 return f"项目内采集图片\n相对路径: {document.path}"
             return f"项目资源\n{resolved}"
         return str(self._resolved_document_path(document, project_path=project_path))
+
+    def _first_filesystem_image_directory(self) -> Path | None:
+        for document in self.project.documents:
+            if document.source_type != "filesystem":
+                continue
+            try:
+                resolved = self._resolved_document_path(document)
+            except Exception:
+                continue
+            if str(resolved).strip():
+                return resolved.parent
+        return None
+
+    def _preferred_dialog_directory(self, *, recent_dir: str = "") -> Path:
+        candidates = [
+            Path(recent_dir).expanduser() if str(recent_dir).strip() else None,
+            self._first_filesystem_image_directory(),
+            self._project_path.parent if self._project_path is not None else None,
+            Path.home(),
+        ]
+        for candidate in candidates:
+            if candidate is None:
+                continue
+            try:
+                if candidate.exists():
+                    return candidate
+            except OSError:
+                continue
+        return Path.home()
+
+    def _remember_recent_directory(self, *, setting_name: str, directory: Path, context: str) -> None:
+        normalized = str(directory.expanduser().resolve())
+        if getattr(self._app_settings, setting_name, "") == normalized:
+            return
+        setattr(self._app_settings, setting_name, normalized)
+        self._save_app_settings(context=context)
+
+    def _normalize_dialog_save_path(self, selected_path: str, default_filename: str) -> Path:
+        path = Path(selected_path)
+        if not path.suffix:
+            default_suffix = Path(default_filename).suffix
+            if default_suffix:
+                path = path.with_suffix(default_suffix)
+        return path
+
+    def _single_export_dialog_filter(self, filename: str) -> str:
+        suffix = Path(filename).suffix.lower()
+        return {
+            ".png": "PNG 图片 (*.png)",
+            ".json": "JSON 文件 (*.json)",
+            ".xlsx": "Excel 工作簿 (*.xlsx)",
+            ".csv": "CSV 文件 (*.csv)",
+        }.get(suffix, "所有文件 (*)")
 
     def _document_has_unsaved_project_changes(self, document: ImageDocument) -> bool:
         return document.dirty_flags.session_dirty or (not document.uses_sidecar() and document.dirty_flags.calibration_dirty)
@@ -2699,6 +2932,7 @@ class MainWindow(QMainWindow):
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
+        canvas.pathSessionChanged.connect(self._on_canvas_path_session_changed)
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
         canvas.overlaySelected.connect(self._on_canvas_overlay_selected)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
@@ -2728,20 +2962,22 @@ class MainWindow(QMainWindow):
             return False
         target_path = Path(path) if path else self._project_path
         if target_path is None:
+            default_dir = self._preferred_dialog_directory(recent_dir=self._app_settings.recent_project_dir)
             selected_path, _ = QFileDialog.getSaveFileName(
                 self,
                 "保存项目",
-                "fiber_measurement.fdmproj",
+                str(default_dir / "fiber_measurement.fdmproj"),
                 self.PROJECT_FILTER,
             )
             if not selected_path:
                 return False
-            target_path = Path(selected_path)
+            target_path = self._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
         self.project.version = __version__
         if not self._persist_project_assets(target_path):
             return False
         ProjectIO.save(self.project, target_path)
         self._project_path = target_path
+        self._remember_recent_directory(setting_name="recent_project_dir", directory=target_path.parent, context="保存项目")
         for document in self.project.documents:
             document.mark_session_saved()
             document.mark_calibration_saved()
@@ -2806,20 +3042,42 @@ class MainWindow(QMainWindow):
         if not selection.any_selected():
             QMessageBox.information(self, "导出结果", "请至少选择一种导出内容。")
             return
-        output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录")
-        if not output_dir:
-            return
         target_documents = self.project.documents if selection.scope == ExportScope.ALL_OPEN else ([self.current_document()] if self.current_document() else [])
+        target_documents = [document for document in target_documents if document is not None]
+        planned_outputs = self.export_service.planned_outputs(target_documents, selection)
+        if not planned_outputs:
+            QMessageBox.information(self, "导出结果", "按当前导出内容设置，没有可生成的文件。")
+            return
+        default_dir = self._preferred_dialog_directory(recent_dir=self._app_settings.recent_export_dir)
+        single_output_path: Path | None = None
+        if len(planned_outputs) == 1:
+            selected_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "选择导出文件",
+                str(default_dir / planned_outputs[0].filename),
+                self._single_export_dialog_filter(planned_outputs[0].filename),
+            )
+            if not selected_path:
+                return
+            single_output_path = self._normalize_dialog_save_path(selected_path, planned_outputs[0].filename)
+            output_dir = str(single_output_path.parent)
+        else:
+            output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
+            if not output_dir:
+                return
         outputs = self.export_service.export_project(
             self.project,
             output_dir,
             selection=selection,
-            documents=[document for document in target_documents if document is not None],
+            documents=target_documents,
             overlay_renderer=self._render_overlay_image,
+            single_output_path=single_output_path,
         )
         if not outputs:
             QMessageBox.information(self, "导出结果", "没有生成任何文件。")
             return
+        export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
+        self._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
         output_labels = {
             "measurement_overlays": "测量叠加图",
             "scale_overlays": "比例尺叠加图",
@@ -2837,7 +3095,8 @@ class MainWindow(QMainWindow):
                 summary_lines.append(f"{label}: {len(value)} 个文件")
             else:
                 summary_lines.append(f"{label}: {value}")
-        QMessageBox.information(self, "导出完成", f"结果已导出到:\n{output_dir}\n\n" + "\n".join(summary_lines))
+        location_text = str(single_output_path) if single_output_path is not None else str(output_dir)
+        QMessageBox.information(self, "导出完成", f"结果已导出到:\n{location_text}\n\n" + "\n".join(summary_lines))
 
     def fit_current_image(self) -> None:
         canvas = self.current_canvas()
@@ -3236,6 +3495,16 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None:
             return
+        selected_measurement_ids = self._selected_measurement_ids_from_table()
+        if selected_measurement_ids:
+            label = "删除测量" if len(selected_measurement_ids) == 1 else "批量删除测量"
+
+            def mutate_rows() -> None:
+                document.remove_measurements(selected_measurement_ids)
+
+            self._apply_document_change(document, label, mutate_rows)
+            self._focus_current_canvas()
+            return
         if document.selected_overlay_id is not None:
             overlay_id = document.selected_overlay_id
             overlay = document.get_overlay_annotation(overlay_id)
@@ -3257,6 +3526,115 @@ class MainWindow(QMainWindow):
             document.remove_measurement(measurement_id)
 
         self._apply_document_change(document, "删除测量", mutate)
+
+    def delete_all_measurements(self) -> None:
+        document = self.current_document()
+        if document is None or self._tool_mode == "calibration":
+            return
+        if not any(item.measurements for item in self.project.documents):
+            return
+        selection = self._prompt_measurement_delete_options(
+            title="删除全部测量",
+            message="确认删除测量数据。你可以选择删除当前图片，或整个项目中的全部测量数据。",
+        )
+        if selection is None:
+            return
+        scope, _group_label = selection
+        target_documents = [document] if scope == ExportScope.CURRENT else list(self.project.documents)
+        removed_count = self._apply_documents_change(
+            target_documents,
+            "删除全部测量",
+            lambda item: item.clear_measurements(),
+        )
+        if removed_count > 0:
+            scope_label = "当前图片" if scope == ExportScope.CURRENT else "整个项目"
+            self.statusBar().showMessage(f"已删除 {scope_label}中的 {removed_count} 条测量记录", 4000)
+            self._focus_current_canvas()
+
+    def delete_measurements_by_category(self) -> None:
+        document = self.current_document()
+        if document is None or self._tool_mode == "calibration":
+            return
+        group_labels = document.measurement_group_labels()
+        if not group_labels:
+            QMessageBox.information(self, "删除指定类别", "当前图片没有可删除的测量类别。")
+            return
+        selection = self._prompt_measurement_delete_options(
+            title="删除指定类别",
+            message="确认删除指定类别下的测量记录。类别定义、颜色模板和叠加标注不会被删除。",
+            group_labels=group_labels,
+        )
+        if selection is None:
+            return
+        scope, group_label = selection
+        if not group_label:
+            return
+        target_documents = [document] if scope == ExportScope.CURRENT else list(self.project.documents)
+        removed_count = self._apply_documents_change(
+            target_documents,
+            "删除指定类别测量",
+            lambda item, label=group_label: item.clear_measurements_by_group_label(label),
+        )
+        if removed_count > 0:
+            scope_label = "当前图片" if scope == ExportScope.CURRENT else "整个项目"
+            self.statusBar().showMessage(f"已删除“{group_label}”在{scope_label}中的 {removed_count} 条测量记录", 4000)
+            self._focus_current_canvas()
+
+    def _selected_measurement_ids_from_table(self) -> list[str]:
+        selection_model = self.measurement_table.selectionModel()
+        if selection_model is None:
+            return []
+        measurement_ids: list[str] = []
+        seen: set[str] = set()
+        for row_index in selection_model.selectedRows():
+            item = self._measurement_id_item(row_index.row())
+            if item is None:
+                continue
+            measurement_id = item.data(Qt.ItemDataRole.UserRole)
+            if not measurement_id or measurement_id in seen:
+                continue
+            seen.add(measurement_id)
+            measurement_ids.append(measurement_id)
+        return measurement_ids
+
+    def _prompt_measurement_delete_options(
+        self,
+        *,
+        title: str,
+        message: str,
+        group_labels: list[str] | None = None,
+    ) -> tuple[str, str | None] | None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle(title)
+        layout = QVBoxLayout(dialog)
+        layout.addWidget(QLabel(message, dialog))
+
+        group_combo: QComboBox | None = None
+        if group_labels:
+            layout.addWidget(QLabel("删除类别：", dialog))
+            group_combo = QComboBox(dialog)
+            group_combo.addItems(group_labels)
+            layout.addWidget(group_combo)
+
+        layout.addWidget(QLabel("删除范围：", dialog))
+        current_radio = QRadioButton("当前图片", dialog)
+        current_radio.setChecked(True)
+        project_radio = QRadioButton("整个项目", dialog)
+        layout.addWidget(current_radio)
+        layout.addWidget(project_radio)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel, dialog)
+        ok_button = button_box.button(QDialogButtonBox.StandardButton.Ok)
+        if ok_button is not None:
+            ok_button.setText("删除")
+        button_box.accepted.connect(dialog.accept)
+        button_box.rejected.connect(dialog.reject)
+        layout.addWidget(button_box)
+
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return None
+        scope = ExportScope.CURRENT if current_radio.isChecked() else ExportScope.ALL_OPEN
+        return scope, group_combo.currentText() if group_combo is not None else None
 
     def run_area_auto_recognition(self) -> None:
         if not self.project.documents:
@@ -3485,6 +3863,11 @@ class MainWindow(QMainWindow):
         current_document = self.current_document()
         if current_document is not None and current_document.id == document_id:
             self._update_magic_segment_controls()
+
+    def _on_canvas_path_session_changed(self, document_id: str) -> None:
+        current_document = self.current_document()
+        if current_document is not None and current_document.id == document_id:
+            self._update_path_drawing_controls()
 
     def _dispatch_pending_magic_segment_request(self, document_id: str, completed_request_id: int) -> bool:
         canvas = self._canvases.get(document_id)
@@ -3808,6 +4191,29 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
         return changed
 
+    def _apply_documents_change(
+        self,
+        documents: list[ImageDocument],
+        label: str,
+        mutator,
+    ) -> int:
+        total_removed = 0
+        changed_any = False
+        for document in documents:
+            before = document.snapshot_state()
+            removed_count = mutator(document)
+            total_removed += int(removed_count or 0)
+            document.rebuild_group_memberships()
+            document.refresh_dirty_flags()
+            after = document.snapshot_state()
+            changed = before != after
+            if changed and document.history is not None:
+                document.history.push(label, before, after)
+            changed_any = changed_any or changed
+        if changed_any:
+            self._update_ui_for_current_document()
+        return total_removed
+
     def _on_tab_changed(self, index: int) -> None:
         if index < 0:
             return
@@ -3873,6 +4279,28 @@ class MainWindow(QMainWindow):
                 )
                 if mode == "magic_segment":
                     ensure_measurement_display_geometry(measurement)
+            elif mode == "continuous_manual" and isinstance(payload, dict):
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode="continuous_manual",
+                    measurement_kind="polyline",
+                    polyline_px=list(payload.get("polyline_px", [])),
+                    confidence=1.0,
+                    status="continuous_manual",
+                )
+            elif mode == "count" and isinstance(payload, dict):
+                measurement = Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id if group else None,
+                    mode="count",
+                    measurement_kind="count",
+                    point_px=payload.get("point_px"),
+                    confidence=1.0,
+                    status="count",
+                )
             elif mode == "manual" and isinstance(payload, Line):
                 measurement = Measurement(
                     id=new_id("meas"),
@@ -4260,11 +4688,18 @@ class MainWindow(QMainWindow):
             self._sync_measurement_table_selection(document)
 
     def _format_measurement_kind(self, measurement: Measurement) -> str:
-        return "面积" if measurement.measurement_kind == "area" else "线段"
+        return {
+            "line": "线段",
+            "polyline": "折线",
+            "area": "面积",
+            "count": "计数点",
+        }.get(measurement.measurement_kind, measurement.measurement_kind)
 
     def _format_measurement_mode(self, mode: str) -> str:
         return {
             "manual": "手动线段",
+            "continuous_manual": "连续测量",
+            "count": "计数",
             "snap": "边缘吸附",
             "fiber_auto": "快速测径",
             "fiber_quick": "快速测径",
@@ -4278,6 +4713,7 @@ class MainWindow(QMainWindow):
     def _format_measurement_status(self, status: str) -> str:
         return {
             "manual": "手动测量",
+            "continuous_manual": "连续测量",
             "ready": "已完成",
             "manual_review": "需人工复核",
             "snapped": "吸附成功",
@@ -4290,6 +4726,7 @@ class MainWindow(QMainWindow):
             "boundary_not_found": "未找到边界",
             "fiber_auto": "快速测径",
             "fiber_quick": "快速测径",
+            "count": "计数",
             "auto_instance": "自动识别",
             "reference_instance": "同类扩选",
         }.get(status, status)
@@ -4335,6 +4772,7 @@ class MainWindow(QMainWindow):
             return
         selected_rows = self.measurement_table.selectionModel().selectedRows()
         if not selected_rows:
+            self._update_action_states()
             return
         row = selected_rows[0].row()
         item = self._measurement_id_item(row)
@@ -4431,14 +4869,20 @@ class MainWindow(QMainWindow):
         history = document.history if document is not None else None
         has_document = document is not None
         preview_active = self._preview_active
+        selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
+        has_selected_rows = bool(selection_model and selection_model.selectedRows())
         has_selected_object = bool(
             has_document
             and self._tool_mode != "calibration"
             and (
+                has_selected_rows
+                or
                 document.view_state.selected_measurement_id is not None
                 or document.selected_overlay_id is not None
             )
         )
+        has_measurements = bool(document and document.measurements)
+        has_measurement_groups = bool(document and document.measurement_group_labels())
         has_deletable_group_target = bool(
             document and (
                 document.get_group(document.active_group_id) is not None
@@ -4450,6 +4894,10 @@ class MainWindow(QMainWindow):
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
         self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
+        if self._delete_group_measurements_button is not None:
+            self._delete_group_measurements_button.setEnabled(has_measurement_groups and not preview_active)
+        if self._delete_all_measurements_button is not None:
+            self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
         self.add_group_action.setEnabled(has_document and not preview_active)
         self.rename_group_action.setEnabled(has_named_active_group and not preview_active)
         self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
@@ -4484,12 +4932,19 @@ class MainWindow(QMainWindow):
         self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active)
         for mode, action in self._mode_actions.items():
             action.setEnabled(not preview_active or mode == "select")
+        if self._manual_tool_button is not None:
+            self._manual_tool_button.setEnabled(not preview_active)
+        if self._area_tool_button is not None:
+            self._area_tool_button.setEnabled(not preview_active)
         if self._magic_tool_button is not None:
             self._magic_tool_button.setEnabled(not preview_active)
         if self._overlay_tool_button is not None:
             self._overlay_tool_button.setEnabled(not preview_active)
+        self._update_path_drawing_controls()
         self._update_magic_segment_controls()
         self._update_preview_analysis_controls()
+        self._sync_manual_tool_button()
+        self._sync_area_tool_button()
         self._sync_magic_tool_button()
         self._sync_overlay_tool_button()
 
@@ -4626,6 +5081,43 @@ class MainWindow(QMainWindow):
             layout.activate()
         self._magic_controls_widget.updateGeometry()
         self._magic_controls_widget.adjustSize()
+        self._measurement_tool_strip.updateGeometry()
+
+    def _commit_active_path_drawing(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None:
+            return False
+        committed = canvas.commit_pending_path()
+        self._update_path_drawing_controls()
+        return committed
+
+    def _cancel_active_path_drawing(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None:
+            return False
+        cancelled = canvas.cancel_pending_path()
+        self._update_path_drawing_controls()
+        return cancelled
+
+    def _update_path_drawing_controls(self) -> None:
+        if self._path_controls_widget is None or self._measurement_tool_strip is None:
+            return
+        is_visible = self._tool_mode in {"polygon_area", "continuous_manual"} and not self._preview_active
+        self._measurement_tool_strip.setPathContextVisible(is_visible)
+        if not is_visible:
+            return
+        canvas = self.current_canvas()
+        if self._path_complete_button is not None:
+            self._path_complete_button.setEnabled(bool(canvas and canvas.can_commit_pending_path()))
+        if self._path_cancel_button is not None:
+            self._path_cancel_button.setEnabled(bool(canvas and canvas.has_pending_path_drawing()))
+        self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
+        layout = self._path_controls_widget.layout()
+        if layout is not None:
+            layout.invalidate()
+            layout.activate()
+        self._path_controls_widget.updateGeometry()
+        self._path_controls_widget.adjustSize()
         self._measurement_tool_strip.updateGeometry()
 
     def _preview_analysis_supported(self, mode: str | None = None) -> bool:
@@ -5352,6 +5844,15 @@ class MainWindow(QMainWindow):
                 self._cancel_preview_analysis_session()
                 event.accept()
                 return
+        if self._tool_mode in {"polygon_area", "continuous_manual"} and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                if self._commit_active_path_drawing():
+                    event.accept()
+                    return
+            if event.key() == Qt.Key.Key_Escape:
+                if self._cancel_active_path_drawing():
+                    event.accept()
+                    return
         if is_magic_toolbar_tool_mode(self._tool_mode) and event.modifiers() == Qt.KeyboardModifier.NoModifier:
             if is_magic_segment_tool_mode(self._tool_mode):
                 if event.key() == Qt.Key.Key_R:

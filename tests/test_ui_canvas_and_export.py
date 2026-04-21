@@ -11,9 +11,9 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
-    from PySide6.QtCore import QPoint, QPointF, Qt, QThread
+    from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QImage, QColor, QPalette
-    from PySide6.QtWidgets import QApplication, QComboBox, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -34,7 +34,7 @@ from fdm.settings import (
     ScaleOverlayStyle,
 )
 from fdm.services.area_inference import AreaInstanceResult
-from fdm.services.export_service import ExportImageRenderMode
+from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -770,6 +770,36 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
             self.assertEqual(payload["documents"][0]["path"], captured_document.path)
 
+    def test_save_project_dialog_defaults_to_first_image_directory_without_history(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "first_image.png"
+                image = QImage(120, 80, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_project_dir = ""
+
+                with (
+                    patch.object(window, "_persist_project_assets", return_value=True),
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.ProjectIO.save"),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(Path(tmp_dir) / "named_project.fdmproj"), window.PROJECT_FILTER)) as save_dialog,
+                ):
+                    self.assertTrue(window.save_project())
+
+                args = save_dialog.call_args.args
+                self.assertEqual(args[2], str(Path(tmp_dir) / "fiber_measurement.fdmproj"))
+                self.assertEqual(window._app_settings.recent_project_dir, str(Path(tmp_dir).resolve()))
+        finally:
+            window.close()
+
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
         window, document = self._create_main_window_fixture()
 
@@ -814,6 +844,47 @@ class CanvasAndExportTests(unittest.TestCase):
                     self.assertFalse(scale_image.isNull())
                     self.assertGreater(self._count_diff_pixels(baseline_image, measurement_image), 0)
                     self.assertGreater(self._count_diff_pixels(baseline_image, scale_image), 0)
+        finally:
+            window.close()
+
+    def test_export_results_uses_save_dialog_for_single_output_and_remembers_directory(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_single.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_export_dir = ""
+                chosen_output = Path(tmp_dir) / "renamed_result.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(include_excel=True, scope=ExportScope.CURRENT)
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")) as save_dialog,
+                    patch("fdm.ui.main_window.QFileDialog.getExistingDirectory") as dir_dialog,
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                save_dialog.assert_called_once()
+                dir_dialog.assert_not_called()
+                dialog_path = save_dialog.call_args.args[2]
+                self.assertEqual(dialog_path, str(Path(tmp_dir) / "纤维测量结果.xlsx"))
+                self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
+                self.assertEqual(window._app_settings.recent_export_dir, str(Path(tmp_dir).resolve()))
         finally:
             window.close()
 
@@ -1053,13 +1124,15 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "边缘吸附", "多边形面积", "自由形状面积", "标准魔棒", "比例尺标定", "叠加标注"],
+                ["浏览", "手动测量", "计数", "边缘吸附", "面积测量", "标准魔棒", "比例尺标定", "叠加标注"],
             )
             visible_actions = [
                 window._mode_actions[key]
                 for key in [
                     "select",
                     "manual",
+                    "continuous_manual",
+                    "count",
                     "snap",
                     "polygon_area",
                     "freehand_area",
@@ -1072,6 +1145,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            self.assertIsInstance(window._manual_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._manual_tool_button.text(), "手动测量")
+            self.assertEqual(window._manual_tool_button.currentToolKind(), "manual")
+            self.assertIs(window._manual_tool_menu.parent(), window)
+            self.assertIsInstance(window._area_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._area_tool_button.text(), "面积测量")
+            self.assertEqual(window._area_tool_button.currentToolKind(), "polygon_area")
+            self.assertIs(window._area_tool_menu.parent(), window)
             self.assertIsInstance(window._magic_tool_button, OverlayToolSplitButton)
             self.assertEqual(window._magic_tool_button.text(), "标准魔棒")
             self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.STANDARD)
@@ -1136,7 +1217,7 @@ class CanvasAndExportTests(unittest.TestCase):
             strip._sync_auto_compact_mode()
 
             self.assertTrue(strip.isCompactMode())
-            self.assertEqual(strip.buttonForMode("manual").toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.assertTrue(strip.buttonForMode("manual").isCompactMode())
             self.assertTrue(window._overlay_tool_button.isCompactMode())
             self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
         finally:
@@ -2176,6 +2257,66 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(commits[0][1], "freehand_area")
         self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
 
+    def test_continuous_manual_tool_commits_polyline_on_double_click(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("continuous_manual")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
+        canvas.mouseDoubleClickEvent(FakeMouseEvent(canvas.image_to_widget(Point(130, 75)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][0], document.id)
+        self.assertEqual(commits[0][1], "continuous_manual")
+        self.assertEqual(commits[0][2]["measurement_kind"], "polyline")
+        self.assertEqual(len(commits[0][2]["polyline_px"]), 3)
+
+    def test_count_tool_click_emits_point_measurement(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("count")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(42, 58)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][0], document.id)
+        self.assertEqual(commits[0][1], "count")
+        self.assertEqual(commits[0][2]["measurement_kind"], "count")
+        self.assertAlmostEqual(commits[0][2]["point_px"].x, 42.0)
+        self.assertAlmostEqual(commits[0][2]["point_px"].y, 58.0)
+
+    def test_path_controls_complete_continuous_measurement_in_main_window(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/path_controls.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode("continuous_manual")
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
+
+            self.assertTrue(window._measurement_tool_strip.isPathContextVisible())
+            self.assertTrue(window._path_complete_button.isEnabled())
+            window._path_complete_button.click()
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].measurement_kind, "polyline")
+            self.assertEqual(document.measurements[0].mode, "continuous_manual")
+        finally:
+            window.close()
+
     def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
         document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
@@ -2711,6 +2852,153 @@ class CanvasAndExportTests(unittest.TestCase):
 
             window.delete_selected_measurement()
             self.assertEqual(len(document.overlay_annotations), 0)
+        finally:
+            window.close()
+
+    def test_delete_selected_measurement_prioritizes_table_multi_selection(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/batch_delete.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(70, 20)),
+                )
+            )
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(20, 60), Point(90, 60)),
+                )
+            )
+            self._load_document_into_window(window, document, image)
+            window._on_canvas_overlay_create_requested(
+                document.id,
+                {
+                    "kind": OverlayAnnotationKind.RECT,
+                    "start_px": Point(20, 24),
+                    "end_px": Point(90, 84),
+                },
+            )
+            self.assertEqual(len(document.overlay_annotations), 1)
+            self.assertEqual(window.measurement_table.selectionMode(), QAbstractItemView.SelectionMode.ExtendedSelection)
+
+            selection_model = window.measurement_table.selectionModel()
+            self.assertIsNotNone(selection_model)
+            selection_model.select(
+                window.measurement_table.model().index(0, window.TABLE_COL_KIND),
+                QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+            )
+            selection_model.select(
+                window.measurement_table.model().index(1, window.TABLE_COL_KIND),
+                QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+            )
+
+            window.delete_selected_measurement()
+
+            self.assertEqual(len(document.measurements), 0)
+            self.assertEqual(len(document.overlay_annotations), 1)
+        finally:
+            window.close()
+
+    def test_delete_measurements_by_category_respects_scope(self) -> None:
+        window = MainWindow()
+        try:
+            first_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            first_image.fill(QColor("#FFFFFF"))
+            first_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_category_current.png",
+                image_size=(first_image.width(), first_image.height()),
+            )
+            first_document.initialize_runtime_state()
+            cotton = first_document.create_group(color="#1F7A8C", label="棉")
+            silk = first_document.create_group(color="#E07A5F", label="丝")
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=cotton.id, mode="manual", line_px=Line(Point(10, 10), Point(60, 10)))
+            )
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=silk.id, mode="manual", line_px=Line(Point(20, 40), Point(90, 40)))
+            )
+            second_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            second_image.fill(QColor("#FFFFFF"))
+            second_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_category_project.png",
+                image_size=(second_image.width(), second_image.height()),
+            )
+            second_document.initialize_runtime_state()
+            cotton_second = second_document.create_group(color="#1F7A8C", label="棉")
+            second_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=second_document.id, fiber_group_id=cotton_second.id, mode="manual", line_px=Line(Point(10, 70), Point(80, 70)))
+            )
+            self._load_document_into_window(window, first_document, first_image)
+            self._load_document_into_window(window, second_document, second_image)
+            window.tab_widget.setCurrentIndex(0)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.CURRENT, "棉")):
+                window.delete_measurements_by_category()
+
+            self.assertEqual(len(first_document.measurements), 1)
+            self.assertEqual(first_document.measurements[0].fiber_group_id, silk.id)
+            self.assertEqual(len(second_document.measurements), 1)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.ALL_OPEN, "棉")):
+                window.delete_measurements_by_category()
+
+            self.assertEqual(len(first_document.measurements), 1)
+            self.assertEqual(len(second_document.measurements), 0)
+            self.assertEqual(len(first_document.fiber_groups), 2)
+            self.assertEqual(len(second_document.fiber_groups), 1)
+        finally:
+            window.close()
+
+    def test_delete_all_measurements_supports_project_scope(self) -> None:
+        window = MainWindow()
+        try:
+            first_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            first_image.fill(QColor("#FFFFFF"))
+            first_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_all_current.png",
+                image_size=(first_image.width(), first_image.height()),
+            )
+            first_document.initialize_runtime_state()
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=None, mode="manual", line_px=Line(Point(10, 10), Point(60, 10)))
+            )
+            second_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            second_image.fill(QColor("#FFFFFF"))
+            second_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_all_project.png",
+                image_size=(second_image.width(), second_image.height()),
+            )
+            second_document.initialize_runtime_state()
+            second_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=second_document.id, fiber_group_id=None, mode="manual", line_px=Line(Point(20, 20), Point(80, 20)))
+            )
+            self._load_document_into_window(window, first_document, first_image)
+            self._load_document_into_window(window, second_document, second_image)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.ALL_OPEN, None)):
+                window.delete_all_measurements()
+
+            self.assertEqual(len(first_document.measurements), 0)
+            self.assertEqual(len(second_document.measurements), 0)
         finally:
             window.close()
 

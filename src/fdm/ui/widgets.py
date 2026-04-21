@@ -726,11 +726,14 @@ class MeasurementToolStrip(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._mode_buttons: dict[str, ToolStripActionButton] = {}
+        self._split_buttons: dict[str, OverlayToolSplitButton] = {}
+        self._split_mode_lookup: dict[str, OverlayToolSplitButton] = {}
         self._primary_order: list[str] = []
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._overlay_button: OverlayToolSplitButton | None = None
         self._magic_context_widget: QWidget | None = None
         self._preview_context_widget: QWidget | None = None
+        self._path_context_widget: QWidget | None = None
         self._compact_mode = False
         self._active_mode = "select"
         self._context_placement = "hidden"
@@ -897,8 +900,24 @@ class MeasurementToolStrip(QWidget):
         self._primary_row_layout.addWidget(button)
         return button
 
-    def buttonForMode(self, mode: str) -> ToolStripActionButton | None:
-        return self._mode_buttons.get(mode)
+    def addSplitModeButton(
+        self,
+        mode: str,
+        button: OverlayToolSplitButton,
+        *,
+        aliases: list[str] | tuple[str, ...] | None = None,
+    ) -> OverlayToolSplitButton:
+        self._split_buttons[mode] = button
+        self._split_mode_lookup[mode] = button
+        for alias in aliases or []:
+            self._split_mode_lookup[alias] = button
+        self._primary_order.append(mode)
+        self._primary_row_layout.addWidget(button)
+        self._sync_auto_compact_mode()
+        return button
+
+    def buttonForMode(self, mode: str):
+        return self._mode_buttons.get(mode) or self._split_mode_lookup.get(mode)
 
     def primaryModeLabels(self) -> list[str]:
         labels: list[str] = []
@@ -906,6 +925,9 @@ class MeasurementToolStrip(QWidget):
             if mode == "__magic_tool__":
                 if self._magic_tool_button is not None:
                     labels.append(self._magic_tool_button.text())
+                continue
+            if mode in self._split_buttons:
+                labels.append(self._split_buttons[mode].text())
                 continue
             if mode in self._mode_buttons:
                 labels.append(self._mode_buttons[mode].defaultAction().text())
@@ -945,8 +967,19 @@ class MeasurementToolStrip(QWidget):
         widget.setVisible(False)
         self._refresh_context_visibility()
 
+    def setPathContextWidget(self, widget: QWidget) -> None:
+        self._path_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
     def setActiveMode(self, mode: str) -> None:
         self._active_mode = mode
+        for button in set(self._split_mode_lookup.values()):
+            button.setChecked(False)
+        split_button = self._split_mode_lookup.get(mode)
+        if split_button is not None:
+            split_button.setChecked(True)
         if self._magic_tool_button is not None and mode not in {"magic_segment", "reference_propagation", "fiber_quick"}:
             self._magic_tool_button.setChecked(False)
         if self._overlay_button is not None and mode != "overlay":
@@ -971,6 +1004,8 @@ class MeasurementToolStrip(QWidget):
         self._compact_mode = enabled
         for button in self._mode_buttons.values():
             button.setCompactMode(enabled)
+        for button in set(self._split_mode_lookup.values()):
+            button.setCompactMode(enabled)
         if self._magic_tool_button is not None:
             self._magic_tool_button.setCompactMode(enabled)
         if self._overlay_button is not None:
@@ -993,8 +1028,16 @@ class MeasurementToolStrip(QWidget):
     def isPreviewContextVisible(self) -> bool:
         return bool(self._preview_context_widget and not self._preview_context_widget.isHidden())
 
+    def setPathContextVisible(self, visible: bool) -> None:
+        if self._path_context_widget is not None:
+            self._path_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isPathContextVisible(self) -> bool:
+        return bool(self._path_context_widget and not self._path_context_widget.isHidden())
+
     def _refresh_context_visibility(self) -> None:
-        visible = self.isMagicContextVisible() or self.isPreviewContextVisible()
+        visible = self.isMagicContextVisible() or self.isPreviewContextVisible() or self.isPathContextVisible()
         if not visible:
             self._context_placement = "hidden"
             self._apply_context_placement()
@@ -1004,7 +1047,12 @@ class MeasurementToolStrip(QWidget):
         self.updateGeometry()
 
     def _expanded_primary_width(self) -> int:
-        widths = [self._mode_buttons[mode].expandedWidthHint() for mode in self._primary_order if mode in self._mode_buttons]
+        widths: list[int] = []
+        for mode in self._primary_order:
+            if mode in self._mode_buttons:
+                widths.append(self._mode_buttons[mode].expandedWidthHint())
+            elif mode in self._split_buttons:
+                widths.append(self._split_buttons[mode].expandedWidthHint())
         if self._magic_tool_button is not None:
             widths.append(self._magic_tool_button.expandedWidthHint())
         if self._overlay_button is not None:
@@ -1016,6 +1064,7 @@ class MeasurementToolStrip(QWidget):
 
     def _compact_primary_width(self) -> int:
         widths = [button.COMPACT_WIDTH for button in self._mode_buttons.values()]
+        widths.extend(button.compactWidthHint() for button in self._split_buttons.values())
         if self._magic_tool_button is not None:
             widths.append(self._magic_tool_button.compactWidthHint())
         if self._overlay_button is not None:
@@ -1039,6 +1088,8 @@ class MeasurementToolStrip(QWidget):
             return self._magic_context_widget
         if self.isPreviewContextVisible() and self._preview_context_widget is not None:
             return self._preview_context_widget
+        if self.isPathContextVisible() and self._path_context_widget is not None:
+            return self._path_context_widget
         return None
 
     def _context_height_for_width(self, width: int) -> int:

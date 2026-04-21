@@ -253,6 +253,8 @@ class AppSettings:
     fiber_quick_line_extension_px: float = 0.0
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
+    recent_export_dir: str = ""
+    recent_project_dir: str = ""
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
@@ -276,6 +278,8 @@ class AppSettings:
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
         normalized.fiber_quick_line_extension_px = self._normalize_fiber_quick_line_extension_px(self.fiber_quick_line_extension_px)
+        normalized.recent_export_dir = self._normalize_recent_directory(self.recent_export_dir)
+        normalized.recent_project_dir = self._normalize_recent_directory(self.recent_project_dir)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
@@ -463,6 +467,20 @@ class AppSettings:
             numeric = 2.5
         return max(0.5, min(24.0, numeric))
 
+    @staticmethod
+    def _normalize_recent_directory(value: str | Path | None) -> str:
+        token = str(value or "").strip()
+        if not token:
+            return ""
+        try:
+            path = Path(token).expanduser()
+            resolved = path.resolve() if path.exists() else path
+        except (OSError, RuntimeError):
+            return token
+        if resolved.exists() and resolved.is_file():
+            return str(resolved.parent)
+        return str(resolved)
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -499,6 +517,8 @@ class AppSettings:
             "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
+            "recent_export_dir": normalized.recent_export_dir,
+            "recent_project_dir": normalized.recent_project_dir,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -595,6 +615,8 @@ class AppSettings:
         )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
+        settings.recent_export_dir = cls._normalize_recent_directory(payload.get("recent_export_dir", settings.recent_export_dir))
+        settings.recent_project_dir = cls._normalize_recent_directory(payload.get("recent_project_dir", settings.recent_project_dir))
         mappings = payload.get("area_model_mappings", None)
         if isinstance(mappings, list):
             settings.area_model_mappings = [

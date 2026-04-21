@@ -37,6 +37,15 @@ def line_length(line: Line) -> float:
     return distance(line.start, line.end)
 
 
+def polyline_length(points: list[Point]) -> float:
+    if len(points) < 2:
+        return 0.0
+    return sum(
+        distance(points[index], points[index + 1])
+        for index in range(len(points) - 1)
+    )
+
+
 def midpoint(line: Line) -> Point:
     return Point(
         x=(line.start.x + line.end.x) / 2.0,
@@ -190,6 +199,29 @@ def polygon_bounds_center(points: list[Point]) -> Point:
     return Point((min_x + max_x) / 2.0, (min_y + max_y) / 2.0)
 
 
+def polyline_centroid(points: list[Point]) -> Point:
+    if not points:
+        return Point(0.0, 0.0)
+    if len(points) == 1:
+        return Point(points[0].x, points[0].y)
+    total_length = 0.0
+    weighted_x = 0.0
+    weighted_y = 0.0
+    for index in range(len(points) - 1):
+        start = points[index]
+        end = points[index + 1]
+        segment_length = distance(start, end)
+        if segment_length <= 1e-9:
+            continue
+        segment_midpoint = midpoint(Line(start=start, end=end))
+        total_length += segment_length
+        weighted_x += segment_midpoint.x * segment_length
+        weighted_y += segment_midpoint.y * segment_length
+    if total_length <= 1e-9:
+        return polygon_bounds_center(points)
+    return Point(weighted_x / total_length, weighted_y / total_length)
+
+
 def polygon_translate(points: list[Point], dx: float, dy: float) -> list[Point]:
     return [Point(point.x + dx, point.y + dy) for point in points]
 
@@ -229,6 +261,17 @@ def point_to_segment_distance(point: Point, start: Point, end: Point) -> float:
         y=start.y + (projection * vy),
     )
     return distance(point, closest)
+
+
+def point_to_polyline_distance(point: Point, points: list[Point]) -> float:
+    if len(points) < 2:
+        if points:
+            return distance(point, points[0])
+        return float("inf")
+    return min(
+        point_to_segment_distance(point, points[index], points[index + 1])
+        for index in range(len(points) - 1)
+    )
 
 
 def point_to_polygon_edge_distance(point: Point, polygon: list[Point]) -> float:
