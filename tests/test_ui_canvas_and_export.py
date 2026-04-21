@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
-    from PySide6.QtGui import QImage, QColor, QPalette
+    from PySide6.QtGui import QAction, QImage, QColor, QPalette
     from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
 
     PYSIDE_AVAILABLE = True
@@ -1299,6 +1299,31 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIn("color: #1F2933;", stylesheet)
             self.assertIn("background: #DDF3EF;", stylesheet)
         finally:
+            strip.close()
+
+    def test_measurement_tool_strip_theme_refresh_repolishes_tool_buttons_and_updates_split_buttons(self) -> None:
+        class RecordingSplitButton(OverlayToolSplitButton):
+            def __init__(self) -> None:
+                super().__init__()
+                self.update_calls = 0
+
+            def update(self, *args, **kwargs):  # type: ignore[override]
+                self.update_calls += 1
+                return super().update(*args, **kwargs)
+
+        strip = MeasurementToolStrip()
+        split_button = RecordingSplitButton()
+        try:
+            strip.addModeAction("select", QAction("浏览", strip))
+            strip.addSplitModeButton("overlay", split_button)
+
+            with patch("fdm.ui.widgets._repolish") as repolish:
+                strip._apply_theme_styles()
+
+            self.assertTrue(any(call.args[0].property("primaryTool") for call in repolish.call_args_list))
+            self.assertGreater(split_button.update_calls, 0)
+        finally:
+            split_button.close()
             strip.close()
 
     def test_main_window_uses_application_icon(self) -> None:

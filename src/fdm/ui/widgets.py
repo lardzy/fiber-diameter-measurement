@@ -888,8 +888,17 @@ class MeasurementToolStrip(QWidget):
         self._theme_updating = True
         try:
             self.setStyleSheet(self._build_stylesheet())
+            for button in self.findChildren(QToolButton):
+                _repolish(button)
+            for button in self._mode_buttons.values():
+                button.update()
+            for button in set(self._split_mode_lookup.values()):
+                button.update()
+            if self._magic_tool_button is not None:
+                self._magic_tool_button.update()
             if self._overlay_button is not None:
                 self._overlay_button.update()
+            self.update()
         finally:
             self._theme_updating = False
 

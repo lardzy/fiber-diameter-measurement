@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtGui import QColor, QPalette
-from PySide6.QtWidgets import QApplication, QStyleFactory
+from PySide6.QtWidgets import QApplication, QStyleFactory, QWidget
 
 from fdm.settings import AppThemeMode, normalize_theme_mode
 
@@ -106,3 +106,14 @@ def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
     else:
         app.setPalette(build_dark_palette())
     return normalized
+
+
+def refresh_widget_theme(widget: QWidget | None) -> None:
+    if widget is None:
+        return
+    widgets = [widget, *widget.findChildren(QWidget)]
+    for current in widgets:
+        style = current.style()
+        style.unpolish(current)
+        style.polish(current)
+        current.update()

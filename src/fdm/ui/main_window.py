@@ -124,7 +124,7 @@ from fdm.ui.reference_instance_worker import (
 )
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest, FiberQuickGeometryWorker
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
-from fdm.ui.theme import apply_application_theme
+from fdm.ui.theme import apply_application_theme, refresh_widget_theme
 from fdm.ui.widgets import (
     FiberGroupListItemWidget,
     FlowLayout,
@@ -439,6 +439,7 @@ class MainWindow(QMainWindow):
         self.snap_service = SnapService()
 
         self._build_ui()
+        self._refresh_theme_sensitive_icons()
         self._capture_manager.devicesChanged.connect(self._on_capture_devices_changed)
         self._capture_manager.previewStateChanged.connect(self._on_live_preview_state_changed)
         self._capture_manager.frameReady.connect(self._on_live_preview_frame_ready)
@@ -1525,6 +1526,60 @@ class MainWindow(QMainWindow):
             return "#C8D3DD" if self._is_dark_palette() else "#4E5969"
         return self.palette().color(QPalette.ColorRole.WindowText).name()
 
+    def _tool_icon_color(self, kind: str) -> str:
+        if kind == "select":
+            return "#D4D8DD" if self._is_dark_palette() else "#4E5969"
+        if kind == "count":
+            return "#F08B95" if self._is_dark_palette() else "#C65B75"
+        if kind == "snap":
+            return "#7BD389" if self._is_dark_palette() else "#2F8F6B"
+        if kind == "calibration":
+            return "#FF7F50" if self._is_dark_palette() else "#C7662B"
+        return "#D7E3FC" if self._is_dark_palette() else "#51606F"
+
+    def _refresh_theme_sensitive_icons(self) -> None:
+        if not {
+            "select",
+            "count",
+            "snap",
+            "manual",
+            "continuous_manual",
+            "polygon_area",
+            "freehand_area",
+            "calibration",
+            "overlay",
+            MagicSegmentToolMode.STANDARD,
+            MagicSegmentToolMode.REFERENCE,
+            MagicSegmentToolMode.FIBER_QUICK,
+        }.issubset(self._mode_actions):
+            if self._preview_notice_label is not None:
+                warning = "#F4D35E" if self._is_dark_palette() else "#A66A00"
+                self._preview_notice_label.setStyleSheet(f"color: {warning};")
+            return
+        self._mode_actions["select"].setIcon(themed_icon("select", color=self._tool_icon_color("select")))
+        self._mode_actions["count"].setIcon(themed_icon("count", color=self._tool_icon_color("count")))
+        self._mode_actions["snap"].setIcon(themed_icon("snap", color=self._tool_icon_color("snap")))
+        self._mode_actions["manual"].setIcon(self._manual_tool_icon("manual"))
+        self._mode_actions["continuous_manual"].setIcon(self._manual_tool_icon("continuous_manual"))
+        self._mode_actions["polygon_area"].setIcon(self._area_tool_icon("polygon_area"))
+        self._mode_actions["freehand_area"].setIcon(self._area_tool_icon("freehand_area"))
+        self._mode_actions[MagicSegmentToolMode.STANDARD].setIcon(self._magic_tool_icon(MagicSegmentToolMode.STANDARD))
+        self._mode_actions[MagicSegmentToolMode.REFERENCE].setIcon(self._magic_tool_icon(MagicSegmentToolMode.REFERENCE))
+        self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
+        self._mode_actions["calibration"].setIcon(themed_icon("calibration", color=self._tool_icon_color("calibration")))
+        self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
+        if self._preview_notice_label is not None:
+            warning = "#F4D35E" if self._is_dark_palette() else "#A66A00"
+            self._preview_notice_label.setStyleSheet(f"color: {warning};")
+        if self._manual_tool_button is not None:
+            self._sync_manual_tool_button()
+        if self._area_tool_button is not None:
+            self._sync_area_tool_button()
+        if self._magic_tool_button is not None:
+            self._sync_magic_tool_button()
+        if self._overlay_tool_button is not None:
+            self._sync_overlay_tool_button()
+
     def _update_statusbar_aux_labels(self) -> None:
         if self._version_label is None:
             return
@@ -1603,6 +1658,9 @@ class MainWindow(QMainWindow):
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
             self._update_group_list_header_styles()
+            self._refresh_theme_sensitive_icons()
+            if getattr(self, "tab_widget", None) is not None and hasattr(self, "calibration_label"):
+                self._update_calibration_panel(self.current_document())
             self._apply_tool_menu_stylesheets()
 
     def _apply_tool_menu_stylesheets(self) -> None:
@@ -1621,6 +1679,7 @@ class MainWindow(QMainWindow):
         if app is None:
             return
         self._app_settings.theme_mode = apply_application_theme(app, self._app_settings.theme_mode)
+        refresh_widget_theme(self)
 
     def _resolved_document_path(self, document: ImageDocument, *, project_path: str | Path | None = None) -> Path:
         return document.resolved_path(project_path or self._project_path)
@@ -3182,6 +3241,10 @@ class MainWindow(QMainWindow):
         new_settings = dialog.app_settings()
         self._app_settings = new_settings
         self._apply_theme_mode()
+        refresh_widget_theme(dialog)
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip._apply_theme_styles()
+        self._apply_tool_menu_stylesheets()
         self._magic_standard_roi_enabled = bool(new_settings.magic_segment_standard_roi_enabled)
         self._fiber_quick_roi_enabled = bool(new_settings.fiber_quick_roi_enabled)
         self._save_app_settings(context="设置")
