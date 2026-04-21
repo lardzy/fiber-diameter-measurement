@@ -1388,18 +1388,31 @@ class MainWindow(QMainWindow):
         self.measurement_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
         self.measurement_table.itemSelectionChanged.connect(self._on_measurement_selection_changed)
         measurement_layout.addWidget(self.measurement_table)
-        self.delete_measurement_button = QPushButton("删除选中对象")
+
+        measurement_action_row = QWidget(measurement_box)
+        measurement_action_layout = QHBoxLayout(measurement_action_row)
+        measurement_action_layout.setContentsMargins(0, 0, 0, 0)
+        measurement_action_layout.setSpacing(8)
+
+        self.delete_measurement_button = QPushButton("删除选中")
         self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
-        measurement_layout.addWidget(self.delete_measurement_button)
-        self._delete_group_measurements_button = QPushButton("删除指定类别")
+        self.delete_measurement_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        measurement_action_layout.addWidget(self.delete_measurement_button)
+
+        self._delete_group_measurements_button = QPushButton("删除类别")
         self._delete_group_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
         self._delete_group_measurements_button.clicked.connect(self.delete_measurements_by_category)
-        measurement_layout.addWidget(self._delete_group_measurements_button)
-        self._delete_all_measurements_button = QPushButton("删除全部测量")
+        self._delete_group_measurements_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        measurement_action_layout.addWidget(self._delete_group_measurements_button)
+
+        self._delete_all_measurements_button = QPushButton("删除全部")
         self._delete_all_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
         self._delete_all_measurements_button.clicked.connect(self.delete_all_measurements)
-        measurement_layout.addWidget(self._delete_all_measurements_button)
+        self._delete_all_measurements_button.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        measurement_action_layout.addWidget(self._delete_all_measurements_button)
+
+        measurement_layout.addWidget(measurement_action_row)
 
         right_splitter = QSplitter(Qt.Orientation.Vertical)
         right_splitter.addWidget(top_container)

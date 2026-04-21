@@ -1115,6 +1115,22 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_measurement_record_delete_buttons_share_one_row_with_short_labels(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window.delete_measurement_button.text(), "删除选中")
+            self.assertEqual(window._delete_group_measurements_button.text(), "删除类别")
+            self.assertEqual(window._delete_all_measurements_button.text(), "删除全部")
+
+            action_row = window.delete_measurement_button.parentWidget()
+            self.assertIsNotNone(action_row)
+            self.assertIs(action_row, window._delete_group_measurements_button.parentWidget())
+            self.assertIs(action_row, window._delete_all_measurements_button.parentWidget())
+            self.assertIsNotNone(action_row.layout())
+            self.assertEqual(action_row.layout().count(), 3)
+        finally:
+            window.close()
+
     def test_measure_toolbar_is_separate_and_exposes_primary_modes(self) -> None:
         window = MainWindow()
         try:
