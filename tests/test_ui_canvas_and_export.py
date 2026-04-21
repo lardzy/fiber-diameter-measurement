@@ -888,6 +888,41 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_export_results_shows_busy_file_warning_when_export_overwrite_fails(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_busy.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                chosen_output = Path(tmp_dir) / "locked.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(include_excel=True, scope=ExportScope.CURRENT)
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")),
+                    patch("fdm.ui.main_window.QMessageBox.warning") as warning_box,
+                    patch.object(window.export_service, "export_project", side_effect=PermissionError(13, "Permission denied", str(chosen_output))),
+                ):
+                    window.export_results()
+
+                warning_box.assert_called_once()
+                self.assertIn("文件可能正在被其他程序占用", warning_box.call_args.args[2])
+                self.assertIn(str(chosen_output), warning_box.call_args.args[2])
+        finally:
+            window.close()
+
     def test_group_list_moves_to_left_panel_and_shows_count_badges(self) -> None:
         window = MainWindow()
         try:
@@ -2207,6 +2242,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 window.open_shortcut_help_dialog()
             self.assertEqual(len(dialogs), 1)
             self.assertIn("R", dialogs[0]._content.toPlainText())
+            self.assertIn("S", dialogs[0]._content.toPlainText())
             self.assertIn("T", dialogs[0]._content.toPlainText())
             self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
         finally:
@@ -2444,8 +2480,25 @@ class CanvasAndExportTests(unittest.TestCase):
                 self._rect_mask(image.width(), image.height(), (24, 24, 92, 80)),
             )
 
+            confirm_in_add = FakeKeyEvent(Qt.Key.Key_S)
+            window.keyPressEvent(confirm_in_add)
+            self.assertFalse(confirm_in_add.accepted)
+
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
             self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            canvas._magic_segment.request_id = 2
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+            canvas.apply_magic_segment_result(
+                2,
+                self._rect_mask(image.width(), image.height(), (42, 34, 76, 68)),
+            )
+            confirm_in_subtract = FakeKeyEvent(Qt.Key.Key_S)
+            window.keyPressEvent(confirm_in_subtract)
+            self.assertTrue(confirm_in_subtract.accepted)
+            self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+            self.assertIsNone(canvas._magic_segment.subtract_mask)
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
             self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
@@ -2589,6 +2642,45 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertGreaterEqual(int(commit_result["opened_holes"]), 1)
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
+
+    def test_magic_segment_commit_supports_multiple_confirmed_subtract_shapes(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(image.width(), image.height(), (16, 16, 180, 110)),
+        )
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
+            2,
+            self._rect_mask(image.width(), image.height(), (42, 32, 74, 70)),
+        )
+        confirm_result = canvas.confirm_current_magic_subtract_shape()
+        self.assertTrue(bool(confirm_result["confirmed"]))
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+
+        canvas._magic_segment.request_id = 3
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
+            3,
+            self._rect_mask(image.width(), image.height(), (108, 40, 146, 88)),
+        )
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 0)
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+        self.assertGreaterEqual(int(commit_result["opened_holes"]), 2)
 
     def test_magic_segment_inference_does_not_show_cleanup_messages_before_confirm(self) -> None:
         window = MainWindow()

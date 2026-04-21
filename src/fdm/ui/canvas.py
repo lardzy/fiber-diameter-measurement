@@ -69,10 +69,13 @@ class PromptSegmentationSession:
     subtract_negative_points: list[Point] = field(default_factory=list)
     primary_polygon: list[Point] = field(default_factory=list)
     subtract_polygon: list[Point] = field(default_factory=list)
+    confirmed_subtract_polygons: list[list[Point]] = field(default_factory=list)
     primary_rings: list[list[Point]] = field(default_factory=list)
     subtract_rings: list[list[Point]] = field(default_factory=list)
+    confirmed_subtract_rings: list[list[list[Point]]] = field(default_factory=list)
     primary_mask: object | None = None
     subtract_mask: object | None = None
+    confirmed_subtract_masks: list[object] = field(default_factory=list)
     primary_debug_payload: dict[str, object] = field(default_factory=dict)
     subtract_debug_payload: dict[str, object] = field(default_factory=dict)
     request_id: int = 0
@@ -159,7 +162,16 @@ class PromptSegmentationSession:
         return len(self.primary_polygon) >= 3 or (bool(self.primary_rings) and len(self.primary_rings[0]) >= 3)
 
     def has_any_preview(self) -> bool:
-        return self.has_primary_preview() or len(self.subtract_polygon) >= 3 or (bool(self.subtract_rings) and len(self.subtract_rings[0]) >= 3)
+        return (
+            self.has_primary_preview()
+            or len(self.subtract_polygon) >= 3
+            or (bool(self.subtract_rings) and len(self.subtract_rings[0]) >= 3)
+            or bool(self.confirmed_subtract_polygons)
+            or bool(self.confirmed_subtract_rings)
+        )
+
+    def confirmed_subtract_count(self) -> int:
+        return len(self.confirmed_subtract_masks)
 
 
 @dataclass(slots=True)
@@ -550,6 +562,44 @@ class DocumentCanvas(QWidget):
         self._emit_magic_segment_session_changed()
         return self._magic_segment.active_stage
 
+    def can_confirm_current_magic_subtract_shape(self) -> bool:
+        return bool(
+            self._magic_segment.active_stage == MagicSegmentOperationMode.SUBTRACT
+            and not self._magic_segment.busy
+            and self._magic_segment.subtract_mask is not None
+            and (
+                len(self._magic_segment.subtract_polygon) >= 3
+                or (bool(self._magic_segment.subtract_rings) and len(self._magic_segment.subtract_rings[0]) >= 3)
+            )
+        )
+
+    def confirmed_magic_subtract_shape_count(self) -> int:
+        return self._magic_segment.confirmed_subtract_count()
+
+    def confirm_current_magic_subtract_shape(self) -> dict[str, object]:
+        result = {
+            "confirmed": False,
+            "count": self._magic_segment.confirmed_subtract_count(),
+        }
+        if not self.can_confirm_current_magic_subtract_shape():
+            return result
+        self._magic_segment.confirmed_subtract_masks.append(self._clone_magic_mask(self._magic_segment.subtract_mask))
+        self._magic_segment.confirmed_subtract_polygons.append(self._clone_magic_polygon(self._magic_segment.subtract_polygon))
+        self._magic_segment.confirmed_subtract_rings.append(self._clone_magic_rings(self._magic_segment.subtract_rings))
+        self._magic_segment.subtract_positive_points.clear()
+        self._magic_segment.subtract_negative_points.clear()
+        self._magic_segment.subtract_prompt_type = "positive"
+        self._magic_segment.subtract_polygon = []
+        self._magic_segment.subtract_rings = []
+        self._magic_segment.subtract_mask = None
+        self._magic_segment.subtract_debug_payload = {}
+        self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        self.update()
+        self._emit_magic_segment_session_changed()
+        result["confirmed"] = True
+        result["count"] = self._magic_segment.confirmed_subtract_count()
+        return result
+
     def apply_magic_segment_result(
         self,
         request_id: int,
@@ -823,9 +873,12 @@ class DocumentCanvas(QWidget):
         polygon_points = primary_polygon
         area_rings_points = self._clone_magic_rings(self._magic_segment.primary_rings)
         final_mask = primary_mask.copy()
-        subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
-        if subtract_mask is not None:
-            final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_mask)
+        subtract_masks = [self._clone_magic_mask(mask) for mask in self._magic_segment.confirmed_subtract_masks]
+        current_subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
+        if current_subtract_mask is not None:
+            subtract_masks.append(self._clone_magic_mask(current_subtract_mask))
+        if subtract_masks:
+            final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_masks)
             result.update(stats)
             if final_mask is None:
                 self.clear_magic_segment_session()
@@ -2182,6 +2235,17 @@ class DocumentCanvas(QWidget):
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
             return
+        for polygon_points, area_rings in zip(
+            self._magic_segment.confirmed_subtract_polygons,
+            self._magic_segment.confirmed_subtract_rings,
+        ):
+            self._draw_magic_area_preview(
+                painter,
+                polygon_points,
+                area_rings,
+                fill_color=QColor(248, 113, 113, 68),
+                stroke_color=QColor("#F87171"),
+            )
         self._draw_magic_area_preview(
             painter,
             self._magic_segment.primary_polygon,
@@ -2223,6 +2287,8 @@ class DocumentCanvas(QWidget):
             if active_stage == MagicSegmentOperationMode.SUBTRACT
             else "当前编辑：第一形状"
         )
+        if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_segment.confirmed_subtract_count() > 0:
+            operation_text += f" / 已确认 {self._magic_segment.confirmed_subtract_count()} 块"
         if self._magic_segment.busy:
             prompt_text += " / 推理中..."
         rect = QRectF(14.0, 14.0, 360.0, 32.0)

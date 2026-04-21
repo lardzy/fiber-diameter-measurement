@@ -232,6 +232,46 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(planned[0].kind, "xlsx")
         self.assertEqual(planned[0].filename, XLSX_EXPORT_FILENAME)
 
+    def test_export_progress_callback_reports_each_output_step(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_progress.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+        progress_events: list[tuple[int, int, str, str | None]] = []
+
+        with TemporaryDirectory() as tmp_dir:
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_csv=True, include_excel=True, scope=ExportScope.CURRENT),
+                progress_callback=lambda completed, total, label, path: progress_events.append(
+                    (completed, total, label, path.name if path is not None else None)
+                ),
+            )
+
+        self.assertEqual(
+            progress_events,
+            [
+                (0, 4, CSV_IMAGE_SUMMARY_FILENAME, CSV_IMAGE_SUMMARY_FILENAME),
+                (1, 4, "纤维种类汇总.csv", "纤维种类汇总.csv"),
+                (2, 4, "测量明细.csv", "测量明细.csv"),
+                (3, 4, XLSX_EXPORT_FILENAME, XLSX_EXPORT_FILENAME),
+                (4, 4, "导出完成", None),
+            ],
+        )
+
     def test_all_enabled_export_selection_uses_full_resolution_render_mode(self) -> None:
         selection = ExportSelection.all_enabled()
         self.assertEqual(selection.render_mode, ExportImageRenderMode.FULL_RESOLUTION)

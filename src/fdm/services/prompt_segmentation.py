@@ -405,6 +405,24 @@ def fill_magic_draft_internal_holes(mask):
     return filled.astype(bool)
 
 
+def _combined_subtraction_mask(subtract_mask):
+    try:
+        import numpy as np
+    except ImportError as exc:  # pragma: no cover - dependency is required by the app
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    mask_items = subtract_mask if isinstance(subtract_mask, (list, tuple)) else [subtract_mask]
+    combined = None
+    for item in mask_items:
+        normalized = normalize_magic_draft_mask(item)
+        if normalized is None:
+            continue
+        if combined is None:
+            combined = normalized.copy()
+        else:
+            combined = np.asarray(combined, dtype=bool) | np.asarray(normalized, dtype=bool)
+    return combined
+
+
 def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object | None, dict[str, object]]:
     try:
         import numpy as np
@@ -416,13 +434,18 @@ def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object
         "discarded_fragments": False,
         "result_empty": False,
         "had_intersection": False,
+        "subtract_shape_count": 0,
     }
     if primary is None:
         stats["result_empty"] = True
         return None, stats
-    subtract = normalize_magic_draft_mask(subtract_mask)
+    subtract = _combined_subtraction_mask(subtract_mask)
     if subtract is None:
         return primary.copy(), stats
+    if isinstance(subtract_mask, (list, tuple)):
+        stats["subtract_shape_count"] = len([item for item in subtract_mask if normalize_magic_draft_mask(item) is not None])
+    else:
+        stats["subtract_shape_count"] = 1
     intersection = primary & subtract
     if not np.any(intersection):
         return primary.copy(), stats

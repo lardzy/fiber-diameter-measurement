@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QEvent, QPointF, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -367,6 +367,7 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button: QToolButton | None = None
         self._magic_roi_button: QToolButton | None = None
         self._magic_operation_button: QToolButton | None = None
+        self._magic_confirm_subtract_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
         self._preview_analysis_widget: QWidget | None = None
@@ -751,32 +752,39 @@ class MainWindow(QMainWindow):
 
         self._magic_toggle_button = QToolButton(container)
         self._magic_toggle_button.setProperty("contextTool", True)
-        self._magic_toggle_button.setText("切换正负 (R)")
+        self._magic_toggle_button.setText("正负(R)")
         self._magic_toggle_button.clicked.connect(self._cycle_active_magic_prompt_type)
         layout.addWidget(self._magic_toggle_button)
 
         self._magic_roi_button = QToolButton(container)
         self._magic_roi_button.setProperty("contextTool", True)
         self._magic_roi_button.setCheckable(True)
-        self._magic_roi_button.setText("ROI: 开 (Y)")
+        self._magic_roi_button.setText("ROI开(Y)")
         self._magic_roi_button.clicked.connect(self._toggle_active_magic_roi)
         layout.addWidget(self._magic_roi_button)
 
         self._magic_operation_button = QToolButton(container)
         self._magic_operation_button.setProperty("contextTool", True)
-        self._magic_operation_button.setText("模式：添加 (T)")
+        self._magic_operation_button.setText("添加(T)")
         self._magic_operation_button.clicked.connect(self._cycle_magic_segment_operation_mode)
         layout.addWidget(self._magic_operation_button)
 
+        self._magic_confirm_subtract_button = QToolButton(container)
+        self._magic_confirm_subtract_button.setProperty("contextTool", True)
+        self._magic_confirm_subtract_button.setText("加一块(S)")
+        self._magic_confirm_subtract_button.setToolTip("确认当前剔除形状，并继续添加下一块剔除区域")
+        self._magic_confirm_subtract_button.clicked.connect(self._confirm_current_magic_subtract_shape)
+        layout.addWidget(self._magic_confirm_subtract_button)
+
         self._magic_complete_button = QToolButton(container)
         self._magic_complete_button.setProperty("contextTool", True)
-        self._magic_complete_button.setText("完成 (Enter / F)")
+        self._magic_complete_button.setText("确认(Enter/F)")
         self._magic_complete_button.clicked.connect(self._commit_active_magic_preview)
         layout.addWidget(self._magic_complete_button)
 
         self._magic_cancel_button = QToolButton(container)
         self._magic_cancel_button.setProperty("contextTool", True)
-        self._magic_cancel_button.setText("放弃 (Esc)")
+        self._magic_cancel_button.setText("取消(Esc)")
         self._magic_cancel_button.clicked.connect(self._cancel_active_magic_session)
         layout.addWidget(self._magic_cancel_button)
 
@@ -3078,14 +3086,48 @@ class MainWindow(QMainWindow):
             output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
             if not output_dir:
                 return
-        outputs = self.export_service.export_project(
-            self.project,
-            output_dir,
-            selection=selection,
-            documents=target_documents,
-            overlay_renderer=self._render_overlay_image,
-            single_output_path=single_output_path,
+        progress = self._create_blocking_progress_dialog(
+            title="导出结果",
+            label_text="正在准备导出...",
+            maximum=max(1, len(planned_outputs)),
         )
+        current_output_path: Path | None = None
+
+        def on_export_progress(completed_steps: int, total_steps: int, label: str, path: Path | None) -> None:
+            nonlocal current_output_path
+            if path is not None:
+                current_output_path = path
+            self._update_blocking_progress_dialog(
+                progress,
+                completed_steps=completed_steps,
+                total_steps=total_steps,
+                label=label,
+                path=path,
+            )
+
+        progress.show()
+        progress.raise_()
+        progress.activateWindow()
+        self._pump_modal_progress_events()
+        try:
+            outputs = self.export_service.export_project(
+                self.project,
+                output_dir,
+                selection=selection,
+                documents=target_documents,
+                overlay_renderer=self._render_overlay_image,
+                single_output_path=single_output_path,
+                progress_callback=on_export_progress,
+            )
+        except Exception as exc:
+            self._close_progress_dialog(progress)
+            QMessageBox.warning(
+                self,
+                "导出失败",
+                self._format_export_failure_message(exc, export_path=current_output_path),
+            )
+            return
+        self._close_progress_dialog(progress)
         if not outputs:
             QMessageBox.information(self, "导出结果", "没有生成任何文件。")
             return
@@ -4877,6 +4919,65 @@ class MainWindow(QMainWindow):
         progress.setMinimumWidth(420)
         return progress
 
+    def _create_blocking_progress_dialog(self, *, title: str, label_text: str, maximum: int) -> QProgressDialog:
+        progress = self._create_progress_dialog(title=title, label_text=label_text, maximum=maximum)
+        progress.setCancelButton(None)
+        progress.setWindowFlag(Qt.WindowType.WindowStaysOnTopHint, True)
+        progress.setWindowFlag(Qt.WindowType.WindowCloseButtonHint, False)
+        return progress
+
+    def _update_blocking_progress_dialog(
+        self,
+        progress: QProgressDialog,
+        *,
+        completed_steps: int,
+        total_steps: int,
+        label: str,
+        path: Path | None,
+    ) -> None:
+        total = max(1, total_steps)
+        progress.setMaximum(total)
+        progress.setValue(max(0, min(completed_steps, total)))
+        if path is not None:
+            current_index = min(completed_steps + 1, total)
+            progress.setLabelText(f"正在导出 ({current_index}/{total})\n{path.name}")
+        elif label:
+            progress.setLabelText(label)
+        self._pump_modal_progress_events()
+
+    def _pump_modal_progress_events(self) -> None:
+        QApplication.processEvents(QEventLoop.ProcessEventsFlag.ExcludeUserInputEvents)
+
+    def _close_progress_dialog(self, progress: QProgressDialog | None) -> None:
+        if progress is None:
+            return
+        progress.close()
+        progress.deleteLater()
+        self._pump_modal_progress_events()
+
+    def _is_export_file_busy_error(self, exc: Exception) -> bool:
+        if isinstance(exc, PermissionError):
+            return True
+        if isinstance(exc, OSError) and getattr(exc, "errno", None) in {13, 16, 32}:
+            return True
+        lowered = str(exc).lower()
+        return "permission denied" in lowered or "being used by another process" in lowered
+
+    def _format_export_failure_message(self, exc: Exception, *, export_path: Path | None) -> str:
+        failed_path = getattr(exc, "filename", None)
+        resolved_path = Path(failed_path) if isinstance(failed_path, str) and failed_path else export_path
+        if self._is_export_file_busy_error(exc):
+            if resolved_path is not None:
+                return (
+                    "无法覆盖导出文件，文件可能正在被其他程序占用：\n"
+                    f"{resolved_path}\n\n"
+                    "请关闭占用该文件的程序后重试。"
+                )
+            return "无法覆盖导出文件，文件可能正在被其他程序占用。\n请关闭占用该文件的程序后重试。"
+        if resolved_path is not None:
+            return f"导出过程中写入文件失败：\n{resolved_path}\n\n{exc}"
+        return f"导出过程中发生错误：\n{exc}"
+
     def _update_action_states(self) -> None:
         document = self.current_document()
         history = document.history if document is not None else None
@@ -4971,8 +5072,8 @@ class MainWindow(QMainWindow):
 
     def _magic_operation_button_text(self, operation_mode: str) -> str:
         if operation_mode == MagicSegmentOperationMode.SUBTRACT:
-            return "编辑：剔除形状 (T)"
-        return "编辑：第一形状 (T)"
+            return "剔除(T)"
+        return "添加(T)"
 
     def _current_magic_roi_enabled(self, tool_mode: str | None = None) -> bool:
         active_mode = str(tool_mode or self._tool_mode or "").strip()
@@ -5039,17 +5140,22 @@ class MainWindow(QMainWindow):
         if self._magic_roi_button is not None:
             self._magic_roi_button.setVisible(standard_mode or fiber_quick_mode)
             self._magic_roi_button.setChecked(self._current_magic_roi_enabled())
-            self._magic_roi_button.setText(f"ROI：{'开' if self._current_magic_roi_enabled() else '关'} (Y)")
+            self._magic_roi_button.setText(f"ROI{'开' if self._current_magic_roi_enabled() else '关'}(Y)")
             self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
             self._magic_operation_button.setEnabled(has_document and standard_mode and not busy)
+        if self._magic_confirm_subtract_button is not None:
+            self._magic_confirm_subtract_button.setVisible(standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT)
+            self._magic_confirm_subtract_button.setEnabled(
+                bool(canvas and canvas.can_confirm_current_magic_subtract_shape())
+            )
         if self._magic_complete_button is not None:
             self._magic_complete_button.setText(
-                "完成 (Enter / F)"
+                "确认(Enter/F)"
                 if standard_mode
-                else ("确认线段 (Enter / F)" if fiber_quick_mode else "加入当前类别 (Enter / F)")
+                else ("确认(Enter/F)" if fiber_quick_mode else "加入(Enter/F)")
             )
             self._magic_complete_button.setEnabled(
                 bool(
@@ -5073,6 +5179,7 @@ class MainWindow(QMainWindow):
                 )
             )
         if self._magic_cancel_button is not None:
+            self._magic_cancel_button.setText("取消(Esc)")
             self._magic_cancel_button.setEnabled(
                 bool(
                     canvas
@@ -5438,6 +5545,24 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(self._magic_operation_label_text(operation_mode), 2500)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
+
+    def _confirm_current_magic_subtract_shape(self) -> bool:
+        canvas = self.current_canvas()
+        if (
+            canvas is None
+            or not is_magic_segment_tool_mode(self._tool_mode)
+            or canvas.is_magic_segment_busy()
+            or canvas.current_magic_segment_operation_mode() != MagicSegmentOperationMode.SUBTRACT
+        ):
+            return False
+        confirm_result = canvas.confirm_current_magic_subtract_shape()
+        if not bool(confirm_result.get("confirmed", False)):
+            return False
+        count = int(confirm_result.get("count", 0) or 0)
+        self.statusBar().showMessage(f"已确认剔除形状 {count} 块，可继续添加下一块。", 3000)
+        self._update_magic_segment_controls()
+        self._focus_current_canvas()
+        return True
 
     def _commit_magic_segment_preview(self) -> bool:
         canvas = self.current_canvas()
@@ -5829,7 +5954,8 @@ class MainWindow(QMainWindow):
             )
 
         painter.end()
-        image.save(str(output_path))
+        if not image.save(str(output_path)):
+            raise OSError(f"无法写入导出文件：{output_path}")
 
     def _color_icon(self, color_value: str, *, size: int = 12) -> QIcon:
         pixmap = QPixmap(size, size)
@@ -5842,8 +5968,8 @@ class MainWindow(QMainWindow):
         return "#111111" if luminance > 186 else "#FFFFFF"
 
     def keyPressEvent(self, event) -> None:
+        canvas = self.current_canvas()
         if event.key() == Qt.Key.Key_Space:
-            canvas = self.current_canvas()
             if canvas is not None:
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
@@ -5880,6 +6006,14 @@ class MainWindow(QMainWindow):
                     self._cycle_magic_segment_operation_mode()
                     event.accept()
                     return
+                if (
+                    event.key() == Qt.Key.Key_S
+                    and canvas is not None
+                    and canvas.current_magic_segment_operation_mode() == MagicSegmentOperationMode.SUBTRACT
+                ):
+                    if self._confirm_current_magic_subtract_shape():
+                        event.accept()
+                        return
                 if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
                     self._commit_magic_segment_preview()
                     event.accept()

@@ -7,6 +7,7 @@ from pathlib import Path
 import csv
 import json
 import math
+from typing import Callable
 import zipfile
 from xml.sax.saxutils import escape
 
@@ -142,13 +143,18 @@ class ExportService:
         documents: list[ImageDocument] | None = None,
         overlay_renderer=None,
         single_output_path: str | Path | None = None,
+        progress_callback: Callable[[int, int, str, Path | None], None] | None = None,
     ) -> dict[str, object]:
         selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
         target_documents = list(documents or project.documents)
         if not selection.any_selected() or not target_documents:
             return {}
         output_path = Path(output_dir)
-        planned_outputs = self.planned_outputs(target_documents, selection)
+        planned_outputs = [
+            item
+            for item in self.planned_outputs(target_documents, selection)
+            if overlay_renderer is not None or item.kind not in {"measurement_overlay", "scale_overlay", "combined_overlay"}
+        ]
         single_output_target = Path(single_output_path) if single_output_path is not None else None
         if single_output_target is not None and len(planned_outputs) != 1:
             raise ValueError("single_output_path can only be used when exactly one export file is planned.")
@@ -164,6 +170,15 @@ class ExportService:
         fiber_rows = self.build_fiber_rows(target_documents)
         measurement_rows = self.build_measurement_rows(target_documents)
         meta_rows = self.build_export_meta_rows(project, target_documents)
+        completed_steps = 0
+        total_steps = len(planned_outputs)
+
+        def begin_step(path: Path) -> None:
+            self._report_progress(progress_callback, completed_steps, total_steps, path.name, path)
+
+        def finish_step() -> None:
+            nonlocal completed_steps
+            completed_steps += 1
 
         if selection.include_csv:
             csv_outputs = {
@@ -189,9 +204,15 @@ class ExportService:
                     single_plan=single_plan,
                 ),
             }
+            begin_step(csv_outputs["image_summary_csv"])
             self._write_csv(csv_outputs["image_summary_csv"], image_rows)
+            finish_step()
+            begin_step(csv_outputs["fiber_details_csv"])
             self._write_csv(csv_outputs["fiber_details_csv"], fiber_rows)
+            finish_step()
+            begin_step(csv_outputs["measurement_details_csv"])
             self._write_csv(csv_outputs["measurement_details_csv"], measurement_rows)
+            finish_step()
             outputs.update(csv_outputs)
 
         if selection.include_excel:
@@ -202,6 +223,7 @@ class ExportService:
                 single_output_target=single_output_target,
                 single_plan=single_plan,
             )
+            begin_step(xlsx_path)
             self._write_xlsx(
                 xlsx_path,
                 {
@@ -211,6 +233,7 @@ class ExportService:
                     SHEET_EXPORT_META: meta_rows,
                 },
             )
+            finish_step()
             outputs["xlsx"] = xlsx_path
 
         measurement_overlays: list[Path] = []
@@ -228,6 +251,7 @@ class ExportService:
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
+                begin_step(output_file)
                 overlay_renderer(
                     document,
                     output_file,
@@ -235,6 +259,7 @@ class ExportService:
                     include_scale=False,
                     render_mode=selection.render_mode,
                 )
+                finish_step()
                 measurement_overlays.append(output_file)
             if selection.include_scale_overlay and overlay_renderer is not None:
                 output_file = self._resolved_output_path(
@@ -245,6 +270,7 @@ class ExportService:
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
+                begin_step(output_file)
                 overlay_renderer(
                     document,
                     output_file,
@@ -252,6 +278,7 @@ class ExportService:
                     include_scale=True,
                     render_mode=selection.render_mode,
                 )
+                finish_step()
                 scale_overlays.append(output_file)
             if selection.include_combined_overlay and overlay_renderer is not None:
                 output_file = self._resolved_output_path(
@@ -262,6 +289,7 @@ class ExportService:
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
+                begin_step(output_file)
                 overlay_renderer(
                     document,
                     output_file,
@@ -269,6 +297,7 @@ class ExportService:
                     include_scale=True,
                     render_mode=selection.render_mode,
                 )
+                finish_step()
                 combined_overlays.append(output_file)
             if selection.include_scale_json and document.calibration is not None:
                 output_file = self._resolved_output_path(
@@ -279,9 +308,11 @@ class ExportService:
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
+                begin_step(output_file)
                 exported = CalibrationSidecarIO.export_document(document, output_file)
                 if exported is not None:
                     scale_jsons.append(exported)
+                finish_step()
 
         if measurement_overlays:
             outputs["measurement_overlays"] = measurement_overlays
@@ -291,7 +322,19 @@ class ExportService:
             outputs["combined_overlays"] = combined_overlays
         if scale_jsons:
             outputs["scale_jsons"] = scale_jsons
+        self._report_progress(progress_callback, total_steps, total_steps, "导出完成", None)
         return outputs
+
+    def _report_progress(
+        self,
+        progress_callback: Callable[[int, int, str, Path | None], None] | None,
+        completed_steps: int,
+        total_steps: int,
+        label: str,
+        path: Path | None,
+    ) -> None:
+        if progress_callback is not None:
+            progress_callback(completed_steps, total_steps, label, path)
 
     def _resolved_output_path(
         self,
