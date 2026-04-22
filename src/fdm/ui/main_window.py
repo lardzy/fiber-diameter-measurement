@@ -78,6 +78,7 @@ from fdm.settings import (
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
+from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -4091,7 +4092,7 @@ class MainWindow(QMainWindow):
                         else [],
                         edge_trim_enabled=bool(self._app_settings.fiber_quick_edge_trim_enabled),
                         line_extension_px=float(self._app_settings.fiber_quick_line_extension_px),
-                        timeout_ms=1000.0,
+                        timeout_ms=DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
                     )
                 )
                 self.statusBar().showMessage("快速测径已完成分割，正在异步计算直径线。", 5000)
@@ -5806,7 +5807,7 @@ class MainWindow(QMainWindow):
                 negative_points=list(snapshot.get("negative_points", [])) if isinstance(snapshot.get("negative_points"), list) else [],
                 edge_trim_enabled=bool(self._app_settings.fiber_quick_edge_trim_enabled),
                 line_extension_px=float(self._app_settings.fiber_quick_line_extension_px),
-                timeout_ms=1000.0,
+                timeout_ms=DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
             )
         )
 

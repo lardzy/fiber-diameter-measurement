@@ -13,6 +13,8 @@ from fdm.services.prompt_segmentation import (
     normalize_magic_draft_mask,
 )
 
+DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS = 3000.0
+
 
 @dataclass(slots=True)
 class FiberQuickDiameterGeometryResult:
@@ -36,7 +38,7 @@ class FiberQuickDiameterGeometryService:
         edge_trim_enabled: bool = True,
         line_extension_px: float = 0.0,
         cancel_check: Callable[[], bool] | None = None,
-        timeout_ms: float = 1000.0,
+        timeout_ms: float = DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
     ) -> FiberQuickDiameterGeometryResult:
         try:
             import numpy as np

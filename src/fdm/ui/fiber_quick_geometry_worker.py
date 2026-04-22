@@ -6,7 +6,10 @@ from threading import Lock
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 
 from fdm.geometry import Point
-from fdm.services.fiber_quick_geometry import FiberQuickDiameterGeometryService
+from fdm.services.fiber_quick_geometry import (
+    DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
+    FiberQuickDiameterGeometryService,
+)
 
 
 @dataclass(slots=True)
@@ -20,7 +23,7 @@ class FiberQuickGeometryRequest:
     negative_points: list[Point]
     edge_trim_enabled: bool = True
     line_extension_px: float = 0.0
-    timeout_ms: float = 1000.0
+    timeout_ms: float = DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 
 
 class FiberQuickGeometryWorker(QObject):

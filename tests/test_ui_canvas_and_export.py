@@ -36,6 +36,7 @@ from fdm.settings import (
 )
 from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -2873,6 +2874,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(canvas._fiber_quick.geometry_busy)
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 1)
+            self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
             self.assertIn("正在异步计算直径线", window.statusBar().currentMessage())
         finally:
             window._reset_workspace()
@@ -2929,6 +2931,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(canvas.has_fiber_quick_session())
             self.assertEqual(fake_worker.requests, [(document.id, 1)])
             self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
 
             window._on_fiber_quick_commit_geometry_succeeded(
                 document.id,
