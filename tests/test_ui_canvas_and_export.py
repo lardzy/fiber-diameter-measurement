@@ -1569,6 +1569,79 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
+    def test_single_document_area_auto_recognition_does_not_update_project_templates(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_single_local_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_single_local_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            window._apply_area_inference_result(
+                first,
+                [self._area_instance("棉")],
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+
+            self.assertEqual(window.project.project_group_templates, [])
+            self.assertIsNotNone(first.find_group_by_label("棉"))
+            self.assertIsNone(second.find_group_by_label("棉"))
+            self.assertIsNone(second.find_group_by_label("莱赛尔"))
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_single_document_area_auto_then_add_global_same_label_only_syncs_explicit_template(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_then_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_then_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            window._apply_area_inference_result(
+                first,
+                [self._area_instance("棉")],
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+            auto_measurement = first.area_measurements()[0]
+            original_group_id = auto_measurement.fiber_group_id
+
+            window._set_current_document(second.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#E07A5F", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉"])
+            self.assertEqual(first.get_measurement(auto_measurement.id).fiber_group_id, original_group_id)
+            self.assertEqual(first.get_group(original_group_id).label, "棉")
+            self.assertEqual(first.get_group(original_group_id).color, "#e07a5f")
+            self.assertIsNone(second.find_group_by_label("莱赛尔"))
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
     def test_area_auto_recognition_reorders_existing_groups_without_losing_manual_measurements(self) -> None:
         window = MainWindow()
         try:
@@ -1989,6 +2062,41 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog.close()
             window.close()
 
+    def test_add_existing_project_global_group_reuses_template_color_across_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_global_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_global_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first.create_group(color="#E07A5F", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            window._set_current_document(second.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#1F7A8C")
+            self.assertEqual(first.find_group_by_label("棉").color, "#1f7a8c")
+            self.assertEqual(second.find_group_by_label("棉").color, "#1f7a8c")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
     def test_add_fiber_group_duplicate_local_is_noop(self) -> None:
         window = MainWindow()
         dialogs: list[FiberGroupDialog] = []
@@ -2055,6 +2163,43 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window.close()
+
+    def test_edit_template_bound_group_color_syncs_project_template_and_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first_group = first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#1F7A8C", label="棉")
+            first.set_active_group(first_group.id)
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#E07A5F", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#e07a5f")
+            self.assertEqual(first.find_group_by_label("棉").color, "#e07a5f")
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_edit_group_to_existing_merges_measurements(self) -> None:
@@ -2124,6 +2269,49 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._apply_project_group_templates_to_document(document))
             self.assertIsNone(document.find_group_by_label("棉"))
         finally:
+            window.close()
+
+    def test_settings_group_color_update_syncs_template_bound_groups(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/settings_group_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/settings_group_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first_group = first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#1F7A8C", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            class FakeDialog:
+                def __init__(self, settings: AppSettings) -> None:
+                    self._settings = settings
+
+                def app_settings(self) -> AppSettings:
+                    return self._settings
+
+                def group_colors(self) -> dict[str, str]:
+                    return {first_group.id: "#E07A5F"}
+
+                def wants_scale_anchor_pick(self) -> bool:
+                    return False
+
+            with (
+                patch("fdm.ui.main_window.refresh_widget_theme"),
+                patch.object(window, "_apply_theme_mode"),
+                patch.object(window, "_save_app_settings"),
+            ):
+                window._apply_settings_dialog(FakeDialog(window._app_settings), close_after=False)
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#e07a5f")
+            self.assertEqual(first.find_group_by_label("棉").color, "#e07a5f")
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_merge_legacy_presets_renames_name_conflicts(self) -> None:

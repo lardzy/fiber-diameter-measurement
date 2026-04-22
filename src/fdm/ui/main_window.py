@@ -51,6 +51,7 @@ from fdm.geometry import Line, Point, line_length
 from fdm.models import (
     Calibration,
     CalibrationPreset,
+    FiberGroup,
     ImageDocument,
     Measurement,
     OverlayAnnotation,
@@ -269,6 +270,7 @@ class BatchLoadState:
 class AreaInferenceBatchState:
     total: int
     model_name: str = ""
+    update_project_group_templates: bool = True
     completed_count: int = 0
     failed_count: int = 0
     cancelled: bool = False
@@ -2324,37 +2326,66 @@ class MainWindow(QMainWindow):
     def _next_group_color(self, document: ImageDocument) -> str:
         return self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)]
 
+    def _normalize_group_color(self, color_value: str, *, fallback: str = "#1F7A8C") -> str:
+        color = QColor(str(color_value or "").strip())
+        if color.isValid():
+            return color.name()
+        fallback_color = QColor(str(fallback or "").strip())
+        if fallback_color.isValid():
+            return fallback_color.name()
+        return "#1f7a8c"
+
     def _ensure_project_group_template(self, *, label: str, color: str) -> bool:
         token = normalize_group_label(label)
         if not token or self._project_group_template_for_label(token) is not None:
             return False
         self.project.project_group_templates.append(
-            ProjectGroupTemplate(label=token, color=color),
+            ProjectGroupTemplate(label=token, color=self._normalize_group_color(color)),
         )
         return True
 
-    def _apply_project_group_templates_to_document(self, document: ImageDocument) -> bool:
+    def _set_project_group_template_color(self, *, label: str, color: str) -> bool:
+        template = self._project_group_template_for_label(label)
+        if template is None:
+            return False
+        normalized_color = self._normalize_group_color(color, fallback=template.color)
+        if template.color == normalized_color:
+            return False
+        template.color = normalized_color
+        return True
+
+    def _apply_project_group_templates_to_document(
+        self,
+        document: ImageDocument,
+        *,
+        labels: set[str] | None = None,
+    ) -> bool:
         changed = False
         for template in self.project.project_group_templates:
             token = normalize_group_label(template.label)
-            if not token or document.is_project_group_label_suppressed(token):
+            if (
+                not token
+                or (labels is not None and token not in labels)
+                or document.is_project_group_label_suppressed(token)
+            ):
                 continue
             _group, ensured_changed = self._ensure_document_named_group(
                 document,
                 label=token,
                 color=template.color,
                 activate=False,
+                sync_color=True,
             )
             changed = ensured_changed or changed
         if document.active_group_id is None and document.can_delete_uncategorized_entry():
             changed = document.hide_uncategorized_entry() or changed
         return changed
 
-    def _sync_project_group_templates(self, *, label: str) -> bool:
+    def _sync_project_group_templates(self, *, label: str, labels: set[str] | None = None) -> bool:
         any_changed = False
         for document in self.project.documents:
             before = document.snapshot_state()
-            changed = self._apply_project_group_templates_to_document(document)
+            changed = self._apply_project_group_templates_to_document(document, labels=labels)
             after = document.snapshot_state()
             if changed and document.history is not None and before != after:
                 document.history.push(label, before, after)
@@ -2362,6 +2393,7 @@ class MainWindow(QMainWindow):
             elif changed:
                 any_changed = True
         return any_changed
+
     def _clear_group_suppression_when_present(self, document: ImageDocument, label: str) -> None:
         if document.find_group_by_label(label) is not None:
             document.unsuppress_project_group_label(label)
@@ -2373,10 +2405,12 @@ class MainWindow(QMainWindow):
         label: str,
         color: str,
         activate: bool,
-    ) -> tuple[object | None, bool]:
+        sync_color: bool = False,
+    ) -> tuple[FiberGroup | None, bool]:
         token = normalize_group_label(label)
         if not token:
             return None, False
+        normalized_color = self._normalize_group_color(color)
         changed = False
         matches = document.groups_by_label(token)
         if matches:
@@ -2384,12 +2418,15 @@ class MainWindow(QMainWindow):
             for duplicate in matches[1:]:
                 if document.merge_group_into(duplicate.id, canonical.id):
                     changed = True
+            if sync_color and canonical.color != normalized_color:
+                canonical.color = normalized_color
+                changed = True
             if activate and document.active_group_id != canonical.id:
                 document.set_active_group(canonical.id)
                 changed = True
         else:
             active_group_id = document.active_group_id
-            canonical = document.create_group(color=color, label=token)
+            canonical = document.create_group(color=normalized_color, label=token)
             if activate or active_group_id is None:
                 document.set_active_group(canonical.id)
             elif active_group_id != canonical.id:
@@ -2418,7 +2455,12 @@ class MainWindow(QMainWindow):
         )
         return self._color_palette[template_count % len(self._color_palette)]
 
-    def _area_inference_global_group_labels(self, model_name: str) -> list[str]:
+    def _resolved_area_inference_group_labels(
+        self,
+        model_name: str,
+        *,
+        update_project_group_templates: bool,
+    ) -> list[str]:
         ordered_labels: list[str] = []
         seen_labels: set[str] = set()
         for template in self.project.project_group_templates:
@@ -2431,15 +2473,22 @@ class MainWindow(QMainWindow):
             token = normalize_group_label(label)
             if not token or token in seen_labels:
                 continue
-            self.project.project_group_templates.append(
-                ProjectGroupTemplate(
-                    label=token,
-                    color=self._area_inference_group_color_for_label(token),
+            if update_project_group_templates and self._project_group_template_for_label(token) is None:
+                self.project.project_group_templates.append(
+                    ProjectGroupTemplate(
+                        label=token,
+                        color=self._area_inference_group_color_for_label(token),
+                    )
                 )
-            )
             ordered_labels.append(token)
             seen_labels.add(token)
         return ordered_labels
+
+    def _area_inference_global_group_labels(self, model_name: str) -> list[str]:
+        return self._resolved_area_inference_group_labels(
+            model_name,
+            update_project_group_templates=True,
+        )
 
     def _normalize_document_groups_for_area_inference(
         self,
@@ -2463,6 +2512,7 @@ class MainWindow(QMainWindow):
                 label=token,
                 color=self._area_inference_group_color_for_label(token),
                 activate=False,
+                sync_color=self._project_group_template_for_label(token) is not None,
             )
             changed = ensured_changed or changed
             if group is None or group.id in seen_group_ids:
@@ -2485,6 +2535,23 @@ class MainWindow(QMainWindow):
             document.fiber_groups.sort(key=lambda group: group.number)
             document.rebuild_group_memberships()
         return changed
+
+    def _sync_project_group_template_colors(
+        self,
+        color_by_label: dict[str, str],
+        *,
+        history_label: str,
+    ) -> bool:
+        labels_to_sync: set[str] = set()
+        template_changed = False
+        for raw_label, raw_color in color_by_label.items():
+            token = normalize_group_label(raw_label)
+            if not token or self._project_group_template_for_label(token) is None:
+                continue
+            template_changed = self._set_project_group_template_color(label=token, color=raw_color) or template_changed
+            labels_to_sync.add(token)
+        sync_changed = self._sync_project_group_templates(label=history_label, labels=labels_to_sync) if labels_to_sync else False
+        return template_changed or sync_changed
 
     def _prompt_preset_apply_scope(self, preset: CalibrationPreset) -> str | None:
         if len(self.project.documents) <= 1:
@@ -2801,6 +2868,7 @@ class MainWindow(QMainWindow):
         self._area_infer_state = AreaInferenceBatchState(
             total=len(requests),
             model_name=model_name,
+            update_project_group_templates=len(requests) > 1,
             failures=[],
         )
         progress = self._create_progress_dialog(
@@ -2925,6 +2993,7 @@ class MainWindow(QMainWindow):
                 instances,
                 global_group_labels=state.global_group_labels if state is not None else None,
                 model_name=state.model_name if state is not None else "",
+                update_project_group_templates=bool(state.update_project_group_templates) if state is not None else True,
             )
         if self._area_infer_progress_dialog is not None and state is not None:
             self._area_infer_progress_dialog.setValue(state.completed_count)
@@ -3259,12 +3328,29 @@ class MainWindow(QMainWindow):
         if document is not None:
             group_colors = dialog.group_colors()
             if group_colors:
-                def mutate_group_colors() -> None:
-                    for group in document.sorted_groups():
-                        if group.id in group_colors:
-                            group.color = group_colors[group.id]
+                local_group_colors: dict[str, str] = {}
+                project_template_colors: dict[str, str] = {}
+                for group in document.sorted_groups():
+                    if group.id not in group_colors:
+                        continue
+                    target_color = self._normalize_group_color(group_colors[group.id], fallback=group.color)
+                    label = normalize_group_label(group.label)
+                    if label and self._project_group_template_for_label(label) is not None:
+                        project_template_colors[label] = target_color
+                    elif group.color != target_color:
+                        local_group_colors[group.id] = target_color
+                if local_group_colors:
+                    def mutate_group_colors() -> None:
+                        for group in document.sorted_groups():
+                            if group.id in local_group_colors:
+                                group.color = local_group_colors[group.id]
 
-                self._apply_document_change(document, "更新类别颜色", mutate_group_colors)
+                    self._apply_document_change(document, "更新类别颜色", mutate_group_colors)
+                if project_template_colors:
+                    self._sync_project_group_template_colors(
+                        project_template_colors,
+                        history_label="同步项目全局类别颜色",
+                    )
 
         should_pick_scale_anchor = dialog.wants_scale_anchor_pick()
         if should_pick_scale_anchor and self.current_document() is not None:
@@ -3460,8 +3546,16 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, "新增类别", "应用到当前项目全局时，类别名称不能为空。")
             return
 
+        template = self._project_group_template_for_label(token) if token else None
         existing_group = document.find_group_by_label(token) if token else None
-        color = existing_group.color if existing_group is not None else selected_color
+        if template is not None:
+            color = template.color
+        elif apply_to_project:
+            color = self._normalize_group_color(selected_color, fallback=self._next_group_color(document))
+        elif existing_group is not None:
+            color = existing_group.color
+        else:
+            color = self._normalize_group_color(selected_color, fallback=self._next_group_color(document))
         template_added = False
         if apply_to_project:
             template_added = self._ensure_project_group_template(label=token, color=color)
@@ -3473,6 +3567,7 @@ class MainWindow(QMainWindow):
                     label=token,
                     color=color,
                     activate=True,
+                    sync_color=apply_to_project or template is not None,
                 )
             else:
                 group = document.create_group(
@@ -3549,6 +3644,11 @@ class MainWindow(QMainWindow):
                     document.unsuppress_project_group_label(target_token)
 
             changed = self._apply_document_change(document, "合并类别", mutate_merge)
+            if target_label and self._project_group_template_for_label(target_label) is not None:
+                changed = self._sync_project_group_template_colors(
+                    {target_label: target_color},
+                    history_label="同步项目全局类别颜色",
+                ) or changed
             if changed:
                 self.statusBar().showMessage("类别已合并", 3000)
             return
@@ -3566,6 +3666,11 @@ class MainWindow(QMainWindow):
                 document.unsuppress_project_group_label(target_label)
 
         changed = self._apply_document_change(document, "编辑类别", mutate_rename)
+        if target_label and self._project_group_template_for_label(target_label) is not None:
+            changed = self._sync_project_group_template_colors(
+                {target_label: target_color},
+                history_label="同步项目全局类别颜色",
+            ) or changed
         if changed:
             self.statusBar().showMessage("类别已更新", 3000)
 
@@ -3819,6 +3924,7 @@ class MainWindow(QMainWindow):
         *,
         global_group_labels: list[str] | None = None,
         model_name: str = "",
+        update_project_group_templates: bool = True,
     ) -> None:
         if not instances:
             def clear_mutate() -> None:
@@ -3829,11 +3935,17 @@ class MainWindow(QMainWindow):
             return
 
         if global_group_labels is None:
-            resolved_global_group_labels = self._area_inference_global_group_labels(model_name)
+            resolved_global_group_labels = self._resolved_area_inference_group_labels(
+                model_name,
+                update_project_group_templates=update_project_group_templates,
+            )
         elif global_group_labels:
             resolved_global_group_labels = list(global_group_labels)
         else:
-            resolved_global_group_labels = self._area_inference_global_group_labels(model_name)
+            resolved_global_group_labels = self._resolved_area_inference_group_labels(
+                model_name,
+                update_project_group_templates=update_project_group_templates,
+            )
             global_group_labels.extend(resolved_global_group_labels)
 
         def mutate() -> None:
