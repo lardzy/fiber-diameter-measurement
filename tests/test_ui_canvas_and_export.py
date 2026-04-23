@@ -1642,6 +1642,53 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
+    def test_single_document_area_auto_recognition_assigns_distinct_colors_for_multiple_new_labels(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="麻", color="#6B7280"),
+                ProjectGroupTemplate(label="涤纶", color="#E07A5F"),
+            ]
+
+            instances = [
+                self._area_instance("棉"),
+                self._area_instance(
+                    "莱赛尔",
+                    polygon=[Point(40, 40), Point(60, 40), Point(60, 60), Point(40, 60)],
+                ),
+            ]
+            window._apply_area_inference_result(
+                second,
+                instances,
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+
+            self.assertEqual(
+                [(template.label, template.color) for template in window.project.project_group_templates],
+                [("麻", "#6B7280"), ("涤纶", "#E07A5F")],
+            )
+            cotton = second.find_group_by_label("棉")
+            lyocell = second.find_group_by_label("莱赛尔")
+            self.assertIsNotNone(cotton)
+            self.assertIsNotNone(lyocell)
+            self.assertEqual(cotton.color, window._color_palette[2].lower())
+            self.assertEqual(lyocell.color, window._color_palette[3].lower())
+            self.assertNotEqual(cotton.color, lyocell.color)
+            self.assertIsNone(first.find_group_by_label("棉"))
+            self.assertIsNone(first.find_group_by_label("莱赛尔"))
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_area_auto_recognition_reorders_existing_groups_without_losing_manual_measurements(self) -> None:
         window = MainWindow()
         try:

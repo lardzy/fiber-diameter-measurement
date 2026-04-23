@@ -2455,6 +2455,38 @@ class MainWindow(QMainWindow):
         )
         return self._color_palette[template_count % len(self._color_palette)]
 
+    def _resolve_area_inference_group_colors(self, labels: list[str]) -> dict[str, str]:
+        resolved_colors: dict[str, str] = {}
+        template_count = len(
+            [
+                template
+                for template in self.project.project_group_templates
+                if normalize_group_label(template.label)
+            ]
+        )
+        fallback_offset = 0
+        for label in labels:
+            token = normalize_group_label(label)
+            if not token or token in resolved_colors:
+                continue
+            template = self._project_group_template_for_label(token)
+            if template is not None:
+                resolved_colors[token] = template.color
+                continue
+            existing_color = None
+            for document in self.project.documents:
+                group = document.find_group_by_label(token)
+                if group is not None:
+                    existing_color = group.color
+                    break
+            if existing_color is not None:
+                resolved_colors[token] = existing_color
+                continue
+            palette_index = (template_count + fallback_offset) % len(self._color_palette)
+            resolved_colors[token] = self._color_palette[palette_index]
+            fallback_offset += 1
+        return resolved_colors
+
     def _resolved_area_inference_group_labels(
         self,
         model_name: str,
@@ -2496,6 +2528,7 @@ class MainWindow(QMainWindow):
         *,
         global_group_labels: list[str],
         recognized_labels: set[str],
+        resolved_colors: dict[str, str] | None = None,
     ) -> bool:
         changed = False
         ordered_group_ids: list[str] = []
@@ -2510,7 +2543,11 @@ class MainWindow(QMainWindow):
             group, ensured_changed = self._ensure_document_named_group(
                 document,
                 label=token,
-                color=self._area_inference_group_color_for_label(token),
+                color=(
+                    resolved_colors[token]
+                    if resolved_colors is not None and token in resolved_colors
+                    else self._area_inference_group_color_for_label(token)
+                ),
                 activate=False,
                 sync_color=self._project_group_template_for_label(token) is not None,
             )
@@ -3947,6 +3984,12 @@ class MainWindow(QMainWindow):
                 update_project_group_templates=update_project_group_templates,
             )
             global_group_labels.extend(resolved_global_group_labels)
+        inferred_label_order: list[str] = list(resolved_global_group_labels)
+        for instance in instances:
+            token = normalize_group_label(str(getattr(instance, "class_name", "")).strip() or UNCATEGORIZED_LABEL)
+            if token and token not in inferred_label_order:
+                inferred_label_order.append(token)
+        resolved_colors = self._resolve_area_inference_group_colors(inferred_label_order)
 
         def mutate() -> None:
             document.remove_auto_area_measurements()
@@ -3958,12 +4001,16 @@ class MainWindow(QMainWindow):
                 document,
                 global_group_labels=resolved_global_group_labels,
                 recognized_labels=recognized_labels,
+                resolved_colors=resolved_colors,
             )
             for instance in instances:
                 class_name = str(instance.class_name).strip() or UNCATEGORIZED_LABEL
                 group = document.ensure_group_for_label(
                     class_name,
-                    color=self._area_inference_group_color_for_label(class_name),
+                    color=resolved_colors.get(
+                        normalize_group_label(class_name),
+                        self._area_inference_group_color_for_label(class_name),
+                    ),
                 )
                 measurement = Measurement(
                     id=new_id("meas"),
