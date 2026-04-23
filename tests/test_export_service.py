@@ -139,6 +139,7 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["单位"], "px²")
         self.assertEqual(rows[0]["多边形点数"], 4)
         self.assertIn('"x": 10', rows[0]["多边形顶点JSON"])
+        self.assertEqual(rows[0]["孔洞面积"], 0.0)
 
     def test_area_measurement_rows_use_exact_mask_area_when_available(self) -> None:
         document = ImageDocument(
@@ -168,6 +169,7 @@ class ExportServiceTests(unittest.TestCase):
 
         self.assertEqual(rows[0]["结果"], 1.8)
         self.assertEqual(rows[0]["面积(px²)"], 180.0)
+        self.assertEqual(rows[0]["孔洞面积"], 0.48)
 
     def test_measurement_rows_include_polyline_and_count_fields(self) -> None:
         document = ImageDocument(

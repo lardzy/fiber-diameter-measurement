@@ -151,8 +151,14 @@ def area_rings_area(rings: list[list[Point]]) -> float:
     if not rings or len(rings[0]) < 3:
         return 0.0
     outer_area = polygon_area(rings[0])
-    hole_area = sum(polygon_area(ring) for ring in rings[1:] if len(ring) >= 3)
+    hole_area = area_rings_hole_area(rings)
     return max(0.0, outer_area - hole_area)
+
+
+def area_rings_hole_area(rings: list[list[Point]]) -> float:
+    if len(rings) <= 1:
+        return 0.0
+    return sum(polygon_area(ring) for ring in rings[1:] if len(ring) >= 3)
 
 
 def area_rings_centroid(rings: list[list[Point]]) -> Point:

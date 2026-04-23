@@ -11,6 +11,7 @@ from typing import Callable
 import zipfile
 from xml.sax.saxutils import escape
 
+from fdm.geometry import area_rings_hole_area
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.services.sidecar_io import CalibrationSidecarIO
 
@@ -424,6 +425,7 @@ class ExportService:
             group_lookup = {group.id: group for group in document.fiber_groups}
             for measurement in document.measurements:
                 group = group_lookup.get(measurement.fiber_group_id or "")
+                hole_area_value = self._measurement_hole_area_value(measurement, document)
                 base_row = OrderedDict(
                     [
                         ("纤维种类", group.display_name() if group else UNCATEGORIZED_LABEL),
@@ -452,6 +454,7 @@ class ExportService:
                             ("计数点X(px)", None),
                             ("计数点Y(px)", None),
                             ("面积(px²)", None),
+                            ("孔洞面积", None),
                         ]
                     )
                 elif measurement.measurement_kind == "polyline":
@@ -475,6 +478,7 @@ class ExportService:
                             ("计数点X(px)", None),
                             ("计数点Y(px)", None),
                             ("面积(px²)", None),
+                            ("孔洞面积", None),
                         ]
                     )
                 elif measurement.measurement_kind == "count":
@@ -492,6 +496,7 @@ class ExportService:
                             ("计数点X(px)", round(measurement.point_px.x, 3) if measurement.point_px is not None else None),
                             ("计数点Y(px)", round(measurement.point_px.y, 3) if measurement.point_px is not None else None),
                             ("面积(px²)", None),
+                            ("孔洞面积", None),
                         ]
                     )
                 else:
@@ -513,6 +518,7 @@ class ExportService:
                             ("计数点X(px)", None),
                             ("计数点Y(px)", None),
                             ("面积(px²)", round(measurement.area_px or 0.0, 6)),
+                            ("孔洞面积", round(hole_area_value or 0.0, 6)),
                         ]
                     )
                 base_row.update(
@@ -531,6 +537,19 @@ class ExportService:
                     base_row
                 )
         return rows
+
+    def _measurement_hole_area_px(self, measurement) -> float | None:
+        if measurement.measurement_kind != "area":
+            return None
+        return area_rings_hole_area(measurement.area_rings_px)
+
+    def _measurement_hole_area_value(self, measurement, document: ImageDocument) -> float | None:
+        hole_area_px = self._measurement_hole_area_px(measurement)
+        if hole_area_px is None:
+            return None
+        if document.calibration is None:
+            return hole_area_px
+        return document.calibration.px_area_to_unit(hole_area_px)
 
     def build_export_meta_rows(self, project: ProjectState, documents: list[ImageDocument]) -> list[dict[str, object]]:
         return [
