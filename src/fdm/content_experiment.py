@@ -83,6 +83,7 @@ class ContentExperimentRecord:
     line_px: Line | None = None
     diameter_px: float | None = None
     diameter_unit: float | None = None
+    diameter_unit_name: str = ""
 
     def display_value(self) -> str:
         if self.kind == ContentRecordKind.COUNT:
@@ -102,6 +103,7 @@ class ContentExperimentRecord:
             "line_px": self.line_px.to_dict() if self.line_px else None,
             "diameter_px": self.diameter_px,
             "diameter_unit": self.diameter_unit,
+            "diameter_unit_name": self.diameter_unit_name,
         }
 
     @classmethod
@@ -119,6 +121,7 @@ class ContentExperimentRecord:
             line_px=Line.from_dict(line_payload) if isinstance(line_payload, dict) else None,
             diameter_px=_optional_float(payload.get("diameter_px")),
             diameter_unit=_optional_float(payload.get("diameter_unit")),
+            diameter_unit_name=str(payload.get("diameter_unit_name", "")),
         )
 
 
@@ -143,6 +146,9 @@ class ContentExperimentSession:
     operator: str = ""
     sample_id: str = ""
     sample_name: str = ""
+    calibration_name: str = ""
+    calibration_pixels_per_unit: float | None = None
+    calibration_unit: str = ""
     selection_mode: str = ContentSelectionMode.PRESELECT
     overlay_style: str = ContentOverlayStyle.NONE
     current_fiber_id: str | None = None
@@ -183,6 +189,9 @@ class ContentExperimentSession:
             "operator": self.operator,
             "sample_id": self.sample_id,
             "sample_name": self.sample_name,
+            "calibration_name": self.calibration_name,
+            "calibration_pixels_per_unit": self.calibration_pixels_per_unit,
+            "calibration_unit": self.calibration_unit,
             "selection_mode": self.selection_mode,
             "overlay_style": self.overlay_style,
             "current_fiber_id": self.current_fiber_id,
@@ -202,6 +211,9 @@ class ContentExperimentSession:
             operator=str(payload.get("operator", "")),
             sample_id=str(payload.get("sample_id", "")),
             sample_name=str(payload.get("sample_name", "")),
+            calibration_name=str(payload.get("calibration_name", "")),
+            calibration_pixels_per_unit=_optional_float(payload.get("calibration_pixels_per_unit")),
+            calibration_unit=str(payload.get("calibration_unit", "")),
             selection_mode=normalize_selection_mode(payload.get("selection_mode")),
             overlay_style=normalize_overlay_style(payload.get("overlay_style")),
             current_fiber_id=payload.get("current_fiber_id"),

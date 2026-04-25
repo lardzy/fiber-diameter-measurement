@@ -30,6 +30,9 @@ class ContentExperimentTests(unittest.TestCase):
             operator="张三",
             sample_id="S-001",
             sample_name="样品A",
+            calibration_name="20x",
+            calibration_pixels_per_unit=5.0,
+            calibration_unit="um",
             fibers=[cotton, lyocell],
             current_fiber_id=cotton.id,
         )
@@ -70,6 +73,9 @@ class ContentExperimentTests(unittest.TestCase):
         loaded_session = ContentExperimentSession.from_dict(loaded.metadata[CONTENT_EXPERIMENT_METADATA_KEY])
         self.assertEqual(loaded_session.operator, "张三")
         self.assertEqual(loaded_session.sample_id, "S-001")
+        self.assertEqual(loaded_session.calibration_name, "20x")
+        self.assertEqual(loaded_session.calibration_pixels_per_unit, 5.0)
+        self.assertEqual(loaded_session.calibration_unit, "um")
         self.assertEqual(len(loaded_session.fibers), 2)
         self.assertEqual(len(loaded_session.records), 3)
 

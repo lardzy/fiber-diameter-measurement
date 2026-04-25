@@ -1426,6 +1426,7 @@ class MainWindow(QMainWindow):
         top_layout.setContentsMargins(0, 0, 0, 0)
 
         model_box = QGroupBox("面积识别")
+        self._area_model_box = model_box
         model_layout = QVBoxLayout(model_box)
         self._area_auto_button = QPushButton("面积自动识别...")
         self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
@@ -1500,22 +1501,6 @@ class MainWindow(QMainWindow):
         self._content_status_label = QLabel("实时预览开启后可开始含量试验。")
         self._content_status_label.setWordWrap(True)
         content_layout.addWidget(self._content_status_label)
-        self._content_record_table = QTableWidget(0, 5)
-        self._content_record_table.setHorizontalHeaderLabels(["类型", "类别", "结果", "视场", "ID"])
-        self._content_record_table.verticalHeader().setVisible(False)
-        self._content_record_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
-        self._content_record_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self._content_record_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
-        self._content_record_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
-        self._content_record_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
-        self._content_record_table.setColumnWidth(2, 76)
-        self._content_record_table.setColumnWidth(3, 54)
-        self._content_record_table.setColumnHidden(4, True)
-        content_layout.addWidget(self._content_record_table, 1)
-        self._content_delete_record_button = QPushButton("删除选中记录")
-        self._content_delete_record_button.setIcon(themed_icon("delete", color="#F28482"))
-        self._content_delete_record_button.clicked.connect(self.delete_selected_content_records)
-        content_layout.addWidget(self._content_delete_record_button)
         top_layout.addWidget(content_box)
 
         measurement_box = QGroupBox("测量记录")
@@ -2011,6 +1996,24 @@ class MainWindow(QMainWindow):
             self.start_live_preview()
             return
         self.stop_live_preview()
+
+    def toggle_content_experiment_mode(self, checked: bool) -> None:
+        self._content_mode_enabled = bool(checked)
+        if self._content_mode_enabled:
+            self._ensure_content_session()
+        else:
+            session = self._load_content_session_from_project()
+            if session is not None and session.active:
+                self.close_content_experiment()
+        self._sync_content_experiment_action()
+        self._update_ui_for_current_document()
+
+    def _sync_content_experiment_action(self) -> None:
+        if not hasattr(self, "content_experiment_action"):
+            return
+        self.content_experiment_action.blockSignals(True)
+        self.content_experiment_action.setChecked(self._content_mode_enabled)
+        self.content_experiment_action.blockSignals(False)
 
     def start_live_preview(self) -> None:
         self._refresh_capture_devices()
@@ -3379,6 +3382,8 @@ class MainWindow(QMainWindow):
         )
         self.project.metadata = project.metadata
         self._content_session = session_from_project_metadata(self.project.metadata)
+        self._content_mode_enabled = bool(self._content_session and self._content_session.active)
+        self._sync_content_experiment_action()
         self._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
         for document in project.documents:
@@ -3727,9 +3732,20 @@ class MainWindow(QMainWindow):
     def apply_selected_preset(self) -> None:
         document = self.current_document()
         selected = self._selected_preset()
-        if document is None or selected is None:
+        if selected is None:
             return
         _, preset = selected
+        if self._content_mode_enabled:
+            session = self._ensure_content_session()
+            session.calibration_name = preset.name
+            session.calibration_pixels_per_unit = preset.resolved_pixels_per_unit()
+            session.calibration_unit = preset.unit
+            self._sync_content_session_to_project()
+            self.statusBar().showMessage(f"含量试验已使用标尺: {preset.name}", 4000)
+            self._update_calibration_panel(document)
+            return
+        if document is None:
+            return
         scope = self._prompt_preset_apply_scope(preset)
         if scope is None:
             return
@@ -3748,7 +3764,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已应用标定预设: {preset.name}", 4000)
 
     def add_fiber_group(self) -> None:
-        if self._preview_active:
+        if self._content_mode_enabled:
             self.edit_content_experiment_fibers()
             return
         document = self.current_document()
@@ -3814,7 +3830,7 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("已新增类别", 3000)
 
     def rename_active_group(self) -> None:
-        if self._preview_active:
+        if self._content_mode_enabled:
             self.edit_content_experiment_fibers()
             return
         document = self.current_document()
@@ -3899,7 +3915,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("类别已更新", 3000)
 
     def delete_active_group(self) -> None:
-        if self._preview_active:
+        if self._content_mode_enabled:
             self.remove_active_content_fiber()
             return
         document = self.current_document()
@@ -3966,6 +3982,9 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("未分类入口已隐藏", 3000)
 
     def delete_selected_measurement(self) -> None:
+        if self._content_mode_enabled:
+            self.delete_selected_content_records()
+            return
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None:
             return
@@ -4640,6 +4659,8 @@ class MainWindow(QMainWindow):
         self._content_session = None
         self._content_measure_start = None
         self._content_measure_hover = None
+        self._content_mode_enabled = False
+        self._sync_content_experiment_action()
         self._content_field_timer.stop()
         self._content_field_request_pending = False
         self._content_field_baseline = None
@@ -5035,7 +5056,7 @@ class MainWindow(QMainWindow):
         if self._delete_preset_button is not None:
             self._delete_preset_button.setEnabled(has_preset)
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(has_preset and self.current_document() is not None)
+            self._apply_preset_button.setEnabled(has_preset and (self.current_document() is not None or self._content_mode_enabled))
 
     def _populate_group_list(self, document: ImageDocument | None) -> None:
         self._group_list_rebuilding = True
@@ -5302,15 +5323,18 @@ class MainWindow(QMainWindow):
 
     def _update_content_controls(self) -> None:
         preview_active = self._preview_active
+        content_visible = self._content_mode_enabled
         session = self._load_content_session_from_project()
-        active = bool(session and session.active)
+        active = bool(content_visible and session and session.active)
         if self._left_top_stack is not None:
-            self._left_top_stack.setCurrentWidget(self._content_info_box if preview_active else self._image_box)
+            self._left_top_stack.setCurrentWidget(self._content_info_box if content_visible else self._image_box)
+        if self._area_model_box is not None:
+            self._area_model_box.setVisible(not content_visible)
         if self._content_box is not None:
-            self._content_box.setVisible(preview_active)
-        self._set_group_headers_for_content(preview_active)
+            self._content_box.setVisible(content_visible)
+        self._set_group_headers_for_content(content_visible)
         if self._content_start_button is not None:
-            self._content_start_button.setEnabled(preview_active)
+            self._content_start_button.setEnabled(content_visible and preview_active)
             self._content_start_button.setText("继续" if active else "开始")
         if self._content_close_button is not None:
             self._content_close_button.setEnabled(active)
@@ -5319,8 +5343,10 @@ class MainWindow(QMainWindow):
         if self._content_delete_record_button is not None:
             self._content_delete_record_button.setEnabled(bool(session and session.records))
         if self._content_status_label is not None:
-            if not preview_active:
-                self._content_status_label.setText("实时预览开启后可开始含量试验。")
+            if not content_visible:
+                self._content_status_label.setText("点击工具栏“含量试验”进入试验模式。")
+            elif not preview_active:
+                self._content_status_label.setText("含量试验已打开；请先开启实时预览。")
             elif session is None:
                 self._content_status_label.setText("尚未开始含量试验。")
             else:
@@ -5338,6 +5364,9 @@ class MainWindow(QMainWindow):
 
     def _sync_content_preview_overlay(self) -> None:
         if self._preview_canvas is None:
+            return
+        if not self._content_mode_enabled:
+            self._preview_canvas.set_content_experiment_overlay()
             return
         session = self._load_content_session_from_project()
         if session is None:
@@ -5371,6 +5400,8 @@ class MainWindow(QMainWindow):
     def _update_content_ui(self) -> None:
         self._populate_content_basic_info()
         self._update_content_record_table()
+        if self._content_mode_enabled and hasattr(self, "measurement_table"):
+            self._populate_measurement_table(self.current_document())
         self._sync_content_preview_overlay()
         self._update_content_controls()
 
@@ -5424,8 +5455,11 @@ class MainWindow(QMainWindow):
         self._update_content_ui()
 
     def start_or_continue_content_experiment(self) -> None:
+        self._content_mode_enabled = True
+        self._sync_content_experiment_action()
         if not self._preview_active:
             QMessageBox.information(self, "含量试验", "请先开启实时预览。")
+            self._update_content_ui()
             return
         session = self._ensure_content_session()
         if not session.fibers:
@@ -5481,14 +5515,9 @@ class MainWindow(QMainWindow):
 
     def delete_selected_content_records(self) -> None:
         session = self._load_content_session_from_project()
-        if session is None or self._content_record_table is None:
+        if session is None:
             return
-        selected_rows = self._content_record_table.selectionModel().selectedRows() if self._content_record_table.selectionModel() else []
-        target_ids = set()
-        for index in selected_rows:
-            item = self._content_record_table.item(index.row(), 4)
-            if item is not None:
-                target_ids.add(item.data(Qt.ItemDataRole.UserRole))
+        target_ids = set(self._selected_measurement_ids_from_table())
         if not target_ids:
             return
         session.records = [record for record in session.records if record.id not in target_ids]
@@ -5498,7 +5527,7 @@ class MainWindow(QMainWindow):
 
     def _content_experiment_is_active(self) -> bool:
         session = self._load_content_session_from_project()
-        return bool(self._preview_active and session is not None and session.active)
+        return bool(self._content_mode_enabled and self._preview_active and session is not None and session.active)
 
     def eventFilter(self, watched, event) -> bool:
         if self._content_experiment_is_active() and watched in (self._preview_canvas, self._microview_preview_host):
@@ -5616,6 +5645,7 @@ class MainWindow(QMainWindow):
         diameter_px = line_length(line)
         calibration = self._current_preview_calibration()
         diameter_unit = calibration.px_to_unit(diameter_px) if calibration is not None else diameter_px
+        diameter_unit_name = calibration.unit if calibration is not None else "px"
         record = ContentExperimentRecord(
             id=new_id("content_rec"),
             kind=ContentRecordKind.DIAMETER,
@@ -5624,15 +5654,26 @@ class MainWindow(QMainWindow):
             line_px=line,
             diameter_px=diameter_px,
             diameter_unit=diameter_unit,
+            diameter_unit_name=diameter_unit_name,
         )
         session.records.append(record)
         self._content_after_record_added(record, fiber)
 
     def _current_preview_calibration(self) -> Calibration | None:
-        selected = self._selected_preset()
-        if selected is None:
+        session = self._load_content_session_from_project()
+        if (
+            session is None
+            or session.calibration_pixels_per_unit is None
+            or session.calibration_pixels_per_unit <= 0
+            or not session.calibration_unit
+        ):
             return None
-        return selected[1].to_calibration()
+        return Calibration(
+            mode="preset",
+            pixels_per_unit=session.calibration_pixels_per_unit,
+            unit=session.calibration_unit,
+            source_label=session.calibration_name or "含量试验标尺",
+        )
 
     def _prompt_content_fiber(self, global_pos: QPoint) -> str | None:
         session = self._load_content_session_from_project()
@@ -5828,7 +5869,7 @@ class MainWindow(QMainWindow):
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
         self._load_content_session_from_project()
-        if self._preview_active:
+        if self._content_mode_enabled:
             self._populate_content_group_list()
         else:
             self._populate_group_list(document)
@@ -5846,7 +5887,19 @@ class MainWindow(QMainWindow):
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         if self._preview_active:
-            self._set_calibration_label("实时预览中", status="preview")
+            if self._content_mode_enabled:
+                session = self._load_content_session_from_project()
+                if session is not None and session.calibration_pixels_per_unit is not None and session.calibration_pixels_per_unit > 0:
+                    unit = session.calibration_unit or "unit"
+                    name = session.calibration_name or "含量试验标尺"
+                    self._set_calibration_label(
+                        f"含量试验标尺\n{name}\n{session.calibration_pixels_per_unit:.4f} px/{unit}",
+                        status="calibrated",
+                    )
+                else:
+                    self._set_calibration_label("含量试验未选择标尺\n直径将按 px 记录", status="preview")
+            else:
+                self._set_calibration_label("实时预览中", status="preview")
             return
         if document is None or document.calibration is None:
             self._set_calibration_label("当前图片未标定", status="uncalibrated")
@@ -5865,6 +5918,29 @@ class MainWindow(QMainWindow):
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
         self._table_rebuilding = True
         self.measurement_table.setRowCount(0)
+        if self._content_mode_enabled:
+            self.measurement_table.setHorizontalHeaderLabels(["类别", "类型", "结果", "单位", "模式", "视场", "状态", "ID"])
+            session = self._load_content_session_from_project()
+            if session is not None:
+                for row, record in enumerate(reversed(session.records)):
+                    self.measurement_table.insertRow(row)
+                    fiber = session.fiber_by_id(record.fiber_id)
+                    display_id = record.id.split("_")[-1]
+                    id_item = QTableWidgetItem(display_id)
+                    id_item.setData(Qt.ItemDataRole.UserRole, record.id)
+                    kind_label = "计数" if record.kind == ContentRecordKind.COUNT else "直径"
+                    unit_text = "" if record.kind == ContentRecordKind.COUNT else (record.diameter_unit_name or "px")
+                    self.measurement_table.setItem(row, self.TABLE_COL_GROUP, QTableWidgetItem(fiber.name if fiber is not None else ""))
+                    self.measurement_table.setItem(row, self.TABLE_COL_KIND, QTableWidgetItem(kind_label))
+                    self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(record.display_value()))
+                    self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(unit_text))
+                    self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem("含量试验"))
+                    self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(str(record.field_id)))
+                    self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem("已记录"))
+                    self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
+            self._table_rebuilding = False
+            return
+        self.measurement_table.setHorizontalHeaderLabels(["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
         if document is not None:
             for row, measurement in enumerate(document.measurements):
                 self.measurement_table.insertRow(row)
@@ -5962,6 +6038,9 @@ class MainWindow(QMainWindow):
     def _on_measurement_selection_changed(self) -> None:
         if self._table_rebuilding:
             return
+        if self._content_mode_enabled:
+            self._update_action_states()
+            return
         document = self.current_document()
         canvas = self.current_canvas()
         if document is None or canvas is None:
@@ -6005,7 +6084,7 @@ class MainWindow(QMainWindow):
     def _on_group_selection_changed(self) -> None:
         if self._group_list_rebuilding:
             return
-        if self._preview_active:
+        if self._content_mode_enabled:
             session = self._load_content_session_from_project()
             if session is None:
                 return
@@ -6136,8 +6215,10 @@ class MainWindow(QMainWindow):
         history = document.history if document is not None else None
         has_document = document is not None
         preview_active = self._preview_active
+        content_mode = self._content_mode_enabled
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
         has_selected_rows = bool(selection_model and selection_model.selectedRows())
+        has_selected_content_rows = bool(content_mode and has_selected_rows)
         has_selected_object = bool(
             has_document
             and self._tool_mode != "calibration"
@@ -6157,25 +6238,25 @@ class MainWindow(QMainWindow):
             )
         )
         has_named_active_group = bool(document and document.get_group(document.active_group_id) is not None)
-        content_session = self._load_content_session_from_project() if preview_active else None
+        content_session = self._load_content_session_from_project() if content_mode else None
         has_content_fibers = bool(content_session and content_session.fibers)
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
-        self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
-        self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
+        self.delete_measurement_action.setEnabled((has_selected_object and not preview_active and not content_mode) or has_selected_content_rows)
+        self.delete_measurement_button.setEnabled((has_selected_object and not preview_active and not content_mode) or has_selected_content_rows)
         if self._delete_group_measurements_button is not None:
-            self._delete_group_measurements_button.setEnabled(has_measurement_groups and not preview_active)
+            self._delete_group_measurements_button.setEnabled(has_measurement_groups and not preview_active and not content_mode)
         if self._delete_all_measurements_button is not None:
-            self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
-        self.add_group_action.setEnabled((has_document and not preview_active) or preview_active)
-        self.rename_group_action.setEnabled((has_named_active_group and not preview_active) or (preview_active and has_content_fibers))
-        self.delete_group_action.setEnabled((has_deletable_group_target and not preview_active) or (preview_active and has_content_fibers))
+            self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active and not content_mode)
+        self.add_group_action.setEnabled((has_document and not preview_active and not content_mode) or content_mode)
+        self.rename_group_action.setEnabled((has_named_active_group and not preview_active and not content_mode) or (content_mode and has_content_fibers))
+        self.delete_group_action.setEnabled((has_deletable_group_target and not preview_active and not content_mode) or (content_mode and has_content_fibers))
         if self._add_group_button is not None:
-            self._add_group_button.setEnabled((has_document and not preview_active) or preview_active)
+            self._add_group_button.setEnabled((has_document and not preview_active and not content_mode) or content_mode)
         if self._rename_group_button is not None:
-            self._rename_group_button.setEnabled((has_named_active_group and not preview_active) or (preview_active and has_content_fibers))
+            self._rename_group_button.setEnabled((has_named_active_group and not preview_active and not content_mode) or (content_mode and has_content_fibers))
         if self.delete_group_button is not None:
-            self.delete_group_button.setEnabled((has_deletable_group_target and not preview_active) or (preview_active and has_content_fibers))
+            self.delete_group_button.setEnabled((has_deletable_group_target and not preview_active and not content_mode) or (content_mode and has_content_fibers))
         has_preset = bool(self._calibration_presets())
         if self._add_preset_button is not None:
             self._add_preset_button.setEnabled(True)
@@ -6186,14 +6267,16 @@ class MainWindow(QMainWindow):
         if self._import_cu_preset_button is not None:
             self._import_cu_preset_button.setEnabled(_CU_SCALE_IMPORT_ERROR is None)
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(has_document and has_preset and not preview_active)
+            self._apply_preset_button.setEnabled(has_preset and ((has_document and not preview_active and not content_mode) or content_mode))
         if self._area_auto_button is not None:
-            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings) and not preview_active)
+            self._area_auto_button.setEnabled(has_document and bool(self._app_settings.area_model_mappings) and not preview_active and not content_mode)
         self.undo_action.setEnabled(bool(history and history.can_undo()) and not preview_active)
         self.redo_action.setEnabled(bool(history and history.can_redo()) and not preview_active)
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
+        if hasattr(self, "content_experiment_action"):
+            self.content_experiment_action.setEnabled(capture_feature_available)
         can_optimize_signal = capture_feature_available and self._capture_manager.can_optimize_signal()
         analysis_active = self._preview_analysis_mode != "none"
         self.capture_frame_action.setEnabled(preview_active and self._capture_manager.can_capture_still() and not analysis_active)

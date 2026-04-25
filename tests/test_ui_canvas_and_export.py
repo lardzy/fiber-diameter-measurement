@@ -21,6 +21,7 @@ except ModuleNotFoundError:
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from fdm.content_experiment import ContentExperimentRecord, ContentExperimentSession, ContentFiberDefinition, ContentRecordKind
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import (
@@ -747,6 +748,127 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window.preset_combo.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
             self.assertEqual(window.preset_combo.minimumContentsLength(), 10)
             self.assertIn("激光共聚焦超长超长超长预设名称", window.preset_combo.toolTip())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_experiment_has_separate_entry_and_hides_area_recognition(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsNotNone(window._file_toolbar)
+            toolbar_actions = window._file_toolbar.actions()
+            live_index = toolbar_actions.index(window.live_preview_action)
+            self.assertIs(toolbar_actions[live_index + 1], window.content_experiment_action)
+
+            self.assertFalse(window._content_mode_enabled)
+            self.assertIsNotNone(window._area_model_box)
+            self.assertIsNotNone(window._content_box)
+            self.assertTrue(window._content_box.isHidden())
+            self.assertFalse(window._area_model_box.isHidden())
+
+            window.toggle_content_experiment_mode(True)
+
+            self.assertTrue(window._content_mode_enabled)
+            self.assertTrue(window.content_experiment_action.isChecked())
+            self.assertFalse(window._content_box.isHidden())
+            self.assertTrue(window._area_model_box.isHidden())
+            self.assertIsNone(window._content_record_table)
+            self.assertIsNone(window._content_delete_record_button)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_basic_info_fields_are_read_only_and_buttons_open_dialogs(self) -> None:
+        window = MainWindow()
+        try:
+            window.toggle_content_experiment_mode(True)
+            self.assertIsNotNone(window._content_operator_edit)
+            self.assertIsNotNone(window._content_sample_id_edit)
+            self.assertIsNotNone(window._content_sample_name_edit)
+            for edit in [window._content_operator_edit, window._content_sample_id_edit, window._content_sample_name_edit]:
+                self.assertTrue(edit.isReadOnly())
+                self.assertEqual(edit.focusPolicy(), Qt.FocusPolicy.NoFocus)
+
+            with patch("fdm.ui.main_window.QInputDialog.getText", return_value=("张三", True)) as get_text:
+                window._edit_content_basic_field("operator")
+
+            get_text.assert_called_once()
+            session = window._load_content_session_from_project()
+            self.assertIsNotNone(session)
+            self.assertEqual(session.operator, "张三")
+            self.assertEqual(window._content_operator_edit.text(), "张三")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_records_reuse_measurement_table_for_display_and_deletion(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
+            first_record = ContentExperimentRecord(
+                id="content_rec_1",
+                kind=ContentRecordKind.COUNT,
+                fiber_id=fiber.id,
+                field_id=3,
+            )
+            second_record = ContentExperimentRecord(
+                id="content_rec_2",
+                kind=ContentRecordKind.DIAMETER,
+                fiber_id=fiber.id,
+                field_id=3,
+                diameter_px=30.0,
+                diameter_unit=6.0,
+                diameter_unit_name="um",
+            )
+            session.records = [first_record, second_record]
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window.toggle_content_experiment_mode(True)
+
+            headers = [
+                window.measurement_table.horizontalHeaderItem(index).text()
+                for index in range(window.measurement_table.columnCount())
+            ]
+            self.assertEqual(headers, ["类别", "类型", "结果", "单位", "模式", "视场", "状态", "ID"])
+            self.assertEqual(window.measurement_table.rowCount(), 2)
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_KIND).text(), "直径")
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_UNIT).text(), "um")
+            self.assertEqual(window.measurement_table.item(1, window.TABLE_COL_KIND).text(), "计数")
+
+            window.measurement_table.selectRow(0)
+            window.delete_selected_measurement()
+
+            self.assertEqual([record.id for record in session.records], ["content_rec_1"])
+            self.assertEqual(window.measurement_table.rowCount(), 1)
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_KIND).text(), "计数")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_mode_can_apply_calibration_preset_without_document(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.calibration_presets = [
+                CalibrationPreset(name="20x", pixels_per_unit=7.5, unit="um")
+            ]
+            window._refresh_preset_combo()
+            window._preview_active = True
+            window.toggle_content_experiment_mode(True)
+            window._update_action_states()
+
+            self.assertIsNotNone(window._apply_preset_button)
+            self.assertTrue(window._apply_preset_button.isEnabled())
+
+            window.apply_selected_preset()
+
+            session = window._load_content_session_from_project()
+            self.assertIsNotNone(session)
+            self.assertEqual(session.calibration_name, "20x")
+            self.assertEqual(session.calibration_pixels_per_unit, 7.5)
+            self.assertEqual(session.calibration_unit, "um")
+            self.assertIn("含量试验标尺", window.calibration_label.text())
+            self.assertIn("20x", window.calibration_label.text())
         finally:
             window._reset_workspace()
             window.close()
