@@ -3,7 +3,9 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
+import types
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -19,7 +21,8 @@ from fdm.content_experiment import (
 from fdm.geometry import Line, Point
 from fdm.models import ProjectState, project_assets_root
 from fdm.project_io import ProjectIO
-from fdm.services.content_workbook import ContentWorkbookService
+from fdm.services import content_workbook
+from fdm.services.content_workbook import ContentWorkbookService, content_template_path
 
 
 class ContentExperimentTests(unittest.TestCase):
@@ -114,3 +117,50 @@ class ContentExperimentTests(unittest.TestCase):
             self.assertEqual(workbook["原始数据"]["D8"].value, 1)
             self.assertEqual(workbook["原始数据"]["D25"].value, 2.0)
             self.assertEqual(workbook["原始数据"]["E25"].value, 3.0)
+
+    def test_windows_excel_mode_opens_sheet_template_when_com_available(self) -> None:
+        session = self._session()
+        service = ContentWorkbookService()
+
+        class FakeWorkbooks:
+            def __init__(self) -> None:
+                self.add_template = ""
+
+            def Add(self, *, Template: str):
+                self.add_template = Template
+                return object()
+
+        class FakeExcel:
+            def __init__(self) -> None:
+                self.Visible = False
+                self.Workbooks = FakeWorkbooks()
+
+        fake_excel = FakeExcel()
+        fake_client = types.ModuleType("win32com.client")
+        fake_client.Dispatch = lambda name: fake_excel  # type: ignore[attr-defined]
+        fake_win32com = types.ModuleType("win32com")
+        fake_win32com.client = fake_client  # type: ignore[attr-defined]
+
+        with (
+            patch.object(content_workbook.sys, "platform", "win32"),
+            patch.dict(sys.modules, {"win32com": fake_win32com, "win32com.client": fake_client}),
+            patch.object(service, "sync_session", return_value=None),
+        ):
+            mode = service.open_session(session)
+
+        self.assertEqual(mode, "excel")
+        self.assertTrue(fake_excel.Visible)
+        self.assertEqual(fake_excel.Workbooks.add_template, str(content_template_path()))
+        self.assertEqual(service.last_warning, "")
+
+    def test_windows_excel_mode_falls_back_to_xlsx_with_warning_when_com_fails(self) -> None:
+        session = self._session()
+        service = ContentWorkbookService()
+        with (
+            patch.object(content_workbook.sys, "platform", "win32"),
+            patch.dict(sys.modules, {"win32com": types.ModuleType("win32com")}),
+        ):
+            mode = service.open_session(session)
+
+        self.assertEqual(mode, "xlsx")
+        self.assertIn("xlsx 快照模式", service.last_warning)

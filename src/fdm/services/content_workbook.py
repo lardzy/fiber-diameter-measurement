@@ -36,6 +36,7 @@ class ContentWorkbookService:
         self._com_workbook: Any | None = None
         self._py_workbook: Any | None = None
         self._mode = ""
+        self._last_warning = ""
         self._last_fiber_ids: list[str] = []
         self._last_basic_values: tuple[str, str, str] | None = None
         self._last_diameter_ids_by_fiber: dict[str, list[str]] = {}
@@ -44,20 +45,27 @@ class ContentWorkbookService:
     def mode(self) -> str:
         return self._mode
 
+    @property
+    def last_warning(self) -> str:
+        return self._last_warning
+
     def is_open(self) -> bool:
         return self._com_workbook is not None or self._py_workbook is not None
 
     def open_session(self, session: ContentExperimentSession, *, project_path: str | Path | None = None) -> str:
         self.close()
+        self._last_warning = ""
         snapshot = self.snapshot_path(session, project_path) if project_path is not None else None
         if sys.platform.startswith("win"):
             try:
                 self._open_com(snapshot=snapshot)
                 self._mode = "excel"
+                self._last_warning = ""
                 session.workbook_mode = self._mode
                 self.sync_session(session)
                 return self._mode
-            except Exception:
+            except Exception as exc:
+                self._last_warning = f"Excel 模板打开失败，已切换为 xlsx 快照模式：{exc}"
                 self.close()
         self._open_openpyxl(snapshot=snapshot)
         self._mode = "xlsx"

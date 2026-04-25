@@ -457,12 +457,13 @@ class MainWindow(QMainWindow):
         self._preview_analysis_finalizing = False
         self._content_session: ContentExperimentSession | None = None
         self._content_workbook_service = ContentWorkbookService()
+        self._content_preview_started_by_content = False
         self._content_measure_start: Point | None = None
         self._content_measure_hover: Point | None = None
         self._content_fiber_menu_open = False
         self._content_pending_diameter_line: Line | None = None
         self._content_field_timer = QTimer(self)
-        self._content_field_timer.setInterval(900)
+        self._content_field_timer.setInterval(300)
         self._content_field_timer.timeout.connect(self._request_content_field_frame)
         self._content_field_request_id = -1
         self._content_field_request_pending = False
@@ -1490,7 +1491,7 @@ class MainWindow(QMainWindow):
         self._content_start_button = QPushButton("开始/继续")
         self._content_start_button.setIcon(themed_icon("live_preview", color="#7BD389"))
         self._content_start_button.clicked.connect(self.start_or_continue_content_experiment)
-        self._content_close_button = QPushButton("关闭")
+        self._content_close_button = QPushButton("暂停")
         self._content_close_button.clicked.connect(self.close_content_experiment)
         self._content_save_excel_button = QPushButton("保存Excel")
         self._content_save_excel_button.clicked.connect(self.save_content_experiment_excel)
@@ -1613,7 +1614,9 @@ class MainWindow(QMainWindow):
 
     def current_canvas(self) -> DocumentCanvas | None:
         if self._preview_active:
-            return self._preview_canvas if self._capture_manager.preview_kind() == "frame_stream" else None
+            if self._capture_manager.preview_kind() == "frame_stream" or self._content_mode_enabled:
+                return self._preview_canvas
+            return None
         document = self.current_document()
         if document is None:
             return None
@@ -1637,7 +1640,11 @@ class MainWindow(QMainWindow):
             or self._microview_preview_scroll is None
         ):
             return
-        target_widget = self._microview_preview_scroll if preview_kind == "native_embed" else self._preview_canvas
+        target_widget = (
+            self._preview_canvas
+            if preview_kind == "native_embed" and self._content_mode_enabled
+            else (self._microview_preview_scroll if preview_kind == "native_embed" else self._preview_canvas)
+        )
         self._preview_display_stack.setCurrentWidget(target_widget)
 
     def _refresh_preview_surface(self) -> None:
@@ -1998,15 +2005,10 @@ class MainWindow(QMainWindow):
         self.stop_live_preview()
 
     def toggle_content_experiment_mode(self, checked: bool) -> None:
-        self._content_mode_enabled = bool(checked)
-        if self._content_mode_enabled:
-            self._ensure_content_session()
-        else:
-            session = self._load_content_session_from_project()
-            if session is not None and session.active:
-                self.close_content_experiment()
-        self._sync_content_experiment_action()
-        self._update_ui_for_current_document()
+        if checked:
+            self.enter_content_experiment()
+            return
+        self.close_content_experiment()
 
     def _sync_content_experiment_action(self) -> None:
         if not hasattr(self, "content_experiment_action"):
@@ -2014,6 +2016,32 @@ class MainWindow(QMainWindow):
         self.content_experiment_action.blockSignals(True)
         self.content_experiment_action.setChecked(self._content_mode_enabled)
         self.content_experiment_action.blockSignals(False)
+
+    def enter_content_experiment(self) -> None:
+        self._content_mode_enabled = True
+        self._sync_content_experiment_action()
+        self._ensure_content_session()
+        if self._center_stack is not None and self._preview_page is not None:
+            self._center_stack.setCurrentWidget(self._preview_page)
+        self._apply_preview_surface(self._preview_kind())
+        was_preview_active = bool(self._preview_active or self._capture_manager.is_preview_active())
+        if not was_preview_active:
+            self.start_live_preview()
+            if self._preview_active:
+                self._content_preview_started_by_content = True
+        if not self._preview_active:
+            if self._center_stack is not None and self._preview_page is not None:
+                self._center_stack.setCurrentWidget(self._preview_page)
+            self._update_content_ui()
+            return
+        session = self._ensure_content_session()
+        if not session.fibers:
+            self.edit_content_experiment_fibers()
+            if not session.fibers:
+                self._update_content_ui()
+                self._focus_content_input_target()
+                return
+        self._activate_content_experiment_session()
 
     def start_live_preview(self) -> None:
         self._refresh_capture_devices()
@@ -2088,6 +2116,12 @@ class MainWindow(QMainWindow):
             return
         if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
             return
+        self._update_preview_canvas_frame(image)
+        self._update_action_states()
+
+    def _update_preview_canvas_frame(self, image: QImage) -> None:
+        if self._preview_canvas is None:
+            return
         if (
             self._preview_document is None
             or self._preview_document.image_size != (image.width(), image.height())
@@ -2110,7 +2144,6 @@ class MainWindow(QMainWindow):
             self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
         if self._image_resolution_label is not None:
             self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
-        self._update_action_states()
 
     def _clear_preview_surface_state(self) -> None:
         self._preview_document = None
@@ -3402,6 +3435,8 @@ class MainWindow(QMainWindow):
         if imported_count:
             message += f"；已导入 {imported_count} 个旧版标定预设"
         self.statusBar().showMessage(message, 5000)
+        if self._content_session is not None and self._content_session.active:
+            QTimer.singleShot(0, self.enter_content_experiment)
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
         if not self.project.documents:
@@ -4660,6 +4695,7 @@ class MainWindow(QMainWindow):
         self._content_measure_start = None
         self._content_measure_hover = None
         self._content_mode_enabled = False
+        self._content_preview_started_by_content = False
         self._sync_content_experiment_action()
         self._content_field_timer.stop()
         self._content_field_request_pending = False
@@ -5187,6 +5223,12 @@ class MainWindow(QMainWindow):
             return {}
         return {fiber.id: fiber.color for fiber in session.fibers}
 
+    def _content_workbook_mode_label(self, mode: str) -> str:
+        return {
+            "excel": "Excel",
+            "xlsx": "xlsx快照",
+        }.get(mode, "未打开")
+
     def _edit_content_basic_field(self, field_name: str) -> None:
         session = self._ensure_content_session()
         labels = {
@@ -5332,12 +5374,20 @@ class MainWindow(QMainWindow):
             self._area_model_box.setVisible(not content_visible)
         if self._content_box is not None:
             self._content_box.setVisible(content_visible)
+        if self._calibration_label_scroll is not None:
+            if content_visible:
+                self._calibration_label_scroll.setMinimumHeight(42)
+                self._calibration_label_scroll.setMaximumHeight(58)
+            else:
+                self._calibration_label_scroll.setMinimumHeight(88)
+                self._calibration_label_scroll.setMaximumHeight(118)
         self._set_group_headers_for_content(content_visible)
         if self._content_start_button is not None:
             self._content_start_button.setEnabled(content_visible and preview_active)
-            self._content_start_button.setText("继续" if active else "开始")
+            self._content_start_button.setText("继续" if session and not active and session.fibers else "开始")
         if self._content_close_button is not None:
-            self._content_close_button.setEnabled(active)
+            self._content_close_button.setText("暂停")
+            self._content_close_button.setEnabled(content_visible)
         if self._content_save_excel_button is not None:
             self._content_save_excel_button.setEnabled(bool(session and session.records))
         if self._content_delete_record_button is not None:
@@ -5346,17 +5396,21 @@ class MainWindow(QMainWindow):
             if not content_visible:
                 self._content_status_label.setText("点击工具栏“含量试验”进入试验模式。")
             elif not preview_active:
-                self._content_status_label.setText("含量试验已打开；请先开启实时预览。")
+                self._content_status_label.setText("含量试验已打开；正在等待实时预览或采集设备。")
             elif session is None:
-                self._content_status_label.setText("尚未开始含量试验。")
+                self._content_status_label.setText("正在准备含量试验。")
+            elif not session.fibers:
+                self._content_status_label.setText("请选择含量试验纤维类别后开始计数/测径。")
+            elif not session.active:
+                self._content_status_label.setText("含量试验已暂停；记录已保留，点击“开始”继续。")
             else:
                 fiber = session.active_fiber()
                 fiber_text = fiber.name if fiber is not None else "未选择"
-                workbook_mode = session.workbook_mode or "未打开"
+                workbook_mode = self._content_workbook_mode_label(session.workbook_mode)
                 self._content_status_label.setText(
                     f"{'进行中' if session.active else '已暂停'}；当前纤维: {fiber_text}；工作簿: {workbook_mode}"
                 )
-        if active:
+        if content_visible and preview_active:
             self._content_field_timer.start()
         else:
             self._content_field_timer.stop()
@@ -5455,41 +5509,59 @@ class MainWindow(QMainWindow):
         self._update_content_ui()
 
     def start_or_continue_content_experiment(self) -> None:
-        self._content_mode_enabled = True
-        self._sync_content_experiment_action()
-        if not self._preview_active:
-            QMessageBox.information(self, "含量试验", "请先开启实时预览。")
+        self.enter_content_experiment()
+
+    def _activate_content_experiment_session(self) -> None:
+        session = self._ensure_content_session()
+        if not self._preview_active or not session.fibers:
             self._update_content_ui()
             return
-        session = self._ensure_content_session()
-        if not session.fibers:
-            self.edit_content_experiment_fibers()
-            if not session.fibers:
-                return
         self._update_content_basic_info_from_ui()
         session.active = True
         session.ensure_current_fiber()
         self._sync_content_session_to_project()
-        try:
-            mode = self._content_workbook_service.open_session(session, project_path=self._project_path)
-            session.workbook_mode = mode
-            self._sync_content_session_to_project()
-        except Exception as exc:
-            QMessageBox.warning(self, "含量试验", f"无法打开含量试验工作簿：\n{exc}")
+        workbook_warning = ""
+        if not self._content_workbook_service.is_open():
+            try:
+                mode = self._content_workbook_service.open_session(session, project_path=self._project_path)
+                session.workbook_mode = mode
+                self._sync_content_session_to_project()
+                if self._content_workbook_service.last_warning:
+                    workbook_warning = self._content_workbook_service.last_warning
+            except Exception as exc:
+                session.workbook_mode = ""
+                self._sync_content_session_to_project()
+                QMessageBox.warning(self, "含量试验", f"无法打开含量试验工作簿：\n{exc}\n\n记录会保留在项目中，保存项目时会尝试重建 Excel 快照。")
         self._invalidate_content_field("含量试验开始")
         self._update_content_ui()
+        if workbook_warning:
+            self.statusBar().showMessage(workbook_warning, 7000)
+        self._focus_content_input_target()
 
     def close_content_experiment(self) -> None:
         session = self._load_content_session_from_project()
-        if session is None:
-            return
-        session.active = False
+        if session is not None:
+            session.active = False
         self._content_measure_start = None
         self._content_measure_hover = None
         self._content_pending_diameter_line = None
+        self._content_field_baseline = None
+        self._content_field_motion_hits = 0
+        self._content_field_request_pending = False
+        self._content_field_timer.stop()
         self._content_workbook_service.close()
-        self._sync_content_session_to_project()
-        self._update_content_ui()
+        self._content_mode_enabled = False
+        self._sync_content_experiment_action()
+        if session is not None:
+            self._sync_content_session_to_project()
+        should_stop_preview = self._content_preview_started_by_content
+        self._content_preview_started_by_content = False
+        if should_stop_preview:
+            self.stop_live_preview()
+        else:
+            self._sync_content_preview_overlay()
+            self._update_content_ui()
+        self.statusBar().showMessage("含量试验已暂停，记录已保留；保存项目后可继续。", 5000)
 
     def save_content_experiment_excel(self) -> None:
         session = self._load_content_session_from_project()
@@ -5598,6 +5670,7 @@ class MainWindow(QMainWindow):
         session.current_fiber_id = session.fibers[number - 1].id
         self._sync_content_session_to_project()
         self._update_content_ui()
+        self._focus_content_input_target()
         return True
 
     def _add_content_count_by_number(self, number: int) -> bool:
@@ -5614,6 +5687,7 @@ class MainWindow(QMainWindow):
         )
         session.records.append(record)
         self._content_after_record_added(record, fiber)
+        self._focus_content_input_target()
         return True
 
     def _handle_content_canvas_click(self, point: Point, global_pos: QPoint) -> None:
@@ -5658,6 +5732,7 @@ class MainWindow(QMainWindow):
         )
         session.records.append(record)
         self._content_after_record_added(record, fiber)
+        self._focus_content_input_target()
 
     def _current_preview_calibration(self) -> Calibration | None:
         session = self._load_content_session_from_project()
@@ -5704,6 +5779,7 @@ class MainWindow(QMainWindow):
         session.current_fiber_id = action.data()
         self._sync_content_session_to_project()
         self._update_content_ui()
+        self._focus_content_input_target()
 
     def _build_content_fiber_menu(self) -> QMenu | None:
         session = self._load_content_session_from_project()
@@ -5787,19 +5863,20 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"{reason}，已清空当前视场叠加标记。", 3000)
 
     def _request_content_field_frame(self) -> None:
-        if not self._content_experiment_is_active() or self._content_field_request_pending:
+        if not (self._content_mode_enabled and self._preview_active) or self._content_field_request_pending:
             return
-        if self._is_native_preview():
-            # 原生预览没有稳定的帧流绘制在 Qt 画布里；如果采集后端支持
-            # analysis frame，这里仍会走同一通道。
-            pass
         self._content_field_request_id -= 1
         if self._capture_manager.request_analysis_frame(self._content_field_request_id):
             self._content_field_request_pending = True
 
     def _on_content_field_frame_ready(self, image: object) -> None:
         self._content_field_request_pending = False
-        if not self._content_experiment_is_active() or not isinstance(image, QImage) or image.isNull():
+        if not (self._content_mode_enabled and self._preview_active) or not isinstance(image, QImage) or image.isNull():
+            return
+        if self._is_native_preview():
+            self._update_preview_canvas_frame(image)
+            self._sync_content_preview_overlay()
+        if not self._content_experiment_is_active():
             return
         signature = self._content_frame_signature(image)
         if signature is None:
@@ -5893,11 +5970,11 @@ class MainWindow(QMainWindow):
                     unit = session.calibration_unit or "unit"
                     name = session.calibration_name or "含量试验标尺"
                     self._set_calibration_label(
-                        f"含量试验标尺\n{name}\n{session.calibration_pixels_per_unit:.4f} px/{unit}",
+                        f"含量试验标尺: {name} ({session.calibration_pixels_per_unit:.4f} px/{unit})",
                         status="calibrated",
                     )
                 else:
-                    self._set_calibration_label("含量试验未选择标尺\n直径将按 px 记录", status="preview")
+                    self._set_calibration_label("含量试验未选择标尺，直径按 px 记录", status="preview")
             else:
                 self._set_calibration_label("实时预览中", status="preview")
             return
@@ -6113,6 +6190,22 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.focus_canvas()
+
+    def _focus_content_input_target(self) -> None:
+        if self._content_mode_enabled and self._preview_canvas is not None:
+            self._preview_canvas.focus_canvas()
+
+    def _should_handle_content_hotkeys(self) -> bool:
+        if QApplication.activeModalWidget() is not None:
+            return False
+        focus_widget = QApplication.focusWidget()
+        if focus_widget is None:
+            return True
+        if isinstance(focus_widget, (QLineEdit, QTextEdit, QPlainTextEdit)):
+            return False
+        if isinstance(focus_widget, QComboBox):
+            return False
+        return True
 
     def _should_handle_group_hotkeys(self) -> bool:
         if QApplication.activeModalWidget() is not None:
@@ -7304,6 +7397,21 @@ class MainWindow(QMainWindow):
             return
         if (
             event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and self._content_experiment_is_active()
+            and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_8
+            and self._should_handle_content_hotkeys()
+        ):
+            number = event.key() - Qt.Key.Key_0
+            handled = (
+                self._set_current_content_fiber_by_number(number)
+                if self._content_fiber_menu_open
+                else self._add_content_count_by_number(number)
+            )
+            if handled:
+                event.accept()
+                return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
             and event.key() == Qt.Key.Key_V
             and self._should_handle_group_hotkeys()
         ):
@@ -7318,11 +7426,6 @@ class MainWindow(QMainWindow):
             and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9
             and self._should_handle_group_hotkeys()
         ):
-            if self._content_experiment_is_active() and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_8:
-                number = event.key() - Qt.Key.Key_0
-                if self._add_content_count_by_number(number):
-                    event.accept()
-                    return
             number = event.key() - Qt.Key.Key_0
             if self._switch_active_group_by_number(number):
                 event.accept()
@@ -7343,6 +7446,11 @@ class MainWindow(QMainWindow):
             event.accept()
             return
         super().keyReleaseEvent(event)
+
+    def changeEvent(self, event) -> None:
+        if event.type() == QEvent.Type.ActivationChange and not self.isActiveWindow() and self._content_experiment_is_active():
+            self._invalidate_content_field("窗口失焦")
+        super().changeEvent(event)
 
     def _shutdown_background_threads(self) -> None:
         if self._preview_analysis_mode != "none":
@@ -7425,6 +7533,7 @@ class MainWindow(QMainWindow):
             return
         self._persist_window_geometry()
         self.stop_live_preview()
+        self._content_workbook_service.close()
         self._clear_prompt_segmentation_cache()
         self._shutdown_background_threads()
         event.accept()

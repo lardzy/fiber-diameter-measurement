@@ -755,6 +755,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_experiment_has_separate_entry_and_hides_area_recognition(self) -> None:
         window = MainWindow()
         try:
+            window.start_live_preview = lambda: None  # type: ignore[method-assign]
             self.assertIsNotNone(window._file_toolbar)
             toolbar_actions = window._file_toolbar.actions()
             live_index = toolbar_actions.index(window.live_preview_action)
@@ -772,6 +773,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window.content_experiment_action.isChecked())
             self.assertFalse(window._content_box.isHidden())
             self.assertTrue(window._area_model_box.isHidden())
+            self.assertLessEqual(window._calibration_label_scroll.maximumHeight(), 58)
             self.assertIsNone(window._content_record_table)
             self.assertIsNone(window._content_delete_record_button)
         finally:
@@ -781,6 +783,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_basic_info_fields_are_read_only_and_buttons_open_dialogs(self) -> None:
         window = MainWindow()
         try:
+            window.start_live_preview = lambda: None  # type: ignore[method-assign]
             window.toggle_content_experiment_mode(True)
             self.assertIsNotNone(window._content_operator_edit)
             self.assertIsNotNone(window._content_sample_id_edit)
@@ -804,6 +807,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_records_reuse_measurement_table_for_display_and_deletion(self) -> None:
         window = MainWindow()
         try:
+            window.start_live_preview = lambda: None  # type: ignore[method-assign]
             fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
             session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
             first_record = ContentExperimentRecord(
@@ -849,11 +853,15 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_mode_can_apply_calibration_preset_without_document(self) -> None:
         window = MainWindow()
         try:
+            window.start_live_preview = lambda: None  # type: ignore[method-assign]
             window._app_settings.calibration_presets = [
                 CalibrationPreset(name="20x", pixels_per_unit=7.5, unit="um")
             ]
             window._refresh_preset_combo()
             window._preview_active = True
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            window._content_session = ContentExperimentSession(fibers=[fiber], current_fiber_id=fiber.id)
+            window._sync_content_session_to_project()
             window.toggle_content_experiment_mode(True)
             window._update_action_states()
 
@@ -869,6 +877,143 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(session.calibration_unit, "um")
             self.assertIn("含量试验标尺", window.calibration_label.text())
             self.assertIn("20x", window.calibration_label.text())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_entry_auto_starts_preview_session_and_workbook(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(fibers=[fiber], current_fiber_id=fiber.id)
+            window._content_session = session
+            window._sync_content_session_to_project()
+            start_calls: list[str] = []
+            open_calls: list[str] = []
+
+            def fake_start_preview() -> None:
+                start_calls.append("start")
+                window._on_live_preview_state_changed(True)
+
+            window.start_live_preview = fake_start_preview  # type: ignore[method-assign]
+            window._content_workbook_service.open_session = (  # type: ignore[method-assign]
+                lambda active_session, *, project_path=None: open_calls.append(active_session.id) or "xlsx"
+            )
+            window._content_workbook_service.is_open = lambda: False  # type: ignore[method-assign]
+
+            window.toggle_content_experiment_mode(True)
+
+            self.assertEqual(start_calls, ["start"])
+            self.assertEqual(open_calls, [session.id])
+            self.assertTrue(window._content_mode_enabled)
+            self.assertTrue(session.active)
+            self.assertTrue(window._content_preview_started_by_content)
+            self.assertIs(window._center_stack.currentWidget(), window._preview_page)
+            self.assertIn("xlsx快照", window._content_status_label.text())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_entry_without_fibers_keeps_preview_but_does_not_activate_counting(self) -> None:
+        window = MainWindow()
+        try:
+            window._content_session = ContentExperimentSession()
+            window._sync_content_session_to_project()
+            window.start_live_preview = lambda: window._on_live_preview_state_changed(True)  # type: ignore[method-assign]
+            window.edit_content_experiment_fibers = lambda: None  # type: ignore[method-assign]
+
+            window.toggle_content_experiment_mode(True)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_1))
+
+            session = window._load_content_session_from_project()
+            self.assertIsNotNone(session)
+            self.assertFalse(session.active)
+            self.assertEqual(session.records, [])
+            self.assertIn("请选择含量试验纤维类别", window._content_status_label.text())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_number_hotkeys_count_from_main_window_focus(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window._content_mode_enabled = True
+            window._preview_active = True
+            window._update_ui_for_current_document()
+            window.measurement_table.setFocus()
+
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_1))
+
+            self.assertEqual(len(session.records), 1)
+            self.assertEqual(session.records[0].kind, ContentRecordKind.COUNT)
+            self.assertEqual(session.records[0].fiber_id, fiber.id)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_native_analysis_frame_updates_preview_canvas_and_clears_moved_field(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
+            record = ContentExperimentRecord(
+                id="content_rec_1",
+                kind=ContentRecordKind.DIAMETER,
+                fiber_id=fiber.id,
+                field_id=0,
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+            session.records.append(record)
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window._content_mode_enabled = True
+            window._preview_active = True
+            window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+
+            dark = QImage(80, 60, QImage.Format.Format_RGB32)
+            dark.fill(QColor("#000000"))
+            light = QImage(80, 60, QImage.Format.Format_RGB32)
+            light.fill(QColor("#FFFFFF"))
+
+            window._on_content_field_frame_ready(dark)
+            self.assertIsNotNone(window._preview_document)
+            self.assertEqual(window._preview_canvas.document_id, "preview_document")
+
+            window._on_content_field_frame_ready(light)
+            window._on_content_field_frame_ready(light)
+
+            self.assertEqual(session.current_field_id, 1)
+            self.assertEqual(session.records, [record])
+            self.assertEqual(window._preview_canvas._content_overlay_records, [])
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_pause_keeps_records_and_stops_only_owned_preview(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            record = ContentExperimentRecord(id="content_rec_1", kind=ContentRecordKind.COUNT, fiber_id=fiber.id)
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id, records=[record])
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window._content_mode_enabled = True
+            window._preview_active = True
+            window._content_preview_started_by_content = True
+            stop_calls: list[str] = []
+            window.stop_live_preview = lambda: stop_calls.append("stop")  # type: ignore[method-assign]
+
+            window.close_content_experiment()
+
+            self.assertFalse(session.active)
+            self.assertFalse(window._content_mode_enabled)
+            self.assertEqual(session.records, [record])
+            self.assertEqual(stop_calls, ["stop"])
+            self.assertIn("记录已保留", window.statusBar().currentMessage())
         finally:
             window._reset_workspace()
             window.close()
