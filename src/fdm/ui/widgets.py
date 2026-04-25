@@ -307,6 +307,93 @@ class FiberGroupListItemWidget(QWidget):
         painter.drawText(badge_rect, Qt.AlignmentFlag.AlignCenter, self.countText())
 
 
+class ContentFiberListItemWidget(QWidget):
+    HEIGHT = 42
+    DOT_SIZE = 10
+    COUNT_COLUMN_WIDTH = 72
+    AVG_COLUMN_WIDTH = 72
+    CONTENT_COLUMN_WIDTH = 64
+    RIGHT_MARGIN = 10
+
+    def __init__(
+        self,
+        label: str,
+        count: int,
+        measured: int,
+        average_text: str,
+        content_text: str,
+        color: str,
+        *,
+        selected: bool = False,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self._label = label
+        self._count = max(0, int(count))
+        self._measured = max(0, int(measured))
+        self._average_text = average_text
+        self._content_text = content_text
+        self._color = QColor(color)
+        self._selected = bool(selected)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFixedHeight(self.HEIGHT)
+
+    def setSelected(self, selected: bool) -> None:
+        if self._selected == bool(selected):
+            return
+        self._selected = bool(selected)
+        self.update()
+
+    def sizeHint(self) -> QSize:
+        return QSize(300, self.HEIGHT)
+
+    def minimumSizeHint(self) -> QSize:
+        return QSize(240, self.HEIGHT)
+
+    def _resolved_colors(self) -> tuple[QColor, QColor, QColor]:
+        if self._selected:
+            return QColor("#12343B"), QColor("#00A6A6"), QColor("#F4FBFF")
+        if _is_dark_palette(self):
+            return QColor(255, 255, 255, 20), QColor(255, 255, 255, 34), QColor("#E7ECF2")
+        return QColor(15, 23, 42, 10), QColor(15, 23, 42, 34), QColor("#182430")
+
+    def paintEvent(self, event) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = self.rect().adjusted(1, 1, -2, -2)
+        background, border, text_color = self._resolved_colors()
+        painter.setPen(QPen(border, 1))
+        painter.setBrush(background)
+        painter.drawRoundedRect(rect, 10, 10)
+
+        dot_x = rect.x() + 12
+        dot_y = rect.y() + (rect.height() - self.DOT_SIZE) // 2
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(self._color if self._color.isValid() else QColor("#7BD389"))
+        painter.drawEllipse(QRectF(dot_x, dot_y, self.DOT_SIZE, self.DOT_SIZE))
+
+        text_font = QFont(self.font())
+        text_font.setWeight(QFont.Weight.DemiBold if self._selected else QFont.Weight.Medium)
+        painter.setFont(text_font)
+        painter.setPen(text_color)
+
+        content_left = rect.right() - self.RIGHT_MARGIN - self.CONTENT_COLUMN_WIDTH
+        avg_left = content_left - self.AVG_COLUMN_WIDTH
+        count_left = avg_left - self.COUNT_COLUMN_WIDTH
+        name_left = dot_x + self.DOT_SIZE + 10
+        name_rect = QRect(name_left, rect.y(), max(0, count_left - name_left - 8), rect.height())
+        painter.drawText(
+            name_rect,
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            QFontMetrics(text_font).elidedText(self._label, Qt.TextElideMode.ElideRight, name_rect.width()),
+        )
+        painter.drawText(QRect(count_left, rect.y(), self.COUNT_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, f"{self._count}/{self._measured}")
+        painter.drawText(QRect(avg_left, rect.y(), self.AVG_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, self._average_text)
+        painter.drawText(QRect(content_left, rect.y(), self.CONTENT_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, self._content_text)
+
+
 class ToolStripActionButton(QToolButton):
     HEIGHT = 40
     COMPACT_WIDTH = 40
@@ -555,7 +642,7 @@ class OverlayToolSplitButton(QWidget):
         self._menu.popup(self.mapToGlobal(QPoint(0, self.height() + 6)))
 
     def _theme_colors(self) -> dict[str, QColor]:
-        if _application_palette_is_dark(self):
+        if _is_dark_palette(self):
             return {
                 "checked_fill": QColor("#12343B"),
                 "checked_border": QColor("#2A9D8F"),
@@ -784,7 +871,7 @@ class MeasurementToolStrip(QWidget):
         root_layout.addWidget(self._context_host)
 
     def _build_stylesheet(self) -> str:
-        if _application_palette_is_dark(self):
+        if _is_dark_palette(self):
             strip_background = "#34373C"
             strip_border = "rgba(255, 255, 255, 18)"
             primary_text = "#F3F4F6"
@@ -903,7 +990,7 @@ class MeasurementToolStrip(QWidget):
         """
 
     def _apply_button_palette(self, button: QToolButton) -> None:
-        dark_theme = _application_palette_is_dark(self)
+        dark_theme = _is_dark_palette(self)
         if button.property("primaryTool"):
             normal_color = "#F3F4F6" if dark_theme else "#1F2933"
             disabled_color = "#9AA5B1" if dark_theme else "#51606F"
@@ -1247,6 +1334,8 @@ class MeasurementToolStrip(QWidget):
         compact_primary_width = self._compact_primary_width()
         context_width = self._current_context_width()
         inline_gap = self._top_row_layout.spacing() if context_width > 0 else 0
+        if not self.isVisible() and context_width > 0:
+            available_width = max(available_width, expanded_primary_width + inline_gap + context_width)
 
         if context_width <= 0:
             self.setCompactMode(expanded_primary_width > available_width)
@@ -1266,7 +1355,10 @@ class MeasurementToolStrip(QWidget):
             self._apply_context_placement()
             return
 
-        if compact_primary_width + inline_gap + context_width <= available_width:
+        # If compact+inline only barely fits, stacking is easier to read and
+        # avoids one-pixel layout differences from clipping context buttons.
+        inline_readability_slack = 24
+        if compact_primary_width + inline_gap + context_width + inline_readability_slack <= available_width:
             self.setCompactMode(True)
             self._context_placement = "inline"
             self._apply_context_placement()

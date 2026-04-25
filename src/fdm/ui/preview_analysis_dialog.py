@@ -119,7 +119,12 @@ class PreviewAnalysisDialog(QDialog):
         self.canvas.setEnabled(not active)
         self._busy_overlay.setVisible(active)
         if active:
+            if not self.isVisible():
+                self.show()
+            self._sync_busy_overlay_geometry()
             self._busy_overlay.raise_()
+            self.raise_()
+            self.activateWindow()
         self._busy_overlay.update()
 
     def resizeEvent(self, event) -> None:

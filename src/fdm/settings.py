@@ -6,6 +6,11 @@ import json
 import os
 import sys
 
+from fdm.content_experiment import (
+    ContentFiberDefinition,
+    default_content_fiber_definitions,
+    normalized_content_fiber_definitions,
+)
 from fdm.models import CalibrationPreset
 
 
@@ -279,6 +284,10 @@ class AppSettings:
     area_worker_python: str = field(default_factory=default_area_worker_python)
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
     selected_capture_device_id: str = ""
+    content_fiber_definitions: list[ContentFiberDefinition] = field(default_factory=default_content_fiber_definitions)
+    content_diameter_reminder_count: int = 200
+    content_count_reminder_count: int = 1500
+    content_last_operator: str = ""
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
@@ -302,6 +311,10 @@ class AppSettings:
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
+        normalized.content_fiber_definitions = normalized_content_fiber_definitions(self.content_fiber_definitions)
+        normalized.content_diameter_reminder_count = self._normalize_content_reminder_count(self.content_diameter_reminder_count)
+        normalized.content_count_reminder_count = self._normalize_content_reminder_count(self.content_count_reminder_count)
+        normalized.content_last_operator = str(self.content_last_operator or "").strip()
         return normalized
 
     def resolved_area_weights_dir(self) -> Path:
@@ -500,6 +513,14 @@ class AppSettings:
             return str(resolved.parent)
         return str(resolved)
 
+    @staticmethod
+    def _normalize_content_reminder_count(value: int | float | str | None) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = 0
+        return max(0, min(1_000_000, numeric))
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -545,6 +566,13 @@ class AppSettings:
             "area_worker_python": normalized.area_worker_python,
             "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
             "selected_capture_device_id": normalized.selected_capture_device_id,
+            "content_fiber_definitions": [
+                definition.to_dict()
+                for definition in normalized.content_fiber_definitions
+            ],
+            "content_diameter_reminder_count": normalized.content_diameter_reminder_count,
+            "content_count_reminder_count": normalized.content_count_reminder_count,
+            "content_last_operator": normalized.content_last_operator,
         }
 
     @classmethod
@@ -659,7 +687,23 @@ class AppSettings:
                 if isinstance(item, dict) and str(item.get("name", "")).strip()
             ]
         settings.selected_capture_device_id = str(payload.get("selected_capture_device_id", settings.selected_capture_device_id)).strip()
-        return settings
+        content_definitions = payload.get("content_fiber_definitions", None)
+        if isinstance(content_definitions, list):
+            settings.content_fiber_definitions = normalized_content_fiber_definitions([
+                ContentFiberDefinition.from_dict(item)
+                for item in content_definitions
+                if isinstance(item, dict)
+            ])
+        else:
+            settings.content_fiber_definitions = default_content_fiber_definitions()
+        settings.content_diameter_reminder_count = cls._normalize_content_reminder_count(
+            payload.get("content_diameter_reminder_count", settings.content_diameter_reminder_count)
+        )
+        settings.content_count_reminder_count = cls._normalize_content_reminder_count(
+            payload.get("content_count_reminder_count", settings.content_count_reminder_count)
+        )
+        settings.content_last_operator = str(payload.get("content_last_operator", settings.content_last_operator)).strip()
+        return settings.normalized_copy()
 
 
 def settings_directory() -> Path:

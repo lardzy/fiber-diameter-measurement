@@ -19,6 +19,8 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QListWidget,
+    QListWidgetItem,
     QPushButton,
     QPlainTextEdit,
     QRadioButton,
@@ -33,6 +35,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from fdm.content_experiment import (
+    MAX_CONTENT_FIBERS,
+    ContentFiberDefinition,
+    normalized_content_fiber_definitions,
+)
 from fdm.models import ImageDocument
 from fdm.settings import (
     AppThemeMode,
@@ -247,6 +254,235 @@ class FiberGroupDialog(QDialog):
         )
 
 
+class ContentFiberDefinitionDialog(QDialog):
+    def __init__(
+        self,
+        parent=None,
+        *,
+        title: str = "新增含量试验纤维",
+        initial: ContentFiberDefinition | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(title)
+        self._initial = initial
+        self._name_edit = QLineEdit(initial.name if initial is not None else "")
+        self._name_edit.setPlaceholderText("纤维名称")
+        if initial is not None and initial.builtin:
+            self._name_edit.setReadOnly(True)
+        self._color_button = QPushButton()
+        self._color_button.clicked.connect(self._choose_color)
+        self._apply_button_color(initial.color if initial is not None else "#1F7A8C")
+        self._min_edit = QLineEdit("" if initial is None or initial.diameter_min is None else f"{initial.diameter_min:g}")
+        self._max_edit = QLineEdit("" if initial is None or initial.diameter_max is None else f"{initial.diameter_max:g}")
+        self._density_edit = QLineEdit("" if initial is None or initial.density is None else f"{initial.density:g}")
+        self._min_edit.setPlaceholderText("可留空")
+        self._max_edit.setPlaceholderText("可留空")
+        self._density_edit.setPlaceholderText("可留空，计算时临时按 1")
+
+        form = QFormLayout()
+        form.addRow("名称", self._name_edit)
+        form.addRow("颜色", self._color_button)
+        form.addRow("直径下限", self._min_edit)
+        form.addRow("直径上限", self._max_edit)
+        form.addRow("比重", self._density_edit)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        layout.addLayout(form)
+        layout.addWidget(buttons)
+
+    def accept(self) -> None:
+        name = self._name_edit.text().strip()
+        if not name:
+            self._name_edit.setFocus()
+            return
+        for line_edit in (self._min_edit, self._max_edit, self._density_edit):
+            token = line_edit.text().strip()
+            if token and self._parse_optional_float(token) is None:
+                line_edit.setFocus()
+                return
+        super().accept()
+
+    def _apply_button_color(self, color_value: str) -> None:
+        color = QColor(color_value)
+        normalized = color.name() if color.isValid() else color_value
+        text_color = "#111111" if color.isValid() and color.lightnessF() > 0.7 else "#FFFFFF"
+        self._color_button.setText(normalized)
+        self._color_button.setStyleSheet(
+            f"QPushButton {{ background: {normalized}; color: {text_color}; min-height: 28px; border-radius: 6px; }}"
+        )
+        self._color_button.setProperty("color_value", normalized)
+
+    def _choose_color(self) -> None:
+        initial = QColor(str(self._color_button.property("color_value") or "#1F7A8C"))
+        color = QColorDialog.getColor(initial, self, "选择颜色")
+        if not color.isValid():
+            return
+        self._apply_button_color(color.name())
+
+    def values(self) -> ContentFiberDefinition:
+        initial = self._initial
+        return ContentFiberDefinition(
+            id=initial.id if initial is not None else "",
+            name=self._name_edit.text().strip(),
+            color=str(self._color_button.property("color_value") or "#1F7A8C"),
+            builtin=bool(initial.builtin) if initial is not None else False,
+            diameter_min=self._parse_optional_float(self._min_edit.text()),
+            diameter_max=self._parse_optional_float(self._max_edit.text()),
+            density=self._parse_optional_float(self._density_edit.text()),
+        )
+
+    @staticmethod
+    def _parse_optional_float(value: str) -> float | None:
+        token = str(value or "").strip()
+        if not token:
+            return None
+        try:
+            return float(token)
+        except ValueError:
+            return None
+
+
+class ContentFiberSelectionDialog(QDialog):
+    def __init__(
+        self,
+        definitions: list[ContentFiberDefinition],
+        selected: list[ContentFiberDefinition],
+        *,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("选择含量试验纤维")
+        self.resize(760, 520)
+        self._definitions = normalized_content_fiber_definitions(definitions)
+        self._selected: list[ContentFiberDefinition] = [fiber.clone() for fiber in selected[:MAX_CONTENT_FIBERS]]
+        self._available_selection_order: list[str] = []
+
+        self._available_list = QListWidget()
+        self._available_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self._selected_list = QListWidget()
+        self._selected_list.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self._available_list.itemDoubleClicked.connect(lambda _item: self._add_selected_available())
+        self._available_list.itemSelectionChanged.connect(self._remember_available_selection_order)
+        self._selected_list.itemDoubleClicked.connect(lambda _item: self._remove_selected_fibers())
+
+        add_button = QPushButton("添加 >")
+        add_button.clicked.connect(self._add_selected_available)
+        remove_button = QPushButton("< 移除")
+        remove_button.clicked.connect(self._remove_selected_fibers)
+
+        button_column = QVBoxLayout()
+        button_column.addStretch(1)
+        button_column.addWidget(add_button)
+        button_column.addWidget(remove_button)
+        button_column.addStretch(1)
+
+        left_layout = QVBoxLayout()
+        left_layout.addWidget(QLabel("可选纤维类别"))
+        left_layout.addWidget(self._available_list)
+        right_layout = QVBoxLayout()
+        right_layout.addWidget(QLabel(f"已加入本次试验（最多 {MAX_CONTENT_FIBERS} 种）"))
+        right_layout.addWidget(self._selected_list)
+
+        content_row = QHBoxLayout()
+        left_box = QWidget()
+        left_box.setLayout(left_layout)
+        right_box = QWidget()
+        right_box.setLayout(right_layout)
+        content_row.addWidget(left_box, 1)
+        controls = QWidget()
+        controls.setLayout(button_column)
+        content_row.addWidget(controls)
+        content_row.addWidget(right_box, 1)
+
+        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+
+        layout = QVBoxLayout(self)
+        hint = QLabel("左侧可多选；加入顺序会按当前列表顺序追加到右侧，右侧顺序对应数字键 1-8 和 Excel D-K 列。")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+        layout.addLayout(content_row)
+        layout.addWidget(buttons)
+        self._refresh_lists()
+
+    def selected_fibers(self) -> list[ContentFiberDefinition]:
+        return [fiber.clone() for fiber in self._selected]
+
+    def _refresh_lists(self) -> None:
+        self._available_selection_order = []
+        selected_ids = {fiber.id for fiber in self._selected}
+        self._available_list.clear()
+        for fiber in self._definitions:
+            item = QListWidgetItem(fiber.name)
+            item.setData(Qt.ItemDataRole.UserRole, fiber.id)
+            item.setToolTip(self._fiber_tooltip(fiber))
+            if fiber.id in selected_ids:
+                item.setFlags(item.flags() & ~Qt.ItemFlag.ItemIsEnabled)
+            self._available_list.addItem(item)
+        self._selected_list.clear()
+        for index, fiber in enumerate(self._selected, start=1):
+            item = QListWidgetItem(f"{index}. {fiber.name}")
+            item.setData(Qt.ItemDataRole.UserRole, fiber.id)
+            item.setToolTip(self._fiber_tooltip(fiber))
+            self._selected_list.addItem(item)
+
+    def _remember_available_selection_order(self) -> None:
+        selected_ids = {
+            str(item.data(Qt.ItemDataRole.UserRole))
+            for item in self._available_list.selectedItems()
+        }
+        self._available_selection_order = [
+            fiber_id
+            for fiber_id in self._available_selection_order
+            if fiber_id in selected_ids
+        ]
+        for item in self._available_list.selectedItems():
+            fiber_id = str(item.data(Qt.ItemDataRole.UserRole))
+            if fiber_id not in self._available_selection_order:
+                self._available_selection_order.append(fiber_id)
+
+    def _add_selected_available(self) -> None:
+        existing = {fiber.id for fiber in self._selected}
+        selected_ids = self._available_selection_order or [
+            str(item.data(Qt.ItemDataRole.UserRole))
+            for item in self._available_list.selectedItems()
+        ]
+        for fiber_id in selected_ids:
+            if len(self._selected) >= MAX_CONTENT_FIBERS:
+                break
+            if fiber_id in existing:
+                continue
+            fiber = next((candidate for candidate in self._definitions if candidate.id == fiber_id), None)
+            if fiber is None:
+                continue
+            self._selected.append(fiber.clone())
+            existing.add(fiber.id)
+        self._refresh_lists()
+
+    def _remove_selected_fibers(self) -> None:
+        remove_ids = {item.data(Qt.ItemDataRole.UserRole) for item in self._selected_list.selectedItems()}
+        if not remove_ids:
+            return
+        self._selected = [fiber for fiber in self._selected if fiber.id not in remove_ids]
+        self._refresh_lists()
+
+    @staticmethod
+    def _fiber_tooltip(fiber: ContentFiberDefinition) -> str:
+        parts = [fiber.name]
+        if fiber.density is not None:
+            parts.append(f"比重 {fiber.density:g}")
+        if fiber.diameter_min is not None or fiber.diameter_max is not None:
+            low = "-" if fiber.diameter_min is None else f"{fiber.diameter_min:g}"
+            high = "-" if fiber.diameter_max is None else f"{fiber.diameter_max:g}"
+            parts.append(f"直径范围 {low} - {high}")
+        return "；".join(parts)
+
+
 class ExportOptionsDialog(QDialog):
     def __init__(
         self,
@@ -365,6 +601,7 @@ class ShortcutHelpDialog(QDialog):
                     "A  在当前工具与浏览工具之间切换",
                     "V  切换面积填充显示",
                     "1-9  切换当前激活纤维类别",
+                    "含量试验中 1-8 直接给对应纤维计数；右键画布后 1-8 切换当前纤维",
                     "",
                     "面积与魔棒",
                     "R  在正采样点 / 负采样点之间切换",
@@ -404,6 +641,7 @@ class SettingsDialog(QDialog):
         self._initial_settings = replace(settings)
         self._document = document
         self._group_color_buttons: dict[str | None, QPushButton] = {}
+        self._content_fiber_definitions = normalized_content_fiber_definitions(settings.content_fiber_definitions)
         self._request_scale_anchor_pick = False
 
         self._tabs = QTabWidget()
@@ -413,6 +651,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
+        self._tabs.addTab(self._build_content_experiment_tab(settings), "含量试验")
 
         self._button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -471,6 +710,10 @@ class SettingsDialog(QDialog):
             selected_capture_device_id=self._initial_settings.selected_capture_device_id,
             main_window_geometry=self._initial_settings.main_window_geometry,
             main_window_is_maximized=self._initial_settings.main_window_is_maximized,
+            content_fiber_definitions=self.content_fiber_definitions(),
+            content_diameter_reminder_count=self._content_diameter_reminder_count.value(),
+            content_count_reminder_count=self._content_count_reminder_count.value(),
+            content_last_operator=self._content_last_operator_edit.text().strip(),
         )
 
     def area_model_mappings(self) -> list[AreaModelMapping]:
@@ -484,6 +727,9 @@ class SettingsDialog(QDialog):
                 continue
             mappings.append(AreaModelMapping(model_name=model_name, model_file=model_file))
         return mappings
+
+    def content_fiber_definitions(self) -> list[ContentFiberDefinition]:
+        return normalized_content_fiber_definitions(self._content_fiber_definitions)
 
     def group_colors(self) -> dict[str, str]:
         if self._document is None:
@@ -788,6 +1034,54 @@ class SettingsDialog(QDialog):
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
+    def _build_content_experiment_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        reminder_group = QGroupBox("提醒")
+        reminder_form = QFormLayout(reminder_group)
+        self._content_diameter_reminder_count = NoWheelSpinBox()
+        self._content_diameter_reminder_count.setRange(0, 1_000_000)
+        self._content_diameter_reminder_count.setValue(settings.content_diameter_reminder_count)
+        self._content_count_reminder_count = NoWheelSpinBox()
+        self._content_count_reminder_count.setRange(0, 1_000_000)
+        self._content_count_reminder_count.setValue(settings.content_count_reminder_count)
+        self._content_last_operator_edit = QLineEdit(settings.content_last_operator)
+        reminder_form.addRow("直径测量数量提醒", self._content_diameter_reminder_count)
+        reminder_form.addRow("计数数量提醒", self._content_count_reminder_count)
+        reminder_form.addRow("上次操作人", self._content_last_operator_edit)
+        reminder_hint = QLabel("提醒阈值设为 0 时关闭对应提醒；超出纤维直径上下限时也会用非阻断弹窗提示。")
+        reminder_hint.setWordWrap(True)
+        reminder_form.addRow("", reminder_hint)
+
+        fiber_group = QGroupBox("纤维类型库")
+        fiber_layout = QVBoxLayout(fiber_group)
+        self._content_fiber_table = QTableWidget(0, 6)
+        self._content_fiber_table.setHorizontalHeaderLabels(["颜色", "名称", "下限", "上限", "比重", "内置"])
+        self._content_fiber_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._content_fiber_table.verticalHeader().setVisible(False)
+        self._content_fiber_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._content_fiber_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self._content_fiber_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        fiber_layout.addWidget(self._content_fiber_table)
+        button_row = QHBoxLayout()
+        add_button = QPushButton("新增")
+        edit_button = QPushButton("编辑")
+        delete_button = QPushButton("删除")
+        add_button.clicked.connect(self._add_content_fiber_definition)
+        edit_button.clicked.connect(self._edit_content_fiber_definition)
+        delete_button.clicked.connect(self._delete_content_fiber_definition)
+        button_row.addWidget(add_button)
+        button_row.addWidget(edit_button)
+        button_row.addWidget(delete_button)
+        button_row.addStretch(1)
+        fiber_layout.addLayout(button_row)
+
+        layout.addWidget(reminder_group)
+        layout.addWidget(fiber_group, 1)
+        self._refresh_content_fiber_table()
+        return self._wrap_settings_page(page)
+
     def _build_current_image_tab(self, document: ImageDocument | None) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -824,6 +1118,77 @@ class SettingsDialog(QDialog):
         layout.addWidget(scale_box)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
+
+    def _refresh_content_fiber_table(self) -> None:
+        self._content_fiber_definitions = normalized_content_fiber_definitions(self._content_fiber_definitions)
+        self._content_fiber_table.setRowCount(0)
+        for fiber in self._content_fiber_definitions:
+            row = self._content_fiber_table.rowCount()
+            self._content_fiber_table.insertRow(row)
+            color_item = QTableWidgetItem(fiber.color)
+            color_item.setBackground(QColor(fiber.color))
+            color_item.setData(Qt.ItemDataRole.UserRole, fiber.id)
+            self._content_fiber_table.setItem(row, 0, color_item)
+            self._content_fiber_table.setItem(row, 1, QTableWidgetItem(fiber.name))
+            self._content_fiber_table.setItem(row, 2, QTableWidgetItem("" if fiber.diameter_min is None else f"{fiber.diameter_min:g}"))
+            self._content_fiber_table.setItem(row, 3, QTableWidgetItem("" if fiber.diameter_max is None else f"{fiber.diameter_max:g}"))
+            self._content_fiber_table.setItem(row, 4, QTableWidgetItem("" if fiber.density is None else f"{fiber.density:g}"))
+            self._content_fiber_table.setItem(row, 5, QTableWidgetItem("是" if fiber.builtin else "否"))
+        self._content_fiber_table.resizeColumnsToContents()
+
+    def _selected_content_fiber_index(self) -> int | None:
+        selection = self._content_fiber_table.selectionModel()
+        if selection is None:
+            return None
+        rows = selection.selectedRows()
+        if not rows:
+            return None
+        row = rows[0].row()
+        if 0 <= row < len(self._content_fiber_definitions):
+            return row
+        return None
+
+    def _add_content_fiber_definition(self) -> None:
+        dialog = ContentFiberDefinitionDialog(self, title="新增含量试验纤维")
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        fiber = dialog.values()
+        fiber.id = f"custom_{len(self._content_fiber_definitions) + 1:03d}"
+        existing_ids = {item.id for item in self._content_fiber_definitions}
+        while fiber.id in existing_ids:
+            fiber.id = f"custom_{len(existing_ids) + 1:03d}"
+            existing_ids.add(fiber.id)
+        self._content_fiber_definitions.append(fiber)
+        self._refresh_content_fiber_table()
+
+    def _edit_content_fiber_definition(self) -> None:
+        index = self._selected_content_fiber_index()
+        if index is None:
+            return
+        current = self._content_fiber_definitions[index]
+        dialog = ContentFiberDefinitionDialog(
+            self,
+            title="编辑含量试验纤维",
+            initial=current,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        replacement = dialog.values()
+        replacement.id = current.id
+        replacement.builtin = current.builtin
+        self._content_fiber_definitions[index] = replacement
+        self._refresh_content_fiber_table()
+        self._content_fiber_table.selectRow(index)
+
+    def _delete_content_fiber_definition(self) -> None:
+        index = self._selected_content_fiber_index()
+        if index is None:
+            return
+        fiber = self._content_fiber_definitions[index]
+        if fiber.builtin:
+            return
+        del self._content_fiber_definitions[index]
+        self._refresh_content_fiber_table()
 
     def _create_color_button(self, color_value: str) -> QPushButton:
         button = QPushButton(color_value)

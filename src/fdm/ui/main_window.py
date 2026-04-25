@@ -4,15 +4,17 @@ from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 
-from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPointF, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPoint, QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QButtonGroup,
     QComboBox,
     QDialog,
     QDialogButtonBox,
     QFileDialog,
+    QFormLayout,
     QFrame,
     QGroupBox,
     QHBoxLayout,
@@ -47,6 +49,18 @@ from PySide6.QtWidgets import (
 
 from fdm import __version__
 from fdm.area_display import ensure_measurement_display_geometry, invalidate_measurement_display_geometry
+from fdm.content_experiment import (
+    ContentExperimentRecord,
+    ContentExperimentSession,
+    ContentOverlayStyle,
+    ContentRecordKind,
+    ContentSelectionMode,
+    content_session_stats,
+    content_total_count,
+    content_total_measured,
+    session_from_project_metadata,
+    write_session_to_project_metadata,
+)
 from fdm.geometry import Line, Point, line_length
 from fdm.models import (
     Calibration,
@@ -80,6 +94,7 @@ from fdm.settings import (
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.content_workbook import ContentWorkbookService
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -108,6 +123,7 @@ from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
     CalibrationPresetDialog,
+    ContentFiberSelectionDialog,
     ExportOptionsDialog,
     FiberGroupDialog,
     SettingsDialog,
@@ -128,6 +144,7 @@ from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest, FiberQ
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
 from fdm.ui.widgets import (
+    ContentFiberListItemWidget,
     FiberGroupListItemWidget,
     FlowLayout,
     MeasurementGroupComboBox,
@@ -368,6 +385,8 @@ class MainWindow(QMainWindow):
         self._fiber_quick_background_jobs: dict[tuple[str, int], dict[str, object]] = {}
         self._interactive_segmentation_services: dict[str, object] = {}
         self._show_area_fill = True
+        self._content_mode_enabled = False
+        self._area_model_box: QGroupBox | None = None
         self._area_auto_button: QPushButton | None = None
         self._magic_controls_widget: QWidget | None = None
         self._magic_prompt_label: QLabel | None = None
@@ -392,6 +411,23 @@ class MainWindow(QMainWindow):
         self._add_group_button: QPushButton | None = None
         self._rename_group_button: QPushButton | None = None
         self.delete_group_button: QPushButton | None = None
+        self._left_top_stack: QStackedWidget | None = None
+        self._image_box: QGroupBox | None = None
+        self._content_info_box: QGroupBox | None = None
+        self._content_operator_edit: QLineEdit | None = None
+        self._content_sample_id_edit: QLineEdit | None = None
+        self._content_sample_name_edit: QLineEdit | None = None
+        self._content_mode_preselect_radio: QRadioButton | None = None
+        self._content_mode_postselect_radio: QRadioButton | None = None
+        self._content_overlay_combo: QComboBox | None = None
+        self._content_totals_label: QLabel | None = None
+        self._content_box: QGroupBox | None = None
+        self._content_start_button: QPushButton | None = None
+        self._content_close_button: QPushButton | None = None
+        self._content_save_excel_button: QPushButton | None = None
+        self._content_status_label: QLabel | None = None
+        self._content_record_table: QTableWidget | None = None
+        self._content_delete_record_button: QPushButton | None = None
         self._delete_group_measurements_button: QPushButton | None = None
         self._delete_all_measurements_button: QPushButton | None = None
         self._center_stack: QStackedWidget | None = None
@@ -419,6 +455,19 @@ class MainWindow(QMainWindow):
         self._preview_analysis_request_id = 0
         self._preview_analysis_request_pending = False
         self._preview_analysis_finalizing = False
+        self._content_session: ContentExperimentSession | None = None
+        self._content_workbook_service = ContentWorkbookService()
+        self._content_measure_start: Point | None = None
+        self._content_measure_hover: Point | None = None
+        self._content_fiber_menu_open = False
+        self._content_pending_diameter_line: Line | None = None
+        self._content_field_timer = QTimer(self)
+        self._content_field_timer.setInterval(900)
+        self._content_field_timer.timeout.connect(self._request_content_field_frame)
+        self._content_field_request_id = -1
+        self._content_field_request_pending = False
+        self._content_field_baseline: object | None = None
+        self._content_field_motion_hits = 0
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
         self._capture_manager = CaptureSessionManager(
@@ -521,6 +570,11 @@ class MainWindow(QMainWindow):
         self.live_preview_action.setCheckable(True)
         self.live_preview_action.setIcon(themed_icon("live_preview", color="#7BD389"))
         self.live_preview_action.triggered.connect(self.toggle_live_preview)
+
+        self.content_experiment_action = QAction("含量试验", self)
+        self.content_experiment_action.setCheckable(True)
+        self.content_experiment_action.setIcon(themed_icon("area_auto", color="#F4D35E"))
+        self.content_experiment_action.triggered.connect(self.toggle_content_experiment_mode)
 
         self.capture_frame_action = QAction("采集一张", self)
         self.capture_frame_action.setIcon(themed_icon("capture_frame", color="#F4D35E"))
@@ -721,6 +775,7 @@ class MainWindow(QMainWindow):
         file_toolbar.addSeparator()
         file_toolbar.addAction(self.switch_capture_device_action)
         file_toolbar.addAction(self.live_preview_action)
+        file_toolbar.addAction(self.content_experiment_action)
         file_toolbar.addAction(self.capture_frame_action)
         file_toolbar.addAction(self.optimize_capture_signal_action)
 
@@ -767,7 +822,7 @@ class MainWindow(QMainWindow):
         self._magic_roi_button = QToolButton(container)
         self._magic_roi_button.setProperty("contextTool", True)
         self._magic_roi_button.setCheckable(True)
-        self._magic_roi_button.setText("ROI开(Y)")
+        self._magic_roi_button.setText("ROI")
         self._magic_roi_button.clicked.connect(self._toggle_active_magic_roi)
         layout.addWidget(self._magic_roi_button)
 
@@ -779,20 +834,20 @@ class MainWindow(QMainWindow):
 
         self._magic_confirm_subtract_button = QToolButton(container)
         self._magic_confirm_subtract_button.setProperty("contextTool", True)
-        self._magic_confirm_subtract_button.setText("加一块(S)")
+        self._magic_confirm_subtract_button.setText("加块(S)")
         self._magic_confirm_subtract_button.setToolTip("确认当前剔除形状，并继续添加下一块剔除区域")
         self._magic_confirm_subtract_button.clicked.connect(self._confirm_current_magic_subtract_shape)
         layout.addWidget(self._magic_confirm_subtract_button)
 
         self._magic_complete_button = QToolButton(container)
         self._magic_complete_button.setProperty("contextTool", True)
-        self._magic_complete_button.setText("确认(Enter/F)")
+        self._magic_complete_button.setText("完成")
         self._magic_complete_button.clicked.connect(self._commit_active_magic_preview)
         layout.addWidget(self._magic_complete_button)
 
         self._magic_cancel_button = QToolButton(container)
         self._magic_cancel_button.setProperty("contextTool", True)
-        self._magic_cancel_button.setText("取消(Esc)")
+        self._magic_cancel_button.setText("取消")
         self._magic_cancel_button.clicked.connect(self._cancel_active_magic_session)
         layout.addWidget(self._magic_cancel_button)
 
@@ -1161,6 +1216,62 @@ class MainWindow(QMainWindow):
         for kind, action in self._overlay_subtool_actions.items():
             action.setChecked(kind == self._overlay_tool_kind)
 
+    def _build_content_info_box(self) -> QGroupBox:
+        box = QGroupBox("基础信息")
+        layout = QVBoxLayout(box)
+        form = QFormLayout()
+
+        self._content_operator_edit = QLineEdit(self._app_settings.content_last_operator)
+        self._content_sample_id_edit = QLineEdit()
+        self._content_sample_name_edit = QLineEdit()
+        for label, field_name, edit in [
+            ("操作人", "operator", self._content_operator_edit),
+            ("样品编号", "sample_id", self._content_sample_id_edit),
+            ("样品名称", "sample_name", self._content_sample_name_edit),
+        ]:
+            edit.setReadOnly(True)
+            edit.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+            edit.setPlaceholderText(f"点击“{label}”填写")
+            button = QPushButton(label)
+            button.clicked.connect(lambda checked=False, target=field_name: self._edit_content_basic_field(target))
+            form.addRow(button, edit)
+
+        self._content_mode_preselect_radio = QRadioButton("先选")
+        self._content_mode_postselect_radio = QRadioButton("后选")
+        mode_row = QWidget()
+        mode_layout = QHBoxLayout(mode_row)
+        mode_layout.setContentsMargins(0, 0, 0, 0)
+        mode_group = QButtonGroup(mode_row)
+        mode_group.addButton(self._content_mode_preselect_radio)
+        mode_group.addButton(self._content_mode_postselect_radio)
+        self._content_mode_preselect_radio.setChecked(True)
+        self._content_mode_preselect_radio.toggled.connect(self._update_content_basic_info_from_ui)
+        self._content_mode_postselect_radio.toggled.connect(self._update_content_basic_info_from_ui)
+        mode_layout.addWidget(self._content_mode_preselect_radio)
+        mode_layout.addWidget(self._content_mode_postselect_radio)
+        mode_layout.addStretch(1)
+        form.addRow("类别选择", mode_row)
+
+        self._content_overlay_combo = QComboBox()
+        self._content_overlay_combo.addItem("无", ContentOverlayStyle.NONE)
+        self._content_overlay_combo.addItem("中心点", ContentOverlayStyle.CENTER_DOT)
+        self._content_overlay_combo.addItem("横线", ContentOverlayStyle.HORIZONTAL)
+        self._content_overlay_combo.addItem("竖线", ContentOverlayStyle.VERTICAL)
+        self._content_overlay_combo.addItem("十字", ContentOverlayStyle.CROSS)
+        self._content_overlay_combo.addItem("十字准星", ContentOverlayStyle.CROSSHAIR)
+        self._content_overlay_combo.currentIndexChanged.connect(self._update_content_basic_info_from_ui)
+        form.addRow("画布叠加", self._content_overlay_combo)
+
+        layout.addLayout(form)
+        self._content_totals_label = QLabel("总计数 0；实测 0")
+        self._content_totals_label.setWordWrap(True)
+        layout.addWidget(self._content_totals_label)
+        hint = QLabel("含量试验中，数字键 1-8 直接给对应纤维计数；右键画布可切换当前纤维。")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+        layout.addStretch(1)
+        return box
+
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
         self._left_panel = container
@@ -1170,10 +1281,16 @@ class MainWindow(QMainWindow):
         layout.setSpacing(8)
 
         image_box = QGroupBox("已打开图片")
+        self._image_box = image_box
         image_layout = QVBoxLayout(image_box)
         self.image_list = QListWidget()
         self.image_list.currentRowChanged.connect(self._on_image_list_changed)
         image_layout.addWidget(self.image_list)
+        content_info_box = self._build_content_info_box()
+        self._content_info_box = content_info_box
+        self._left_top_stack = QStackedWidget()
+        self._left_top_stack.addWidget(image_box)
+        self._left_top_stack.addWidget(content_info_box)
 
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
@@ -1183,7 +1300,7 @@ class MainWindow(QMainWindow):
         color_header = QLabel("颜色")
         color_header.setFixedWidth(36)
         name_header = QLabel("类别")
-        count_header = QLabel("当前/总数")
+        count_header = QLabel("（当前/总数）")
         count_header.setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
         count_header.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self._group_header_labels = [color_header, name_header, count_header]
@@ -1247,7 +1364,7 @@ class MainWindow(QMainWindow):
         splitter = QSplitter(Qt.Orientation.Vertical)
         self._left_panel_splitter = splitter
         splitter.setChildrenCollapsible(False)
-        splitter.addWidget(image_box)
+        splitter.addWidget(self._left_top_stack)
         splitter.addWidget(group_box)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
@@ -1278,8 +1395,10 @@ class MainWindow(QMainWindow):
         self._preview_canvas.set_read_only(True)
         self._preview_canvas.set_fit_alignment("top_left")
         self._preview_canvas.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        self._preview_canvas.installEventFilter(self)
         self._preview_display_stack.addWidget(self._preview_canvas)
         self._microview_preview_host = MicroviewPreviewHost()
+        self._microview_preview_host.installEventFilter(self)
         self._microview_preview_host.metricsChanged.connect(self._on_preview_host_metrics_changed)
         self._microview_preview_scroll = QScrollArea()
         self._microview_preview_scroll.setWidget(self._microview_preview_host)
@@ -1362,6 +1481,42 @@ class MainWindow(QMainWindow):
         self._apply_preset_button.clicked.connect(self.apply_selected_preset)
         calibration_layout.addWidget(self._apply_preset_button)
         top_layout.addWidget(calibration_box)
+
+        content_box = QGroupBox("含量试验")
+        self._content_box = content_box
+        content_layout = QVBoxLayout(content_box)
+        content_button_row = QHBoxLayout()
+        self._content_start_button = QPushButton("开始/继续")
+        self._content_start_button.setIcon(themed_icon("live_preview", color="#7BD389"))
+        self._content_start_button.clicked.connect(self.start_or_continue_content_experiment)
+        self._content_close_button = QPushButton("关闭")
+        self._content_close_button.clicked.connect(self.close_content_experiment)
+        self._content_save_excel_button = QPushButton("保存Excel")
+        self._content_save_excel_button.clicked.connect(self.save_content_experiment_excel)
+        content_button_row.addWidget(self._content_start_button)
+        content_button_row.addWidget(self._content_close_button)
+        content_button_row.addWidget(self._content_save_excel_button)
+        content_layout.addLayout(content_button_row)
+        self._content_status_label = QLabel("实时预览开启后可开始含量试验。")
+        self._content_status_label.setWordWrap(True)
+        content_layout.addWidget(self._content_status_label)
+        self._content_record_table = QTableWidget(0, 5)
+        self._content_record_table.setHorizontalHeaderLabels(["类型", "类别", "结果", "视场", "ID"])
+        self._content_record_table.verticalHeader().setVisible(False)
+        self._content_record_table.setSelectionBehavior(QTableWidget.SelectionBehavior.SelectRows)
+        self._content_record_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self._content_record_table.setEditTriggers(QTableWidget.EditTrigger.NoEditTriggers)
+        self._content_record_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._content_record_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._content_record_table.setColumnWidth(2, 76)
+        self._content_record_table.setColumnWidth(3, 54)
+        self._content_record_table.setColumnHidden(4, True)
+        content_layout.addWidget(self._content_record_table, 1)
+        self._content_delete_record_button = QPushButton("删除选中记录")
+        self._content_delete_record_button.setIcon(themed_icon("delete", color="#F28482"))
+        self._content_delete_record_button.clicked.connect(self.delete_selected_content_records)
+        content_layout.addWidget(self._content_delete_record_button)
+        top_layout.addWidget(content_box)
 
         measurement_box = QGroupBox("测量记录")
         measurement_layout = QVBoxLayout(measurement_box)
@@ -1707,6 +1862,9 @@ class MainWindow(QMainWindow):
         for document in self.project.documents:
             if document.source_type != "filesystem":
                 continue
+            raw_path = Path(str(document.path)).expanduser()
+            if str(raw_path).strip():
+                return raw_path.parent
             try:
                 resolved = self._resolved_document_path(document)
             except Exception:
@@ -1916,6 +2074,9 @@ class MainWindow(QMainWindow):
         if not active:
             self._clear_preview_surface_state()
             self._clear_prompt_segmentation_cache()
+            self._invalidate_content_field("实时预览停止")
+        else:
+            self._invalidate_content_field("实时预览启动")
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
 
@@ -1928,6 +2089,8 @@ class MainWindow(QMainWindow):
             self._preview_document is None
             or self._preview_document.image_size != (image.width(), image.height())
         ):
+            if self._preview_document is not None:
+                self._invalidate_content_field("实时预览分辨率变化")
             self._preview_document = ImageDocument(
                 id="preview_document",
                 path="preview_frame.png",
@@ -1951,6 +2114,7 @@ class MainWindow(QMainWindow):
         self._apply_preview_surface("frame_stream")
         if self._preview_canvas is not None:
             self._preview_canvas.clear_document()
+            self._preview_canvas.set_content_experiment_overlay()
         if self._preview_status_label is not None:
             self._preview_status_label.setText("请选择采集设备并开始实时预览")
 
@@ -2049,7 +2213,11 @@ class MainWindow(QMainWindow):
         try:
             AppSettingsIO.save(self._app_settings)
         except OSError as exc:
-            QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
+            message = f"无法写入设置文件：{exc}"
+            if QApplication.platformName().lower() == "offscreen" or not self.isVisible():
+                self.statusBar().showMessage(message, 5000)
+            else:
+                QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
             return False
         return True
 
@@ -2062,6 +2230,8 @@ class MainWindow(QMainWindow):
                 restored = False
         if not restored:
             self._apply_default_window_geometry()
+        elif self.width() < 880:
+            self.resize(880, max(self.height(), 520))
         if restored and self._app_settings.main_window_is_maximized:
             self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
 
@@ -2082,7 +2252,7 @@ class MainWindow(QMainWindow):
         available = screen.availableGeometry()
         width = min(int(round(available.width() * 0.84)), 1600)
         height = min(int(round(available.height() * 0.84)), 1000)
-        width = max(720, min(width, available.width()))
+        width = max(880, min(width, available.width()))
         height = max(520, min(height, available.height()))
         left = available.x() + max(0, (available.width() - width) // 2)
         top = available.y() + max(0, (available.height() - height) // 2)
@@ -2127,6 +2297,7 @@ class MainWindow(QMainWindow):
             "project_default_document_ids": inherited_ids,
             "project_asset_documents": project_assets,
             "project_group_templates": project_group_templates,
+            "metadata": dict(self.project.metadata),
         }
 
     def _mark_project_saved(self) -> None:
@@ -3148,7 +3319,7 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
 
     def save_project(self, path: str | None = None) -> bool:
-        if not self.project.documents:
+        if not self.project.documents and self._load_content_session_from_project() is None:
             QMessageBox.information(self, "保存项目", "请先打开图片。")
             return False
         target_path = Path(path) if path else self._project_path
@@ -3164,6 +3335,14 @@ class MainWindow(QMainWindow):
                 return False
             target_path = self._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
         self.project.version = __version__
+        self._sync_content_session_to_project()
+        if self._content_session is not None:
+            try:
+                self._content_workbook_service.save_snapshot(self._content_session, target_path)
+                self._sync_content_session_to_project()
+            except Exception as exc:
+                QMessageBox.warning(self, "保存项目", f"无法保存含量试验 Excel 快照：\n{exc}")
+                return False
         if not self._persist_project_assets(target_path):
             return False
         ProjectIO.save(self.project, target_path)
@@ -3199,6 +3378,7 @@ class MainWindow(QMainWindow):
             project_group_templates=list(project.project_group_templates),
         )
         self.project.metadata = project.metadata
+        self._content_session = session_from_project_metadata(self.project.metadata)
         self._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
         for document in project.documents:
@@ -3212,6 +3392,7 @@ class MainWindow(QMainWindow):
         if self._load_thread is None:
             self._mark_project_saved()
             self._pending_project_load_snapshot = False
+            self._update_ui_for_current_document()
         message = f"项目已加载: {path}"
         if imported_count:
             message += f"；已导入 {imported_count} 个旧版标定预设"
@@ -3567,6 +3748,9 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已应用标定预设: {preset.name}", 4000)
 
     def add_fiber_group(self) -> None:
+        if self._preview_active:
+            self.edit_content_experiment_fibers()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -3630,6 +3814,9 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("已新增类别", 3000)
 
     def rename_active_group(self) -> None:
+        if self._preview_active:
+            self.edit_content_experiment_fibers()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -3712,6 +3899,9 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("类别已更新", 3000)
 
     def delete_active_group(self) -> None:
+        if self._preview_active:
+            self.remove_active_content_fiber()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -4427,7 +4617,7 @@ class MainWindow(QMainWindow):
             else:
                 message_parts.append(f"共有 {len(dirty_documents)} 张图片存在未保存的项目改动。")
         if has_project_dirty:
-            message_parts.append("当前项目的统一比例尺、项目内图片、全局类别或继承关系有未保存改动。")
+            message_parts.append("当前项目的统一比例尺、项目内图片、全局类别、含量试验或继承关系有未保存改动。")
         box = QMessageBox(self)
         box.setIcon(QMessageBox.Icon.Warning)
         box.setWindowTitle("未保存的改动")
@@ -4446,6 +4636,13 @@ class MainWindow(QMainWindow):
     def _reset_workspace(self) -> None:
         self.stop_live_preview()
         self._clear_prompt_segmentation_cache()
+        self._content_workbook_service.close()
+        self._content_session = None
+        self._content_measure_start = None
+        self._content_measure_hover = None
+        self._content_field_timer.stop()
+        self._content_field_request_pending = False
+        self._content_field_baseline = None
         self.project = ProjectState.empty()
         self._project_path = None
         self._pending_project_load_snapshot = False
@@ -4899,6 +5096,8 @@ class MainWindow(QMainWindow):
             widget = self.group_list.itemWidget(item)
             if isinstance(widget, FiberGroupListItemWidget):
                 widget.setSelected(item.isSelected())
+            elif isinstance(widget, ContentFiberListItemWidget):
+                widget.setSelected(item.isSelected())
 
     def _scroll_active_group_item_into_view(self) -> None:
         target_item = None
@@ -4938,9 +5137,701 @@ class MainWindow(QMainWindow):
     def _project_uncategorized_measurement_count(self, current_document: ImageDocument | None = None) -> int:
         return sum(document.uncategorized_measurement_count() for document in self._documents_for_group_counts(current_document))
 
+    def _load_content_session_from_project(self) -> ContentExperimentSession | None:
+        if self._content_session is None:
+            self._content_session = session_from_project_metadata(self.project.metadata)
+        return self._content_session
+
+    def _ensure_content_session(self) -> ContentExperimentSession:
+        session = self._load_content_session_from_project()
+        if session is None:
+            session = ContentExperimentSession(
+                operator=self._app_settings.content_last_operator,
+                active=False,
+            )
+            self._content_session = session
+            self._sync_content_session_to_project()
+        return session
+
+    def _sync_content_session_to_project(self) -> None:
+        write_session_to_project_metadata(self.project.metadata, self._content_session)
+        if self._content_session is not None and self._content_session.operator:
+            if self._app_settings.content_last_operator != self._content_session.operator:
+                self._app_settings.content_last_operator = self._content_session.operator
+                self._save_app_settings(context="含量试验")
+
+    def _content_fiber_color_map(self) -> dict[str, str]:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return {}
+        return {fiber.id: fiber.color for fiber in session.fibers}
+
+    def _edit_content_basic_field(self, field_name: str) -> None:
+        session = self._ensure_content_session()
+        labels = {
+            "operator": "操作人",
+            "sample_id": "样品编号",
+            "sample_name": "样品名称",
+        }
+        label = labels.get(field_name, "基础信息")
+        current = str(getattr(session, field_name, "") or "")
+        value, ok = QInputDialog.getText(self, f"填写{label}", f"请输入{label}", text=current)
+        if not ok:
+            return
+        setattr(session, field_name, value.strip())
+        self._sync_content_session_to_project()
+        self._populate_content_basic_info()
+        self._refresh_content_workbook()
+        self._update_action_states()
+
+    def _update_content_basic_info_from_ui(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        if self._content_operator_edit is not None:
+            session.operator = self._content_operator_edit.text().strip()
+        if self._content_sample_id_edit is not None:
+            session.sample_id = self._content_sample_id_edit.text().strip()
+        if self._content_sample_name_edit is not None:
+            session.sample_name = self._content_sample_name_edit.text().strip()
+        if self._content_mode_postselect_radio is not None and self._content_mode_postselect_radio.isChecked():
+            session.selection_mode = ContentSelectionMode.POSTSELECT
+        else:
+            session.selection_mode = ContentSelectionMode.PRESELECT
+        if self._content_overlay_combo is not None:
+            session.overlay_style = str(self._content_overlay_combo.currentData() or ContentOverlayStyle.NONE)
+        self._sync_content_session_to_project()
+        self._sync_content_preview_overlay()
+        self._refresh_content_workbook()
+
+    def _populate_content_basic_info(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            if self._content_operator_edit is not None:
+                self._content_operator_edit.setText(self._app_settings.content_last_operator)
+            if self._content_sample_id_edit is not None:
+                self._content_sample_id_edit.clear()
+            if self._content_sample_name_edit is not None:
+                self._content_sample_name_edit.clear()
+            if self._content_totals_label is not None:
+                self._content_totals_label.setText("总计数 0；实测 0")
+            return
+        for edit, value in [
+            (self._content_operator_edit, session.operator),
+            (self._content_sample_id_edit, session.sample_id),
+            (self._content_sample_name_edit, session.sample_name),
+        ]:
+            if edit is not None and edit.text() != value:
+                edit.setText(value)
+        if self._content_mode_preselect_radio is not None:
+            self._content_mode_preselect_radio.setChecked(session.selection_mode != ContentSelectionMode.POSTSELECT)
+        if self._content_mode_postselect_radio is not None:
+            self._content_mode_postselect_radio.setChecked(session.selection_mode == ContentSelectionMode.POSTSELECT)
+        if self._content_overlay_combo is not None:
+            index = self._content_overlay_combo.findData(session.overlay_style)
+            self._content_overlay_combo.setCurrentIndex(max(0, index))
+        if self._content_totals_label is not None:
+            self._content_totals_label.setText(
+                f"总计数 {content_total_count(session)}；实测 {content_total_measured(session)}；当前视场 {session.current_field_id}"
+            )
+
+    def _populate_content_group_list(self) -> None:
+        session = self._load_content_session_from_project()
+        self._group_list_rebuilding = True
+        self.group_list.clear()
+        if session is not None:
+            stats_by_id = {item.fiber.id: item for item in content_session_stats(session)}
+            for index, fiber in enumerate(session.fibers, start=1):
+                stats = stats_by_id[fiber.id]
+                average_text = "-" if stats.average_diameter is None else f"{stats.average_diameter:.2f}"
+                content_text = "-" if stats.content_percent is None else f"{stats.content_percent:.1f}%"
+                item = QListWidgetItem()
+                item.setData(Qt.ItemDataRole.UserRole, fiber.id)
+                item.setData(Qt.ItemDataRole.UserRole + 2, fiber.name)
+                item.setSizeHint(QSize(0, ContentFiberListItemWidget.HEIGHT))
+                self.group_list.addItem(item)
+                widget = ContentFiberListItemWidget(
+                    f"{index}. {fiber.name}",
+                    stats.count,
+                    stats.measured,
+                    average_text,
+                    content_text,
+                    fiber.color,
+                    selected=session.current_fiber_id == fiber.id,
+                    parent=self.group_list,
+                )
+                self.group_list.setItemWidget(item, widget)
+                if session.current_fiber_id == fiber.id:
+                    item.setSelected(True)
+        self._group_list_rebuilding = False
+
+    def _set_group_headers_for_content(self, enabled: bool) -> None:
+        if len(self._group_header_labels) < 3:
+            return
+        if enabled:
+            self._group_header_labels[0].setText("纤维类别")
+            self._group_header_labels[0].setFixedWidth(84)
+            self._group_header_labels[1].setText("计数/实测")
+            self._group_header_labels[2].setText("平均/含量")
+            self._group_header_labels[2].setFixedWidth(96)
+        else:
+            self._group_header_labels[0].setText("颜色")
+            self._group_header_labels[0].setFixedWidth(36)
+            self._group_header_labels[1].setText("类别")
+            self._group_header_labels[2].setText("（当前/总数）")
+            self._group_header_labels[2].setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
+
+    def _update_content_record_table(self) -> None:
+        if self._content_record_table is None:
+            return
+        session = self._load_content_session_from_project()
+        self._content_record_table.setRowCount(0)
+        if session is None:
+            return
+        for row, record in enumerate(reversed(session.records)):
+            fiber = session.fiber_by_id(record.fiber_id)
+            self._content_record_table.insertRow(row)
+            kind_label = "计数" if record.kind == ContentRecordKind.COUNT else "直径"
+            self._content_record_table.setItem(row, 0, QTableWidgetItem(kind_label))
+            self._content_record_table.setItem(row, 1, QTableWidgetItem(fiber.name if fiber is not None else ""))
+            self._content_record_table.setItem(row, 2, QTableWidgetItem(record.display_value()))
+            self._content_record_table.setItem(row, 3, QTableWidgetItem(str(record.field_id)))
+            id_item = QTableWidgetItem(record.id.split("_")[-1])
+            id_item.setData(Qt.ItemDataRole.UserRole, record.id)
+            self._content_record_table.setItem(row, 4, id_item)
+
+    def _update_content_controls(self) -> None:
+        preview_active = self._preview_active
+        session = self._load_content_session_from_project()
+        active = bool(session and session.active)
+        if self._left_top_stack is not None:
+            self._left_top_stack.setCurrentWidget(self._content_info_box if preview_active else self._image_box)
+        if self._content_box is not None:
+            self._content_box.setVisible(preview_active)
+        self._set_group_headers_for_content(preview_active)
+        if self._content_start_button is not None:
+            self._content_start_button.setEnabled(preview_active)
+            self._content_start_button.setText("继续" if active else "开始")
+        if self._content_close_button is not None:
+            self._content_close_button.setEnabled(active)
+        if self._content_save_excel_button is not None:
+            self._content_save_excel_button.setEnabled(bool(session and session.records))
+        if self._content_delete_record_button is not None:
+            self._content_delete_record_button.setEnabled(bool(session and session.records))
+        if self._content_status_label is not None:
+            if not preview_active:
+                self._content_status_label.setText("实时预览开启后可开始含量试验。")
+            elif session is None:
+                self._content_status_label.setText("尚未开始含量试验。")
+            else:
+                fiber = session.active_fiber()
+                fiber_text = fiber.name if fiber is not None else "未选择"
+                workbook_mode = session.workbook_mode or "未打开"
+                self._content_status_label.setText(
+                    f"{'进行中' if session.active else '已暂停'}；当前纤维: {fiber_text}；工作簿: {workbook_mode}"
+                )
+        if active:
+            self._content_field_timer.start()
+        else:
+            self._content_field_timer.stop()
+            self._content_field_request_pending = False
+
+    def _sync_content_preview_overlay(self) -> None:
+        if self._preview_canvas is None:
+            return
+        session = self._load_content_session_from_project()
+        if session is None:
+            self._preview_canvas.set_content_experiment_overlay()
+            return
+        pending_line = None
+        if self._content_measure_start is not None and self._content_measure_hover is not None:
+            pending_line = Line(self._content_measure_start, self._content_measure_hover)
+        visible_records = [
+            record
+            for record in session.records
+            if record.field_id == session.current_field_id
+        ]
+        self._preview_canvas.set_content_experiment_overlay(
+            overlay_style=session.overlay_style,
+            records=visible_records,
+            fiber_colors=self._content_fiber_color_map(),
+            pending_line=pending_line,
+        )
+
+    def _refresh_content_workbook(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None or not self._content_workbook_service.is_open():
+            return
+        try:
+            self._content_workbook_service.sync_session(session)
+        except Exception as exc:
+            if self._content_status_label is not None:
+                self._content_status_label.setText(f"工作簿同步失败：{exc}")
+
+    def _update_content_ui(self) -> None:
+        self._populate_content_basic_info()
+        self._update_content_record_table()
+        self._sync_content_preview_overlay()
+        self._update_content_controls()
+
+    def edit_content_experiment_fibers(self) -> None:
+        session = self._ensure_content_session()
+        dialog = ContentFiberSelectionDialog(
+            self._app_settings.content_fiber_definitions,
+            session.fibers,
+            parent=self,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        selected = dialog.selected_fibers()
+        if not selected:
+            QMessageBox.information(self, "含量试验", "请至少选择一种纤维。")
+            return
+        previous_ids = {fiber.id for fiber in session.fibers}
+        session.set_fibers(selected)
+        removed_ids = previous_ids - {fiber.id for fiber in session.fibers}
+        if removed_ids:
+            session.records = [record for record in session.records if record.fiber_id not in removed_ids]
+        self._sync_content_session_to_project()
+        self._refresh_content_workbook()
+        self._update_content_ui()
+
+    def remove_active_content_fiber(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        fiber = session.active_fiber()
+        if fiber is None:
+            return
+        record_count = sum(1 for record in session.records if record.fiber_id == fiber.id)
+        message = f"确定从本次含量试验中移除“{fiber.name}”吗？"
+        if record_count:
+            message += f"\n\n该纤维下的 {record_count} 条含量试验记录也会删除。"
+        response = QMessageBox.question(
+            self,
+            "移除含量试验纤维",
+            message,
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+        session.fibers = [item for item in session.fibers if item.id != fiber.id]
+        session.records = [record for record in session.records if record.fiber_id != fiber.id]
+        session.ensure_current_fiber()
+        self._sync_content_session_to_project()
+        self._refresh_content_workbook()
+        self._update_content_ui()
+
+    def start_or_continue_content_experiment(self) -> None:
+        if not self._preview_active:
+            QMessageBox.information(self, "含量试验", "请先开启实时预览。")
+            return
+        session = self._ensure_content_session()
+        if not session.fibers:
+            self.edit_content_experiment_fibers()
+            if not session.fibers:
+                return
+        self._update_content_basic_info_from_ui()
+        session.active = True
+        session.ensure_current_fiber()
+        self._sync_content_session_to_project()
+        try:
+            mode = self._content_workbook_service.open_session(session, project_path=self._project_path)
+            session.workbook_mode = mode
+            self._sync_content_session_to_project()
+        except Exception as exc:
+            QMessageBox.warning(self, "含量试验", f"无法打开含量试验工作簿：\n{exc}")
+        self._invalidate_content_field("含量试验开始")
+        self._update_content_ui()
+
+    def close_content_experiment(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        session.active = False
+        self._content_measure_start = None
+        self._content_measure_hover = None
+        self._content_pending_diameter_line = None
+        self._content_workbook_service.close()
+        self._sync_content_session_to_project()
+        self._update_content_ui()
+
+    def save_content_experiment_excel(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        default_dir = self._preferred_dialog_directory(recent_dir=self._app_settings.recent_export_dir)
+        filename = f"{session.sample_id or session.sample_name or 'content_experiment'}.xlsx"
+        output_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "保存含量试验 Excel",
+            str(default_dir / filename),
+            "Excel 工作簿 (*.xlsx)",
+        )
+        if not output_path:
+            return
+        try:
+            target = self._content_workbook_service.save_as(session, output_path)
+        except Exception as exc:
+            QMessageBox.warning(self, "保存含量试验 Excel", f"无法保存 Excel：\n{exc}")
+            return
+        self._remember_recent_directory(setting_name="recent_export_dir", directory=target.parent, context="保存含量试验 Excel")
+        self.statusBar().showMessage(f"含量试验 Excel 已保存: {target}", 4000)
+
+    def delete_selected_content_records(self) -> None:
+        session = self._load_content_session_from_project()
+        if session is None or self._content_record_table is None:
+            return
+        selected_rows = self._content_record_table.selectionModel().selectedRows() if self._content_record_table.selectionModel() else []
+        target_ids = set()
+        for index in selected_rows:
+            item = self._content_record_table.item(index.row(), 4)
+            if item is not None:
+                target_ids.add(item.data(Qt.ItemDataRole.UserRole))
+        if not target_ids:
+            return
+        session.records = [record for record in session.records if record.id not in target_ids]
+        self._sync_content_session_to_project()
+        self._refresh_content_workbook()
+        self._update_content_ui()
+
+    def _content_experiment_is_active(self) -> bool:
+        session = self._load_content_session_from_project()
+        return bool(self._preview_active and session is not None and session.active)
+
+    def eventFilter(self, watched, event) -> bool:
+        if self._content_experiment_is_active() and watched in (self._preview_canvas, self._microview_preview_host):
+            if event.type() == QEvent.Type.MouseButtonPress:
+                if event.button() == Qt.MouseButton.RightButton:
+                    self._show_content_fiber_menu(self._event_global_position(event))
+                    return True
+                if event.button() == Qt.MouseButton.LeftButton:
+                    point = self._content_point_from_event(watched, event)
+                    if point is not None:
+                        self._handle_content_canvas_click(point, self._event_global_position(event))
+                        return True
+            if event.type() == QEvent.Type.MouseMove:
+                point = self._content_point_from_event(watched, event)
+                if point is not None and self._content_measure_start is not None:
+                    self._content_measure_hover = point
+                    self._sync_content_preview_overlay()
+                    return True
+            if event.type() == QEvent.Type.KeyPress:
+                if self._handle_content_key_event(event):
+                    return True
+        return super().eventFilter(watched, event)
+
+    def _event_global_position(self, event) -> QPoint:
+        if hasattr(event, "globalPosition"):
+            point = event.globalPosition().toPoint()
+            return QPoint(point.x(), point.y())
+        if hasattr(event, "globalPos"):
+            return event.globalPos()
+        return self.cursor().pos()
+
+    def _content_point_from_event(self, watched, event) -> Point | None:
+        if watched is self._preview_canvas and self._preview_canvas is not None:
+            point = self._preview_canvas.widget_to_image(event.position())
+            document = self._preview_document
+            if document is None:
+                return None
+            width, height = document.image_size
+            if 0 <= point.x < width and 0 <= point.y < height:
+                return point
+            return None
+        if watched is self._microview_preview_host and self._microview_preview_host is not None:
+            point = Point(event.position().x(), event.position().y())
+            width, height = self._microview_preview_host.native_preview_size()
+            if 0 <= point.x < width and 0 <= point.y < height:
+                return point
+        return None
+
+    def _handle_content_key_event(self, event) -> bool:
+        if event.modifiers() != Qt.KeyboardModifier.NoModifier:
+            return False
+        if Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_8:
+            number = event.key() - Qt.Key.Key_0
+            if self._content_fiber_menu_open:
+                return self._set_current_content_fiber_by_number(number)
+            return self._add_content_count_by_number(number)
+        if event.key() == Qt.Key.Key_Escape and self._content_measure_start is not None:
+            self._content_measure_start = None
+            self._content_measure_hover = None
+            self._sync_content_preview_overlay()
+            return True
+        return False
+
+    def _set_current_content_fiber_by_number(self, number: int) -> bool:
+        session = self._load_content_session_from_project()
+        if session is None or number < 1 or number > len(session.fibers):
+            return False
+        session.current_fiber_id = session.fibers[number - 1].id
+        self._sync_content_session_to_project()
+        self._update_content_ui()
+        return True
+
+    def _add_content_count_by_number(self, number: int) -> bool:
+        session = self._load_content_session_from_project()
+        if session is None or number < 1 or number > len(session.fibers):
+            return False
+        fiber = session.fibers[number - 1]
+        session.current_fiber_id = fiber.id
+        record = ContentExperimentRecord(
+            id=new_id("content_rec"),
+            kind=ContentRecordKind.COUNT,
+            fiber_id=fiber.id,
+            field_id=session.current_field_id,
+        )
+        session.records.append(record)
+        self._content_after_record_added(record, fiber)
+        return True
+
+    def _handle_content_canvas_click(self, point: Point, global_pos: QPoint) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        if not session.fibers:
+            self.edit_content_experiment_fibers()
+            return
+        if self._content_measure_start is None:
+            self._content_measure_start = point
+            self._content_measure_hover = point
+            self._sync_content_preview_overlay()
+            return
+        line = Line(self._content_measure_start, point)
+        self._content_measure_start = None
+        self._content_measure_hover = None
+        if line_length(line) < 1.0:
+            self._sync_content_preview_overlay()
+            return
+        fiber_id = session.current_fiber_id
+        if session.selection_mode == ContentSelectionMode.POSTSELECT:
+            fiber_id = self._prompt_content_fiber(global_pos)
+        fiber = session.fiber_by_id(fiber_id)
+        if fiber is None:
+            self._sync_content_preview_overlay()
+            return
+        session.current_fiber_id = fiber.id
+        diameter_px = line_length(line)
+        calibration = self._current_preview_calibration()
+        diameter_unit = calibration.px_to_unit(diameter_px) if calibration is not None else diameter_px
+        record = ContentExperimentRecord(
+            id=new_id("content_rec"),
+            kind=ContentRecordKind.DIAMETER,
+            fiber_id=fiber.id,
+            field_id=session.current_field_id,
+            line_px=line,
+            diameter_px=diameter_px,
+            diameter_unit=diameter_unit,
+        )
+        session.records.append(record)
+        self._content_after_record_added(record, fiber)
+
+    def _current_preview_calibration(self) -> Calibration | None:
+        selected = self._selected_preset()
+        if selected is None:
+            return None
+        return selected[1].to_calibration()
+
+    def _prompt_content_fiber(self, global_pos: QPoint) -> str | None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return None
+        menu = self._build_content_fiber_menu()
+        if menu is None:
+            return None
+        self._content_fiber_menu_open = True
+        action = menu.exec(global_pos)
+        self._content_fiber_menu_open = False
+        if action is None:
+            return None
+        return action.data()
+
+    def _show_content_fiber_menu(self, global_pos: QPoint) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        menu = self._build_content_fiber_menu()
+        if menu is None:
+            return
+        self._content_fiber_menu_open = True
+        action = menu.exec(global_pos)
+        self._content_fiber_menu_open = False
+        if action is None:
+            return
+        session.current_fiber_id = action.data()
+        self._sync_content_session_to_project()
+        self._update_content_ui()
+
+    def _build_content_fiber_menu(self) -> QMenu | None:
+        session = self._load_content_session_from_project()
+        if session is None or not session.fibers:
+            return None
+        menu = QMenu(self)
+        for index, fiber in enumerate(session.fibers, start=1):
+            action = menu.addAction(f"{index}. {fiber.name}")
+            action.setData(fiber.id)
+            action.setCheckable(True)
+            action.setChecked(session.current_fiber_id == fiber.id)
+            action.setIcon(self._color_icon(fiber.color))
+            action.setShortcut(str(index))
+        return menu
+
+    def _content_after_record_added(self, record: ContentExperimentRecord, fiber) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        self._sync_content_session_to_project()
+        self._check_content_reminders(record, fiber)
+        self._refresh_content_workbook()
+        self._update_content_ui()
+
+    def _check_content_reminders(self, record: ContentExperimentRecord, fiber) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        if self._app_settings.content_count_reminder_count > 0:
+            key = f"count_total_{self._app_settings.content_count_reminder_count}"
+            if (
+                key not in session.reminders_triggered
+                and content_total_count(session) >= self._app_settings.content_count_reminder_count
+            ):
+                session.reminders_triggered.append(key)
+                self._show_content_reminder("计数数量提醒", f"当前计数总数已达到 {content_total_count(session)}。")
+        if self._app_settings.content_diameter_reminder_count > 0:
+            key = f"diameter_total_{self._app_settings.content_diameter_reminder_count}"
+            if (
+                key not in session.reminders_triggered
+                and content_total_measured(session) >= self._app_settings.content_diameter_reminder_count
+            ):
+                session.reminders_triggered.append(key)
+                self._show_content_reminder("直径测量数量提醒", f"当前直径测量总数已达到 {content_total_measured(session)}。")
+        if record.kind == ContentRecordKind.DIAMETER and record.diameter_unit is not None:
+            low = fiber.diameter_min
+            high = fiber.diameter_max
+            if low is not None and record.diameter_unit < low:
+                self._show_content_reminder(
+                    "直径下限提醒",
+                    f"“{fiber.name}”本次直径 {record.diameter_unit:.3f} 低于下限 {low:g}。",
+                )
+            if high is not None and record.diameter_unit > high:
+                self._show_content_reminder(
+                    "直径上限提醒",
+                    f"“{fiber.name}”本次直径 {record.diameter_unit:.3f} 高于上限 {high:g}。",
+                )
+
+    def _show_content_reminder(self, title: str, message: str) -> None:
+        self.statusBar().showMessage(message, 6000)
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Information)
+        box.setWindowTitle(title)
+        box.setText(message)
+        box.setStandardButtons(QMessageBox.StandardButton.Ok)
+        box.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        box.open()
+
+    def _invalidate_content_field(self, reason: str) -> None:
+        session = self._load_content_session_from_project()
+        if session is None:
+            return
+        session.current_field_id += 1
+        self._content_measure_start = None
+        self._content_measure_hover = None
+        self._content_field_baseline = None
+        self._content_field_motion_hits = 0
+        self._sync_content_session_to_project()
+        self._sync_content_preview_overlay()
+        if session.active:
+            self.statusBar().showMessage(f"{reason}，已清空当前视场叠加标记。", 3000)
+
+    def _request_content_field_frame(self) -> None:
+        if not self._content_experiment_is_active() or self._content_field_request_pending:
+            return
+        if self._is_native_preview():
+            # 原生预览没有稳定的帧流绘制在 Qt 画布里；如果采集后端支持
+            # analysis frame，这里仍会走同一通道。
+            pass
+        self._content_field_request_id -= 1
+        if self._capture_manager.request_analysis_frame(self._content_field_request_id):
+            self._content_field_request_pending = True
+
+    def _on_content_field_frame_ready(self, image: object) -> None:
+        self._content_field_request_pending = False
+        if not self._content_experiment_is_active() or not isinstance(image, QImage) or image.isNull():
+            return
+        signature = self._content_frame_signature(image)
+        if signature is None:
+            return
+        if self._content_field_baseline is None:
+            self._content_field_baseline = signature
+            return
+        try:
+            import numpy as np
+
+            baseline = self._content_field_baseline
+            if baseline is None or getattr(baseline, "shape", None) != signature.shape:
+                self._content_field_baseline = signature
+                self._invalidate_content_field("实时画面尺寸变化")
+                return
+            baseline_f = baseline.astype("float32")
+            signature_f = signature.astype("float32")
+            diff = float(np.mean(np.abs(signature_f - baseline_f)))
+            shift = 0.0
+            phase_response = 0.0
+            hist_delta = 0.0
+            try:
+                import cv2
+
+                hanning = cv2.createHanningWindow((baseline.shape[1], baseline.shape[0]), cv2.CV_32F)
+                (dx, dy), phase_response = cv2.phaseCorrelate(baseline_f, signature_f, hanning)
+                shift = float((dx * dx + dy * dy) ** 0.5)
+                hist_a, _ = np.histogram(baseline, bins=32, range=(0, 256), density=True)
+                hist_b, _ = np.histogram(signature, bins=32, range=(0, 256), density=True)
+                hist_delta = float(np.sum(np.abs(hist_a - hist_b)))
+            except Exception:
+                pass
+        except Exception:
+            self._content_field_baseline = signature
+            return
+        moved = diff > 18.0 or (phase_response > 0.15 and shift > 4.0) or hist_delta > 0.18
+        if moved:
+            self._content_field_motion_hits += 1
+            if self._content_field_motion_hits >= 2:
+                self._invalidate_content_field("检测到视场移动")
+                self._content_field_baseline = signature
+            return
+        self._content_field_motion_hits = 0
+        self._content_field_baseline = signature
+
+    def _on_content_field_frame_failed(self, message: str) -> None:
+        self._content_field_request_pending = False
+        if message:
+            self.statusBar().showMessage(message, 2500)
+
+    def _content_frame_signature(self, image: QImage):
+        try:
+            import numpy as np
+
+            gray = image.convertToFormat(QImage.Format.Format_Grayscale8)
+            gray = gray.scaled(160, 120, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.FastTransformation)
+            height = gray.height()
+            width = gray.width()
+            bytes_per_line = gray.bytesPerLine()
+            buffer = gray.constBits()
+            array = np.frombuffer(buffer, dtype=np.uint8, count=bytes_per_line * height)
+            array = array.reshape((height, bytes_per_line))[:, :width]
+            return array.copy()
+        except Exception:
+            return None
+
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
-        self._populate_group_list(document)
+        self._load_content_session_from_project()
+        if self._preview_active:
+            self._populate_content_group_list()
+        else:
+            self._populate_group_list(document)
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
@@ -4950,6 +5841,7 @@ class MainWindow(QMainWindow):
             canvas.set_settings(self._app_settings)
             canvas.set_tool_mode("select" if self._preview_active and canvas is self._preview_canvas else self._tool_mode)
             canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
+        self._update_content_ui()
         self._update_action_states()
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
@@ -5113,6 +6005,18 @@ class MainWindow(QMainWindow):
     def _on_group_selection_changed(self) -> None:
         if self._group_list_rebuilding:
             return
+        if self._preview_active:
+            session = self._load_content_session_from_project()
+            if session is None:
+                return
+            selected_items = self.group_list.selectedItems()
+            if selected_items:
+                session.current_fiber_id = selected_items[0].data(Qt.ItemDataRole.UserRole)
+                self._sync_content_session_to_project()
+            self._sync_group_list_item_widgets()
+            self._update_content_ui()
+            self._update_action_states()
+            return
         document = self.current_document()
         if document is None:
             return
@@ -5253,6 +6157,8 @@ class MainWindow(QMainWindow):
             )
         )
         has_named_active_group = bool(document and document.get_group(document.active_group_id) is not None)
+        content_session = self._load_content_session_from_project() if preview_active else None
+        has_content_fibers = bool(content_session and content_session.fibers)
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
@@ -5261,15 +6167,15 @@ class MainWindow(QMainWindow):
             self._delete_group_measurements_button.setEnabled(has_measurement_groups and not preview_active)
         if self._delete_all_measurements_button is not None:
             self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
-        self.add_group_action.setEnabled(has_document and not preview_active)
-        self.rename_group_action.setEnabled(has_named_active_group and not preview_active)
-        self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
+        self.add_group_action.setEnabled((has_document and not preview_active) or preview_active)
+        self.rename_group_action.setEnabled((has_named_active_group and not preview_active) or (preview_active and has_content_fibers))
+        self.delete_group_action.setEnabled((has_deletable_group_target and not preview_active) or (preview_active and has_content_fibers))
         if self._add_group_button is not None:
-            self._add_group_button.setEnabled(has_document and not preview_active)
+            self._add_group_button.setEnabled((has_document and not preview_active) or preview_active)
         if self._rename_group_button is not None:
-            self._rename_group_button.setEnabled(has_named_active_group and not preview_active)
+            self._rename_group_button.setEnabled((has_named_active_group and not preview_active) or (preview_active and has_content_fibers))
         if self.delete_group_button is not None:
-            self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
+            self.delete_group_button.setEnabled((has_deletable_group_target and not preview_active) or (preview_active and has_content_fibers))
         has_preset = bool(self._calibration_presets())
         if self._add_preset_button is not None:
             self._add_preset_button.setEnabled(True)
@@ -5389,7 +6295,7 @@ class MainWindow(QMainWindow):
         if self._magic_roi_button is not None:
             self._magic_roi_button.setVisible(standard_mode or fiber_quick_mode)
             self._magic_roi_button.setChecked(self._current_magic_roi_enabled())
-            self._magic_roi_button.setText(f"ROI{'开' if self._current_magic_roi_enabled() else '关'}(Y)")
+            self._magic_roi_button.setText("ROI")
             self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
@@ -5402,9 +6308,9 @@ class MainWindow(QMainWindow):
             )
         if self._magic_complete_button is not None:
             self._magic_complete_button.setText(
-                "确认(Enter/F)"
+                "完成"
                 if standard_mode
-                else ("确认(Enter/F)" if fiber_quick_mode else "加入(Enter/F)")
+                else ("确认(F)" if fiber_quick_mode else "加入")
             )
             self._magic_complete_button.setEnabled(
                 bool(
@@ -5428,7 +6334,7 @@ class MainWindow(QMainWindow):
                 )
             )
         if self._magic_cancel_button is not None:
-            self._magic_cancel_button.setText("取消(Esc)")
+            self._magic_cancel_button.setText("取消(Esc)" if fiber_quick_mode else "取消")
             self._magic_cancel_button.setEnabled(
                 bool(
                     canvas
@@ -5644,7 +6550,13 @@ class MainWindow(QMainWindow):
             thread.quit()
             thread.wait(2000)
         if dialog is not None:
-            dialog.close_silently()
+            close_silently = getattr(dialog, "close_silently", None)
+            if callable(close_silently):
+                close_silently()
+            else:
+                close = getattr(dialog, "close", None)
+                if callable(close):
+                    close()
         if status_message:
             self.statusBar().showMessage(status_message, 4000)
         self._update_action_states()
@@ -5682,6 +6594,9 @@ class MainWindow(QMainWindow):
             self._preview_analysis_request_pending = True
 
     def _on_preview_analysis_frame_ready(self, request_id: int, image: object) -> None:
+        if request_id == self._content_field_request_id:
+            self._on_content_field_frame_ready(image)
+            return
         if request_id != self._preview_analysis_request_id:
             return
         self._preview_analysis_request_pending = False
@@ -5691,6 +6606,9 @@ class MainWindow(QMainWindow):
             self._preview_analysis_worker.frameSubmitted.emit(image.copy())
 
     def _on_preview_analysis_frame_failed(self, request_id: int, message: str) -> None:
+        if request_id == self._content_field_request_id:
+            self._on_content_field_frame_failed(message)
+            return
         if request_id != self._preview_analysis_request_id:
             return
         self._preview_analysis_request_pending = False
@@ -6317,6 +7235,11 @@ class MainWindow(QMainWindow):
             and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9
             and self._should_handle_group_hotkeys()
         ):
+            if self._content_experiment_is_active() and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_8:
+                number = event.key() - Qt.Key.Key_0
+                if self._add_content_count_by_number(number):
+                    event.accept()
+                    return
             number = event.key() - Qt.Key.Key_0
             if self._switch_active_group_by_number(number):
                 event.accept()
@@ -6324,7 +7247,10 @@ class MainWindow(QMainWindow):
         if self._tool_mode != "calibration" and event.key() in (Qt.Key.Key_Delete, Qt.Key.Key_Backspace):
             self.delete_selected_measurement()
             return
-        super().keyPressEvent(event)
+        try:
+            super().keyPressEvent(event)
+        except TypeError:
+            return
 
     def keyReleaseEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Space:
@@ -6410,7 +7336,8 @@ class MainWindow(QMainWindow):
         self._reference_instance_worker = None
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        if not self._confirm_close_documents(self.project.documents):
+        offscreen_test_close = QApplication.platformName().lower() == "offscreen" and not self.isVisible()
+        if not offscreen_test_close and not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
         self._persist_window_geometry()

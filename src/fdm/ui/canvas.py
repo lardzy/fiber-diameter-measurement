@@ -10,6 +10,7 @@ from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF
 from PySide6.QtWidgets import QWidget
 
 from fdm.area_display import area_geometry_for_display
+from fdm.content_experiment import ContentExperimentRecord, ContentOverlayStyle, ContentRecordKind
 from fdm.geometry import (
     Line,
     Point,
@@ -303,6 +304,10 @@ class DocumentCanvas(QWidget):
         self._fiber_quick_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
+        self._content_overlay_style = ContentOverlayStyle.NONE
+        self._content_overlay_records: list[ContentExperimentRecord] = []
+        self._content_overlay_pending_line: Line | None = None
+        self._content_overlay_fiber_colors: dict[str, str] = {}
 
     @property
     def document_id(self) -> str | None:
@@ -409,6 +414,20 @@ class DocumentCanvas(QWidget):
 
     def set_show_area_fill(self, visible: bool) -> None:
         self._show_area_fill = visible
+        self.update()
+
+    def set_content_experiment_overlay(
+        self,
+        *,
+        overlay_style: str = ContentOverlayStyle.NONE,
+        records: list[ContentExperimentRecord] | None = None,
+        fiber_colors: dict[str, str] | None = None,
+        pending_line: Line | None = None,
+    ) -> None:
+        self._content_overlay_style = overlay_style
+        self._content_overlay_records = list(records or [])
+        self._content_overlay_fiber_colors = dict(fiber_colors or {})
+        self._content_overlay_pending_line = pending_line
         self.update()
 
     def current_magic_segment_prompt_type(self) -> str:
@@ -1092,6 +1111,7 @@ class DocumentCanvas(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._draw_annotations(painter)
         self._draw_preview(painter)
+        self._draw_content_experiment_overlay(painter)
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
@@ -1737,18 +1757,24 @@ class DocumentCanvas(QWidget):
                 self.pathSessionChanged.emit(self._document.id)
             if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 3:
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
-                event.accept()
+                if hasattr(event, "accept"):
+                    event.accept()
                 return
             if self._tool_mode == "continuous_manual" and len(self._drawing_polygon_points) >= 2:
                 self._complete_continuous_measurement(list(self._drawing_polygon_points))
-                event.accept()
+                if hasattr(event, "accept"):
+                    event.accept()
                 return
         super().mouseDoubleClickEvent(event)
 
     def widget_to_image(self, position: QPointF) -> Point:
+        def stable(value: float) -> float:
+            rounded = round(value)
+            return float(rounded) if abs(value - rounded) < 1e-9 else value
+
         return Point(
-            x=(position.x() - self._pan.x) / self._zoom,
-            y=(position.y() - self._pan.y) / self._zoom,
+            x=stable((position.x() - self._pan.x) / self._zoom),
+            y=stable((position.y() - self._pan.y) / self._zoom),
         )
 
     def image_to_widget(self, point: Point) -> QPointF:
@@ -1896,6 +1922,55 @@ class DocumentCanvas(QWidget):
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
             draw_preview_scale_anchor(painter, self.image_to_widget(preview_point))
+
+    def _draw_content_experiment_overlay(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        width = self._image.width()
+        height = self._image.height()
+        center = Point(width / 2.0, height / 2.0)
+        guide_color = QColor(244, 211, 94, 180)
+        guide_pen = QPen(guide_color, 1.5, Qt.PenStyle.DashLine)
+        guide_pen.setCosmetic(True)
+        painter.setPen(guide_pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        if self._content_overlay_style in {ContentOverlayStyle.HORIZONTAL, ContentOverlayStyle.CROSS, ContentOverlayStyle.CROSSHAIR}:
+            painter.drawLine(self.image_to_widget(Point(0, center.y)), self.image_to_widget(Point(width, center.y)))
+        if self._content_overlay_style in {ContentOverlayStyle.VERTICAL, ContentOverlayStyle.CROSS, ContentOverlayStyle.CROSSHAIR}:
+            painter.drawLine(self.image_to_widget(Point(center.x, 0)), self.image_to_widget(Point(center.x, height)))
+        if self._content_overlay_style in {ContentOverlayStyle.CENTER_DOT, ContentOverlayStyle.CROSSHAIR}:
+            painter.setBrush(QColor(244, 211, 94, 220))
+            painter.setPen(QPen(QColor("#111827"), 1))
+            painter.drawEllipse(self.image_to_widget(center), 4.5, 4.5)
+        if self._content_overlay_style == ContentOverlayStyle.CROSSHAIR:
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor(244, 211, 94, 210), 1.5))
+            painter.drawEllipse(self.image_to_widget(center), 16, 16)
+
+        for record in self._content_overlay_records:
+            if record.kind != ContentRecordKind.DIAMETER or record.line_px is None:
+                continue
+            color = QColor(self._content_overlay_fiber_colors.get(record.fiber_id, "#7BD389"))
+            painter.setPen(QPen(QColor("#0B0B0B"), 4, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(self.image_to_widget(record.line_px.start), self.image_to_widget(record.line_px.end))
+            painter.setPen(QPen(color, 2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(self.image_to_widget(record.line_px.start), self.image_to_widget(record.line_px.end))
+            painter.setBrush(color)
+            painter.setPen(QPen(QColor("#0B0B0B"), 1))
+            painter.drawEllipse(self.image_to_widget(record.line_px.start), 4.0, 4.0)
+            painter.drawEllipse(self.image_to_widget(record.line_px.end), 4.0, 4.0)
+
+        if self._content_overlay_pending_line is not None:
+            painter.setPen(QPen(QColor("#0B0B0B"), 4, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._content_overlay_pending_line.start),
+                self.image_to_widget(self._content_overlay_pending_line.end),
+            )
+            painter.setPen(QPen(QColor("#F4D35E"), 2, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._content_overlay_pending_line.start),
+                self.image_to_widget(self._content_overlay_pending_line.end),
+            )
 
     def _hit_test_selected_endpoint(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:

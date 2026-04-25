@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.area_display import ensure_measurement_display_geometry
+from fdm.content_experiment import ContentFiberDefinition
 from fdm.geometry import Line, Point
 from fdm.models import (
     Calibration,
@@ -54,6 +55,29 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(calibration.px_to_unit(100.0), 5.0)
         self.assertAlmostEqual(calibration.unit_to_px(2.5), 50.0)
         self.assertAlmostEqual(calibration.px_area_to_unit(400.0), 1.0)
+
+    def test_app_settings_roundtrip_preserves_content_experiment_settings(self) -> None:
+        settings = AppSettings(
+            content_fiber_definitions=[
+                ContentFiberDefinition(
+                    id="custom_demo",
+                    name="自定义纤维",
+                    color="#ABCDEF",
+                    density=1.23,
+                )
+            ],
+            content_diameter_reminder_count=321,
+            content_count_reminder_count=654,
+            content_last_operator="李四",
+        )
+        payload = settings.to_dict()
+        loaded = AppSettings.from_dict(payload)
+
+        self.assertEqual(loaded.content_diameter_reminder_count, 321)
+        self.assertEqual(loaded.content_count_reminder_count, 654)
+        self.assertEqual(loaded.content_last_operator, "李四")
+        self.assertTrue(any(item.name == "自定义纤维" for item in loaded.content_fiber_definitions))
+        self.assertTrue(any(item.builtin and item.name == "棉" for item in loaded.content_fiber_definitions))
 
     def test_project_roundtrip(self) -> None:
         document = ImageDocument(
