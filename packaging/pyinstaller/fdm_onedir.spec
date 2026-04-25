@@ -50,6 +50,11 @@ hiddenimports = [
     "onnxruntime.capi.onnxruntime_inference_collection",
     "onnxruntime.capi.onnxruntime_pybind11_state",
     "fdm.microview_helper",
+    "pythoncom",
+    "pywintypes",
+    "win32com",
+    "win32com.client",
+    "win32com.client.dynamic",
 ]
 
 for optional_pkg in ("cv2", "PIL", "torch", "torchvision"):
@@ -71,6 +76,11 @@ except Exception:
 try:
     hiddenimports.append("PySide6.QtMultimedia")
     hiddenimports += collect_submodules("PySide6.QtMultimedia")
+except Exception:
+    pass
+
+try:
+    hiddenimports += collect_submodules("win32com")
 except Exception:
     pass
 

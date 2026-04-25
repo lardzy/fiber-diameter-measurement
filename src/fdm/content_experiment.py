@@ -78,6 +78,7 @@ class ContentExperimentRecord:
     id: str
     kind: str
     fiber_id: str
+    source_mode: str = ""
     field_id: int = 0
     created_at: str = field(default_factory=utc_now_iso)
     line_px: Line | None = None
@@ -98,6 +99,7 @@ class ContentExperimentRecord:
             "id": self.id,
             "kind": self.kind,
             "fiber_id": self.fiber_id,
+            "source_mode": self.source_mode,
             "field_id": self.field_id,
             "created_at": self.created_at,
             "line_px": self.line_px.to_dict() if self.line_px else None,
@@ -116,6 +118,7 @@ class ContentExperimentRecord:
             id=str(payload.get("id") or new_id("content_rec")),
             kind=kind,
             fiber_id=str(payload.get("fiber_id", "")),
+            source_mode=str(payload.get("source_mode", "")),
             field_id=int(payload.get("field_id", 0) or 0),
             created_at=str(payload.get("created_at", utc_now_iso())),
             line_px=Line.from_dict(line_payload) if isinstance(line_payload, dict) else None,

@@ -755,7 +755,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_experiment_has_separate_entry_and_hides_area_recognition(self) -> None:
         window = MainWindow()
         try:
-            window.start_live_preview = lambda: None  # type: ignore[method-assign]
+            window.start_content_preview = lambda: None  # type: ignore[method-assign]
             self.assertIsNotNone(window._file_toolbar)
             toolbar_actions = window._file_toolbar.actions()
             live_index = toolbar_actions.index(window.live_preview_action)
@@ -783,7 +783,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_basic_info_fields_are_read_only_and_buttons_open_dialogs(self) -> None:
         window = MainWindow()
         try:
-            window.start_live_preview = lambda: None  # type: ignore[method-assign]
+            window.start_content_preview = lambda: None  # type: ignore[method-assign]
             window.toggle_content_experiment_mode(True)
             self.assertIsNotNone(window._content_operator_edit)
             self.assertIsNotNone(window._content_sample_id_edit)
@@ -807,7 +807,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_records_reuse_measurement_table_for_display_and_deletion(self) -> None:
         window = MainWindow()
         try:
-            window.start_live_preview = lambda: None  # type: ignore[method-assign]
+            window.start_content_preview = lambda: setattr(window, "_content_preview_active", True)  # type: ignore[method-assign]
             fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
             session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
             first_record = ContentExperimentRecord(
@@ -853,12 +853,12 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_content_mode_can_apply_calibration_preset_without_document(self) -> None:
         window = MainWindow()
         try:
-            window.start_live_preview = lambda: None  # type: ignore[method-assign]
+            window.start_content_preview = lambda: setattr(window, "_content_preview_active", True)  # type: ignore[method-assign]
             window._app_settings.calibration_presets = [
                 CalibrationPreset(name="20x", pixels_per_unit=7.5, unit="um")
             ]
             window._refresh_preset_combo()
-            window._preview_active = True
+            window._content_preview_active = True
             fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
             window._content_session = ContentExperimentSession(fibers=[fiber], current_fiber_id=fiber.id)
             window._sync_content_session_to_project()
@@ -893,9 +893,9 @@ class CanvasAndExportTests(unittest.TestCase):
 
             def fake_start_preview() -> None:
                 start_calls.append("start")
-                window._on_live_preview_state_changed(True)
+                window._on_content_preview_state_changed(True)
 
-            window.start_live_preview = fake_start_preview  # type: ignore[method-assign]
+            window.start_content_preview = fake_start_preview  # type: ignore[method-assign]
             window._content_workbook_service.open_session = (  # type: ignore[method-assign]
                 lambda active_session, *, project_path=None: open_calls.append(active_session.id) or "xlsx"
             )
@@ -907,7 +907,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(open_calls, [session.id])
             self.assertTrue(window._content_mode_enabled)
             self.assertTrue(session.active)
-            self.assertTrue(window._content_preview_started_by_content)
+            self.assertTrue(window._content_preview_active)
+            self.assertFalse(window.live_preview_action.isChecked())
             self.assertIs(window._center_stack.currentWidget(), window._preview_page)
             self.assertIn("xlsx快照", window._content_status_label.text())
         finally:
@@ -919,7 +920,7 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             window._content_session = ContentExperimentSession()
             window._sync_content_session_to_project()
-            window.start_live_preview = lambda: window._on_live_preview_state_changed(True)  # type: ignore[method-assign]
+            window.start_content_preview = lambda: window._on_content_preview_state_changed(True)  # type: ignore[method-assign]
             window.edit_content_experiment_fibers = lambda: None  # type: ignore[method-assign]
 
             window.toggle_content_experiment_mode(True)
@@ -942,7 +943,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._content_session = session
             window._sync_content_session_to_project()
             window._content_mode_enabled = True
-            window._preview_active = True
+            window._content_preview_active = True
             window._update_ui_for_current_document()
             window.measurement_table.setFocus()
 
@@ -951,6 +952,35 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(session.records), 1)
             self.assertEqual(session.records[0].kind, ContentRecordKind.COUNT)
             self.assertEqual(session.records[0].fiber_id, fiber.id)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_manual_line_records_diameter_without_project_measurement(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window._content_mode_enabled = True
+            window._content_preview_active = True
+            frame = QImage(80, 60, QImage.Format.Format_RGB32)
+            frame.fill(QColor("#808080"))
+            window._update_content_preview_document(frame, native=False)
+
+            self.assertIsNotNone(window._content_preview_document)
+            window._on_canvas_line_committed(
+                window._content_preview_document.id,
+                "manual",
+                Line(Point(0, 0), Point(3, 4)),
+            )
+
+            self.assertEqual(len(session.records), 1)
+            self.assertEqual(session.records[0].kind, ContentRecordKind.DIAMETER)
+            self.assertEqual(session.records[0].source_mode, "manual")
+            self.assertEqual(session.records[0].diameter_px, 5.0)
+            self.assertEqual(window.project.documents, [])
         finally:
             window._reset_workspace()
             window.close()
@@ -971,8 +1001,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window._content_session = session
             window._sync_content_session_to_project()
             window._content_mode_enabled = True
-            window._preview_active = True
-            window._capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
+            window._content_preview_active = True
+            window._content_capture_manager.preview_kind = lambda: "native_embed"  # type: ignore[method-assign]
 
             dark = QImage(80, 60, QImage.Format.Format_RGB32)
             dark.fill(QColor("#000000"))
@@ -980,15 +1010,15 @@ class CanvasAndExportTests(unittest.TestCase):
             light.fill(QColor("#FFFFFF"))
 
             window._on_content_field_frame_ready(dark)
-            self.assertIsNotNone(window._preview_document)
-            self.assertEqual(window._preview_canvas.document_id, "preview_document")
+            self.assertIsNotNone(window._content_preview_document)
+            self.assertEqual(window._content_overlay_canvas.document_id, "content_preview_document")
 
             window._on_content_field_frame_ready(light)
             window._on_content_field_frame_ready(light)
 
             self.assertEqual(session.current_field_id, 1)
             self.assertEqual(session.records, [record])
-            self.assertEqual(window._preview_canvas._content_overlay_records, [])
+            self.assertEqual(window._content_overlay_canvas._content_overlay_records, [])
         finally:
             window._reset_workspace()
             window.close()
@@ -1002,10 +1032,9 @@ class CanvasAndExportTests(unittest.TestCase):
             window._content_session = session
             window._sync_content_session_to_project()
             window._content_mode_enabled = True
-            window._preview_active = True
-            window._content_preview_started_by_content = True
+            window._content_preview_active = True
             stop_calls: list[str] = []
-            window.stop_live_preview = lambda: stop_calls.append("stop")  # type: ignore[method-assign]
+            window.stop_content_preview = lambda: stop_calls.append("stop")  # type: ignore[method-assign]
 
             window.close_content_experiment()
 

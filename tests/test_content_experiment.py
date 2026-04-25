@@ -46,6 +46,7 @@ class ContentExperimentTests(unittest.TestCase):
                     id="rec_dia_1",
                     kind=ContentRecordKind.DIAMETER,
                     fiber_id=cotton.id,
+                    source_mode="manual",
                     line_px=Line(Point(0, 0), Point(10, 0)),
                     diameter_px=10.0,
                     diameter_unit=2.0,
@@ -54,6 +55,7 @@ class ContentExperimentTests(unittest.TestCase):
                     id="rec_dia_2",
                     kind=ContentRecordKind.DIAMETER,
                     fiber_id=lyocell.id,
+                    source_mode="snap",
                     line_px=Line(Point(0, 0), Point(12, 0)),
                     diameter_px=12.0,
                     diameter_unit=3.0,
@@ -81,6 +83,8 @@ class ContentExperimentTests(unittest.TestCase):
         self.assertEqual(loaded_session.calibration_unit, "um")
         self.assertEqual(len(loaded_session.fibers), 2)
         self.assertEqual(len(loaded_session.records), 3)
+        self.assertEqual(loaded_session.records[1].source_mode, "manual")
+        self.assertEqual(loaded_session.records[2].source_mode, "snap")
 
     def test_content_stats_use_counts_plus_measured_roots(self) -> None:
         session = self._session()

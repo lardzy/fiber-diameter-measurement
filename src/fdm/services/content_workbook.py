@@ -34,6 +34,7 @@ class ContentWorkbookService:
     def __init__(self) -> None:
         self._excel_app: Any | None = None
         self._com_workbook: Any | None = None
+        self._pythoncom: Any | None = None
         self._py_workbook: Any | None = None
         self._mode = ""
         self._last_warning = ""
@@ -81,6 +82,12 @@ class ContentWorkbookService:
                 pass
         self._com_workbook = None
         self._excel_app = None
+        if self._pythoncom is not None:
+            try:
+                self._pythoncom.CoUninitialize()
+            except Exception:
+                pass
+        self._pythoncom = None
         self._py_workbook = None
         self._mode = ""
         self._last_fiber_ids = []
@@ -136,7 +143,28 @@ class ContentWorkbookService:
     def _open_com(self, *, snapshot: Path | None) -> None:
         import win32com.client  # type: ignore[import-not-found]
 
-        excel = win32com.client.Dispatch("Excel.Application")
+        try:
+            import pythoncom  # type: ignore[import-not-found]
+
+            pythoncom.CoInitialize()
+            self._pythoncom = pythoncom
+        except Exception:
+            self._pythoncom = None
+
+        excel_errors: list[str] = []
+        excel = None
+        for factory_name in ("DispatchEx", "Dispatch"):
+            factory = getattr(win32com.client, factory_name, None)
+            if not callable(factory):
+                continue
+            try:
+                excel = factory("Excel.Application")
+                break
+            except Exception as exc:  # noqa: BLE001
+                excel_errors.append(f"{factory_name}: {exc}")
+        if excel is None:
+            detail = "; ".join(excel_errors) or "win32com.client 未提供 Dispatch/DispatchEx。"
+            raise RuntimeError(f"无法创建 Excel.Application COM 对象。{detail}")
         excel.Visible = True
         if snapshot is not None and snapshot.exists():
             workbook = excel.Workbooks.Open(str(snapshot))
@@ -144,7 +172,24 @@ class ContentWorkbookService:
             template = content_template_path()
             if not template.exists():
                 raise FileNotFoundError(f"含量试验模板不存在: {template}")
-            workbook = excel.Workbooks.Add(Template=str(template))
+            workbook_errors: list[str] = []
+            workbook = None
+            try:
+                workbook = excel.Workbooks.Add(Template=str(template))
+            except Exception as exc:  # noqa: BLE001
+                workbook_errors.append(f"Add(Template=...): {exc}")
+            if workbook is None:
+                try:
+                    workbook = excel.Workbooks.Add(str(template))
+                except Exception as exc:  # noqa: BLE001
+                    workbook_errors.append(f"Add(path): {exc}")
+            if workbook is None:
+                try:
+                    workbook = excel.Workbooks.Open(str(template))
+                except Exception as exc:  # noqa: BLE001
+                    workbook_errors.append(f"Open(template): {exc}")
+            if workbook is None:
+                raise RuntimeError("无法用 Excel 打开含量试验模板。" + "；".join(workbook_errors))
         self._excel_app = excel
         self._com_workbook = workbook
 

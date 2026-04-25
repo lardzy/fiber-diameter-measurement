@@ -304,6 +304,7 @@ class DocumentCanvas(QWidget):
         self._fiber_quick_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
+        self._transparent_background = False
         self._content_overlay_style = ContentOverlayStyle.NONE
         self._content_overlay_records: list[ContentExperimentRecord] = []
         self._content_overlay_pending_line: Line | None = None
@@ -385,6 +386,18 @@ class DocumentCanvas(QWidget):
         self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
 
+    def set_transparent_background(self, enabled: bool) -> None:
+        self._transparent_background = bool(enabled)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground, self._transparent_background)
+        self.setAttribute(Qt.WidgetAttribute.WA_NoSystemBackground, self._transparent_background)
+        self.setAutoFillBackground(not self._transparent_background)
+        self.update()
+
+    def set_view_transform(self, *, zoom: float, pan: Point | None = None) -> None:
+        self._zoom = max(0.05, min(40.0, float(zoom)))
+        self._pan = pan or Point(0.0, 0.0)
+        self.update()
+
     def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
         if mode != self._tool_mode:
             self._cancel_area_drawing()
@@ -428,6 +441,11 @@ class DocumentCanvas(QWidget):
         self._content_overlay_records = list(records or [])
         self._content_overlay_fiber_colors = dict(fiber_colors or {})
         self._content_overlay_pending_line = pending_line
+        self.update()
+
+    def clear_content_transient_interactions(self) -> None:
+        self._cancel_line_drawing()
+        self.clear_fiber_quick_session()
         self.update()
 
     def current_magic_segment_prompt_type(self) -> str:
@@ -1095,10 +1113,12 @@ class DocumentCanvas(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor("#101820"))
+        if not self._transparent_background:
+            painter.fillRect(self.rect(), QColor("#101820"))
         if self._image is None or self._document is None:
-            painter.setPen(QColor("#F2F2F2"))
-            painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "打开图片后开始测量")
+            if not self._transparent_background:
+                painter.setPen(QColor("#F2F2F2"))
+                painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "打开图片后开始测量")
             return
 
         target = QRectF(
@@ -1107,7 +1127,8 @@ class DocumentCanvas(QWidget):
             self._image.width() * self._zoom,
             self._image.height() * self._zoom,
         )
-        painter.drawImage(target, self._image)
+        if not self._transparent_background:
+            painter.drawImage(target, self._image)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._draw_annotations(painter)
         self._draw_preview(painter)
@@ -1115,6 +1136,8 @@ class DocumentCanvas(QWidget):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
+        if self._transparent_background:
+            return
         if self._image is not None and self._document is not None and self._document.view_state.zoom == 1.0:
             self.fit_to_view()
 
