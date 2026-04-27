@@ -11,6 +11,7 @@ from fdm.content_experiment import (
     content_session_stats,
 )
 from fdm.models import project_assets_root
+from fdm.runtime_logging import append_runtime_log
 from fdm.settings import runtime_directory
 
 
@@ -67,6 +68,7 @@ class ContentWorkbookService:
                 return self._mode
             except Exception as exc:
                 self._last_warning = f"Excel 模板打开失败，已切换为 xlsx 快照模式：{exc}"
+                append_runtime_log("Content workbook COM open failed", repr(exc))
                 self.close()
         self._open_openpyxl(snapshot=snapshot)
         self._mode = "xlsx"
@@ -153,18 +155,26 @@ class ContentWorkbookService:
 
         excel_errors: list[str] = []
         excel = None
-        for factory_name in ("DispatchEx", "Dispatch"):
+        prog_ids = ("Excel.Application", "Excel.Application.16", "Excel.Application.15", "Excel.Application.14")
+        for factory_name in ("DispatchEx", "Dispatch", "EnsureDispatch"):
             factory = getattr(win32com.client, factory_name, None)
             if not callable(factory):
                 continue
-            try:
-                excel = factory("Excel.Application")
+            for prog_id in prog_ids:
+                try:
+                    excel = factory(prog_id)
+                    break
+                except Exception as exc:  # noqa: BLE001
+                    excel_errors.append(f"{factory_name}({prog_id}): {exc}")
+            if excel is not None:
                 break
-            except Exception as exc:  # noqa: BLE001
-                excel_errors.append(f"{factory_name}: {exc}")
         if excel is None:
             detail = "; ".join(excel_errors) or "win32com.client 未提供 Dispatch/DispatchEx。"
-            raise RuntimeError(f"无法创建 Excel.Application COM 对象。{detail}")
+            raise RuntimeError(
+                "无法创建 Excel.Application COM 对象。"
+                "请确认当前 Python 环境已安装 pywin32，且桌面版 Microsoft Excel 已完成 COM 注册。"
+                f"诊断: {detail}"
+            )
         excel.Visible = True
         if snapshot is not None and snapshot.exists():
             workbook = excel.Workbooks.Open(str(snapshot))

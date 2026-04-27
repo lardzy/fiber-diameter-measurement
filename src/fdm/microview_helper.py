@@ -10,16 +10,20 @@ from fdm.services.capture import CaptureDevice, MicroviewCaptureBackend
 
 
 class _PreviewTarget:
-    def __init__(self, hwnd: int, width: int, height: int) -> None:
+    def __init__(self, hwnd: int, width: int, height: int, *, prefer_gdi: bool = False) -> None:
         self._hwnd = max(0, int(hwnd))
         self._width = max(1, int(width))
         self._height = max(1, int(height))
+        self._prefer_gdi = bool(prefer_gdi)
 
     def native_preview_handle(self) -> int:
         return self._hwnd
 
     def native_preview_size(self) -> tuple[int, int]:
         return self._width, self._height
+
+    def prefer_gdi_preview(self) -> bool:
+        return self._prefer_gdi
 
 
 def _emit(payload: dict[str, object]) -> None:
@@ -77,7 +81,7 @@ def _run_list() -> int:
 
 def _run_preview(args) -> int:
     backend = MicroviewCaptureBackend()
-    target = _PreviewTarget(args.preview_hwnd, args.preview_width, args.preview_height)
+    target = _PreviewTarget(args.preview_hwnd, args.preview_width, args.preview_height, prefer_gdi=args.prefer_gdi)
     device = _device(args.device_index)
     try:
         backend.start_preview(
@@ -114,6 +118,7 @@ def _run_preview(args) -> int:
                         int(payload.get("hwnd", 0)),
                         int(payload.get("width", 1)),
                         int(payload.get("height", 1)),
+                        prefer_gdi=args.prefer_gdi,
                     )
                     backend.update_preview_target(target)
                 except Exception as exc:  # noqa: BLE001
@@ -216,6 +221,7 @@ def build_parser() -> argparse.ArgumentParser:
     preview.add_argument("--preview-hwnd", type=int, required=True)
     preview.add_argument("--preview-width", type=int, required=True)
     preview.add_argument("--preview-height", type=int, required=True)
+    preview.add_argument("--prefer-gdi", action="store_true")
 
     capture = subparsers.add_parser("capture")
     capture.add_argument("--device-index", type=int, required=True)

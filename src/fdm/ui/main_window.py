@@ -33,7 +33,6 @@ from PySide6.QtWidgets import (
     QScrollArea,
     QSizePolicy,
     QSplitter,
-    QStackedLayout,
     QStackedWidget,
     QStatusBar,
     QTableWidget,
@@ -474,6 +473,9 @@ class MainWindow(QMainWindow):
         self._content_field_timer = QTimer(self)
         self._content_field_timer.setInterval(300)
         self._content_field_timer.timeout.connect(self._request_content_field_frame)
+        self._content_native_overlay_timer = QTimer(self)
+        self._content_native_overlay_timer.setInterval(33)
+        self._content_native_overlay_timer.timeout.connect(self._refresh_content_native_overlay)
         self._content_field_request_id = -1
         self._content_field_request_pending = False
         self._content_field_baseline: object | None = None
@@ -1334,7 +1336,7 @@ class MainWindow(QMainWindow):
         group_box = QGroupBox("纤维类别")
         group_layout = QVBoxLayout(group_box)
         header_row = QHBoxLayout()
-        header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
+        header_row.setContentsMargins(10, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
         header_row.setSpacing(0)
         color_header = QLabel("颜色")
         color_header.setFixedWidth(36)
@@ -1358,7 +1360,7 @@ class MainWindow(QMainWindow):
         self.group_list.setMovement(QListView.Movement.Static)
         self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.group_list.setSpacing(6)
+        self.group_list.setSpacing(4)
         self.group_list.setFrameShape(QFrame.Shape.NoFrame)
         self.group_list.setViewportMargins(2, 2, 2, 2)
         self.group_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -1468,22 +1470,21 @@ class MainWindow(QMainWindow):
         self._preview_display_stack.addWidget(self._content_frame_canvas)
 
         self._content_native_preview_container = QWidget()
-        native_stack = QStackedLayout(self._content_native_preview_container)
-        native_stack.setContentsMargins(0, 0, 0, 0)
-        native_stack.setStackingMode(QStackedLayout.StackingMode.StackAll)
-        self._content_microview_preview_host = MicroviewPreviewHost()
+        self._content_native_preview_container.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        self._content_microview_preview_host = MicroviewPreviewHost(self._content_native_preview_container)
+        self._content_microview_preview_host.set_prefer_gdi_preview(True)
+        self._content_microview_preview_host.move(0, 0)
         self._content_microview_preview_host.installEventFilter(self)
         self._content_microview_preview_host.metricsChanged.connect(self._on_content_preview_host_metrics_changed)
-        self._content_overlay_canvas = DocumentCanvas()
+        self._content_overlay_canvas = DocumentCanvas(self._content_native_preview_container)
         self._content_overlay_canvas.set_read_only(False)
         self._content_overlay_canvas.set_fit_alignment("top_left")
         self._content_overlay_canvas.set_show_area_fill(False)
         self._content_overlay_canvas.set_transparent_background(True)
         self._content_overlay_canvas.setAttribute(Qt.WidgetAttribute.WA_AlwaysStackOnTop, True)
+        self._content_overlay_canvas.hide()
         self._content_overlay_canvas.installEventFilter(self)
         self._connect_interactive_canvas(self._content_overlay_canvas)
-        native_stack.addWidget(self._content_microview_preview_host)
-        native_stack.addWidget(self._content_overlay_canvas)
         self._content_microview_preview_scroll = QScrollArea()
         self._content_microview_preview_scroll.setWidget(self._content_native_preview_container)
         self._content_microview_preview_scroll.setWidgetResizable(False)
@@ -1697,6 +1698,8 @@ class MainWindow(QMainWindow):
         self._sync_overlay_tool_button()
         self._update_magic_segment_controls()
         self._update_path_drawing_controls()
+        if self._content_mode_enabled:
+            self._refresh_preview_surface()
 
     def current_document(self) -> ImageDocument | None:
         if self._preview_active or self._content_mode_enabled:
@@ -1720,7 +1723,7 @@ class MainWindow(QMainWindow):
 
     def _content_current_canvas(self) -> DocumentCanvas | None:
         if self._content_preview_kind() == "native_embed":
-            return self._content_overlay_canvas
+            return self._content_frame_canvas if is_fiber_quick_tool_mode(self._tool_mode) else None
         return self._content_frame_canvas
 
     def _preview_kind(self) -> str:
@@ -1753,7 +1756,11 @@ class MainWindow(QMainWindow):
         ):
             return
         if self._content_mode_enabled:
-            if preview_kind == "native_embed" and self._content_microview_preview_scroll is not None:
+            if (
+                preview_kind == "native_embed"
+                and self._content_microview_preview_scroll is not None
+                and not is_fiber_quick_tool_mode(self._tool_mode)
+            ):
                 target_widget = self._content_microview_preview_scroll
             else:
                 target_widget = self._content_frame_canvas
@@ -1943,7 +1950,9 @@ class MainWindow(QMainWindow):
         self._content_microview_preview_host.set_preview_resolution(width, height)
         self._content_overlay_canvas.setFixedSize(width, height)
         self._content_overlay_canvas.set_view_transform(zoom=1.0, pan=Point(0.0, 0.0))
-        self._content_overlay_canvas.raise_()
+        self._content_overlay_canvas.move(0, 0)
+        self._content_overlay_canvas.hide()
+        self._content_microview_preview_host.move(0, 0)
         self._content_native_preview_container.setFixedSize(width, height)
         if self._content_analysis_frame is None or self._content_analysis_frame.size() != QSize(width, height):
             placeholder = QImage(width, height, QImage.Format.Format_ARGB32)
@@ -2383,13 +2392,14 @@ class MainWindow(QMainWindow):
             self._preview_status_label.setText("请选择采集设备并开始实时预览")
 
     def _update_content_preview_document(self, image: QImage, *, native: bool) -> None:
-        canvas = self._content_overlay_canvas if native else self._content_frame_canvas
-        if canvas is None:
+        canvases = [canvas for canvas in (self._content_frame_canvas, self._content_overlay_canvas) if canvas is not None]
+        if not canvases:
             return
+        primary_canvas = self._content_frame_canvas if self._content_frame_canvas is not None else canvases[0]
         if (
             self._content_preview_document is None
             or self._content_preview_document.image_size != (image.width(), image.height())
-            or canvas.document_id is None
+            or primary_canvas.document_id is None
         ):
             if self._content_preview_document is not None:
                 self._invalidate_content_field("含量试验预览分辨率变化")
@@ -2399,15 +2409,17 @@ class MainWindow(QMainWindow):
                 image_size=(image.width(), image.height()),
                 source_type="project_asset",
             )
-            canvas.set_document(self._content_preview_document, image)
-            canvas.set_show_area_fill(False)
-            canvas.set_view_transform(zoom=1.0, pan=Point(0.0, 0.0))
-            if native:
-                canvas.setFixedSize(image.width(), image.height())
-            elif self._content_frame_canvas is not None:
+            for canvas in canvases:
+                canvas.set_document(self._content_preview_document, image)
+                canvas.set_show_area_fill(False)
+                canvas.set_view_transform(zoom=1.0, pan=Point(0.0, 0.0))
+                if native:
+                    canvas.setFixedSize(image.width(), image.height())
+            if self._content_frame_canvas is not None:
                 self._content_frame_canvas.setMinimumSize(image.width(), image.height())
         else:
-            canvas.set_image(image)
+            for canvas in canvases:
+                canvas.set_image(image)
         if self._preview_status_label is not None:
             selected = self._selected_content_capture_device()
             label = selected.name if selected is not None else "采集设备"
@@ -5051,6 +5063,7 @@ class MainWindow(QMainWindow):
         self._content_analysis_frame = None
         self._sync_content_experiment_action()
         self._content_field_timer.stop()
+        self._content_native_overlay_timer.stop()
         self._content_field_request_pending = False
         self._content_field_baseline = None
         self.project = ProjectState.empty()
@@ -5288,6 +5301,13 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage(f"边缘吸附失败: {exc}", 5000)
                 self._focus_content_input_target()
                 return
+            if snap_result.snapped_line is None:
+                self.statusBar().showMessage(
+                    f"边缘吸附未找到可靠边界，请重画线段或改用手动线段。状态: {self._format_measurement_status(snap_result.status)}",
+                    5000,
+                )
+                self._focus_content_input_target()
+                return
             if self._append_content_diameter_record(snap_result.snapped_line, source_mode="snap"):
                 self.statusBar().showMessage(self._edge_snap_status_message(snap_result), 4000)
             self._focus_content_input_target()
@@ -5297,9 +5317,12 @@ class MainWindow(QMainWindow):
                 self.statusBar().showMessage("已记录快速测径直径", 3000)
             self._focus_content_input_target()
 
-    def _append_content_diameter_record(self, line: Line, *, source_mode: str) -> bool:
+    def _append_content_diameter_record(self, line: Line | None, *, source_mode: str) -> bool:
         session = self._load_content_session_from_project()
         if session is None:
+            return False
+        if line is None:
+            self._sync_content_preview_overlay()
             return False
         if not session.fibers:
             self.edit_content_experiment_fibers()
@@ -5764,16 +5787,25 @@ class MainWindow(QMainWindow):
             return
         if enabled:
             self._group_header_labels[0].setText("纤维类别")
-            self._group_header_labels[0].setFixedWidth(84)
-            self._group_header_labels[1].setText("计数/实测")
-            self._group_header_labels[2].setText("平均/含量")
-            self._group_header_labels[2].setFixedWidth(96)
+            self._group_header_labels[0].setFixedWidth(104)
+            self._group_header_labels[1].setText("计/测")
+            self._group_header_labels[1].setFixedWidth(ContentFiberListItemWidget.COUNT_COLUMN_WIDTH)
+            self._group_header_labels[1].setAlignment(Qt.AlignmentFlag.AlignCenter)
+            self._group_header_labels[2].setText("均径/含量")
+            self._group_header_labels[2].setFixedWidth(
+                ContentFiberListItemWidget.AVG_COLUMN_WIDTH + ContentFiberListItemWidget.CONTENT_COLUMN_WIDTH
+            )
+            self._group_header_labels[2].setAlignment(Qt.AlignmentFlag.AlignCenter)
         else:
             self._group_header_labels[0].setText("颜色")
             self._group_header_labels[0].setFixedWidth(36)
             self._group_header_labels[1].setText("类别")
+            self._group_header_labels[1].setMinimumWidth(0)
+            self._group_header_labels[1].setMaximumWidth(16777215)
+            self._group_header_labels[1].setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
             self._group_header_labels[2].setText("（当前/总数）")
             self._group_header_labels[2].setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
+            self._group_header_labels[2].setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
 
     def _update_content_record_table(self) -> None:
         if self._content_record_table is None:
@@ -5807,11 +5839,16 @@ class MainWindow(QMainWindow):
             self._content_box.setVisible(content_visible)
         if self._calibration_label_scroll is not None:
             if content_visible:
-                self._calibration_label_scroll.setMinimumHeight(42)
-                self._calibration_label_scroll.setMaximumHeight(58)
+                self._calibration_label_scroll.setMinimumHeight(30)
+                self._calibration_label_scroll.setMaximumHeight(42)
             else:
                 self._calibration_label_scroll.setMinimumHeight(88)
                 self._calibration_label_scroll.setMaximumHeight(118)
+        for button in (self._add_preset_button, self._edit_preset_button, self._delete_preset_button, self._import_cu_preset_button):
+            if button is not None:
+                button.setVisible(not content_visible)
+        if self._apply_preset_button is not None:
+            self._apply_preset_button.setVisible(True)
         self._set_group_headers_for_content(content_visible)
         if self._content_start_button is not None:
             self._content_start_button.setEnabled(content_visible and preview_active)
@@ -5838,13 +5875,23 @@ class MainWindow(QMainWindow):
                 fiber = session.active_fiber()
                 fiber_text = fiber.name if fiber is not None else "未选择"
                 workbook_mode = self._content_workbook_mode_label(session.workbook_mode)
-                self._content_status_label.setText(
-                    f"{'进行中' if session.active else '已暂停'}；当前纤维: {fiber_text}；工作簿: {workbook_mode}"
-                )
+                status_text = f"{'进行中' if session.active else '已暂停'}；当前纤维: {fiber_text}；工作簿: {workbook_mode}"
+                warning = self._content_workbook_service.last_warning.strip()
+                if warning:
+                    status_text += "（Excel COM失败，已记入日志）"
+                    self._content_status_label.setToolTip(warning)
+                else:
+                    self._content_status_label.setToolTip("")
+                self._content_status_label.setText(status_text)
         if content_visible and preview_active:
             self._content_field_timer.start()
+            if self._is_content_native_preview() and not is_fiber_quick_tool_mode(self._tool_mode):
+                self._content_native_overlay_timer.start()
+            else:
+                self._content_native_overlay_timer.stop()
         else:
             self._content_field_timer.stop()
+            self._content_native_overlay_timer.stop()
             self._content_field_request_pending = False
 
     def _sync_content_preview_overlay(self) -> None:
@@ -5858,24 +5905,48 @@ class MainWindow(QMainWindow):
         if not self._content_mode_enabled:
             for canvas in canvases:
                 canvas.set_content_experiment_overlay()
+            if self._content_microview_preview_host is not None:
+                self._content_microview_preview_host.set_content_experiment_overlay()
             return
         session = self._load_content_session_from_project()
         if session is None:
             for canvas in canvases:
                 canvas.set_content_experiment_overlay()
+            if self._content_microview_preview_host is not None:
+                self._content_microview_preview_host.set_content_experiment_overlay()
             return
         visible_records = [
             record
             for record in session.records
             if record.field_id == session.current_field_id
         ]
+        pending_line = None
+        if self._content_measure_start is not None and self._content_measure_hover is not None:
+            pending_line = Line(self._content_measure_start, self._content_measure_hover)
         for canvas in canvases:
             canvas.set_content_experiment_overlay(
                 overlay_style=session.overlay_style,
                 records=visible_records,
                 fiber_colors=self._content_fiber_color_map(),
-                pending_line=None,
+                pending_line=pending_line,
             )
+        if self._content_microview_preview_host is not None:
+            self._content_microview_preview_host.set_content_experiment_overlay(
+                overlay_style=session.overlay_style,
+                records=visible_records,
+                fiber_colors=self._content_fiber_color_map(),
+                pending_line=pending_line,
+            )
+
+    def _refresh_content_native_overlay(self) -> None:
+        if (
+            self._content_mode_enabled
+            and self._content_preview_active
+            and self._is_content_native_preview()
+            and not is_fiber_quick_tool_mode(self._tool_mode)
+            and self._content_microview_preview_host is not None
+        ):
+            self._content_microview_preview_host.draw_content_experiment_overlay()
 
     def _refresh_content_workbook(self) -> None:
         session = self._load_content_session_from_project()
@@ -5985,6 +6056,7 @@ class MainWindow(QMainWindow):
         self._content_field_motion_hits = 0
         self._content_field_request_pending = False
         self._content_field_timer.stop()
+        self._content_native_overlay_timer.stop()
         self._content_workbook_service.close()
         self._content_mode_enabled = False
         self._sync_content_experiment_action()
@@ -6039,6 +6111,16 @@ class MainWindow(QMainWindow):
                 if event.button() == Qt.MouseButton.RightButton:
                     self._show_content_fiber_menu(self._event_global_position(event))
                     return True
+                if watched is self._content_microview_preview_host and event.button() == Qt.MouseButton.LeftButton:
+                    point = self._content_point_from_event(watched, event)
+                    if point is not None and self._handle_content_native_tool_click(point):
+                        return True
+            if watched is self._content_microview_preview_host and event.type() == QEvent.Type.MouseMove:
+                point = self._content_point_from_event(watched, event)
+                if point is not None and self._content_measure_start is not None:
+                    self._content_measure_hover = point
+                    self._sync_content_preview_overlay()
+                    return True
             if event.type() == QEvent.Type.KeyPress:
                 if self._handle_content_key_event(event):
                     return True
@@ -6060,6 +6142,18 @@ class MainWindow(QMainWindow):
         return self.cursor().pos()
 
     def _content_point_from_event(self, watched, event) -> Point | None:
+        if watched in {self._content_frame_canvas, self._content_overlay_canvas}:
+            canvas = watched if isinstance(watched, DocumentCanvas) else None
+            if canvas is None:
+                return None
+            point = canvas.widget_to_image(event.position())
+            document = self._content_preview_document
+            if document is None:
+                return None
+            width, height = document.image_size
+            if 0 <= point.x < width and 0 <= point.y < height:
+                return point
+            return None
         if watched is self._preview_canvas and self._preview_canvas is not None:
             point = self._preview_canvas.widget_to_image(event.position())
             document = self._preview_document
@@ -6069,12 +6163,32 @@ class MainWindow(QMainWindow):
             if 0 <= point.x < width and 0 <= point.y < height:
                 return point
             return None
-        if watched is self._microview_preview_host and self._microview_preview_host is not None:
+        if watched in {self._microview_preview_host, self._content_microview_preview_host}:
             point = Point(event.position().x(), event.position().y())
-            width, height = self._microview_preview_host.native_preview_size()
+            host = watched if isinstance(watched, MicroviewPreviewHost) else None
+            if host is None:
+                return None
+            width, height = host.native_preview_size()
             if 0 <= point.x < width and 0 <= point.y < height:
                 return point
         return None
+
+    def _handle_content_native_tool_click(self, point: Point) -> bool:
+        if self._tool_mode not in {"manual", "snap"}:
+            return False
+        if self._content_measure_start is None:
+            self._content_measure_start = point
+            self._content_measure_hover = point
+            self._sync_content_preview_overlay()
+            return True
+        line = Line(self._content_measure_start, point)
+        self._content_measure_start = None
+        self._content_measure_hover = None
+        self._sync_content_preview_overlay()
+        if line_length(line) < 1.0:
+            return True
+        self._on_content_canvas_line_committed(self._tool_mode, line)
+        return True
 
     def _handle_content_key_event(self, event) -> bool:
         if event.modifiers() != Qt.KeyboardModifier.NoModifier:
@@ -6649,6 +6763,8 @@ class MainWindow(QMainWindow):
             canvas = self._content_current_canvas()
             if canvas is not None:
                 canvas.focus_canvas()
+            elif self._content_microview_preview_host is not None:
+                self._content_microview_preview_host.setFocus(Qt.FocusReason.OtherFocusReason)
 
     def _should_handle_content_hotkeys(self) -> bool:
         if QApplication.activeModalWidget() is not None:

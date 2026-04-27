@@ -308,12 +308,12 @@ class FiberGroupListItemWidget(QWidget):
 
 
 class ContentFiberListItemWidget(QWidget):
-    HEIGHT = 42
-    DOT_SIZE = 10
-    COUNT_COLUMN_WIDTH = 72
-    AVG_COLUMN_WIDTH = 72
-    CONTENT_COLUMN_WIDTH = 64
-    RIGHT_MARGIN = 10
+    HEIGHT = 34
+    DOT_SIZE = 8
+    COUNT_COLUMN_WIDTH = 54
+    AVG_COLUMN_WIDTH = 82
+    CONTENT_COLUMN_WIDTH = 0
+    RIGHT_MARGIN = 6
 
     def __init__(
         self,
@@ -346,10 +346,10 @@ class ContentFiberListItemWidget(QWidget):
         self.update()
 
     def sizeHint(self) -> QSize:
-        return QSize(300, self.HEIGHT)
+        return QSize(248, self.HEIGHT)
 
     def minimumSizeHint(self) -> QSize:
-        return QSize(240, self.HEIGHT)
+        return QSize(176, self.HEIGHT)
 
     def _resolved_colors(self) -> tuple[QColor, QColor, QColor]:
         if self._selected:
@@ -366,9 +366,9 @@ class ContentFiberListItemWidget(QWidget):
         background, border, text_color = self._resolved_colors()
         painter.setPen(QPen(border, 1))
         painter.setBrush(background)
-        painter.drawRoundedRect(rect, 10, 10)
+        painter.drawRoundedRect(rect, 8, 8)
 
-        dot_x = rect.x() + 12
+        dot_x = rect.x() + 9
         dot_y = rect.y() + (rect.height() - self.DOT_SIZE) // 2
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(self._color if self._color.isValid() else QColor("#7BD389"))
@@ -376,22 +376,26 @@ class ContentFiberListItemWidget(QWidget):
 
         text_font = QFont(self.font())
         text_font.setWeight(QFont.Weight.DemiBold if self._selected else QFont.Weight.Medium)
+        text_font.setPointSizeF(max(8.0, text_font.pointSizeF() - 0.3))
         painter.setFont(text_font)
         painter.setPen(text_color)
 
         content_left = rect.right() - self.RIGHT_MARGIN - self.CONTENT_COLUMN_WIDTH
         avg_left = content_left - self.AVG_COLUMN_WIDTH
         count_left = avg_left - self.COUNT_COLUMN_WIDTH
-        name_left = dot_x + self.DOT_SIZE + 10
-        name_rect = QRect(name_left, rect.y(), max(0, count_left - name_left - 8), rect.height())
+        name_left = dot_x + self.DOT_SIZE + 7
+        name_rect = QRect(name_left, rect.y(), max(0, count_left - name_left - 4), rect.height())
         painter.drawText(
             name_rect,
             Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
             QFontMetrics(text_font).elidedText(self._label, Qt.TextElideMode.ElideRight, name_rect.width()),
         )
         painter.drawText(QRect(count_left, rect.y(), self.COUNT_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, f"{self._count}/{self._measured}")
-        painter.drawText(QRect(avg_left, rect.y(), self.AVG_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, self._average_text)
-        painter.drawText(QRect(content_left, rect.y(), self.CONTENT_COLUMN_WIDTH, rect.height()), Qt.AlignmentFlag.AlignCenter, self._content_text)
+        painter.drawText(
+            QRect(avg_left, rect.y(), self.AVG_COLUMN_WIDTH, rect.height()),
+            Qt.AlignmentFlag.AlignCenter,
+            f"{self._average_text}/{self._content_text}",
+        )
 
 
 class ToolStripActionButton(QToolButton):

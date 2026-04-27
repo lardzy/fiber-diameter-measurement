@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import ctypes
+import json
 import struct
 import sys
 import unittest
@@ -275,6 +276,26 @@ class CaptureAndCuScaleTests(unittest.TestCase):
                 "height": 576,
             },
         )
+
+    @unittest.skipIf(capture_module is None, "PySide6 not installed")
+    def test_microview_helper_command_forwards_gdi_preview_preference(self) -> None:
+        class FakePreviewTarget:
+            def native_preview_handle(self) -> int:
+                return 12345
+
+            def native_preview_size(self) -> tuple[int, int]:
+                return 768, 576
+
+            def prefer_gdi_preview(self) -> bool:
+                return True
+
+        _, arguments = capture_module._microview_helper_command(  # noqa: SLF001
+            "preview",
+            device_index=0,
+            preview_target=FakePreviewTarget(),
+        )
+
+        self.assertIn("--prefer-gdi", arguments)
 
     @unittest.skipIf(capture_module is None, "PySide6 not installed")
     def test_microview_isolated_backend_snapshot_command_is_sent(self) -> None:

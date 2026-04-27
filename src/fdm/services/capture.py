@@ -693,9 +693,18 @@ class MicroviewCaptureBackend(CaptureBackend):
         self._preview_resolution = self._get_capture_dimensions(raw_device_handle)
         self._configure_capture_defaults(dll, raw_device_handle, self._board_type)
         self._bind_preview_target(dll, raw_device_handle, preview_target)
-        if not self._start_with_display_mode(dll, raw_device_handle, self._BUFFER_SYSTEM_MEMORY_DX):
-            if self._start_with_display_mode(dll, raw_device_handle, self._BUFFER_SYSTEM_MEMORY_GDI):
-                self._active_warning = "DirectX 预览初始化失败，已自动回退到 GDI 预览。"
+        display_modes = (
+            (self._BUFFER_SYSTEM_MEMORY_GDI, self._BUFFER_SYSTEM_MEMORY_DX)
+            if _preview_target_prefers_gdi(preview_target)
+            else (self._BUFFER_SYSTEM_MEMORY_DX, self._BUFFER_SYSTEM_MEMORY_GDI)
+        )
+        if not self._start_with_display_mode(dll, raw_device_handle, display_modes[0]):
+            if self._start_with_display_mode(dll, raw_device_handle, display_modes[1]):
+                self._active_warning = (
+                    "GDI 预览初始化失败，已自动回退到 DirectX 预览。"
+                    if display_modes[0] == self._BUFFER_SYSTEM_MEMORY_GDI
+                    else "DirectX 预览初始化失败，已自动回退到 GDI 预览。"
+                )
             else:
                 self.stop_preview()
                 raise RuntimeError("Microview 原生预览初始化失败，DirectX 和 GDI 模式均未成功。")
@@ -1606,6 +1615,8 @@ def _microview_helper_command(
                 str(int(height)),
             ]
         )
+        if preview_target is not None and _preview_target_prefers_gdi(preview_target):
+            arguments.append("--prefer-gdi")
     return program, arguments
 
 
@@ -1789,6 +1800,16 @@ def _preview_target_dimensions(preview_target: object) -> tuple[int, int]:
     width = max(1, int(getattr(preview_target, "width", lambda: 640)()))
     height = max(1, int(getattr(preview_target, "height", lambda: 480)()))
     return width, height
+
+
+def _preview_target_prefers_gdi(preview_target: object) -> bool:
+    preference = getattr(preview_target, "prefer_gdi_preview", None)
+    if not callable(preference):
+        return False
+    try:
+        return bool(preference())
+    except Exception:
+        return False
 
 
 def _microview_pixel_format_name(pixel_format: int) -> str:

@@ -44,7 +44,7 @@ from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate
-    from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.dialogs import ContentFiberSelectionDialog, FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
@@ -804,6 +804,22 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
+    def test_content_fiber_selection_dialog_can_reorder_selected_fibers(self) -> None:
+        fibers = [
+            ContentFiberDefinition(id="fiber_a", name="A"),
+            ContentFiberDefinition(id="fiber_b", name="B"),
+            ContentFiberDefinition(id="fiber_c", name="C"),
+        ]
+        dialog = ContentFiberSelectionDialog(fibers, fibers)
+        try:
+            dialog._selected_list.item(1).setSelected(True)  # noqa: SLF001
+            dialog._move_selected_fibers(-1)  # noqa: SLF001
+            self.assertEqual([fiber.id for fiber in dialog.selected_fibers()], ["fiber_b", "fiber_a", "fiber_c"])
+            dialog._move_selected_fibers(1)  # noqa: SLF001
+            self.assertEqual([fiber.id for fiber in dialog.selected_fibers()], ["fiber_a", "fiber_b", "fiber_c"])
+        finally:
+            dialog.close()
+
     def test_content_records_reuse_measurement_table_for_display_and_deletion(self) -> None:
         window = MainWindow()
         try:
@@ -981,6 +997,35 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(session.records[0].source_mode, "manual")
             self.assertEqual(session.records[0].diameter_px, 5.0)
             self.assertEqual(window.project.documents, [])
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_content_snap_without_snapped_line_does_not_crash_or_record(self) -> None:
+        window = MainWindow()
+        try:
+            fiber = ContentFiberDefinition(id="fiber_cotton", name="棉", color="#1F7A8C")
+            session = ContentExperimentSession(active=True, fibers=[fiber], current_fiber_id=fiber.id)
+            window._content_session = session
+            window._sync_content_session_to_project()
+            window._content_mode_enabled = True
+            window._content_preview_active = True
+            frame = QImage(80, 60, QImage.Format.Format_RGB32)
+            frame.fill(QColor("#808080"))
+            window._content_analysis_frame = frame
+            line = Line(Point(0, 0), Point(20, 0))
+            window.snap_service.snap_measurement = lambda image, payload: SnapResult(  # type: ignore[method-assign]
+                status="edge_pair_not_found",
+                original_line=line,
+                snapped_line=None,
+                diameter_px=None,
+                confidence=0.0,
+            )
+
+            window._on_content_canvas_line_committed("snap", line)
+
+            self.assertEqual(session.records, [])
+            self.assertIn("边缘吸附未找到可靠边界", window.statusBar().currentMessage())
         finally:
             window._reset_workspace()
             window.close()

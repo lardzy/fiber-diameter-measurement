@@ -373,11 +373,18 @@ class ContentFiberSelectionDialog(QDialog):
         add_button.clicked.connect(self._add_selected_available)
         remove_button = QPushButton("< 移除")
         remove_button.clicked.connect(self._remove_selected_fibers)
+        move_up_button = QPushButton("上移")
+        move_up_button.clicked.connect(lambda: self._move_selected_fibers(-1))
+        move_down_button = QPushButton("下移")
+        move_down_button.clicked.connect(lambda: self._move_selected_fibers(1))
 
         button_column = QVBoxLayout()
         button_column.addStretch(1)
         button_column.addWidget(add_button)
         button_column.addWidget(remove_button)
+        button_column.addSpacing(12)
+        button_column.addWidget(move_up_button)
+        button_column.addWidget(move_down_button)
         button_column.addStretch(1)
 
         left_layout = QVBoxLayout()
@@ -470,6 +477,30 @@ class ContentFiberSelectionDialog(QDialog):
             return
         self._selected = [fiber for fiber in self._selected if fiber.id not in remove_ids]
         self._refresh_lists()
+
+    def _move_selected_fibers(self, delta: int) -> None:
+        selected_ids = [
+            str(item.data(Qt.ItemDataRole.UserRole))
+            for item in self._selected_list.selectedItems()
+        ]
+        if not selected_ids:
+            return
+        selected_set = set(selected_ids)
+        if delta < 0:
+            indexes = range(1, len(self._selected))
+            for index in indexes:
+                if self._selected[index].id in selected_set and self._selected[index - 1].id not in selected_set:
+                    self._selected[index - 1], self._selected[index] = self._selected[index], self._selected[index - 1]
+        else:
+            indexes = range(len(self._selected) - 2, -1, -1)
+            for index in indexes:
+                if self._selected[index].id in selected_set and self._selected[index + 1].id not in selected_set:
+                    self._selected[index + 1], self._selected[index] = self._selected[index], self._selected[index + 1]
+        self._refresh_lists()
+        for row in range(self._selected_list.count()):
+            item = self._selected_list.item(row)
+            if str(item.data(Qt.ItemDataRole.UserRole)) in selected_set:
+                item.setSelected(True)
 
     @staticmethod
     def _fiber_tooltip(fiber: ContentFiberDefinition) -> str:
