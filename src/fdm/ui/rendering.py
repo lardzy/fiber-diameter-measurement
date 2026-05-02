@@ -349,8 +349,25 @@ def draw_measurements(
     selected_measurement_id: str | None = None,
     show_area_fill: bool = True,
     show_area_handles: bool = False,
+    visible_rect: QRectF | None = None,
 ) -> None:
+    count_measurements: list[Measurement] = []
+    selected_count_measurement: Measurement | None = None
+    visible_padding = max(12.0, endpoint_radius * 4.0)
     for measurement in document.measurements:
+        selected = measurement.id == selected_measurement_id
+        if visible_rect is not None and not selected and not _measurement_intersects_rect(
+            measurement,
+            visible_rect,
+            padding=visible_padding,
+        ):
+            continue
+        if measurement.measurement_kind == "count":
+            if selected:
+                selected_count_measurement = measurement
+            else:
+                count_measurements.append(measurement)
+            continue
         if measurement.measurement_kind == "area":
             draw_area_measurement(
                 painter,
@@ -360,9 +377,9 @@ def draw_measurements(
                 settings,
                 line_width=line_width,
                 endpoint_radius=endpoint_radius,
-                selected=measurement.id == selected_measurement_id,
+                selected=selected,
                 show_fill=show_area_fill,
-                show_handles=show_area_handles and measurement.id == selected_measurement_id,
+                show_handles=show_area_handles and selected,
             )
             continue
         if measurement.measurement_kind == "polyline":
@@ -374,25 +391,13 @@ def draw_measurements(
                 settings,
                 line_width=line_width,
                 endpoint_radius=endpoint_radius,
-                selected=measurement.id == selected_measurement_id,
-            )
-            continue
-        if measurement.measurement_kind == "count":
-            draw_count_measurement(
-                painter,
-                document,
-                measurement,
-                image_to_output,
-                settings,
-                endpoint_radius=endpoint_radius,
-                selected=measurement.id == selected_measurement_id,
+                selected=selected,
             )
             continue
         line = measurement.effective_line()
         start_point = image_to_output(line.start)
         end_point = image_to_output(line.end)
         color = measurement_color(document, measurement, settings)
-        selected = measurement.id == selected_measurement_id
         actual_width = line_width * (1.7 if selected else 1.0)
         outline_width = max(actual_width * 1.7, actual_width + 1.0)
         painter.setPen(
@@ -426,6 +431,59 @@ def draw_measurements(
         )
         if settings.show_measurement_labels:
             draw_measurement_label(painter, measurement, document, settings, start_point, end_point)
+    draw_count_measurements_batch(
+        painter,
+        document,
+        count_measurements,
+        image_to_output,
+        settings,
+        endpoint_radius=endpoint_radius,
+    )
+    if selected_count_measurement is not None:
+        draw_count_measurement(
+            painter,
+            document,
+            selected_count_measurement,
+            image_to_output,
+            settings,
+            endpoint_radius=endpoint_radius,
+            selected=True,
+        )
+
+
+def _measurement_intersects_rect(measurement: Measurement, rect: QRectF, *, padding: float) -> bool:
+    bounds = _measurement_bounds(measurement)
+    if bounds is None:
+        return True
+    left, top, right, bottom = bounds
+    return (
+        right >= rect.left() - padding
+        and left <= rect.right() + padding
+        and bottom >= rect.top() - padding
+        and top <= rect.bottom() + padding
+    )
+
+
+def _measurement_bounds(measurement: Measurement) -> tuple[float, float, float, float] | None:
+    if measurement.measurement_kind == "count" and measurement.point_px is not None:
+        point = measurement.point_px
+        return point.x, point.y, point.x, point.y
+    if measurement.measurement_kind == "line" and measurement.line_px is not None:
+        line = measurement.effective_line()
+        return (
+            min(line.start.x, line.end.x),
+            min(line.start.y, line.end.y),
+            max(line.start.x, line.end.x),
+            max(line.start.y, line.end.y),
+        )
+    if measurement.measurement_kind == "polyline" and measurement.polyline_px:
+        xs = [point.x for point in measurement.polyline_px]
+        ys = [point.y for point in measurement.polyline_px]
+        return min(xs), min(ys), max(xs), max(ys)
+    if measurement.measurement_kind == "area":
+        _outline_points, _fill_rings, bounds = area_geometry_for_display(measurement, selected=False)
+        return bounds
+    return None
 
 
 def draw_polyline_measurement(
@@ -508,6 +566,38 @@ def draw_count_measurement(
         return
     painter.setBrush(color)
     painter.drawEllipse(point, inner_radius, inner_radius)
+
+
+def draw_count_measurements_batch(
+    painter: QPainter,
+    document: ImageDocument,
+    measurements: list[Measurement],
+    image_to_output,
+    settings: AppSettings,
+    *,
+    endpoint_radius: float,
+) -> None:
+    if not measurements:
+        return
+    outline_radius = endpoint_radius * 1.35
+    inner_radius = endpoint_radius * 0.9
+    grouped_points: dict[str, list[QPointF]] = {}
+    for measurement in measurements:
+        if measurement.point_px is None:
+            continue
+        color = measurement_color(document, measurement, settings).name()
+        grouped_points.setdefault(color, []).append(image_to_output(measurement.point_px))
+    if not grouped_points:
+        return
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(QColor("#0B0B0B"))
+    for points in grouped_points.values():
+        for point in points:
+            painter.drawEllipse(point, outline_radius, outline_radius)
+    for color_name, points in grouped_points.items():
+        painter.setBrush(QColor(color_name))
+        for point in points:
+            painter.drawEllipse(point, inner_radius, inner_radius)
 
 
 def draw_area_measurement(

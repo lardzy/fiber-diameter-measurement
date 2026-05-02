@@ -3887,6 +3887,133 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_drag_open_classifies_images_folders_and_project_files(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                image_path = root / "fiber.png"
+                image_path.write_bytes(b"fake")
+                project_path = root / "demo.fdmproj"
+                project_path.write_text("{}", encoding="utf-8")
+                text_path = root / "notes.txt"
+                text_path.write_text("ignore", encoding="utf-8")
+                folder = root / "folder"
+                folder.mkdir()
+                folder_image = folder / "nested.jpg"
+                folder_image.write_bytes(b"fake")
+                (folder / "nested.txt").write_text("ignore", encoding="utf-8")
+
+                projects, images, unsupported_count = window._classify_dropped_paths(
+                    [image_path, folder, project_path, text_path]
+                )
+
+                self.assertEqual(projects, [project_path])
+                self.assertEqual(images, [image_path, folder_image])
+                self.assertEqual(unsupported_count, 1)
+        finally:
+            window.close()
+
+    def test_drop_open_routes_images_and_projects_without_mixing(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                image_path = root / "fiber.png"
+                image_path.write_bytes(b"fake")
+                project_path = root / "demo.fdmproj"
+                project_path.write_text("{}", encoding="utf-8")
+
+                image_calls: list[tuple[list[tuple[str, object]], str]] = []
+                with patch.object(window, "_open_image_requests", side_effect=lambda items, *, context_label, missing_paths=None: image_calls.append((items, context_label))):
+                    window._open_dropped_paths([image_path])
+                self.assertEqual(image_calls, [([(str(image_path), None)], "拖入图片")])
+
+                project_calls: list[Path] = []
+                with patch.object(window, "_load_project_from_path", side_effect=lambda path: project_calls.append(Path(path))):
+                    window._open_dropped_paths([project_path])
+                self.assertEqual(project_calls, [project_path])
+
+                with (
+                    patch.object(window, "_open_image_requests") as open_images_mock,
+                    patch.object(window, "_load_project_from_path") as load_project_mock,
+                    patch("fdm.ui.main_window.QMessageBox.information") as message_mock,
+                ):
+                    window._open_dropped_paths([project_path, image_path])
+                open_images_mock.assert_not_called()
+                load_project_mock.assert_not_called()
+                message_mock.assert_called_once()
+        finally:
+            window.close()
+
+    def test_count_measurement_append_uses_incremental_ui_and_history(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(320, 220, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/count_fast_path.png",
+                image_size=(image.width(), image.height()),
+            )
+            group = document.ensure_default_group()
+            window._add_loaded_document(ImageLoadRequest(path=document.path, document=document), image)
+
+            with (
+                patch.object(ImageDocument, "snapshot_state", side_effect=AssertionError("count append should not snapshot")),
+                patch.object(window, "_populate_measurement_table", side_effect=AssertionError("count append should not rebuild the whole table")),
+            ):
+                for index in range(500):
+                    window._on_canvas_line_committed(
+                        document.id,
+                        "count",
+                        {
+                            "measurement_kind": "count",
+                            "point_px": Point(float(index % 50), float(index // 50)),
+                        },
+                    )
+
+            self.assertEqual(len(document.measurements), 500)
+            self.assertEqual(window.measurement_table.rowCount(), 500)
+            self.assertEqual(len(group.measurement_ids), 500)
+            self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
+            item = window.group_list.item(0)
+            widget = window.group_list.itemWidget(item)
+            self.assertIsInstance(widget, FiberGroupListItemWidget)
+            self.assertEqual(widget.countText(), "500/500")
+
+            last_measurement_id = document.measurements[-1].id
+            window.undo_current_document()
+            self.assertEqual(len(document.measurements), 499)
+            self.assertNotEqual(document.measurements[-1].id, last_measurement_id)
+            window.redo_current_document()
+            self.assertEqual(len(document.measurements), 500)
+            self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
+            self.assertEqual(document.measurements[-1].id, last_measurement_id)
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
+    def test_count_hit_test_uses_latest_point_with_many_measurements(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        group = document.ensure_default_group()
+        for index in range(500):
+            document.insert_measurement_incremental(
+                Measurement(
+                    id=f"meas_{index:03d}",
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="count",
+                    measurement_kind="count",
+                    point_px=Point(42, 58),
+                    confidence=1.0,
+                    status="count",
+                )
+            )
+        canvas.set_document(document, image)
+
+        self.assertEqual(canvas._hit_test_measurement(Point(42, 58)), "meas_499")
+
     def test_settings_dialog_uses_separate_area_models_tab(self) -> None:
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)

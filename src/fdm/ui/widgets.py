@@ -215,6 +215,15 @@ class FiberGroupListItemWidget(QWidget):
         self._selected = selected
         self.update()
 
+    def setCounts(self, current_count: int, project_count: int) -> None:
+        current_count = max(0, int(current_count))
+        project_count = max(0, int(project_count))
+        if self._current_count == current_count and self._project_count == project_count:
+            return
+        self._current_count = current_count
+        self._project_count = project_count
+        self.update()
+
     def labelText(self) -> str:
         return self._label
 

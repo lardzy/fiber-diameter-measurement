@@ -303,6 +303,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.setWindowTitle("显微测量工作台")
         self.setWindowIcon(application_icon())
+        self.setAcceptDrops(True)
 
         self.project = ProjectState.empty()
         self._project_path: Path | None = None
@@ -2684,6 +2685,101 @@ class MainWindow(QMainWindow):
             context_label="打开文件夹",
         )
 
+    def dragEnterEvent(self, event) -> None:
+        if self._local_paths_from_mime(event.mimeData()):
+            event.acceptProposedAction()
+            return
+        event.ignore()
+
+    def dragMoveEvent(self, event) -> None:
+        if self._local_paths_from_mime(event.mimeData()):
+            event.acceptProposedAction()
+            return
+        event.ignore()
+
+    def dropEvent(self, event) -> None:
+        paths = self._local_paths_from_mime(event.mimeData())
+        if not paths:
+            event.ignore()
+            return
+        event.acceptProposedAction()
+        self._open_dropped_paths(paths)
+
+    def _local_paths_from_mime(self, mime_data) -> list[Path]:
+        if mime_data is None or not mime_data.hasUrls():
+            return []
+        paths: list[Path] = []
+        for url in mime_data.urls():
+            if not url.isLocalFile():
+                continue
+            local_path = Path(url.toLocalFile()).expanduser()
+            if local_path.exists():
+                paths.append(local_path)
+        return paths
+
+    def _folder_image_paths(self, folder: Path) -> list[Path]:
+        return [
+            item
+            for item in sorted(folder.iterdir(), key=lambda path: path.name.lower())
+            if item.is_file() and item.suffix.lower() in self.SUPPORTED_SUFFIXES
+        ]
+
+    def _classify_dropped_paths(self, paths: list[Path]) -> tuple[list[Path], list[Path], int]:
+        project_paths: list[Path] = []
+        image_paths: list[Path] = []
+        unsupported_count = 0
+        seen_images: set[Path] = set()
+        seen_projects: set[Path] = set()
+        for path in paths:
+            resolved = path.expanduser()
+            if resolved.is_dir():
+                folder_images = self._folder_image_paths(resolved)
+                unsupported_count += 0 if folder_images else 1
+                for image_path in folder_images:
+                    image_key = image_path.resolve()
+                    if image_key not in seen_images:
+                        seen_images.add(image_key)
+                        image_paths.append(image_path)
+                continue
+            if not resolved.is_file():
+                unsupported_count += 1
+                continue
+            suffix = resolved.suffix.lower()
+            if suffix == ".fdmproj":
+                project_key = resolved.resolve()
+                if project_key not in seen_projects:
+                    seen_projects.add(project_key)
+                    project_paths.append(resolved)
+                continue
+            if suffix in self.SUPPORTED_SUFFIXES:
+                image_key = resolved.resolve()
+                if image_key not in seen_images:
+                    seen_images.add(image_key)
+                    image_paths.append(resolved)
+                continue
+            unsupported_count += 1
+        return project_paths, image_paths, unsupported_count
+
+    def _open_dropped_paths(self, paths: list[Path]) -> None:
+        project_paths, image_paths, unsupported_count = self._classify_dropped_paths(paths)
+        if project_paths and (image_paths or len(project_paths) > 1):
+            QMessageBox.information(self, "拖入打开", "项目文件需单独拖入，一次只打开一个项目。")
+            return
+        if project_paths:
+            self._load_project_from_path(project_paths[0])
+            return
+        if image_paths:
+            self.stop_live_preview()
+            self._open_image_requests(
+                [(str(path), None) for path in image_paths],
+                context_label="拖入图片",
+            )
+            if unsupported_count:
+                self.statusBar().showMessage(f"已忽略 {unsupported_count} 个不支持的拖入项目。", 5000)
+            return
+        if unsupported_count:
+            QMessageBox.information(self, "拖入打开", "拖入内容中没有支持的图片或项目文件。")
+
     def _normalize_image_path(self, path: str | Path) -> str:
         return str(Path(path).expanduser().resolve())
 
@@ -3178,20 +3274,24 @@ class MainWindow(QMainWindow):
         return True
 
     def load_project(self) -> None:
+        path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
+        if not path:
+            return
+        self._load_project_from_path(Path(path))
+
+    def _load_project_from_path(self, path: str | Path) -> None:
         self.stop_live_preview()
         if self._load_thread is not None:
             QMessageBox.information(self, "打开项目", "当前仍有图片在加载，请稍候。")
             return
         if not self._confirm_close_documents(self.project.documents):
             return
-        path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
-        if not path:
-            return
-        project = ProjectIO.load(path)
+        project_path = Path(path).expanduser().resolve()
+        project = ProjectIO.load(project_path)
         imported_count = self._merge_legacy_calibration_presets(project.calibration_presets)
         missing_paths = []
         self._reset_workspace()
-        self._project_path = Path(path)
+        self._project_path = project_path
         self.project = ProjectState(
             version=project.version,
             documents=[],
@@ -3212,7 +3312,7 @@ class MainWindow(QMainWindow):
         if self._load_thread is None:
             self._mark_project_saved()
             self._pending_project_load_snapshot = False
-        message = f"项目已加载: {path}"
+        message = f"项目已加载: {project_path}"
         if imported_count:
             message += f"；已导入 {imported_count} 个旧版标定预设"
         self.statusBar().showMessage(message, 5000)
@@ -4481,6 +4581,7 @@ class MainWindow(QMainWindow):
         before = document.snapshot_state()
         mutator()
         document.rebuild_group_memberships()
+        document.mark_measurement_geometry_changed()
         document.refresh_dirty_flags()
         after = document.snapshot_state()
         changed = before != after
@@ -4492,6 +4593,32 @@ class MainWindow(QMainWindow):
             document.mark_calibration_saved()
         self._update_ui_for_current_document()
         return changed
+
+    def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
+        previous_selected_measurement_id = document.view_state.selected_measurement_id
+        previous_selected_overlay_id = document.selected_overlay_id
+        measurement_index = len(document.measurements)
+        document.insert_measurement_incremental(measurement)
+        if document.history is not None:
+            document.history.push_add_measurement(
+                label,
+                measurement_payload=measurement.to_dict(),
+                index=measurement_index,
+                previous_selected_measurement_id=previous_selected_measurement_id,
+                previous_selected_overlay_id=previous_selected_overlay_id,
+            )
+        self._refresh_measurement_append_ui(document, measurement)
+
+    def _refresh_measurement_append_ui(self, document: ImageDocument, measurement: Measurement) -> None:
+        if document is not self.current_document():
+            self._update_action_states()
+            return
+        self._refresh_group_list_counts(document)
+        self._append_measurement_table_row(document, measurement)
+        canvas = self.current_canvas()
+        if canvas is not None:
+            canvas.update()
+        self._update_action_states()
 
     def _apply_documents_change(
         self,
@@ -4506,6 +4633,7 @@ class MainWindow(QMainWindow):
             removed_count = mutator(document)
             total_removed += int(removed_count or 0)
             document.rebuild_group_memberships()
+            document.mark_measurement_geometry_changed()
             document.refresh_dirty_flags()
             after = document.snapshot_state()
             changed = before != after
@@ -4566,83 +4694,81 @@ class MainWindow(QMainWindow):
                 self._focus_current_canvas()
                 return
 
-        def mutate() -> None:
-            if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode=mode,
-                    measurement_kind="area",
-                    polygon_px=list(payload.get("polygon_px", [])),
-                    area_rings_px=[list(ring) for ring in payload.get("area_rings_px", [])],
-                    exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
-                    confidence=1.0,
-                    status="manual" if mode != "auto_instance" else "auto_instance",
-                )
-                if mode == "magic_segment":
-                    ensure_measurement_display_geometry(measurement)
-            elif mode == "continuous_manual" and isinstance(payload, dict):
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="continuous_manual",
-                    measurement_kind="polyline",
-                    polyline_px=list(payload.get("polyline_px", [])),
-                    confidence=1.0,
-                    status="continuous_manual",
-                )
-            elif mode == "count" and isinstance(payload, dict):
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="count",
-                    measurement_kind="count",
-                    point_px=payload.get("point_px"),
-                    confidence=1.0,
-                    status="count",
-                )
-            elif mode == "manual" and isinstance(payload, Line):
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="manual",
-                    line_px=payload,
-                    confidence=1.0,
-                    status="manual",
-                )
-            elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="snap",
-                    line_px=snap_result.original_line,
-                    snapped_line_px=snap_result.snapped_line,
-                    confidence=snap_result.confidence,
-                    status=snap_result.status,
-                    debug_payload=dict(snap_result.debug_payload),
-                )
-            elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
-                measurement = Measurement(
-                    id=new_id("meas"),
-                    image_id=document.id,
-                    fiber_group_id=group.id if group else None,
-                    mode="fiber_quick",
-                    line_px=payload["line_px"],
-                    confidence=float(payload.get("confidence", 0.0)),
-                    status=str(payload.get("status", "fiber_quick") or "fiber_quick"),
-                    debug_payload=dict(payload.get("debug_payload", {})),
-                )
-            else:
-                return
-            document.add_measurement(measurement)
-            document.select_overlay_annotation(None)
+        if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode=mode,
+                measurement_kind="area",
+                polygon_px=list(payload.get("polygon_px", [])),
+                area_rings_px=[list(ring) for ring in payload.get("area_rings_px", [])],
+                exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
+                confidence=1.0,
+                status="manual" if mode != "auto_instance" else "auto_instance",
+            )
+            if mode == "magic_segment":
+                ensure_measurement_display_geometry(measurement)
+        elif mode == "continuous_manual" and isinstance(payload, dict):
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=list(payload.get("polyline_px", [])),
+                confidence=1.0,
+                status="continuous_manual",
+            )
+        elif mode == "count" and isinstance(payload, dict):
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode="count",
+                measurement_kind="count",
+                point_px=payload.get("point_px"),
+                confidence=1.0,
+                status="count",
+            )
+        elif mode == "manual" and isinstance(payload, Line):
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode="manual",
+                line_px=payload,
+                confidence=1.0,
+                status="manual",
+            )
+        elif mode == "snap" and isinstance(payload, Line) and snap_result is not None:
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode="snap",
+                line_px=snap_result.original_line,
+                snapped_line_px=snap_result.snapped_line,
+                confidence=snap_result.confidence,
+                status=snap_result.status,
+                debug_payload=dict(snap_result.debug_payload),
+            )
+        elif mode == "fiber_quick" and isinstance(payload, dict) and isinstance(payload.get("line_px"), Line):
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id if group else None,
+                mode="fiber_quick",
+                line_px=payload["line_px"],
+                confidence=float(payload.get("confidence", 0.0)),
+                status=str(payload.get("status", "fiber_quick") or "fiber_quick"),
+                debug_payload=dict(payload.get("debug_payload", {})),
+            )
+        else:
+            self._focus_current_canvas()
+            return
 
-        self._apply_document_change(document, "新增测量", mutate)
+        self._append_new_measurement(document, measurement, label="新增测量")
         if snap_result is not None:
             self.statusBar().showMessage(self._edge_snap_status_message(snap_result), 4000)
         else:
@@ -4900,6 +5026,44 @@ class MainWindow(QMainWindow):
             if isinstance(widget, FiberGroupListItemWidget):
                 widget.setSelected(item.isSelected())
 
+    def _refresh_group_list_counts(self, document: ImageDocument) -> None:
+        expected_group_ids: list[str | None] = []
+        if document.should_show_uncategorized_entry():
+            expected_group_ids.append(None)
+        expected_group_ids.extend(group.id for group in document.sorted_groups())
+        current_group_ids = [
+            self.group_list.item(index).data(Qt.ItemDataRole.UserRole)
+            for index in range(self.group_list.count())
+        ]
+        if current_group_ids != expected_group_ids:
+            self._populate_group_list(document)
+            return
+        self._group_list_rebuilding = True
+        try:
+            for index, group_id in enumerate(expected_group_ids):
+                item = self.group_list.item(index)
+                if group_id is None:
+                    current_count = document.uncategorized_measurement_count()
+                    project_count = self._project_uncategorized_measurement_count(document)
+                    selected = document.active_group_id is None
+                else:
+                    group = document.get_group(group_id)
+                    if group is None:
+                        self._populate_group_list(document)
+                        return
+                    current_count = len(group.measurement_ids)
+                    project_count = self._project_measurement_count_for_group_label(group.label, document)
+                    selected = document.active_group_id == group.id
+                item.setData(Qt.ItemDataRole.UserRole + 1, current_count)
+                item.setData(Qt.ItemDataRole.UserRole + 3, project_count)
+                item.setSelected(selected)
+                widget = self.group_list.itemWidget(item)
+                if isinstance(widget, FiberGroupListItemWidget):
+                    widget.setCounts(current_count, project_count)
+                    widget.setSelected(selected)
+        finally:
+            self._group_list_rebuilding = False
+
     def _scroll_active_group_item_into_view(self) -> None:
         target_item = None
         selected_items = self.group_list.selectedItems()
@@ -4976,20 +5140,40 @@ class MainWindow(QMainWindow):
         if document is not None:
             for row, measurement in enumerate(document.measurements):
                 self.measurement_table.insertRow(row)
-                display_id = measurement.id.split("_")[-1]
-                id_item = QTableWidgetItem(display_id)
-                id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
-                self.measurement_table.setCellWidget(row, self.TABLE_COL_GROUP, self._create_group_combo(document, measurement))
-                self.measurement_table.setItem(row, self.TABLE_COL_KIND, QTableWidgetItem(self._format_measurement_kind(measurement)))
-                self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{measurement.display_value():.4f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(measurement.display_unit(document.calibration)))
-                self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem(self._format_measurement_mode(measurement.mode)))
-                self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(f"{measurement.confidence:.2f}"))
-                self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(self._format_measurement_status(measurement.status)))
-                self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
+                self._set_measurement_table_row(row, document, measurement)
         self._table_rebuilding = False
         if document is not None:
             self._sync_measurement_table_selection(document)
+
+    def _set_measurement_table_row(self, row: int, document: ImageDocument, measurement: Measurement) -> None:
+        display_id = measurement.id.split("_")[-1]
+        id_item = QTableWidgetItem(display_id)
+        id_item.setData(Qt.ItemDataRole.UserRole, measurement.id)
+        self.measurement_table.setCellWidget(row, self.TABLE_COL_GROUP, self._create_group_combo(document, measurement))
+        self.measurement_table.setItem(row, self.TABLE_COL_KIND, QTableWidgetItem(self._format_measurement_kind(measurement)))
+        self.measurement_table.setItem(row, self.TABLE_COL_RESULT, QTableWidgetItem(f"{measurement.display_value():.4f}"))
+        self.measurement_table.setItem(row, self.TABLE_COL_UNIT, QTableWidgetItem(measurement.display_unit(document.calibration)))
+        self.measurement_table.setItem(row, self.TABLE_COL_MODE, QTableWidgetItem(self._format_measurement_mode(measurement.mode)))
+        self.measurement_table.setItem(row, self.TABLE_COL_CONFIDENCE, QTableWidgetItem(f"{measurement.confidence:.2f}"))
+        self.measurement_table.setItem(row, self.TABLE_COL_STATUS, QTableWidgetItem(self._format_measurement_status(measurement.status)))
+        self.measurement_table.setItem(row, self.TABLE_COL_ID, id_item)
+
+    def _append_measurement_table_row(self, document: ImageDocument, measurement: Measurement) -> None:
+        expected_existing_rows = max(0, len(document.measurements) - 1)
+        if self.measurement_table.rowCount() != expected_existing_rows:
+            self._populate_measurement_table(document)
+            return
+        self._table_rebuilding = True
+        self.measurement_table.blockSignals(True)
+        try:
+            row = self.measurement_table.rowCount()
+            self.measurement_table.insertRow(row)
+            self._set_measurement_table_row(row, document, measurement)
+            self.measurement_table.clearSelection()
+            self.measurement_table.selectRow(row)
+        finally:
+            self.measurement_table.blockSignals(False)
+            self._table_rebuilding = False
 
     def _format_measurement_kind(self, measurement: Measurement) -> str:
         return {

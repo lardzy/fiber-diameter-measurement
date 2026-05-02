@@ -26,7 +26,7 @@ from fdm.geometry import (
     polygon_translate,
     snap_to_pixel_center,
 )
-from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
+from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
     fill_magic_draft_internal_holes,
@@ -57,6 +57,94 @@ from fdm.ui.rendering import (
 class MagicSegmentOperationMode:
     ADD = "add"
     SUBTRACT = "subtract"
+
+
+@dataclass(slots=True)
+class MeasurementIndexEntry:
+    measurement: Measurement
+    bounds: tuple[float, float, float, float]
+    order: int
+
+
+class MeasurementSpatialIndex:
+    def __init__(self, measurements: list[Measurement], *, cell_size: float = 128.0) -> None:
+        self._cell_size = max(32.0, float(cell_size))
+        self._entries: dict[str, MeasurementIndexEntry] = {}
+        self._cells: dict[tuple[int, int], list[str]] = {}
+        for order, measurement in enumerate(measurements):
+            bounds = self._measurement_bounds(measurement)
+            if bounds is None:
+                continue
+            self._entries[measurement.id] = MeasurementIndexEntry(
+                measurement=measurement,
+                bounds=bounds,
+                order=order,
+            )
+            for cell in self._cells_for_bounds(bounds):
+                self._cells.setdefault(cell, []).append(measurement.id)
+
+    def query(self, point: Point, *, tolerance: float) -> list[Measurement]:
+        query_bounds = (
+            point.x - tolerance,
+            point.y - tolerance,
+            point.x + tolerance,
+            point.y + tolerance,
+        )
+        candidate_ids: set[str] = set()
+        for cell in self._cells_for_bounds(query_bounds):
+            candidate_ids.update(self._cells.get(cell, []))
+        entries = [
+            entry
+            for measurement_id in candidate_ids
+            if (entry := self._entries.get(measurement_id)) is not None
+            and point_near_bounds(point, entry.bounds, tolerance)
+        ]
+        entries.sort(key=lambda entry: entry.order, reverse=True)
+        return [entry.measurement for entry in entries]
+
+    def _cells_for_bounds(self, bounds: tuple[float, float, float, float]) -> list[tuple[int, int]]:
+        left, top, right, bottom = bounds
+        min_col = int(left // self._cell_size)
+        max_col = int(right // self._cell_size)
+        min_row = int(top // self._cell_size)
+        max_row = int(bottom // self._cell_size)
+        return [
+            (col, row)
+            for col in range(min_col, max_col + 1)
+            for row in range(min_row, max_row + 1)
+        ]
+
+    @staticmethod
+    def _measurement_bounds(measurement: Measurement) -> tuple[float, float, float, float] | None:
+        if measurement.measurement_kind == "count" and measurement.point_px is not None:
+            point = measurement.point_px
+            return point.x, point.y, point.x, point.y
+        if measurement.measurement_kind == "line" and measurement.line_px is not None:
+            line = measurement.effective_line()
+            return (
+                min(line.start.x, line.end.x),
+                min(line.start.y, line.end.y),
+                max(line.start.x, line.end.x),
+                max(line.start.y, line.end.y),
+            )
+        if measurement.measurement_kind == "polyline" and measurement.polyline_px:
+            xs = [point.x for point in measurement.polyline_px]
+            ys = [point.y for point in measurement.polyline_px]
+            return min(xs), min(ys), max(xs), max(ys)
+        if measurement.measurement_kind == "area":
+            _outline, _rings, unselected_bounds = area_geometry_for_display(measurement, selected=False)
+            _selected_outline, _selected_rings, selected_bounds = area_geometry_for_display(measurement, selected=True)
+            if unselected_bounds is None:
+                return selected_bounds
+            if selected_bounds is None:
+                return unselected_bounds
+            return (
+                min(unselected_bounds[0], selected_bounds[0]),
+                min(unselected_bounds[1], selected_bounds[1]),
+                max(unselected_bounds[2], selected_bounds[2]),
+                max(unselected_bounds[3], selected_bounds[3]),
+            )
+        return None
 
 
 @dataclass(slots=True)
@@ -303,6 +391,8 @@ class DocumentCanvas(QWidget):
         self._fiber_quick_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
+        self._measurement_hit_index: MeasurementSpatialIndex | None = None
+        self._measurement_hit_index_revision = -1
 
     @property
     def document_id(self) -> str | None:
@@ -317,6 +407,8 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        self._measurement_hit_index = None
+        self._measurement_hit_index_revision = -1
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -354,6 +446,8 @@ class DocumentCanvas(QWidget):
         self._reference_instance = ReferenceInstanceSession()
         self._fiber_quick = FiberQuickDiameterSession()
         self._fiber_quick_request_serial = 0
+        self._measurement_hit_index = None
+        self._measurement_hit_index_revision = -1
         if document_id is not None:
             self.pathSessionChanged.emit(document_id)
         self.update()
@@ -1770,6 +1864,37 @@ class DocumentCanvas(QWidget):
             return None
         return measurement.effective_line()
 
+    def _visible_image_rect(self) -> QRectF:
+        if self._image is None:
+            return QRectF()
+        zoom = max(self._zoom, 0.001)
+        left = (0.0 - self._pan.x) / zoom
+        top = (0.0 - self._pan.y) / zoom
+        right = (self.width() - self._pan.x) / zoom
+        bottom = (self.height() - self._pan.y) / zoom
+        padding = max(16.0, 28.0 / zoom)
+        return QRectF(
+            max(0.0, min(left, right) - padding),
+            max(0.0, min(top, bottom) - padding),
+            min(float(self._image.width()), abs(right - left) + (padding * 2.0)),
+            min(float(self._image.height()), abs(bottom - top) + (padding * 2.0)),
+        )
+
+    def _measurement_index(self) -> MeasurementSpatialIndex | None:
+        if self._document is None:
+            return None
+        revision = self._document.measurement_geometry_revision
+        if self._measurement_hit_index is None or self._measurement_hit_index_revision != revision:
+            self._measurement_hit_index = MeasurementSpatialIndex(self._document.measurements)
+            self._measurement_hit_index_revision = revision
+        return self._measurement_hit_index
+
+    def _measurement_candidates(self, image_point: Point, *, tolerance: float) -> list[Measurement]:
+        index = self._measurement_index()
+        if index is None:
+            return []
+        return index.query(image_point, tolerance=tolerance)
+
     def _draw_annotations(self, painter: QPainter) -> None:
         if self._document is None:
             return
@@ -1783,6 +1908,7 @@ class DocumentCanvas(QWidget):
             selected_measurement_id=self._document.view_state.selected_measurement_id,
             show_area_fill=self._show_area_fill,
             show_area_handles=self._tool_mode == "select",
+            visible_rect=self._visible_image_rect(),
         )
         draw_overlay_annotations(
             painter,
@@ -1912,7 +2038,7 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return None
         tolerance = self._endpoint_tolerance()
-        for measurement in reversed(self._document.measurements):
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
             if measurement.measurement_kind != "line":
                 continue
             line = measurement.effective_line()
@@ -1955,7 +2081,7 @@ class DocumentCanvas(QWidget):
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
         selected_measurement_id = self._document.view_state.selected_measurement_id
-        for measurement in reversed(self._document.measurements):
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
             outline_points, fill_rings, bounds = area_geometry_for_display(
                 measurement,
                 selected=measurement.id == selected_measurement_id,
@@ -1982,7 +2108,7 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
-        for measurement in reversed(self._document.measurements):
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
             if measurement.measurement_kind == "line":
                 line = measurement.effective_line()
                 bounds = (

@@ -598,6 +598,7 @@ class ImageDocument:
     history: Any = field(default=None, repr=False, compare=False)
     _session_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     _calibration_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
+    _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     def initialize_runtime_state(self) -> None:
         from fdm.history import DocumentHistory
@@ -751,6 +752,13 @@ class ImageDocument:
         return None
 
     @property
+    def measurement_geometry_revision(self) -> int:
+        return self._measurement_geometry_revision
+
+    def mark_measurement_geometry_changed(self) -> None:
+        self._measurement_geometry_revision += 1
+
+    @property
     def text_annotations(self) -> list[OverlayAnnotation]:
         return [
             annotation
@@ -798,16 +806,74 @@ class ImageDocument:
         self.select_overlay_annotation(annotation.id if annotation is not None else None)
 
     def add_measurement(self, measurement: Measurement) -> None:
+        self.insert_measurement_incremental(measurement, mark_dirty=False)
+        self.rebuild_group_memberships()
+        self.refresh_dirty_flags()
+
+    def insert_measurement_incremental(
+        self,
+        measurement: Measurement,
+        *,
+        index: int | None = None,
+        select: bool = True,
+        mark_dirty: bool = True,
+    ) -> None:
         if measurement.fiber_group_id is None:
             measurement.fiber_group_id = self.active_group_id
         measurement.recalculate(self.calibration)
-        self.measurements.append(measurement)
-        self.rebuild_group_memberships()
-        self.select_measurement(measurement.id)
-        self.refresh_dirty_flags()
+        if index is None or index < 0 or index >= len(self.measurements):
+            self.measurements.append(measurement)
+        else:
+            self.measurements.insert(index, measurement)
+        group = self.get_group(measurement.fiber_group_id)
+        if group is not None and measurement.id not in group.measurement_ids:
+            group.measurement_ids.append(measurement.id)
+        if select:
+            self.select_measurement(measurement.id)
+        self.mark_measurement_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
 
     def remove_measurement(self, measurement_id: str) -> None:
         self.remove_measurements([measurement_id])
+
+    def remove_measurement_incremental(
+        self,
+        measurement_id: str,
+        *,
+        select_measurement_id: str | None = None,
+        select_overlay_id: str | None = None,
+        mark_dirty: bool = True,
+    ) -> Measurement | None:
+        removed: Measurement | None = None
+        kept: list[Measurement] = []
+        for measurement in self.measurements:
+            if measurement.id == measurement_id and removed is None:
+                removed = measurement
+                continue
+            kept.append(measurement)
+        if removed is None:
+            return None
+        self.measurements = kept
+        group = self.get_group(removed.fiber_group_id)
+        if group is not None:
+            group.measurement_ids = [
+                item
+                for item in group.measurement_ids
+                if item != measurement_id
+            ]
+        if select_overlay_id is not None:
+            self.select_overlay_annotation(select_overlay_id)
+        else:
+            self.select_measurement(
+                select_measurement_id
+                if self.get_measurement(select_measurement_id) is not None
+                else None
+            )
+        self.mark_measurement_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
+        return removed
 
     def remove_measurements(self, measurement_ids: list[str] | set[str] | tuple[str, ...]) -> int:
         targets = {measurement_id for measurement_id in measurement_ids if measurement_id}
@@ -825,6 +891,7 @@ class ImageDocument:
         if self.view_state.selected_measurement_id in targets:
             self.select_measurement(None)
         self.rebuild_group_memberships()
+        self.mark_measurement_geometry_changed()
         self.refresh_dirty_flags()
         return removed_count
 
@@ -1142,6 +1209,7 @@ class ImageDocument:
             self.view_state.selected_measurement_id = None
         if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
             self.selected_overlay_id = None
+        self.mark_measurement_geometry_changed()
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -1151,6 +1219,12 @@ class ImageDocument:
     def mark_calibration_saved(self) -> None:
         self._calibration_clean_snapshot = self.calibration_snapshot()
         self.refresh_dirty_flags()
+
+    def mark_session_dirty(self) -> None:
+        self.dirty_flags = DirtyFlags(
+            session_dirty=True,
+            calibration_dirty=self.dirty_flags.calibration_dirty,
+        )
 
     def refresh_dirty_flags(self) -> None:
         session_dirty = self._session_clean_snapshot is not None and self.session_snapshot() != self._session_clean_snapshot
