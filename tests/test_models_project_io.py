@@ -9,6 +9,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from fdm.area_display import ensure_measurement_display_geometry
 from fdm.geometry import Line, Point
 from fdm.models import (
     Calibration,
@@ -27,9 +28,11 @@ from fdm.project_io import ProjectIO
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
+    AppThemeMode,
     AppSettings,
     AppSettingsIO,
     FocusStackProfile,
+    MagicSegmentModelVariant,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
@@ -329,6 +332,7 @@ class ModelsProjectIOTests(unittest.TestCase):
 
     def test_app_settings_roundtrip_uses_user_writable_path(self) -> None:
         settings = AppSettings(
+            theme_mode=AppThemeMode.LIGHT,
             show_measurement_labels=False,
             measurement_label_font_size=22,
             measurement_label_decimals=2,
@@ -346,6 +350,12 @@ class ModelsProjectIOTests(unittest.TestCase):
             overlay_line_width=3.5,
             focus_stack_profile=FocusStackProfile.SHARP,
             focus_stack_sharpen_strength=60,
+            magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
+            magic_segment_fill_draft_holes_enabled=True,
+            magic_segment_standard_roi_enabled=True,
+            fiber_quick_roi_enabled=False,
+            fiber_quick_edge_trim_enabled=False,
+            fiber_quick_line_extension_px=3.5,
             main_window_geometry="Zm9v",
             main_window_is_maximized=True,
         )
@@ -356,6 +366,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded = AppSettingsIO.load(saved_path)
 
         self.assertEqual(saved_path, path)
+        self.assertEqual(loaded.theme_mode, AppThemeMode.LIGHT)
         self.assertFalse(loaded.show_measurement_labels)
         self.assertEqual(loaded.measurement_label_font_size, 22)
         self.assertEqual(loaded.measurement_label_decimals, 2)
@@ -373,12 +384,19 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
+        self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
+        self.assertTrue(loaded.magic_segment_fill_draft_holes_enabled)
+        self.assertTrue(loaded.magic_segment_standard_roi_enabled)
+        self.assertFalse(loaded.fiber_quick_roi_enabled)
+        self.assertFalse(loaded.fiber_quick_edge_trim_enabled)
+        self.assertAlmostEqual(loaded.fiber_quick_line_extension_px, 3.5)
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
         self.assertTrue(loaded.main_window_is_maximized)
 
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
 
+        self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
         self.assertEqual(settings.measurement_label_color, "#00FF00")
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertFalse(settings.measurement_label_background_enabled)
@@ -394,12 +412,19 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
+        self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+        self.assertFalse(settings.magic_segment_fill_draft_holes_enabled)
+        self.assertFalse(settings.magic_segment_standard_roi_enabled)
+        self.assertTrue(settings.fiber_quick_roi_enabled)
+        self.assertTrue(settings.fiber_quick_edge_trim_enabled)
+        self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 0.0)
         self.assertEqual(settings.main_window_geometry, "")
         self.assertFalse(settings.main_window_is_maximized)
 
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(
             {
+                "theme_mode": "unknown",
                 "measurement_label_decimals": 99,
                 "measurement_endpoint_style": "unknown",
                 "open_image_view_mode": "unknown",
@@ -410,9 +435,12 @@ class ModelsProjectIOTests(unittest.TestCase):
                 "overlay_line_width": 1000,
                 "focus_stack_profile": "unknown",
                 "focus_stack_sharpen_strength": 1000,
+                "magic_segment_model_variant": "unknown",
+                "fiber_quick_line_extension_px": 999,
             }
         )
 
+        self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
         self.assertEqual(settings.measurement_label_decimals, 8)
         self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
         self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)
@@ -423,6 +451,37 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(settings.overlay_line_width, 24.0)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
+        self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+        self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 20.0)
+
+    def test_app_settings_from_dict_ignores_legacy_complex_magic_segment_field(self) -> None:
+        settings = AppSettings.from_dict(
+            {
+                "magic_segment_model_variant": MagicSegmentModelVariant.EDGE_SAM,
+                "complex_magic_segment_model_variant": "light_hq_sam",
+            }
+        )
+
+        self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
+        self.assertFalse(hasattr(settings, "complex_magic_segment_model_variant"))
+
+    def test_measurement_from_dict_maps_legacy_fiber_auto_mode_to_fiber_quick(self) -> None:
+        measurement = Measurement.from_dict(
+            {
+                "id": new_id("meas"),
+                "image_id": new_id("image"),
+                "mode": "fiber_auto",
+                "measurement_kind": "line",
+                "status": "fiber_auto",
+                "line_px": {
+                    "start": {"x": 10, "y": 20},
+                    "end": {"x": 30, "y": 20},
+                },
+            }
+        )
+
+        self.assertEqual(measurement.mode, "fiber_quick")
+        self.assertEqual(measurement.status, "fiber_quick")
 
     def test_app_settings_roundtrip_preserves_calibration_presets(self) -> None:
         settings = AppSettings(
@@ -457,6 +516,40 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded = AppSettingsIO.load(saved_path)
 
         self.assertEqual(loaded.selected_capture_device_id, "microview:1")
+
+    def test_remove_auto_area_measurements_preserves_reference_instance_areas(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/reference_instance_preserve.png",
+            image_size=(320, 240),
+        )
+        group = document.ensure_default_group()
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="auto_instance",
+                measurement_kind="area",
+                polygon_px=[Point(10, 10), Point(40, 10), Point(40, 40), Point(10, 40)],
+                status="auto_instance",
+            )
+        )
+        reference_measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=group.id,
+            mode="reference_instance",
+            measurement_kind="area",
+            polygon_px=[Point(60, 10), Point(90, 10), Point(90, 40), Point(60, 40)],
+            status="reference_instance",
+        )
+        document.add_measurement(reference_measurement)
+
+        document.remove_auto_area_measurements()
+
+        self.assertEqual([measurement.id for measurement in document.measurements], [reference_measurement.id])
 
     def test_project_roundtrip_persists_project_default_calibration_without_writing_legacy_presets(self) -> None:
         project = ProjectState(
@@ -693,6 +786,10 @@ class ModelsProjectIOTests(unittest.TestCase):
                 mode="polygon_area",
                 measurement_kind="area",
                 polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                area_rings_px=[
+                    [Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                    [Point(6, 2), Point(14, 2), Point(14, 8), Point(6, 8)],
+                ],
             )
         )
         project = ProjectState(version="0.1.0", documents=[document])
@@ -705,8 +802,172 @@ class ModelsProjectIOTests(unittest.TestCase):
         measurement = loaded.documents[0].measurements[0]
         self.assertEqual(measurement.measurement_kind, "area")
         self.assertEqual(len(measurement.polygon_px), 4)
-        self.assertAlmostEqual(measurement.area_px or 0.0, 200.0)
-        self.assertAlmostEqual(measurement.area_unit or 0.0, 2.0)
+        self.assertEqual(len(measurement.area_rings_px), 2)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 152.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 1.52)
+
+    def test_exact_area_px_roundtrip_and_recalibration_preserve_mask_area(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_exact_area_roundtrip.png",
+            image_size=(200, 160),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=10.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                area_rings_px=[
+                    [Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                    [Point(6, 2), Point(14, 2), Point(14, 8), Point(6, 8)],
+                ],
+                exact_area_px=180.0,
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "exact_area_roundtrip.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        measurement = loaded.documents[0].measurements[0]
+        self.assertAlmostEqual(measurement.exact_area_px or 0.0, 180.0)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 180.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 1.8)
+
+        loaded.documents[0].calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="updated",
+        )
+        loaded.documents[0].recalculate_measurements()
+
+        self.assertAlmostEqual(measurement.exact_area_px or 0.0, 180.0)
+        self.assertAlmostEqual(measurement.area_px or 0.0, 180.0)
+        self.assertAlmostEqual(measurement.area_unit or 0.0, 7.2)
+
+    def test_polyline_and_count_measurements_roundtrip_keep_new_geometry(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_polyline_roundtrip.png",
+            image_size=(200, 160),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=[Point(0, 0), Point(30, 0), Point(30, 40)],
+                status="continuous_manual",
+            )
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="count",
+                measurement_kind="count",
+                point_px=Point(12, 18),
+                status="count",
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "polyline_roundtrip.fdmproj"
+            ProjectIO.save(project, path)
+            loaded = ProjectIO.load(path)
+
+        polyline = loaded.documents[0].measurements[0]
+        count = loaded.documents[0].measurements[1]
+        self.assertEqual(polyline.measurement_kind, "polyline")
+        self.assertEqual(polyline.mode, "continuous_manual")
+        self.assertEqual(len(polyline.polyline_px), 3)
+        self.assertAlmostEqual(polyline.diameter_px or 0.0, 70.0)
+        self.assertEqual(count.measurement_kind, "count")
+        self.assertEqual(count.mode, "count")
+        self.assertIsNotNone(count.point_px)
+        self.assertAlmostEqual(count.point_px.x, 12.0)
+        self.assertAlmostEqual(count.point_px.y, 18.0)
+
+    def test_measurement_from_dict_is_backward_compatible_without_polyline_or_point_fields(self) -> None:
+        measurement = Measurement.from_dict(
+            {
+                "id": "meas_legacy",
+                "image_id": "image_1",
+                "fiber_group_id": None,
+                "measurement_kind": "line",
+                "mode": "continuous",
+                "line_px": {"start": {"x": 1.0, "y": 2.0}, "end": {"x": 5.0, "y": 2.0}},
+            }
+        )
+
+        self.assertEqual(measurement.mode, "continuous_manual")
+        self.assertEqual(measurement.polyline_px, [])
+        self.assertIsNone(measurement.point_px)
+
+    def test_magic_segment_display_geometry_cache_is_not_persisted(self) -> None:
+        dense_outer = [
+            Point(0, 0),
+            Point(5, 0),
+            Point(10, 0),
+            Point(15, 0),
+            Point(20, 0),
+            Point(20, 5),
+            Point(20, 10),
+            Point(20, 15),
+            Point(20, 20),
+            Point(15, 20),
+            Point(10, 20),
+            Point(5, 20),
+            Point(0, 20),
+            Point(0, 15),
+            Point(0, 10),
+            Point(0, 5),
+        ]
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id="image_1",
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=list(dense_outer),
+            area_rings_px=[list(dense_outer)],
+        )
+        ensure_measurement_display_geometry(measurement)
+
+        payload = measurement.to_dict()
+        roundtrip = Measurement.from_dict(payload)
+
+        self.assertNotIn("display_polygon_px", payload)
+        self.assertNotIn("display_area_rings_px", payload)
+        self.assertNotIn("display_bounds_px", payload)
+        self.assertLess(len(measurement.display_polygon_px), len(measurement.polygon_px))
+        self.assertEqual(roundtrip.display_polygon_px, [])
+        self.assertEqual(roundtrip.display_area_rings_px, [])
+        self.assertIsNone(roundtrip.display_bounds_px)
 
     def test_parse_area_model_labels_applies_aliases_and_deduplicates(self) -> None:
         self.assertEqual(parse_area_model_labels("棉-粘-莱-粘"), ["棉", "粘纤", "莱赛尔"])

@@ -7,7 +7,18 @@ from typing import Any
 import statistics
 import uuid
 
-from fdm.geometry import Line, Point, line_length, polygon_area, polygon_centroid
+from fdm.geometry import (
+    Line,
+    Point,
+    area_rings_area,
+    area_rings_centroid,
+    line_length,
+    midpoint,
+    polygon_area,
+    polygon_centroid,
+    polyline_centroid,
+    polyline_length,
+)
 from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
@@ -215,30 +226,41 @@ class Measurement:
     mode: str
     measurement_kind: str = "line"
     line_px: Line | None = None
+    polyline_px: list[Point] = field(default_factory=list)
+    point_px: Point | None = None
     polygon_px: list[Point] = field(default_factory=list)
+    area_rings_px: list[list[Point]] = field(default_factory=list)
     snapped_line_px: Line | None = None
     diameter_px: float | None = None
     diameter_unit: float | None = None
+    exact_area_px: float | None = None
     area_px: float | None = None
     area_unit: float | None = None
     confidence: float = 0.0
     status: str = "ready"
     created_at: str = field(default_factory=utc_now_iso)
     debug_payload: dict[str, Any] = field(default_factory=dict)
+    display_polygon_px: list[Point] = field(default_factory=list, repr=False)
+    display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
+    display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
 
     def effective_line(self) -> Line:
-        if self.line_px is None:
-            raise ValueError("Area measurements do not have line geometry.")
+        if self.measurement_kind != "line" or self.line_px is None:
+            raise ValueError("Only straight line measurements expose line geometry.")
         return self.snapped_line_px or self.line_px
 
     def display_value(self) -> float:
         if self.measurement_kind == "area":
             return self.area_unit if self.area_unit is not None else self.area_px or 0.0
+        if self.measurement_kind == "count":
+            return 1.0
         return self.diameter_unit if self.diameter_unit is not None else self.diameter_px or 0.0
 
     def display_unit(self, calibration: Calibration | None) -> str:
         if self.measurement_kind == "area":
             return square_unit(calibration.unit if calibration else "px")
+        if self.measurement_kind == "count":
+            return "个"
         return calibration.unit if calibration else "px"
 
     def display_label(self, calibration: Calibration | None) -> str:
@@ -249,11 +271,32 @@ class Measurement:
         )
 
     def polygon_center(self) -> Point:
+        if self.measurement_kind == "area" and self.area_rings_px:
+            return area_rings_centroid(self.area_rings_px)
         return polygon_centroid(self.polygon_px)
+
+    def geometry_center(self) -> Point:
+        if self.measurement_kind == "area":
+            return self.polygon_center()
+        if self.measurement_kind == "polyline":
+            return polyline_centroid(self.polyline_px)
+        if self.measurement_kind == "count" and self.point_px is not None:
+            return Point(self.point_px.x, self.point_px.y)
+        if self.measurement_kind == "line" and self.line_px is not None:
+            return midpoint(self.effective_line())
+        return Point(0.0, 0.0)
 
     def recalculate(self, calibration: Calibration | None) -> None:
         if self.measurement_kind == "area":
-            self.area_px = polygon_area(self.polygon_px)
+            self.area_px = (
+                float(self.exact_area_px)
+                if self.exact_area_px is not None
+                else (
+                    area_rings_area(self.area_rings_px)
+                    if self.area_rings_px
+                    else polygon_area(self.polygon_px)
+                )
+            )
             if calibration is None:
                 self.area_unit = self.area_px
             else:
@@ -261,7 +304,16 @@ class Measurement:
             self.diameter_px = None
             self.diameter_unit = None
             return
-        self.diameter_px = line_length(self.effective_line())
+        if self.measurement_kind == "count":
+            self.diameter_px = None
+            self.diameter_unit = None
+            self.area_px = None
+            self.area_unit = None
+            return
+        if self.measurement_kind == "polyline":
+            self.diameter_px = polyline_length(self.polyline_px)
+        else:
+            self.diameter_px = line_length(self.effective_line())
         if calibration is None:
             self.diameter_unit = self.diameter_px
         else:
@@ -277,10 +329,17 @@ class Measurement:
             "measurement_kind": self.measurement_kind,
             "mode": self.mode,
             "line_px": self.line_px.to_dict() if self.line_px else None,
+            "polyline_px": [point.to_dict() for point in self.polyline_px],
+            "point_px": self.point_px.to_dict() if self.point_px else None,
             "polygon_px": [point.to_dict() for point in self.polygon_px],
+            "area_rings_px": [
+                [point.to_dict() for point in ring]
+                for ring in self.area_rings_px
+            ],
             "snapped_line_px": self.snapped_line_px.to_dict() if self.snapped_line_px else None,
             "diameter_px": self.diameter_px,
             "diameter_unit": self.diameter_unit,
+            "exact_area_px": self.exact_area_px,
             "area_px": self.area_px,
             "area_unit": self.area_unit,
             "confidence": self.confidence,
@@ -294,25 +353,49 @@ class Measurement:
         snapped_line = payload.get("snapped_line_px")
         line_payload = payload.get("line_px")
         kind = str(payload.get("measurement_kind", "line"))
+        mode = str(payload.get("mode", "manual"))
+        if mode == "fiber_auto":
+            mode = "fiber_quick"
+        if mode == "continuous":
+            mode = "continuous_manual"
+        status = str(payload.get("status", "ready"))
+        if status == "fiber_auto":
+            status = "fiber_quick"
         return cls(
             id=str(payload["id"]),
             image_id=str(payload["image_id"]),
             fiber_group_id=payload.get("fiber_group_id"),
             measurement_kind=kind,
-            mode=str(payload["mode"]),
+            mode=mode,
             line_px=Line.from_dict(line_payload) if line_payload else None,
+            polyline_px=[
+                Point.from_dict(item)
+                for item in payload.get("polyline_px", [])
+                if isinstance(item, dict)
+            ],
+            point_px=Point.from_dict(payload["point_px"]) if isinstance(payload.get("point_px"), dict) else None,
             polygon_px=[
                 Point.from_dict(item)
                 for item in payload.get("polygon_px", [])
                 if isinstance(item, dict)
             ],
+            area_rings_px=[
+                [
+                    Point.from_dict(item)
+                    for item in ring
+                    if isinstance(item, dict)
+                ]
+                for ring in payload.get("area_rings_px", [])
+                if isinstance(ring, list)
+            ],
             snapped_line_px=Line.from_dict(snapped_line) if snapped_line else None,
             diameter_px=payload.get("diameter_px"),
             diameter_unit=payload.get("diameter_unit"),
+            exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
             area_px=payload.get("area_px"),
             area_unit=payload.get("area_unit"),
             confidence=float(payload.get("confidence", 0.0)),
-            status=str(payload.get("status", "ready")),
+            status=status,
             created_at=str(payload.get("created_at", utc_now_iso())),
             debug_payload=dict(payload.get("debug_payload", {})),
         )
@@ -515,6 +598,7 @@ class ImageDocument:
     history: Any = field(default=None, repr=False, compare=False)
     _session_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     _calibration_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
+    _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     def initialize_runtime_state(self) -> None:
         from fdm.history import DocumentHistory
@@ -563,8 +647,14 @@ class ImageDocument:
     def line_measurements(self) -> list[Measurement]:
         return [measurement for measurement in self.measurements if measurement.measurement_kind == "line"]
 
+    def polyline_measurements(self) -> list[Measurement]:
+        return [measurement for measurement in self.measurements if measurement.measurement_kind == "polyline"]
+
     def area_measurements(self) -> list[Measurement]:
         return [measurement for measurement in self.measurements if measurement.measurement_kind == "area"]
+
+    def count_measurements(self) -> list[Measurement]:
+        return [measurement for measurement in self.measurements if measurement.measurement_kind == "count"]
 
     def uncategorized_measurement_count(self) -> int:
         return len(self.uncategorized_measurements())
@@ -662,6 +752,13 @@ class ImageDocument:
         return None
 
     @property
+    def measurement_geometry_revision(self) -> int:
+        return self._measurement_geometry_revision
+
+    def mark_measurement_geometry_changed(self) -> None:
+        self._measurement_geometry_revision += 1
+
+    @property
     def text_annotations(self) -> list[OverlayAnnotation]:
         return [
             annotation
@@ -709,23 +806,139 @@ class ImageDocument:
         self.select_overlay_annotation(annotation.id if annotation is not None else None)
 
     def add_measurement(self, measurement: Measurement) -> None:
+        self.insert_measurement_incremental(measurement, mark_dirty=False)
+        self.rebuild_group_memberships()
+        self.refresh_dirty_flags()
+
+    def insert_measurement_incremental(
+        self,
+        measurement: Measurement,
+        *,
+        index: int | None = None,
+        select: bool = True,
+        mark_dirty: bool = True,
+    ) -> None:
         if measurement.fiber_group_id is None:
             measurement.fiber_group_id = self.active_group_id
         measurement.recalculate(self.calibration)
-        self.measurements.append(measurement)
-        self.rebuild_group_memberships()
-        self.select_measurement(measurement.id)
-        self.refresh_dirty_flags()
+        if index is None or index < 0 or index >= len(self.measurements):
+            self.measurements.append(measurement)
+        else:
+            self.measurements.insert(index, measurement)
+        group = self.get_group(measurement.fiber_group_id)
+        if group is not None and measurement.id not in group.measurement_ids:
+            group.measurement_ids.append(measurement.id)
+        if select:
+            self.select_measurement(measurement.id)
+        self.mark_measurement_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
 
     def remove_measurement(self, measurement_id: str) -> None:
+        self.remove_measurements([measurement_id])
+
+    def remove_measurement_incremental(
+        self,
+        measurement_id: str,
+        *,
+        select_measurement_id: str | None = None,
+        select_overlay_id: str | None = None,
+        mark_dirty: bool = True,
+    ) -> Measurement | None:
+        removed: Measurement | None = None
+        kept: list[Measurement] = []
+        for measurement in self.measurements:
+            if measurement.id == measurement_id and removed is None:
+                removed = measurement
+                continue
+            kept.append(measurement)
+        if removed is None:
+            return None
+        self.measurements = kept
+        group = self.get_group(removed.fiber_group_id)
+        if group is not None:
+            group.measurement_ids = [
+                item
+                for item in group.measurement_ids
+                if item != measurement_id
+            ]
+        if select_overlay_id is not None:
+            self.select_overlay_annotation(select_overlay_id)
+        else:
+            self.select_measurement(
+                select_measurement_id
+                if self.get_measurement(select_measurement_id) is not None
+                else None
+            )
+        self.mark_measurement_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
+        return removed
+
+    def remove_measurements(self, measurement_ids: list[str] | set[str] | tuple[str, ...]) -> int:
+        targets = {measurement_id for measurement_id in measurement_ids if measurement_id}
+        if not targets:
+            return 0
+        original_count = len(self.measurements)
         self.measurements = [
-            measurement for measurement in self.measurements
-            if measurement.id != measurement_id
+            measurement
+            for measurement in self.measurements
+            if measurement.id not in targets
         ]
-        if self.view_state.selected_measurement_id == measurement_id:
+        removed_count = original_count - len(self.measurements)
+        if removed_count <= 0:
+            return 0
+        if self.view_state.selected_measurement_id in targets:
             self.select_measurement(None)
         self.rebuild_group_memberships()
+        self.mark_measurement_geometry_changed()
         self.refresh_dirty_flags()
+        return removed_count
+
+    def remove_measurements_for_group(self, group_id: str | None) -> int:
+        if group_id is None:
+            targets = [measurement.id for measurement in self.measurements if measurement.fiber_group_id is None]
+        else:
+            targets = [measurement.id for measurement in self.measurements if measurement.fiber_group_id == group_id]
+        return self.remove_measurements(targets)
+
+    def clear_measurements(self) -> int:
+        return self.remove_measurements([measurement.id for measurement in self.measurements])
+
+    def clear_measurements_by_group_label(self, label: str) -> int:
+        token = normalize_group_label(label)
+        if not token:
+            return 0
+        group = self.find_group_by_label(token)
+        if group is not None:
+            return self.remove_measurements_for_group(group.id)
+        if token == normalize_group_label(UNCATEGORIZED_LABEL):
+            return self.remove_measurements_for_group(None)
+        return 0
+
+    def has_measurements_for_group_label(self, label: str) -> bool:
+        token = normalize_group_label(label)
+        if not token:
+            return False
+        group = self.find_group_by_label(token)
+        if group is not None:
+            return any(measurement.fiber_group_id == group.id for measurement in self.measurements)
+        if token == normalize_group_label(UNCATEGORIZED_LABEL):
+            return any(measurement.fiber_group_id is None for measurement in self.measurements)
+        return False
+
+    def measurement_group_labels(self) -> list[str]:
+        labels: list[str] = []
+        seen: set[str] = set()
+        for group in self.sorted_groups():
+            token = normalize_group_label(group.label)
+            if not token or token in seen or not any(measurement.fiber_group_id == group.id for measurement in self.measurements):
+                continue
+            seen.add(token)
+            labels.append(token)
+        if any(measurement.fiber_group_id is None for measurement in self.measurements):
+            labels.append(UNCATEGORIZED_LABEL)
+        return labels
 
     def remove_auto_area_measurements(self) -> None:
         auto_ids = {
@@ -735,14 +948,7 @@ class ImageDocument:
         }
         if not auto_ids:
             return
-        self.measurements = [
-            measurement for measurement in self.measurements
-            if measurement.id not in auto_ids
-        ]
-        if self.view_state.selected_measurement_id in auto_ids:
-            self.select_measurement(None)
-        self.rebuild_group_memberships()
-        self.refresh_dirty_flags()
+        self.remove_measurements(auto_ids)
 
     def set_measurement_group(self, measurement_id: str, group_id: str | None) -> None:
         measurement = self.get_measurement(measurement_id)
@@ -1003,6 +1209,7 @@ class ImageDocument:
             self.view_state.selected_measurement_id = None
         if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
             self.selected_overlay_id = None
+        self.mark_measurement_geometry_changed()
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -1012,6 +1219,12 @@ class ImageDocument:
     def mark_calibration_saved(self) -> None:
         self._calibration_clean_snapshot = self.calibration_snapshot()
         self.refresh_dirty_flags()
+
+    def mark_session_dirty(self) -> None:
+        self.dirty_flags = DirtyFlags(
+            session_dirty=True,
+            calibration_dirty=self.dirty_flags.calibration_dirty,
+        )
 
     def refresh_dirty_flags(self) -> None:
         session_dirty = self._session_clean_snapshot is not None and self.session_snapshot() != self._session_clean_snapshot

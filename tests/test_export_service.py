@@ -17,6 +17,7 @@ from fdm.services.export_service import (
     SHEET_MEASUREMENT_DETAILS,
     XLSX_EXPORT_FILENAME,
     ExportImageRenderMode,
+    ExportScope,
     ExportSelection,
     ExportService,
 )
@@ -138,6 +139,169 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(rows[0]["单位"], "px²")
         self.assertEqual(rows[0]["多边形点数"], 4)
         self.assertIn('"x": 10', rows[0]["多边形顶点JSON"])
+        self.assertEqual(rows[0]["孔洞面积"], 0.0)
+
+    def test_area_measurement_rows_use_exact_mask_area_when_available(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_area_exact.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(mode="preset", pixels_per_unit=10.0, unit="um", source_label="demo")
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                area_rings_px=[
+                    [Point(0, 0), Point(20, 0), Point(20, 10), Point(0, 10)],
+                    [Point(6, 2), Point(14, 2), Point(14, 8), Point(6, 8)],
+                ],
+                exact_area_px=180.0,
+            )
+        )
+
+        rows = ExportService().build_measurement_rows([document])
+
+        self.assertEqual(rows[0]["结果"], 1.8)
+        self.assertEqual(rows[0]["面积(px²)"], 180.0)
+        self.assertEqual(rows[0]["孔洞面积"], 0.48)
+
+    def test_measurement_rows_include_polyline_and_count_fields(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_polyline_count.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(mode="preset", pixels_per_unit=2.0, unit="um", source_label="demo")
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=[Point(0, 0), Point(10, 0), Point(10, 10)],
+                status="continuous_manual",
+            )
+        )
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="count",
+                measurement_kind="count",
+                point_px=Point(5, 6),
+                status="count",
+            )
+        )
+
+        rows = ExportService().build_measurement_rows([document])
+
+        self.assertEqual(rows[0]["类型"], "折线")
+        self.assertEqual(rows[0]["模式"], "连续测量")
+        self.assertEqual(rows[0]["折线点数"], 3)
+        self.assertIn('"y": 10', rows[0]["折线顶点JSON"])
+        self.assertEqual(rows[1]["类型"], "计数点")
+        self.assertEqual(rows[1]["模式"], "计数")
+        self.assertEqual(rows[1]["单位"], "个")
+        self.assertEqual(rows[1]["计数点X(px)"], 5)
+        self.assertEqual(rows[1]["计数点Y(px)"], 6)
+
+    def test_single_output_export_can_override_filename(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_single_export.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+        selection = ExportSelection(include_excel=True, scope=ExportScope.CURRENT)
+
+        with TemporaryDirectory() as tmp_dir:
+            custom_path = Path(tmp_dir) / "custom_name.xlsx"
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                documents=[document],
+                single_output_path=custom_path,
+            )
+
+            self.assertEqual(outputs["xlsx"], custom_path)
+            self.assertTrue(custom_path.exists())
+
+    def test_planned_outputs_resolve_single_excel_file(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_planned_output.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+
+        planned = ExportService().planned_outputs(
+            [document],
+            ExportSelection(include_excel=True, scope=ExportScope.CURRENT),
+        )
+
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(planned[0].kind, "xlsx")
+        self.assertEqual(planned[0].filename, XLSX_EXPORT_FILENAME)
+
+    def test_export_progress_callback_reports_each_output_step(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_progress.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+        progress_events: list[tuple[int, int, str, str | None]] = []
+
+        with TemporaryDirectory() as tmp_dir:
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_csv=True, include_excel=True, scope=ExportScope.CURRENT),
+                progress_callback=lambda completed, total, label, path: progress_events.append(
+                    (completed, total, label, path.name if path is not None else None)
+                ),
+            )
+
+        self.assertEqual(
+            progress_events,
+            [
+                (0, 4, CSV_IMAGE_SUMMARY_FILENAME, CSV_IMAGE_SUMMARY_FILENAME),
+                (1, 4, "纤维种类汇总.csv", "纤维种类汇总.csv"),
+                (2, 4, "测量明细.csv", "测量明细.csv"),
+                (3, 4, XLSX_EXPORT_FILENAME, XLSX_EXPORT_FILENAME),
+                (4, 4, "导出完成", None),
+            ],
+        )
 
     def test_all_enabled_export_selection_uses_full_resolution_render_mode(self) -> None:
         selection = ExportSelection.all_enabled()

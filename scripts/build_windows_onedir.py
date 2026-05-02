@@ -7,7 +7,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-from build_support import write_installer_version_include
+from build_support import (
+    PACKAGED_AREA_MODEL_FILENAMES,
+    PACKAGED_SEGMENT_ANYTHING_DIRS,
+    PACKAGED_SEGMENT_ANYTHING_FILENAMES,
+    write_installer_version_include,
+)
 
 
 def check_area_runtime_dependencies() -> list[str]:
@@ -25,9 +30,25 @@ def check_area_runtime_dependencies() -> list[str]:
 
 
 def check_magic_segment_runtime_assets(root: Path) -> list[str]:
-    runtime_root = root / "runtime" / "segment-anything" / "edge_sam"
+    runtime_root = root / "runtime" / "segment-anything"
     missing: list[str] = []
-    for filename in ("edge_sam_encoder.onnx", "edge_sam_decoder.onnx"):
+    expected_files = {
+        "edge_sam": ("edge_sam_encoder.onnx", "edge_sam_decoder.onnx"),
+        "edge_sam_3x": ("edge_sam_3x_encoder.onnx", "edge_sam_3x_decoder.onnx"),
+    }
+    for folder_name in sorted(PACKAGED_SEGMENT_ANYTHING_DIRS):
+        for filename in expected_files.get(folder_name, ()):
+            if filename not in PACKAGED_SEGMENT_ANYTHING_FILENAMES:
+                continue
+            if not (runtime_root / folder_name / filename).exists():
+                missing.append(f"{folder_name}/{filename}")
+    return missing
+
+
+def check_area_model_runtime_assets(root: Path) -> list[str]:
+    runtime_root = root / "runtime" / "area-models"
+    missing: list[str] = []
+    for filename in sorted(PACKAGED_AREA_MODEL_FILENAMES):
         if not (runtime_root / filename).exists():
             missing.append(filename)
     return missing
@@ -70,6 +91,13 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
         print(
             "Warning: the magic segmentation tool may be unavailable because these runtime assets are missing: "
             + ", ".join(missing_magic_assets),
+            file=sys.stderr,
+        )
+    missing_area_assets = check_area_model_runtime_assets(root)
+    if missing_area_assets:
+        print(
+            "Warning: area auto-recognition default weights are incomplete and these files will be missing from the package: "
+            + ", ".join(missing_area_assets),
             file=sys.stderr,
         )
 

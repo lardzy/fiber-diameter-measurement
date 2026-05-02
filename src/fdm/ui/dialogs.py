@@ -35,9 +35,11 @@ from PySide6.QtWidgets import (
 
 from fdm.models import ImageDocument
 from fdm.settings import (
+    AppThemeMode,
     AreaModelMapping,
     AppSettings,
     FocusStackProfile,
+    MagicSegmentModelVariant,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayStyle,
@@ -190,18 +192,25 @@ class FiberGroupDialog(QDialog):
         *,
         title: str = "新增类别",
         initial_label: str = "",
+        initial_color: str = "#1F7A8C",
         apply_to_project_default: bool = True,
+        show_apply_to_project: bool = True,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle(title)
+        self._show_apply_to_project = show_apply_to_project
         self._label_edit = QLineEdit()
         self._label_edit.setPlaceholderText("类别名称")
         self._label_edit.setText(initial_label)
         self._apply_to_project = QCheckBox("应用到当前项目全局")
         self._apply_to_project.setChecked(apply_to_project_default)
+        self._color_button = QPushButton()
+        self._color_button.clicked.connect(self._choose_color)
+        self._apply_button_color(initial_color)
 
         form = QFormLayout()
         form.addRow("类别名称", self._label_edit)
+        form.addRow("类别颜色", self._color_button)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -209,11 +218,33 @@ class FiberGroupDialog(QDialog):
 
         layout = QVBoxLayout(self)
         layout.addLayout(form)
-        layout.addWidget(self._apply_to_project)
+        if self._show_apply_to_project:
+            layout.addWidget(self._apply_to_project)
         layout.addWidget(buttons)
 
-    def values(self) -> tuple[str, bool]:
-        return self._label_edit.text().strip(), self._apply_to_project.isChecked()
+    def _apply_button_color(self, color_value: str) -> None:
+        color = QColor(color_value)
+        normalized = color.name() if color.isValid() else color_value
+        text_color = "#111111" if color.isValid() and color.lightnessF() > 0.7 else "#FFFFFF"
+        self._color_button.setText(normalized)
+        self._color_button.setStyleSheet(
+            f"QPushButton {{ background: {normalized}; color: {text_color}; min-height: 28px; border-radius: 6px; }}"
+        )
+        self._color_button.setProperty("color_value", normalized)
+
+    def _choose_color(self) -> None:
+        initial = QColor(str(self._color_button.property("color_value") or "#1F7A8C"))
+        color = QColorDialog.getColor(initial, self, "选择颜色")
+        if not color.isValid():
+            return
+        self._apply_button_color(color.name())
+
+    def values(self) -> tuple[str, str, bool]:
+        return (
+            self._label_edit.text().strip(),
+            str(self._color_button.property("color_value") or "#1F7A8C"),
+            self._apply_to_project.isChecked() if self._show_apply_to_project else False,
+        )
 
 
 class ExportOptionsDialog(QDialog):
@@ -337,6 +368,9 @@ class ShortcutHelpDialog(QDialog):
                     "",
                     "面积与魔棒",
                     "R  在正采样点 / 负采样点之间切换",
+                    "Y  切换 ROI 限制区域",
+                    "T  在添加模式 / 剔除模式之间切换",
+                    "S  确认当前剔除形状并继续添加下一块（仅剔除模式）",
                     "Enter / F  完成当前魔棒遮罩",
                     "Esc  放弃当前测量线、多边形、自由形状或魔棒草稿",
                     "",
@@ -398,6 +432,7 @@ class SettingsDialog(QDialog):
 
     def app_settings(self) -> AppSettings:
         return AppSettings(
+            theme_mode=self._theme_mode_combo.currentData(),
             show_measurement_labels=self._show_measurement_labels.isChecked(),
             measurement_label_font_family=self._measurement_label_font.currentFont().family(),
             measurement_label_font_size=self._measurement_label_size.value(),
@@ -422,6 +457,12 @@ class SettingsDialog(QDialog):
             overlay_line_width=self._overlay_line_width.value(),
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
             focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
+            magic_segment_model_variant=self._magic_segment_model_variant_combo.currentData(),
+            magic_segment_fill_draft_holes_enabled=self._magic_segment_fill_draft_holes_checkbox.isChecked(),
+            magic_segment_standard_roi_enabled=self._magic_segment_standard_roi_checkbox.isChecked(),
+            fiber_quick_roi_enabled=self._fiber_quick_roi_checkbox.isChecked(),
+            fiber_quick_edge_trim_enabled=self._fiber_quick_edge_trim_checkbox.isChecked(),
+            fiber_quick_line_extension_px=self._fiber_quick_line_extension_spin.value(),
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
@@ -554,7 +595,49 @@ class SettingsDialog(QDialog):
         focus_stack_form.addRow("默认锐化强度", sharpen_row)
         focus_stack_form.addRow("", focus_stack_hint)
 
+        magic_segment_group = QGroupBox("魔棒分割")
+        magic_segment_form = QFormLayout(magic_segment_group)
+        self._magic_segment_model_variant_combo = NoWheelComboBox()
+        self._magic_segment_model_variant_combo.addItem("标准 (EdgeSAM)", MagicSegmentModelVariant.EDGE_SAM)
+        self._magic_segment_model_variant_combo.addItem("高精度 (EdgeSAM-3x)", MagicSegmentModelVariant.EDGE_SAM_3X)
+        self._magic_segment_model_variant_combo.setCurrentIndex(
+            max(0, self._magic_segment_model_variant_combo.findData(settings.magic_segment_model_variant))
+        )
+        self._magic_segment_fill_draft_holes_checkbox = QCheckBox("草稿阶段自动填充内部孔洞")
+        self._magic_segment_fill_draft_holes_checkbox.setChecked(settings.magic_segment_fill_draft_holes_enabled)
+        self._magic_segment_standard_roi_checkbox = QCheckBox("标准魔棒默认启用 ROI")
+        self._magic_segment_standard_roi_checkbox.setChecked(settings.magic_segment_standard_roi_enabled)
+        self._fiber_quick_roi_checkbox = QCheckBox("快速测径默认启用 ROI")
+        self._fiber_quick_roi_checkbox.setChecked(settings.fiber_quick_roi_enabled)
+        self._fiber_quick_edge_trim_checkbox = QCheckBox("快速测径启用边缘剔除")
+        self._fiber_quick_edge_trim_checkbox.setChecked(settings.fiber_quick_edge_trim_enabled)
+        self._fiber_quick_line_extension_spin = NoWheelDoubleSpinBox()
+        self._fiber_quick_line_extension_spin.setDecimals(1)
+        self._fiber_quick_line_extension_spin.setRange(-20.0, 20.0)
+        self._fiber_quick_line_extension_spin.setSingleStep(0.5)
+        self._fiber_quick_line_extension_spin.setValue(settings.fiber_quick_line_extension_px)
+        self._fiber_quick_line_extension_spin.setSuffix(" px")
+        magic_hint = QLabel("标准魔棒与同类扩选都会复用这里的 EdgeSAM / EdgeSAM-3x 设置；若缺失高精度模型文件，运行时会自动回退到标准模型。")
+        magic_hint.setWordWrap(True)
+        fill_holes_hint = QLabel("开启后，标准魔棒的第一形状与剔除形状草稿都会先填充内部孔洞；同类扩选不受此开关影响。")
+        fill_holes_hint.setWordWrap(True)
+        roi_hint = QLabel("ROI 开关会同时出现在标准魔棒与快速测径右侧工具区，快捷键为 Y。快速测径在 ROI 失败时仍会自动回退到整图分割。")
+        roi_hint.setWordWrap(True)
+        quick_hint = QLabel("快速测径确认后会在后台异步生成线段；边缘剔除只影响快速测径，不影响标准魔棒与同类扩选。")
+        quick_hint.setWordWrap(True)
+        magic_segment_form.addRow("标准模型", self._magic_segment_model_variant_combo)
+        magic_segment_form.addRow("", self._magic_segment_fill_draft_holes_checkbox)
+        magic_segment_form.addRow("", self._magic_segment_standard_roi_checkbox)
+        magic_segment_form.addRow("", self._fiber_quick_roi_checkbox)
+        magic_segment_form.addRow("", self._fiber_quick_edge_trim_checkbox)
+        magic_segment_form.addRow("快速测径扩展像素", self._fiber_quick_line_extension_spin)
+        magic_segment_form.addRow("", fill_holes_hint)
+        magic_segment_form.addRow("", roi_hint)
+        magic_segment_form.addRow("", quick_hint)
+        magic_segment_form.addRow("", magic_hint)
+
         layout.addWidget(focus_stack_group)
+        layout.addWidget(magic_segment_group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
@@ -569,7 +652,13 @@ class SettingsDialog(QDialog):
         self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
         self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
         self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
+        self._theme_mode_combo = NoWheelComboBox()
+        self._theme_mode_combo.addItem("跟随系统", AppThemeMode.SYSTEM)
+        self._theme_mode_combo.addItem("深色", AppThemeMode.DARK)
+        self._theme_mode_combo.addItem("浅色", AppThemeMode.LIGHT)
+        self._theme_mode_combo.setCurrentIndex(max(0, self._theme_mode_combo.findData(settings.theme_mode)))
         display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
+        display_form.addRow("界面主题", self._theme_mode_combo)
 
         placement_group = QGroupBox("位置与长度")
         placement_form = QFormLayout(placement_group)

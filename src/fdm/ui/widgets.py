@@ -3,6 +3,7 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QVariantAnimation, Signal
 from PySide6.QtGui import QAction, QColor, QCursor, QFont, QFontMetrics, QIcon, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
+    QApplication,
     QComboBox,
     QHBoxLayout,
     QLayout,
@@ -44,6 +45,15 @@ def _repolish(widget: QWidget) -> None:
 
 def _is_dark_palette(widget: QWidget) -> bool:
     return widget.palette().color(QPalette.ColorRole.Window).lightnessF() < 0.5
+
+
+def _application_palette(widget: QWidget) -> QPalette:
+    app = QApplication.instance()
+    return app.palette() if app is not None else widget.palette()
+
+
+def _application_palette_is_dark(widget: QWidget) -> bool:
+    return _application_palette(widget).color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
 
 class MeasurementGroupComboBox(QComboBox):
@@ -203,6 +213,15 @@ class FiberGroupListItemWidget(QWidget):
         if self._selected == selected:
             return
         self._selected = selected
+        self.update()
+
+    def setCounts(self, current_count: int, project_count: int) -> None:
+        current_count = max(0, int(current_count))
+        project_count = max(0, int(project_count))
+        if self._current_count == current_count and self._project_count == project_count:
+            return
+        self._current_count = current_count
+        self._project_count = project_count
         self.update()
 
     def labelText(self) -> str:
@@ -545,7 +564,7 @@ class OverlayToolSplitButton(QWidget):
         self._menu.popup(self.mapToGlobal(QPoint(0, self.height() + 6)))
 
     def _theme_colors(self) -> dict[str, QColor]:
-        if _is_dark_palette(self):
+        if _application_palette_is_dark(self):
             return {
                 "checked_fill": QColor("#12343B"),
                 "checked_border": QColor("#2A9D8F"),
@@ -726,10 +745,14 @@ class MeasurementToolStrip(QWidget):
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._mode_buttons: dict[str, ToolStripActionButton] = {}
+        self._split_buttons: dict[str, OverlayToolSplitButton] = {}
+        self._split_mode_lookup: dict[str, OverlayToolSplitButton] = {}
         self._primary_order: list[str] = []
+        self._magic_tool_button: OverlayToolSplitButton | None = None
         self._overlay_button: OverlayToolSplitButton | None = None
         self._magic_context_widget: QWidget | None = None
         self._preview_context_widget: QWidget | None = None
+        self._path_context_widget: QWidget | None = None
         self._compact_mode = False
         self._active_mode = "select"
         self._context_placement = "hidden"
@@ -770,10 +793,11 @@ class MeasurementToolStrip(QWidget):
         root_layout.addWidget(self._context_host)
 
     def _build_stylesheet(self) -> str:
-        if _is_dark_palette(self):
+        if _application_palette_is_dark(self):
             strip_background = "#34373C"
             strip_border = "rgba(255, 255, 255, 18)"
             primary_text = "#F3F4F6"
+            primary_disabled_text = "#9AA5B1"
             primary_hover = "rgba(255, 255, 255, 14)"
             primary_pressed = "rgba(255, 255, 255, 20)"
             primary_checked_background = "#12343B"
@@ -782,6 +806,7 @@ class MeasurementToolStrip(QWidget):
             context_tool_border = "rgba(255, 255, 255, 24)"
             context_tool_background = "rgba(255, 255, 255, 8)"
             context_tool_text = "#F3F4F6"
+            context_tool_disabled_text = "#9AA5B1"
             context_tool_hover = "rgba(255, 255, 255, 16)"
             context_tool_pressed = "rgba(255, 255, 255, 20)"
             chip_background = "#F6F1E8"
@@ -793,6 +818,7 @@ class MeasurementToolStrip(QWidget):
             strip_background = "#F5F7FA"
             strip_border = "rgba(17, 24, 39, 22)"
             primary_text = "#1F2933"
+            primary_disabled_text = "#51606F"
             primary_hover = "rgba(31, 41, 51, 10)"
             primary_pressed = "rgba(31, 41, 51, 16)"
             primary_checked_background = "#DDF3EF"
@@ -801,6 +827,7 @@ class MeasurementToolStrip(QWidget):
             context_tool_border = "rgba(17, 24, 39, 16)"
             context_tool_background = "rgba(31, 41, 51, 4)"
             context_tool_text = "#1F2933"
+            context_tool_disabled_text = "#51606F"
             context_tool_hover = "rgba(31, 41, 51, 9)"
             context_tool_pressed = "rgba(31, 41, 51, 14)"
             chip_background = "#F5EFD9"
@@ -833,6 +860,9 @@ class MeasurementToolStrip(QWidget):
                 background: {primary_checked_background};
                 color: {primary_checked_text};
                 border: 1px solid {primary_checked_border};
+            }}
+            QToolButton[primaryTool="true"]:disabled {{
+                color: {primary_disabled_text};
             }}
             QToolButton[primaryTool="true"][compactTool="true"] {{
                 padding: 0;
@@ -876,7 +906,32 @@ class MeasurementToolStrip(QWidget):
                 color: {primary_checked_text};
                 border: 1px solid {primary_checked_border};
             }}
+            QToolButton[contextTool="true"]:disabled {{
+                color: {context_tool_disabled_text};
+            }}
         """
+
+    def _apply_button_palette(self, button: QToolButton) -> None:
+        dark_theme = _application_palette_is_dark(self)
+        if button.property("primaryTool"):
+            normal_color = "#F3F4F6" if dark_theme else "#1F2933"
+            disabled_color = "#9AA5B1" if dark_theme else "#51606F"
+        elif button.property("contextTool"):
+            normal_color = "#F3F4F6" if dark_theme else "#1F2933"
+            disabled_color = "#9AA5B1" if dark_theme else "#51606F"
+        else:
+            return
+
+        palette = QPalette(button.palette())
+        for role in (
+            QPalette.ColorRole.ButtonText,
+            QPalette.ColorRole.WindowText,
+            QPalette.ColorRole.Text,
+        ):
+            palette.setColor(QPalette.ColorGroup.Active, role, QColor(normal_color))
+            palette.setColor(QPalette.ColorGroup.Inactive, role, QColor(normal_color))
+            palette.setColor(QPalette.ColorGroup.Disabled, role, QColor(disabled_color))
+        button.setPalette(palette)
 
     def _apply_theme_styles(self) -> None:
         if self._theme_updating:
@@ -884,8 +939,18 @@ class MeasurementToolStrip(QWidget):
         self._theme_updating = True
         try:
             self.setStyleSheet(self._build_stylesheet())
+            for button in self.findChildren(QToolButton):
+                self._apply_button_palette(button)
+                _repolish(button)
+            for button in self._mode_buttons.values():
+                button.update()
+            for button in set(self._split_mode_lookup.values()):
+                button.update()
+            if self._magic_tool_button is not None:
+                self._magic_tool_button.update()
             if self._overlay_button is not None:
                 self._overlay_button.update()
+            self.update()
         finally:
             self._theme_updating = False
 
@@ -896,14 +961,55 @@ class MeasurementToolStrip(QWidget):
         self._primary_row_layout.addWidget(button)
         return button
 
-    def buttonForMode(self, mode: str) -> ToolStripActionButton | None:
-        return self._mode_buttons.get(mode)
+    def addSplitModeButton(
+        self,
+        mode: str,
+        button: OverlayToolSplitButton,
+        *,
+        aliases: list[str] | tuple[str, ...] | None = None,
+    ) -> OverlayToolSplitButton:
+        self._split_buttons[mode] = button
+        self._split_mode_lookup[mode] = button
+        for alias in aliases or []:
+            self._split_mode_lookup[alias] = button
+        self._primary_order.append(mode)
+        self._primary_row_layout.addWidget(button)
+        self._sync_auto_compact_mode()
+        return button
+
+    def buttonForMode(self, mode: str):
+        return self._mode_buttons.get(mode) or self._split_mode_lookup.get(mode)
 
     def primaryModeLabels(self) -> list[str]:
-        labels = [self._mode_buttons[mode].defaultAction().text() for mode in self._primary_order if mode in self._mode_buttons]
+        labels: list[str] = []
+        for mode in self._primary_order:
+            if mode == "__magic_tool__":
+                if self._magic_tool_button is not None:
+                    labels.append(self._magic_tool_button.text())
+                continue
+            if mode in self._split_buttons:
+                labels.append(self._split_buttons[mode].text())
+                continue
+            if mode in self._mode_buttons:
+                labels.append(self._mode_buttons[mode].defaultAction().text())
         if self._overlay_button is not None:
             labels.append(self._overlay_button.text())
         return labels
+
+    def setMagicToolButton(self, button: OverlayToolSplitButton) -> None:
+        self._magic_tool_button = button
+        self._primary_order.append("__magic_tool__")
+        self._primary_row_layout.addWidget(button)
+        self._sync_auto_compact_mode()
+
+    def setMagicTool(self, kind: str, checked: bool, *, icon: QIcon | None = None, tooltip: str | None = None) -> None:
+        if self._magic_tool_button is None:
+            return
+        if icon is not None:
+            self._magic_tool_button.setCurrentTool(kind, icon)
+        self._magic_tool_button.setChecked(checked)
+        if tooltip is not None:
+            self._magic_tool_button.setToolTip(tooltip)
 
     def setOverlayButton(self, button: OverlayToolSplitButton) -> None:
         self._overlay_button = button
@@ -922,8 +1028,21 @@ class MeasurementToolStrip(QWidget):
         widget.setVisible(False)
         self._refresh_context_visibility()
 
+    def setPathContextWidget(self, widget: QWidget) -> None:
+        self._path_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
     def setActiveMode(self, mode: str) -> None:
         self._active_mode = mode
+        for button in set(self._split_mode_lookup.values()):
+            button.setChecked(False)
+        split_button = self._split_mode_lookup.get(mode)
+        if split_button is not None:
+            split_button.setChecked(True)
+        if self._magic_tool_button is not None and mode not in {"magic_segment", "reference_propagation", "fiber_quick"}:
+            self._magic_tool_button.setChecked(False)
         if self._overlay_button is not None and mode != "overlay":
             self._overlay_button.setChecked(False)
 
@@ -946,6 +1065,10 @@ class MeasurementToolStrip(QWidget):
         self._compact_mode = enabled
         for button in self._mode_buttons.values():
             button.setCompactMode(enabled)
+        for button in set(self._split_mode_lookup.values()):
+            button.setCompactMode(enabled)
+        if self._magic_tool_button is not None:
+            self._magic_tool_button.setCompactMode(enabled)
         if self._overlay_button is not None:
             self._overlay_button.setCompactMode(enabled)
         self.updateGeometry()
@@ -966,8 +1089,16 @@ class MeasurementToolStrip(QWidget):
     def isPreviewContextVisible(self) -> bool:
         return bool(self._preview_context_widget and not self._preview_context_widget.isHidden())
 
+    def setPathContextVisible(self, visible: bool) -> None:
+        if self._path_context_widget is not None:
+            self._path_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isPathContextVisible(self) -> bool:
+        return bool(self._path_context_widget and not self._path_context_widget.isHidden())
+
     def _refresh_context_visibility(self) -> None:
-        visible = self.isMagicContextVisible() or self.isPreviewContextVisible()
+        visible = self.isMagicContextVisible() or self.isPreviewContextVisible() or self.isPathContextVisible()
         if not visible:
             self._context_placement = "hidden"
             self._apply_context_placement()
@@ -977,7 +1108,14 @@ class MeasurementToolStrip(QWidget):
         self.updateGeometry()
 
     def _expanded_primary_width(self) -> int:
-        widths = [self._mode_buttons[mode].expandedWidthHint() for mode in self._primary_order if mode in self._mode_buttons]
+        widths: list[int] = []
+        for mode in self._primary_order:
+            if mode in self._mode_buttons:
+                widths.append(self._mode_buttons[mode].expandedWidthHint())
+            elif mode in self._split_buttons:
+                widths.append(self._split_buttons[mode].expandedWidthHint())
+        if self._magic_tool_button is not None:
+            widths.append(self._magic_tool_button.expandedWidthHint())
         if self._overlay_button is not None:
             widths.append(self._overlay_button.expandedWidthHint())
         if not widths:
@@ -987,6 +1125,9 @@ class MeasurementToolStrip(QWidget):
 
     def _compact_primary_width(self) -> int:
         widths = [button.COMPACT_WIDTH for button in self._mode_buttons.values()]
+        widths.extend(button.compactWidthHint() for button in self._split_buttons.values())
+        if self._magic_tool_button is not None:
+            widths.append(self._magic_tool_button.compactWidthHint())
         if self._overlay_button is not None:
             widths.append(self._overlay_button.compactWidthHint())
         if not widths:
@@ -1008,6 +1149,8 @@ class MeasurementToolStrip(QWidget):
             return self._magic_context_widget
         if self.isPreviewContextVisible() and self._preview_context_widget is not None:
             return self._preview_context_widget
+        if self.isPathContextVisible() and self._path_context_widget is not None:
+            return self._path_context_widget
         return None
 
     def _context_height_for_width(self, width: int) -> int:

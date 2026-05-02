@@ -3,10 +3,13 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import time
 
+import cv2
+
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF, QWheelEvent
 from PySide6.QtWidgets import QWidget
 
+from fdm.area_display import area_geometry_for_display
 from fdm.geometry import (
     Line,
     Point,
@@ -14,16 +17,34 @@ from fdm.geometry import (
     distance,
     line_length,
     nearest_endpoint,
+    point_in_area_rings,
     point_in_polygon,
     point_near_bounds,
+    point_to_area_rings_edge_distance,
+    point_to_polyline_distance,
     point_to_polygon_edge_distance,
-    polygon_bounds,
     polygon_translate,
     snap_to_pixel_center,
 )
-from fdm.models import ImageDocument, OverlayAnnotation, OverlayAnnotationKind
-from fdm.settings import AppSettings
+from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind
+from fdm.services.prompt_segmentation import (
+    finalize_magic_subtraction_mask,
+    fill_magic_draft_internal_holes,
+    magic_mask_area_px,
+    magic_mask_to_geometry,
+    magic_mask_to_polygon,
+    normalize_magic_draft_mask,
+)
+from fdm.settings import (
+    AppSettings,
+    MagicSegmentToolMode,
+    is_fiber_quick_tool_mode,
+    is_magic_segment_tool_mode,
+    is_magic_toolbar_tool_mode,
+    is_reference_propagation_tool_mode,
+)
 from fdm.ui.rendering import (
+    area_rings_path,
     annotation_rect,
     draw_overlay_annotations,
     draw_measurements,
@@ -33,26 +54,279 @@ from fdm.ui.rendering import (
 )
 
 
+class MagicSegmentOperationMode:
+    ADD = "add"
+    SUBTRACT = "subtract"
+
+
+@dataclass(slots=True)
+class MeasurementIndexEntry:
+    measurement: Measurement
+    bounds: tuple[float, float, float, float]
+    order: int
+
+
+class MeasurementSpatialIndex:
+    def __init__(self, measurements: list[Measurement], *, cell_size: float = 128.0) -> None:
+        self._cell_size = max(32.0, float(cell_size))
+        self._entries: dict[str, MeasurementIndexEntry] = {}
+        self._cells: dict[tuple[int, int], list[str]] = {}
+        for order, measurement in enumerate(measurements):
+            bounds = self._measurement_bounds(measurement)
+            if bounds is None:
+                continue
+            self._entries[measurement.id] = MeasurementIndexEntry(
+                measurement=measurement,
+                bounds=bounds,
+                order=order,
+            )
+            for cell in self._cells_for_bounds(bounds):
+                self._cells.setdefault(cell, []).append(measurement.id)
+
+    def query(self, point: Point, *, tolerance: float) -> list[Measurement]:
+        query_bounds = (
+            point.x - tolerance,
+            point.y - tolerance,
+            point.x + tolerance,
+            point.y + tolerance,
+        )
+        candidate_ids: set[str] = set()
+        for cell in self._cells_for_bounds(query_bounds):
+            candidate_ids.update(self._cells.get(cell, []))
+        entries = [
+            entry
+            for measurement_id in candidate_ids
+            if (entry := self._entries.get(measurement_id)) is not None
+            and point_near_bounds(point, entry.bounds, tolerance)
+        ]
+        entries.sort(key=lambda entry: entry.order, reverse=True)
+        return [entry.measurement for entry in entries]
+
+    def _cells_for_bounds(self, bounds: tuple[float, float, float, float]) -> list[tuple[int, int]]:
+        left, top, right, bottom = bounds
+        min_col = int(left // self._cell_size)
+        max_col = int(right // self._cell_size)
+        min_row = int(top // self._cell_size)
+        max_row = int(bottom // self._cell_size)
+        return [
+            (col, row)
+            for col in range(min_col, max_col + 1)
+            for row in range(min_row, max_row + 1)
+        ]
+
+    @staticmethod
+    def _measurement_bounds(measurement: Measurement) -> tuple[float, float, float, float] | None:
+        if measurement.measurement_kind == "count" and measurement.point_px is not None:
+            point = measurement.point_px
+            return point.x, point.y, point.x, point.y
+        if measurement.measurement_kind == "line" and measurement.line_px is not None:
+            line = measurement.effective_line()
+            return (
+                min(line.start.x, line.end.x),
+                min(line.start.y, line.end.y),
+                max(line.start.x, line.end.x),
+                max(line.start.y, line.end.y),
+            )
+        if measurement.measurement_kind == "polyline" and measurement.polyline_px:
+            xs = [point.x for point in measurement.polyline_px]
+            ys = [point.y for point in measurement.polyline_px]
+            return min(xs), min(ys), max(xs), max(ys)
+        if measurement.measurement_kind == "area":
+            _outline, _rings, unselected_bounds = area_geometry_for_display(measurement, selected=False)
+            _selected_outline, _selected_rings, selected_bounds = area_geometry_for_display(measurement, selected=True)
+            if unselected_bounds is None:
+                return selected_bounds
+            if selected_bounds is None:
+                return unselected_bounds
+            return (
+                min(unselected_bounds[0], selected_bounds[0]),
+                min(unselected_bounds[1], selected_bounds[1]),
+                max(unselected_bounds[2], selected_bounds[2]),
+                max(unselected_bounds[3], selected_bounds[3]),
+            )
+        return None
+
+
 @dataclass(slots=True)
 class PromptSegmentationSession:
+    active_stage: str = MagicSegmentOperationMode.ADD
+    primary_prompt_type: str = "positive"
+    subtract_prompt_type: str = "positive"
+    primary_positive_points: list[Point] = field(default_factory=list)
+    primary_negative_points: list[Point] = field(default_factory=list)
+    subtract_positive_points: list[Point] = field(default_factory=list)
+    subtract_negative_points: list[Point] = field(default_factory=list)
+    primary_polygon: list[Point] = field(default_factory=list)
+    subtract_polygon: list[Point] = field(default_factory=list)
+    confirmed_subtract_polygons: list[list[Point]] = field(default_factory=list)
+    primary_rings: list[list[Point]] = field(default_factory=list)
+    subtract_rings: list[list[Point]] = field(default_factory=list)
+    confirmed_subtract_rings: list[list[list[Point]]] = field(default_factory=list)
+    primary_mask: object | None = None
+    subtract_mask: object | None = None
+    confirmed_subtract_masks: list[object] = field(default_factory=list)
+    primary_debug_payload: dict[str, object] = field(default_factory=dict)
+    subtract_debug_payload: dict[str, object] = field(default_factory=dict)
+    request_id: int = 0
+    inflight_request_id: int = 0
+    pending_stage: str = MagicSegmentOperationMode.ADD
+    pending_recompute: bool = False
+    busy: bool = False
+
+    def prompt_type_for_stage(self, stage: str) -> str:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_prompt_type
+        return self.primary_prompt_type
+
+    def set_prompt_type_for_stage(self, stage: str, prompt_type: str) -> None:
+        normalized = "negative" if prompt_type == "negative" else "positive"
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_prompt_type = normalized
+        else:
+            self.primary_prompt_type = normalized
+
+    def positive_points_for_stage(self, stage: str) -> list[Point]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_positive_points
+        return self.primary_positive_points
+
+    def negative_points_for_stage(self, stage: str) -> list[Point]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_negative_points
+        return self.primary_negative_points
+
+    def mask_for_stage(self, stage: str):
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_mask
+        return self.primary_mask
+
+    def polygon_for_stage(self, stage: str) -> list[Point]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_polygon
+        return self.primary_polygon
+
+    def rings_for_stage(self, stage: str) -> list[list[Point]]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_rings
+        return self.primary_rings
+
+    def set_mask_for_stage(self, stage: str, mask) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_mask = mask
+        else:
+            self.primary_mask = mask
+
+    def set_polygon_for_stage(self, stage: str, polygon: list[Point]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_polygon = polygon
+        else:
+            self.primary_polygon = polygon
+
+    def set_rings_for_stage(self, stage: str, rings: list[list[Point]]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_rings = rings
+        else:
+            self.primary_rings = rings
+
+    def debug_payload_for_stage(self, stage: str) -> dict[str, object]:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            return self.subtract_debug_payload
+        return self.primary_debug_payload
+
+    def set_debug_payload_for_stage(self, stage: str, payload: dict[str, object]) -> None:
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self.subtract_debug_payload = dict(payload)
+        else:
+            self.primary_debug_payload = dict(payload)
+
+    def has_points(self) -> bool:
+        return bool(
+            self.primary_positive_points
+            or self.primary_negative_points
+            or self.subtract_positive_points
+            or self.subtract_negative_points
+        )
+
+    def has_primary_preview(self) -> bool:
+        return len(self.primary_polygon) >= 3 or (bool(self.primary_rings) and len(self.primary_rings[0]) >= 3)
+
+    def has_any_preview(self) -> bool:
+        return (
+            self.has_primary_preview()
+            or len(self.subtract_polygon) >= 3
+            or (bool(self.subtract_rings) and len(self.subtract_rings[0]) >= 3)
+            or bool(self.confirmed_subtract_polygons)
+            or bool(self.confirmed_subtract_rings)
+        )
+
+    def confirmed_subtract_count(self) -> int:
+        return len(self.confirmed_subtract_masks)
+
+
+@dataclass(slots=True)
+class ReferenceInstancePreviewCandidate:
+    polygon_px: list[Point] = field(default_factory=list)
+    area_rings_px: list[list[Point]] = field(default_factory=list)
+    confidence: float = 0.0
+
+
+@dataclass(slots=True)
+class ReferenceInstanceSession:
+    drag_start: Point | None = None
+    drag_end: Point | None = None
+    dragging: bool = False
+    busy: bool = False
+    request_id: int = 0
+    reference_polygon: list[Point] = field(default_factory=list)
+    reference_rings: list[list[Point]] = field(default_factory=list)
+    preview_candidates: list[ReferenceInstancePreviewCandidate] = field(default_factory=list)
+
+    def has_reference_geometry(self) -> bool:
+        return len(self.reference_polygon) >= 3 or bool(self.reference_rings)
+
+    def has_preview(self) -> bool:
+        return bool(self.preview_candidates)
+
+    def has_session(self) -> bool:
+        return self.dragging or self.busy or self.has_reference_geometry() or self.has_preview()
+
+
+@dataclass(slots=True)
+class FiberQuickDiameterSession:
     prompt_type: str = "positive"
     positive_points: list[Point] = field(default_factory=list)
     negative_points: list[Point] = field(default_factory=list)
+    preview_line: Line | None = None
+    preview_mask: object | None = None
     preview_polygon: list[Point] = field(default_factory=list)
+    preview_rings: list[list[Point]] = field(default_factory=list)
+    confidence: float = 0.0
     request_id: int = 0
-    busy: bool = False
+    inflight_request_id: int = 0
+    pending_recompute: bool = False
+    commit_pending: bool = False
+    segmentation_busy: bool = False
+    geometry_busy: bool = False
+    debug_payload: dict[str, object] = field(default_factory=dict)
 
     def has_points(self) -> bool:
         return bool(self.positive_points or self.negative_points)
 
+    def has_shape_preview(self) -> bool:
+        return bool(self.preview_polygon or self.preview_rings)
+
     def has_preview(self) -> bool:
-        return len(self.preview_polygon) >= 3
+        return self.preview_line is not None
+
+    def has_session(self) -> bool:
+        return self.has_points() or self.has_shape_preview() or self.has_preview() or self.segmentation_busy or self.geometry_busy
 
 
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
     measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
+    pathSessionChanged = Signal(str)
     overlayCreateRequested = Signal(str, object)
     overlaySelected = Signal(str, object)
     overlayEdited = Signal(str, str, object)
@@ -86,9 +360,11 @@ class DocumentCanvas(QWidget):
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
 
-        self._dragging_area_handle: tuple[str, str, int | None] | None = None
+        self._dragging_area_handle: tuple[str, str, int | None, int | None] | None = None
         self._drag_area_preview_points: list[Point] | None = None
         self._drag_area_origin_points: list[Point] | None = None
+        self._drag_area_preview_rings: list[list[Point]] | None = None
+        self._drag_area_origin_rings: list[list[Point]] | None = None
         self._drag_area_press_point: Point | None = None
 
         self._drawing_overlay_start: Point | None = None
@@ -110,8 +386,13 @@ class DocumentCanvas(QWidget):
         self._scale_anchor_preview_point: Point | None = None
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
         self._read_only = False
         self._fit_alignment = "center"
+        self._measurement_hit_index: MeasurementSpatialIndex | None = None
+        self._measurement_hit_index_revision = -1
 
     @property
     def document_id(self) -> str | None:
@@ -120,7 +401,14 @@ class DocumentCanvas(QWidget):
     def set_document(self, document: ImageDocument, image: QImage) -> None:
         self._document = document
         self._image = image
+        self._cancel_area_drawing()
+        self._cancel_line_drawing()
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
+        self._measurement_hit_index = None
+        self._measurement_hit_index_revision = -1
         self._zoom = max(0.05, document.view_state.zoom or 1.0)
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
@@ -134,14 +422,18 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        document_id = self.document_id
         self._document = None
         self._image = None
         self._cancel_line_drawing()
+        self._cancel_area_drawing()
         self._dragging_handle = None
         self._drag_preview_line = None
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
+        self._drag_area_preview_rings = None
+        self._drag_area_origin_rings = None
         self._drag_area_press_point = None
         self._drawing_overlay_start = None
         self._drawing_overlay_end = None
@@ -151,6 +443,13 @@ class DocumentCanvas(QWidget):
         self._drag_overlay_origin = None
         self._drag_overlay_preview = None
         self._magic_segment = PromptSegmentationSession()
+        self._reference_instance = ReferenceInstanceSession()
+        self._fiber_quick = FiberQuickDiameterSession()
+        self._fiber_quick_request_serial = 0
+        self._measurement_hit_index = None
+        self._measurement_hit_index_revision = -1
+        if document_id is not None:
+            self.pathSessionChanged.emit(document_id)
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -179,8 +478,12 @@ class DocumentCanvas(QWidget):
         if mode != self._tool_mode:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
-            if self._tool_mode == "magic_segment" or mode != "magic_segment":
+            if is_magic_segment_tool_mode(self._tool_mode) or not is_magic_segment_tool_mode(mode):
                 self.clear_magic_segment_session()
+            if is_reference_propagation_tool_mode(self._tool_mode) or not is_reference_propagation_tool_mode(mode):
+                self.clear_reference_instance_session()
+            if is_fiber_quick_tool_mode(self._tool_mode) or not is_fiber_quick_tool_mode(mode):
+                self.clear_fiber_quick_session()
             self._cancel_overlay_interaction()
         self._tool_mode = mode
         if overlay_kind in {
@@ -203,56 +506,562 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def current_magic_segment_prompt_type(self) -> str:
-        return self._magic_segment.prompt_type
+        return self._magic_segment.prompt_type_for_stage(self._magic_segment.active_stage)
+
+    def current_magic_segment_operation_mode(self) -> str:
+        return self._magic_segment.active_stage
 
     def has_magic_segment_session(self) -> bool:
-        return self._magic_segment.has_points() or self._magic_segment.has_preview()
+        return bool(
+            self._magic_segment.has_points()
+            or self._magic_segment.has_any_preview()
+            or self._magic_segment.busy
+        )
 
     def has_magic_segment_preview(self) -> bool:
-        return self._magic_segment.has_preview()
+        return self._magic_segment.has_primary_preview()
+
+    def is_magic_segment_busy(self) -> bool:
+        return self._magic_segment.busy
+
+    def has_reference_instance_session(self) -> bool:
+        return self._reference_instance.has_session()
+
+    def has_reference_instance_preview(self) -> bool:
+        return self._reference_instance.has_preview()
+
+    def is_reference_instance_busy(self) -> bool:
+        return self._reference_instance.busy
+
+    def current_fiber_quick_prompt_type(self) -> str:
+        return self._fiber_quick.prompt_type
+
+    def has_fiber_quick_session(self) -> bool:
+        return self._fiber_quick.has_session()
+
+    def has_fiber_quick_preview(self) -> bool:
+        return self._fiber_quick.has_preview()
+
+    def has_fiber_quick_shape_preview(self) -> bool:
+        return self._fiber_quick.has_shape_preview()
+
+    def is_fiber_quick_busy(self) -> bool:
+        return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
+
+    def has_pending_path_drawing(self) -> bool:
+        return bool(self._drawing_polygon_points or self._drawing_freehand_active)
+
+    def can_commit_pending_path(self) -> bool:
+        if self._drawing_freehand_active:
+            return False
+        if self._tool_mode == "polygon_area":
+            return len(self._drawing_polygon_points) >= 3
+        if self._tool_mode == "continuous_manual":
+            return len(self._drawing_polygon_points) >= 2
+        return False
+
+    def commit_pending_path(self) -> bool:
+        if not self.can_commit_pending_path():
+            return False
+        if self._tool_mode == "polygon_area":
+            self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
+            return True
+        if self._tool_mode == "continuous_manual":
+            self._complete_continuous_measurement(list(self._drawing_polygon_points))
+            return True
+        return False
+
+    def cancel_pending_path(self) -> bool:
+        if not self.has_pending_path_drawing():
+            return False
+        self._cancel_area_drawing()
+        return True
+
+    def _begin_magic_segment_request(self, stage: str) -> dict[str, object] | None:
+        positive_points = list(self._magic_segment.positive_points_for_stage(stage))
+        if not positive_points:
+            return None
+        self._magic_segment.request_id += 1
+        self._magic_segment.inflight_request_id = self._magic_segment.request_id
+        self._magic_segment.pending_stage = stage
+        self._magic_segment.pending_recompute = False
+        self._magic_segment.busy = True
+        return {
+            "request_id": self._magic_segment.request_id,
+            "positive_points": positive_points,
+            "negative_points": list(self._magic_segment.negative_points_for_stage(stage)),
+            "tool_mode": self._tool_mode,
+            "active_stage": stage,
+        }
+
+    def dequeue_pending_magic_segment_request(self, completed_request_id: int) -> dict[str, object] | None:
+        if completed_request_id != self._magic_segment.inflight_request_id:
+            return None
+        self._magic_segment.inflight_request_id = 0
+        if not self._magic_segment.pending_recompute:
+            return None
+        return self._begin_magic_segment_request(self._magic_segment.pending_stage)
+
+    def _begin_fiber_quick_request(self) -> dict[str, object] | None:
+        positive_points = list(self._fiber_quick.positive_points)
+        if not positive_points:
+            return None
+        self._fiber_quick_request_serial += 1
+        self._fiber_quick.request_id = self._fiber_quick_request_serial
+        self._fiber_quick.inflight_request_id = self._fiber_quick.request_id
+        self._fiber_quick.pending_recompute = False
+        self._fiber_quick.commit_pending = False
+        self._fiber_quick.segmentation_busy = True
+        self._fiber_quick.geometry_busy = False
+        self._fiber_quick.preview_line = None
+        return {
+            "request_id": self._fiber_quick.request_id,
+            "positive_points": positive_points,
+            "negative_points": list(self._fiber_quick.negative_points),
+            "tool_mode": self._tool_mode,
+        }
+
+    def dequeue_pending_fiber_quick_request(self, completed_request_id: int) -> dict[str, object] | None:
+        if completed_request_id != self._fiber_quick.inflight_request_id:
+            return None
+        self._fiber_quick.inflight_request_id = 0
+        if not self._fiber_quick.pending_recompute:
+            return None
+        return self._begin_fiber_quick_request()
+
+    def cycle_fiber_quick_prompt_type(self) -> str:
+        self._fiber_quick.prompt_type = "negative" if self._fiber_quick.prompt_type == "positive" else "positive"
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return self._fiber_quick.prompt_type
 
     def set_magic_segment_prompt_type(self, prompt_type: str) -> None:
-        self._magic_segment.prompt_type = "negative" if prompt_type == "negative" else "positive"
+        self._magic_segment.set_prompt_type_for_stage(self._magic_segment.active_stage, prompt_type)
+        self.update()
         self._emit_magic_segment_session_changed()
 
     def cycle_magic_segment_prompt_type(self) -> str:
-        self._magic_segment.prompt_type = "negative" if self._magic_segment.prompt_type == "positive" else "positive"
+        prompt_type = self.current_magic_segment_prompt_type()
+        self._magic_segment.set_prompt_type_for_stage(
+            self._magic_segment.active_stage,
+            "negative" if prompt_type == "positive" else "positive",
+        )
+        self.update()
         self._emit_magic_segment_session_changed()
-        return self._magic_segment.prompt_type
+        return self.current_magic_segment_prompt_type()
 
-    def apply_magic_segment_result(self, request_id: int, polygon_points: list[Point]) -> None:
-        if request_id != self._magic_segment.request_id:
-            return
-        self._magic_segment.busy = False
-        self._magic_segment.preview_polygon = list(polygon_points)
+    def cycle_magic_segment_operation_mode(self) -> str:
+        if self._magic_segment.active_stage == MagicSegmentOperationMode.ADD:
+            if not self._magic_segment.has_primary_preview():
+                return self._magic_segment.active_stage
+            self._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
+        else:
+            self._magic_segment.active_stage = MagicSegmentOperationMode.ADD
+        self.update()
         self._emit_magic_segment_session_changed()
+        return self._magic_segment.active_stage
+
+    def can_confirm_current_magic_subtract_shape(self) -> bool:
+        return bool(
+            self._magic_segment.active_stage == MagicSegmentOperationMode.SUBTRACT
+            and not self._magic_segment.busy
+            and self._magic_segment.subtract_mask is not None
+            and (
+                len(self._magic_segment.subtract_polygon) >= 3
+                or (bool(self._magic_segment.subtract_rings) and len(self._magic_segment.subtract_rings[0]) >= 3)
+            )
+        )
+
+    def confirmed_magic_subtract_shape_count(self) -> int:
+        return self._magic_segment.confirmed_subtract_count()
+
+    def confirm_current_magic_subtract_shape(self) -> dict[str, object]:
+        result = {
+            "confirmed": False,
+            "count": self._magic_segment.confirmed_subtract_count(),
+        }
+        if not self.can_confirm_current_magic_subtract_shape():
+            return result
+        self._magic_segment.confirmed_subtract_masks.append(self._clone_magic_mask(self._magic_segment.subtract_mask))
+        self._magic_segment.confirmed_subtract_polygons.append(self._clone_magic_polygon(self._magic_segment.subtract_polygon))
+        self._magic_segment.confirmed_subtract_rings.append(self._clone_magic_rings(self._magic_segment.subtract_rings))
+        self._magic_segment.subtract_positive_points.clear()
+        self._magic_segment.subtract_negative_points.clear()
+        self._magic_segment.subtract_prompt_type = "positive"
+        self._magic_segment.subtract_polygon = []
+        self._magic_segment.subtract_rings = []
+        self._magic_segment.subtract_mask = None
+        self._magic_segment.subtract_debug_payload = {}
+        self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        self.update()
+        self._emit_magic_segment_session_changed()
+        result["confirmed"] = True
+        result["count"] = self._magic_segment.confirmed_subtract_count()
+        return result
+
+    def apply_magic_segment_result(
+        self,
+        request_id: int,
+        mask,
+        polygon_points: list[Point] | None = None,
+        area_rings_points: list[list[Point]] | None = None,
+        debug_payload: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._magic_segment.request_id:
+            return None
+        self._magic_segment.busy = False
+        stage = self._magic_segment.pending_stage
+        draft_mask = normalize_magic_draft_mask(mask)
+        draft_polygon = self._normalize_magic_polygon(polygon_points)
+        draft_rings = self._normalize_magic_rings(area_rings_points)
+        if draft_mask is not None and (len(draft_polygon) < 3 or not draft_rings):
+            selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(draft_mask)
+            draft_mask = selected_mask
+            if selected_rings:
+                draft_rings = self._clone_magic_rings(selected_rings)
+            if len(selected_polygon) >= 3:
+                draft_polygon = self._clone_magic_polygon(selected_polygon)
+        if (
+            draft_mask is not None
+            and self._tool_mode == MagicSegmentToolMode.STANDARD
+            and self._settings.magic_segment_fill_draft_holes_enabled
+        ):
+            filled_mask = fill_magic_draft_internal_holes(draft_mask)
+            selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(filled_mask)
+            draft_mask = selected_mask
+            draft_rings = self._clone_magic_rings(selected_rings)
+            draft_polygon = self._clone_magic_polygon(selected_polygon)
+        if len(draft_polygon) < 3 and draft_rings:
+            draft_polygon = self._clone_magic_polygon(draft_rings[0])
+        if len(draft_polygon) < 3 and not draft_rings:
+            draft_polygon = []
+            draft_mask = None
+        self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
+        self._magic_segment.set_rings_for_stage(stage, self._clone_magic_rings(draft_rings))
+        self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
+        self._magic_segment.set_debug_payload_for_stage(stage, dict(debug_payload or {}))
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "stage": stage,
+            "has_preview": len(self._magic_segment.polygon_for_stage(stage)) >= 3 or bool(self._magic_segment.rings_for_stage(stage)),
+        }
 
     def fail_magic_segment_result(self, request_id: int) -> None:
         if request_id != self._magic_segment.request_id:
             return
         self._magic_segment.busy = False
-        self._magic_segment.preview_polygon = []
+        self.update()
         self._emit_magic_segment_session_changed()
 
     def clear_magic_segment_session(self) -> None:
         self._magic_segment = PromptSegmentationSession()
+        self.update()
         self._emit_magic_segment_session_changed()
 
-    def commit_magic_segment_preview(self) -> bool:
+    def apply_reference_instance_result(
+        self,
+        request_id: int,
+        *,
+        reference_polygon_points: list[Point] | None = None,
+        reference_area_rings_points: list[list[Point]] | None = None,
+        candidates: list[ReferenceInstancePreviewCandidate] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._reference_instance.request_id:
+            return None
+        self._reference_instance.busy = False
+        self._reference_instance.dragging = False
+        self._reference_instance.drag_start = None
+        self._reference_instance.drag_end = None
+        self._reference_instance.reference_polygon = self._normalize_magic_polygon(reference_polygon_points)
+        self._reference_instance.reference_rings = self._normalize_magic_rings(reference_area_rings_points)
+        if len(self._reference_instance.reference_polygon) < 3 and self._reference_instance.reference_rings:
+            self._reference_instance.reference_polygon = self._clone_magic_polygon(self._reference_instance.reference_rings[0])
+        normalized_candidates: list[ReferenceInstancePreviewCandidate] = []
+        for candidate in candidates or []:
+            polygon = self._normalize_magic_polygon(candidate.polygon_px)
+            rings = self._normalize_magic_rings(candidate.area_rings_px)
+            if len(polygon) < 3 and rings:
+                polygon = self._clone_magic_polygon(rings[0])
+            if len(polygon) < 3 and not rings:
+                continue
+            normalized_candidates.append(
+                ReferenceInstancePreviewCandidate(
+                    polygon_px=polygon,
+                    area_rings_px=rings,
+                    confidence=float(candidate.confidence),
+                )
+            )
+        self._reference_instance.preview_candidates = normalized_candidates
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "candidate_count": len(normalized_candidates),
+            "has_reference": self._reference_instance.has_reference_geometry(),
+        }
+
+    def fail_reference_instance_result(self, request_id: int) -> None:
+        if request_id != self._reference_instance.request_id:
+            return
+        self._reference_instance.busy = False
+        self._reference_instance.dragging = False
+        self._reference_instance.drag_start = None
+        self._reference_instance.drag_end = None
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def clear_reference_instance_session(self) -> None:
+        self._reference_instance = ReferenceInstanceSession()
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def apply_fiber_quick_segmentation_result(
+        self,
+        request_id: int,
+        *,
+        mask=None,
+        preview_polygon_points: list[Point] | None = None,
+        preview_area_rings_points: list[list[Point]] | None = None,
+        debug_payload: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._fiber_quick.request_id:
+            return None
+        self._fiber_quick.segmentation_busy = False
+        self._fiber_quick.preview_mask = normalize_magic_draft_mask(mask)
+        self._fiber_quick.preview_polygon = self._normalize_magic_polygon(preview_polygon_points)
+        self._fiber_quick.preview_rings = self._normalize_magic_rings(preview_area_rings_points)
+        self._fiber_quick.debug_payload = dict(debug_payload or {})
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "has_shape_preview": bool(self._fiber_quick.preview_polygon or self._fiber_quick.preview_rings),
+        }
+
+    def set_fiber_quick_pending_roi(self, request_id: int, crop_box: tuple[int, int, int, int] | None) -> bool:
+        if request_id != self._fiber_quick.request_id:
+            return False
+        self._fiber_quick.debug_payload = {
+            **dict(self._fiber_quick.debug_payload),
+            "segmentation_crop_box": crop_box,
+            "segmentation_pending": True,
+        }
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return True
+
+    def begin_fiber_quick_geometry(self, request_id: int) -> bool:
+        if request_id != self._fiber_quick.request_id:
+            return False
+        self._fiber_quick.geometry_busy = True
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return True
+
+    def apply_fiber_quick_geometry_result(
+        self,
+        request_id: int,
+        *,
+        preview_line: Line | None = None,
+        confidence: float = 0.0,
+        debug_payload: dict[str, object] | None = None,
+    ) -> dict[str, object] | None:
+        if request_id != self._fiber_quick.request_id:
+            return None
+        self._fiber_quick.geometry_busy = False
+        self._fiber_quick.preview_line = preview_line
+        self._fiber_quick.confidence = float(confidence)
+        if debug_payload:
+            merged_payload = dict(self._fiber_quick.debug_payload)
+            merged_payload.update(debug_payload)
+            merged_payload.pop("segmentation_pending", None)
+            self._fiber_quick.debug_payload = merged_payload
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return {
+            "has_preview": self._fiber_quick.has_preview(),
+        }
+
+    def fail_fiber_quick_result(self, request_id: int, *, stage: str = "all") -> None:
+        if request_id != self._fiber_quick.request_id:
+            return
+        if stage in {"segmentation", "all"}:
+            self._fiber_quick.segmentation_busy = False
+            self._fiber_quick.commit_pending = False
+            if stage == "all":
+                self._fiber_quick.preview_mask = None
+            if stage == "segmentation":
+                self._fiber_quick.debug_payload = dict(self._fiber_quick.debug_payload)
+        if stage in {"geometry", "all"}:
+            self._fiber_quick.geometry_busy = False
+            self._fiber_quick.preview_line = None
+            if stage == "geometry":
+                self._fiber_quick.commit_pending = False
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def clear_fiber_quick_session(self) -> None:
+        self._fiber_quick = FiberQuickDiameterSession()
+        self.update()
+        self._emit_magic_segment_session_changed()
+
+    def commit_fiber_quick_preview(self) -> dict[str, object]:
         document_id = self._document.id if self._document is not None else None
-        polygon_points = list(self._magic_segment.preview_polygon)
+        preview_line = self._fiber_quick.preview_line
+        if preview_line is None and self._fiber_quick.has_shape_preview():
+            snapshot = {
+                "measurement_kind": "line",
+                "mode": "fiber_quick",
+                "mask": self._clone_magic_mask(self._fiber_quick.preview_mask),
+                "polygon_px": self._clone_magic_polygon(self._fiber_quick.preview_polygon),
+                "area_rings_px": self._clone_magic_rings(self._fiber_quick.preview_rings),
+                "positive_points": list(self._fiber_quick.positive_points),
+                "negative_points": list(self._fiber_quick.negative_points),
+                "debug_payload": dict(self._fiber_quick.debug_payload),
+            }
+            self.clear_fiber_quick_session()
+            return {
+                "committed": False,
+                "pending": True,
+                "snapshot": snapshot,
+            }
+        payload = {
+            "measurement_kind": "line",
+            "line_px": preview_line,
+            "confidence": float(self._fiber_quick.confidence),
+            "status": "fiber_quick",
+            "debug_payload": dict(self._fiber_quick.debug_payload),
+        }
+        committed = document_id is not None and preview_line is not None
+        self.clear_fiber_quick_session()
+        if committed:
+            self.lineCommitted.emit(document_id, "fiber_quick", payload)
+        return {
+            "committed": committed,
+        }
+
+    def commit_reference_instance_preview(self) -> dict[str, object]:
+        candidates = [
+            {
+                "polygon_px": self._clone_magic_polygon(candidate.polygon_px),
+                "area_rings_px": self._clone_magic_rings(candidate.area_rings_px),
+                "confidence": float(candidate.confidence),
+            }
+            for candidate in self._reference_instance.preview_candidates
+            if len(candidate.polygon_px) >= 3 or candidate.area_rings_px
+        ]
+        committed = bool(candidates)
+        self.clear_reference_instance_session()
+        return {
+            "committed": committed,
+            "candidates": candidates,
+        }
+
+    def commit_magic_segment_preview(self) -> dict[str, object]:
+        document_id = self._document.id if self._document is not None else None
+        primary_polygon = self._clone_magic_polygon(self._magic_segment.primary_polygon)
+        primary_mask = normalize_magic_draft_mask(self._magic_segment.primary_mask)
+        result: dict[str, object] = {
+            "committed": False,
+            "hole_count": 0,
+            "discarded_fragments": False,
+            "result_empty": False,
+        }
+        if document_id is None or len(primary_polygon) < 3 or primary_mask is None:
+            result["reason"] = "missing_primary"
+            return result
+        polygon_points = primary_polygon
+        area_rings_points = self._clone_magic_rings(self._magic_segment.primary_rings)
+        final_mask = primary_mask.copy()
+        subtract_masks = [self._clone_magic_mask(mask) for mask in self._magic_segment.confirmed_subtract_masks]
+        current_subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
+        if current_subtract_mask is not None:
+            subtract_masks.append(self._clone_magic_mask(current_subtract_mask))
+        if subtract_masks:
+            final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_masks)
+            result.update(stats)
+            if final_mask is None:
+                self.clear_magic_segment_session()
+                return result
+        selected_mask, selected_rings, selected_polygon, geometry_stats = magic_mask_to_geometry(
+            final_mask,
+            select_prompt_component=False,
+        )
+        if selected_mask is None:
+            self.clear_magic_segment_session()
+            result["result_empty"] = True
+            return result
+        if selected_rings:
+            area_rings_points = self._clone_magic_rings(selected_rings)
+        if len(selected_polygon) >= 3:
+            polygon_points = self._clone_magic_polygon(selected_polygon)
+        result["hole_count"] = int(geometry_stats.get("hole_count", 0) or 0)
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
-            return False
+            result["reason"] = "missing_polygon"
+            return result
         self.lineCommitted.emit(
             document_id,
             "magic_segment",
             {
                 "measurement_kind": "area",
                 "polygon_px": polygon_points,
+                "area_rings_px": area_rings_points,
+                "exact_area_px": magic_mask_area_px(selected_mask),
             },
         )
-        return True
+        result["committed"] = True
+        return result
+
+    def _clone_magic_mask(self, mask):
+        if mask is None:
+            return None
+        return mask.copy()
+
+    def _clone_magic_polygon(self, polygon_points: list[Point]) -> list[Point]:
+        return [Point(float(point.x), float(point.y)) for point in polygon_points]
+
+    def _clone_magic_rings(self, area_rings: list[list[Point]]) -> list[list[Point]]:
+        return [self._clone_magic_polygon(ring) for ring in area_rings]
+
+    def _normalize_magic_polygon(self, polygon_points: list[Point] | None) -> list[Point]:
+        if not polygon_points:
+            return []
+        return self._clone_magic_polygon(list(polygon_points))
+
+    def _normalize_magic_rings(self, area_rings: list[list[Point]] | None) -> list[list[Point]]:
+        if not area_rings:
+            return []
+        normalized: list[list[Point]] = []
+        for ring in area_rings:
+            cloned = self._normalize_magic_polygon(ring)
+            if len(cloned) >= 3:
+                normalized.append(cloned)
+        return normalized
+
+    def _magic_polygon_to_mask(self, polygon_points: list[Point]):
+        if self._image is None or len(polygon_points) < 3:
+            return None
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover - dependency is required by the app
+            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+        mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
+        contour = np.array(
+            [
+                [
+                    int(clamp(round(point.x), 0, self._image.width() - 1)),
+                    int(clamp(round(point.y), 0, self._image.height() - 1)),
+                ]
+                for point in polygon_points
+            ],
+            dtype=np.int32,
+        )
+        if contour.shape[0] < 3:
+            return None
+        cv2.fillPoly(mask, [contour], 1)
+        if not mask.any():
+            return None
+        return mask.astype(bool)
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
@@ -327,8 +1136,19 @@ class DocumentCanvas(QWidget):
             self.set_temporary_grab_pressed(True)
             event.accept()
             return
-        if event.key() == Qt.Key.Key_Escape and self._tool_mode == "magic_segment" and self.has_magic_segment_session():
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F)
+            and self.commit_pending_path()
+        ):
+            event.accept()
+            return
+        if event.key() == Qt.Key.Key_Escape and is_magic_segment_tool_mode(self._tool_mode) and self.has_magic_segment_session():
             self.clear_magic_segment_session()
+            event.accept()
+            return
+        if event.key() == Qt.Key.Key_Escape and is_fiber_quick_tool_mode(self._tool_mode) and self.has_fiber_quick_session():
+            self.clear_fiber_quick_session()
             event.accept()
             return
         if event.key() == Qt.Key.Key_Escape and self._drawing_anchor_raw is not None:
@@ -336,8 +1156,7 @@ class DocumentCanvas(QWidget):
             self.update()
             event.accept()
             return
-        if event.key() == Qt.Key.Key_Escape and (self._drawing_polygon_points or self._drawing_freehand_active):
-            self._cancel_area_drawing()
+        if event.key() == Qt.Key.Key_Escape and self.cancel_pending_path():
             event.accept()
             return
         super().keyPressEvent(event)
@@ -420,7 +1239,7 @@ class DocumentCanvas(QWidget):
                 self.scaleAnchorPicked.emit(self._document.id, self._scale_anchor_preview_point)
             return
 
-        if self._tool_mode == "magic_segment":
+        if is_magic_segment_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
                 return
             self._document.select_measurement(None)
@@ -429,21 +1248,82 @@ class DocumentCanvas(QWidget):
             self.overlaySelected.emit(self._document.id, "")
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
-            if self._magic_segment.prompt_type == "negative":
-                self._magic_segment.negative_points.append(point)
+            active_stage = self._magic_segment.active_stage
+            if self._magic_segment.prompt_type_for_stage(active_stage) == "negative":
+                self._magic_segment.negative_points_for_stage(active_stage).append(point)
             else:
-                self._magic_segment.positive_points.append(point)
-            self._magic_segment.request_id += 1
-            self._magic_segment.busy = True
-            self._magic_segment.preview_polygon = []
-            self.magicSegmentRequested.emit(
-                self._document.id,
-                {
-                    "request_id": self._magic_segment.request_id,
-                    "positive_points": list(self._magic_segment.positive_points),
-                    "negative_points": list(self._magic_segment.negative_points),
-                },
-            )
+                self._magic_segment.positive_points_for_stage(active_stage).append(point)
+            if self._magic_segment.busy:
+                self._magic_segment.pending_stage = active_stage
+                self._magic_segment.pending_recompute = True
+            else:
+                payload = self._begin_magic_segment_request(active_stage)
+                if payload is not None:
+                    self.magicSegmentRequested.emit(self._document.id, payload)
+            self.update()
+            self._emit_magic_segment_session_changed()
+            return
+
+        if is_fiber_quick_tool_mode(self._tool_mode):
+            if not self._point_in_image(image_point):
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            if self._fiber_quick.prompt_type == "negative":
+                self._fiber_quick.negative_points.append(point)
+            else:
+                self._fiber_quick.positive_points.append(point)
+            if not self._fiber_quick.positive_points:
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return
+            if self._fiber_quick.segmentation_busy:
+                self._fiber_quick.pending_recompute = True
+            else:
+                self._fiber_quick.debug_payload = {}
+                payload = self._begin_fiber_quick_request()
+                if payload is not None:
+                    self.magicSegmentRequested.emit(self._document.id, payload)
+            self.update()
+            self._emit_magic_segment_session_changed()
+            return
+
+        if is_reference_propagation_tool_mode(self._tool_mode):
+            if not self._point_in_image(image_point):
+                return
+            if self._reference_instance.busy:
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            measurement_id = self._hit_test_area_measurement(point)
+            if measurement_id is not None:
+                self._reference_instance = ReferenceInstanceSession()
+                self._reference_instance.request_id += 1
+                self._reference_instance.busy = True
+                self.magicSegmentRequested.emit(
+                    self._document.id,
+                    {
+                        "request_id": self._reference_instance.request_id,
+                        "tool_mode": self._tool_mode,
+                        "reference_measurement_id": measurement_id,
+                    },
+                )
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return
+            self._reference_instance = ReferenceInstanceSession()
+            self._reference_instance.dragging = True
+            self._reference_instance.drag_start = point
+            self._reference_instance.drag_end = point
+            self.update()
             self._emit_magic_segment_session_changed()
             return
 
@@ -474,23 +1354,70 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "polygon_area":
             if not self._point_in_image(image_point):
                 return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._can_close_polygon_with_point(point):
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 return
             self._drawing_polygon_points.append(point)
             self._area_hover_point = point
+            self.pathSessionChanged.emit(self._document.id)
+            self.update()
+            return
+
+        if self._tool_mode == "continuous_manual":
+            if not self._point_in_image(image_point):
+                return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            if self._drawing_polygon_points and distance(self._drawing_polygon_points[-1], point) < 1.0:
+                return
+            self._drawing_polygon_points.append(point)
+            self._area_hover_point = point
+            self.pathSessionChanged.emit(self._document.id)
             self.update()
             return
 
         if self._tool_mode == "freehand_area":
             if not self._point_in_image(image_point):
                 return
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+            self.measurementSelected.emit(self._document.id, "")
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             self._drawing_polygon_points = [point]
             self._area_hover_point = point
             self._drawing_freehand_active = True
             self._freehand_last_sample_at = time.monotonic()
+            self.pathSessionChanged.emit(self._document.id)
+            self.update()
+            return
+
+        if self._tool_mode == "count":
+            if not self._point_in_image(image_point):
+                return
+            point = self._clamp_to_image(image_point, pixel_center=False)
+            self._document.select_overlay_annotation(None)
+            self.overlaySelected.emit(self._document.id, "")
+            self.textSelected.emit(self._document.id, "")
+            self.lineCommitted.emit(
+                self._document.id,
+                "count",
+                {
+                    "measurement_kind": "count",
+                    "point_px": point,
+                },
+            )
             self.update()
             return
 
@@ -612,7 +1539,12 @@ class DocumentCanvas(QWidget):
 
         image_point = self.widget_to_image(event.position())
 
-        if self._tool_mode == "polygon_area" and self._drawing_polygon_points:
+        if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
+            self._reference_instance.drag_end = self._clamp_to_image(image_point, pixel_center=False)
+            self.update()
+            return
+
+        if self._tool_mode in {"polygon_area", "continuous_manual"} and self._drawing_polygon_points:
             self._area_hover_point = self._clamp_to_image(image_point, pixel_center=False)
             self.update()
             return
@@ -672,15 +1604,29 @@ class DocumentCanvas(QWidget):
             and self._drag_area_origin_points is not None
             and self._drag_area_press_point is not None
         ):
-            _measurement_id, handle_kind, point_index = self._dragging_area_handle
+            _measurement_id, handle_kind, ring_index, point_index = self._dragging_area_handle
             if handle_kind == "center":
                 dx = image_point.x - self._drag_area_press_point.x
                 dy = image_point.y - self._drag_area_press_point.y
                 self._drag_area_preview_points = polygon_translate(self._drag_area_origin_points, dx, dy)
+                if self._drag_area_origin_rings is not None:
+                    self._drag_area_preview_rings = [
+                        polygon_translate(ring, dx, dy)
+                        for ring in self._drag_area_origin_rings
+                    ]
+                    if self._drag_area_preview_rings:
+                        self._drag_area_preview_points = list(self._drag_area_preview_rings[0])
             elif point_index is not None:
                 preview = list(self._drag_area_origin_points)
                 preview[point_index] = self._clamp_to_image(image_point, pixel_center=False)
                 self._drag_area_preview_points = preview
+                if self._drag_area_origin_rings is not None and ring_index is not None:
+                    preview_rings = self._clone_magic_rings(self._drag_area_origin_rings)
+                    if 0 <= ring_index < len(preview_rings) and 0 <= point_index < len(preview_rings[ring_index]):
+                        preview_rings[ring_index][point_index] = self._clamp_to_image(image_point, pixel_center=False)
+                    self._drag_area_preview_rings = preview_rings
+                    if preview_rings:
+                        self._drag_area_preview_points = list(preview_rings[0])
             self.update()
             return
 
@@ -719,6 +1665,35 @@ class DocumentCanvas(QWidget):
             return
         if self._read_only:
             self._update_cursor()
+            return
+
+        if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
+            start = self._reference_instance.drag_start
+            end = self._reference_instance.drag_end
+            self._reference_instance.dragging = False
+            self._reference_instance.drag_start = None
+            self._reference_instance.drag_end = None
+            if start is not None and end is not None:
+                width = abs(end.x - start.x)
+                height = abs(end.y - start.y)
+                if width >= 8.0 and height >= 8.0:
+                    self._reference_instance.request_id += 1
+                    self._reference_instance.busy = True
+                    self.magicSegmentRequested.emit(
+                        self._document.id,
+                        {
+                            "request_id": self._reference_instance.request_id,
+                            "tool_mode": self._tool_mode,
+                            "reference_box": {
+                                "start": start,
+                                "end": end,
+                            },
+                        },
+                    )
+                else:
+                    self._reference_instance = ReferenceInstanceSession()
+            self.update()
+            self._emit_magic_segment_session_changed()
             return
 
         if self._drawing_freehand_active:
@@ -789,16 +1764,27 @@ class DocumentCanvas(QWidget):
             return
 
         if self._dragging_area_handle is not None and self._drag_area_preview_points is not None:
-            measurement_id, _handle_kind, _index = self._dragging_area_handle
-            preview = list(self._drag_area_preview_points)
+            measurement_id, _handle_kind, _ring_index, _index = self._dragging_area_handle
+            preview_polygon = list(self._drag_area_preview_points)
+            preview_rings = self._clone_magic_rings(self._drag_area_preview_rings) if self._drag_area_preview_rings is not None else []
+            if preview_rings:
+                preview_polygon = list(preview_rings[0])
             self._dragging_area_handle = None
             self._drag_area_preview_points = None
             self._drag_area_origin_points = None
+            self._drag_area_preview_rings = None
+            self._drag_area_origin_rings = None
             self._drag_area_press_point = None
             self.measurementEdited.emit(
                 self._document.id,
                 measurement_id,
-                {"measurement_kind": "area", "polygon_px": preview},
+                {
+                    "measurement_kind": "area",
+                    "mode": "polygon_area",
+                    "polygon_px": preview_polygon,
+                    "area_rings_px": preview_rings,
+                    "exact_area_px": None,
+                },
             )
             if self._space_pressed:
                 self._temporary_grab_active = True
@@ -824,6 +1810,8 @@ class DocumentCanvas(QWidget):
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
+        self._drag_area_preview_rings = None
+        self._drag_area_origin_rings = None
         self._drag_area_press_point = None
         self._update_cursor()
 
@@ -832,12 +1820,21 @@ class DocumentCanvas(QWidget):
             return
         if self._read_only:
             return
-        if event.button() == Qt.MouseButton.LeftButton and self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and self._tool_mode in {"polygon_area", "continuous_manual"}
+            and len(self._drawing_polygon_points) >= 1
+        ):
             point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
             if distance(point, self._drawing_polygon_points[-1]) > 1.0:
                 self._drawing_polygon_points.append(point)
-            if len(self._drawing_polygon_points) >= 3:
+                self.pathSessionChanged.emit(self._document.id)
+            if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 3:
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
+                event.accept()
+                return
+            if self._tool_mode == "continuous_manual" and len(self._drawing_polygon_points) >= 2:
+                self._complete_continuous_measurement(list(self._drawing_polygon_points))
                 event.accept()
                 return
         super().mouseDoubleClickEvent(event)
@@ -867,6 +1864,37 @@ class DocumentCanvas(QWidget):
             return None
         return measurement.effective_line()
 
+    def _visible_image_rect(self) -> QRectF:
+        if self._image is None:
+            return QRectF()
+        zoom = max(self._zoom, 0.001)
+        left = (0.0 - self._pan.x) / zoom
+        top = (0.0 - self._pan.y) / zoom
+        right = (self.width() - self._pan.x) / zoom
+        bottom = (self.height() - self._pan.y) / zoom
+        padding = max(16.0, 28.0 / zoom)
+        return QRectF(
+            max(0.0, min(left, right) - padding),
+            max(0.0, min(top, bottom) - padding),
+            min(float(self._image.width()), abs(right - left) + (padding * 2.0)),
+            min(float(self._image.height()), abs(bottom - top) + (padding * 2.0)),
+        )
+
+    def _measurement_index(self) -> MeasurementSpatialIndex | None:
+        if self._document is None:
+            return None
+        revision = self._document.measurement_geometry_revision
+        if self._measurement_hit_index is None or self._measurement_hit_index_revision != revision:
+            self._measurement_hit_index = MeasurementSpatialIndex(self._document.measurements)
+            self._measurement_hit_index_revision = revision
+        return self._measurement_hit_index
+
+    def _measurement_candidates(self, image_point: Point, *, tolerance: float) -> list[Measurement]:
+        index = self._measurement_index()
+        if index is None:
+            return []
+        return index.query(image_point, tolerance=tolerance)
+
     def _draw_annotations(self, painter: QPainter) -> None:
         if self._document is None:
             return
@@ -880,6 +1908,7 @@ class DocumentCanvas(QWidget):
             selected_measurement_id=self._document.view_state.selected_measurement_id,
             show_area_fill=self._show_area_fill,
             show_area_handles=self._tool_mode == "select",
+            visible_rect=self._visible_image_rect(),
         )
         draw_overlay_annotations(
             painter,
@@ -903,30 +1932,53 @@ class DocumentCanvas(QWidget):
             painter.drawEllipse(self.image_to_widget(preview_line.end), 6, 6)
 
         preview_points = self._drag_area_preview_points or self._drawing_polygon_points
+        preview_rings = self._drag_area_preview_rings or []
         if preview_points:
-            polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
-            if self._show_area_fill and len(preview_points) >= 3:
-                painter.setBrush(QColor(244, 211, 94, 56))
-            else:
+            if self._drag_area_preview_points is not None and preview_rings:
+                fill_path = area_rings_path(preview_rings, self.image_to_widget)
+                if self._show_area_fill:
+                    painter.setBrush(QColor(244, 211, 94, 56))
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    if fill_path.elementCount() > 0:
+                        painter.drawPath(fill_path)
                 painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                painter.drawPolygon(polygon)
+                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                for ring in preview_rings:
+                    if len(ring) >= 3:
+                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                for ring in preview_rings:
+                    if len(ring) >= 3:
+                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+                painter.setBrush(QColor("#F4D35E"))
+                painter.setPen(QPen(QColor("#0B0B0B"), 1))
+                for ring in preview_rings:
+                    for point in ring:
+                        painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
             else:
-                painter.drawPolyline(polygon)
-            painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                painter.drawPolygon(polygon)
-            else:
-                painter.drawPolyline(polygon)
-            painter.setBrush(QColor("#F4D35E"))
-            painter.setPen(QPen(QColor("#0B0B0B"), 1))
-            for point in preview_points:
-                painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
-            if self._tool_mode == "polygon_area" and self._area_hover_point is not None and self._drawing_polygon_points:
+                polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
+                if self._show_area_fill and len(preview_points) >= 3:
+                    painter.setBrush(QColor(244, 211, 94, 56))
+                else:
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                    painter.drawPolygon(polygon)
+                else:
+                    painter.drawPolyline(polygon)
+                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                    painter.drawPolygon(polygon)
+                else:
+                    painter.drawPolyline(polygon)
+                painter.setBrush(QColor("#F4D35E"))
+                painter.setPen(QPen(QColor("#0B0B0B"), 1))
+                for point in preview_points:
+                    painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
+            if self._tool_mode in {"polygon_area", "continuous_manual"} and self._area_hover_point is not None and self._drawing_polygon_points:
                 painter.setPen(QPen(QColor("#F4D35E"), 1.2, Qt.PenStyle.DashLine))
                 painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
-                if len(self._drawing_polygon_points) >= 2:
+                if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
                     painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
 
         preview_overlay = self._drag_overlay_preview
@@ -960,8 +2012,12 @@ class DocumentCanvas(QWidget):
                 render_mode="screen_scale_full_image",
             )
 
-        if self._tool_mode == "magic_segment":
+        if is_magic_segment_tool_mode(self._tool_mode):
             self._draw_magic_segment_preview(painter)
+        elif is_fiber_quick_tool_mode(self._tool_mode):
+            self._draw_fiber_quick_preview(painter)
+        elif is_reference_propagation_tool_mode(self._tool_mode) or self._reference_instance.has_session():
+            self._draw_reference_instance_preview(painter)
 
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
@@ -982,7 +2038,7 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return None
         tolerance = self._endpoint_tolerance()
-        for measurement in reversed(self._document.measurements):
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
             if measurement.measurement_kind != "line":
                 continue
             line = measurement.effective_line()
@@ -995,38 +2051,56 @@ class DocumentCanvas(QWidget):
                 return measurement.id, endpoint_name
         return None
 
-    def _hit_test_selected_area_handle(self, image_point: Point) -> tuple[str, str, int | None] | None:
+    def _hit_test_selected_area_handle(self, image_point: Point) -> tuple[str, str, int | None, int | None] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
             return None
         measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
-        if measurement is None or measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
+        if (
+            measurement is None
+            or measurement.measurement_kind != "area"
+            or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px)
+        ):
             return None
-        nearest_vertex: tuple[int, float] | None = None
-        for index, point in enumerate(measurement.polygon_px):
-            vertex_distance = distance(point, image_point)
-            if vertex_distance <= self._selected_endpoint_tolerance():
-                if nearest_vertex is None or vertex_distance < nearest_vertex[1]:
-                    nearest_vertex = (index, vertex_distance)
+        editable_rings = measurement.area_rings_px or ([measurement.polygon_px] if len(measurement.polygon_px) >= 3 else [])
+        nearest_vertex: tuple[int, int, float] | None = None
+        for ring_index, ring in enumerate(editable_rings):
+            for point_index, point in enumerate(ring):
+                vertex_distance = distance(point, image_point)
+                if vertex_distance <= self._selected_endpoint_tolerance():
+                    if nearest_vertex is None or vertex_distance < nearest_vertex[2]:
+                        nearest_vertex = (ring_index, point_index, vertex_distance)
         if nearest_vertex is not None:
-            return measurement.id, "vertex", nearest_vertex[0]
+            return measurement.id, "vertex", nearest_vertex[0], nearest_vertex[1]
         center = measurement.polygon_center()
         if distance(center, image_point) <= max(3.0, 5.0 / max(self._zoom, 0.001)):
-            return measurement.id, "center", None
+            return measurement.id, "center", None, None
         return None
 
     def _hit_test_area_measurement(self, image_point: Point) -> str | None:
         if self._document is None:
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
-        for measurement in reversed(self._document.measurements):
-            if measurement.measurement_kind != "area" or len(measurement.polygon_px) < 3:
+        selected_measurement_id = self._document.view_state.selected_measurement_id
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
+            outline_points, fill_rings, bounds = area_geometry_for_display(
+                measurement,
+                selected=measurement.id == selected_measurement_id,
+            )
+            if measurement.measurement_kind != "area" or (len(outline_points) < 3 and not fill_rings):
                 continue
-            bounds = polygon_bounds(measurement.polygon_px)
+            if bounds is None:
+                continue
             if not point_near_bounds(image_point, bounds, tolerance):
                 continue
-            if point_in_polygon(image_point, measurement.polygon_px):
+            if fill_rings:
+                if point_in_area_rings(image_point, fill_rings):
+                    return measurement.id
+                if point_to_area_rings_edge_distance(image_point, fill_rings) <= tolerance:
+                    return measurement.id
+                continue
+            if point_in_polygon(image_point, outline_points):
                 return measurement.id
-            if point_to_polygon_edge_distance(image_point, measurement.polygon_px) <= tolerance:
+            if point_to_polygon_edge_distance(image_point, outline_points) <= tolerance:
                 return measurement.id
         return None
 
@@ -1034,16 +2108,32 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return None
         tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
-        for measurement in reversed(self._document.measurements):
-            if measurement.measurement_kind != "line":
+        for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
+            if measurement.measurement_kind == "line":
+                line = measurement.effective_line()
+                bounds = (
+                    min(line.start.x, line.end.x),
+                    min(line.start.y, line.end.y),
+                    max(line.start.x, line.end.x),
+                    max(line.start.y, line.end.y),
+                )
+                if not point_near_bounds(image_point, bounds, tolerance):
+                    continue
+                if self._point_to_segment_distance(image_point, line) <= tolerance:
+                    return measurement.id
                 continue
-            line = measurement.effective_line()
-            bounds = (min(line.start.x, line.end.x), min(line.start.y, line.end.y),
-                      max(line.start.x, line.end.x), max(line.start.y, line.end.y))
-            if not point_near_bounds(image_point, bounds, tolerance):
+            if measurement.measurement_kind == "polyline" and len(measurement.polyline_px) >= 2:
+                xs = [point.x for point in measurement.polyline_px]
+                ys = [point.y for point in measurement.polyline_px]
+                bounds = (min(xs), min(ys), max(xs), max(ys))
+                if not point_near_bounds(image_point, bounds, tolerance):
+                    continue
+                if point_to_polyline_distance(image_point, measurement.polyline_px) <= tolerance:
+                    return measurement.id
                 continue
-            if self._point_to_segment_distance(image_point, line) <= tolerance:
-                return measurement.id
+            if measurement.measurement_kind == "count" and measurement.point_px is not None:
+                if distance(image_point, measurement.point_px) <= tolerance:
+                    return measurement.id
         return None
 
     def _selected_endpoint_tolerance(self) -> float:
@@ -1317,32 +2407,190 @@ class DocumentCanvas(QWidget):
             or self._dragging_overlay_id is not None
             or self._dragging_overlay_handle is not None
             or self._scale_anchor_pick_active
+            or self._reference_instance.dragging
         )
 
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
             return
-        if len(self._magic_segment.preview_polygon) >= 3:
-            polygon = QPolygonF([self.image_to_widget(point) for point in self._magic_segment.preview_polygon])
-            if self._show_area_fill:
-                painter.setBrush(QColor(52, 211, 153, 72))
-            else:
-                painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            painter.drawPolygon(polygon)
-            painter.setPen(QPen(QColor("#34D399"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-            painter.drawPolygon(polygon)
+        for polygon_points, area_rings in zip(
+            self._magic_segment.confirmed_subtract_polygons,
+            self._magic_segment.confirmed_subtract_rings,
+        ):
+            self._draw_magic_area_preview(
+                painter,
+                polygon_points,
+                area_rings,
+                fill_color=QColor(248, 113, 113, 68),
+                stroke_color=QColor("#F87171"),
+            )
+        self._draw_magic_area_preview(
+            painter,
+            self._magic_segment.primary_polygon,
+            self._magic_segment.primary_rings,
+            fill_color=QColor(52, 211, 153, 72),
+            stroke_color=QColor("#34D399"),
+        )
+        self._draw_magic_area_preview(
+            painter,
+            self._magic_segment.subtract_polygon,
+            self._magic_segment.subtract_rings,
+            fill_color=QColor(248, 113, 113, 68),
+            stroke_color=QColor("#F87171"),
+        )
 
-        self._draw_magic_prompt_points(painter, self._magic_segment.positive_points, QColor("#34D399"), positive=True)
-        self._draw_magic_prompt_points(painter, self._magic_segment.negative_points, QColor("#F87171"), positive=False)
+        active_stage = self._magic_segment.active_stage
+        self._draw_magic_prompt_points(
+            painter,
+            self._magic_segment.positive_points_for_stage(active_stage),
+            QColor("#34D399"),
+            positive=True,
+        )
+        self._draw_magic_prompt_points(
+            painter,
+            self._magic_segment.negative_points_for_stage(active_stage),
+            QColor("#F87171"),
+            positive=False,
+        )
+        self._draw_roi_debug_box(
+            painter,
+            self._magic_segment.debug_payload_for_stage(active_stage).get("segmentation_crop_box"),
+            stroke_color=QColor("#F4D35E"),
+        )
 
-        prompt_text = "当前提示：负采样点" if self._magic_segment.prompt_type == "negative" else "当前提示：正采样点"
+        prompt_type = self._magic_segment.prompt_type_for_stage(active_stage)
+        prompt_text = "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
+        operation_text = (
+            "当前编辑：剔除形状"
+            if active_stage == MagicSegmentOperationMode.SUBTRACT
+            else "当前编辑：第一形状"
+        )
+        if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_segment.confirmed_subtract_count() > 0:
+            operation_text += f" / 已确认 {self._magic_segment.confirmed_subtract_count()} 块"
         if self._magic_segment.busy:
             prompt_text += " / 推理中..."
-        rect = QRectF(14.0, 14.0, 240.0, 32.0)
+        rect = QRectF(14.0, 14.0, 360.0, 32.0)
         painter.fillRect(rect, QColor(16, 24, 32, 188))
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, prompt_text)
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
+
+    def _draw_reference_instance_preview(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        if self._reference_instance.dragging and self._reference_instance.drag_start is not None and self._reference_instance.drag_end is not None:
+            rect = QRectF(
+                self.image_to_widget(self._reference_instance.drag_start),
+                self.image_to_widget(self._reference_instance.drag_end),
+            ).normalized()
+            painter.setBrush(QColor(96, 165, 250, 40))
+            painter.setPen(QPen(QColor("#60A5FA"), 1.8, Qt.PenStyle.DashLine))
+            painter.drawRect(rect)
+        self._draw_magic_area_preview(
+            painter,
+            self._reference_instance.reference_polygon,
+            self._reference_instance.reference_rings,
+            fill_color=QColor(96, 165, 250, 54),
+            stroke_color=QColor("#60A5FA"),
+        )
+        for candidate in self._reference_instance.preview_candidates:
+            self._draw_magic_area_preview(
+                painter,
+                candidate.polygon_px,
+                candidate.area_rings_px,
+                fill_color=QColor(52, 211, 153, 56),
+                stroke_color=QColor("#34D399"),
+            )
+        label_text = "拖框或点已确认面积作为参考"
+        if self._reference_instance.busy:
+            label_text = "同类扩选推理中..."
+        elif self._reference_instance.preview_candidates:
+            label_text = f"已找到 {len(self._reference_instance.preview_candidates)} 个候选，按 Enter / F 加入当前类别"
+        rect = QRectF(14.0, 14.0, 420.0, 32.0)
+        painter.fillRect(rect, QColor(16, 24, 32, 188))
+        painter.setPen(QPen(QColor("#FFFFFF"), 1))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)
+
+    def _draw_fiber_quick_preview(self, painter: QPainter) -> None:
+        if self._image is None:
+            return
+        self._draw_magic_area_preview(
+            painter,
+            self._fiber_quick.preview_polygon,
+            self._fiber_quick.preview_rings,
+            fill_color=QColor(80, 180, 255, 52),
+            stroke_color=QColor("#60A5FA"),
+        )
+        if self._fiber_quick.preview_line is not None:
+            painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._fiber_quick.preview_line.start),
+                self.image_to_widget(self._fiber_quick.preview_line.end),
+            )
+            painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+            painter.drawLine(
+                self.image_to_widget(self._fiber_quick.preview_line.start),
+                self.image_to_widget(self._fiber_quick.preview_line.end),
+            )
+        self._draw_magic_prompt_points(
+            painter,
+            self._fiber_quick.positive_points,
+            QColor("#34D399"),
+            positive=True,
+        )
+        self._draw_magic_prompt_points(
+            painter,
+            self._fiber_quick.negative_points,
+            QColor("#F87171"),
+            positive=False,
+        )
+        self._draw_roi_debug_box(
+            painter,
+            self._fiber_quick.debug_payload.get("segmentation_crop_box"),
+            stroke_color=QColor("#F4D35E" if self._fiber_quick.debug_payload.get("segmentation_pending") else "#60A5FA"),
+        )
+        prompt_text = "当前提示：负采样点" if self._fiber_quick.prompt_type == "negative" else "当前提示：正采样点"
+        label_text = prompt_text
+        if self._fiber_quick.segmentation_busy:
+            label_text += " / 分割中..."
+        elif self._fiber_quick.geometry_busy:
+            label_text += " / 测径中..."
+        rect = QRectF(14.0, 14.0, 360.0, 32.0)
+        painter.fillRect(rect, QColor(16, 24, 32, 188))
+        painter.setPen(QPen(QColor("#FFFFFF"), 1))
+        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)
+
+    def _draw_magic_area_preview(
+        self,
+        painter: QPainter,
+        polygon_points: list[Point],
+        area_rings: list[list[Point]],
+        *,
+        fill_color: QColor,
+        stroke_color: QColor,
+    ) -> None:
+        outline_points = polygon_points if len(polygon_points) >= 3 else (area_rings[0] if area_rings else [])
+        if len(outline_points) < 3 and not area_rings:
+            return
+        preview_rings = area_rings or [outline_points]
+        path = area_rings_path(preview_rings, self.image_to_widget)
+        if self._show_area_fill:
+            painter.setBrush(fill_color)
+            painter.setPen(Qt.PenStyle.NoPen)
+            if path.elementCount() > 0:
+                painter.drawPath(path)
+            else:
+                painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in outline_points]))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        for ring in preview_rings:
+            if len(ring) < 3:
+                continue
+            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+        painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+        for ring in preview_rings:
+            if len(ring) < 3:
+                continue
+            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
 
     def _draw_magic_prompt_points(
         self,
@@ -1370,7 +2618,27 @@ class DocumentCanvas(QWidget):
                     QPointF(widget_point.x(), widget_point.y() + 2.4),
                 )
 
+    def _draw_roi_debug_box(self, painter: QPainter, crop_box, *, stroke_color: QColor) -> None:
+        if self._image is None or not isinstance(crop_box, (tuple, list)) or len(crop_box) != 4:
+            return
+        try:
+            x0, y0, x1, y1 = (float(crop_box[0]), float(crop_box[1]), float(crop_box[2]), float(crop_box[3]))
+        except (TypeError, ValueError):
+            return
+        rect = QRectF(
+            self.image_to_widget(Point(x0, y0)),
+            self.image_to_widget(Point(x1, y1)),
+        ).normalized()
+        if rect.width() < 2.0 or rect.height() < 2.0:
+            return
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor("#0B0B0B"), 3.0, Qt.PenStyle.SolidLine))
+        painter.drawRect(rect)
+        painter.setPen(QPen(stroke_color, 1.4, Qt.PenStyle.DashLine))
+        painter.drawRect(rect)
+
     def _cancel_area_drawing(self) -> None:
+        document_id = self.document_id
         self._drawing_polygon_points = []
         self._area_hover_point = None
         self._drawing_freehand_active = False
@@ -1379,6 +2647,8 @@ class DocumentCanvas(QWidget):
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
         self._drag_area_press_point = None
+        if document_id is not None:
+            self.pathSessionChanged.emit(document_id)
         self.update()
 
     def _append_freehand_point(self, point: Point) -> None:
@@ -1411,7 +2681,21 @@ class DocumentCanvas(QWidget):
             },
         )
 
-    def _begin_area_drag(self, handle: tuple[str, str, int | None], image_point: Point) -> None:
+    def _complete_continuous_measurement(self, polyline_points: list[Point]) -> None:
+        document_id = self._document.id if self._document is not None else None
+        self._cancel_area_drawing()
+        if document_id is None or len(polyline_points) < 2:
+            return
+        self.lineCommitted.emit(
+            document_id,
+            "continuous_manual",
+            {
+                "measurement_kind": "polyline",
+                "polyline_px": polyline_points,
+            },
+        )
+
+    def _begin_area_drag(self, handle: tuple[str, str, int | None, int | None], image_point: Point) -> None:
         if self._document is None:
             return
         measurement = self._document.get_measurement(handle[0])
@@ -1420,8 +2704,15 @@ class DocumentCanvas(QWidget):
         self._document.select_measurement(measurement.id)
         self.measurementSelected.emit(self._document.id, measurement.id)
         self._dragging_area_handle = handle
-        self._drag_area_origin_points = list(measurement.polygon_px)
-        self._drag_area_preview_points = list(measurement.polygon_px)
+        self._drag_area_origin_rings = self._clone_magic_rings(measurement.area_rings_px) if measurement.area_rings_px else None
+        if self._drag_area_origin_rings:
+            self._drag_area_origin_points = list(self._drag_area_origin_rings[0])
+            self._drag_area_preview_points = list(self._drag_area_origin_rings[0])
+            self._drag_area_preview_rings = self._clone_magic_rings(self._drag_area_origin_rings)
+        else:
+            self._drag_area_origin_points = list(measurement.polygon_px)
+            self._drag_area_preview_points = list(measurement.polygon_px)
+            self._drag_area_preview_rings = None
         self._drag_area_press_point = image_point
 
     def _emit_magic_segment_session_changed(self) -> None:

@@ -37,10 +37,64 @@ class ScaleOverlayStyle:
     BAR = "bar"
 
 
+class AppThemeMode:
+    SYSTEM = "system"
+    DARK = "dark"
+    LIGHT = "light"
+
+
+def normalize_theme_mode(value: str | None) -> str:
+    token = str(value or "").strip().lower()
+    if token in {
+        AppThemeMode.SYSTEM,
+        AppThemeMode.DARK,
+        AppThemeMode.LIGHT,
+    }:
+        return token
+    return AppThemeMode.DARK
+
+
 class FocusStackProfile:
     SHARP = "sharp"
     BALANCED = "balanced"
     SOFT = "soft"
+
+
+class MagicSegmentModelVariant:
+    EDGE_SAM = "edge_sam"
+    EDGE_SAM_3X = "edge_sam_3x"
+
+
+class ComplexMagicSegmentModelVariant:
+    LIGHT_HQ_SAM = "light_hq_sam"
+    EFFICIENTSAM_S = "efficientsam_s"
+
+
+class MagicSegmentToolMode:
+    STANDARD = "magic_segment"
+    REFERENCE = "reference_propagation"
+    FIBER_QUICK = "fiber_quick"
+    COMPLEX = REFERENCE
+
+
+def is_magic_segment_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.STANDARD
+
+
+def is_reference_propagation_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.REFERENCE
+
+
+def is_fiber_quick_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() == MagicSegmentToolMode.FIBER_QUICK
+
+
+def is_magic_toolbar_tool_mode(value: str | None) -> bool:
+    return str(value or "").strip() in {
+        MagicSegmentToolMode.STANDARD,
+        MagicSegmentToolMode.REFERENCE,
+        MagicSegmentToolMode.FIBER_QUICK,
+    }
 
 
 @dataclass(slots=True)
@@ -184,6 +238,7 @@ def default_area_model_mappings() -> list[AreaModelMapping]:
 
 @dataclass(slots=True)
 class AppSettings:
+    theme_mode: str = AppThemeMode.DARK
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
@@ -208,8 +263,16 @@ class AppSettings:
     overlay_line_width: float = 2.5
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
+    magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
+    magic_segment_fill_draft_holes_enabled: bool = False
+    magic_segment_standard_roi_enabled: bool = False
+    fiber_quick_roi_enabled: bool = True
+    fiber_quick_edge_trim_enabled: bool = True
+    fiber_quick_line_extension_px: float = 0.0
     main_window_geometry: str = ""
     main_window_is_maximized: bool = False
+    recent_export_dir: str = ""
+    recent_project_dir: str = ""
     area_model_mappings: list[AreaModelMapping] = field(default_factory=default_area_model_mappings)
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
@@ -219,6 +282,7 @@ class AppSettings:
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
+        normalized.theme_mode = normalize_theme_mode(self.theme_mode)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
         normalized.measurement_label_decimals = self._normalize_measurement_label_decimals(self.measurement_label_decimals)
         normalized.measurement_endpoint_style = self._normalize_measurement_endpoint_style(self.measurement_endpoint_style)
@@ -231,6 +295,10 @@ class AppSettings:
         normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
+        normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
+        normalized.fiber_quick_line_extension_px = self._normalize_fiber_quick_line_extension_px(self.fiber_quick_line_extension_px)
+        normalized.recent_export_dir = self._normalize_recent_directory(self.recent_export_dir)
+        normalized.recent_project_dir = self._normalize_recent_directory(self.recent_project_dir)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
@@ -393,6 +461,24 @@ class AppSettings:
         return max(0, min(100, numeric))
 
     @staticmethod
+    def _normalize_magic_segment_model_variant(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            MagicSegmentModelVariant.EDGE_SAM,
+            MagicSegmentModelVariant.EDGE_SAM_3X,
+        }:
+            return token
+        return MagicSegmentModelVariant.EDGE_SAM_3X
+
+    @staticmethod
+    def _normalize_fiber_quick_line_extension_px(value: int | float | str | None) -> float:
+        try:
+            numeric = float(value)
+        except (TypeError, ValueError):
+            numeric = 0.0
+        return max(-20.0, min(20.0, numeric))
+
+    @staticmethod
     def _normalize_overlay_line_width(value: int | float | str | None) -> float:
         try:
             numeric = float(value)
@@ -400,10 +486,25 @@ class AppSettings:
             numeric = 2.5
         return max(0.5, min(24.0, numeric))
 
+    @staticmethod
+    def _normalize_recent_directory(value: str | Path | None) -> str:
+        token = str(value or "").strip()
+        if not token:
+            return ""
+        try:
+            path = Path(token).expanduser()
+            resolved = path.resolve() if path.exists() else path
+        except (OSError, RuntimeError):
+            return token
+        if resolved.exists() and resolved.is_file():
+            return str(resolved.parent)
+        return str(resolved)
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
             "version": 1,
+            "theme_mode": normalized.theme_mode,
             "show_measurement_labels": normalized.show_measurement_labels,
             "measurement_label_font_family": normalized.measurement_label_font_family,
             "measurement_label_font_size": normalized.measurement_label_font_size,
@@ -428,8 +529,16 @@ class AppSettings:
             "overlay_line_width": normalized.overlay_line_width,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
+            "magic_segment_model_variant": normalized.magic_segment_model_variant,
+            "magic_segment_fill_draft_holes_enabled": normalized.magic_segment_fill_draft_holes_enabled,
+            "magic_segment_standard_roi_enabled": normalized.magic_segment_standard_roi_enabled,
+            "fiber_quick_roi_enabled": normalized.fiber_quick_roi_enabled,
+            "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
+            "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_is_maximized": normalized.main_window_is_maximized,
+            "recent_export_dir": normalized.recent_export_dir,
+            "recent_project_dir": normalized.recent_project_dir,
             "area_model_mappings": [item.to_dict() for item in normalized.area_model_mappings],
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
@@ -441,6 +550,7 @@ class AppSettings:
     @classmethod
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
+        settings.theme_mode = normalize_theme_mode(payload.get("theme_mode", settings.theme_mode))
         settings.show_measurement_labels = bool(payload.get("show_measurement_labels", settings.show_measurement_labels))
         settings.measurement_label_font_family = str(payload.get("measurement_label_font_family", settings.measurement_label_font_family))
         settings.measurement_label_font_size = cls._normalize_font_size(
@@ -491,8 +601,43 @@ class AppSettings:
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
             payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)
         )
+        settings.magic_segment_model_variant = cls._normalize_magic_segment_model_variant(
+            payload.get("magic_segment_model_variant", settings.magic_segment_model_variant)
+        )
+        settings.magic_segment_fill_draft_holes_enabled = bool(
+            payload.get(
+                "magic_segment_fill_draft_holes_enabled",
+                settings.magic_segment_fill_draft_holes_enabled,
+            )
+        )
+        settings.magic_segment_standard_roi_enabled = bool(
+            payload.get(
+                "magic_segment_standard_roi_enabled",
+                settings.magic_segment_standard_roi_enabled,
+            )
+        )
+        settings.fiber_quick_roi_enabled = bool(
+            payload.get(
+                "fiber_quick_roi_enabled",
+                settings.fiber_quick_roi_enabled,
+            )
+        )
+        settings.fiber_quick_edge_trim_enabled = bool(
+            payload.get(
+                "fiber_quick_edge_trim_enabled",
+                settings.fiber_quick_edge_trim_enabled,
+            )
+        )
+        settings.fiber_quick_line_extension_px = cls._normalize_fiber_quick_line_extension_px(
+            payload.get(
+                "fiber_quick_line_extension_px",
+                settings.fiber_quick_line_extension_px,
+            )
+        )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
+        settings.recent_export_dir = cls._normalize_recent_directory(payload.get("recent_export_dir", settings.recent_export_dir))
+        settings.recent_project_dir = cls._normalize_recent_directory(payload.get("recent_project_dir", settings.recent_project_dir))
         mappings = payload.get("area_model_mappings", None)
         if isinstance(mappings, list):
             settings.area_model_mappings = [

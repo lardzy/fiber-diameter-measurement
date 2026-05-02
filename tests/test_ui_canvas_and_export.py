@@ -11,9 +11,9 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
-    from PySide6.QtCore import QPoint, QPointF, Qt
-    from PySide6.QtGui import QImage, QColor, QPalette
-    from PySide6.QtWidgets import QApplication, QComboBox, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter
+    from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
+    from PySide6.QtGui import QAction, QImage, QColor, QPalette
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -24,28 +24,36 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
 from fdm.settings import (
+    AppThemeMode,
     AppSettings,
     FocusStackProfile,
+    MagicSegmentModelVariant,
+    MagicSegmentToolMode,
     MeasurementEndpointStyle,
     OpenImageViewMode,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
 )
-from fdm.services.export_service import ExportImageRenderMode
+from fdm.services.area_inference import AreaInstanceResult
+from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas
+    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.rendering import measurement_display_text_with_settings
+    from fdm.ui.rendering import draw_area_measurement, draw_scale_overlay, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
+    MagicSegmentOperationMode = object  # type: ignore[assignment]
+    ReferenceInstancePreviewCandidate = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
@@ -55,10 +63,51 @@ else:
     qimage_to_raster = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    draw_area_measurement = object  # type: ignore[assignment]
+    draw_scale_overlay = object  # type: ignore[assignment]
     measurement_display_text_with_settings = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
+
+
+class RecordingPainter:
+    def __init__(self) -> None:
+        self.pen = None
+        self.brush = None
+        self.calls: list[tuple[str, object, object, int]] = []
+
+    def setPen(self, pen) -> None:
+        self.pen = pen
+
+    def setBrush(self, brush) -> None:
+        self.brush = brush
+
+    def drawPath(self, path) -> None:
+        self.calls.append(("path", self.pen, self.brush, path.elementCount()))
+
+    def drawPolygon(self, polygon) -> None:
+        self.calls.append(("polygon", self.pen, self.brush, polygon.size()))
+
+
+class ScaleOverlayRecordingPainter:
+    def __init__(self) -> None:
+        self.pen = None
+        self.font = None
+        self.lines: list[tuple[QPointF, QPointF]] = []
+        self.text_calls: list[tuple[object, ...]] = []
+
+    def setPen(self, pen) -> None:
+        self.pen = pen
+
+    def setFont(self, font) -> None:
+        self.font = font
+
+    def drawLine(self, start: QPointF, end: QPointF) -> None:
+        self.lines.append((start, end))
+
+    def drawText(self, *args) -> None:
+        self.text_calls.append(args)
 
 
 class FakeWheelEvent:
@@ -106,6 +155,18 @@ class FakeKeyEvent:
 
     def accept(self) -> None:
         self.accepted = True
+
+
+class FakeCloseEvent:
+    def __init__(self) -> None:
+        self.accepted = False
+        self.ignored = False
+
+    def accept(self) -> None:
+        self.accepted = True
+
+    def ignore(self) -> None:
+        self.ignored = True
 
 
 class FakeIgnoredWheelEvent:
@@ -184,6 +245,26 @@ class CanvasAndExportTests(unittest.TestCase):
         content = tab.widget()
         self.assertIsNotNone(content)
         return [group.title() for group in content.findChildren(QGroupBox) if group.title()]
+
+    def _rect_mask(self, width: int, height: int, rect: tuple[int, int, int, int]):
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+        mask = np.zeros((height, width), dtype=bool)
+        x1, y1, x2, y2 = rect
+        mask[y1:y2, x1:x2] = True
+        return mask
+
+    def _area_instance(self, label: str, polygon: list[Point] | None = None) -> AreaInstanceResult:
+        shape = polygon or [Point(10, 10), Point(30, 10), Point(30, 30), Point(10, 30)]
+        return AreaInstanceResult(
+            class_name=label,
+            score=0.95,
+            bbox=[10, 10, 30, 30],
+            polygon_px=list(shape),
+            area_px=400.0,
+        )
 
     def _count_diff_pixels(self, left: QImage, right: QImage) -> int:
         self.assertEqual(left.size(), right.size())
@@ -534,7 +615,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(statuses, ["正在完成景深合成，请稍候…"])
             self.assertEqual(busy_calls, [(True, "正在完成景深合成，请稍候…")])
         finally:
-            window.close()
+            window._reset_workspace()
+            window.deleteLater()
+            self.app.processEvents()
 
     def test_map_build_button_shows_developing_message_when_unavailable(self) -> None:
         window = MainWindow()
@@ -557,6 +640,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIn("开发中", mock_information.call_args.args[2])
             self.assertFalse(window._map_build_button.isChecked())
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_image_resolution_label_shows_pixels_and_actual_size_when_calibrated(self) -> None:
@@ -685,6 +769,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window.preset_combo.minimumContentsLength(), 10)
             self.assertIn("激光共聚焦超长超长超长预设名称", window.preset_combo.toolTip())
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_save_project_persists_project_asset_images_into_assets_directory(self) -> None:
@@ -707,6 +792,36 @@ class CanvasAndExportTests(unittest.TestCase):
             payload = json.loads(project_path.read_text(encoding="utf-8"))
             self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
             self.assertEqual(payload["documents"][0]["path"], captured_document.path)
+
+    def test_save_project_dialog_defaults_to_first_image_directory_without_history(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "first_image.png"
+                image = QImage(120, 80, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_project_dir = ""
+
+                with (
+                    patch.object(window, "_persist_project_assets", return_value=True),
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.ProjectIO.save"),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(Path(tmp_dir) / "named_project.fdmproj"), window.PROJECT_FILTER)) as save_dialog,
+                ):
+                    self.assertTrue(window.save_project())
+
+                args = save_dialog.call_args.args
+                self.assertEqual(args[2], str(Path(tmp_dir) / "fiber_measurement.fdmproj"))
+                self.assertEqual(window._app_settings.recent_project_dir, str(Path(tmp_dir).resolve()))
+        finally:
+            window.close()
 
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
         window, document = self._create_main_window_fixture()
@@ -752,6 +867,82 @@ class CanvasAndExportTests(unittest.TestCase):
                     self.assertFalse(scale_image.isNull())
                     self.assertGreater(self._count_diff_pixels(baseline_image, measurement_image), 0)
                     self.assertGreater(self._count_diff_pixels(baseline_image, scale_image), 0)
+        finally:
+            window.close()
+
+    def test_export_results_uses_save_dialog_for_single_output_and_remembers_directory(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_single.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_export_dir = ""
+                chosen_output = Path(tmp_dir) / "renamed_result.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(include_excel=True, scope=ExportScope.CURRENT)
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")) as save_dialog,
+                    patch("fdm.ui.main_window.QFileDialog.getExistingDirectory") as dir_dialog,
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                save_dialog.assert_called_once()
+                dir_dialog.assert_not_called()
+                dialog_path = save_dialog.call_args.args[2]
+                self.assertEqual(dialog_path, str(Path(tmp_dir) / "纤维测量结果.xlsx"))
+                self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
+                self.assertEqual(window._app_settings.recent_export_dir, str(Path(tmp_dir).resolve()))
+        finally:
+            window.close()
+
+    def test_export_results_shows_busy_file_warning_when_export_overwrite_fails(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_busy.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                chosen_output = Path(tmp_dir) / "locked.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(include_excel=True, scope=ExportScope.CURRENT)
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")),
+                    patch("fdm.ui.main_window.QMessageBox.warning") as warning_box,
+                    patch.object(window.export_service, "export_project", side_effect=PermissionError(13, "Permission denied", str(chosen_output))),
+                ):
+                    window.export_results()
+
+                warning_box.assert_called_once()
+                self.assertIn("文件可能正在被其他程序占用", warning_box.call_args.args[2])
+                self.assertIn(str(chosen_output), warning_box.call_args.args[2])
         finally:
             window.close()
 
@@ -982,6 +1173,22 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_measurement_record_delete_buttons_share_one_row_with_short_labels(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window.delete_measurement_button.text(), "删除选中")
+            self.assertEqual(window._delete_group_measurements_button.text(), "删除类别")
+            self.assertEqual(window._delete_all_measurements_button.text(), "删除全部")
+
+            action_row = window.delete_measurement_button.parentWidget()
+            self.assertIsNotNone(action_row)
+            self.assertIs(action_row, window._delete_group_measurements_button.parentWidget())
+            self.assertIs(action_row, window._delete_all_measurements_button.parentWidget())
+            self.assertIsNotNone(action_row.layout())
+            self.assertEqual(action_row.layout().count(), 3)
+        finally:
+            window.close()
+
     def test_measure_toolbar_is_separate_and_exposes_primary_modes(self) -> None:
         window = MainWindow()
         try:
@@ -991,12 +1198,39 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "边缘吸附", "多边形面积", "自由形状面积", "魔棒分割", "比例尺标定", "叠加标注"],
+                ["浏览", "手动测量", "计数", "边缘吸附", "面积测量", "标准魔棒", "比例尺标定", "叠加标注"],
             )
-            visible_actions = [window._mode_actions[key] for key in ["select", "manual", "snap", "polygon_area", "freehand_area", "magic_segment", "calibration"]]
+            visible_actions = [
+                window._mode_actions[key]
+                for key in [
+                    "select",
+                    "manual",
+                    "continuous_manual",
+                    "count",
+                    "snap",
+                    "polygon_area",
+                    "freehand_area",
+                    MagicSegmentToolMode.STANDARD,
+                    MagicSegmentToolMode.REFERENCE,
+                    MagicSegmentToolMode.FIBER_QUICK,
+                    "calibration",
+                ]
+            ]
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            self.assertIsInstance(window._manual_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._manual_tool_button.text(), "手动测量")
+            self.assertEqual(window._manual_tool_button.currentToolKind(), "manual")
+            self.assertIs(window._manual_tool_menu.parent(), window)
+            self.assertIsInstance(window._area_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._area_tool_button.text(), "面积测量")
+            self.assertEqual(window._area_tool_button.currentToolKind(), "polygon_area")
+            self.assertIs(window._area_tool_menu.parent(), window)
+            self.assertIsInstance(window._magic_tool_button, OverlayToolSplitButton)
+            self.assertEqual(window._magic_tool_button.text(), "标准魔棒")
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.STANDARD)
+            self.assertIs(window._magic_tool_menu.parent(), window)
             self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
             self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
             self.assertLessEqual(window._overlay_tool_button.expandedWidthHint(), 120)
@@ -1057,7 +1291,7 @@ class CanvasAndExportTests(unittest.TestCase):
             strip._sync_auto_compact_mode()
 
             self.assertTrue(strip.isCompactMode())
-            self.assertEqual(strip.buttonForMode("manual").toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            self.assertTrue(strip.buttonForMode("manual").isCompactMode())
             self.assertTrue(window._overlay_tool_button.isCompactMode())
             self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
         finally:
@@ -1080,13 +1314,44 @@ class CanvasAndExportTests(unittest.TestCase):
             palette = strip.palette()
             palette.setColor(QPalette.ColorRole.Window, QColor("#F7F8FA"))
             strip.setPalette(palette)
+            action = QAction("浏览", strip)
+            primary_button = strip.addModeAction("select", action)
+            context_button = QToolButton(strip)
+            context_button.setProperty("contextTool", True)
             strip._apply_theme_styles()
 
             stylesheet = strip.styleSheet()
             self.assertIn("background: #F5F7FA;", stylesheet)
             self.assertIn("color: #1F2933;", stylesheet)
             self.assertIn("background: #DDF3EF;", stylesheet)
+            self.assertEqual(primary_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
+            self.assertEqual(context_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
         finally:
+            strip.close()
+
+    def test_measurement_tool_strip_theme_refresh_repolishes_tool_buttons_and_updates_split_buttons(self) -> None:
+        class RecordingSplitButton(OverlayToolSplitButton):
+            def __init__(self) -> None:
+                super().__init__()
+                self.update_calls = 0
+
+            def update(self, *args, **kwargs):  # type: ignore[override]
+                self.update_calls += 1
+                return super().update(*args, **kwargs)
+
+        strip = MeasurementToolStrip()
+        split_button = RecordingSplitButton()
+        try:
+            strip.addModeAction("select", QAction("浏览", strip))
+            strip.addSplitModeButton("overlay", split_button)
+
+            with patch("fdm.ui.widgets._repolish") as repolish:
+                strip._apply_theme_styles()
+
+            self.assertTrue(any(call.args[0].property("primaryTool") for call in repolish.call_args_list))
+            self.assertGreater(split_button.update_calls, 0)
+        finally:
+            split_button.close()
             strip.close()
 
     def test_main_window_uses_application_icon(self) -> None:
@@ -1294,6 +1559,296 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_area_auto_recognition_uses_shared_project_group_order_across_documents(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_order_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_order_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first.create_group(color="#E07A5F", label="莱赛尔")
+            first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#E07A5F", label="莱赛尔")
+            second.create_group(color="#1F7A8C", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            global_labels: list[str] = []
+            instances = [self._area_instance("棉"), self._area_instance("莱赛尔")]
+            window._apply_area_inference_result(first, instances, global_group_labels=global_labels, model_name="棉-莱赛尔")
+            window._apply_area_inference_result(second, instances, global_group_labels=global_labels, model_name="棉-莱赛尔")
+
+            self.assertEqual(global_labels, ["棉", "莱赛尔"])
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉", "莱赛尔"])
+            self.assertEqual([group.label for group in first.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertEqual([group.label for group in second.sorted_groups()], ["棉", "莱赛尔"])
+            self.assertEqual(first.get_group_by_number(1).label, "棉")
+            self.assertEqual(second.get_group_by_number(1).label, "棉")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_single_document_area_auto_recognition_does_not_update_project_templates(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_single_local_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_single_local_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            window._apply_area_inference_result(
+                first,
+                [self._area_instance("棉")],
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+
+            self.assertEqual(window.project.project_group_templates, [])
+            self.assertIsNotNone(first.find_group_by_label("棉"))
+            self.assertIsNone(second.find_group_by_label("棉"))
+            self.assertIsNone(second.find_group_by_label("莱赛尔"))
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_single_document_area_auto_then_add_global_same_label_only_syncs_explicit_template(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_then_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_then_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            window._apply_area_inference_result(
+                first,
+                [self._area_instance("棉")],
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+            auto_measurement = first.area_measurements()[0]
+            original_group_id = auto_measurement.fiber_group_id
+
+            window._set_current_document(second.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#E07A5F", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual([template.label for template in window.project.project_group_templates], ["棉"])
+            self.assertEqual(first.get_measurement(auto_measurement.id).fiber_group_id, original_group_id)
+            self.assertEqual(first.get_group(original_group_id).label, "棉")
+            self.assertEqual(first.get_group(original_group_id).color, "#e07a5f")
+            self.assertIsNone(second.find_group_by_label("莱赛尔"))
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_single_document_area_auto_recognition_assigns_distinct_colors_for_multiple_new_labels(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/area_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/area_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="麻", color="#6B7280"),
+                ProjectGroupTemplate(label="涤纶", color="#E07A5F"),
+            ]
+
+            instances = [
+                self._area_instance("棉"),
+                self._area_instance(
+                    "莱赛尔",
+                    polygon=[Point(40, 40), Point(60, 40), Point(60, 60), Point(40, 60)],
+                ),
+            ]
+            window._apply_area_inference_result(
+                second,
+                instances,
+                model_name="棉-莱赛尔",
+                update_project_group_templates=False,
+            )
+
+            self.assertEqual(
+                [(template.label, template.color) for template in window.project.project_group_templates],
+                [("麻", "#6B7280"), ("涤纶", "#E07A5F")],
+            )
+            cotton = second.find_group_by_label("棉")
+            lyocell = second.find_group_by_label("莱赛尔")
+            self.assertIsNotNone(cotton)
+            self.assertIsNotNone(lyocell)
+            self.assertEqual(cotton.color, window._color_palette[2].lower())
+            self.assertEqual(lyocell.color, window._color_palette[3].lower())
+            self.assertNotEqual(cotton.color, lyocell.color)
+            self.assertIsNone(first.find_group_by_label("棉"))
+            self.assertIsNone(first.find_group_by_label("莱赛尔"))
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_reorders_existing_groups_without_losing_manual_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_manual_keep.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            hemp = document.create_group(color="#6B7280", label="麻")
+            lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            manual = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton.id,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(80, 20)),
+            )
+            document.add_measurement(manual)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉", "莱赛尔", "麻"])
+            self.assertEqual(document.get_group(cotton.id).number, 1)
+            self.assertEqual(document.get_measurement(manual.id).fiber_group_id, cotton.id)
+            self.assertEqual(document.get_group(hemp.id).number, 3)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_merges_duplicate_same_label_groups_before_import(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_merge_dupes.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            cotton_a = document.create_group(color="#1F7A8C", label="棉")
+            document.create_group(color="#6B7280", label="麻")
+            cotton_b = document.create_group(color="#7DD3FC", label="棉")
+            manual = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton_b.id,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(80, 20)),
+            )
+            document.add_measurement(manual)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉",
+            )
+
+            cotton_groups = document.groups_by_label("棉")
+            self.assertEqual(len(cotton_groups), 1)
+            self.assertEqual(cotton_groups[0].id, cotton_a.id)
+            self.assertEqual(document.get_measurement(manual.id).fiber_group_id, cotton_a.id)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_restores_suppressed_project_label_when_model_hits_it(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [
+                ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+                ProjectGroupTemplate(label="莱赛尔", color="#E07A5F"),
+            ]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/area_unsuppress.png",
+                image_size=(220, 140),
+                suppressed_project_group_labels=["棉"],
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [self._area_instance("棉")],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertFalse(document.is_project_group_label_suppressed("棉"))
+            self.assertIsNotNone(document.find_group_by_label("棉"))
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉", "莱赛尔"])
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_auto_recognition_empty_result_clears_auto_instances_without_reordering_groups(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/area_empty.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            auto_area = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=cotton.id,
+                mode="auto_instance",
+                measurement_kind="area",
+                polygon_px=[Point(10, 10), Point(30, 10), Point(30, 30), Point(10, 30)],
+            )
+            document.add_measurement(auto_area)
+            self._load_document_into_window(window, document, image)
+
+            window._apply_area_inference_result(
+                document,
+                [],
+                global_group_labels=[],
+                model_name="棉-莱赛尔",
+            )
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["莱赛尔", "棉"])
+            self.assertEqual(document.get_group(lyocell.id).number, 1)
+            self.assertEqual(document.get_group(cotton.id).number, 2)
+            self.assertFalse(
+                any(measurement.mode == "auto_instance" for measurement in document.measurements)
+            )
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_magic_segment_request_uses_in_memory_image_and_cache_key(self) -> None:
         window = MainWindow()
         try:
@@ -1319,12 +1874,17 @@ class CanvasAndExportTests(unittest.TestCase):
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
 
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
             fake_worker = FakeWorker()
             window._prompt_seg_worker = fake_worker
 
-            with patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None), patch(
-                "fdm.ui.main_window.PromptSegmentationService.models_ready",
-                return_value=True,
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
             ):
                 window._on_canvas_magic_segment_requested(
                     document.id,
@@ -1332,15 +1892,210 @@ class CanvasAndExportTests(unittest.TestCase):
                         "request_id": 7,
                         "positive_points": [Point(20, 20)],
                         "negative_points": [Point(30, 30)],
+                        "tool_mode": MagicSegmentToolMode.STANDARD,
+                        "active_stage": MagicSegmentOperationMode.ADD,
                     },
                 )
 
             self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
             self.assertIs(fake_worker.requested.payload.image, image)
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 7)
             self.assertTrue(fake_worker.requested.payload.cache_key.startswith(f"{document.id}:"))
+            self.assertEqual(
+                fake_worker.requested.payload.model_variant,
+                window._app_settings.magic_segment_model_variant,
+            )
+            self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.STANDARD)
+            self.assertEqual(fake_worker.requested.payload.active_stage, MagicSegmentOperationMode.ADD)
         finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_reference_instance_request_uses_reference_worker_for_existing_area_seed(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/reference_existing_area.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            group = document.ensure_default_group()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=[Point(22, 18), Point(90, 18), Point(90, 72), Point(22, 72)],
+                status="ready",
+            )
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
+            fake_worker = FakeWorker()
+            window._reference_instance_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_reference_instance_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 9,
+                        "tool_mode": MagicSegmentToolMode.REFERENCE,
+                        "reference_measurement_id": measurement.id,
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 9)
+            self.assertEqual(fake_worker.requested.payload.model_variant, window._app_settings.magic_segment_model_variant)
+            self.assertEqual(fake_worker.requested.payload.reference_box, None)
+            self.assertEqual(fake_worker.requested.payload.reference_polygon_px, measurement.polygon_px)
+            self.assertEqual(fake_worker.requested.payload.reference_area_rings_px, measurement.area_rings_px)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_reference_instance_request_uses_reference_worker_for_drag_box_seed(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/reference_drag_box.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+            fake_worker = FakeWorker()
+            window._reference_instance_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_reference_instance_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 8,
+                        "tool_mode": MagicSegmentToolMode.REFERENCE,
+                        "reference_box": {
+                            "start": Point(24, 28),
+                            "end": Point(96, 104),
+                        },
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 8)
+            self.assertEqual(fake_worker.requested.payload.reference_box, (Point(24, 28), Point(96, 104)))
+            self.assertEqual(fake_worker.requested.payload.reference_polygon_px, [])
+            self.assertEqual(fake_worker.requested.payload.reference_area_rings_px, [])
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_fiber_quick_request_uses_prompt_segmentation_worker(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/fiber_quick.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+                    self.requests: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.requests.append((document_id, request_id))
+
+            fake_worker = FakeWorker()
+            window._prompt_seg_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None),
+                patch.object(QMessageBox, "warning") as warning_mock,
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 11,
+                        "positive_points": [Point(48, 52)],
+                        "negative_points": [Point(74, 56)],
+                        "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 11)
+            self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.FIBER_QUICK)
+            self.assertEqual(fake_worker.requested.payload.positive_points, [Point(48, 52)])
+            self.assertEqual(fake_worker.requested.payload.negative_points, [Point(74, 56)])
+            self.assertTrue(fake_worker.requested.payload.roi_enabled)
+            self.assertEqual(fake_worker.requests, [(document.id, 11)])
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_add_fiber_group_global_syncs_existing_documents(self) -> None:
@@ -1362,7 +2117,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 return dialog_self.DialogCode.Accepted
 
             def fake_values(dialog_self):
-                return ("棉", True)
+                return ("棉", "#1F7A8C", True)
 
             with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
                 window.add_fiber_group()
@@ -1373,6 +2128,41 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window.close()
+
+    def test_add_existing_project_global_group_reuses_template_color_across_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_global_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_global_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first.create_group(color="#E07A5F", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            window._set_current_document(second.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.add_fiber_group()
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#1F7A8C")
+            self.assertEqual(first.find_group_by_label("棉").color, "#1f7a8c")
+            self.assertEqual(second.find_group_by_label("棉").color, "#1f7a8c")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_add_fiber_group_duplicate_local_is_noop(self) -> None:
@@ -1392,7 +2182,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 return dialog_self.DialogCode.Accepted
 
             def fake_values(dialog_self):
-                return ("棉", False)
+                return ("棉", "#1F7A8C", False)
 
             with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
                 window.add_fiber_group()
@@ -1404,8 +2194,85 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog.close()
             window.close()
 
-    def test_rename_group_to_existing_merges_measurements(self) -> None:
+    def test_group_action_button_uses_edit_label(self) -> None:
         window = MainWindow()
+        try:
+            self.assertEqual(window._rename_group_button.text(), "编辑")
+            self.assertEqual(window.rename_group_action.text(), "编辑当前类别")
+        finally:
+            window.close()
+
+    def test_edit_group_updates_name_and_color(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_edit_color.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            group = document.create_group(color="#1F7A8C", label="棉")
+            document.set_active_group(group.id)
+            self._load_document_into_window(window, document, image)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉花", "#E07A5F", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            updated = document.get_group(group.id)
+            self.assertIsNotNone(updated)
+            self.assertEqual(updated.label, "棉花")
+            self.assertEqual(updated.color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window.close()
+
+    def test_edit_template_bound_group_color_syncs_project_template_and_documents(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first_group = first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#1F7A8C", label="棉")
+            first.set_active_group(first_group.id)
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#E07A5F", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#e07a5f")
+            self.assertEqual(first.find_group_by_label("棉").color, "#e07a5f")
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_group_to_existing_merges_measurements(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
         try:
             image = QImage(220, 140, QImage.Format.Format_RGB32)
             image.fill(QColor("#FFFFFF"))
@@ -1425,7 +2292,14 @@ class CanvasAndExportTests(unittest.TestCase):
             document.set_active_group(hemp.id)
             self._load_document_into_window(window, document, image)
 
-            with patch("fdm.ui.main_window.QInputDialog.getText", return_value=("棉", True)), patch(
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values), patch(
                 "fdm.ui.main_window.QMessageBox.question",
                 return_value=QMessageBox.StandardButton.Yes,
             ):
@@ -1434,7 +2308,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
             self.assertEqual(document.measurements[0].fiber_group_id, cotton.id)
             self.assertEqual(document.active_group_id, cotton.id)
+            self.assertEqual(document.get_group(cotton.id).color, "#1F7A8C")
         finally:
+            for dialog in dialogs:
+                dialog.close()
             window.close()
 
     def test_delete_project_global_group_adds_local_suppression(self) -> None:
@@ -1460,6 +2337,49 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._apply_project_group_templates_to_document(document))
             self.assertIsNone(document.find_group_by_label("棉"))
         finally:
+            window.close()
+
+    def test_settings_group_color_update_syncs_template_bound_groups(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/settings_group_color_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/settings_group_color_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first_group = first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#1F7A8C", label="棉")
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            class FakeDialog:
+                def __init__(self, settings: AppSettings) -> None:
+                    self._settings = settings
+
+                def app_settings(self) -> AppSettings:
+                    return self._settings
+
+                def group_colors(self) -> dict[str, str]:
+                    return {first_group.id: "#E07A5F"}
+
+                def wants_scale_anchor_pick(self) -> bool:
+                    return False
+
+            with (
+                patch("fdm.ui.main_window.refresh_widget_theme"),
+                patch.object(window, "_apply_theme_mode"),
+                patch.object(window, "_save_app_settings"),
+            ):
+                window._apply_settings_dialog(FakeDialog(window._app_settings), close_after=False)
+
+            self.assertEqual(window.project.project_group_templates[0].color, "#e07a5f")
+            self.assertEqual(first.find_group_by_label("棉").color, "#e07a5f")
+            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_merge_legacy_presets_renames_name_conflicts(self) -> None:
@@ -1508,11 +2428,21 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._magic_controls_widget)
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertIsNotNone(window._magic_prompt_label)
 
             window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
-            window.set_tool_mode("magic_segment")
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
             self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
             self.assertTrue(window._measurement_tool_strip.isContextInline())
+            self.assertTrue(window._magic_prompt_label.isHidden())
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+            self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.REFERENCE)
+            self.assertFalse(window._magic_prompt_label.isHidden())
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
+            self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.FIBER_QUICK)
+            self.assertTrue(window._magic_prompt_label.isHidden())
 
             window.set_tool_mode("select")
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
@@ -1651,6 +2581,8 @@ class CanvasAndExportTests(unittest.TestCase):
                 window.open_shortcut_help_dialog()
             self.assertEqual(len(dialogs), 1)
             self.assertIn("R", dialogs[0]._content.toPlainText())
+            self.assertIn("S", dialogs[0]._content.toPlainText())
+            self.assertIn("T", dialogs[0]._content.toPlainText())
             self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
         finally:
             for dialog in dialogs:
@@ -1716,8 +2648,68 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(commits[0][1], "freehand_area")
         self.assertGreaterEqual(len(commits[0][2]["polygon_px"]), 3)
 
-    def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
+    def test_continuous_manual_tool_commits_polyline_on_double_click(self) -> None:
         document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("continuous_manual")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
+        canvas.mouseDoubleClickEvent(FakeMouseEvent(canvas.image_to_widget(Point(130, 75)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][0], document.id)
+        self.assertEqual(commits[0][1], "continuous_manual")
+        self.assertEqual(commits[0][2]["measurement_kind"], "polyline")
+        self.assertEqual(len(commits[0][2]["polyline_px"]), 3)
+
+    def test_count_tool_click_emits_point_measurement(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("count")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(42, 58)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][0], document.id)
+        self.assertEqual(commits[0][1], "count")
+        self.assertEqual(commits[0][2]["measurement_kind"], "count")
+        self.assertAlmostEqual(commits[0][2]["point_px"].x, 42.0)
+        self.assertAlmostEqual(commits[0][2]["point_px"].y, 58.0)
+
+    def test_path_controls_complete_continuous_measurement_in_main_window(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/path_controls.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode("continuous_manual")
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
+
+            self.assertTrue(window._measurement_tool_strip.isPathContextVisible())
+            self.assertTrue(window._path_complete_button.isEnabled())
+            window._path_complete_button.click()
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].measurement_kind, "polyline")
+            self.assertEqual(document.measurements[0].mode, "continuous_manual")
+        finally:
+            window.close()
+
+    def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
+        document, image, canvas = self._create_canvas_document()
         canvas.set_tool_mode("magic_segment")
         requests: list[tuple[str, object]] = []
         commits: list[tuple[str, str, object]] = []
@@ -1734,14 +2726,66 @@ class CanvasAndExportTests(unittest.TestCase):
         request_id = requests[0][1]["request_id"]
         canvas.apply_magic_segment_result(
             request_id,
-            [Point(20, 20), Point(90, 18), Point(92, 76), Point(24, 80)],
+            self._rect_mask(image.width(), image.height(), (20, 20, 92, 80)),
         )
 
         self.assertTrue(canvas.has_magic_segment_preview())
-        self.assertTrue(canvas.commit_magic_segment_preview())
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
+        commit_result = canvas.commit_magic_segment_preview()
+        self.assertTrue(bool(commit_result["committed"]))
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
+
+    def test_magic_segment_tool_queues_refinement_while_busy(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(46, 52)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][0], document.id)
+        self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.STANDARD)
+        self.assertEqual(requests[0][1]["request_id"], 1)
+        self.assertTrue(canvas._magic_segment.busy)
+        self.assertTrue(canvas._magic_segment.pending_recompute)
+
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(220, 140, (20, 20, 92, 80)),
+        )
+        followup = canvas.dequeue_pending_magic_segment_request(1)
+
+        self.assertIsNotNone(followup)
+        self.assertEqual(followup["request_id"], 2)
+        self.assertEqual(len(followup["positive_points"]), 2)
+
+    def test_fiber_quick_tool_queues_refinement_while_segmentation_busy(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(44, 48)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertTrue(canvas._fiber_quick.segmentation_busy)
+        self.assertTrue(canvas._fiber_quick.pending_recompute)
+
+        canvas.apply_fiber_quick_segmentation_result(
+            1,
+            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
+            debug_payload={"candidate_count": 7},
+        )
+        followup = canvas.dequeue_pending_fiber_quick_request(1)
+
+        self.assertIsNotNone(followup)
+        self.assertEqual(followup["request_id"], 2)
+        self.assertEqual(len(followup["positive_points"]), 2)
 
     def test_magic_segment_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
         window = MainWindow()
@@ -1763,25 +2807,483 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(canvas.current_magic_segment_prompt_type(), "positive")
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
             self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
+            self.assertIn("请先完成第一个形状草稿", window.statusBar().currentMessage())
 
             canvas._magic_segment.request_id = 1
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
             canvas.apply_magic_segment_result(
                 1,
-                [Point(24, 24), Point(88, 22), Point(92, 76), Point(26, 80)],
+                self._rect_mask(image.width(), image.height(), (24, 24, 92, 80)),
             )
+
+            confirm_in_add = FakeKeyEvent(Qt.Key.Key_S)
+            window.keyPressEvent(confirm_in_add)
+            self.assertFalse(confirm_in_add.accepted)
+
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            canvas._magic_segment.request_id = 2
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+            canvas.apply_magic_segment_result(
+                2,
+                self._rect_mask(image.width(), image.height(), (42, 34, 76, 68)),
+            )
+            confirm_in_subtract = FakeKeyEvent(Qt.Key.Key_S)
+            window.keyPressEvent(confirm_in_subtract)
+            self.assertTrue(confirm_in_subtract.accepted)
+            self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+            self.assertIsNone(canvas._magic_segment.subtract_mask)
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].mode, "magic_segment")
 
             canvas.set_tool_mode("magic_segment")
-            canvas._magic_segment.positive_points = [Point(40, 40)]
+            canvas._magic_segment.primary_positive_points = [Point(40, 40)]
             self.assertTrue(canvas.has_magic_segment_session())
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
             self.assertFalse(canvas.has_magic_segment_session())
         finally:
             window._reset_workspace()
             window.close()
+
+    def test_fiber_quick_tool_emits_request_and_commits_preview(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        commits: list[tuple[str, str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(requests), 1)
+        self.assertEqual(requests[0][1]["tool_mode"], MagicSegmentToolMode.FIBER_QUICK)
+
+        request_id = requests[0][1]["request_id"]
+        canvas.apply_fiber_quick_segmentation_result(
+            request_id,
+            preview_polygon_points=[Point(18, 26), Point(82, 26), Point(82, 66), Point(18, 66)],
+            debug_payload={"candidate_count": 7},
+        )
+        canvas.begin_fiber_quick_geometry(request_id)
+        canvas.apply_fiber_quick_geometry_result(
+            request_id,
+            preview_line=Line(Point(28, 46), Point(68, 46)),
+            confidence=0.83,
+            debug_payload={"candidate_count": 7},
+        )
+
+        self.assertTrue(canvas.has_fiber_quick_preview())
+        commit_result = canvas.commit_fiber_quick_preview()
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "fiber_quick")
+        self.assertEqual(commits[0][2]["measurement_kind"], "line")
+        self.assertEqual(commits[0][2]["status"], "fiber_quick")
+
+    def test_fiber_quick_request_ids_do_not_reset_after_clear(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+        requests: list[tuple[str, object]] = []
+        canvas.magicSegmentRequested.connect(lambda document_id, payload: requests.append((document_id, payload)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 35)), button=Qt.MouseButton.LeftButton))
+        first_request_id = requests[-1][1]["request_id"]
+
+        canvas.clear_fiber_quick_session()
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(40, 45)), button=Qt.MouseButton.LeftButton))
+        second_request_id = requests[-1][1]["request_id"]
+
+        self.assertGreater(second_request_id, first_request_id)
+
+    def test_fiber_quick_shortcuts_toggle_prompt_commit_and_cancel(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_shortcuts.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+
+            self.assertEqual(canvas.current_fiber_quick_prompt_type(), "positive")
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_R))
+            self.assertEqual(canvas.current_fiber_quick_prompt_type(), "negative")
+
+            canvas._fiber_quick.request_id = 1
+            canvas.apply_fiber_quick_segmentation_result(
+                1,
+                preview_polygon_points=[Point(40, 20), Point(112, 20), Point(112, 80), Point(40, 80)],
+                debug_payload={"candidate_count": 5},
+            )
+            canvas.begin_fiber_quick_geometry(1)
+            canvas.apply_fiber_quick_geometry_result(1, preview_line=Line(Point(60, 40), Point(92, 40)), confidence=0.91)
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "fiber_quick")
+
+            canvas.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.positive_points = [Point(44, 44)]
+            self.assertTrue(canvas.has_fiber_quick_session())
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+            self.assertFalse(canvas.has_fiber_quick_session())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_magic_segment_subtract_stage_preserves_primary_draft_until_commit(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+        )
+        self.assertTrue(canvas.has_magic_segment_preview())
+
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
+            2,
+            self._rect_mask(image.width(), image.height(), (56, 38, 108, 82)),
+        )
+
+        self.assertTrue(canvas.has_magic_segment_preview())
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
+        self.assertGreaterEqual(len(canvas._magic_segment.subtract_polygon), 3)
+        self.assertIsNotNone(canvas._magic_segment.primary_mask)
+        self.assertIsNotNone(canvas._magic_segment.subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 2)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
+
+    def test_magic_segment_commit_supports_multiple_confirmed_subtract_shapes(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(
+            1,
+            self._rect_mask(image.width(), image.height(), (16, 16, 180, 110)),
+        )
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
+            2,
+            self._rect_mask(image.width(), image.height(), (42, 32, 74, 70)),
+        )
+        confirm_result = canvas.confirm_current_magic_subtract_shape()
+        self.assertTrue(bool(confirm_result["confirmed"]))
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+
+        canvas._magic_segment.request_id = 3
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(
+            3,
+            self._rect_mask(image.width(), image.height(), (108, 40, 146, 88)),
+        )
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 0)
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(commits[0][1], "magic_segment")
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 3)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
+
+    def test_magic_segment_inference_does_not_show_cleanup_messages_before_confirm(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_segment_status.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode("magic_segment")
+            canvas._magic_segment.request_id = 1
+            canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+            window._on_prompt_segmentation_succeeded(
+                document.id,
+                1,
+                PromptSegmentationResult(
+                    mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+                    polygon_px=[],
+                    area_rings_px=[],
+                    area_px=0.0,
+                    metadata={},
+                ),
+            )
+
+            self.assertNotIn("自动开缝", window.statusBar().currentMessage())
+            self.assertNotIn("仅保留最大连通区域", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_magic_segment_preview_uses_largest_polygon_instead_of_raw_mask_fragments(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+
+        fragmented_mask = self._rect_mask(image.width(), image.height(), (28, 24, 136, 92))
+        fragmented_mask[16:22, 164:170] = True
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+
+        canvas.apply_magic_segment_result(1, fragmented_mask)
+
+        self.assertGreaterEqual(len(canvas._magic_segment.primary_polygon), 3)
+        self.assertIsNotNone(canvas._magic_segment.primary_mask)
+        self.assertFalse(bool(canvas._magic_segment.primary_mask[18, 166]))
+
+    def test_fiber_quick_prompt_success_dispatches_async_geometry_worker(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_prompt.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.request_id = 1
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeGeometryWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
+            fake_worker = FakeGeometryWorker()
+            window._fiber_quick_geometry_worker = fake_worker
+
+            with patch.object(window, "_ensure_fiber_quick_geometry_worker", return_value=None):
+                window._on_prompt_segmentation_succeeded(
+                    document.id,
+                    1,
+                    PromptSegmentationResult(
+                        mask=self._rect_mask(image.width(), image.height(), (20, 18, 150, 102)),
+                        polygon_px=[Point(20, 18), Point(150, 18), Point(150, 102), Point(20, 102)],
+                        area_rings_px=[],
+                        area_px=0.0,
+                        metadata={
+                            "tool_mode": MagicSegmentToolMode.FIBER_QUICK,
+                        },
+                    ),
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertTrue(canvas._fiber_quick.geometry_busy)
+            self.assertEqual(fake_worker.requested.payload.document_id, document.id)
+            self.assertEqual(fake_worker.requested.payload.request_id, 1)
+            self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
+            self.assertIn("正在异步计算直径线", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_fiber_quick_can_confirm_shape_before_geometry_finishes(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/fiber_quick_pending_commit.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            canvas._fiber_quick.request_id = 1
+            canvas._fiber_quick.positive_points = [Point(70, 40)]
+            canvas.apply_fiber_quick_segmentation_result(
+                1,
+                mask=self._rect_mask(image.width(), image.height(), (40, 20, 112, 80)),
+                preview_polygon_points=[Point(40, 20), Point(112, 20), Point(112, 80), Point(40, 80)],
+                debug_payload={"candidate_count": 5},
+            )
+            canvas.begin_fiber_quick_geometry(1)
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeCommitWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+                    self.requests: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.requests.append((document_id, request_id))
+
+            fake_worker = FakeCommitWorker()
+            window._fiber_quick_commit_geometry_worker = fake_worker
+
+            with patch.object(window, "_ensure_fiber_quick_commit_geometry_worker", return_value=None):
+                self.assertTrue(window._commit_fiber_quick_preview())
+
+            self.assertEqual(len(document.measurements), 0)
+            self.assertFalse(canvas.has_fiber_quick_session())
+            self.assertEqual(fake_worker.requests, [(document.id, 1)])
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertEqual(fake_worker.requested.payload.timeout_ms, DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS)
+
+            window._on_fiber_quick_commit_geometry_succeeded(
+                document.id,
+                1,
+                type(
+                    "Result",
+                    (),
+                    {
+                        "line_px": Line(Point(60, 40), Point(92, 40)),
+                        "confidence": 0.9,
+                        "debug_payload": {},
+                    },
+                )(),
+            )
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "fiber_quick")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_magic_segment_commit_preserves_enclosed_hole_even_with_raw_fragment_noise(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        primary_mask = self._rect_mask(image.width(), image.height(), (20, 18, 150, 102))
+        subtract_mask = self._rect_mask(image.width(), image.height(), (56, 38, 108, 82))
+        subtract_mask[10:16, 170:176] = True
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, primary_mask)
+        self.assertEqual(canvas.cycle_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(2, subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertFalse(bool(commit_result["result_empty"]))
+        self.assertEqual(len(commits), 1)
+        self.assertEqual(len(commits[0][2]["area_rings_px"]), 2)
+
+    def test_magic_segment_commit_preserves_area_rings_for_hole_geometry(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        primary_mask = self._rect_mask(image.width(), image.height(), (20, 18, 150, 102))
+        subtract_mask = self._rect_mask(image.width(), image.height(), (56, 38, 108, 82))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, primary_mask)
+        canvas.cycle_magic_segment_operation_mode()
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.apply_magic_segment_result(2, subtract_mask)
+
+        commit_result = canvas.commit_magic_segment_preview()
+
+        self.assertTrue(bool(commit_result["committed"]))
+        self.assertEqual(len(commits), 1)
+        payload = commits[0][2]
+        self.assertEqual(len(payload["area_rings_px"]), 2)
+        self.assertGreaterEqual(len(payload["polygon_px"]), 3)
+        self.assertGreater(float(payload["exact_area_px"]), 0.0)
+
+    def test_area_hit_test_uses_area_rings_instead_of_simplified_polygon(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        area_measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=[Point(20, 20), Point(60, 20), Point(60, 120), Point(20, 120)],
+            area_rings_px=[
+                [
+                    Point(20, 20),
+                    Point(70, 20),
+                    Point(70, 60),
+                    Point(30, 60),
+                    Point(30, 120),
+                    Point(20, 120),
+                ]
+            ],
+        )
+        document.add_measurement(area_measurement)
+
+        self.assertEqual(canvas._hit_test_area_measurement(Point(64, 40)), area_measurement.id)
 
     def test_text_tool_adds_annotation_and_delete_removes_selected_text(self) -> None:
         window = MainWindow()
@@ -1808,6 +3310,153 @@ class CanvasAndExportTests(unittest.TestCase):
 
             window.delete_selected_measurement()
             self.assertEqual(len(document.overlay_annotations), 0)
+        finally:
+            window.close()
+
+    def test_delete_selected_measurement_prioritizes_table_multi_selection(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/batch_delete.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(10, 20), Point(70, 20)),
+                )
+            )
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(20, 60), Point(90, 60)),
+                )
+            )
+            self._load_document_into_window(window, document, image)
+            window._on_canvas_overlay_create_requested(
+                document.id,
+                {
+                    "kind": OverlayAnnotationKind.RECT,
+                    "start_px": Point(20, 24),
+                    "end_px": Point(90, 84),
+                },
+            )
+            self.assertEqual(len(document.overlay_annotations), 1)
+            self.assertEqual(window.measurement_table.selectionMode(), QAbstractItemView.SelectionMode.ExtendedSelection)
+
+            selection_model = window.measurement_table.selectionModel()
+            self.assertIsNotNone(selection_model)
+            selection_model.select(
+                window.measurement_table.model().index(0, window.TABLE_COL_KIND),
+                QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+            )
+            selection_model.select(
+                window.measurement_table.model().index(1, window.TABLE_COL_KIND),
+                QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows,
+            )
+
+            window.delete_selected_measurement()
+
+            self.assertEqual(len(document.measurements), 0)
+            self.assertEqual(len(document.overlay_annotations), 1)
+        finally:
+            window.close()
+
+    def test_delete_measurements_by_category_respects_scope(self) -> None:
+        window = MainWindow()
+        try:
+            first_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            first_image.fill(QColor("#FFFFFF"))
+            first_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_category_current.png",
+                image_size=(first_image.width(), first_image.height()),
+            )
+            first_document.initialize_runtime_state()
+            cotton = first_document.create_group(color="#1F7A8C", label="棉")
+            silk = first_document.create_group(color="#E07A5F", label="丝")
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=cotton.id, mode="manual", line_px=Line(Point(10, 10), Point(60, 10)))
+            )
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=silk.id, mode="manual", line_px=Line(Point(20, 40), Point(90, 40)))
+            )
+            second_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            second_image.fill(QColor("#FFFFFF"))
+            second_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_category_project.png",
+                image_size=(second_image.width(), second_image.height()),
+            )
+            second_document.initialize_runtime_state()
+            cotton_second = second_document.create_group(color="#1F7A8C", label="棉")
+            second_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=second_document.id, fiber_group_id=cotton_second.id, mode="manual", line_px=Line(Point(10, 70), Point(80, 70)))
+            )
+            self._load_document_into_window(window, first_document, first_image)
+            self._load_document_into_window(window, second_document, second_image)
+            window.tab_widget.setCurrentIndex(0)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.CURRENT, "棉")):
+                window.delete_measurements_by_category()
+
+            self.assertEqual(len(first_document.measurements), 1)
+            self.assertEqual(first_document.measurements[0].fiber_group_id, silk.id)
+            self.assertEqual(len(second_document.measurements), 1)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.ALL_OPEN, "棉")):
+                window.delete_measurements_by_category()
+
+            self.assertEqual(len(first_document.measurements), 1)
+            self.assertEqual(len(second_document.measurements), 0)
+            self.assertEqual(len(first_document.fiber_groups), 2)
+            self.assertEqual(len(second_document.fiber_groups), 1)
+        finally:
+            window.close()
+
+    def test_delete_all_measurements_supports_project_scope(self) -> None:
+        window = MainWindow()
+        try:
+            first_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            first_image.fill(QColor("#FFFFFF"))
+            first_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_all_current.png",
+                image_size=(first_image.width(), first_image.height()),
+            )
+            first_document.initialize_runtime_state()
+            first_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=None, mode="manual", line_px=Line(Point(10, 10), Point(60, 10)))
+            )
+            second_image = QImage(240, 160, QImage.Format.Format_RGB32)
+            second_image.fill(QColor("#FFFFFF"))
+            second_document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/delete_all_project.png",
+                image_size=(second_image.width(), second_image.height()),
+            )
+            second_document.initialize_runtime_state()
+            second_document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=second_document.id, fiber_group_id=None, mode="manual", line_px=Line(Point(20, 20), Point(80, 20)))
+            )
+            self._load_document_into_window(window, first_document, first_image)
+            self._load_document_into_window(window, second_document, second_image)
+
+            with patch.object(window, "_prompt_measurement_delete_options", return_value=(ExportScope.ALL_OPEN, None)):
+                window.delete_all_measurements()
+
+            self.assertEqual(len(first_document.measurements), 0)
+            self.assertEqual(len(second_document.measurements), 0)
         finally:
             window.close()
 
@@ -1978,6 +3627,48 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_short_scale_overlay_text_width_is_not_limited_to_bar_width(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/short_scale_text.png",
+            image_size=(260, 180),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="demo",
+        )
+        settings = AppSettings(
+            scale_overlay_placement_mode=ScaleOverlayPlacementMode.BOTTOM_LEFT,
+            scale_overlay_style=ScaleOverlayStyle.LINE,
+            scale_overlay_length_value=1.0,
+            scale_overlay_font_size=18,
+        )
+        painter = ScaleOverlayRecordingPainter()
+
+        draw_scale_overlay(
+            painter,
+            document,
+            settings,
+            image_width=260,
+            image_height=180,
+            image_to_output_scale=1.0,
+            scale_bg_width=5.0,
+            scale_fg_width=2.5,
+            font_px=18.0,
+            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+        )
+
+        self.assertEqual(len(painter.lines), 1)
+        bar_start, bar_end = painter.lines[0]
+        bar_width = bar_end.x() - bar_start.x()
+        text_rects = [call[0] for call in painter.text_calls if len(call) == 3 and call[2] == "1 um"]
+        self.assertEqual(len(text_rects), 2)
+        self.assertGreater(text_rects[0].width(), bar_width)
+        self.assertAlmostEqual(text_rects[0].center().x(), bar_start.x() + (bar_width / 2.0))
+
     def test_scale_overlay_renders_for_uncalibrated_document_using_pixel_length(self) -> None:
         window = MainWindow()
         try:
@@ -2044,6 +3735,7 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_settings_dialog_uses_new_measurement_and_scale_defaults(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
+            self.assertEqual(dialog._theme_mode_combo.currentData(), AppThemeMode.DARK)
             self.assertEqual(dialog._measurement_label_color.property("color_value"), "#00FF00")
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
             self.assertFalse(dialog._measurement_label_background.isChecked())
@@ -2195,6 +3887,133 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_drag_open_classifies_images_folders_and_project_files(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                image_path = root / "fiber.png"
+                image_path.write_bytes(b"fake")
+                project_path = root / "demo.fdmproj"
+                project_path.write_text("{}", encoding="utf-8")
+                text_path = root / "notes.txt"
+                text_path.write_text("ignore", encoding="utf-8")
+                folder = root / "folder"
+                folder.mkdir()
+                folder_image = folder / "nested.jpg"
+                folder_image.write_bytes(b"fake")
+                (folder / "nested.txt").write_text("ignore", encoding="utf-8")
+
+                projects, images, unsupported_count = window._classify_dropped_paths(
+                    [image_path, folder, project_path, text_path]
+                )
+
+                self.assertEqual(projects, [project_path])
+                self.assertEqual(images, [image_path, folder_image])
+                self.assertEqual(unsupported_count, 1)
+        finally:
+            window.close()
+
+    def test_drop_open_routes_images_and_projects_without_mixing(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                image_path = root / "fiber.png"
+                image_path.write_bytes(b"fake")
+                project_path = root / "demo.fdmproj"
+                project_path.write_text("{}", encoding="utf-8")
+
+                image_calls: list[tuple[list[tuple[str, object]], str]] = []
+                with patch.object(window, "_open_image_requests", side_effect=lambda items, *, context_label, missing_paths=None: image_calls.append((items, context_label))):
+                    window._open_dropped_paths([image_path])
+                self.assertEqual(image_calls, [([(str(image_path), None)], "拖入图片")])
+
+                project_calls: list[Path] = []
+                with patch.object(window, "_load_project_from_path", side_effect=lambda path: project_calls.append(Path(path))):
+                    window._open_dropped_paths([project_path])
+                self.assertEqual(project_calls, [project_path])
+
+                with (
+                    patch.object(window, "_open_image_requests") as open_images_mock,
+                    patch.object(window, "_load_project_from_path") as load_project_mock,
+                    patch("fdm.ui.main_window.QMessageBox.information") as message_mock,
+                ):
+                    window._open_dropped_paths([project_path, image_path])
+                open_images_mock.assert_not_called()
+                load_project_mock.assert_not_called()
+                message_mock.assert_called_once()
+        finally:
+            window.close()
+
+    def test_count_measurement_append_uses_incremental_ui_and_history(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(320, 220, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/count_fast_path.png",
+                image_size=(image.width(), image.height()),
+            )
+            group = document.ensure_default_group()
+            window._add_loaded_document(ImageLoadRequest(path=document.path, document=document), image)
+
+            with (
+                patch.object(ImageDocument, "snapshot_state", side_effect=AssertionError("count append should not snapshot")),
+                patch.object(window, "_populate_measurement_table", side_effect=AssertionError("count append should not rebuild the whole table")),
+            ):
+                for index in range(500):
+                    window._on_canvas_line_committed(
+                        document.id,
+                        "count",
+                        {
+                            "measurement_kind": "count",
+                            "point_px": Point(float(index % 50), float(index // 50)),
+                        },
+                    )
+
+            self.assertEqual(len(document.measurements), 500)
+            self.assertEqual(window.measurement_table.rowCount(), 500)
+            self.assertEqual(len(group.measurement_ids), 500)
+            self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
+            item = window.group_list.item(0)
+            widget = window.group_list.itemWidget(item)
+            self.assertIsInstance(widget, FiberGroupListItemWidget)
+            self.assertEqual(widget.countText(), "500/500")
+
+            last_measurement_id = document.measurements[-1].id
+            window.undo_current_document()
+            self.assertEqual(len(document.measurements), 499)
+            self.assertNotEqual(document.measurements[-1].id, last_measurement_id)
+            window.redo_current_document()
+            self.assertEqual(len(document.measurements), 500)
+            self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
+            self.assertEqual(document.measurements[-1].id, last_measurement_id)
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
+    def test_count_hit_test_uses_latest_point_with_many_measurements(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        group = document.ensure_default_group()
+        for index in range(500):
+            document.insert_measurement_incremental(
+                Measurement(
+                    id=f"meas_{index:03d}",
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="count",
+                    measurement_kind="count",
+                    point_px=Point(42, 58),
+                    confidence=1.0,
+                    status="count",
+                )
+            )
+        canvas.set_document(document, image)
+
+        self.assertEqual(canvas._hit_test_measurement(Point(42, 58)), "meas_499")
+
     def test_settings_dialog_uses_separate_area_models_tab(self) -> None:
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
@@ -2214,9 +4033,179 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
             self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "测量线与端点"])
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
-            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数"])
+            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
+            self.assertEqual(
+                dialog._magic_segment_model_variant_combo.currentData(),
+                MagicSegmentModelVariant.EDGE_SAM_3X,
+            )
+            self.assertFalse(dialog._magic_segment_fill_draft_holes_checkbox.isChecked())
+            self.assertFalse(dialog._magic_segment_standard_roi_checkbox.isChecked())
+            self.assertTrue(dialog._fiber_quick_roi_checkbox.isChecked())
+            self.assertTrue(dialog._fiber_quick_edge_trim_checkbox.isChecked())
+            self.assertAlmostEqual(dialog._fiber_quick_line_extension_spin.value(), 0.0)
         finally:
             dialog.close()
+
+    def test_settings_dialog_roundtrips_magic_segment_controls(self) -> None:
+        settings = AppSettings(
+            magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
+        )
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            dialog._magic_segment_model_variant_combo.setCurrentIndex(
+                dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
+            )
+            dialog._magic_segment_fill_draft_holes_checkbox.setChecked(True)
+            dialog._magic_segment_standard_roi_checkbox.setChecked(True)
+            dialog._fiber_quick_roi_checkbox.setChecked(False)
+            dialog._fiber_quick_edge_trim_checkbox.setChecked(False)
+            dialog._fiber_quick_line_extension_spin.setValue(3.5)
+
+            collected = dialog.app_settings()
+
+            self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+            self.assertTrue(collected.magic_segment_fill_draft_holes_enabled)
+            self.assertTrue(collected.magic_segment_standard_roi_enabled)
+            self.assertFalse(collected.fiber_quick_roi_enabled)
+            self.assertFalse(collected.fiber_quick_edge_trim_enabled)
+            self.assertAlmostEqual(collected.fiber_quick_line_extension_px, 3.5)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_roundtrips_theme_mode(self) -> None:
+        dialog = SettingsDialog(AppSettings(theme_mode=AppThemeMode.DARK), document=None)
+        try:
+            dialog._theme_mode_combo.setCurrentIndex(dialog._theme_mode_combo.findData(AppThemeMode.LIGHT))
+
+            collected = dialog.app_settings()
+
+            self.assertEqual(collected.theme_mode, AppThemeMode.LIGHT)
+        finally:
+            dialog.close()
+
+    def test_magic_segment_draft_hole_fill_setting_only_applies_when_enabled(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("magic_segment")
+        hole_mask = self._rect_mask(image.width(), image.height(), (24, 24, 112, 96))
+        hole_mask[46:72, 54:82] = False
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 2)
+
+        canvas.clear_magic_segment_session()
+        canvas.set_settings(AppSettings(magic_segment_fill_draft_holes_enabled=True))
+        canvas._magic_segment.request_id = 2
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(2, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 1)
+
+        canvas.clear_magic_segment_session()
+        canvas.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+        canvas._magic_segment.request_id = 3
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(3, hole_mask)
+        self.assertEqual(len(canvas._magic_segment.primary_rings), 2)
+
+    def test_reference_instance_commit_adds_measurements_with_reference_mode_labels(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/reference_instance_commit.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            reference_polygon = [Point(20, 18), Point(88, 18), Point(88, 72), Point(20, 72)]
+            candidate_polygon = [Point(112, 18), Point(180, 18), Point(180, 72), Point(112, 72)]
+            canvas._reference_instance.request_id = 1
+            canvas._reference_instance.reference_polygon = list(reference_polygon)
+            canvas._reference_instance.preview_candidates = [
+                ReferenceInstancePreviewCandidate(
+                    polygon_px=list(candidate_polygon),
+                    area_rings_px=[],
+                    confidence=0.91,
+                )
+            ]
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+
+            committed = window._commit_reference_instance_preview()
+
+            self.assertTrue(committed)
+            self.assertEqual(len(document.measurements), 1)
+            measurement = document.measurements[0]
+            self.assertEqual(measurement.mode, "reference_instance")
+            self.assertEqual(measurement.status, "reference_instance")
+            self.assertIsNotNone(measurement.fiber_group_id)
+
+            window._populate_measurement_table(document)
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_MODE).text(), "同类扩选")
+            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_STATUS).text(), "同类扩选")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_close_event_stops_idle_prompt_reference_and_fiber_quick_threads(self) -> None:
+        window = MainWindow()
+        try:
+            prompt_thread = QThread(window)
+            prompt_thread.start()
+            geometry_thread = QThread(window)
+            geometry_thread.start()
+            commit_geometry_thread = QThread(window)
+            commit_geometry_thread.start()
+            reference_thread = QThread(window)
+            reference_thread.start()
+            window._prompt_seg_thread = prompt_thread
+            window._fiber_quick_geometry_thread = geometry_thread
+            window._fiber_quick_commit_geometry_thread = commit_geometry_thread
+            window._reference_instance_thread = reference_thread
+            event = FakeCloseEvent()
+
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.closeEvent(event)
+
+            self.assertTrue(event.accepted)
+            self.assertFalse(event.ignored)
+            self.assertFalse(prompt_thread.isRunning())
+            self.assertFalse(geometry_thread.isRunning())
+            self.assertFalse(commit_geometry_thread.isRunning())
+            self.assertFalse(reference_thread.isRunning())
+        finally:
+            window.close()
+
+    def test_magic_context_reflows_when_switching_modes_without_document(self) -> None:
+        window = MainWindow()
+        try:
+            window.resize(980, 720)
+            window.show()
+            self.app.processEvents()
+
+            window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
+            self.app.processEvents()
+            reference_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            self.app.processEvents()
+            standard_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            self.app.processEvents()
+            fiber_quick_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+
+            self.assertGreater(standard_width, reference_width)
+            self.assertGreater(fiber_quick_width, reference_width)
+            self.assertFalse(window._magic_toggle_button.isHidden())  # noqa: SLF001
+            self.assertFalse(window._magic_roi_button.isHidden())  # noqa: SLF001
+        finally:
+            window.close()
 
     def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
         document = ImageDocument(
@@ -2393,7 +4382,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         hit = canvas._hit_test_selected_area_handle(Point(26.5, 20))
 
-        self.assertEqual(hit, (measurement.id, "vertex", 1))
+        self.assertEqual(hit, (measurement.id, "vertex", 0, 1))
 
     def test_selected_area_handle_uses_center_only_when_no_vertex_matches(self) -> None:
         document, _, canvas = self._create_canvas_document()
@@ -2412,8 +4401,229 @@ class CanvasAndExportTests(unittest.TestCase):
         vertex_hit = canvas._hit_test_selected_area_handle(Point(23.4, 20.4))
         center_hit = canvas._hit_test_selected_area_handle(Point(40, 40))
 
-        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0))
-        self.assertEqual(center_hit, (measurement.id, "center", None))
+        self.assertEqual(vertex_hit, (measurement.id, "vertex", 0, 0))
+        self.assertEqual(center_hit, (measurement.id, "center", None, None))
+
+    def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
+        document, _, _canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(24, 20), Point(84, 24), Point(78, 92), Point(18, 86)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        painter = RecordingPainter()
+
+        draw_area_measurement(
+            painter,
+            document,
+            measurement,
+            lambda point: QPointF(point.x, point.y),
+            AppSettings(),
+            line_width=2.0,
+            endpoint_radius=4.0,
+            selected=False,
+            show_fill=True,
+            show_handles=False,
+        )
+
+        self.assertEqual([call[0] for call in painter.calls], ["path", "polygon", "polygon", "polygon", "polygon"])
+        self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
+        self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
+        self.assertEqual(painter.calls[3][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+
+    def test_unselected_magic_segment_area_draws_with_simplified_display_geometry(self) -> None:
+        document, _, _canvas = self._create_canvas_document()
+        dense_ring = [
+            Point(20, 20),
+            Point(28, 20),
+            Point(36, 20),
+            Point(44, 20),
+            Point(52, 20),
+            Point(60, 20),
+            Point(68, 20),
+            Point(76, 20),
+            Point(84, 20),
+            Point(84, 28),
+            Point(84, 36),
+            Point(84, 44),
+            Point(84, 52),
+            Point(84, 60),
+            Point(84, 68),
+            Point(84, 76),
+            Point(84, 84),
+            Point(76, 84),
+            Point(68, 84),
+            Point(60, 84),
+            Point(52, 84),
+            Point(44, 84),
+            Point(36, 84),
+            Point(28, 84),
+            Point(20, 84),
+            Point(20, 76),
+            Point(20, 68),
+            Point(20, 60),
+            Point(20, 52),
+            Point(20, 44),
+            Point(20, 36),
+            Point(20, 28),
+        ]
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=list(dense_ring),
+            area_rings_px=[list(dense_ring)],
+        )
+        measurement.recalculate(None)
+
+        unselected_painter = RecordingPainter()
+        draw_area_measurement(
+            unselected_painter,
+            document,
+            measurement,
+            lambda point: QPointF(point.x, point.y),
+            AppSettings(),
+            line_width=2.0,
+            endpoint_radius=4.0,
+            selected=False,
+            show_fill=False,
+            show_handles=False,
+        )
+        selected_painter = RecordingPainter()
+        draw_area_measurement(
+            selected_painter,
+            document,
+            measurement,
+            lambda point: QPointF(point.x, point.y),
+            AppSettings(),
+            line_width=2.0,
+            endpoint_radius=4.0,
+            selected=True,
+            show_fill=False,
+            show_handles=False,
+        )
+
+        self.assertLess(unselected_painter.calls[0][3], len(dense_ring))
+        self.assertEqual(selected_painter.calls[0][3], len(dense_ring))
+
+    def test_dragging_area_vertex_preserves_magic_rings_and_clears_exact_area(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(24, 20), Point(84, 24), Point(78, 92), Point(18, 86)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+        payloads: list[object] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: payloads.append(payload))
+
+        preview_rings = [
+            [Point(26, 18), Point(88, 20), Point(88, 88), Point(20, 88)],
+            [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+        ]
+        canvas._dragging_area_handle = (measurement.id, "vertex", 0, 0)
+        canvas._drag_area_preview_points = list(preview_rings[0])
+        canvas._drag_area_preview_rings = [list(ring) for ring in preview_rings]
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(preview_rings[0][0]), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(payloads), 1)
+        self.assertEqual(payloads[0]["measurement_kind"], "area")
+        self.assertEqual(payloads[0]["mode"], "polygon_area")
+        self.assertEqual(payloads[0]["area_rings_px"], preview_rings)
+        self.assertEqual(payloads[0]["polygon_px"], preview_rings[0])
+        self.assertIsNone(payloads[0]["exact_area_px"])
+
+    def test_selected_area_handle_can_hit_hole_vertex(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+            area_rings_px=[
+                [Point(20, 20), Point(88, 20), Point(88, 88), Point(20, 88)],
+                [Point(42, 42), Point(60, 42), Point(60, 60), Point(42, 60)],
+            ],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+
+        hit = canvas._hit_test_selected_area_handle(Point(42.5, 42.5))
+
+        self.assertEqual(hit, (measurement.id, "vertex", 1, 0))
+
+    def test_unselected_magic_segment_hit_test_uses_simplified_geometry_until_selected(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="magic_segment",
+            polygon_px=[
+                Point(20, 20),
+                Point(80, 20),
+                Point(80, 60),
+                Point(45, 60),
+                Point(45, 120),
+                Point(20, 120),
+            ],
+            area_rings_px=[
+                [
+                    Point(20, 20),
+                    Point(80, 20),
+                    Point(80, 60),
+                    Point(45, 60),
+                    Point(45, 120),
+                    Point(20, 120),
+                ]
+            ],
+            display_polygon_px=[
+                Point(20, 20),
+                Point(80, 20),
+                Point(80, 60),
+                Point(20, 60),
+            ],
+            display_area_rings_px=[
+                [
+                    Point(20, 20),
+                    Point(80, 20),
+                    Point(80, 60),
+                    Point(20, 60),
+                ]
+            ],
+            display_bounds_px=(20.0, 20.0, 80.0, 60.0),
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        document.select_measurement(None)
+
+        self.assertIsNone(canvas._hit_test_area_measurement(Point(30, 100)))
+
+        document.select_measurement(measurement.id)
+        self.assertEqual(canvas._hit_test_area_measurement(Point(30, 100)), measurement.id)
 
     def test_measurement_group_combo_ignores_wheel_without_popup(self) -> None:
         window = MainWindow()
