@@ -48,7 +48,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.rendering import draw_area_measurement, measurement_display_text_with_settings
+    from fdm.ui.rendering import draw_area_measurement, draw_scale_overlay, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
@@ -64,6 +64,7 @@ else:
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
+    draw_scale_overlay = object  # type: ignore[assignment]
     measurement_display_text_with_settings = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
@@ -87,6 +88,26 @@ class RecordingPainter:
 
     def drawPolygon(self, polygon) -> None:
         self.calls.append(("polygon", self.pen, self.brush, polygon.size()))
+
+
+class ScaleOverlayRecordingPainter:
+    def __init__(self) -> None:
+        self.pen = None
+        self.font = None
+        self.lines: list[tuple[QPointF, QPointF]] = []
+        self.text_calls: list[tuple[object, ...]] = []
+
+    def setPen(self, pen) -> None:
+        self.pen = pen
+
+    def setFont(self, font) -> None:
+        self.font = font
+
+    def drawLine(self, start: QPointF, end: QPointF) -> None:
+        self.lines.append((start, end))
+
+    def drawText(self, *args) -> None:
+        self.text_calls.append(args)
 
 
 class FakeWheelEvent:
@@ -3605,6 +3626,48 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertGreater(self._count_diff_pixels(line_image, bar_image), 0)
         finally:
             window.close()
+
+    def test_short_scale_overlay_text_width_is_not_limited_to_bar_width(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/short_scale_text.png",
+            image_size=(260, 180),
+        )
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=5.0,
+            unit="um",
+            source_label="demo",
+        )
+        settings = AppSettings(
+            scale_overlay_placement_mode=ScaleOverlayPlacementMode.BOTTOM_LEFT,
+            scale_overlay_style=ScaleOverlayStyle.LINE,
+            scale_overlay_length_value=1.0,
+            scale_overlay_font_size=18,
+        )
+        painter = ScaleOverlayRecordingPainter()
+
+        draw_scale_overlay(
+            painter,
+            document,
+            settings,
+            image_width=260,
+            image_height=180,
+            image_to_output_scale=1.0,
+            scale_bg_width=5.0,
+            scale_fg_width=2.5,
+            font_px=18.0,
+            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+        )
+
+        self.assertEqual(len(painter.lines), 1)
+        bar_start, bar_end = painter.lines[0]
+        bar_width = bar_end.x() - bar_start.x()
+        text_rects = [call[0] for call in painter.text_calls if len(call) == 3 and call[2] == "1 um"]
+        self.assertEqual(len(text_rects), 2)
+        self.assertGreater(text_rects[0].width(), bar_width)
+        self.assertAlmostEqual(text_rects[0].center().x(), bar_start.x() + (bar_width / 2.0))
 
     def test_scale_overlay_renders_for_uncalibrated_document_using_pixel_length(self) -> None:
         window = MainWindow()

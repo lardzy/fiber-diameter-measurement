@@ -796,7 +796,10 @@ def draw_scale_overlay(
     metrics = QFontMetricsF(font)
     text = f"{value:g} {unit}"
     text_top = start_point.y() + max(resolved_font_px * 0.45, 10.0) if draw_below else start_point.y() - metrics.height() - max(6.0, resolved_font_px * 0.18)
-    text_rect = QRectF(start_point.x(), text_top, bar_px, metrics.height())
+    text_padding_x = max(4.0, resolved_font_px * 0.25)
+    text_width = max(bar_px, metrics.horizontalAdvance(text) + (text_padding_x * 2.0))
+    text_center_x = start_point.x() + (bar_px / 2.0)
+    text_rect = QRectF(text_center_x - (text_width / 2.0), text_top, text_width, metrics.height())
     painter.setPen(QPen(text_outline, 3))
     painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
     painter.setPen(QPen(text_color, 1))
