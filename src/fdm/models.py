@@ -583,6 +583,7 @@ class ImageDocument:
     path: str
     image_size: tuple[int, int]
     source_type: str = "filesystem"
+    absolute_path: str | None = None
     calibration: Calibration | None = None
     fiber_groups: list[FiberGroup] = field(default_factory=list)
     measurements: list[Measurement] = field(default_factory=list)
@@ -636,7 +637,12 @@ class ImageDocument:
         if self.is_project_asset():
             base = project_assets_root(project_path) if project_path is not None else Path()
             return (base / token).resolve() if base else Path(token)
-        return Path(token).expanduser().resolve()
+        image_path = Path(token).expanduser()
+        if image_path.is_absolute():
+            return image_path.resolve()
+        if project_path is not None:
+            return (Path(project_path).expanduser().resolve().parent / image_path).resolve()
+        return image_path.resolve()
 
     def sorted_groups(self) -> list[FiberGroup]:
         return sorted(self.fiber_groups, key=lambda group: group.number)
@@ -1235,7 +1241,7 @@ class ImageDocument:
         )
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "id": self.id,
             "path": self.path,
             "source_type": self.source_type,
@@ -1251,6 +1257,9 @@ class ImageDocument:
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
+        if self.source_type == "filesystem" and self.absolute_path:
+            payload["absolute_path"] = self.absolute_path
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
@@ -1268,6 +1277,7 @@ class ImageDocument:
             id=str(payload["id"]),
             path=str(payload["path"]),
             source_type=str(payload.get("source_type", "filesystem")),
+            absolute_path=str(payload["absolute_path"]) if payload.get("absolute_path") else None,
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,
             fiber_groups=[

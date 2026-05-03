@@ -64,7 +64,7 @@ from fdm.models import (
     project_assets_root,
     project_capture_root,
 )
-from fdm.project_io import ProjectIO
+from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.settings import (
     AppSettings,
     AppSettingsIO,
@@ -264,6 +264,7 @@ class BatchLoadState:
     cancelled: bool = False
     failures: list[str] | None = None
     missing_paths: list[str] | None = None
+    repaired_paths: list[str] | None = None
 
 
 @dataclass(slots=True)
@@ -2819,6 +2820,7 @@ class MainWindow(QMainWindow):
         *,
         context_label: str,
         missing_paths: list[str] | None = None,
+        repaired_paths: list[str] | None = None,
     ) -> None:
         if self._load_thread is not None:
             QMessageBox.information(self, context_label, "当前仍有图片在加载，请稍候。")
@@ -2837,6 +2839,7 @@ class MainWindow(QMainWindow):
                     cancelled=False,
                     failures=[],
                     missing_paths=list(missing_paths or []),
+                    repaired_paths=list(repaired_paths or []),
                 )
             )
             return
@@ -2847,6 +2850,7 @@ class MainWindow(QMainWindow):
                 skipped_count=skipped_count,
                 failures=[],
                 missing_paths=list(missing_paths or []),
+                repaired_paths=list(repaired_paths or []),
             )
             self._load_single_request_sync(requests[0], state)
             self._show_batch_load_summary(state)
@@ -2856,6 +2860,7 @@ class MainWindow(QMainWindow):
             context_label=context_label,
             skipped_count=skipped_count,
             missing_paths=missing_paths,
+            repaired_paths=repaired_paths,
         )
 
     def _load_single_request_sync(self, request: ImageLoadRequest, state: BatchLoadState) -> None:
@@ -2879,6 +2884,7 @@ class MainWindow(QMainWindow):
         context_label: str,
         skipped_count: int,
         missing_paths: list[str] | None = None,
+        repaired_paths: list[str] | None = None,
     ) -> None:
         self._load_state = BatchLoadState(
             context_label=context_label,
@@ -2886,6 +2892,7 @@ class MainWindow(QMainWindow):
             skipped_count=skipped_count,
             failures=[],
             missing_paths=list(missing_paths or []),
+            repaired_paths=list(repaired_paths or []),
         )
         progress = self._create_progress_dialog(
             title=context_label,
@@ -2971,6 +2978,8 @@ class MainWindow(QMainWindow):
             summary_lines.append(f"读取失败 {state.failed_count} 张")
         if state.missing_paths:
             summary_lines.append(f"未找到项目中的图片 {len(state.missing_paths)} 张")
+        if state.repaired_paths:
+            summary_lines.append(f"已自动修复 {len(state.repaired_paths)} 张图片路径")
         if state.cancelled:
             summary_lines.insert(0, "加载已取消，已保留已成功打开的图片。")
         if summary_lines:
@@ -2985,8 +2994,12 @@ class MainWindow(QMainWindow):
             detail_lines.append("")
             detail_lines.append("缺失图片:")
             detail_lines.extend(str(Path(path)) for path in state.missing_paths[:8])
+        if state.repaired_paths:
+            detail_lines.append("")
+            detail_lines.append("原绝对路径已失效，已自动改用项目目录中的图片:")
+            detail_lines.extend(state.repaired_paths[:8])
 
-        has_warning = bool(state.failed_count or state.missing_paths)
+        has_warning = bool(state.failed_count or state.missing_paths or state.repaired_paths)
         if has_warning:
             QMessageBox.warning(self, state.context_label, "\n".join(detail_lines))
         elif state.cancelled or state.skipped_count:
@@ -3301,20 +3314,37 @@ class MainWindow(QMainWindow):
         self.project.metadata = project.metadata
         self._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
+        repaired_paths: list[str] = []
+        repaired_path_count = 0
         for document in project.documents:
-            resolved_path = document.resolved_path(self._project_path)
-            if resolved_path.exists():
+            resolution = resolve_document_load_path(document, self._project_path)
+            if resolution is not None:
+                resolved_path = resolution.path
+                if document.source_type == "filesystem":
+                    original_absolute_path = str(document.absolute_path or document.path or "").strip()
+                    document.path = str(resolved_path)
+                    document.absolute_path = str(resolved_path)
+                    if resolution.repaired_from_missing_absolute:
+                        repaired_path_count += 1
+                        repaired_paths.append(f"{original_absolute_path} -> {resolved_path}")
                 load_items.append((str(resolved_path), document))
             else:
-                missing_paths.append(str(resolved_path))
+                missing_paths.append(str(document.resolved_path(self._project_path)))
         self._pending_project_load_snapshot = True
-        self._open_image_requests(load_items, context_label="打开项目", missing_paths=missing_paths)
+        self._open_image_requests(
+            load_items,
+            context_label="打开项目",
+            missing_paths=missing_paths,
+            repaired_paths=repaired_paths,
+        )
         if self._load_thread is None:
             self._mark_project_saved()
             self._pending_project_load_snapshot = False
         message = f"项目已加载: {project_path}"
         if imported_count:
             message += f"；已导入 {imported_count} 个旧版标定预设"
+        if repaired_path_count:
+            message += f"；已自动修复 {repaired_path_count} 张图片路径"
         self.statusBar().showMessage(message, 5000)
 
     def export_results(self, preset: ExportSelection | None = None) -> None:

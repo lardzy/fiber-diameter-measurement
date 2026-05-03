@@ -22,7 +22,7 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
 from fdm.settings import (
     AppThemeMode,
     AppSettings,
@@ -40,6 +40,7 @@ from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEO
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
+from fdm.project_io import ProjectIO
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate
@@ -792,6 +793,59 @@ class CanvasAndExportTests(unittest.TestCase):
             payload = json.loads(project_path.read_text(encoding="utf-8"))
             self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
             self.assertEqual(payload["documents"][0]["path"], captured_document.path)
+
+    def test_load_project_updates_relative_document_path_to_resolved_absolute_path(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                old_root = root / "old"
+                old_image = old_root / "images" / "fiber.png"
+                old_image.parent.mkdir(parents=True)
+                old_image.write_bytes(b"old image")
+                old_project_path = old_root / "demo.fdmproj"
+                project = ProjectState(
+                    version="0.1.0",
+                    documents=[
+                        ImageDocument(id=new_id("image"), path=str(old_image), image_size=(10, 10)),
+                    ],
+                )
+                ProjectIO.save(project, old_project_path)
+                old_image.unlink()
+
+                moved_root = root / "moved"
+                moved_image = moved_root / "images" / "fiber.png"
+                moved_image.parent.mkdir(parents=True)
+                moved_image.write_bytes(b"moved image")
+                moved_project_path = moved_root / "demo.fdmproj"
+                moved_project_path.write_text(old_project_path.read_text(encoding="utf-8"), encoding="utf-8")
+
+                image_calls: list[tuple[list[tuple[str, ImageDocument | None]], str, list[str] | None]] = []
+                with (
+                    patch.object(window, "_confirm_close_documents", return_value=True),
+                    patch.object(
+                        window,
+                        "_open_image_requests",
+                        side_effect=lambda items, *, context_label, missing_paths=None: image_calls.append(
+                            (items, context_label, missing_paths)
+                        ),
+                    ),
+                ):
+                    window._load_project_from_path(moved_project_path)
+
+                self.assertEqual(len(image_calls), 1)
+                load_items, context_label, missing_paths = image_calls[0]
+                self.assertEqual(context_label, "打开项目")
+                self.assertEqual(missing_paths, [])
+                self.assertEqual(len(load_items), 1)
+                resolved_path, loaded_document = load_items[0]
+                self.assertEqual(Path(resolved_path), moved_image.resolve())
+                self.assertIsNotNone(loaded_document)
+                self.assertEqual(loaded_document.path, str(moved_image.resolve()))
+                self.assertEqual(loaded_document.absolute_path, str(moved_image.resolve()))
+                self.assertIn("已自动修复 1 张图片路径", window.statusBar().currentMessage())
+        finally:
+            window.close()
 
     def test_save_project_dialog_defaults_to_first_image_directory_without_history(self) -> None:
         window = MainWindow()

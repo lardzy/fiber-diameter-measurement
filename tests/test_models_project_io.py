@@ -24,7 +24,7 @@ from fdm.models import (
     new_id,
     project_assets_root,
 )
-from fdm.project_io import ProjectIO
+from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
@@ -190,10 +190,200 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertEqual(loaded.documents[0].source_type, "project_asset")
         self.assertEqual(loaded.documents[0].path, "captures/capture_20260326_01.png")
+        self.assertIsNone(loaded.documents[0].absolute_path)
         self.assertEqual(
             loaded.documents[0].resolved_path(path),
             (project_assets_root(path) / "captures" / "capture_20260326_01.png").resolve(),
         )
+
+    def test_project_save_stores_relative_and_absolute_paths_for_project_local_images(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            image_path = root / "fiber.png"
+            image_path.write_bytes(b"fake image")
+            nested_image_path = root / "images" / "nested.png"
+            nested_image_path.parent.mkdir()
+            nested_image_path.write_bytes(b"fake image")
+            project_path = root / "demo.fdmproj"
+            project = ProjectState(
+                version="0.1.0",
+                documents=[
+                    ImageDocument(id=new_id("image"), path=str(image_path), image_size=(10, 10)),
+                    ImageDocument(id=new_id("image"), path=str(nested_image_path), image_size=(10, 10)),
+                ],
+            )
+
+            ProjectIO.save(project, project_path)
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            loaded = ProjectIO.load(project_path)
+
+        first_payload, second_payload = payload["documents"]
+        self.assertEqual(first_payload["path"], "fiber.png")
+        self.assertEqual(first_payload["absolute_path"], str(image_path))
+        self.assertEqual(second_payload["path"], "images/nested.png")
+        self.assertEqual(second_payload["absolute_path"], str(nested_image_path))
+        self.assertEqual(loaded.documents[0].path, "fiber.png")
+        self.assertEqual(loaded.documents[0].absolute_path, str(image_path))
+        self.assertEqual(loaded.documents[0].resolved_path(project_path), image_path.resolve())
+        self.assertEqual(loaded.documents[1].resolved_path(project_path), nested_image_path.resolve())
+
+    def test_project_save_leaves_external_filesystem_path_absolute_without_backup(self) -> None:
+        with TemporaryDirectory() as project_tmp_dir, TemporaryDirectory() as image_tmp_dir:
+            project_root = Path(project_tmp_dir)
+            image_path = Path(image_tmp_dir) / "external.png"
+            image_path.write_bytes(b"fake image")
+            project_path = project_root / "demo.fdmproj"
+            project = ProjectState(
+                version="0.1.0",
+                documents=[
+                    ImageDocument(id=new_id("image"), path=str(image_path), image_size=(10, 10)),
+                ],
+            )
+
+            ProjectIO.save(project, project_path)
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+
+        document_payload = payload["documents"][0]
+        self.assertEqual(document_payload["path"], str(image_path))
+        self.assertNotIn("absolute_path", document_payload)
+
+    def test_resolve_document_load_path_prefers_absolute_backup_before_project_relative_image(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            old_root = root / "old"
+            old_image = old_root / "images" / "fiber.png"
+            old_image.parent.mkdir(parents=True)
+            old_image.write_bytes(b"old image")
+            old_project_path = old_root / "demo.fdmproj"
+            project = ProjectState(
+                version="0.1.0",
+                documents=[
+                    ImageDocument(id=new_id("image"), path=str(old_image), image_size=(10, 10)),
+                ],
+            )
+            ProjectIO.save(project, old_project_path)
+
+            moved_root = root / "moved"
+            moved_image = moved_root / "images" / "fiber.png"
+            moved_image.parent.mkdir(parents=True)
+            moved_image.write_bytes(b"moved image")
+            moved_project_path = moved_root / "demo.fdmproj"
+            moved_project_path.write_text(old_project_path.read_text(encoding="utf-8"), encoding="utf-8")
+            loaded = ProjectIO.load(moved_project_path)
+
+            resolution = resolve_document_load_path(loaded.documents[0], moved_project_path)
+
+        self.assertIsNotNone(resolution)
+        self.assertEqual(resolution.path, old_image.resolve())
+        self.assertEqual(resolution.source, "absolute_path")
+        self.assertFalse(resolution.repaired_from_missing_absolute)
+
+    def test_resolve_document_load_path_falls_back_to_relative_when_absolute_backup_missing(self) -> None:
+        saved_payload: dict[str, object] = {}
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            old_root = root / "old"
+            old_image = old_root / "images" / "fiber.png"
+            old_image.parent.mkdir(parents=True)
+            old_image.write_bytes(b"old image")
+            old_project_path = old_root / "demo.fdmproj"
+            project = ProjectState(
+                version="0.1.0",
+                documents=[
+                    ImageDocument(id=new_id("image"), path=str(old_image), image_size=(10, 10)),
+                ],
+            )
+            ProjectIO.save(project, old_project_path)
+            old_image.unlink()
+
+            moved_root = root / "moved"
+            moved_image = moved_root / "images" / "fiber.png"
+            moved_image.parent.mkdir(parents=True)
+            moved_image.write_bytes(b"moved image")
+            moved_project_path = moved_root / "demo.fdmproj"
+            moved_project_path.write_text(old_project_path.read_text(encoding="utf-8"), encoding="utf-8")
+            loaded = ProjectIO.load(moved_project_path)
+
+            resolution = resolve_document_load_path(loaded.documents[0], moved_project_path)
+            if resolution is not None:
+                loaded.documents[0].path = str(resolution.path)
+                loaded.documents[0].absolute_path = str(resolution.path)
+                ProjectIO.save(loaded, moved_project_path)
+                saved_payload = json.loads(moved_project_path.read_text(encoding="utf-8"))
+
+        self.assertIsNotNone(resolution)
+        self.assertEqual(resolution.path, moved_image.resolve())
+        self.assertEqual(resolution.source, "relative_path")
+        self.assertTrue(resolution.repaired_from_missing_absolute)
+        self.assertEqual(saved_payload["documents"][0]["path"], "images/fiber.png")
+        self.assertEqual(saved_payload["documents"][0]["absolute_path"], str(moved_image.resolve()))
+
+    def test_resolve_document_load_path_falls_back_to_project_sibling_when_absolute_missing(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            old_root = root / "old"
+            old_image = old_root / "images" / "fiber.png"
+            old_image.parent.mkdir(parents=True)
+            old_image.write_bytes(b"old image")
+            old_project_path = old_root / "demo.fdmproj"
+            project = ProjectState(
+                version="0.1.0",
+                documents=[
+                    ImageDocument(id=new_id("image"), path=str(old_image), image_size=(10, 10)),
+                ],
+            )
+            ProjectIO.save(project, old_project_path)
+            old_image.unlink()
+
+            moved_root = root / "moved"
+            moved_root.mkdir()
+            sibling_image = moved_root / "fiber.png"
+            sibling_image.write_bytes(b"moved image")
+            moved_project_path = moved_root / "demo.fdmproj"
+            moved_project_path.write_text(old_project_path.read_text(encoding="utf-8"), encoding="utf-8")
+            loaded = ProjectIO.load(moved_project_path)
+
+            resolution = resolve_document_load_path(loaded.documents[0], moved_project_path)
+
+        self.assertIsNotNone(resolution)
+        self.assertEqual(resolution.path, sibling_image.resolve())
+        self.assertEqual(resolution.source, "project_dir_filename")
+        self.assertTrue(resolution.repaired_from_missing_absolute)
+
+    def test_resolve_document_load_path_uses_windows_unc_filename_for_project_sibling(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            sibling_image = root / "B_q11.bmp"
+            sibling_image.write_bytes(b"moved image")
+            document = ImageDocument(
+                id=new_id("image"),
+                path=r"\\192.168.105.82\材料检测中心\10特纤\02-检验\2026-电镜\26Z001149\反面测量\15K\B_q11.bmp",
+                image_size=(10, 10),
+            )
+
+            resolution = resolve_document_load_path(document, root / "lisy.fdmproj")
+
+        self.assertIsNotNone(resolution)
+        self.assertEqual(resolution.path, sibling_image.resolve())
+        self.assertEqual(resolution.source, "project_dir_filename")
+        self.assertTrue(resolution.repaired_from_missing_absolute)
+
+    def test_resolve_document_load_path_does_not_search_subdirectories_after_same_level_fails(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            nested_image = root / "images" / "fiber.png"
+            nested_image.parent.mkdir()
+            nested_image.write_bytes(b"nested")
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/definitely/missing/fiber.png",
+                image_size=(10, 10),
+                absolute_path="/also/missing/fiber.png",
+            )
+
+            resolution = resolve_document_load_path(document, root / "legacy.fdmproj")
+
+        self.assertIsNone(resolution)
 
     def test_calibration_preset_roundtrip_keeps_source_distances(self) -> None:
         preset = CalibrationPreset(
