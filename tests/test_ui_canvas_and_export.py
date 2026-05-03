@@ -802,7 +802,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 old_root = root / "old"
                 old_image = old_root / "images" / "fiber.png"
                 old_image.parent.mkdir(parents=True)
-                old_image.write_bytes(b"old image")
+                old_bitmap = QImage(10, 10, QImage.Format.Format_RGB32)
+                old_bitmap.fill(QColor("#FFFFFF"))
+                self.assertTrue(old_bitmap.save(str(old_image)))
                 old_project_path = old_root / "demo.fdmproj"
                 project = ProjectState(
                     version="0.1.0",
@@ -816,34 +818,28 @@ class CanvasAndExportTests(unittest.TestCase):
                 moved_root = root / "moved"
                 moved_image = moved_root / "images" / "fiber.png"
                 moved_image.parent.mkdir(parents=True)
-                moved_image.write_bytes(b"moved image")
+                moved_bitmap = QImage(10, 10, QImage.Format.Format_RGB32)
+                moved_bitmap.fill(QColor("#F2F2F2"))
+                self.assertTrue(moved_bitmap.save(str(moved_image)))
                 moved_project_path = moved_root / "demo.fdmproj"
                 moved_project_path.write_text(old_project_path.read_text(encoding="utf-8"), encoding="utf-8")
 
-                image_calls: list[tuple[list[tuple[str, ImageDocument | None]], str, list[str] | None]] = []
                 with (
                     patch.object(window, "_confirm_close_documents", return_value=True),
-                    patch.object(
-                        window,
-                        "_open_image_requests",
-                        side_effect=lambda items, *, context_label, missing_paths=None: image_calls.append(
-                            (items, context_label, missing_paths)
-                        ),
-                    ),
+                    patch("fdm.ui.main_window.QMessageBox.warning") as warning_mock,
                 ):
                     window._load_project_from_path(moved_project_path)
 
-                self.assertEqual(len(image_calls), 1)
-                load_items, context_label, missing_paths = image_calls[0]
-                self.assertEqual(context_label, "打开项目")
-                self.assertEqual(missing_paths, [])
-                self.assertEqual(len(load_items), 1)
-                resolved_path, loaded_document = load_items[0]
-                self.assertEqual(Path(resolved_path), moved_image.resolve())
-                self.assertIsNotNone(loaded_document)
+                self.assertEqual(len(window.project.documents), 1)
+                loaded_document = window.project.documents[0]
                 self.assertEqual(loaded_document.path, str(moved_image.resolve()))
                 self.assertEqual(loaded_document.absolute_path, str(moved_image.resolve()))
                 self.assertIn("已自动修复 1 张图片路径", window.statusBar().currentMessage())
+                warning_mock.assert_called_once()
+                warning_text = warning_mock.call_args.args[2]
+                self.assertIn("原绝对路径已失效", warning_text)
+                self.assertIn(str(old_image), warning_text)
+                self.assertIn(str(moved_image.resolve()), warning_text)
         finally:
             window.close()
 
