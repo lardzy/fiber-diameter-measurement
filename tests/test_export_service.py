@@ -32,9 +32,24 @@ from fdm.settings import (
 
 
 class ExportServiceTests(unittest.TestCase):
-    def _write_minimal_macro_template(self, path: Path, *, sheet_name: str = "Raw") -> None:
+    def _write_minimal_macro_template(
+        self,
+        path: Path,
+        *,
+        sheet_name: str = "Raw",
+        markup_compat: bool = False,
+        missing_sheet_compat_namespace: bool = False,
+        calc_chain: bool = False,
+    ) -> None:
+        sheet_namespace_attrs = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
+        if markup_compat:
+            sheet_namespace_attrs += ' xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+            sheet_namespace_attrs += ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"'
+            sheet_namespace_attrs += ' mc:Ignorable="x14ac"'
+            if not missing_sheet_compat_namespace:
+                sheet_namespace_attrs += ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"'
         sheet_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+<worksheet {sheet_namespace_attrs}>
   <dimension ref="A1:I5"/>
   <sheetData>
     <row r="2"><c r="B2" s="7"/></row>
@@ -46,10 +61,21 @@ class ExportServiceTests(unittest.TestCase):
   <dimension ref="A1:A1"/>
   <sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>untouched</t></is></c></row></sheetData>
 </worksheet>'''
+        workbook_namespace_attrs = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"'
+        alternate_content = ""
+        if markup_compat:
+            workbook_namespace_attrs += ' xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x15" xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"'
+            alternate_content = '''
+  <mc:AlternateContent xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006">
+    <mc:Choice Requires="x15">
+      <x15ac:absPath url="/tmp/" xmlns:x15ac="http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac"/>
+    </mc:Choice>
+  </mc:AlternateContent>'''
         with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            calc_chain_override = '\n  <Override PartName="/xl/calcChain.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.calcChain+xml"/>' if calc_chain else ""
             archive.writestr(
                 "[Content_Types].xml",
-                '''<?xml version="1.0" encoding="UTF-8"?>
+                f'''<?xml version="1.0" encoding="UTF-8"?>
 <Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
   <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
   <Default Extension="xml" ContentType="application/xml"/>
@@ -57,6 +83,7 @@ class ExportServiceTests(unittest.TestCase):
   <Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/>
   <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
   <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  {calc_chain_override}
 </Types>''',
             )
             archive.writestr(
@@ -69,25 +96,33 @@ class ExportServiceTests(unittest.TestCase):
             archive.writestr(
                 "xl/workbook.xml",
                 f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+<workbook {workbook_namespace_attrs}>{alternate_content}
   <sheets>
     <sheet name="{sheet_name}" sheetId="1" r:id="rId1"/>
     <sheet name="Other" sheetId="2" r:id="rId2"/>
   </sheets>
 </workbook>''',
             )
+            calc_chain_relationship = '\n  <Relationship Id="rId4" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/calcChain" Target="calcChain.xml"/>' if calc_chain else ""
             archive.writestr(
                 "xl/_rels/workbook.xml.rels",
-                '''<?xml version="1.0" encoding="UTF-8"?>
+                f'''<?xml version="1.0" encoding="UTF-8"?>
 <Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
   <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
   <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
   <Relationship Id="rId3" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
+  {calc_chain_relationship}
 </Relationships>''',
             )
             archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
             archive.writestr("xl/worksheets/sheet2.xml", other_sheet_xml)
             archive.writestr("xl/vbaProject.bin", b"macro-bytes-do-not-touch")
+            if calc_chain:
+                archive.writestr(
+                    "xl/calcChain.xml",
+                    '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<calcChain xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><c r="D5" i="1"/></calcChain>''',
+                )
 
     def _cell_texts(self, sheet_xml: bytes) -> dict[str, str]:
         namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
@@ -102,6 +137,22 @@ class ExportServiceTests(unittest.TestCase):
             elif inline_node is not None and inline_node.text is not None:
                 values[coordinate] = inline_node.text
         return values
+
+    def _missing_compat_prefixes(self, xml_bytes: bytes) -> list[str]:
+        text = xml_bytes.decode("utf-8", errors="replace")
+        import re
+
+        declarations = {
+            match.group(1)
+            for match in re.finditer(r"\bxmlns:([A-Za-z_][\w.-]*)=(['\"])(.*?)\2", text)
+        }
+        missing: set[str] = set()
+        for match in re.finditer(r"\b(?:[A-Za-z_][\w.-]*:)?(?:Ignorable|Requires|ProcessContent)=(['\"])(.*?)\1", text):
+            for token in match.group(2).split():
+                prefix = token.split(":", 1)[0]
+                if prefix and prefix not in declarations:
+                    missing.add(prefix)
+        return sorted(missing)
 
     def test_export_writes_csv_and_xlsx(self) -> None:
         document = ImageDocument(
@@ -270,6 +321,156 @@ class ExportServiceTests(unittest.TestCase):
             formula = sheet_xml.find(".//xlsx:c[@r='D5']/xlsx:f", namespace)
             self.assertIsNotNone(formula)
             self.assertEqual(formula.text, "SUM(A1:A2)")
+
+    def test_raw_record_template_export_preserves_office_compat_namespaces(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_mc.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path, markup_compat=True)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.ALL_OPEN,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[RawRecordExportRule(sheet_name="Raw", start_cell="B2")],
+            )
+
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            with zipfile.ZipFile(template_path) as template_archive, zipfile.ZipFile(output_path) as output_archive:
+                self.assertEqual(output_archive.read("[Content_Types].xml"), template_archive.read("[Content_Types].xml"))
+                self.assertEqual(output_archive.read("xl/workbook.xml"), template_archive.read("xl/workbook.xml"))
+                sheet_xml = output_archive.read("xl/worksheets/sheet1.xml")
+
+        self.assertIn(b"mc:Ignorable=\"x14ac\"", sheet_xml)
+        self.assertIn(b"xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\"", sheet_xml)
+        self.assertNotIn(b"ns1:Ignorable", sheet_xml)
+        self.assertEqual(self._missing_compat_prefixes(sheet_xml), [])
+
+    def test_raw_record_template_export_removes_stale_calc_chain(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_calc_chain.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path, calc_chain=True)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.ALL_OPEN,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[RawRecordExportRule(sheet_name="Raw", start_cell="B2")],
+            )
+
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            with zipfile.ZipFile(output_path) as output_archive:
+                names = set(output_archive.namelist())
+                content_types_xml = output_archive.read("[Content_Types].xml")
+                rels_xml = output_archive.read("xl/_rels/workbook.xml.rels")
+
+        self.assertNotIn("xl/calcChain.xml", names)
+        self.assertNotIn(b"calcChain", content_types_xml)
+        self.assertNotIn(b"calcChain", rels_xml)
+
+    def test_raw_record_template_export_falls_back_on_invalid_compat_namespace(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_bad_mc.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(
+                template_path,
+                markup_compat=True,
+                missing_sheet_compat_namespace=True,
+            )
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.ALL_OPEN,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[RawRecordExportRule(sheet_name="Raw", start_cell="B2")],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
+            self.assertIn("_template_fallback_message", outputs)
+            self.assertFalse(output_path.exists())
 
     def test_raw_record_template_unique_field_range_deduplicates_and_truncates(self) -> None:
         document = ImageDocument(

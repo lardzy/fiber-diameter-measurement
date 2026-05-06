@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from dataclasses import dataclass
+from io import BytesIO
 from pathlib import Path
 import math
 import os
+import posixpath
+import re
 import tempfile
 import zipfile
 from xml.etree import ElementTree as ET
@@ -32,10 +35,20 @@ SPREADSHEET_NS = "http://schemas.openxmlformats.org/spreadsheetml/2006/main"
 OFFICE_REL_NS = "http://schemas.openxmlformats.org/officeDocument/2006/relationships"
 PACKAGE_REL_NS = "http://schemas.openxmlformats.org/package/2006/relationships"
 CONTENT_TYPES_NS = "http://schemas.openxmlformats.org/package/2006/content-types"
+MARKUP_COMPAT_NS = "http://schemas.openxmlformats.org/markup-compatibility/2006"
+X14_NS = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/main"
+X14AC_NS = "http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"
+X15_NS = "http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"
+X15AC_NS = "http://schemas.microsoft.com/office/spreadsheetml/2010/11/ac"
 XML_NS = "http://www.w3.org/XML/1998/namespace"
 
 ET.register_namespace("", SPREADSHEET_NS)
 ET.register_namespace("r", OFFICE_REL_NS)
+ET.register_namespace("mc", MARKUP_COMPAT_NS)
+ET.register_namespace("x14", X14_NS)
+ET.register_namespace("x14ac", X14AC_NS)
+ET.register_namespace("x15", X15_NS)
+ET.register_namespace("x15ac", X15AC_NS)
 ET.register_namespace("pkgrel", PACKAGE_REL_NS)
 ET.register_namespace("ct", CONTENT_TYPES_NS)
 
@@ -143,9 +156,10 @@ def write_raw_record_template(
             modified_entries[sheet_path] = _updated_sheet_xml(modified_entries[sheet_path], plans, sheet_name=sheet_name)
         modified_entries["[Content_Types].xml"] = _updated_content_types_xml(
             modified_entries["[Content_Types].xml"],
+            input_suffix=template_path.suffix.lower(),
             output_suffix=target_path.suffix.lower(),
         )
-        modified_entries["xl/workbook.xml"] = _updated_workbook_calc_xml(modified_entries["xl/workbook.xml"])
+        _remove_calc_chain(modified_entries)
     except KeyError as exc:
         raise RawRecordTemplateExportError("原始记录模板缺少必要的 OOXML 文件。") from exc
     except ET.ParseError as exc:
@@ -163,7 +177,15 @@ def write_raw_record_template(
             temp_name = temp_file.name
         with zipfile.ZipFile(temp_name, "w") as output_archive:
             for info, _data in entries:
+                if info.filename not in modified_entries:
+                    continue
                 output_archive.writestr(info, modified_entries[info.filename])
+        _validate_ooxml_package(
+            temp_name,
+            original_entries=entry_data,
+            source_suffix=template_path.suffix.lower(),
+            output_suffix=target_path.suffix.lower(),
+        )
         Path(temp_name).replace(target_path)
     except Exception:
         if temp_name:
@@ -355,7 +377,55 @@ def _normalize_workbook_target_path(target: str) -> str:
     return f"xl/{token}"
 
 
+def _register_namespaces_from_xml(xml_bytes: bytes) -> dict[str, str]:
+    fallback_namespaces: dict[str, str] = {
+        "": SPREADSHEET_NS,
+        "r": OFFICE_REL_NS,
+        "mc": MARKUP_COMPAT_NS,
+        "x14": X14_NS,
+        "x14ac": X14AC_NS,
+        "x15": X15_NS,
+        "x15ac": X15AC_NS,
+    }
+    namespaces: dict[str, str] = {}
+    try:
+        for _event, namespace in ET.iterparse(BytesIO(xml_bytes), events=("start-ns",)):
+            prefix, uri = namespace
+            namespaces[prefix or ""] = uri
+    except ET.ParseError:
+        raise
+    for prefix, uri in {**fallback_namespaces, **namespaces}.items():
+        if prefix == "xml":
+            continue
+        try:
+            ET.register_namespace(prefix, uri)
+        except ValueError:
+            continue
+    return namespaces
+
+
+def _preserve_compatibility_namespace_declarations(xml_bytes: bytes, namespaces: dict[str, str]) -> bytes:
+    text = xml_bytes.decode("utf-8")
+    missing_declarations = [
+        (prefix, namespaces[prefix])
+        for prefix in sorted(_compatibility_prefixes(text))
+        if prefix in namespaces and f"xmlns:{prefix}=" not in text
+    ]
+    if not missing_declarations:
+        return xml_bytes
+
+    declaration_end = text.find("?>")
+    search_start = declaration_end + 2 if declaration_end >= 0 else 0
+    root_start = text.find("<", search_start)
+    root_end = text.find(">", root_start)
+    if root_start < 0 or root_end < 0:
+        return xml_bytes
+    insertion = "".join(f' xmlns:{prefix}="{uri}"' for prefix, uri in missing_declarations)
+    return f"{text[:root_end]}{insertion}{text[root_end:]}".encode("utf-8")
+
+
 def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sheet_name: str) -> bytes:
+    original_namespaces = _register_namespaces_from_xml(sheet_xml)
     root = ET.fromstring(sheet_xml)
     sheet_data = root.find(f"{{{SPREADSHEET_NS}}}sheetData")
     if sheet_data is None:
@@ -379,7 +449,8 @@ def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sh
 
     _sort_sheet_rows_and_cells(sheet_data)
     _refresh_dimension(root)
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    updated_xml = ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return _preserve_compatibility_namespace_declarations(updated_xml, original_namespaces)
 
 
 def _row_map(sheet_data: ET.Element) -> dict[int, ET.Element]:
@@ -544,8 +615,10 @@ def _cell_sort_key(cell: ET.Element) -> int:
 
 
 def _refresh_dimension(root: ET.Element) -> None:
-    max_row = 1
-    max_column = 1
+    min_row: int | None = None
+    min_column: int | None = None
+    max_row = 0
+    max_column = 0
     for cell in root.findall(f".//{{{SPREADSHEET_NS}}}c"):
         coordinate = cell.attrib.get("r", "")
         if not coordinate:
@@ -554,34 +627,190 @@ def _refresh_dimension(root: ET.Element) -> None:
             row, column = _parse_cell_coordinate(coordinate)
         except RawRecordTemplateExportError:
             continue
+        min_row = row if min_row is None else min(min_row, row)
+        min_column = column if min_column is None else min(min_column, column)
         max_row = max(max_row, row)
         max_column = max(max_column, column)
     dimension = root.find(f"{{{SPREADSHEET_NS}}}dimension")
     if dimension is None:
         dimension = ET.Element(f"{{{SPREADSHEET_NS}}}dimension")
         root.insert(0, dimension)
-    dimension.set("ref", f"A1:{get_column_letter(max_column)}{max_row}")
+    if min_row is None or min_column is None:
+        dimension.set("ref", "A1")
+        return
+    start = f"{get_column_letter(min_column)}{min_row}"
+    end = f"{get_column_letter(max_column)}{max_row}"
+    dimension.set("ref", start if start == end else f"{start}:{end}")
 
 
-def _updated_content_types_xml(content_types_xml: bytes, *, output_suffix: str) -> bytes:
-    root = ET.fromstring(content_types_xml)
-    workbook_content_type = (
-        "application/vnd.ms-excel.sheet.macroEnabled.main+xml"
-        if output_suffix == ".xlsm"
-        else "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"
+def _updated_content_types_xml(content_types_xml: bytes, *, input_suffix: str, output_suffix: str) -> bytes:
+    updated = content_types_xml
+    if input_suffix == ".xltm" and output_suffix == ".xlsm":
+        updated = updated.replace(
+            b"application/vnd.ms-excel.template.macroEnabled.main+xml",
+            b"application/vnd.ms-excel.sheet.macroEnabled.main+xml",
+        )
+    elif input_suffix == ".xltx" and output_suffix == ".xlsx":
+        updated = updated.replace(
+            b"application/vnd.openxmlformats-officedocument.spreadsheetml.template.main+xml",
+            b"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
+        )
+    return updated
+
+
+def _remove_calc_chain(entries: dict[str, bytes]) -> None:
+    if "xl/calcChain.xml" not in entries:
+        return
+    entries.pop("xl/calcChain.xml", None)
+    if "xl/_rels/workbook.xml.rels" in entries:
+        entries["xl/_rels/workbook.xml.rels"] = _remove_calc_chain_relationship(
+            entries["xl/_rels/workbook.xml.rels"]
+        )
+    if "[Content_Types].xml" in entries:
+        entries["[Content_Types].xml"] = _remove_calc_chain_content_type(
+            entries["[Content_Types].xml"]
+        )
+
+
+def _remove_calc_chain_relationship(rels_xml: bytes) -> bytes:
+    text = rels_xml.decode("utf-8")
+    pattern = re.compile(r"\s*<Relationship\b[^>]*/>", re.IGNORECASE)
+
+    def replacement(match: re.Match[str]) -> str:
+        fragment = match.group(0)
+        if "calcChain" in fragment and "Relationship" in fragment:
+            return ""
+        return fragment
+
+    return pattern.sub(replacement, text).encode("utf-8")
+
+
+def _remove_calc_chain_content_type(content_types_xml: bytes) -> bytes:
+    text = content_types_xml.decode("utf-8")
+    pattern = re.compile(
+        r"\s*<Override\b(?=[^>]*\bPartName=(['\"])/xl/calcChain\.xml\1)[^>]*/>",
+        re.IGNORECASE,
     )
-    for override in root.findall(f"{{{CONTENT_TYPES_NS}}}Override"):
-        if override.attrib.get("PartName") == "/xl/workbook.xml":
-            override.set("ContentType", workbook_content_type)
-            break
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+    return pattern.sub("", text).encode("utf-8")
 
 
-def _updated_workbook_calc_xml(workbook_xml: bytes) -> bytes:
-    root = ET.fromstring(workbook_xml)
-    calc_pr = root.find(f"{{{SPREADSHEET_NS}}}calcPr")
-    if calc_pr is None:
-        calc_pr = ET.SubElement(root, f"{{{SPREADSHEET_NS}}}calcPr")
-    calc_pr.set("fullCalcOnLoad", "1")
-    calc_pr.set("forceFullCalc", "1")
-    return ET.tostring(root, encoding="utf-8", xml_declaration=True)
+def _validate_ooxml_package(
+    package_path: str | Path,
+    *,
+    original_entries: dict[str, bytes],
+    source_suffix: str,
+    output_suffix: str,
+) -> None:
+    try:
+        with zipfile.ZipFile(package_path, "r") as archive:
+            entries = {
+                name: archive.read(name)
+                for name in archive.namelist()
+                if not name.endswith("/")
+            }
+    except zipfile.BadZipFile as exc:
+        raise RawRecordTemplateExportError("原始记录模板导出结果不是有效的 OOXML 文件。") from exc
+
+    _validate_xml_parts(entries)
+    _validate_relationship_targets(entries)
+    _validate_macro_part_preserved(entries, original_entries, source_suffix=source_suffix, output_suffix=output_suffix)
+
+
+def _validate_xml_parts(entries: dict[str, bytes]) -> None:
+    for name, data in entries.items():
+        if not name.endswith(".xml"):
+            continue
+        try:
+            ET.fromstring(data)
+        except ET.ParseError as exc:
+            raise RawRecordTemplateExportError(f"原始记录模板导出结果 XML 无法解析: {name}") from exc
+        missing_prefixes = _missing_compatibility_prefixes(data)
+        if missing_prefixes:
+            missing_text = ", ".join(missing_prefixes)
+            raise RawRecordTemplateExportError(f"原始记录模板导出结果缺少兼容性命名空间声明: {name} ({missing_text})")
+
+
+def _missing_compatibility_prefixes(xml_bytes: bytes) -> list[str]:
+    text = xml_bytes.decode("utf-8", errors="replace")
+    declarations = _namespace_declarations(text)
+    return sorted(prefix for prefix in _compatibility_prefixes(text) if prefix not in declarations)
+
+
+def _namespace_declarations(xml_text: str) -> dict[str, str]:
+    return {
+        match.group(1): match.group(3)
+        for match in re.finditer(r"\bxmlns:([A-Za-z_][\w.-]*)=(['\"])(.*?)\2", xml_text)
+    }
+
+
+def _compatibility_prefixes(xml_text: str) -> set[str]:
+    prefixes: set[str] = set()
+    pattern = re.compile(r"\b(?:[A-Za-z_][\w.-]*:)?(?:Ignorable|Requires|ProcessContent)=(['\"])(.*?)\1")
+    for match in pattern.finditer(xml_text):
+        for token in str(match.group(2) or "").split():
+            if not token:
+                continue
+            prefix = token.split(":", 1)[0]
+            if prefix and prefix != "xml":
+                prefixes.add(prefix)
+    return prefixes
+
+
+def _validate_relationship_targets(entries: dict[str, bytes]) -> None:
+    for rel_name, rel_xml in entries.items():
+        if not rel_name.endswith(".rels"):
+            continue
+        try:
+            root = ET.fromstring(rel_xml)
+        except ET.ParseError as exc:
+            raise RawRecordTemplateExportError(f"原始记录模板导出结果关系文件无法解析: {rel_name}") from exc
+        base_path = _relationship_base_path(rel_name)
+        for relationship in root.findall(f"{{{PACKAGE_REL_NS}}}Relationship"):
+            target_mode = relationship.attrib.get("TargetMode", "")
+            target = relationship.attrib.get("Target", "")
+            if not target or target_mode == "External" or _is_external_relationship_target(target):
+                continue
+            target_path = _resolve_relationship_target(base_path, target)
+            if target_path not in entries:
+                raise RawRecordTemplateExportError(f"原始记录模板导出结果关系目标缺失: {rel_name} -> {target}")
+
+
+def _relationship_base_path(rel_name: str) -> str:
+    if rel_name == "_rels/.rels":
+        return ""
+    if "/_rels/" in rel_name:
+        prefix, _tail = rel_name.split("/_rels/", 1)
+        return prefix
+    return posixpath.dirname(rel_name)
+
+
+def _resolve_relationship_target(base_path: str, target: str) -> str:
+    if target.startswith("/"):
+        return posixpath.normpath(target.lstrip("/"))
+    return posixpath.normpath(posixpath.join(base_path, target))
+
+
+def _is_external_relationship_target(target: str) -> bool:
+    token = target.strip().lower()
+    return bool(
+        "://" in token
+        or token.startswith("mailto:")
+        or token.startswith("file:")
+        or token.startswith("urn:")
+    )
+
+
+def _validate_macro_part_preserved(
+    entries: dict[str, bytes],
+    original_entries: dict[str, bytes],
+    *,
+    source_suffix: str,
+    output_suffix: str,
+) -> None:
+    if source_suffix not in {".xlsm", ".xltm"} or output_suffix != ".xlsm":
+        return
+    original_macro = original_entries.get("xl/vbaProject.bin")
+    if original_macro is None:
+        return
+    if entries.get("xl/vbaProject.bin") != original_macro:
+        raise RawRecordTemplateExportError("原始记录模板导出结果中的宏工程已变化。")
