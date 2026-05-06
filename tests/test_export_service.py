@@ -495,6 +495,27 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(planned[0].kind, "xlsx")
         self.assertEqual(planned[0].filename, XLSX_EXPORT_FILENAME)
 
+    def test_planned_outputs_use_raw_record_template_filename(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_planned_raw_template.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+
+        planned = ExportService().planned_outputs(
+            [document],
+            ExportSelection(
+                include_excel=True,
+                scope=ExportScope.CURRENT,
+                raw_record_template_path="/tmp/面积法原始记录模板.xltm",
+            ),
+        )
+
+        self.assertEqual(len(planned), 1)
+        self.assertEqual(planned[0].kind, "xlsx")
+        self.assertEqual(planned[0].filename, "面积法原始记录模板.xlsm")
+
     def test_export_progress_callback_reports_each_output_step(self) -> None:
         document = ImageDocument(
             id=new_id("image"),

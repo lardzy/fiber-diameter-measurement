@@ -979,6 +979,53 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_export_results_uses_template_name_as_default_excel_filename(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_template_name.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_export_dir = ""
+                template_path = Path(tmp_dir) / "面积法原始记录模板.xlsm"
+                template_path.write_bytes(b"placeholder")
+                window._app_settings.raw_record_templates = [
+                    RawRecordTemplate(name="面积法", path=str(template_path))
+                ]
+                chosen_output = Path(tmp_dir) / "filled_record.xlsm"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.CURRENT,
+                    raw_record_template_path=str(template_path),
+                )
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "启用宏的 Excel 工作簿 (*.xlsm)")) as save_dialog,
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                default_path = Path(save_dialog.call_args.args[2])
+                self.assertEqual(default_path.resolve(), (Path(tmp_dir) / "面积法原始记录模板.xlsm").resolve())
+                self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
+                self.assertIsNotNone(export_project.call_args.kwargs["raw_record_template"])
+        finally:
+            window.close()
+
     def test_export_results_shows_busy_file_warning_when_export_overwrite_fails(self) -> None:
         window = MainWindow()
         try:
@@ -3902,6 +3949,54 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(dialog._scale_overlay_length_spin.value(), 50.0)
             self.assertEqual(dialog._scale_overlay_color.property("color_value"), "#FF0000")
             self.assertEqual(dialog._scale_overlay_text_color.property("color_value"), "#FF0000")
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_raw_record_rule_locks_filter_for_result_sources(self) -> None:
+        settings = AppSettings(
+            raw_record_templates=[
+                RawRecordTemplate(
+                    name="原始记录",
+                    path="/tmp/raw-record-template.xlsm",
+                    rules=[
+                        RawRecordExportRule(
+                            data_source=RawRecordDataSource.AREA_RESULT,
+                            field_name="单位",
+                            measurement_filter=RawRecordMeasurementFilter.ALL,
+                            sheet_name="原始数据",
+                            start_cell="B2",
+                        )
+                    ],
+                )
+            ]
+        )
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            source_combo = dialog._raw_record_rule_table.cellWidget(0, 0)
+            field_combo = dialog._raw_record_rule_table.cellWidget(0, 1)
+            filter_combo = dialog._raw_record_rule_table.cellWidget(0, 2)
+            self.assertIsInstance(source_combo, QComboBox)
+            self.assertIsInstance(field_combo, QComboBox)
+            self.assertIsInstance(filter_combo, QComboBox)
+            self.assertEqual(field_combo.currentText(), "结果")
+            self.assertFalse(field_combo.isEnabled())
+            self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.AREA)
+            self.assertEqual(filter_combo.currentText(), "自动: 面积")
+            self.assertFalse(filter_combo.isEnabled())
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.MEASUREMENT_FIELD))
+            self.app.processEvents()
+            self.assertTrue(field_combo.isEnabled())
+            self.assertTrue(filter_combo.isEnabled())
+            self.assertEqual(filter_combo.currentText(), "面积")
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.DIAMETER_RESULT))
+            self.app.processEvents()
+            self.assertEqual(field_combo.currentText(), "结果")
+            self.assertFalse(field_combo.isEnabled())
+            self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.LINE)
+            self.assertEqual(filter_combo.currentText(), "自动: 直径/线段")
+            self.assertFalse(filter_combo.isEnabled())
         finally:
             dialog.close()
 

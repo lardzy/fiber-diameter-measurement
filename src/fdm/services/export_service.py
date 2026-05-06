@@ -595,9 +595,10 @@ class ExportService:
 
     def _excel_export_filename(self, selection: ExportSelection) -> str:
         if selection.raw_record_template_path:
-            return Path(XLSX_EXPORT_FILENAME).with_suffix(
-                raw_record_output_suffix(selection.raw_record_template_path)
-            ).name
+            template_path = Path(selection.raw_record_template_path)
+            output_suffix = raw_record_output_suffix(selection.raw_record_template_path)
+            template_stem = template_path.stem.strip() or Path(XLSX_EXPORT_FILENAME).stem
+            return f"{template_stem}{output_suffix}"
         return XLSX_EXPORT_FILENAME
 
     def _raw_record_template_fallback_path(

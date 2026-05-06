@@ -1105,8 +1105,10 @@ class SettingsDialog(QDialog):
         if not isinstance(source_combo, QComboBox) or not isinstance(field_combo, QComboBox) or not isinstance(filter_combo, QComboBox):
             return
         data_source = str(source_combo.currentData() or "")
+        self._reset_raw_record_filter_combo_labels(filter_combo)
         if data_source == RawRecordDataSource.DIAMETER_RESULT:
             self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
+            self._set_combo_item_text_for_data(filter_combo, RawRecordMeasurementFilter.LINE, "自动: 直径/线段")
             self._set_combo_current_data(filter_combo, RawRecordMeasurementFilter.LINE)
             field_combo.setEnabled(False)
             filter_combo.setEnabled(False)
@@ -1115,6 +1117,7 @@ class SettingsDialog(QDialog):
             return
         if data_source == RawRecordDataSource.AREA_RESULT:
             self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
+            self._set_combo_item_text_for_data(filter_combo, RawRecordMeasurementFilter.AREA, "自动: 面积")
             self._set_combo_current_data(filter_combo, RawRecordMeasurementFilter.AREA)
             field_combo.setEnabled(False)
             filter_combo.setEnabled(False)
@@ -1137,6 +1140,15 @@ class SettingsDialog(QDialog):
             combo.setCurrentIndex(text_index)
         elif combo.isEditable():
             combo.setEditText(text)
+
+    def _reset_raw_record_filter_combo_labels(self, combo: QComboBox) -> None:
+        for label, value in RAW_RECORD_FILTER_ITEMS:
+            self._set_combo_item_text_for_data(combo, value, label)
+
+    def _set_combo_item_text_for_data(self, combo: QComboBox, value: str, label: str) -> None:
+        index = combo.findData(value)
+        if index >= 0:
+            combo.setItemText(index, label)
 
     def _raw_record_rule_row_for_widget(self, widget: QWidget) -> int:
         for row in range(self._raw_record_rule_table.rowCount()):
