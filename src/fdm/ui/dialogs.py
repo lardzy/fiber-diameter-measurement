@@ -1112,10 +1112,12 @@ class SettingsDialog(QDialog):
             return
         data_source = str(source_combo.currentData() or "")
         self._reset_raw_record_filter_combo_labels(filter_combo)
-        end_cell_enabled = data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE
         if end_cell_item is not None:
-            end_cell_item.setFlags(self._raw_record_table_item_flags(enabled=end_cell_enabled))
-            end_cell_item.setToolTip("去重字段范围需要填写结束单元格，例如 BG11。" if end_cell_enabled else "")
+            end_cell_item.setFlags(self._raw_record_table_item_flags(enabled=True))
+            if data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
+                end_cell_item.setToolTip("去重字段范围需要填写结束单元格，例如 BG11。")
+            else:
+                end_cell_item.setToolTip("普通规则填写结束单元格后，会按纤维类别分列或分行导出。")
         if data_source == RawRecordDataSource.DIAMETER_RESULT:
             self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
             self._set_combo_item_text_for_data(filter_combo, RawRecordMeasurementFilter.LINE, "自动: 直径/线段")

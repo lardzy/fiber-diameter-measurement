@@ -4077,14 +4077,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.AREA)
             self.assertEqual(filter_combo.currentText(), "自动: 面积")
             self.assertFalse(filter_combo.isEnabled())
-            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
 
             source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.MEASUREMENT_FIELD))
             self.app.processEvents()
             self.assertTrue(field_combo.isEnabled())
             self.assertTrue(filter_combo.isEnabled())
             self.assertEqual(filter_combo.currentText(), "面积")
-            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
 
             source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.UNIQUE_FIELD_RANGE))
             self.app.processEvents()
@@ -4099,7 +4099,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.LINE)
             self.assertEqual(filter_combo.currentText(), "自动: 直径/线段")
             self.assertFalse(filter_combo.isEnabled())
-            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
         finally:
             dialog.close()
 

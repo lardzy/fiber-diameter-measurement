@@ -20,7 +20,7 @@ from openpyxl.utils.cell import (
 )
 from openpyxl.utils.exceptions import CellCoordinatesException
 
-from fdm.models import ImageDocument
+from fdm.models import ImageDocument, UNCATEGORIZED_LABEL
 from fdm.settings import (
     RawRecordDataSource,
     RawRecordExportDirection,
@@ -106,7 +106,8 @@ class _CellWrite:
 @dataclass(frozen=True, slots=True)
 class _RuleWritePlan:
     rule: RawRecordExportRule
-    values: list[object]
+    writes: list[_CellWrite]
+    occupied_coordinates: list[str]
 
 
 def raw_record_output_suffix(template_path: str | Path) -> str:
@@ -212,11 +213,54 @@ def _build_rule_plans(
     measurement_rows: list[dict[str, object]],
 ) -> list[_RuleWritePlan]:
     plans: list[_RuleWritePlan] = []
+    category_labels = _fiber_category_labels(documents)
     for raw_rule in rules:
         rule = raw_rule.normalized_copy()
-        values = _values_for_rule(rule, documents=documents, measurement_rows=measurement_rows)
-        plans.append(_RuleWritePlan(rule=rule, values=values))
+        plans.append(
+            _build_rule_write_plan(
+                rule,
+                documents=documents,
+                measurement_rows=measurement_rows,
+                category_labels=category_labels,
+            )
+        )
     return plans
+
+
+def _build_rule_write_plan(
+    rule: RawRecordExportRule,
+    *,
+    documents: list[ImageDocument],
+    measurement_rows: list[dict[str, object]],
+    category_labels: list[str],
+) -> _RuleWritePlan:
+    values = _values_for_rule(rule, documents=documents, measurement_rows=measurement_rows)
+    if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
+        coordinates = _target_coordinates_for_rule(rule, len(values))
+        return _RuleWritePlan(
+            rule=rule,
+            writes=[
+                _CellWrite(coordinate=coordinate, value=value)
+                for coordinate, value in zip(coordinates, values)
+            ],
+            occupied_coordinates=_occupied_coordinates_for_rule(rule, len(values)),
+        )
+    if _uses_category_grouped_range(rule):
+        writes = _category_grouped_writes(rule, measurement_rows=measurement_rows, category_labels=category_labels)
+        return _RuleWritePlan(
+            rule=rule,
+            writes=writes,
+            occupied_coordinates=[write.coordinate for write in writes],
+        )
+    coordinates = _target_coordinates_for_rule(rule, len(values))
+    return _RuleWritePlan(
+        rule=rule,
+        writes=[
+            _CellWrite(coordinate=coordinate, value=value)
+            for coordinate, value in zip(coordinates, values)
+        ],
+        occupied_coordinates=_occupied_coordinates_for_rule(rule, len(values)),
+    )
 
 
 def _values_for_rule(
@@ -265,6 +309,101 @@ def _unique_field_values(rule: RawRecordExportRule, measurement_rows: list[dict[
     return values
 
 
+def _uses_category_grouped_range(rule: RawRecordExportRule) -> bool:
+    return rule.data_source != RawRecordDataSource.UNIQUE_FIELD_RANGE and bool(str(rule.end_cell or "").strip())
+
+
+def _fiber_category_labels(documents: list[ImageDocument]) -> list[str]:
+    labels: list[str] = []
+    seen: set[str] = set()
+    has_uncategorized = False
+    for document in documents:
+        for group in document.sorted_groups():
+            label = str(group.label or group.display_name()).strip()
+            if label and label not in seen:
+                seen.add(label)
+                labels.append(label)
+        if any(measurement.fiber_group_id is None for measurement in document.measurements):
+            has_uncategorized = True
+    if has_uncategorized and UNCATEGORIZED_LABEL not in seen:
+        labels.append(UNCATEGORIZED_LABEL)
+    return labels
+
+
+def _category_grouped_writes(
+    rule: RawRecordExportRule,
+    *,
+    measurement_rows: list[dict[str, object]],
+    category_labels: list[str],
+) -> list[_CellWrite]:
+    anchors = _category_grouped_anchors(rule.start_cell, rule.end_cell, rule.direction, len(category_labels))
+    values_by_label: dict[str, list[object]] = {label: [] for label in category_labels}
+    for row in measurement_rows:
+        if not _row_matches_rule_data_source(row, rule):
+            continue
+        label = _row_category_label(row)
+        if label not in values_by_label:
+            continue
+        values_by_label[label].append(_row_value_for_rule(row, rule))
+
+    writes: list[_CellWrite] = []
+    for label, anchor in zip(category_labels, anchors):
+        row, column = _parse_cell_coordinate(anchor)
+        for offset, value in enumerate(values_by_label.get(label, [])):
+            if rule.direction == RawRecordExportDirection.VERTICAL:
+                coordinate = f"{get_column_letter(column)}{row + offset}"
+            else:
+                coordinate = f"{get_column_letter(column + offset)}{row}"
+            writes.append(_CellWrite(coordinate=coordinate, value=value))
+    return writes
+
+
+def _category_grouped_anchors(start_cell: str, end_cell: str, direction: str, category_count: int) -> list[str]:
+    start_row, start_column = _parse_cell_coordinate(start_cell)
+    end_row, end_column = _parse_cell_coordinate(end_cell)
+    if direction == RawRecordExportDirection.VERTICAL:
+        if start_row != end_row or end_column < start_column:
+            raise RawRecordTemplateExportError(f"纵向按类别分组范围无效: {start_cell}:{end_cell}")
+        capacity = end_column - start_column + 1
+        if category_count > capacity:
+            raise RawRecordTemplateExportError(
+                f"按类别分组范围容量不足: {start_cell}:{end_cell} 可容纳 {capacity} 个类别，当前有 {category_count} 个类别。"
+            )
+        return [
+            f"{get_column_letter(start_column + offset)}{start_row}"
+            for offset in range(category_count)
+        ]
+    if start_column != end_column or end_row < start_row:
+        raise RawRecordTemplateExportError(f"横向按类别分组范围无效: {start_cell}:{end_cell}")
+    capacity = end_row - start_row + 1
+    if category_count > capacity:
+        raise RawRecordTemplateExportError(
+            f"按类别分组范围容量不足: {start_cell}:{end_cell} 可容纳 {capacity} 个类别，当前有 {category_count} 个类别。"
+        )
+    return [
+        f"{get_column_letter(start_column)}{start_row + offset}"
+        for offset in range(category_count)
+    ]
+
+
+def _row_matches_rule_data_source(row: dict[str, object], rule: RawRecordExportRule) -> bool:
+    if rule.data_source == RawRecordDataSource.DIAMETER_RESULT:
+        return str(row.get("类型", "")) == MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.LINE]
+    if rule.data_source == RawRecordDataSource.AREA_RESULT:
+        return str(row.get("类型", "")) == MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.AREA]
+    return _row_matches_measurement_filter(row, rule.measurement_filter)
+
+
+def _row_value_for_rule(row: dict[str, object], rule: RawRecordExportRule) -> object:
+    if rule.data_source in {RawRecordDataSource.DIAMETER_RESULT, RawRecordDataSource.AREA_RESULT}:
+        return row.get("结果")
+    return row.get(rule.field_name or "结果")
+
+
+def _row_category_label(row: dict[str, object]) -> str:
+    return str(row.get("纤维种类名称") or row.get("纤维种类") or "").strip()
+
+
 def _row_matches_measurement_filter(row: dict[str, object], measurement_filter: str) -> bool:
     if measurement_filter == RawRecordMeasurementFilter.ALL:
         return True
@@ -281,8 +420,7 @@ def _group_rule_plans_by_sheet(
         sheet_name = plan.rule.sheet_name.strip()
         if sheet_name not in sheet_paths:
             raise RawRecordTemplateExportError(f"原始记录模板中找不到工作表: {sheet_name}")
-        coordinates = _occupied_coordinates_for_rule(plan.rule, len(plan.values))
-        for coordinate in coordinates:
+        for coordinate in plan.occupied_coordinates:
             key = (sheet_name, coordinate)
             if key in occupied:
                 raise RawRecordTemplateExportError(f"原始记录导出规则目标单元格重叠: {sheet_name}!{coordinate}")
@@ -436,14 +574,7 @@ def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sh
     merged_ranges = _merged_ranges(root)
     for plan in rule_plans:
         start_style = _existing_cell_style(row_map, plan.rule.start_cell)
-        writes = [
-            _CellWrite(coordinate=coordinate, value=value)
-            for coordinate, value in zip(
-                _target_coordinates_for_rule(plan.rule, len(plan.values)),
-                plan.values,
-            )
-        ]
-        for write in writes:
+        for write in plan.writes:
             _validate_merge_target(write.coordinate, merged_ranges, sheet_name=sheet_name)
             cell = _get_or_create_cell(sheet_data, row_map, write.coordinate, inherited_style=start_style)
             _write_cell_value(cell, write.value)

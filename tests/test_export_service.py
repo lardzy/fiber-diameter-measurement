@@ -569,6 +569,208 @@ class ExportServiceTests(unittest.TestCase):
         self.assertNotIn("BD11", sheet_values)
         self.assertNotIn("BD12", sheet_values)
 
+    def test_raw_record_template_normal_rule_groups_vertically_by_fiber_category(self) -> None:
+        first_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_grouped_vertical_a.png",
+            image_size=(200, 100),
+        )
+        first_document.initialize_runtime_state()
+        cotton = first_document.create_group(color="#1F7A8C", label="棉")
+        lyocell = first_document.create_group(color="#E07A5F", label="莱赛尔")
+        first_document.add_measurement(
+            Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=cotton.id, mode="manual", line_px=Line(Point(0, 0), Point(10, 0)))
+        )
+        first_document.add_measurement(
+            Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=lyocell.id, mode="manual", line_px=Line(Point(0, 0), Point(20, 0)))
+        )
+        uncategorized = Measurement(id=new_id("meas"), image_id=first_document.id, fiber_group_id=None, mode="manual", line_px=Line(Point(0, 0), Point(30, 0)))
+        first_document.add_measurement(uncategorized)
+        first_document.set_measurement_group(uncategorized.id, None)
+        second_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_grouped_vertical_b.png",
+            image_size=(200, 100),
+        )
+        second_document.initialize_runtime_state()
+        second_cotton = second_document.create_group(color="#22C55E", label="棉")
+        second_document.add_measurement(
+            Measurement(id=new_id("meas"), image_id=second_document.id, fiber_group_id=second_cotton.id, mode="manual", line_px=Line(Point(0, 0), Point(11, 0)))
+        )
+        project = ProjectState(version="0.1.0", documents=[first_document, second_document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="D25",
+                        end_cell="F25",
+                        direction=RawRecordExportDirection.VERTICAL,
+                    )
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual(sheet_values["D25"], "10")
+        self.assertEqual(sheet_values["D26"], "11")
+        self.assertEqual(sheet_values["E25"], "20")
+        self.assertEqual(sheet_values["F25"], "30")
+
+    def test_raw_record_template_normal_rule_groups_horizontally_by_fiber_category(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_grouped_horizontal.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        cotton = document.create_group(color="#1F7A8C", label="棉")
+        lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+        for group, length in [(cotton, 10), (cotton, 11), (lyocell, 20)]:
+            document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=document.id, fiber_group_id=group.id, mode="manual", line_px=Line(Point(0, 0), Point(length, 0)))
+            )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="D25",
+                        end_cell="D26",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    )
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual(sheet_values["D25"], "10")
+        self.assertEqual(sheet_values["E25"], "11")
+        self.assertEqual(sheet_values["D26"], "20")
+
+    def test_raw_record_template_grouped_normal_rule_falls_back_on_invalid_range(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_grouped_invalid.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        group = document.create_group(color="#1F7A8C", label="棉")
+        document.add_measurement(
+            Measurement(id=new_id("meas"), image_id=document.id, fiber_group_id=group.id, mode="manual", line_px=Line(Point(0, 0), Point(10, 0)))
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="D25",
+                        end_cell="E26",
+                        direction=RawRecordExportDirection.VERTICAL,
+                    )
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
+            self.assertIn("_template_fallback_message", outputs)
+            self.assertFalse(output_path.exists())
+
+    def test_raw_record_template_grouped_normal_rule_falls_back_when_range_is_too_small(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_grouped_too_small.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        cotton = document.create_group(color="#1F7A8C", label="棉")
+        lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+        for group in [cotton, lyocell]:
+            document.add_measurement(
+                Measurement(id=new_id("meas"), image_id=document.id, fiber_group_id=group.id, mode="manual", line_px=Line(Point(0, 0), Point(10, 0)))
+            )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="D25",
+                        end_cell="D25",
+                        direction=RawRecordExportDirection.VERTICAL,
+                    )
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
+            self.assertIn("_template_fallback_message", outputs)
+            self.assertFalse(output_path.exists())
+
     def test_raw_record_template_export_falls_back_to_default_xlsx_on_rule_error(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
