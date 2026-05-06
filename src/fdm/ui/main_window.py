@@ -3820,6 +3820,8 @@ class MainWindow(QMainWindow):
             return
         group = document.get_group(document.active_group_id)
         if group is None:
+            if document.active_group_id is None:
+                self._rename_uncategorized_group(document)
             return
         dialog = FiberGroupDialog(
             self,
@@ -3895,6 +3897,65 @@ class MainWindow(QMainWindow):
             ) or changed
         if changed:
             self.statusBar().showMessage("类别已更新", 3000)
+
+    def _rename_uncategorized_group(self, document: ImageDocument) -> None:
+        dialog = FiberGroupDialog(
+            self,
+            title="编辑未分类",
+            initial_label="",
+            initial_color=self._app_settings.default_measurement_color,
+            apply_to_project_default=False,
+            show_apply_to_project=False,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        label, selected_color, _apply_to_project = dialog.values()
+        target_label = normalize_group_label(label)
+        if not target_label:
+            QMessageBox.warning(self, "编辑未分类", "类别名称不能为空。")
+            return
+        selected_qcolor = QColor(selected_color)
+        target_color = (
+            selected_qcolor.name()
+            if selected_qcolor.isValid()
+            else selected_color.strip() or self._app_settings.default_measurement_color
+        )
+        merge_target = document.find_group_by_label(target_label)
+        if merge_target is not None:
+            response = QMessageBox.question(
+                self,
+                "合并类别",
+                f"当前图片中已存在类别“{target_label}”。\n\n确认后会将未分类测量合并到该类别。",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+
+            def mutate_merge() -> None:
+                target = document.get_group(merge_target.id)
+                if target is None:
+                    return
+                document.move_uncategorized_measurements_to_group(target.id)
+                target_token = normalize_group_label(target.label)
+                if self._project_group_template_for_label(target_token) is not None:
+                    document.unsuppress_project_group_label(target_token)
+
+            changed = self._apply_document_change(document, "合并未分类", mutate_merge)
+            if changed:
+                self.statusBar().showMessage("未分类已合并到现有类别", 3000)
+            return
+
+        def mutate_create() -> None:
+            group = document.create_group(color=target_color, label=target_label)
+            document.move_uncategorized_measurements_to_group(group.id)
+            document.set_active_group(group.id)
+            if self._project_group_template_for_label(target_label) is not None:
+                document.unsuppress_project_group_label(target_label)
+
+        changed = self._apply_document_change(document, "编辑未分类", mutate_create)
+        if changed:
+            self.statusBar().showMessage("未分类已迁移到新类别", 3000)
 
     def delete_active_group(self) -> None:
         document = self.current_document()

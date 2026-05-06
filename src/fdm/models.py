@@ -966,6 +966,20 @@ class ImageDocument:
         self.rebuild_group_memberships()
         self.refresh_dirty_flags()
 
+    def move_uncategorized_measurements_to_group(self, group_id: str) -> int:
+        if self.get_group(group_id) is None:
+            return 0
+        moved_count = 0
+        for measurement in self.measurements:
+            if measurement.fiber_group_id is None:
+                measurement.fiber_group_id = group_id
+                moved_count += 1
+        if self.active_group_id is None:
+            self.active_group_id = group_id
+        self.rebuild_group_memberships()
+        self.refresh_dirty_flags()
+        return moved_count
+
     def rebuild_group_memberships(self) -> None:
         group_map = {group.id: group for group in self.fiber_groups}
         for group in self.fiber_groups:

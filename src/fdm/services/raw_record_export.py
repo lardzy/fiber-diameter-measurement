@@ -66,6 +66,7 @@ RAW_RECORD_FIELD_NAMES = [
     "图片编号",
     "测量记录ID",
     "纤维种类ID",
+    "纤维类别序号",
     "纤维种类编号",
     "纤维种类名称",
     "纤维种类颜色",
@@ -215,6 +216,8 @@ def _values_for_rule(
             for measurement in document.measurements
             if measurement.measurement_kind == "area"
         ]
+    if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
+        return _unique_field_values(rule, measurement_rows)
 
     field_name = rule.field_name or "结果"
     return [
@@ -222,6 +225,21 @@ def _values_for_rule(
         for row in measurement_rows
         if _row_matches_measurement_filter(row, rule.measurement_filter)
     ]
+
+
+def _unique_field_values(rule: RawRecordExportRule, measurement_rows: list[dict[str, object]]) -> list[object]:
+    field_name = rule.field_name or "纤维种类名称"
+    values: list[object] = []
+    seen_labels: set[str] = set()
+    for row in measurement_rows:
+        if not _row_matches_measurement_filter(row, rule.measurement_filter):
+            continue
+        label = str(row.get("纤维种类名称", "") or "").strip()
+        if not label or label in seen_labels:
+            continue
+        seen_labels.add(label)
+        values.append(row.get(field_name))
+    return values
 
 
 def _row_matches_measurement_filter(row: dict[str, object], measurement_filter: str) -> bool:
@@ -240,7 +258,7 @@ def _group_rule_plans_by_sheet(
         sheet_name = plan.rule.sheet_name.strip()
         if sheet_name not in sheet_paths:
             raise RawRecordTemplateExportError(f"原始记录模板中找不到工作表: {sheet_name}")
-        coordinates = _target_coordinates(plan.rule.start_cell, plan.rule.direction, len(plan.values))
+        coordinates = _occupied_coordinates_for_rule(plan.rule, len(plan.values))
         for coordinate in coordinates:
             key = (sheet_name, coordinate)
             if key in occupied:
@@ -258,6 +276,42 @@ def _target_coordinates(start_cell: str, direction: str, value_count: int) -> li
         target_column = column if direction == RawRecordExportDirection.VERTICAL else column + offset
         coordinates.append(f"{get_column_letter(target_column)}{target_row}")
     return coordinates
+
+
+def _target_coordinates_for_rule(rule: RawRecordExportRule, value_count: int) -> list[str]:
+    if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
+        return _range_target_coordinates(rule.start_cell, rule.end_cell, rule.direction, value_count)
+    return _target_coordinates(rule.start_cell, rule.direction, value_count)
+
+
+def _occupied_coordinates_for_rule(rule: RawRecordExportRule, value_count: int) -> list[str]:
+    if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
+        return _range_target_coordinates(rule.start_cell, rule.end_cell, rule.direction, None)
+    return _target_coordinates(rule.start_cell, rule.direction, value_count)
+
+
+def _range_target_coordinates(start_cell: str, end_cell: str, direction: str, value_count: int | None) -> list[str]:
+    if not str(end_cell or "").strip():
+        raise RawRecordTemplateExportError("去重字段范围规则需要填写结束单元格。")
+    start_row, start_column = _parse_cell_coordinate(start_cell)
+    end_row, end_column = _parse_cell_coordinate(end_cell)
+    if direction == RawRecordExportDirection.HORIZONTAL:
+        if start_row != end_row or end_column < start_column:
+            raise RawRecordTemplateExportError(f"横向去重字段范围无效: {start_cell}:{end_cell}")
+        capacity = end_column - start_column + 1
+        target_count = capacity if value_count is None else min(value_count, capacity)
+        return [
+            f"{get_column_letter(start_column + offset)}{start_row}"
+            for offset in range(target_count)
+        ]
+    if start_column != end_column or end_row < start_row:
+        raise RawRecordTemplateExportError(f"纵向去重字段范围无效: {start_cell}:{end_cell}")
+    capacity = end_row - start_row + 1
+    target_count = capacity if value_count is None else min(value_count, capacity)
+    return [
+        f"{get_column_letter(start_column)}{start_row + offset}"
+        for offset in range(target_count)
+    ]
 
 
 def _parse_cell_coordinate(coordinate: str) -> tuple[int, int]:
@@ -314,7 +368,7 @@ def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sh
         writes = [
             _CellWrite(coordinate=coordinate, value=value)
             for coordinate, value in zip(
-                _target_coordinates(plan.rule.start_cell, plan.rule.direction, len(plan.values)),
+                _target_coordinates_for_rule(plan.rule, len(plan.values)),
                 plan.values,
             )
         ]

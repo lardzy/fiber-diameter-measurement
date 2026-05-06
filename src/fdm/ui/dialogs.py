@@ -67,6 +67,7 @@ RAW_RECORD_DATA_SOURCE_ITEMS = [
     ("直径结果", RawRecordDataSource.DIAMETER_RESULT),
     ("面积结果", RawRecordDataSource.AREA_RESULT),
     ("测量明细字段", RawRecordDataSource.MEASUREMENT_FIELD),
+    ("去重字段范围", RawRecordDataSource.UNIQUE_FIELD_RANGE),
 ]
 
 RAW_RECORD_FILTER_ITEMS = [
@@ -917,14 +918,15 @@ class SettingsDialog(QDialog):
 
         rules_group = QGroupBox("导出规则")
         rules_layout = QVBoxLayout(rules_group)
-        self._raw_record_rule_table = QTableWidget(0, 6)
-        self._raw_record_rule_table.setHorizontalHeaderLabels(["数据", "字段", "筛选", "工作表", "起始单元格", "方向"])
+        self._raw_record_rule_table = QTableWidget(0, 7)
+        self._raw_record_rule_table.setHorizontalHeaderLabels(["数据", "字段", "筛选", "工作表", "起始单元格", "结束单元格", "方向"])
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
         self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(6, QHeaderView.ResizeMode.ResizeToContents)
         self._raw_record_rule_table.verticalHeader().setVisible(False)
         self._raw_record_rule_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self._raw_record_rule_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
@@ -1024,9 +1026,10 @@ class SettingsDialog(QDialog):
             source_combo = self._raw_record_rule_table.cellWidget(row, 0)
             field_combo = self._raw_record_rule_table.cellWidget(row, 1)
             filter_combo = self._raw_record_rule_table.cellWidget(row, 2)
-            direction_combo = self._raw_record_rule_table.cellWidget(row, 5)
+            direction_combo = self._raw_record_rule_table.cellWidget(row, 6)
             sheet_item = self._raw_record_rule_table.item(row, 3)
             cell_item = self._raw_record_rule_table.item(row, 4)
+            end_cell_item = self._raw_record_rule_table.item(row, 5)
             data_source = source_combo.currentData() if isinstance(source_combo, QComboBox) else RawRecordDataSource.DIAMETER_RESULT
             field_name = field_combo.currentText().strip() if isinstance(field_combo, QComboBox) else "结果"
             measurement_filter = filter_combo.currentData() if isinstance(filter_combo, QComboBox) else RawRecordMeasurementFilter.ALL
@@ -1038,6 +1041,7 @@ class SettingsDialog(QDialog):
                     measurement_filter=str(measurement_filter),
                     sheet_name=(sheet_item.text().strip() if sheet_item is not None else "Sheet1") or "Sheet1",
                     start_cell=(cell_item.text().strip() if cell_item is not None else "B2") or "B2",
+                    end_cell=(end_cell_item.text().strip() if end_cell_item is not None else ""),
                     direction=str(direction),
                 ).normalized_copy()
             )
@@ -1076,9 +1080,10 @@ class SettingsDialog(QDialog):
         )
         self._raw_record_rule_table.setItem(row, 3, QTableWidgetItem(normalized.sheet_name))
         self._raw_record_rule_table.setItem(row, 4, QTableWidgetItem(normalized.start_cell))
+        self._raw_record_rule_table.setItem(row, 5, QTableWidgetItem(normalized.end_cell))
         self._raw_record_rule_table.setCellWidget(
             row,
-            5,
+            6,
             self._raw_record_combo(RAW_RECORD_DIRECTION_ITEMS, normalized.direction),
         )
         source_combo.currentIndexChanged.connect(
@@ -1102,10 +1107,15 @@ class SettingsDialog(QDialog):
         source_combo = self._raw_record_rule_table.cellWidget(row, 0)
         field_combo = self._raw_record_rule_table.cellWidget(row, 1)
         filter_combo = self._raw_record_rule_table.cellWidget(row, 2)
+        end_cell_item = self._raw_record_rule_table.item(row, 5)
         if not isinstance(source_combo, QComboBox) or not isinstance(field_combo, QComboBox) or not isinstance(filter_combo, QComboBox):
             return
         data_source = str(source_combo.currentData() or "")
         self._reset_raw_record_filter_combo_labels(filter_combo)
+        end_cell_enabled = data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE
+        if end_cell_item is not None:
+            end_cell_item.setFlags(self._raw_record_table_item_flags(enabled=end_cell_enabled))
+            end_cell_item.setToolTip("去重字段范围需要填写结束单元格，例如 BG11。" if end_cell_enabled else "")
         if data_source == RawRecordDataSource.DIAMETER_RESULT:
             self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
             self._set_combo_item_text_for_data(filter_combo, RawRecordMeasurementFilter.LINE, "自动: 直径/线段")
@@ -1128,6 +1138,12 @@ class SettingsDialog(QDialog):
         filter_combo.setEnabled(True)
         field_combo.setToolTip("")
         filter_combo.setToolTip("")
+
+    def _raw_record_table_item_flags(self, *, enabled: bool) -> Qt.ItemFlag:
+        flags = Qt.ItemFlag.ItemIsSelectable | Qt.ItemFlag.ItemIsEnabled
+        if enabled:
+            flags |= Qt.ItemFlag.ItemIsEditable
+        return flags
 
     def _set_combo_current_data(self, combo: QComboBox, value: str, *, text_fallback: str | None = None) -> None:
         index = combo.findData(value)

@@ -2291,6 +2291,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_add_existing_project_global_group_reuses_template_color_across_documents(self) -> None:
@@ -2355,6 +2356,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_group_action_button_uses_edit_label(self) -> None:
@@ -2394,6 +2396,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_edit_template_bound_group_color_syncs_project_template_and_documents(self) -> None:
@@ -2475,6 +2478,96 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_uncategorized_creates_group_and_moves_measurements(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_edit.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(80, 10)),
+            )
+            document.add_measurement(measurement)
+            document.set_measurement_group(measurement.id, None)
+            document.set_active_group(None)
+            self._load_document_into_window(window, document, image)
+            document.set_active_group(None)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            group = document.sorted_groups()[0]
+            self.assertEqual(document.measurements[0].fiber_group_id, group.id)
+            self.assertEqual(document.active_group_id, group.id)
+            self.assertEqual(group.color, "#22c55e")
+            self.assertEqual(document.uncategorized_measurement_count(), 0)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_uncategorized_to_existing_group_merges_without_new_group(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_merge.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            existing = document.create_group(color="#1F7A8C", label="棉")
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(80, 10)),
+            )
+            document.add_measurement(measurement)
+            document.set_measurement_group(measurement.id, None)
+            document.set_active_group(None)
+            self._load_document_into_window(window, document, image)
+            document.set_active_group(None)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values), patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.measurements[0].fiber_group_id, existing.id)
+            self.assertEqual(document.active_group_id, existing.id)
+            self.assertEqual(document.get_group(existing.id).color, "#1F7A8C")
+            self.assertEqual(document.uncategorized_measurement_count(), 0)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_delete_project_global_group_adds_local_suppression(self) -> None:
@@ -3975,6 +4068,7 @@ class CanvasAndExportTests(unittest.TestCase):
             source_combo = dialog._raw_record_rule_table.cellWidget(0, 0)
             field_combo = dialog._raw_record_rule_table.cellWidget(0, 1)
             filter_combo = dialog._raw_record_rule_table.cellWidget(0, 2)
+            end_cell_item = dialog._raw_record_rule_table.item(0, 5)
             self.assertIsInstance(source_combo, QComboBox)
             self.assertIsInstance(field_combo, QComboBox)
             self.assertIsInstance(filter_combo, QComboBox)
@@ -3983,12 +4077,20 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.AREA)
             self.assertEqual(filter_combo.currentText(), "自动: 面积")
             self.assertFalse(filter_combo.isEnabled())
+            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
 
             source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.MEASUREMENT_FIELD))
             self.app.processEvents()
             self.assertTrue(field_combo.isEnabled())
             self.assertTrue(filter_combo.isEnabled())
             self.assertEqual(filter_combo.currentText(), "面积")
+            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.UNIQUE_FIELD_RANGE))
+            self.app.processEvents()
+            self.assertTrue(field_combo.isEnabled())
+            self.assertTrue(filter_combo.isEnabled())
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
 
             source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.DIAMETER_RESULT))
             self.app.processEvents()
@@ -3997,6 +4099,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.LINE)
             self.assertEqual(filter_combo.currentText(), "自动: 直径/线段")
             self.assertFalse(filter_combo.isEnabled())
+            self.assertFalse(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
         finally:
             dialog.close()
 

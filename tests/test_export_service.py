@@ -271,6 +271,81 @@ class ExportServiceTests(unittest.TestCase):
             self.assertIsNotNone(formula)
             self.assertEqual(formula.text, "SUM(A1:A2)")
 
+    def test_raw_record_template_unique_field_range_deduplicates_and_truncates(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        groups = [
+            document.create_group(color="#1F7A8C", label="棉"),
+            document.create_group(color="#E07A5F", label="麻"),
+            document.create_group(color="#22C55E", label="棉"),
+            document.create_group(color="#A855F7", label="莱赛尔"),
+            document.create_group(color="#F59E0B", label="莫代尔"),
+        ]
+        for group in groups:
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(0, 0), Point(10, 0)),
+                )
+            )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.ALL_OPEN,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="BA11",
+                        end_cell="BC11",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维类别序号",
+                        sheet_name="Raw",
+                        start_cell="BA12",
+                        end_cell="BC12",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([sheet_values["BA11"], sheet_values["BB11"], sheet_values["BC11"]], ["棉", "麻", "莱赛尔"])
+        self.assertEqual([sheet_values["BA12"], sheet_values["BB12"], sheet_values["BC12"]], ["1", "2", "4"])
+        self.assertNotIn("BD11", sheet_values)
+        self.assertNotIn("BD12", sheet_values)
+
     def test_raw_record_template_export_falls_back_to_default_xlsx_on_rule_error(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
@@ -341,8 +416,35 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(len(rows), 1)
         self.assertEqual(rows[0]["纤维种类"], UNCATEGORIZED_LABEL)
         self.assertEqual(rows[0]["纤维种类名称"], UNCATEGORIZED_LABEL)
+        self.assertIsNone(rows[0]["纤维类别序号"])
         self.assertEqual(rows[0]["纤维种类颜色"], UNCATEGORIZED_COLOR)
         self.assertEqual(list(rows[0].keys())[:6], ["纤维种类", "类型", "结果", "单位", "标尺信息", "模式"])
+
+    def test_export_rows_include_fiber_category_sequence(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/fiber_category_sequence.png",
+            image_size=(400, 300),
+        )
+        document.initialize_runtime_state()
+        first_group = document.create_group(color="#1F7A8C", label="棉")
+        second_group = document.create_group(color="#E07A5F", label="麻")
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=second_group.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+
+        service = ExportService()
+        measurement_rows = service.build_measurement_rows([document])
+        fiber_rows = service.build_fiber_rows([document])
+
+        self.assertEqual(measurement_rows[0]["纤维类别序号"], second_group.number)
+        self.assertEqual([row["纤维类别序号"] for row in fiber_rows], [first_group.number, second_group.number])
 
     def test_area_measurement_rows_include_polygon_fields(self) -> None:
         document = ImageDocument(

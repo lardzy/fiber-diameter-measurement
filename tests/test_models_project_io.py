@@ -721,11 +721,12 @@ class ModelsProjectIOTests(unittest.TestCase):
                     path=str(template_path),
                     rules=[
                         RawRecordExportRule(
-                            data_source=RawRecordDataSource.MEASUREMENT_FIELD,
-                            field_name="纤维种类",
+                            data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                            field_name="纤维类别序号",
                             measurement_filter=RawRecordMeasurementFilter.LINE,
                             sheet_name="Sheet1",
                             start_cell="c3",
+                            end_cell="e3",
                             direction=RawRecordExportDirection.HORIZONTAL,
                         )
                     ],
@@ -743,10 +744,11 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(len(loaded.raw_record_templates), 1)
         self.assertEqual(loaded.raw_record_templates[0].path, "runtime/content-templates/raw-record-template.xlsm")
         self.assertEqual(loaded.last_raw_record_template_path, "runtime/content-templates/raw-record-template.xlsm")
-        self.assertEqual(loaded.raw_record_templates[0].rules[0].data_source, RawRecordDataSource.MEASUREMENT_FIELD)
-        self.assertEqual(loaded.raw_record_templates[0].rules[0].field_name, "纤维种类")
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].data_source, RawRecordDataSource.UNIQUE_FIELD_RANGE)
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].field_name, "纤维类别序号")
         self.assertEqual(loaded.raw_record_templates[0].rules[0].measurement_filter, RawRecordMeasurementFilter.LINE)
         self.assertEqual(loaded.raw_record_templates[0].rules[0].start_cell, "C3")
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].end_cell, "E3")
         self.assertEqual(loaded.raw_record_templates[0].rules[0].direction, RawRecordExportDirection.HORIZONTAL)
 
     def test_remove_auto_area_measurements_preserves_reference_instance_areas(self) -> None:

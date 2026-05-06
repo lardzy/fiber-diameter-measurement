@@ -120,6 +120,7 @@ class RawRecordDataSource:
     DIAMETER_RESULT = "diameter_result"
     AREA_RESULT = "area_result"
     MEASUREMENT_FIELD = "measurement_field"
+    UNIQUE_FIELD_RANGE = "unique_field_range"
 
 
 class RawRecordMeasurementFilter:
@@ -145,6 +146,7 @@ class RawRecordExportRule:
     measurement_filter: str = RawRecordMeasurementFilter.ALL
     sheet_name: str = "Sheet1"
     start_cell: str = "B2"
+    end_cell: str = ""
     direction: str = RawRecordExportDirection.VERTICAL
 
     def normalized_copy(self) -> "RawRecordExportRule":
@@ -154,6 +156,7 @@ class RawRecordExportRule:
             measurement_filter=self._normalize_measurement_filter(self.measurement_filter),
             sheet_name=str(self.sheet_name or "Sheet1").strip() or "Sheet1",
             start_cell=str(self.start_cell or "B2").strip().upper() or "B2",
+            end_cell=str(self.end_cell or "").strip().upper(),
             direction=self._normalize_direction(self.direction),
         )
 
@@ -165,6 +168,7 @@ class RawRecordExportRule:
             "measurement_filter": normalized.measurement_filter,
             "sheet_name": normalized.sheet_name,
             "start_cell": normalized.start_cell,
+            "end_cell": normalized.end_cell,
             "direction": normalized.direction,
         }
 
@@ -176,6 +180,7 @@ class RawRecordExportRule:
             measurement_filter=cls._normalize_measurement_filter(str(payload.get("measurement_filter", RawRecordMeasurementFilter.ALL))),
             sheet_name=str(payload.get("sheet_name", "Sheet1")).strip() or "Sheet1",
             start_cell=str(payload.get("start_cell", "B2")).strip().upper() or "B2",
+            end_cell=str(payload.get("end_cell", "")).strip().upper(),
             direction=cls._normalize_direction(str(payload.get("direction", RawRecordExportDirection.VERTICAL))),
         ).normalized_copy()
 
@@ -186,6 +191,7 @@ class RawRecordExportRule:
             RawRecordDataSource.DIAMETER_RESULT,
             RawRecordDataSource.AREA_RESULT,
             RawRecordDataSource.MEASUREMENT_FIELD,
+            RawRecordDataSource.UNIQUE_FIELD_RANGE,
         }:
             return token
         return RawRecordDataSource.DIAMETER_RESULT
