@@ -31,6 +31,10 @@ from fdm.settings import (
     MagicSegmentToolMode,
     MeasurementEndpointStyle,
     OpenImageViewMode,
+    RawRecordDataSource,
+    RawRecordExportRule,
+    RawRecordMeasurementFilter,
+    RawRecordTemplate,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
 )
@@ -969,7 +973,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 save_dialog.assert_called_once()
                 dir_dialog.assert_not_called()
                 dialog_path = save_dialog.call_args.args[2]
-                self.assertEqual(dialog_path, str(Path(tmp_dir) / "纤维测量结果.xlsx"))
+                self.assertEqual(Path(dialog_path).resolve(), (Path(tmp_dir) / "纤维测量结果.xlsx").resolve())
                 self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
                 self.assertEqual(window._app_settings.recent_export_dir, str(Path(tmp_dir).resolve()))
         finally:
@@ -1007,6 +1011,54 @@ class CanvasAndExportTests(unittest.TestCase):
                 warning_box.assert_called_once()
                 self.assertIn("文件可能正在被其他程序占用", warning_box.call_args.args[2])
                 self.assertIn(str(chosen_output), warning_box.call_args.args[2])
+        finally:
+            window.close()
+
+    def test_export_results_falls_back_when_raw_record_template_is_missing(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_raw_template_missing.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                missing_template = Path(tmp_dir) / "missing_template.xlsm"
+                window._app_settings.raw_record_templates = [
+                    RawRecordTemplate(name="缺失模板", path=str(missing_template))
+                ]
+                window._app_settings.last_raw_record_template_path = str(missing_template)
+                chosen_output = Path(tmp_dir) / "fallback.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.CURRENT,
+                    raw_record_template_path=str(missing_template),
+                )
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")),
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.warning") as warning_box,
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                warning_box.assert_called_once()
+                self.assertIn("找不到已选择的原始记录模板", warning_box.call_args.args[2])
+                self.assertEqual(window._app_settings.last_raw_record_template_path, "")
+                self.assertIsNone(export_project.call_args.kwargs["raw_record_template"])
+                self.assertEqual(export_project.call_args.kwargs["selection"].raw_record_template_path, "")
         finally:
             window.close()
 

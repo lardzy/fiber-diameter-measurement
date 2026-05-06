@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from pathlib import Path
 
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QColor, QFont
@@ -19,6 +20,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QMessageBox,
     QPushButton,
     QPlainTextEdit,
     QRadioButton,
@@ -42,8 +44,14 @@ from fdm.settings import (
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
     OpenImageViewMode,
+    RawRecordDataSource,
+    RawRecordExportDirection,
+    RawRecordExportRule,
+    RawRecordMeasurementFilter,
+    RawRecordTemplate,
     ScaleOverlayStyle,
     ScaleOverlayPlacementMode,
+    SUPPORTED_RAW_RECORD_TEMPLATE_SUFFIXES,
     application_root,
     bundle_resource_root,
     resolve_app_relative_path,
@@ -52,6 +60,27 @@ from fdm.settings import (
     to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
+
+
+RAW_RECORD_DATA_SOURCE_ITEMS = [
+    ("直径结果", RawRecordDataSource.DIAMETER_RESULT),
+    ("面积结果", RawRecordDataSource.AREA_RESULT),
+    ("测量明细字段", RawRecordDataSource.MEASUREMENT_FIELD),
+]
+
+RAW_RECORD_FILTER_ITEMS = [
+    ("全部", RawRecordMeasurementFilter.ALL),
+    ("直径/线段", RawRecordMeasurementFilter.LINE),
+    ("面积", RawRecordMeasurementFilter.AREA),
+    ("折线", RawRecordMeasurementFilter.POLYLINE),
+    ("计数点", RawRecordMeasurementFilter.COUNT),
+]
+
+RAW_RECORD_DIRECTION_ITEMS = [
+    ("纵向", RawRecordExportDirection.VERTICAL),
+    ("横向", RawRecordExportDirection.HORIZONTAL),
+]
 
 
 class NoWheelComboBox(QComboBox):
@@ -253,6 +282,8 @@ class ExportOptionsDialog(QDialog):
         selection: ExportSelection,
         *,
         allow_all_scope: bool,
+        raw_record_templates: list[RawRecordTemplate] | None = None,
+        last_raw_record_template_path: str = "",
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -303,9 +334,25 @@ class ExportOptionsDialog(QDialog):
         render_layout.addRow("渲染方式", self._render_mode_combo)
         render_layout.addRow("", self._render_mode_hint)
 
+        raw_record_group = QGroupBox("原始记录模板")
+        raw_record_layout = QFormLayout(raw_record_group)
+        self._raw_record_template_combo = QComboBox()
+        self._raw_record_template_combo.addItem("不使用模板", "")
+        for template in raw_record_templates or []:
+            display_name = template.name or Path(template.path).stem or template.path
+            self._raw_record_template_combo.addItem(display_name, template.path)
+        selected_template_path = selection.raw_record_template_path or last_raw_record_template_path
+        template_index = self._raw_record_template_combo.findData(selected_template_path)
+        self._raw_record_template_combo.setCurrentIndex(max(0, template_index))
+        self._raw_record_template_hint = QLabel("选择后会复制模板并写入测量数据；模板文件本身不会被修改。")
+        self._raw_record_template_hint.setWordWrap(True)
+        raw_record_layout.addRow("模板", self._raw_record_template_combo)
+        raw_record_layout.addRow("", self._raw_record_template_hint)
+
         self._measurement_overlay.toggled.connect(self._update_render_mode_state)
         self._scale_overlay.toggled.connect(self._update_render_mode_state)
         self._combined_overlay.toggled.connect(self._update_render_mode_state)
+        self._excel.toggled.connect(self._update_raw_record_template_state)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
         buttons.accepted.connect(self.accept)
@@ -315,8 +362,10 @@ class ExportOptionsDialog(QDialog):
         layout.addWidget(export_group)
         layout.addWidget(scope_group)
         layout.addWidget(render_group)
+        layout.addWidget(raw_record_group)
         layout.addWidget(buttons)
         self._update_render_mode_state()
+        self._update_raw_record_template_state()
 
     def _update_render_mode_state(self) -> None:
         enabled = (
@@ -326,6 +375,11 @@ class ExportOptionsDialog(QDialog):
         )
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
+
+    def _update_raw_record_template_state(self) -> None:
+        enabled = self._excel.isChecked()
+        self._raw_record_template_combo.setEnabled(enabled)
+        self._raw_record_template_hint.setEnabled(enabled)
 
     def selection(self) -> ExportSelection:
         return ExportSelection(
@@ -337,6 +391,7 @@ class ExportOptionsDialog(QDialog):
             include_csv=self._csv.isChecked(),
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
             render_mode=self._render_mode_combo.currentData(),
+            raw_record_template_path=str(self._raw_record_template_combo.currentData() or "") if self._excel.isChecked() else "",
         )
 
 
@@ -405,6 +460,8 @@ class SettingsDialog(QDialog):
         self._document = document
         self._group_color_buttons: dict[str | None, QPushButton] = {}
         self._request_scale_anchor_pick = False
+        self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
+        self._raw_record_current_template_index = -1
 
         self._tabs = QTabWidget()
         self._tabs.addTab(self._build_measurement_tab(settings), "测量标注")
@@ -412,6 +469,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._build_image_processing_tab(settings), "图像处理")
         self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
+        self._tabs.addTab(self._build_raw_record_templates_tab(settings), "原始记录模板")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
 
         self._button_box = QDialogButtonBox(
@@ -463,12 +521,16 @@ class SettingsDialog(QDialog):
             fiber_quick_roi_enabled=self._fiber_quick_roi_checkbox.isChecked(),
             fiber_quick_edge_trim_enabled=self._fiber_quick_edge_trim_checkbox.isChecked(),
             fiber_quick_line_extension_px=self._fiber_quick_line_extension_spin.value(),
+            recent_export_dir=self._initial_settings.recent_export_dir,
+            recent_project_dir=self._initial_settings.recent_project_dir,
             area_model_mappings=self.area_model_mappings(),
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
             area_worker_python=self._area_worker_python_edit.text().strip(),
             calibration_presets=list(self._initial_settings.calibration_presets),
             selected_capture_device_id=self._initial_settings.selected_capture_device_id,
+            raw_record_templates=self.raw_record_templates(),
+            last_raw_record_template_path=self._initial_settings.last_raw_record_template_path,
             main_window_geometry=self._initial_settings.main_window_geometry,
             main_window_is_maximized=self._initial_settings.main_window_is_maximized,
         )
@@ -484,6 +546,36 @@ class SettingsDialog(QDialog):
                 continue
             mappings.append(AreaModelMapping(model_name=model_name, model_file=model_file))
         return mappings
+
+    def raw_record_templates(self) -> list[RawRecordTemplate]:
+        self._store_raw_record_rules_from_table(self._raw_record_current_template_index)
+        templates: list[RawRecordTemplate] = []
+        seen_paths: set[str] = set()
+        for row in range(self._raw_record_template_table.rowCount()):
+            name_item = self._raw_record_template_table.item(row, 0)
+            path_item = self._raw_record_template_table.item(row, 1)
+            name = name_item.text().strip() if name_item is not None else ""
+            path_token = path_item.text().strip() if path_item is not None else ""
+            if not path_token or Path(path_token).suffix.lower() not in SUPPORTED_RAW_RECORD_TEMPLATE_SUFFIXES:
+                continue
+            normalized_path = to_resource_relative_path(path_token)
+            key = normalized_path.casefold()
+            if key in seen_paths:
+                continue
+            seen_paths.add(key)
+            rules = (
+                list(self._raw_record_templates_data[row].rules)
+                if row < len(self._raw_record_templates_data)
+                else [RawRecordExportRule()]
+            )
+            templates.append(
+                RawRecordTemplate(
+                    name=name or Path(normalized_path).stem,
+                    path=normalized_path,
+                    rules=rules,
+                ).normalized_copy()
+            )
+        return templates
 
     def group_colors(self) -> dict[str, str]:
         if self._document is None:
@@ -788,6 +880,76 @@ class SettingsDialog(QDialog):
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
+    def _build_raw_record_templates_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        template_group = QGroupBox("原始记录模板")
+        template_layout = QVBoxLayout(template_group)
+        template_hint = QLabel("模板文件建议放在 runtime/content-templates 下，并使用 .xlsx/.xlsm/.xltx/.xltm 格式。旧版 .xls/.xlt 请先用 Excel 另存为新格式。")
+        template_hint.setWordWrap(True)
+        template_layout.addWidget(template_hint)
+
+        self._raw_record_template_table = QTableWidget(0, 2)
+        self._raw_record_template_table.setHorizontalHeaderLabels(["名称", "模板文件"])
+        self._raw_record_template_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_template_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._raw_record_template_table.verticalHeader().setVisible(False)
+        self._raw_record_template_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._raw_record_template_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        for template in self._raw_record_templates_data:
+            self._insert_raw_record_template_row(template)
+        self._raw_record_template_table.currentCellChanged.connect(self._on_raw_record_template_selection_changed)
+        template_layout.addWidget(self._raw_record_template_table)
+
+        template_buttons = QHBoxLayout()
+        add_template_button = QPushButton("新增模板")
+        add_template_button.clicked.connect(self._add_raw_record_template)
+        remove_template_button = QPushButton("删除选中模板")
+        remove_template_button.clicked.connect(self._remove_selected_raw_record_template)
+        browse_template_button = QPushButton("更换模板文件")
+        browse_template_button.clicked.connect(self._browse_selected_raw_record_template)
+        template_buttons.addWidget(add_template_button)
+        template_buttons.addWidget(remove_template_button)
+        template_buttons.addWidget(browse_template_button)
+        template_buttons.addStretch(1)
+        template_layout.addLayout(template_buttons)
+
+        rules_group = QGroupBox("导出规则")
+        rules_layout = QVBoxLayout(rules_group)
+        self._raw_record_rule_table = QTableWidget(0, 6)
+        self._raw_record_rule_table.setHorizontalHeaderLabels(["数据", "字段", "筛选", "工作表", "起始单元格", "方向"])
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.horizontalHeader().setSectionResizeMode(5, QHeaderView.ResizeMode.ResizeToContents)
+        self._raw_record_rule_table.verticalHeader().setVisible(False)
+        self._raw_record_rule_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self._raw_record_rule_table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        rules_layout.addWidget(self._raw_record_rule_table)
+
+        rule_buttons = QHBoxLayout()
+        self._raw_record_add_rule_button = QPushButton("新增规则")
+        self._raw_record_add_rule_button.clicked.connect(self._add_raw_record_rule)
+        self._raw_record_remove_rule_button = QPushButton("删除选中规则")
+        self._raw_record_remove_rule_button.clicked.connect(self._remove_selected_raw_record_rule)
+        rule_buttons.addWidget(self._raw_record_add_rule_button)
+        rule_buttons.addWidget(self._raw_record_remove_rule_button)
+        rule_buttons.addStretch(1)
+        rules_layout.addLayout(rule_buttons)
+
+        layout.addWidget(template_group)
+        layout.addWidget(rules_group)
+        layout.addStretch(1)
+        if self._raw_record_template_table.rowCount() > 0:
+            self._raw_record_template_table.setCurrentCell(0, 0)
+            self._load_raw_record_rules_into_table(0)
+        else:
+            self._load_raw_record_rules_into_table(-1)
+        return self._wrap_settings_page(page)
+
     def _build_current_image_tab(self, document: ImageDocument | None) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -824,6 +986,249 @@ class SettingsDialog(QDialog):
         layout.addWidget(scale_box)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
+
+    def _insert_raw_record_template_row(self, template: RawRecordTemplate) -> None:
+        row = self._raw_record_template_table.rowCount()
+        self._raw_record_template_table.insertRow(row)
+        self._raw_record_template_table.setItem(row, 0, QTableWidgetItem(template.name))
+        self._raw_record_template_table.setItem(row, 1, QTableWidgetItem(template.path))
+
+    def _on_raw_record_template_selection_changed(
+        self,
+        current_row: int,
+        _current_column: int,
+        previous_row: int,
+        _previous_column: int,
+    ) -> None:
+        if previous_row >= 0:
+            self._store_raw_record_rules_from_table(previous_row)
+        self._raw_record_current_template_index = current_row
+        self._load_raw_record_rules_into_table(current_row)
+
+    def _load_raw_record_rules_into_table(self, template_index: int) -> None:
+        self._raw_record_rule_table.setRowCount(0)
+        enabled = 0 <= template_index < len(self._raw_record_templates_data)
+        self._raw_record_rule_table.setEnabled(enabled)
+        self._raw_record_add_rule_button.setEnabled(enabled)
+        self._raw_record_remove_rule_button.setEnabled(enabled)
+        if not enabled:
+            return
+        for rule in self._raw_record_templates_data[template_index].rules:
+            self._append_raw_record_rule_row(rule)
+
+    def _store_raw_record_rules_from_table(self, template_index: int) -> None:
+        if not (0 <= template_index < len(self._raw_record_templates_data)):
+            return
+        rules: list[RawRecordExportRule] = []
+        for row in range(self._raw_record_rule_table.rowCount()):
+            source_combo = self._raw_record_rule_table.cellWidget(row, 0)
+            field_combo = self._raw_record_rule_table.cellWidget(row, 1)
+            filter_combo = self._raw_record_rule_table.cellWidget(row, 2)
+            direction_combo = self._raw_record_rule_table.cellWidget(row, 5)
+            sheet_item = self._raw_record_rule_table.item(row, 3)
+            cell_item = self._raw_record_rule_table.item(row, 4)
+            data_source = source_combo.currentData() if isinstance(source_combo, QComboBox) else RawRecordDataSource.DIAMETER_RESULT
+            field_name = field_combo.currentText().strip() if isinstance(field_combo, QComboBox) else "结果"
+            measurement_filter = filter_combo.currentData() if isinstance(filter_combo, QComboBox) else RawRecordMeasurementFilter.ALL
+            direction = direction_combo.currentData() if isinstance(direction_combo, QComboBox) else RawRecordExportDirection.VERTICAL
+            rules.append(
+                RawRecordExportRule(
+                    data_source=str(data_source),
+                    field_name=field_name or "结果",
+                    measurement_filter=str(measurement_filter),
+                    sheet_name=(sheet_item.text().strip() if sheet_item is not None else "Sheet1") or "Sheet1",
+                    start_cell=(cell_item.text().strip() if cell_item is not None else "B2") or "B2",
+                    direction=str(direction),
+                ).normalized_copy()
+            )
+        current = self._raw_record_templates_data[template_index]
+        self._raw_record_templates_data[template_index] = RawRecordTemplate(
+            name=current.name,
+            path=current.path,
+            rules=rules,
+        ).normalized_copy()
+
+    def _append_raw_record_rule_row(self, rule: RawRecordExportRule) -> None:
+        normalized = rule.normalized_copy()
+        row = self._raw_record_rule_table.rowCount()
+        self._raw_record_rule_table.insertRow(row)
+        source_combo = self._raw_record_combo(RAW_RECORD_DATA_SOURCE_ITEMS, normalized.data_source)
+        self._raw_record_rule_table.setCellWidget(
+            row,
+            0,
+            source_combo,
+        )
+        field_combo = NoWheelComboBox()
+        field_combo.setEditable(True)
+        for field_name in RAW_RECORD_FIELD_NAMES:
+            field_combo.addItem(field_name, field_name)
+        field_index = field_combo.findText(normalized.field_name)
+        if field_index >= 0:
+            field_combo.setCurrentIndex(field_index)
+        else:
+            field_combo.setEditText(normalized.field_name)
+        self._raw_record_rule_table.setCellWidget(row, 1, field_combo)
+        filter_combo = self._raw_record_combo(RAW_RECORD_FILTER_ITEMS, normalized.measurement_filter)
+        self._raw_record_rule_table.setCellWidget(
+            row,
+            2,
+            filter_combo,
+        )
+        self._raw_record_rule_table.setItem(row, 3, QTableWidgetItem(normalized.sheet_name))
+        self._raw_record_rule_table.setItem(row, 4, QTableWidgetItem(normalized.start_cell))
+        self._raw_record_rule_table.setCellWidget(
+            row,
+            5,
+            self._raw_record_combo(RAW_RECORD_DIRECTION_ITEMS, normalized.direction),
+        )
+        source_combo.currentIndexChanged.connect(
+            lambda _index, source=source_combo: self._sync_raw_record_rule_row_state(
+                self._raw_record_rule_row_for_widget(source)
+            )
+        )
+        self._sync_raw_record_rule_row_state(row)
+
+    def _raw_record_combo(self, items: list[tuple[str, str]], current_value: str) -> NoWheelComboBox:
+        combo = NoWheelComboBox()
+        for label, value in items:
+            combo.addItem(label, value)
+        index = combo.findData(current_value)
+        combo.setCurrentIndex(max(0, index))
+        return combo
+
+    def _sync_raw_record_rule_row_state(self, row: int) -> None:
+        if row < 0:
+            return
+        source_combo = self._raw_record_rule_table.cellWidget(row, 0)
+        field_combo = self._raw_record_rule_table.cellWidget(row, 1)
+        filter_combo = self._raw_record_rule_table.cellWidget(row, 2)
+        if not isinstance(source_combo, QComboBox) or not isinstance(field_combo, QComboBox) or not isinstance(filter_combo, QComboBox):
+            return
+        data_source = str(source_combo.currentData() or "")
+        if data_source == RawRecordDataSource.DIAMETER_RESULT:
+            self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
+            self._set_combo_current_data(filter_combo, RawRecordMeasurementFilter.LINE)
+            field_combo.setEnabled(False)
+            filter_combo.setEnabled(False)
+            field_combo.setToolTip("直径结果固定导出“结果”字段。")
+            filter_combo.setToolTip("直径结果会自动只导出直径/线段测量。")
+            return
+        if data_source == RawRecordDataSource.AREA_RESULT:
+            self._set_combo_current_data(field_combo, "结果", text_fallback="结果")
+            self._set_combo_current_data(filter_combo, RawRecordMeasurementFilter.AREA)
+            field_combo.setEnabled(False)
+            filter_combo.setEnabled(False)
+            field_combo.setToolTip("面积结果固定导出“结果”字段。")
+            filter_combo.setToolTip("面积结果会自动只导出面积测量。")
+            return
+        field_combo.setEnabled(True)
+        filter_combo.setEnabled(True)
+        field_combo.setToolTip("")
+        filter_combo.setToolTip("")
+
+    def _set_combo_current_data(self, combo: QComboBox, value: str, *, text_fallback: str | None = None) -> None:
+        index = combo.findData(value)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+            return
+        text = text_fallback or value
+        text_index = combo.findText(text)
+        if text_index >= 0:
+            combo.setCurrentIndex(text_index)
+        elif combo.isEditable():
+            combo.setEditText(text)
+
+    def _raw_record_rule_row_for_widget(self, widget: QWidget) -> int:
+        for row in range(self._raw_record_rule_table.rowCount()):
+            if self._raw_record_rule_table.cellWidget(row, 0) is widget:
+                return row
+        return -1
+
+    def _add_raw_record_template(self) -> None:
+        path = self._choose_raw_record_template_path()
+        if not path:
+            return
+        self._store_raw_record_rules_from_table(self._raw_record_current_template_index)
+        template = RawRecordTemplate(
+            name=Path(path).stem,
+            path=to_resource_relative_path(path),
+            rules=[RawRecordExportRule()],
+        ).normalized_copy()
+        self._raw_record_templates_data.append(template)
+        self._insert_raw_record_template_row(template)
+        self._raw_record_template_table.setCurrentCell(self._raw_record_template_table.rowCount() - 1, 0)
+
+    def _remove_selected_raw_record_template(self) -> None:
+        row = self._selected_raw_record_template_row()
+        if row < 0:
+            return
+        self._raw_record_template_table.removeRow(row)
+        if row < len(self._raw_record_templates_data):
+            self._raw_record_templates_data.pop(row)
+        if self._raw_record_template_table.rowCount() == 0:
+            self._raw_record_current_template_index = -1
+            self._load_raw_record_rules_into_table(-1)
+            return
+        self._raw_record_template_table.setCurrentCell(min(row, self._raw_record_template_table.rowCount() - 1), 0)
+
+    def _browse_selected_raw_record_template(self) -> None:
+        row = self._selected_raw_record_template_row()
+        if row < 0:
+            return
+        path = self._choose_raw_record_template_path()
+        if not path:
+            return
+        path_token = to_resource_relative_path(path)
+        self._raw_record_template_table.setItem(row, 1, QTableWidgetItem(path_token))
+        name_item = self._raw_record_template_table.item(row, 0)
+        if name_item is None or not name_item.text().strip():
+            self._raw_record_template_table.setItem(row, 0, QTableWidgetItem(Path(path).stem))
+        if row < len(self._raw_record_templates_data):
+            current = self._raw_record_templates_data[row]
+            self._raw_record_templates_data[row] = RawRecordTemplate(
+                name=current.name or Path(path).stem,
+                path=path_token,
+                rules=list(current.rules),
+            ).normalized_copy()
+
+    def _choose_raw_record_template_path(self) -> str:
+        start_dir = bundle_resource_root() / "runtime" / "content-templates"
+        if not start_dir.exists():
+            start_dir = bundle_resource_root()
+        path, _ = QFileDialog.getOpenFileName(
+            self,
+            "选择原始记录模板",
+            str(start_dir),
+            "Excel 模板 (*.xlsx *.xlsm *.xltx *.xltm);;旧版 Excel (*.xls *.xlt);;所有文件 (*)",
+        )
+        if not path:
+            return ""
+        suffix = Path(path).suffix.lower()
+        if suffix not in SUPPORTED_RAW_RECORD_TEMPLATE_SUFFIXES:
+            QMessageBox.warning(
+                self,
+                "原始记录模板",
+                "当前只支持 .xlsx/.xlsm/.xltx/.xltm 模板。\n请先用 Excel 将 .xls/.xlt 另存为新格式后再配置。",
+            )
+            return ""
+        return path
+
+    def _selected_raw_record_template_row(self) -> int:
+        selected_rows = self._raw_record_template_table.selectionModel().selectedRows()
+        if selected_rows:
+            return selected_rows[0].row()
+        return self._raw_record_template_table.currentRow()
+
+    def _add_raw_record_rule(self) -> None:
+        if not (0 <= self._raw_record_current_template_index < len(self._raw_record_templates_data)):
+            return
+        self._append_raw_record_rule_row(RawRecordExportRule())
+
+    def _remove_selected_raw_record_rule(self) -> None:
+        selected_rows = self._raw_record_rule_table.selectionModel().selectedRows()
+        if not selected_rows:
+            return
+        self._raw_record_rule_table.removeRow(selected_rows[0].row())
 
     def _create_color_button(self, color_value: str) -> QPushButton:
         button = QPushButton(color_value)

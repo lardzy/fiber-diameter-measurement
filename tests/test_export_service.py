@@ -21,10 +21,88 @@ from fdm.services.export_service import (
     ExportSelection,
     ExportService,
 )
-from fdm.settings import AppSettings
+from fdm.settings import (
+    AppSettings,
+    RawRecordDataSource,
+    RawRecordExportDirection,
+    RawRecordExportRule,
+    RawRecordMeasurementFilter,
+    RawRecordTemplate,
+)
 
 
 class ExportServiceTests(unittest.TestCase):
+    def _write_minimal_macro_template(self, path: Path, *, sheet_name: str = "Raw") -> None:
+        sheet_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <dimension ref="A1:I5"/>
+  <sheetData>
+    <row r="2"><c r="B2" s="7"/></row>
+    <row r="5"><c r="D5"><f>SUM(A1:A2)</f><v>0</v></c></row>
+  </sheetData>
+</worksheet>'''
+        other_sheet_xml = '''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">
+  <dimension ref="A1:A1"/>
+  <sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>untouched</t></is></c></row></sheetData>
+</worksheet>'''
+        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr(
+                "[Content_Types].xml",
+                '''<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>
+  <Default Extension="xml" ContentType="application/xml"/>
+  <Default Extension="bin" ContentType="application/vnd.ms-office.vbaProject"/>
+  <Override PartName="/xl/workbook.xml" ContentType="application/vnd.ms-excel.sheet.macroEnabled.main+xml"/>
+  <Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+  <Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>
+</Types>''',
+            )
+            archive.writestr(
+                "_rels/.rels",
+                '''<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>
+</Relationships>''',
+            )
+            archive.writestr(
+                "xl/workbook.xml",
+                f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">
+  <sheets>
+    <sheet name="{sheet_name}" sheetId="1" r:id="rId1"/>
+    <sheet name="Other" sheetId="2" r:id="rId2"/>
+  </sheets>
+</workbook>''',
+            )
+            archive.writestr(
+                "xl/_rels/workbook.xml.rels",
+                '''<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/>
+  <Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/>
+  <Relationship Id="rId3" Type="http://schemas.microsoft.com/office/2006/relationships/vbaProject" Target="vbaProject.bin"/>
+</Relationships>''',
+            )
+            archive.writestr("xl/worksheets/sheet1.xml", sheet_xml)
+            archive.writestr("xl/worksheets/sheet2.xml", other_sheet_xml)
+            archive.writestr("xl/vbaProject.bin", b"macro-bytes-do-not-touch")
+
+    def _cell_texts(self, sheet_xml: bytes) -> dict[str, str]:
+        namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+        root = ElementTree.fromstring(sheet_xml)
+        values: dict[str, str] = {}
+        for cell in root.findall(".//xlsx:c", namespace):
+            coordinate = cell.attrib["r"]
+            value_node = cell.find("xlsx:v", namespace)
+            inline_node = cell.find("xlsx:is/xlsx:t", namespace)
+            if value_node is not None and value_node.text is not None:
+                values[coordinate] = value_node.text
+            elif inline_node is not None and inline_node.text is not None:
+                values[coordinate] = inline_node.text
+        return values
+
     def test_export_writes_csv_and_xlsx(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
@@ -85,6 +163,160 @@ class ExportServiceTests(unittest.TestCase):
             namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
             sheet_names = [element.attrib["name"] for element in workbook.findall("./xlsx:sheets/xlsx:sheet", namespace)]
             self.assertEqual(sheet_names[0], SHEET_MEASUREMENT_DETAILS)
+
+    def test_raw_record_template_export_preserves_macro_and_writes_rules(self) -> None:
+        first_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_a.png",
+            image_size=(200, 100),
+        )
+        first_document.initialize_runtime_state()
+        first_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=first_document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        first_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=first_document.id,
+                fiber_group_id=None,
+                mode="polygon_area",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(5, 0), Point(5, 5), Point(0, 5)],
+            )
+        )
+        second_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_b.png",
+            image_size=(200, 100),
+        )
+        second_document.initialize_runtime_state()
+        second_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=second_document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[first_document, second_document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            template_before = template_path.read_bytes()
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.ALL_OPEN,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="B2",
+                        direction=RawRecordExportDirection.VERTICAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.AREA_RESULT,
+                        sheet_name="Raw",
+                        start_cell="D4",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.MEASUREMENT_FIELD,
+                        field_name="类型",
+                        measurement_filter=RawRecordMeasurementFilter.ALL,
+                        sheet_name="Raw",
+                        start_cell="G2",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(template_path.read_bytes(), template_before)
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(template_path) as template_archive, zipfile.ZipFile(output_path) as output_archive:
+                self.assertEqual(output_archive.read("xl/vbaProject.bin"), template_archive.read("xl/vbaProject.bin"))
+                self.assertEqual(output_archive.read("xl/worksheets/sheet2.xml"), template_archive.read("xl/worksheets/sheet2.xml"))
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+                sheet_xml = ElementTree.fromstring(output_archive.read("xl/worksheets/sheet1.xml"))
+
+            self.assertEqual(sheet_values["B2"], "10")
+            self.assertEqual(sheet_values["B3"], "20")
+            self.assertEqual(sheet_values["D4"], "25")
+            self.assertEqual(sheet_values["G2"], "线段")
+            self.assertEqual(sheet_values["H2"], "面积")
+            self.assertEqual(sheet_values["I2"], "线段")
+            namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+            formula = sheet_xml.find(".//xlsx:c[@r='D5']/xlsx:f", namespace)
+            self.assertIsNotNone(formula)
+            self.assertEqual(formula.text, "SUM(A1:A2)")
+
+    def test_raw_record_template_export_falls_back_to_default_xlsx_on_rule_error(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_fallback.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            selection = ExportSelection(
+                include_excel=True,
+                scope=ExportScope.CURRENT,
+                raw_record_template_path=str(template_path),
+            )
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[RawRecordExportRule(sheet_name="Missing", start_cell="B2")],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=selection,
+                documents=[document],
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
+            self.assertTrue(outputs["xlsx"].exists())
+            self.assertIn("_template_fallback_message", outputs)
+            self.assertFalse(output_path.exists())
 
     def test_measurement_rows_include_uncategorized_metadata(self) -> None:
         document = ImageDocument(

@@ -13,6 +13,12 @@ from xml.sax.saxutils import escape
 
 from fdm.geometry import area_rings_hole_area
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
+from fdm.settings import RawRecordTemplate
+from fdm.services.raw_record_export import (
+    RawRecordTemplateExportError,
+    raw_record_output_suffix,
+    write_raw_record_template,
+)
 from fdm.services.sidecar_io import CalibrationSidecarIO
 
 CSV_IMAGE_SUMMARY_FILENAME = "图片汇总.csv"
@@ -47,6 +53,7 @@ class ExportSelection:
     include_csv: bool = False
     scope: str = ExportScope.CURRENT
     render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
+    raw_record_template_path: str = ""
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -102,7 +109,7 @@ class ExportService:
                 ]
             )
         if selection.include_excel:
-            planned.append(PlannedExportFile("xlsx", XLSX_EXPORT_FILENAME))
+            planned.append(PlannedExportFile("xlsx", self._excel_export_filename(selection)))
 
         render_suffix = self._render_mode_suffix(selection.render_mode)
         for document in target_documents:
@@ -144,6 +151,7 @@ class ExportService:
         documents: list[ImageDocument] | None = None,
         overlay_renderer=None,
         single_output_path: str | Path | None = None,
+        raw_record_template: RawRecordTemplate | None = None,
         progress_callback: Callable[[int, int, str, Path | None], None] | None = None,
     ) -> dict[str, object]:
         selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
@@ -219,21 +227,36 @@ class ExportService:
         if selection.include_excel:
             xlsx_path = self._resolved_output_path(
                 output_path,
-                XLSX_EXPORT_FILENAME,
+                self._excel_export_filename(selection),
                 kind="xlsx",
                 single_output_target=single_output_target,
                 single_plan=single_plan,
             )
             begin_step(xlsx_path)
-            self._write_xlsx(
-                xlsx_path,
-                {
-                    SHEET_MEASUREMENT_DETAILS: measurement_rows,
-                    SHEET_IMAGE_SUMMARY: image_rows,
-                    SHEET_FIBER_DETAILS: fiber_rows,
-                    SHEET_EXPORT_META: meta_rows,
-                },
-            )
+            workbook_sheets = {
+                SHEET_MEASUREMENT_DETAILS: measurement_rows,
+                SHEET_IMAGE_SUMMARY: image_rows,
+                SHEET_FIBER_DETAILS: fiber_rows,
+                SHEET_EXPORT_META: meta_rows,
+            }
+            if raw_record_template is not None:
+                try:
+                    xlsx_path = write_raw_record_template(
+                        raw_record_template,
+                        xlsx_path,
+                        documents=target_documents,
+                        measurement_rows=measurement_rows,
+                    )
+                except (FileNotFoundError, RawRecordTemplateExportError) as exc:
+                    fallback_path = self._raw_record_template_fallback_path(
+                        xlsx_path,
+                        single_output_target=single_output_target,
+                    )
+                    self._write_xlsx(fallback_path, workbook_sheets)
+                    xlsx_path = fallback_path
+                    outputs["_template_fallback_message"] = str(exc)
+            else:
+                self._write_xlsx(xlsx_path, workbook_sheets)
             finish_step()
             outputs["xlsx"] = xlsx_path
 
@@ -569,6 +592,23 @@ class ExportService:
             writer.writeheader()
             for row in rows:
                 writer.writerow(row)
+
+    def _excel_export_filename(self, selection: ExportSelection) -> str:
+        if selection.raw_record_template_path:
+            return Path(XLSX_EXPORT_FILENAME).with_suffix(
+                raw_record_output_suffix(selection.raw_record_template_path)
+            ).name
+        return XLSX_EXPORT_FILENAME
+
+    def _raw_record_template_fallback_path(
+        self,
+        path: Path,
+        *,
+        single_output_target: Path | None,
+    ) -> Path:
+        if single_output_target is not None:
+            return path.with_suffix(".xlsx")
+        return path.parent / XLSX_EXPORT_FILENAME
 
     def _render_mode_suffix(self, render_mode: str) -> str:
         return {

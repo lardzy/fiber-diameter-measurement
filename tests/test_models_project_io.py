@@ -35,6 +35,11 @@ from fdm.settings import (
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
     OpenImageViewMode,
+    RawRecordDataSource,
+    RawRecordExportDirection,
+    RawRecordExportRule,
+    RawRecordMeasurementFilter,
+    RawRecordTemplate,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
     application_root,
@@ -706,6 +711,43 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded = AppSettingsIO.load(saved_path)
 
         self.assertEqual(loaded.selected_capture_device_id, "microview:1")
+
+    def test_app_settings_roundtrip_preserves_raw_record_templates(self) -> None:
+        template_path = bundle_resource_root() / "runtime" / "content-templates" / "raw-record-template.xlsm"
+        settings = AppSettings(
+            raw_record_templates=[
+                RawRecordTemplate(
+                    name="原始记录",
+                    path=str(template_path),
+                    rules=[
+                        RawRecordExportRule(
+                            data_source=RawRecordDataSource.MEASUREMENT_FIELD,
+                            field_name="纤维种类",
+                            measurement_filter=RawRecordMeasurementFilter.LINE,
+                            sheet_name="Sheet1",
+                            start_cell="c3",
+                            direction=RawRecordExportDirection.HORIZONTAL,
+                        )
+                    ],
+                ),
+                RawRecordTemplate(name="重复路径", path=str(template_path), rules=[RawRecordExportRule()]),
+            ],
+            last_raw_record_template_path=str(template_path),
+        )
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            saved_path = AppSettingsIO.save(settings, path)
+            loaded = AppSettingsIO.load(saved_path)
+
+        self.assertEqual(len(loaded.raw_record_templates), 1)
+        self.assertEqual(loaded.raw_record_templates[0].path, "runtime/content-templates/raw-record-template.xlsm")
+        self.assertEqual(loaded.last_raw_record_template_path, "runtime/content-templates/raw-record-template.xlsm")
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].data_source, RawRecordDataSource.MEASUREMENT_FIELD)
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].field_name, "纤维种类")
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].measurement_filter, RawRecordMeasurementFilter.LINE)
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].start_cell, "C3")
+        self.assertEqual(loaded.raw_record_templates[0].rules[0].direction, RawRecordExportDirection.HORIZONTAL)
 
     def test_remove_auto_area_measurements_preserves_reference_instance_areas(self) -> None:
         document = ImageDocument(

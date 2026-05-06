@@ -71,11 +71,13 @@ from fdm.settings import (
     FocusStackProfile,
     MagicSegmentToolMode,
     OpenImageViewMode,
+    RawRecordTemplate,
     ScaleOverlayPlacementMode,
     is_fiber_quick_tool_mode,
     is_magic_toolbar_tool_mode,
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
+    resolve_resource_relative_path,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
@@ -1755,6 +1757,7 @@ class MainWindow(QMainWindow):
             ".png": "PNG 图片 (*.png)",
             ".json": "JSON 文件 (*.json)",
             ".xlsx": "Excel 工作簿 (*.xlsx)",
+            ".xlsm": "启用宏的 Excel 工作簿 (*.xlsm)",
             ".csv": "CSV 文件 (*.csv)",
         }.get(suffix, "所有文件 (*)")
 
@@ -3355,6 +3358,8 @@ class MainWindow(QMainWindow):
         dialog = ExportOptionsDialog(
             preset,
             allow_all_scope=len(self.project.documents) > 1,
+            raw_record_templates=self._app_settings.raw_record_templates,
+            last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
             parent=self,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
@@ -3363,6 +3368,7 @@ class MainWindow(QMainWindow):
         if not selection.any_selected():
             QMessageBox.information(self, "导出结果", "请至少选择一种导出内容。")
             return
+        raw_record_template = self._prepare_raw_record_template_for_export(selection)
         target_documents = self.project.documents if selection.scope == ExportScope.ALL_OPEN else ([self.current_document()] if self.current_document() else [])
         target_documents = [document for document in target_documents if document is not None]
         planned_outputs = self.export_service.planned_outputs(target_documents, selection)
@@ -3381,6 +3387,9 @@ class MainWindow(QMainWindow):
             if not selected_path:
                 return
             single_output_path = self._normalize_dialog_save_path(selected_path, planned_outputs[0].filename)
+            expected_suffix = Path(planned_outputs[0].filename).suffix.lower()
+            if expected_suffix in {".xlsx", ".xlsm"} and single_output_path.suffix.lower() != expected_suffix:
+                single_output_path = single_output_path.with_suffix(expected_suffix)
             output_dir = str(single_output_path.parent)
         else:
             output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
@@ -3417,6 +3426,7 @@ class MainWindow(QMainWindow):
                 documents=target_documents,
                 overlay_renderer=self._render_overlay_image,
                 single_output_path=single_output_path,
+                raw_record_template=raw_record_template,
                 progress_callback=on_export_progress,
             )
         except Exception as exc:
@@ -3431,6 +3441,14 @@ class MainWindow(QMainWindow):
         if not outputs:
             QMessageBox.information(self, "导出结果", "没有生成任何文件。")
             return
+        template_fallback_message = str(outputs.pop("_template_fallback_message", "") or "")
+        if template_fallback_message:
+            QMessageBox.warning(
+                self,
+                "原始记录模板",
+                "原始记录模板导出失败，已自动回退到默认 Excel 文档。\n\n"
+                f"{template_fallback_message}",
+            )
         export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
         self._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
         output_labels = {
@@ -3450,8 +3468,45 @@ class MainWindow(QMainWindow):
                 summary_lines.append(f"{label}: {len(value)} 个文件")
             else:
                 summary_lines.append(f"{label}: {value}")
-        location_text = str(single_output_path) if single_output_path is not None else str(output_dir)
+        location_text = str(outputs.get("xlsx", single_output_path)) if single_output_path is not None else str(output_dir)
         QMessageBox.information(self, "导出完成", f"结果已导出到:\n{location_text}\n\n" + "\n".join(summary_lines))
+
+    def _prepare_raw_record_template_for_export(self, selection: ExportSelection) -> RawRecordTemplate | None:
+        selected_path = str(selection.raw_record_template_path or "").strip() if selection.include_excel else ""
+        template = self._raw_record_template_for_path(selected_path) if selected_path else None
+        if selected_path:
+            resolved_path = resolve_resource_relative_path(selected_path)
+            if template is None or not resolved_path.exists():
+                QMessageBox.warning(
+                    self,
+                    "原始记录模板",
+                    "找不到已选择的原始记录模板，已自动回退到默认 Excel 文档：\n"
+                    f"{selected_path}",
+                )
+                selected_path = ""
+                template = None
+        selection.raw_record_template_path = selected_path
+        if self._app_settings.last_raw_record_template_path != selected_path:
+            self._app_settings.last_raw_record_template_path = selected_path
+            self._save_app_settings(context="导出结果")
+        return template
+
+    def _raw_record_template_for_path(self, template_path: str) -> RawRecordTemplate | None:
+        token = str(template_path or "").strip()
+        if not token:
+            return None
+        token_key = token.casefold()
+        token_resolved = resolve_resource_relative_path(token)
+        for template in self._app_settings.raw_record_templates:
+            candidate = str(template.path or "").strip()
+            if candidate.casefold() == token_key:
+                return template
+            try:
+                if resolve_resource_relative_path(candidate).resolve() == token_resolved.resolve():
+                    return template
+            except OSError:
+                continue
+        return None
 
     def fit_current_image(self) -> None:
         canvas = self.current_canvas()

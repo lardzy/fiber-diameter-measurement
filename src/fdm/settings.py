@@ -116,6 +116,149 @@ class AreaModelMapping:
         )
 
 
+class RawRecordDataSource:
+    DIAMETER_RESULT = "diameter_result"
+    AREA_RESULT = "area_result"
+    MEASUREMENT_FIELD = "measurement_field"
+
+
+class RawRecordMeasurementFilter:
+    ALL = "all"
+    LINE = "line"
+    AREA = "area"
+    POLYLINE = "polyline"
+    COUNT = "count"
+
+
+class RawRecordExportDirection:
+    VERTICAL = "vertical"
+    HORIZONTAL = "horizontal"
+
+
+SUPPORTED_RAW_RECORD_TEMPLATE_SUFFIXES = {".xlsx", ".xlsm", ".xltx", ".xltm"}
+
+
+@dataclass(slots=True)
+class RawRecordExportRule:
+    data_source: str = RawRecordDataSource.DIAMETER_RESULT
+    field_name: str = "结果"
+    measurement_filter: str = RawRecordMeasurementFilter.ALL
+    sheet_name: str = "Sheet1"
+    start_cell: str = "B2"
+    direction: str = RawRecordExportDirection.VERTICAL
+
+    def normalized_copy(self) -> "RawRecordExportRule":
+        return RawRecordExportRule(
+            data_source=self._normalize_data_source(self.data_source),
+            field_name=str(self.field_name or "结果").strip() or "结果",
+            measurement_filter=self._normalize_measurement_filter(self.measurement_filter),
+            sheet_name=str(self.sheet_name or "Sheet1").strip() or "Sheet1",
+            start_cell=str(self.start_cell or "B2").strip().upper() or "B2",
+            direction=self._normalize_direction(self.direction),
+        )
+
+    def to_dict(self) -> dict[str, str]:
+        normalized = self.normalized_copy()
+        return {
+            "data_source": normalized.data_source,
+            "field_name": normalized.field_name,
+            "measurement_filter": normalized.measurement_filter,
+            "sheet_name": normalized.sheet_name,
+            "start_cell": normalized.start_cell,
+            "direction": normalized.direction,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "RawRecordExportRule":
+        return cls(
+            data_source=cls._normalize_data_source(str(payload.get("data_source", RawRecordDataSource.DIAMETER_RESULT))),
+            field_name=str(payload.get("field_name", "结果")).strip() or "结果",
+            measurement_filter=cls._normalize_measurement_filter(str(payload.get("measurement_filter", RawRecordMeasurementFilter.ALL))),
+            sheet_name=str(payload.get("sheet_name", "Sheet1")).strip() or "Sheet1",
+            start_cell=str(payload.get("start_cell", "B2")).strip().upper() or "B2",
+            direction=cls._normalize_direction(str(payload.get("direction", RawRecordExportDirection.VERTICAL))),
+        ).normalized_copy()
+
+    @staticmethod
+    def _normalize_data_source(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            RawRecordDataSource.DIAMETER_RESULT,
+            RawRecordDataSource.AREA_RESULT,
+            RawRecordDataSource.MEASUREMENT_FIELD,
+        }:
+            return token
+        return RawRecordDataSource.DIAMETER_RESULT
+
+    @staticmethod
+    def _normalize_measurement_filter(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            RawRecordMeasurementFilter.ALL,
+            RawRecordMeasurementFilter.LINE,
+            RawRecordMeasurementFilter.AREA,
+            RawRecordMeasurementFilter.POLYLINE,
+            RawRecordMeasurementFilter.COUNT,
+        }:
+            return token
+        return RawRecordMeasurementFilter.ALL
+
+    @staticmethod
+    def _normalize_direction(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {
+            RawRecordExportDirection.VERTICAL,
+            RawRecordExportDirection.HORIZONTAL,
+        }:
+            return token
+        return RawRecordExportDirection.VERTICAL
+
+
+@dataclass(slots=True)
+class RawRecordTemplate:
+    name: str
+    path: str
+    rules: list[RawRecordExportRule] = field(default_factory=lambda: [RawRecordExportRule()])
+
+    def normalized_copy(self) -> "RawRecordTemplate":
+        path_token = normalize_raw_record_template_path(self.path)
+        name = str(self.name or "").strip()
+        if not name and path_token:
+            name = Path(path_token).stem
+        return RawRecordTemplate(
+            name=name,
+            path=path_token,
+            rules=[rule.normalized_copy() for rule in self.rules if isinstance(rule, RawRecordExportRule)],
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        normalized = self.normalized_copy()
+        return {
+            "name": normalized.name,
+            "path": normalized.path,
+            "rules": [rule.to_dict() for rule in normalized.rules],
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, object]) -> "RawRecordTemplate":
+        rules_payload = payload.get("rules", [])
+        rules = [
+            RawRecordExportRule.from_dict(item)
+            for item in rules_payload
+            if isinstance(item, dict)
+        ] if isinstance(rules_payload, list) else []
+        return cls(
+            name=str(payload.get("name", "")).strip(),
+            path=str(payload.get("path", "")).strip(),
+            rules=rules or [RawRecordExportRule()],
+        ).normalized_copy()
+
+
+def is_supported_raw_record_template_path(value: str | Path | None) -> bool:
+    token = str(value or "").strip()
+    return Path(token).suffix.lower() in SUPPORTED_RAW_RECORD_TEMPLATE_SUFFIXES
+
+
 def project_runtime_root() -> Path:
     return Path(__file__).resolve().parents[2]
 
@@ -167,6 +310,13 @@ def to_app_relative_path(value: str | Path | None) -> str:
 
 def to_resource_relative_path(value: str | Path | None) -> str:
     return _to_relative_path(value, root=bundle_resource_root())
+
+
+def normalize_raw_record_template_path(value: str | Path | None) -> str:
+    token = to_resource_relative_path(value)
+    if not token or not is_supported_raw_record_template_path(token):
+        return ""
+    return token
 
 
 def _resolve_relative_path(value: str | Path | None, *, root: Path, default: str | Path | None = None) -> Path:
@@ -279,6 +429,8 @@ class AppSettings:
     area_worker_python: str = field(default_factory=default_area_worker_python)
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
     selected_capture_device_id: str = ""
+    raw_record_templates: list[RawRecordTemplate] = field(default_factory=list)
+    last_raw_record_template_path: str = ""
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
@@ -302,6 +454,8 @@ class AppSettings:
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
+        normalized.raw_record_templates = self._normalize_raw_record_templates(self.raw_record_templates)
+        normalized.last_raw_record_template_path = normalize_raw_record_template_path(self.last_raw_record_template_path)
         return normalized
 
     def resolved_area_weights_dir(self) -> Path:
@@ -500,6 +654,21 @@ class AppSettings:
             return str(resolved.parent)
         return str(resolved)
 
+    @staticmethod
+    def _normalize_raw_record_templates(value: list[RawRecordTemplate] | None) -> list[RawRecordTemplate]:
+        normalized_templates: list[RawRecordTemplate] = []
+        seen_paths: set[str] = set()
+        for template in value or []:
+            normalized = template.normalized_copy()
+            if not normalized.path:
+                continue
+            key = normalized.path.casefold()
+            if key in seen_paths:
+                continue
+            seen_paths.add(key)
+            normalized_templates.append(normalized)
+        return normalized_templates
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -545,6 +714,8 @@ class AppSettings:
             "area_worker_python": normalized.area_worker_python,
             "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
             "selected_capture_device_id": normalized.selected_capture_device_id,
+            "raw_record_templates": [template.to_dict() for template in normalized.raw_record_templates],
+            "last_raw_record_template_path": normalized.last_raw_record_template_path,
         }
 
     @classmethod
@@ -659,6 +830,18 @@ class AppSettings:
                 if isinstance(item, dict) and str(item.get("name", "")).strip()
             ]
         settings.selected_capture_device_id = str(payload.get("selected_capture_device_id", settings.selected_capture_device_id)).strip()
+        templates = payload.get("raw_record_templates", None)
+        if isinstance(templates, list):
+            settings.raw_record_templates = cls._normalize_raw_record_templates(
+                [
+                    RawRecordTemplate.from_dict(item)
+                    for item in templates
+                    if isinstance(item, dict)
+                ]
+            )
+        settings.last_raw_record_template_path = normalize_raw_record_template_path(
+            payload.get("last_raw_record_template_path", settings.last_raw_record_template_path)
+        )
         return settings
 
 
