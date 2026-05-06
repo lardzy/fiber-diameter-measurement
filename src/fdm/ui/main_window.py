@@ -78,6 +78,7 @@ from fdm.settings import (
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
     resolve_resource_relative_path,
+    settings_file_path,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
@@ -2765,6 +2766,13 @@ class MainWindow(QMainWindow):
         return project_paths, image_paths, unsupported_count
 
     def _open_dropped_paths(self, paths: list[Path]) -> None:
+        settings_paths, remaining_paths = self._split_dropped_settings_paths(paths)
+        if settings_paths:
+            if len(settings_paths) > 1 or remaining_paths:
+                QMessageBox.information(self, "导入设置", "settings.json 需单独拖入，一次只导入一个设置文件。")
+                return
+            self._import_settings_from_path(settings_paths[0])
+            return
         project_paths, image_paths, unsupported_count = self._classify_dropped_paths(paths)
         if project_paths and (image_paths or len(project_paths) > 1):
             QMessageBox.information(self, "拖入打开", "项目文件需单独拖入，一次只打开一个项目。")
@@ -2783,6 +2791,45 @@ class MainWindow(QMainWindow):
             return
         if unsupported_count:
             QMessageBox.information(self, "拖入打开", "拖入内容中没有支持的图片或项目文件。")
+
+    def _split_dropped_settings_paths(self, paths: list[Path]) -> tuple[list[Path], list[Path]]:
+        settings_paths: list[Path] = []
+        remaining_paths: list[Path] = []
+        seen_settings: set[Path] = set()
+        for path in paths:
+            resolved = path.expanduser()
+            if resolved.is_file() and resolved.name.lower() == "settings.json":
+                settings_key = resolved.resolve()
+                if settings_key not in seen_settings:
+                    seen_settings.add(settings_key)
+                    settings_paths.append(resolved)
+                continue
+            remaining_paths.append(path)
+        return settings_paths, remaining_paths
+
+    def _import_settings_from_path(self, path: Path) -> None:
+        source_path = path.expanduser()
+        target_path = settings_file_path()
+        response = QMessageBox.question(
+            self,
+            "导入设置",
+            f"是否使用拖入的 settings.json 覆盖当前软件设置？\n\n来源:\n{source_path}\n\n当前设置:\n{target_path}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            imported_settings, saved_path = AppSettingsIO.replace_with_file(source_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "导入设置", f"无法导入 settings.json：\n{exc}")
+            return
+        except OSError as exc:
+            QMessageBox.warning(self, "导入设置", f"无法替换当前设置文件：\n{exc}")
+            return
+        self._apply_imported_app_settings(imported_settings)
+        self.statusBar().showMessage(f"设置已从 {source_path.name} 导入", 5000)
+        QMessageBox.information(self, "导入设置", f"设置已导入并覆盖当前 settings.json。\n\n位置:\n{saved_path}")
 
     def _normalize_image_path(self, path: str | Path) -> str:
         return str(Path(path).expanduser().resolve())
@@ -3533,18 +3580,9 @@ class MainWindow(QMainWindow):
 
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
         new_settings = dialog.app_settings()
-        self._app_settings = new_settings
-        self._apply_theme_mode()
+        self._activate_app_settings(new_settings)
         refresh_widget_theme(dialog)
-        self._refresh_theme_sensitive_icons()
-        if self._measurement_tool_strip is not None:
-            self._measurement_tool_strip._apply_theme_styles()
-        self._apply_tool_menu_stylesheets()
-        self._magic_standard_roi_enabled = bool(new_settings.magic_segment_standard_roi_enabled)
-        self._fiber_quick_roi_enabled = bool(new_settings.fiber_quick_roi_enabled)
         self._save_app_settings(context="设置")
-        self._refresh_preset_combo()
-        self._refresh_canvases_for_settings()
 
         document = self.current_document()
         if document is not None:
@@ -3582,6 +3620,24 @@ class MainWindow(QMainWindow):
             self._begin_scale_anchor_pick(self.current_document())
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
+
+    def _apply_imported_app_settings(self, settings: AppSettings) -> None:
+        self._activate_app_settings(settings)
+
+    def _activate_app_settings(self, settings: AppSettings) -> None:
+        self._app_settings = settings
+        self._apply_theme_mode()
+        self._refresh_theme_sensitive_icons()
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip._apply_theme_styles()
+        self._apply_tool_menu_stylesheets()
+        self._magic_standard_roi_enabled = bool(settings.magic_segment_standard_roi_enabled)
+        self._fiber_quick_roi_enabled = bool(settings.fiber_quick_roi_enabled)
+        if settings.selected_capture_device_id:
+            self._capture_manager.set_selected_device(settings.selected_capture_device_id)
+        self._update_capture_device_ui()
+        self._refresh_preset_combo()
+        self._refresh_canvases_for_settings()
 
     def open_shortcut_help_dialog(self) -> None:
         dialog = ShortcutHelpDialog(self)

@@ -4300,6 +4300,52 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_drop_open_imports_single_settings_json_after_confirmation(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                settings_path = Path(tmp_dir) / "settings.json"
+                settings_path.write_text(json.dumps(AppSettings(theme_mode=AppThemeMode.LIGHT).to_dict()), encoding="utf-8")
+                target_path = Path(tmp_dir) / "current-settings.json"
+                imported_settings = AppSettings(theme_mode=AppThemeMode.LIGHT)
+
+                with (
+                    patch("fdm.ui.main_window.QMessageBox.question", return_value=QMessageBox.StandardButton.Yes),
+                    patch("fdm.ui.main_window.QMessageBox.information") as info_mock,
+                    patch("fdm.ui.main_window.AppSettingsIO.replace_with_file", return_value=(imported_settings, target_path)) as replace_mock,
+                    patch.object(window, "_activate_app_settings") as activate_mock,
+                ):
+                    window._open_dropped_paths([settings_path])
+
+                replace_mock.assert_called_once_with(settings_path)
+                activate_mock.assert_called_once_with(imported_settings)
+                info_mock.assert_called_once()
+        finally:
+            window.close()
+
+    def test_drop_open_requires_settings_json_to_be_dropped_alone(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                settings_path = root / "settings.json"
+                image_path = root / "fiber.png"
+                settings_path.write_text("{}", encoding="utf-8")
+                image_path.write_bytes(b"fake")
+
+                with (
+                    patch.object(window, "_import_settings_from_path") as import_mock,
+                    patch.object(window, "_open_image_requests") as open_images_mock,
+                    patch("fdm.ui.main_window.QMessageBox.information") as message_mock,
+                ):
+                    window._open_dropped_paths([settings_path, image_path])
+
+                import_mock.assert_not_called()
+                open_images_mock.assert_not_called()
+                message_mock.assert_called_once()
+        finally:
+            window.close()
+
     def test_count_measurement_append_uses_incremental_ui_and_history(self) -> None:
         window = MainWindow()
         try:

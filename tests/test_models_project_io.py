@@ -588,6 +588,34 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
         self.assertTrue(loaded.main_window_is_maximized)
 
+    def test_app_settings_replace_with_file_copies_source_after_validation(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            source = root / "settings.json"
+            target = root / "current" / "settings.json"
+            source_payload = AppSettings(theme_mode=AppThemeMode.LIGHT, measurement_label_decimals=4).to_dict()
+            source.write_text(json.dumps(source_payload, ensure_ascii=False, indent=2), encoding="utf-8")
+            target.parent.mkdir()
+            target.write_text("{}", encoding="utf-8")
+
+            imported, saved_path = AppSettingsIO.replace_with_file(source, target)
+
+            self.assertEqual(saved_path, target)
+            self.assertEqual(imported.theme_mode, AppThemeMode.LIGHT)
+            self.assertEqual(imported.measurement_label_decimals, 4)
+            self.assertEqual(target.read_text(encoding="utf-8"), source.read_text(encoding="utf-8"))
+
+    def test_app_settings_replace_with_file_rejects_invalid_json(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            source = Path(tmp_dir) / "settings.json"
+            target = Path(tmp_dir) / "current" / "settings.json"
+            source.write_text("{bad json", encoding="utf-8")
+
+            with self.assertRaises(ValueError):
+                AppSettingsIO.replace_with_file(source, target)
+
+            self.assertFalse(target.exists())
+
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
 

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 import os
+import shutil
 import sys
 
 from fdm.models import CalibrationPreset
@@ -898,3 +899,23 @@ class AppSettingsIO:
             encoding="utf-8",
         )
         return target_path
+
+    @staticmethod
+    def replace_with_file(source_path: str | Path, path: str | Path | None = None) -> tuple[AppSettings, Path]:
+        source = Path(source_path).expanduser()
+        target_path = Path(path) if path is not None else settings_file_path()
+        try:
+            payload = json.loads(source.read_text(encoding="utf-8"))
+        except json.JSONDecodeError as exc:
+            raise ValueError("设置文件不是有效的 JSON。") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("设置文件内容不是有效的对象。")
+        settings = AppSettings.from_dict(payload)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            same_file = source.resolve() == target_path.resolve()
+        except OSError:
+            same_file = False
+        if not same_file:
+            shutil.copyfile(source, target_path)
+        return settings, target_path
