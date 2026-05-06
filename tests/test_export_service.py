@@ -154,6 +154,11 @@ class ExportServiceTests(unittest.TestCase):
                     missing.add(prefix)
         return sorted(missing)
 
+    def _strip_calc_pr(self, xml_bytes: bytes) -> bytes:
+        import re
+
+        return re.sub(rb"<calcPr\b[^>]*/?>", b"", xml_bytes)
+
     def test_export_writes_csv_and_xlsx(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
@@ -365,9 +370,20 @@ class ExportServiceTests(unittest.TestCase):
 
             with zipfile.ZipFile(template_path) as template_archive, zipfile.ZipFile(output_path) as output_archive:
                 self.assertEqual(output_archive.read("[Content_Types].xml"), template_archive.read("[Content_Types].xml"))
-                self.assertEqual(output_archive.read("xl/workbook.xml"), template_archive.read("xl/workbook.xml"))
+                workbook_xml = output_archive.read("xl/workbook.xml")
+                template_workbook_xml = template_archive.read("xl/workbook.xml")
                 sheet_xml = output_archive.read("xl/worksheets/sheet1.xml")
 
+        self.assertEqual(self._strip_calc_pr(workbook_xml), self._strip_calc_pr(template_workbook_xml))
+        self.assertIn(b'fullCalcOnLoad="1"', workbook_xml)
+        self.assertIn(b'forceFullCalc="1"', workbook_xml)
+        self.assertIn(b'calcMode="auto"', workbook_xml)
+        self.assertIn(b'calcOnSave="1"', workbook_xml)
+        self.assertIn(b'calcId="0"', workbook_xml)
+        self.assertIn(b'mc:Ignorable="x15"', workbook_xml)
+        self.assertIn(b'xmlns:x15="http://schemas.microsoft.com/office/spreadsheetml/2010/11/main"', workbook_xml)
+        self.assertNotIn(b"ns1:Ignorable", workbook_xml)
+        self.assertEqual(self._missing_compat_prefixes(workbook_xml), [])
         self.assertIn(b"mc:Ignorable=\"x14ac\"", sheet_xml)
         self.assertIn(b"xmlns:x14ac=\"http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac\"", sheet_xml)
         self.assertNotIn(b"ns1:Ignorable", sheet_xml)
@@ -418,10 +434,16 @@ class ExportServiceTests(unittest.TestCase):
                 names = set(output_archive.namelist())
                 content_types_xml = output_archive.read("[Content_Types].xml")
                 rels_xml = output_archive.read("xl/_rels/workbook.xml.rels")
+                workbook_xml = output_archive.read("xl/workbook.xml")
 
         self.assertNotIn("xl/calcChain.xml", names)
         self.assertNotIn(b"calcChain", content_types_xml)
         self.assertNotIn(b"calcChain", rels_xml)
+        self.assertIn(b'fullCalcOnLoad="1"', workbook_xml)
+        self.assertIn(b'forceFullCalc="1"', workbook_xml)
+        self.assertIn(b'calcMode="auto"', workbook_xml)
+        self.assertIn(b'calcOnSave="1"', workbook_xml)
+        self.assertIn(b'calcId="0"', workbook_xml)
 
     def test_raw_record_template_export_falls_back_on_invalid_compat_namespace(self) -> None:
         document = ImageDocument(

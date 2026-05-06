@@ -160,6 +160,7 @@ def write_raw_record_template(
             output_suffix=target_path.suffix.lower(),
         )
         _remove_calc_chain(modified_entries)
+        modified_entries["xl/workbook.xml"] = _updated_workbook_calc_xml_text(modified_entries["xl/workbook.xml"])
     except KeyError as exc:
         raise RawRecordTemplateExportError("原始记录模板缺少必要的 OOXML 文件。") from exc
     except ET.ParseError as exc:
@@ -656,6 +657,45 @@ def _updated_content_types_xml(content_types_xml: bytes, *, input_suffix: str, o
             b"application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml",
         )
     return updated
+
+
+def _updated_workbook_calc_xml_text(workbook_xml: bytes) -> bytes:
+    text = workbook_xml.decode("utf-8")
+    match = re.search(r"<calcPr\b[^>]*/?>", text)
+    if match is None:
+        closing_workbook = re.search(r"</(?:[A-Za-z_][\w.-]*:)?workbook\s*>", text)
+        if closing_workbook is None:
+            return workbook_xml
+        calc_pr = _calc_pr_tag_with_recalc_attrs("<calcPr/>")
+        return f"{text[:closing_workbook.start()]}{calc_pr}{text[closing_workbook.start():]}".encode("utf-8")
+    updated_tag = _calc_pr_tag_with_recalc_attrs(match.group(0))
+    return f"{text[:match.start()]}{updated_tag}{text[match.end():]}".encode("utf-8")
+
+
+def _calc_pr_tag_with_recalc_attrs(calc_pr_tag: str) -> str:
+    updated = calc_pr_tag
+    for name, value in {
+        "calcId": "0",
+        "calcMode": "auto",
+        "fullCalcOnLoad": "1",
+        "forceFullCalc": "1",
+        "calcOnSave": "1",
+    }.items():
+        updated = _set_xml_tag_attribute(updated, name, value)
+    return updated
+
+
+def _set_xml_tag_attribute(tag: str, name: str, value: str) -> str:
+    pattern = re.compile(rf"\s{name}=([\"']).*?\1")
+    replacement = f' {name}="{value}"'
+    if pattern.search(tag):
+        return pattern.sub(replacement, tag, count=1)
+    insert_at = tag.rfind("/>")
+    if insert_at < 0:
+        insert_at = tag.rfind(">")
+    if insert_at < 0:
+        return tag
+    return f"{tag[:insert_at]}{replacement}{tag[insert_at:]}"
 
 
 def _remove_calc_chain(entries: dict[str, bytes]) -> None:
