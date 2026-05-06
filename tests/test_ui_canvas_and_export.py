@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
-    from PySide6.QtGui import QAction, QImage, QColor, QPalette
+    from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
     from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
@@ -96,6 +96,7 @@ class ScaleOverlayRecordingPainter:
         self.pen = None
         self.font = None
         self.lines: list[tuple[QPointF, QPointF]] = []
+        self.fill_rects: list[tuple[object, object]] = []
         self.text_calls: list[tuple[object, ...]] = []
 
     def setPen(self, pen) -> None:
@@ -106,6 +107,9 @@ class ScaleOverlayRecordingPainter:
 
     def drawLine(self, start: QPointF, end: QPointF) -> None:
         self.lines.append((start, end))
+
+    def fillRect(self, rect, color) -> None:
+        self.fill_rects.append((rect, color))
 
     def drawText(self, *args) -> None:
         self.text_calls.append(args)
@@ -275,6 +279,16 @@ class CanvasAndExportTests(unittest.TestCase):
                 if left.pixel(x, y) != right.pixel(x, y):
                     diff += 1
         return diff
+
+    def _dark_x_bounds(self, image: QImage, *, y_start: int, y_end: int) -> tuple[int, int]:
+        xs: list[int] = []
+        for y in range(y_start, y_end):
+            for x in range(image.width()):
+                color = image.pixelColor(x, y)
+                if color.red() < 245 or color.green() < 245 or color.blue() < 245:
+                    xs.append(x)
+        self.assertTrue(xs)
+        return min(xs), max(xs)
 
     def test_wheel_event_uses_horizontal_delta_fallback_for_zoom_in(self) -> None:
         _, _, canvas = self._create_canvas_document()
@@ -3711,13 +3725,53 @@ class CanvasAndExportTests(unittest.TestCase):
             render_mode=ExportImageRenderMode.FULL_RESOLUTION,
         )
 
-        self.assertEqual(len(painter.lines), 1)
-        bar_start, bar_end = painter.lines[0]
-        bar_width = bar_end.x() - bar_start.x()
+        self.assertEqual(len(painter.fill_rects), 1)
+        bar_rect, _ = painter.fill_rects[0]
+        bar_width = bar_rect.width()
         text_rects = [call[0] for call in painter.text_calls if len(call) == 3 and call[2] == "1 um"]
         self.assertEqual(len(text_rects), 2)
         self.assertGreater(text_rects[0].width(), bar_width)
-        self.assertAlmostEqual(text_rects[0].center().x(), bar_start.x() + (bar_width / 2.0))
+        self.assertAlmostEqual(text_rects[0].center().x(), bar_rect.center().x())
+
+    def test_scale_overlay_visible_width_matches_target_endpoints(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/exact_scale_width.png",
+            image_size=(140, 120),
+        )
+        document.initialize_runtime_state()
+        document.scale_overlay_anchor = Point(40, 80)
+
+        for style in (ScaleOverlayStyle.LINE, ScaleOverlayStyle.TICKS, ScaleOverlayStyle.BAR):
+            with self.subTest(style=style):
+                image = QImage(140, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                settings = AppSettings(
+                    scale_overlay_placement_mode=ScaleOverlayPlacementMode.MANUAL,
+                    scale_overlay_style=style,
+                    scale_overlay_length_value=40.0,
+                    scale_overlay_color="#000000",
+                    scale_overlay_text_color="#FFFFFF",
+                    scale_overlay_font_size=8,
+                )
+                painter = QPainter(image)
+                painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+                draw_scale_overlay(
+                    painter,
+                    document,
+                    settings,
+                    image_width=image.width(),
+                    image_height=image.height(),
+                    image_to_output_scale=1.0,
+                    scale_bg_width=5.0,
+                    scale_fg_width=5.0,
+                    font_px=8.0,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                )
+                painter.end()
+
+                self.assertEqual(self._dark_x_bounds(image, y_start=78, y_end=83), (40, 79))
 
     def test_scale_overlay_renders_for_uncalibrated_document_using_pixel_length(self) -> None:
         window = MainWindow()

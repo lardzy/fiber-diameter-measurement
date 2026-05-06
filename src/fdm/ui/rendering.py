@@ -821,11 +821,32 @@ def _draw_scale_ticks(
     fg_width: float,
     tick_length: float,
 ) -> None:
-    for anchor in (start_point, end_point):
-        tick_start = QPointF(anchor.x(), anchor.y() - tick_length)
-        tick_end = QPointF(anchor.x(), anchor.y() + tick_length)
-        painter.setPen(QPen(foreground_color, fg_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
-        painter.drawLine(tick_start, tick_end)
+    bar_px = max(0.0, end_point.x() - start_point.x())
+    tick_width = min(max(1.0, fg_width), bar_px)
+    if bar_px <= 0.0 or tick_width <= 0.0:
+        return
+    tick_height = max(1.0, tick_length * 2.0)
+    tick_top = start_point.y() - tick_length
+    left_tick = QRectF(start_point.x(), tick_top, tick_width, tick_height)
+    right_tick = QRectF(end_point.x() - tick_width, tick_top, tick_width, tick_height)
+    painter.fillRect(left_tick, foreground_color)
+    painter.fillRect(right_tick, foreground_color)
+
+
+def _draw_scale_segment(
+    painter: QPainter,
+    start_point: QPointF,
+    *,
+    bar_px: float,
+    foreground_color: QColor,
+    fg_width: float,
+) -> None:
+    if bar_px <= 0.0 or fg_width <= 0.0:
+        return
+    # Filled rectangles keep the visible bar inside the calibrated endpoints;
+    # pen caps would otherwise extend the exported scale by part of the stroke.
+    segment_rect = QRectF(start_point.x(), start_point.y() - (fg_width / 2.0), bar_px, fg_width)
+    painter.fillRect(segment_rect, foreground_color)
 
 
 def draw_scale_overlay(
@@ -863,15 +884,16 @@ def draw_scale_overlay(
         image_to_output_scale=image_to_output_scale,
     )
     end_point = QPointF(start_point.x() + bar_px, start_point.y())
-    bg_width = scale_bg_width
     fg_width = scale_fg_width
-    cap_style = Qt.PenCapStyle.RoundCap
     if settings.scale_overlay_style == ScaleOverlayStyle.BAR:
-        bg_width = max(bg_width * 2.2, fg_width * 2.0)
         fg_width = max(fg_width * 1.9, scale_fg_width + 1.5)
-        cap_style = Qt.PenCapStyle.SquareCap
-    painter.setPen(QPen(line_color, fg_width, Qt.PenStyle.SolidLine, cap_style))
-    painter.drawLine(start_point, end_point)
+    _draw_scale_segment(
+        painter,
+        start_point,
+        bar_px=bar_px,
+        foreground_color=line_color,
+        fg_width=fg_width,
+    )
     if settings.scale_overlay_style == ScaleOverlayStyle.TICKS:
         tick_length = max(resolved_font_px * 0.34, fg_width * 2.4, 6.0)
         _draw_scale_ticks(
