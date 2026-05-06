@@ -2360,6 +2360,43 @@ class MainWindow(QMainWindow):
         template.color = normalized_color
         return True
 
+    def _apply_project_group_template_edit(self, *, original_label: str, target_label: str, color: str) -> bool:
+        target_token = normalize_group_label(target_label)
+        if not target_token:
+            return False
+        original_token = normalize_group_label(original_label)
+        normalized_color = self._normalize_group_color(color)
+        original_template = self._project_group_template_for_label(original_token) if original_token else None
+        target_template = self._project_group_template_for_label(target_token)
+        changed = False
+        if original_template is not None:
+            if target_template is not None and target_template is not original_template:
+                if target_template.color != normalized_color:
+                    target_template.color = normalized_color
+                    changed = True
+                self.project.project_group_templates = [
+                    template
+                    for template in self.project.project_group_templates
+                    if template is not original_template
+                ]
+                return True
+            if normalize_group_label(original_template.label) != target_token:
+                original_template.label = target_token
+                changed = True
+            if original_template.color != normalized_color:
+                original_template.color = normalized_color
+                changed = True
+            return changed
+        if target_template is not None:
+            if target_template.color != normalized_color:
+                target_template.color = normalized_color
+                return True
+            return False
+        self.project.project_group_templates.append(
+            ProjectGroupTemplate(label=target_token, color=normalized_color),
+        )
+        return True
+
     def _apply_project_group_templates_to_document(
         self,
         document: ImageDocument,
@@ -2395,6 +2432,59 @@ class MainWindow(QMainWindow):
             after = document.snapshot_state()
             if changed and document.history is not None and before != after:
                 document.history.push(label, before, after)
+                any_changed = True
+            elif changed:
+                any_changed = True
+        return any_changed
+
+    def _sync_project_group_template_edit_to_documents(
+        self,
+        *,
+        original_label: str,
+        target_label: str,
+        color: str,
+        history_label: str,
+    ) -> bool:
+        target_token = normalize_group_label(target_label)
+        if not target_token:
+            return False
+        original_token = normalize_group_label(original_label)
+        normalized_color = self._normalize_group_color(color)
+        any_changed = False
+        for document in self.project.documents:
+            before = document.snapshot_state()
+            changed = False
+            original_group = document.find_group_by_label(original_token) if original_token else None
+            target_group = document.find_group_by_label(target_token)
+            if original_group is not None and target_group is not None and original_group.id != target_group.id:
+                changed = document.merge_group_into(original_group.id, target_group.id) or changed
+                target_group = document.find_group_by_label(target_token)
+            elif original_group is not None:
+                if normalize_group_label(original_group.label) != target_token:
+                    original_group.label = target_token
+                    changed = True
+                target_group = original_group
+            elif target_group is None:
+                target_group, ensured_changed = self._ensure_document_named_group(
+                    document,
+                    label=target_token,
+                    color=normalized_color,
+                    activate=False,
+                    sync_color=True,
+                )
+                changed = ensured_changed or changed
+            if target_group is not None and target_group.color != normalized_color:
+                target_group.color = normalized_color
+                changed = True
+            if original_token and original_token != target_token:
+                changed = document.unsuppress_project_group_label(original_token) or changed
+            changed = document.unsuppress_project_group_label(target_token) or changed
+            if changed:
+                document.rebuild_group_memberships()
+                document.refresh_dirty_flags()
+            after = document.snapshot_state()
+            if changed and document.history is not None and before != after:
+                document.history.push(history_label, before, after)
                 any_changed = True
             elif changed:
                 any_changed = True
@@ -3885,18 +3975,21 @@ class MainWindow(QMainWindow):
             initial_label=group.label,
             initial_color=group.color,
             apply_to_project_default=False,
-            show_apply_to_project=False,
+            show_apply_to_project=True,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        label, selected_color, _apply_to_project = dialog.values()
+        label, selected_color, apply_to_project = dialog.values()
         target_label = normalize_group_label(label)
+        if apply_to_project and not target_label:
+            QMessageBox.warning(self, "编辑类别", "应用到当前项目全局时，类别名称不能为空。")
+            return
         selected_qcolor = QColor(selected_color)
         target_color = selected_qcolor.name() if selected_qcolor.isValid() else selected_color.strip() or group.color
         current_label = normalize_group_label(group.label)
         current_qcolor = QColor(group.color)
         current_color = current_qcolor.name() if current_qcolor.isValid() else group.color
-        if target_label == current_label and target_color == current_color:
+        if target_label == current_label and target_color == current_color and not apply_to_project:
             return
         merge_target = document.find_group_by_label(target_label) if target_label else None
         if merge_target is not None and merge_target.id != group.id:
@@ -3909,12 +4002,19 @@ class MainWindow(QMainWindow):
             )
             if response != QMessageBox.StandardButton.Yes:
                 return
+            template_changed = (
+                self._apply_project_group_template_edit(original_label=current_label, target_label=target_label, color=target_color)
+                if apply_to_project
+                else False
+            )
 
             def mutate_merge() -> None:
                 source = document.get_group(group.id)
                 target = document.get_group(merge_target.id)
                 if source is None or target is None:
                     return
+                if apply_to_project or self._project_group_template_for_label(target_label) is not None:
+                    target.color = target_color
                 source_label = normalize_group_label(source.label)
                 target_token = normalize_group_label(target.label)
                 document.merge_group_into(source.id, target.id)
@@ -3924,14 +4024,33 @@ class MainWindow(QMainWindow):
                     document.unsuppress_project_group_label(target_token)
 
             changed = self._apply_document_change(document, "合并类别", mutate_merge)
-            if target_label and self._project_group_template_for_label(target_label) is not None:
-                changed = self._sync_project_group_template_colors(
-                    {target_label: target_color},
-                    history_label="同步项目全局类别颜色",
-                ) or changed
+            sync_changed = (
+                self._sync_project_group_template_edit_to_documents(
+                    original_label=current_label,
+                    target_label=target_label,
+                    color=target_color,
+                    history_label="同步项目全局类别",
+                )
+                if apply_to_project
+                else False
+            )
+            if apply_to_project:
+                self._update_ui_for_current_document()
+                self._focus_current_canvas()
+                if changed or sync_changed or template_changed:
+                    self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+                else:
+                    self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+                return
             if changed:
                 self.statusBar().showMessage("类别已合并", 3000)
             return
+
+        template_changed = (
+            self._apply_project_group_template_edit(original_label=current_label, target_label=target_label, color=target_color)
+            if apply_to_project
+            else False
+        )
 
         def mutate_rename() -> None:
             target = document.get_group(group.id)
@@ -3946,11 +4065,24 @@ class MainWindow(QMainWindow):
                 document.unsuppress_project_group_label(target_label)
 
         changed = self._apply_document_change(document, "编辑类别", mutate_rename)
-        if target_label and self._project_group_template_for_label(target_label) is not None:
-            changed = self._sync_project_group_template_colors(
-                {target_label: target_color},
-                history_label="同步项目全局类别颜色",
-            ) or changed
+        sync_changed = (
+            self._sync_project_group_template_edit_to_documents(
+                original_label=current_label,
+                target_label=target_label,
+                color=target_color,
+                history_label="同步项目全局类别",
+            )
+            if apply_to_project
+            else False
+        )
+        if apply_to_project:
+            self._update_ui_for_current_document()
+            self._focus_current_canvas()
+            if changed or sync_changed or template_changed:
+                self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+            else:
+                self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+            return
         if changed:
             self.statusBar().showMessage("类别已更新", 3000)
 
@@ -3961,22 +4093,29 @@ class MainWindow(QMainWindow):
             initial_label="",
             initial_color=self._app_settings.default_measurement_color,
             apply_to_project_default=False,
-            show_apply_to_project=False,
+            show_apply_to_project=True,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        label, selected_color, _apply_to_project = dialog.values()
+        label, selected_color, apply_to_project = dialog.values()
         target_label = normalize_group_label(label)
+        if apply_to_project and not target_label:
+            QMessageBox.warning(self, "编辑未分类", "应用到当前项目全局时，类别名称不能为空。")
+            return
         if not target_label:
             QMessageBox.warning(self, "编辑未分类", "类别名称不能为空。")
             return
-        selected_qcolor = QColor(selected_color)
-        target_color = (
-            selected_qcolor.name()
-            if selected_qcolor.isValid()
-            else selected_color.strip() or self._app_settings.default_measurement_color
-        )
+        template = self._project_group_template_for_label(target_label)
         merge_target = document.find_group_by_label(target_label)
+        if template is not None:
+            target_color = template.color
+        elif apply_to_project:
+            target_color = self._normalize_group_color(selected_color, fallback=self._app_settings.default_measurement_color)
+        elif merge_target is not None:
+            target_color = merge_target.color
+        else:
+            target_color = self._normalize_group_color(selected_color, fallback=self._app_settings.default_measurement_color)
+        template_added = False
         if merge_target is not None:
             response = QMessageBox.question(
                 self,
@@ -3987,20 +4126,40 @@ class MainWindow(QMainWindow):
             )
             if response != QMessageBox.StandardButton.Yes:
                 return
+            if apply_to_project:
+                template_added = self._ensure_project_group_template(label=target_label, color=target_color)
 
             def mutate_merge() -> None:
                 target = document.get_group(merge_target.id)
                 if target is None:
                     return
+                if apply_to_project or template is not None:
+                    target.color = target_color
                 document.move_uncategorized_measurements_to_group(target.id)
                 target_token = normalize_group_label(target.label)
                 if self._project_group_template_for_label(target_token) is not None:
                     document.unsuppress_project_group_label(target_token)
 
             changed = self._apply_document_change(document, "合并未分类", mutate_merge)
+            sync_changed = (
+                self._sync_project_group_templates(label="同步项目全局类别", labels={target_label})
+                if apply_to_project
+                else False
+            )
+            self._update_ui_for_current_document()
+            self._focus_current_canvas()
+            if apply_to_project:
+                if changed or sync_changed or template_added:
+                    self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+                else:
+                    self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+                return
             if changed:
                 self.statusBar().showMessage("未分类已合并到现有类别", 3000)
             return
+
+        if apply_to_project:
+            template_added = self._ensure_project_group_template(label=target_label, color=target_color)
 
         def mutate_create() -> None:
             group = document.create_group(color=target_color, label=target_label)
@@ -4010,6 +4169,19 @@ class MainWindow(QMainWindow):
                 document.unsuppress_project_group_label(target_label)
 
         changed = self._apply_document_change(document, "编辑未分类", mutate_create)
+        sync_changed = (
+            self._sync_project_group_templates(label="同步项目全局类别", labels={target_label})
+            if apply_to_project
+            else False
+        )
+        self._update_ui_for_current_document()
+        self._focus_current_canvas()
+        if apply_to_project:
+            if changed or sync_changed or template_added:
+                self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+            else:
+                self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+            return
         if changed:
             self.statusBar().showMessage("未分类已迁移到新类别", 3000)
 
@@ -5639,6 +5811,14 @@ class MainWindow(QMainWindow):
             )
         )
         has_named_active_group = bool(document and document.get_group(document.active_group_id) is not None)
+        has_editable_active_group = bool(
+            has_named_active_group
+            or (
+                document
+                and document.active_group_id is None
+                and document.should_show_uncategorized_entry()
+            )
+        )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
@@ -5648,12 +5828,12 @@ class MainWindow(QMainWindow):
         if self._delete_all_measurements_button is not None:
             self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
         self.add_group_action.setEnabled(has_document and not preview_active)
-        self.rename_group_action.setEnabled(has_named_active_group and not preview_active)
+        self.rename_group_action.setEnabled(has_editable_active_group and not preview_active)
         self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
         if self._add_group_button is not None:
             self._add_group_button.setEnabled(has_document and not preview_active)
         if self._rename_group_button is not None:
-            self._rename_group_button.setEnabled(has_named_active_group and not preview_active)
+            self._rename_group_button.setEnabled(has_editable_active_group and not preview_active)
         if self.delete_group_button is not None:
             self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
         has_preset = bool(self._calibration_presets())
