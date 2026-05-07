@@ -293,7 +293,7 @@ class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
-    MAP_BUILD_AVAILABLE = False
+    MAP_BUILD_AVAILABLE = True
     TABLE_COL_GROUP = 0
     TABLE_COL_KIND = 1
     TABLE_COL_RESULT = 2
@@ -6086,7 +6086,7 @@ class MainWindow(QMainWindow):
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")
         focus_tooltip = "实时预览分析：景深合成"
-        map_tooltip = "地图构建功能开发中，当前版本暂不可用。"
+        map_tooltip = "地图构建首版仅支持 Microview 实时预览。"
         if self.MAP_BUILD_AVAILABLE and selected is not None and selected.backend_key == "microview":
             map_tooltip = "实时预览分析：地图构建"
         focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
@@ -6103,7 +6103,7 @@ class MainWindow(QMainWindow):
 
     def _preview_analysis_intro_text(self, mode: str) -> str:
         if mode == "map_build":
-            return "移动样品台并适当切换焦距，系统会先对每个 tile 做景深合成，再实时拼接地图。按 Enter 或 F 结束，Esc 取消。"
+            return "移动样品台到相邻视野，保持 20%-40% 重叠并等待静止；系统会先合成每个 tile，再拼接可靠地图。按 Enter 或 F 结束，Esc 取消。"
         return "尽量均匀地从一个焦距移动到另一个焦距，系统会持续采样并合成清晰图像。按 Enter 或 F 结束，Esc 取消。"
 
     def _analysis_mode_label(self, mode: str) -> str:
@@ -6133,7 +6133,7 @@ class MainWindow(QMainWindow):
         if not self._preview_analysis_supported(mode):
             message = "该功能需要实时预览已提供可用分析帧。"
             if mode == "map_build":
-                message = "地图构建功能开发中，当前版本暂不可用。"
+                message = "地图构建首版仅支持 Microview 实时预览。"
             self._sync_preview_analysis_buttons()
             QMessageBox.information(self, self._analysis_mode_label(mode), message)
             return

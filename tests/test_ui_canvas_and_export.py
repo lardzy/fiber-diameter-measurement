@@ -638,7 +638,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.deleteLater()
             self.app.processEvents()
 
-    def test_map_build_button_shows_developing_message_when_unavailable(self) -> None:
+    def test_map_build_button_is_enabled_for_microview_preview(self) -> None:
         window = MainWindow()
         try:
             fake_device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
@@ -653,11 +653,25 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window._focus_stack_button.isEnabled())
             self.assertTrue(window._map_build_button.isEnabled())
             self.assertIsNone(window._map_build_status_label)
-            with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok) as mock_information:
-                window._map_build_button.click()
-            mock_information.assert_called_once()
-            self.assertIn("开发中", mock_information.call_args.args[2])
             self.assertFalse(window._map_build_button.isChecked())
+            self.assertIn("地图构建", window._map_build_button.toolTip())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_map_build_button_remains_disabled_for_non_microview_preview(self) -> None:
+        window = MainWindow()
+        try:
+            fake_device = type("Device", (), {"backend_key": "qt_multimedia", "id": "usb:0", "name": "USB Camera"})()
+            window._preview_active = True
+            window._capture_manager.selected_device = lambda: fake_device  # type: ignore[method-assign]
+            window._capture_manager.can_request_analysis_frame = lambda: True  # type: ignore[method-assign]
+
+            window._update_preview_analysis_controls()
+
+            self.assertIsNotNone(window._map_build_button)
+            self.assertFalse(window._map_build_button.isEnabled())
+            self.assertIn("Microview", window._map_build_button.toolTip())
         finally:
             window._reset_workspace()
             window.close()

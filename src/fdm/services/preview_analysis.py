@@ -139,6 +139,55 @@ class _TileEdge:
     weight: float
 
 
+@dataclass(slots=True)
+class _MapRegistrationConfig:
+    min_overlap: float = 0.15
+    max_overlap: float = 0.60
+    min_phase_response: float = 0.08
+    min_ncc: float = 0.42
+    min_texture_std: float = 4.0
+    max_seed_correction_px: float = 56.0
+    min_edge_weight: float = 0.12
+    ambiguity_margin: float = 0.08
+    ambiguity_distance_px: float = 18.0
+
+    def as_metadata(self) -> dict[str, float]:
+        return {
+            "min_overlap": self.min_overlap,
+            "max_overlap": self.max_overlap,
+            "min_phase_response": self.min_phase_response,
+            "min_ncc": self.min_ncc,
+            "min_texture_std": self.min_texture_std,
+            "max_seed_correction_px": self.max_seed_correction_px,
+            "min_edge_weight": self.min_edge_weight,
+            "ambiguity_margin": self.ambiguity_margin,
+            "ambiguity_distance_px": self.ambiguity_distance_px,
+        }
+
+
+@dataclass(slots=True)
+class _RegistrationCandidate:
+    dx: float
+    dy: float
+    response: float
+    ncc: float
+    overlap: float
+    seed_delta: float
+    score: float
+
+
+@dataclass(slots=True)
+class _RegistrationResult:
+    accepted: bool
+    dx: float = 0.0
+    dy: float = 0.0
+    response: float = 0.0
+    ncc: float = 0.0
+    overlap: float = 0.0
+    weight: float = 0.0
+    reason: str = "registration"
+
+
 class FocusAccumulator:
     def __init__(self) -> None:
         self._records: list[_PreparedFrame] = []
@@ -273,17 +322,22 @@ class MapBuildAnalyzer:
             profile=FocusStackProfile.BALANCED,
             sharpen_strength=0,
         )
+        self._registration_config = _MapRegistrationConfig()
         self._sampled_frames = 0
         self._accepted_frames = 0
         self._rejected_moving_frames = 0
         self._rejected_low_confidence_frames = 0
+        self._rejected_registration_frames = 0
+        self._rejected_overlap_frames = 0
+        self._rejected_ambiguous_frames = 0
         self._stable_accept_count = 0
         self._tiles: list[_TileRecord] = []
         self._edges: list[_TileEdge] = []
         self._current_accumulator = FocusAccumulator()
         self._current_origin_small = None
         self._current_predicted_position = (0.0, 0.0)
-        self._pending_transition = (0.0, 0.0)
+        self._pending_current_edge: _TileEdge | None = None
+        self._last_tile_delta: tuple[float, float] | None = None
         self._tile_counter = 0
         self._previous_frame: _PreparedFrame | None = None
         self._transition_pending = False
@@ -293,7 +347,6 @@ class MapBuildAnalyzer:
         self._stable_window: list[_PreparedFrame] = []
         self._stable_required = 3
         self._last_message = "等待移动样品台并采样"
-        self._tile_shift_threshold_px: float | None = None
         self._stable_step_threshold_px: float | None = None
         self._tile_freeze_threshold_px: float | None = None
         self._stable_response_threshold = 0.015
@@ -301,18 +354,12 @@ class MapBuildAnalyzer:
         self._last_translation_px = 0.0
         self._last_response = 0.0
         self._last_quality_score = 0.0
+        self._last_motion_state = "moving"
 
     def add_frame(self, image: QImage) -> MapBuildReport:
         frame = _prepare_frame(image)
         self._sampled_frames += 1
-        if self._tile_shift_threshold_px is None:
-            self._tile_shift_threshold_px = max(72.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.18)
-        if self._stable_step_threshold_px is None:
-            self._stable_step_threshold_px = max(2.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.005)
-        if self._tile_freeze_threshold_px is None:
-            self._tile_freeze_threshold_px = max(6.0, min(frame.bgr.shape[0], frame.bgr.shape[1]) * 0.015)
-        if self._resume_origin_threshold_px is None:
-            self._resume_origin_threshold_px = max(4.0, float(self._tile_freeze_threshold_px or 6.0) * 0.65)
+        self._initialize_thresholds(frame)
         self._last_quality_score = frame.sharpness
         if self._previous_frame is None:
             self._previous_frame = frame
@@ -322,12 +369,13 @@ class MapBuildAnalyzer:
             self._last_translation_px = 0.0
             self._last_response = 1.0
             self._last_message = self._settling_message()
+            self._last_motion_state = "settling"
             return self._build_report()
 
-        step_dx, step_dy, step_response = _estimate_translation(self._previous_frame.small_gray, frame.small_gray)
+        step_phase_dx, step_phase_dy, step_response = _estimate_translation(self._previous_frame.small_gray, frame.small_gray)
         step_scale = _small_frame_scale(frame.gray.shape, frame.small_gray.shape)
-        step_dx *= step_scale
-        step_dy *= step_scale
+        step_dx = -step_phase_dx * step_scale
+        step_dy = -step_phase_dy * step_scale
         step_translation = math.hypot(step_dx, step_dy)
         self._last_translation_px = step_translation
         self._last_response = step_response
@@ -342,13 +390,15 @@ class MapBuildAnalyzer:
 
         origin_dx = 0.0
         origin_dy = 0.0
-        origin_response = 0.0
         origin_translation = 0.0
         if self._current_origin_small is not None:
-            origin_dx, origin_dy, origin_response = _estimate_translation(self._current_origin_small, frame.small_gray)
-            origin_dx *= step_scale
-            origin_dy *= step_scale
+            origin_phase_dx, origin_phase_dy, _ = _estimate_translation(self._current_origin_small, frame.small_gray)
+            origin_dx = -origin_phase_dx * step_scale
+            origin_dy = -origin_phase_dy * step_scale
             origin_translation = math.hypot(origin_dx, origin_dy)
+
+        if self._current_accumulator.has_frames() and origin_translation <= float(self._resume_origin_threshold_px or 4.0):
+            self._transition_pending = False
 
         if self._current_accumulator.has_frames() and origin_translation >= float(self._tile_freeze_threshold_px or 6.0):
             if not self._transition_pending:
@@ -361,90 +411,60 @@ class MapBuildAnalyzer:
                 else:
                     self._stable_streak = 0
                     self._stable_window.clear()
-            self._pending_transition = (origin_dx, origin_dy)
 
         if not self._current_accumulator.has_frames():
             if self._is_stable and stable_anchor is not None:
                 self._current_origin_small = stable_anchor.small_gray
                 self._current_predicted_position = (0.0, 0.0)
                 self._accept_prepared_frame(stable_anchor)
-                self._last_message = self._sampling_message()
+                self._last_message = self._sampling_message("开始采样首个 tile")
+                self._last_motion_state = "sampling"
             else:
                 self._rejected_moving_frames += 1
                 self._last_message = self._motion_wait_message()
+                self._last_motion_state = "settling" if self._stable_streak > 0 else "moving"
             return self._build_report()
 
         if self._transition_pending:
             if not self._is_stable:
                 self._rejected_moving_frames += 1
-                self._last_message = "检测到新位置，等待稳定"
+                self._last_message = "检测到新位置，等待静止后再采样候选 tile"
+                self._last_motion_state = "moving" if self._stable_streak == 0 else "settling"
                 return self._build_report()
 
-            candidate = stable_anchor or self._best_stable_frame()
-            if candidate is None:
-                self._last_message = "检测到新位置，等待稳定"
+            candidate_frames = list(self._stable_window)
+            if not candidate_frames:
+                candidate = stable_anchor or self._best_stable_frame()
+                candidate_frames = [candidate] if candidate is not None else []
+            if not candidate_frames:
+                self._last_message = "检测到新位置，等待静止后再采样候选 tile"
+                self._last_motion_state = "settling"
                 return self._build_report()
-            candidate_dx, candidate_dy, candidate_response = _estimate_translation(self._current_origin_small, candidate.small_gray)
-            candidate_dx *= step_scale
-            candidate_dy *= step_scale
-            candidate_translation = math.hypot(candidate_dx, candidate_dy)
-            if candidate_translation <= float(self._resume_origin_threshold_px or 4.0):
-                self._transition_pending = False
-                if self._accept_prepared_frame(candidate):
-                    self._last_message = self._sampling_message()
-                else:
-                    self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
-                return self._build_report()
-            if candidate_translation < float(self._tile_shift_threshold_px or 80.0):
-                self._rejected_low_confidence_frames += 1
-                self._last_message = "位移过大或重叠不足，未创建新 tile"
-                return self._build_report()
-            if (
-                candidate_response < self._stable_response_threshold
-                or _predicted_overlap_ratio(
-                    self._current_accumulator.preview_image(self._render_config).width() or frame.bgr.shape[1],
-                    self._current_accumulator.preview_image(self._render_config).height() or frame.bgr.shape[0],
-                    candidate.bgr.shape[1],
-                    candidate.bgr.shape[0],
-                    candidate_dx,
-                    candidate_dy,
-                ) < 0.08
-            ):
-                self._rejected_low_confidence_frames += 1
-                self._last_message = "位移过大或重叠不足，未创建新 tile"
-                return self._build_report()
-            transition = (candidate_dx, candidate_dy)
-            self._pending_transition = transition
-            self._finalize_current_tile()
-            if self._tiles:
-                last_tile = self._tiles[-1]
-                self._current_predicted_position = (last_tile.x + transition[0], last_tile.y + transition[1])
-            else:
-                self._current_predicted_position = transition
-            self._current_origin_small = candidate.small_gray
-            self._transition_pending = False
-            if self._accept_prepared_frame(candidate):
-                self._last_message = self._sampling_message()
-            else:
-                self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
+            self._try_commit_candidate_tile(candidate_frames, coarse_dx=origin_dx, coarse_dy=origin_dy)
             return self._build_report()
 
         if not self._is_stable:
             self._rejected_moving_frames += 1
             self._last_message = self._motion_wait_message()
+            self._last_motion_state = "settling" if self._stable_streak > 0 else "moving"
             return self._build_report()
 
         candidate = stable_anchor if newly_stable and stable_anchor is not None else frame
         if self._accept_prepared_frame(candidate):
-            self._last_message = self._sampling_message()
+            self._last_message = self._sampling_message("当前 tile 继续采样")
         else:
-            self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近"
+            self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近，已跳过"
+        self._last_motion_state = "sampling"
         return self._build_report()
 
     def finalize(self) -> MapBuildFinalResult:
         self._finalize_current_tile()
         if not self._tiles:
             raise RuntimeError("地图构建未生成有效 tile。")
+        if len(self._tiles) < 2:
+            raise RuntimeError("地图构建至少需要两个可靠 tile。")
+        if not self._edges:
+            raise RuntimeError("重叠纹理不足，未生成可靠地图。")
         image = _render_mosaic(self._tiles)
         metadata = {
             "analysis_mode": "map_build",
@@ -453,9 +473,14 @@ class MapBuildAnalyzer:
             "sampled_frames": self._sampled_frames,
             "accepted_frames": self._accepted_frames,
             "tile_count": len(self._tiles),
+            "edge_count": len(self._edges),
             "rejected_moving_frames": self._rejected_moving_frames,
             "rejected_low_confidence_frames": self._rejected_low_confidence_frames,
+            "rejected_registration_frames": self._rejected_registration_frames,
+            "rejected_overlap_frames": self._rejected_overlap_frames,
+            "rejected_ambiguous_frames": self._rejected_ambiguous_frames,
             "stable_accept_count": self._stable_accept_count,
+            "registration_thresholds": self._registration_config.as_metadata(),
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
         return MapBuildFinalResult(
@@ -505,12 +530,12 @@ class MapBuildAnalyzer:
             quality_score=self._last_quality_score,
         )
 
-    def _finalize_current_tile(self) -> None:
+    def _finalize_current_tile(self) -> _TileRecord | None:
         if not self._current_accumulator.has_frames():
-            return
+            return None
         tile_image = self._current_accumulator.final_image(self._render_config)
         if tile_image.isNull():
-            return
+            return None
         tile_bgr = qimage_to_bgr_array(tile_image)
         tile_gray = _to_gray(tile_bgr)
         tile = _TileRecord(
@@ -522,41 +547,13 @@ class MapBuildAnalyzer:
         )
         self._tile_counter += 1
         self._tiles.append(tile)
-        self._refine_edges_for_tile(tile)
+        if self._pending_current_edge is not None and self._pending_current_edge.target_id == tile.tile_id:
+            self._edges.append(self._pending_current_edge)
+            self._pending_current_edge = None
         self._optimize_tile_positions()
         self._current_accumulator = FocusAccumulator()
         self._current_origin_small = None
-        self._pending_transition = (0.0, 0.0)
-
-    def _refine_edges_for_tile(self, tile: _TileRecord) -> None:
-        if len(self._tiles) == 1:
-            return
-        candidates = self._tiles[:-1][-6:]
-        for candidate in candidates:
-            predicted_dx = tile.x - candidate.x
-            predicted_dy = tile.y - candidate.y
-            overlap_ok = _predicted_overlap_ratio(
-                candidate.width,
-                candidate.height,
-                tile.width,
-                tile.height,
-                predicted_dx,
-                predicted_dy,
-            ) >= 0.08
-            if not overlap_ok and candidate is not self._tiles[-2]:
-                continue
-            refined_dx, refined_dy, response = _refine_translation(candidate.gray, tile.gray, predicted_dx, predicted_dy)
-            if response <= 0.01 and candidate is not self._tiles[-2]:
-                continue
-            self._edges.append(
-                _TileEdge(
-                    source_id=candidate.tile_id,
-                    target_id=tile.tile_id,
-                    dx=refined_dx,
-                    dy=refined_dy,
-                    weight=max(0.05, float(response)),
-                )
-            )
+        return tile
 
     def _optimize_tile_positions(self) -> None:
         if len(self._tiles) <= 1 or not self._edges:
@@ -598,37 +595,140 @@ class MapBuildAnalyzer:
 
     def _low_confidence_warning(self) -> str:
         if self._tiles and not self._edges and len(self._tiles) > 1:
-            return "重叠不足，当前地图使用顺序拼接"
+            return "重叠纹理不足，未生成可靠地图"
         if self._edges and self._edges[-1].weight <= 0.08:
             return "最近 tile 匹配置信度较低"
         return ""
 
     def _motion_state(self) -> str:
-        if self._transition_pending:
-            return "transition_pending"
-        if self._is_stable:
-            return "stable"
-        if self._stable_streak > 0:
-            return "settling"
-        return "moving"
+        return self._last_motion_state
 
     def _settling_message(self) -> str:
         return f"静止确认中 {min(self._stable_streak, self._stable_required)}/{self._stable_required}"
 
-    def _sampling_message(self) -> str:
-        return f"已静止，正在采样 tile {len(self._tiles) + 1}"
+    def _sampling_message(self, detail: str = "") -> str:
+        message = f"已静止，正在采样 tile {len(self._tiles) + 1}"
+        if detail:
+            message += f" | {detail}"
+        return message
 
     def _motion_wait_message(self) -> str:
         if self._transition_pending:
-            return "检测到新位置，等待稳定"
+            return "检测到新位置，等待静止后再采样候选 tile"
         if self._stable_streak > 0:
             return self._settling_message()
         return "运动中，暂停入图"
+
+    def _initialize_thresholds(self, frame: _PreparedFrame) -> None:
+        short_side = min(frame.bgr.shape[0], frame.bgr.shape[1])
+        if self._stable_step_threshold_px is None:
+            self._stable_step_threshold_px = max(2.0, short_side * 0.005)
+        if self._tile_freeze_threshold_px is None:
+            self._tile_freeze_threshold_px = max(6.0, short_side * 0.015)
+        if self._resume_origin_threshold_px is None:
+            self._resume_origin_threshold_px = max(4.0, float(self._tile_freeze_threshold_px or 6.0) * 0.65)
+
+    def _try_commit_candidate_tile(self, candidate_frames: list[_PreparedFrame], *, coarse_dx: float, coarse_dy: float) -> None:
+        reference_tile = self._current_tile_preview_record()
+        candidate_bgr = _fuse_prepared_frames(candidate_frames, self._render_config)
+        if reference_tile is None or candidate_bgr is None:
+            self._reject_candidate("registration", "候选 tile 图像为空，未创建新 tile")
+            return
+        candidate_gray = _to_gray(candidate_bgr)
+        candidate_tile = _TileRecord(
+            tile_id=-2,
+            bgr=candidate_bgr,
+            gray=candidate_gray,
+            x=0.0,
+            y=0.0,
+        )
+        registration = _register_tile_translation(
+            reference_tile,
+            candidate_tile,
+            config=self._registration_config,
+            coarse_dx=coarse_dx,
+            coarse_dy=coarse_dy,
+            last_delta=self._last_tile_delta,
+        )
+        if not registration.accepted:
+            if registration.reason == "overlap":
+                self._reject_candidate("overlap", "候选位置重叠不在 15%-60% 范围内，未创建新 tile")
+            elif registration.reason == "ambiguous":
+                self._reject_candidate("ambiguous", "候选位置纹理重复，匹配不唯一，未创建新 tile")
+            else:
+                self._reject_candidate("registration", "候选位置纹理不足或匹配置信度低，未创建新 tile")
+            return
+
+        previous_tile = self._finalize_current_tile()
+        if previous_tile is None:
+            self._reject_candidate("registration", "当前 tile 尚未生成有效图像，未创建新 tile")
+            return
+        target_id = self._tile_counter
+        self._pending_current_edge = _TileEdge(
+            source_id=previous_tile.tile_id,
+            target_id=target_id,
+            dx=registration.dx,
+            dy=registration.dy,
+            weight=registration.weight,
+        )
+        self._current_accumulator = FocusAccumulator()
+        accepted_any = False
+        for candidate in candidate_frames:
+            accepted_any = self._accept_prepared_frame(candidate) or accepted_any
+        anchor = self._best_prepared_frame(candidate_frames)
+        self._current_origin_small = anchor.small_gray if anchor is not None else candidate_frames[-1].small_gray
+        self._current_predicted_position = (
+            previous_tile.x + registration.dx,
+            previous_tile.y + registration.dy,
+        )
+        self._transition_pending = False
+        self._last_tile_delta = (registration.dx, registration.dy)
+        self._last_response = registration.response
+        self._last_motion_state = "tile_committed"
+        detail = (
+            f"创建新 tile，重叠 {registration.overlap:.0%}，"
+            f"NCC {registration.ncc:.2f}，response {registration.response:.2f}"
+        )
+        if not accepted_any:
+            detail += " | 候选帧与上一帧接近"
+        self._last_message = self._sampling_message(detail)
+
+    def _current_tile_preview_record(self) -> _TileRecord | None:
+        if not self._current_accumulator.has_frames():
+            return None
+        current_preview = self._current_accumulator.final_image(self._render_config)
+        if current_preview.isNull():
+            return None
+        current_bgr = qimage_to_bgr_array(current_preview)
+        return _TileRecord(
+            tile_id=-1,
+            bgr=current_bgr,
+            gray=_to_gray(current_bgr),
+            x=self._current_predicted_position[0],
+            y=self._current_predicted_position[1],
+        )
+
+    def _reject_candidate(self, reason: str, message: str) -> None:
+        self._rejected_low_confidence_frames += 1
+        if reason == "overlap":
+            self._rejected_overlap_frames += 1
+        elif reason == "ambiguous":
+            self._rejected_ambiguous_frames += 1
+            self._rejected_registration_frames += 1
+        else:
+            self._rejected_registration_frames += 1
+        self._last_message = message
+        self._last_motion_state = "candidate_rejected"
 
     def _best_stable_frame(self) -> _PreparedFrame | None:
         if not self._stable_window:
             return None
         return max(self._stable_window, key=lambda frame: frame.sharpness)
+
+    def _best_prepared_frame(self, frames: list[_PreparedFrame]) -> _PreparedFrame | None:
+        if not frames:
+            return None
+        return max(frames, key=lambda frame: frame.sharpness)
 
     def _update_stability_gate(
         self,
@@ -667,6 +767,176 @@ class MapBuildAnalyzer:
             self._accepted_frames += 1
             self._stable_accept_count += 1
         return accepted
+
+
+def _fuse_prepared_frames(frames: list[_PreparedFrame], render_config: FocusStackRenderConfig) -> Any | None:
+    if not frames:
+        return None
+    accumulator = FocusAccumulator()
+    for frame in frames:
+        accumulator.add_prepared_frame(frame)
+    if not accumulator.has_frames():
+        accumulator.add_prepared_frame(frames[-1])
+    image = accumulator.final_image(render_config)
+    if image.isNull():
+        return None
+    return qimage_to_bgr_array(image)
+
+
+def _register_tile_translation(
+    reference: _TileRecord,
+    candidate: _TileRecord,
+    *,
+    config: _MapRegistrationConfig,
+    coarse_dx: float,
+    coarse_dy: float,
+    last_delta: tuple[float, float] | None,
+) -> _RegistrationResult:
+    seeds = _registration_seed_candidates(
+        reference.width,
+        reference.height,
+        candidate.width,
+        candidate.height,
+        coarse_dx=coarse_dx,
+        coarse_dy=coarse_dy,
+        last_delta=last_delta,
+        config=config,
+    )
+    candidates: list[_RegistrationCandidate] = []
+    overlap_rejections = 0
+    texture_rejections = 0
+    for seed_dx, seed_dy in seeds:
+        refined = _refine_registration_seed(reference.gray, candidate.gray, seed_dx, seed_dy, config)
+        if refined is None:
+            overlap_rejections += 1
+            continue
+        if refined.ncc < config.min_ncc or refined.response < config.min_phase_response:
+            texture_rejections += 1
+            continue
+        candidates.append(refined)
+    if not candidates:
+        reason = "overlap" if overlap_rejections and not texture_rejections else "registration"
+        return _RegistrationResult(accepted=False, reason=reason)
+
+    candidates.sort(key=lambda item: item.score, reverse=True)
+    best = candidates[0]
+    for other in candidates[1:]:
+        if math.hypot(best.dx - other.dx, best.dy - other.dy) < config.ambiguity_distance_px:
+            continue
+        if other.score >= best.score - config.ambiguity_margin:
+            return _RegistrationResult(
+                accepted=False,
+                dx=best.dx,
+                dy=best.dy,
+                response=best.response,
+                ncc=best.ncc,
+                overlap=best.overlap,
+                reason="ambiguous",
+            )
+    weight = max(config.min_edge_weight, min(1.0, best.score))
+    return _RegistrationResult(
+        accepted=True,
+        dx=best.dx,
+        dy=best.dy,
+        response=best.response,
+        ncc=best.ncc,
+        overlap=best.overlap,
+        weight=weight,
+    )
+
+
+def _registration_seed_candidates(
+    width_a: int,
+    height_a: int,
+    width_b: int,
+    height_b: int,
+    *,
+    coarse_dx: float,
+    coarse_dy: float,
+    last_delta: tuple[float, float] | None,
+    config: _MapRegistrationConfig,
+) -> list[tuple[float, float]]:
+    del width_b, height_b
+    seeds: list[tuple[float, float]] = []
+
+    def add(dx: float, dy: float) -> None:
+        if not math.isfinite(dx) or not math.isfinite(dy):
+            return
+        rounded = (round(dx, 1), round(dy, 1))
+        if rounded not in {(round(seed_dx, 1), round(seed_dy, 1)) for seed_dx, seed_dy in seeds}:
+            seeds.append((float(dx), float(dy)))
+
+    if last_delta is not None:
+        add(last_delta[0], last_delta[1])
+    if math.hypot(coarse_dx, coarse_dy) > 1.0:
+        add(coarse_dx, coarse_dy)
+        if abs(coarse_dx) >= abs(coarse_dy):
+            add(coarse_dx, 0.0)
+        else:
+            add(0.0, coarse_dy)
+
+    overlap_guesses = (0.20, 0.35, 0.50)
+    for overlap in overlap_guesses:
+        shift_x = width_a * (1.0 - overlap)
+        shift_y = height_a * (1.0 - overlap)
+        add(shift_x, 0.0)
+        add(-shift_x, 0.0)
+        add(0.0, shift_y)
+        add(0.0, -shift_y)
+
+    min_shift_x = width_a * (1.0 - config.max_overlap)
+    min_shift_y = height_a * (1.0 - config.max_overlap)
+    max_shift_x = width_a * (1.0 - config.min_overlap)
+    max_shift_y = height_a * (1.0 - config.min_overlap)
+    return [
+        (dx, dy)
+        for dx, dy in seeds
+        if (
+            min_shift_x <= abs(dx) <= max_shift_x
+            or min_shift_y <= abs(dy) <= max_shift_y
+        )
+    ]
+
+
+def _refine_registration_seed(gray_a, gray_b, seed_dx: float, seed_dy: float, config: _MapRegistrationConfig) -> _RegistrationCandidate | None:
+    overlap = _predicted_overlap_ratio(gray_a.shape[1], gray_a.shape[0], gray_b.shape[1], gray_b.shape[0], seed_dx, seed_dy)
+    if overlap < config.min_overlap or overlap > config.max_overlap:
+        return None
+    crop_a, crop_b = _crop_overlap_min(gray_a, gray_b, seed_dx, seed_dy, min_size=36)
+    if crop_a is None or crop_b is None:
+        return None
+    if _texture_std(crop_a) < config.min_texture_std or _texture_std(crop_b) < config.min_texture_std:
+        return None
+    residual_phase_dx, residual_phase_dy, response = _estimate_translation(crop_a, crop_b)
+    refined_dx = seed_dx - residual_phase_dx
+    refined_dy = seed_dy - residual_phase_dy
+    seed_delta = math.hypot(refined_dx - seed_dx, refined_dy - seed_dy)
+    if seed_delta > config.max_seed_correction_px:
+        return None
+    refined_overlap = _predicted_overlap_ratio(
+        gray_a.shape[1],
+        gray_a.shape[0],
+        gray_b.shape[1],
+        gray_b.shape[0],
+        refined_dx,
+        refined_dy,
+    )
+    if refined_overlap < config.min_overlap or refined_overlap > config.max_overlap:
+        return None
+    refined_a, refined_b = _crop_overlap_min(gray_a, gray_b, refined_dx, refined_dy, min_size=36)
+    if refined_a is None or refined_b is None:
+        return None
+    ncc = _normalized_cross_correlation(refined_a, refined_b)
+    score = (0.72 * max(0.0, ncc)) + (0.28 * max(0.0, min(1.0, response)))
+    return _RegistrationCandidate(
+        dx=float(refined_dx),
+        dy=float(refined_dy),
+        response=float(response),
+        ncc=float(ncc),
+        overlap=float(refined_overlap),
+        seed_delta=float(seed_delta),
+        score=float(score),
+    )
 
 
 def _prepare_frame(image: QImage) -> _PreparedFrame:
@@ -800,8 +1070,7 @@ def _predicted_overlap_ratio(width_a: int, height_a: int, width_b: int, height_b
     return float(overlap_area / max(1.0, base))
 
 
-def _crop_overlap(gray_a, gray_b, dx: float, dy: float):
-    _, np = _ensure_cv_numpy()
+def _crop_overlap_min(gray_a, gray_b, dx: float, dy: float, *, min_size: int):
     dx_i = int(round(dx))
     dy_i = int(round(dy))
     x1_a = max(0, dx_i)
@@ -810,7 +1079,7 @@ def _crop_overlap(gray_a, gray_b, dx: float, dy: float):
     y1_b = max(0, -dy_i)
     overlap_w = min(gray_a.shape[1] - x1_a, gray_b.shape[1] - x1_b)
     overlap_h = min(gray_a.shape[0] - y1_a, gray_b.shape[0] - y1_b)
-    if overlap_w < 64 or overlap_h < 64:
+    if overlap_w < min_size or overlap_h < min_size:
         return None, None
     crop_a = gray_a[y1_a : y1_a + overlap_h, x1_a : x1_a + overlap_w]
     crop_b = gray_b[y1_b : y1_b + overlap_h, x1_b : x1_b + overlap_w]
@@ -819,12 +1088,21 @@ def _crop_overlap(gray_a, gray_b, dx: float, dy: float):
     return crop_a, crop_b
 
 
-def _refine_translation(gray_a, gray_b, predicted_dx: float, predicted_dy: float) -> tuple[float, float, float]:
-    crop_a, crop_b = _crop_overlap(gray_a, gray_b, predicted_dx, predicted_dy)
-    if crop_a is None or crop_b is None:
-        return predicted_dx, predicted_dy, 0.0
-    residual_dx, residual_dy, response = _estimate_translation(crop_a, crop_b)
-    return predicted_dx + residual_dx, predicted_dy + residual_dy, response
+def _texture_std(gray) -> float:
+    _, np = _ensure_cv_numpy()
+    return float(np.std(gray.astype(np.float32, copy=False)))
+
+
+def _normalized_cross_correlation(gray_a, gray_b) -> float:
+    _, np = _ensure_cv_numpy()
+    a = gray_a.astype(np.float32, copy=False)
+    b = gray_b.astype(np.float32, copy=False)
+    a_centered = a - float(a.mean())
+    b_centered = b - float(b.mean())
+    denom = float(np.sqrt(np.sum(a_centered * a_centered) * np.sum(b_centered * b_centered)))
+    if denom <= 1e-6:
+        return -1.0
+    return float(np.sum(a_centered * b_centered) / denom)
 
 
 def _render_mosaic(tiles: list[_TileRecord], *, max_dimension: int | None = None):
