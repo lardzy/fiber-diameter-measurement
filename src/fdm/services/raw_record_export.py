@@ -234,7 +234,12 @@ def _build_rule_write_plan(
     measurement_rows: list[dict[str, object]],
     category_labels: list[str],
 ) -> _RuleWritePlan:
-    values = _values_for_rule(rule, documents=documents, measurement_rows=measurement_rows)
+    values = _values_for_rule(
+        rule,
+        documents=documents,
+        measurement_rows=measurement_rows,
+        category_labels=category_labels,
+    )
     if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
         coordinates = _target_coordinates_for_rule(rule, len(values))
         return _RuleWritePlan(
@@ -268,6 +273,7 @@ def _values_for_rule(
     *,
     documents: list[ImageDocument],
     measurement_rows: list[dict[str, object]],
+    category_labels: list[str],
 ) -> list[object]:
     if rule.data_source == RawRecordDataSource.DIAMETER_RESULT:
         return [
@@ -284,7 +290,7 @@ def _values_for_rule(
             if measurement.measurement_kind == "area"
         ]
     if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
-        return _unique_field_values(rule, measurement_rows)
+        return _unique_field_values(rule, measurement_rows, category_labels)
 
     field_name = rule.field_name or "结果"
     return [
@@ -294,19 +300,34 @@ def _values_for_rule(
     ]
 
 
-def _unique_field_values(rule: RawRecordExportRule, measurement_rows: list[dict[str, object]]) -> list[object]:
+def _unique_field_values(
+    rule: RawRecordExportRule,
+    measurement_rows: list[dict[str, object]],
+    category_labels: list[str],
+) -> list[object]:
     field_name = rule.field_name or "纤维种类名称"
-    values: list[object] = []
-    seen_labels: set[str] = set()
+    first_rows_by_label: dict[str, dict[str, object]] = {}
+    labels_by_measurement_order: list[str] = []
     for row in measurement_rows:
         if not _row_matches_measurement_filter(row, rule.measurement_filter):
             continue
-        label = str(row.get("纤维种类名称", "") or "").strip()
-        if not label or label in seen_labels:
+        label = _row_category_label(row)
+        if not label or label in first_rows_by_label:
             continue
-        seen_labels.add(label)
-        values.append(row.get(field_name))
-    return values
+        first_rows_by_label[label] = row
+        labels_by_measurement_order.append(label)
+
+    ordered_labels: list[str] = []
+    seen_labels: set[str] = set()
+    for label in category_labels:
+        if label in first_rows_by_label and label not in seen_labels:
+            ordered_labels.append(label)
+            seen_labels.add(label)
+    for label in labels_by_measurement_order:
+        if label not in seen_labels:
+            ordered_labels.append(label)
+            seen_labels.add(label)
+    return [first_rows_by_label[label].get(field_name) for label in ordered_labels]
 
 
 def _uses_category_grouped_range(rule: RawRecordExportRule) -> bool:

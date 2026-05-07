@@ -569,6 +569,69 @@ class ExportServiceTests(unittest.TestCase):
         self.assertNotIn("BD11", sheet_values)
         self.assertNotIn("BD12", sheet_values)
 
+    def test_raw_record_template_unique_field_range_uses_fiber_category_order(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_group_order.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        cotton = document.create_group(color="#1F7A8C", label="棉")
+        lyocell = document.create_group(color="#E07A5F", label="莱赛尔")
+        for group in [lyocell, cotton]:
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(0, 0), Point(10, 0)),
+                )
+            )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="BA11",
+                        end_cell="BB11",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维类别序号",
+                        sheet_name="Raw",
+                        start_cell="BA12",
+                        end_cell="BB12",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([sheet_values["BA11"], sheet_values["BB11"]], ["棉", "莱赛尔"])
+        self.assertEqual([sheet_values["BA12"], sheet_values["BB12"]], ["1", "2"])
+
     def test_raw_record_template_normal_rule_groups_vertically_by_fiber_category(self) -> None:
         first_document = ImageDocument(
             id=new_id("image"),
