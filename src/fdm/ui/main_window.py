@@ -71,11 +71,14 @@ from fdm.settings import (
     FocusStackProfile,
     MagicSegmentToolMode,
     OpenImageViewMode,
+    RawRecordTemplate,
     ScaleOverlayPlacementMode,
     is_fiber_quick_tool_mode,
     is_magic_toolbar_tool_mode,
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
+    resolve_resource_relative_path,
+    settings_file_path,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
@@ -290,7 +293,7 @@ class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
-    MAP_BUILD_AVAILABLE = False
+    MAP_BUILD_AVAILABLE = True
     TABLE_COL_GROUP = 0
     TABLE_COL_KIND = 1
     TABLE_COL_RESULT = 2
@@ -1755,6 +1758,7 @@ class MainWindow(QMainWindow):
             ".png": "PNG 图片 (*.png)",
             ".json": "JSON 文件 (*.json)",
             ".xlsx": "Excel 工作簿 (*.xlsx)",
+            ".xlsm": "启用宏的 Excel 工作簿 (*.xlsm)",
             ".csv": "CSV 文件 (*.csv)",
         }.get(suffix, "所有文件 (*)")
 
@@ -2356,6 +2360,43 @@ class MainWindow(QMainWindow):
         template.color = normalized_color
         return True
 
+    def _apply_project_group_template_edit(self, *, original_label: str, target_label: str, color: str) -> bool:
+        target_token = normalize_group_label(target_label)
+        if not target_token:
+            return False
+        original_token = normalize_group_label(original_label)
+        normalized_color = self._normalize_group_color(color)
+        original_template = self._project_group_template_for_label(original_token) if original_token else None
+        target_template = self._project_group_template_for_label(target_token)
+        changed = False
+        if original_template is not None:
+            if target_template is not None and target_template is not original_template:
+                if target_template.color != normalized_color:
+                    target_template.color = normalized_color
+                    changed = True
+                self.project.project_group_templates = [
+                    template
+                    for template in self.project.project_group_templates
+                    if template is not original_template
+                ]
+                return True
+            if normalize_group_label(original_template.label) != target_token:
+                original_template.label = target_token
+                changed = True
+            if original_template.color != normalized_color:
+                original_template.color = normalized_color
+                changed = True
+            return changed
+        if target_template is not None:
+            if target_template.color != normalized_color:
+                target_template.color = normalized_color
+                return True
+            return False
+        self.project.project_group_templates.append(
+            ProjectGroupTemplate(label=target_token, color=normalized_color),
+        )
+        return True
+
     def _apply_project_group_templates_to_document(
         self,
         document: ImageDocument,
@@ -2391,6 +2432,59 @@ class MainWindow(QMainWindow):
             after = document.snapshot_state()
             if changed and document.history is not None and before != after:
                 document.history.push(label, before, after)
+                any_changed = True
+            elif changed:
+                any_changed = True
+        return any_changed
+
+    def _sync_project_group_template_edit_to_documents(
+        self,
+        *,
+        original_label: str,
+        target_label: str,
+        color: str,
+        history_label: str,
+    ) -> bool:
+        target_token = normalize_group_label(target_label)
+        if not target_token:
+            return False
+        original_token = normalize_group_label(original_label)
+        normalized_color = self._normalize_group_color(color)
+        any_changed = False
+        for document in self.project.documents:
+            before = document.snapshot_state()
+            changed = False
+            original_group = document.find_group_by_label(original_token) if original_token else None
+            target_group = document.find_group_by_label(target_token)
+            if original_group is not None and target_group is not None and original_group.id != target_group.id:
+                changed = document.merge_group_into(original_group.id, target_group.id) or changed
+                target_group = document.find_group_by_label(target_token)
+            elif original_group is not None:
+                if normalize_group_label(original_group.label) != target_token:
+                    original_group.label = target_token
+                    changed = True
+                target_group = original_group
+            elif target_group is None:
+                target_group, ensured_changed = self._ensure_document_named_group(
+                    document,
+                    label=target_token,
+                    color=normalized_color,
+                    activate=False,
+                    sync_color=True,
+                )
+                changed = ensured_changed or changed
+            if target_group is not None and target_group.color != normalized_color:
+                target_group.color = normalized_color
+                changed = True
+            if original_token and original_token != target_token:
+                changed = document.unsuppress_project_group_label(original_token) or changed
+            changed = document.unsuppress_project_group_label(target_token) or changed
+            if changed:
+                document.rebuild_group_memberships()
+                document.refresh_dirty_flags()
+            after = document.snapshot_state()
+            if changed and document.history is not None and before != after:
+                document.history.push(history_label, before, after)
                 any_changed = True
             elif changed:
                 any_changed = True
@@ -2762,6 +2856,13 @@ class MainWindow(QMainWindow):
         return project_paths, image_paths, unsupported_count
 
     def _open_dropped_paths(self, paths: list[Path]) -> None:
+        settings_paths, remaining_paths = self._split_dropped_settings_paths(paths)
+        if settings_paths:
+            if len(settings_paths) > 1 or remaining_paths:
+                QMessageBox.information(self, "导入设置", "settings.json 需单独拖入，一次只导入一个设置文件。")
+                return
+            self._import_settings_from_path(settings_paths[0])
+            return
         project_paths, image_paths, unsupported_count = self._classify_dropped_paths(paths)
         if project_paths and (image_paths or len(project_paths) > 1):
             QMessageBox.information(self, "拖入打开", "项目文件需单独拖入，一次只打开一个项目。")
@@ -2780,6 +2881,45 @@ class MainWindow(QMainWindow):
             return
         if unsupported_count:
             QMessageBox.information(self, "拖入打开", "拖入内容中没有支持的图片或项目文件。")
+
+    def _split_dropped_settings_paths(self, paths: list[Path]) -> tuple[list[Path], list[Path]]:
+        settings_paths: list[Path] = []
+        remaining_paths: list[Path] = []
+        seen_settings: set[Path] = set()
+        for path in paths:
+            resolved = path.expanduser()
+            if resolved.is_file() and resolved.name.lower() == "settings.json":
+                settings_key = resolved.resolve()
+                if settings_key not in seen_settings:
+                    seen_settings.add(settings_key)
+                    settings_paths.append(resolved)
+                continue
+            remaining_paths.append(path)
+        return settings_paths, remaining_paths
+
+    def _import_settings_from_path(self, path: Path) -> None:
+        source_path = path.expanduser()
+        target_path = settings_file_path()
+        response = QMessageBox.question(
+            self,
+            "导入设置",
+            f"是否使用拖入的 settings.json 覆盖当前软件设置？\n\n来源:\n{source_path}\n\n当前设置:\n{target_path}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+        try:
+            imported_settings, saved_path = AppSettingsIO.replace_with_file(source_path)
+        except ValueError as exc:
+            QMessageBox.warning(self, "导入设置", f"无法导入 settings.json：\n{exc}")
+            return
+        except OSError as exc:
+            QMessageBox.warning(self, "导入设置", f"无法替换当前设置文件：\n{exc}")
+            return
+        self._apply_imported_app_settings(imported_settings)
+        self.statusBar().showMessage(f"设置已从 {source_path.name} 导入", 5000)
+        QMessageBox.information(self, "导入设置", f"设置已导入并覆盖当前 settings.json。\n\n位置:\n{saved_path}")
 
     def _normalize_image_path(self, path: str | Path) -> str:
         return str(Path(path).expanduser().resolve())
@@ -3355,6 +3495,8 @@ class MainWindow(QMainWindow):
         dialog = ExportOptionsDialog(
             preset,
             allow_all_scope=len(self.project.documents) > 1,
+            raw_record_templates=self._app_settings.raw_record_templates,
+            last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
             parent=self,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
@@ -3363,6 +3505,7 @@ class MainWindow(QMainWindow):
         if not selection.any_selected():
             QMessageBox.information(self, "导出结果", "请至少选择一种导出内容。")
             return
+        raw_record_template = self._prepare_raw_record_template_for_export(selection)
         target_documents = self.project.documents if selection.scope == ExportScope.ALL_OPEN else ([self.current_document()] if self.current_document() else [])
         target_documents = [document for document in target_documents if document is not None]
         planned_outputs = self.export_service.planned_outputs(target_documents, selection)
@@ -3381,6 +3524,9 @@ class MainWindow(QMainWindow):
             if not selected_path:
                 return
             single_output_path = self._normalize_dialog_save_path(selected_path, planned_outputs[0].filename)
+            expected_suffix = Path(planned_outputs[0].filename).suffix.lower()
+            if expected_suffix in {".xlsx", ".xlsm"} and single_output_path.suffix.lower() != expected_suffix:
+                single_output_path = single_output_path.with_suffix(expected_suffix)
             output_dir = str(single_output_path.parent)
         else:
             output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
@@ -3417,6 +3563,7 @@ class MainWindow(QMainWindow):
                 documents=target_documents,
                 overlay_renderer=self._render_overlay_image,
                 single_output_path=single_output_path,
+                raw_record_template=raw_record_template,
                 progress_callback=on_export_progress,
             )
         except Exception as exc:
@@ -3431,6 +3578,14 @@ class MainWindow(QMainWindow):
         if not outputs:
             QMessageBox.information(self, "导出结果", "没有生成任何文件。")
             return
+        template_fallback_message = str(outputs.pop("_template_fallback_message", "") or "")
+        if template_fallback_message:
+            QMessageBox.warning(
+                self,
+                "原始记录模板",
+                "原始记录模板导出失败，已自动回退到默认 Excel 文档。\n\n"
+                f"{template_fallback_message}",
+            )
         export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
         self._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
         output_labels = {
@@ -3450,8 +3605,45 @@ class MainWindow(QMainWindow):
                 summary_lines.append(f"{label}: {len(value)} 个文件")
             else:
                 summary_lines.append(f"{label}: {value}")
-        location_text = str(single_output_path) if single_output_path is not None else str(output_dir)
+        location_text = str(outputs.get("xlsx", single_output_path)) if single_output_path is not None else str(output_dir)
         QMessageBox.information(self, "导出完成", f"结果已导出到:\n{location_text}\n\n" + "\n".join(summary_lines))
+
+    def _prepare_raw_record_template_for_export(self, selection: ExportSelection) -> RawRecordTemplate | None:
+        selected_path = str(selection.raw_record_template_path or "").strip() if selection.include_excel else ""
+        template = self._raw_record_template_for_path(selected_path) if selected_path else None
+        if selected_path:
+            resolved_path = resolve_resource_relative_path(selected_path)
+            if template is None or not resolved_path.exists():
+                QMessageBox.warning(
+                    self,
+                    "原始记录模板",
+                    "找不到已选择的原始记录模板，已自动回退到默认 Excel 文档：\n"
+                    f"{selected_path}",
+                )
+                selected_path = ""
+                template = None
+        selection.raw_record_template_path = selected_path
+        if self._app_settings.last_raw_record_template_path != selected_path:
+            self._app_settings.last_raw_record_template_path = selected_path
+            self._save_app_settings(context="导出结果")
+        return template
+
+    def _raw_record_template_for_path(self, template_path: str) -> RawRecordTemplate | None:
+        token = str(template_path or "").strip()
+        if not token:
+            return None
+        token_key = token.casefold()
+        token_resolved = resolve_resource_relative_path(token)
+        for template in self._app_settings.raw_record_templates:
+            candidate = str(template.path or "").strip()
+            if candidate.casefold() == token_key:
+                return template
+            try:
+                if resolve_resource_relative_path(candidate).resolve() == token_resolved.resolve():
+                    return template
+            except OSError:
+                continue
+        return None
 
     def fit_current_image(self) -> None:
         canvas = self.current_canvas()
@@ -3478,18 +3670,9 @@ class MainWindow(QMainWindow):
 
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
         new_settings = dialog.app_settings()
-        self._app_settings = new_settings
-        self._apply_theme_mode()
+        self._activate_app_settings(new_settings)
         refresh_widget_theme(dialog)
-        self._refresh_theme_sensitive_icons()
-        if self._measurement_tool_strip is not None:
-            self._measurement_tool_strip._apply_theme_styles()
-        self._apply_tool_menu_stylesheets()
-        self._magic_standard_roi_enabled = bool(new_settings.magic_segment_standard_roi_enabled)
-        self._fiber_quick_roi_enabled = bool(new_settings.fiber_quick_roi_enabled)
         self._save_app_settings(context="设置")
-        self._refresh_preset_combo()
-        self._refresh_canvases_for_settings()
 
         document = self.current_document()
         if document is not None:
@@ -3527,6 +3710,24 @@ class MainWindow(QMainWindow):
             self._begin_scale_anchor_pick(self.current_document())
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
+
+    def _apply_imported_app_settings(self, settings: AppSettings) -> None:
+        self._activate_app_settings(settings)
+
+    def _activate_app_settings(self, settings: AppSettings) -> None:
+        self._app_settings = settings
+        self._apply_theme_mode()
+        self._refresh_theme_sensitive_icons()
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip._apply_theme_styles()
+        self._apply_tool_menu_stylesheets()
+        self._magic_standard_roi_enabled = bool(settings.magic_segment_standard_roi_enabled)
+        self._fiber_quick_roi_enabled = bool(settings.fiber_quick_roi_enabled)
+        if settings.selected_capture_device_id:
+            self._capture_manager.set_selected_device(settings.selected_capture_device_id)
+        self._update_capture_device_ui()
+        self._refresh_preset_combo()
+        self._refresh_canvases_for_settings()
 
     def open_shortcut_help_dialog(self) -> None:
         dialog = ShortcutHelpDialog(self)
@@ -3765,6 +3966,8 @@ class MainWindow(QMainWindow):
             return
         group = document.get_group(document.active_group_id)
         if group is None:
+            if document.active_group_id is None:
+                self._rename_uncategorized_group(document)
             return
         dialog = FiberGroupDialog(
             self,
@@ -3772,18 +3975,21 @@ class MainWindow(QMainWindow):
             initial_label=group.label,
             initial_color=group.color,
             apply_to_project_default=False,
-            show_apply_to_project=False,
+            show_apply_to_project=True,
         )
         if dialog.exec() != dialog.DialogCode.Accepted:
             return
-        label, selected_color, _apply_to_project = dialog.values()
+        label, selected_color, apply_to_project = dialog.values()
         target_label = normalize_group_label(label)
+        if apply_to_project and not target_label:
+            QMessageBox.warning(self, "编辑类别", "应用到当前项目全局时，类别名称不能为空。")
+            return
         selected_qcolor = QColor(selected_color)
         target_color = selected_qcolor.name() if selected_qcolor.isValid() else selected_color.strip() or group.color
         current_label = normalize_group_label(group.label)
         current_qcolor = QColor(group.color)
         current_color = current_qcolor.name() if current_qcolor.isValid() else group.color
-        if target_label == current_label and target_color == current_color:
+        if target_label == current_label and target_color == current_color and not apply_to_project:
             return
         merge_target = document.find_group_by_label(target_label) if target_label else None
         if merge_target is not None and merge_target.id != group.id:
@@ -3796,12 +4002,19 @@ class MainWindow(QMainWindow):
             )
             if response != QMessageBox.StandardButton.Yes:
                 return
+            template_changed = (
+                self._apply_project_group_template_edit(original_label=current_label, target_label=target_label, color=target_color)
+                if apply_to_project
+                else False
+            )
 
             def mutate_merge() -> None:
                 source = document.get_group(group.id)
                 target = document.get_group(merge_target.id)
                 if source is None or target is None:
                     return
+                if apply_to_project or self._project_group_template_for_label(target_label) is not None:
+                    target.color = target_color
                 source_label = normalize_group_label(source.label)
                 target_token = normalize_group_label(target.label)
                 document.merge_group_into(source.id, target.id)
@@ -3811,14 +4024,33 @@ class MainWindow(QMainWindow):
                     document.unsuppress_project_group_label(target_token)
 
             changed = self._apply_document_change(document, "合并类别", mutate_merge)
-            if target_label and self._project_group_template_for_label(target_label) is not None:
-                changed = self._sync_project_group_template_colors(
-                    {target_label: target_color},
-                    history_label="同步项目全局类别颜色",
-                ) or changed
+            sync_changed = (
+                self._sync_project_group_template_edit_to_documents(
+                    original_label=current_label,
+                    target_label=target_label,
+                    color=target_color,
+                    history_label="同步项目全局类别",
+                )
+                if apply_to_project
+                else False
+            )
+            if apply_to_project:
+                self._update_ui_for_current_document()
+                self._focus_current_canvas()
+                if changed or sync_changed or template_changed:
+                    self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+                else:
+                    self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+                return
             if changed:
                 self.statusBar().showMessage("类别已合并", 3000)
             return
+
+        template_changed = (
+            self._apply_project_group_template_edit(original_label=current_label, target_label=target_label, color=target_color)
+            if apply_to_project
+            else False
+        )
 
         def mutate_rename() -> None:
             target = document.get_group(group.id)
@@ -3833,13 +4065,125 @@ class MainWindow(QMainWindow):
                 document.unsuppress_project_group_label(target_label)
 
         changed = self._apply_document_change(document, "编辑类别", mutate_rename)
-        if target_label and self._project_group_template_for_label(target_label) is not None:
-            changed = self._sync_project_group_template_colors(
-                {target_label: target_color},
-                history_label="同步项目全局类别颜色",
-            ) or changed
+        sync_changed = (
+            self._sync_project_group_template_edit_to_documents(
+                original_label=current_label,
+                target_label=target_label,
+                color=target_color,
+                history_label="同步项目全局类别",
+            )
+            if apply_to_project
+            else False
+        )
+        if apply_to_project:
+            self._update_ui_for_current_document()
+            self._focus_current_canvas()
+            if changed or sync_changed or template_changed:
+                self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+            else:
+                self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+            return
         if changed:
             self.statusBar().showMessage("类别已更新", 3000)
+
+    def _rename_uncategorized_group(self, document: ImageDocument) -> None:
+        dialog = FiberGroupDialog(
+            self,
+            title="编辑未分类",
+            initial_label="",
+            initial_color=self._app_settings.default_measurement_color,
+            apply_to_project_default=False,
+            show_apply_to_project=True,
+        )
+        if dialog.exec() != dialog.DialogCode.Accepted:
+            return
+        label, selected_color, apply_to_project = dialog.values()
+        target_label = normalize_group_label(label)
+        if apply_to_project and not target_label:
+            QMessageBox.warning(self, "编辑未分类", "应用到当前项目全局时，类别名称不能为空。")
+            return
+        if not target_label:
+            QMessageBox.warning(self, "编辑未分类", "类别名称不能为空。")
+            return
+        template = self._project_group_template_for_label(target_label)
+        merge_target = document.find_group_by_label(target_label)
+        if template is not None:
+            target_color = template.color
+        elif apply_to_project:
+            target_color = self._normalize_group_color(selected_color, fallback=self._app_settings.default_measurement_color)
+        elif merge_target is not None:
+            target_color = merge_target.color
+        else:
+            target_color = self._normalize_group_color(selected_color, fallback=self._app_settings.default_measurement_color)
+        template_added = False
+        if merge_target is not None:
+            response = QMessageBox.question(
+                self,
+                "合并类别",
+                f"当前图片中已存在类别“{target_label}”。\n\n确认后会将未分类测量合并到该类别。",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+            if apply_to_project:
+                template_added = self._ensure_project_group_template(label=target_label, color=target_color)
+
+            def mutate_merge() -> None:
+                target = document.get_group(merge_target.id)
+                if target is None:
+                    return
+                if apply_to_project or template is not None:
+                    target.color = target_color
+                document.move_uncategorized_measurements_to_group(target.id)
+                target_token = normalize_group_label(target.label)
+                if self._project_group_template_for_label(target_token) is not None:
+                    document.unsuppress_project_group_label(target_token)
+
+            changed = self._apply_document_change(document, "合并未分类", mutate_merge)
+            sync_changed = (
+                self._sync_project_group_templates(label="同步项目全局类别", labels={target_label})
+                if apply_to_project
+                else False
+            )
+            self._update_ui_for_current_document()
+            self._focus_current_canvas()
+            if apply_to_project:
+                if changed or sync_changed or template_added:
+                    self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+                else:
+                    self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+                return
+            if changed:
+                self.statusBar().showMessage("未分类已合并到现有类别", 3000)
+            return
+
+        if apply_to_project:
+            template_added = self._ensure_project_group_template(label=target_label, color=target_color)
+
+        def mutate_create() -> None:
+            group = document.create_group(color=target_color, label=target_label)
+            document.move_uncategorized_measurements_to_group(group.id)
+            document.set_active_group(group.id)
+            if self._project_group_template_for_label(target_label) is not None:
+                document.unsuppress_project_group_label(target_label)
+
+        changed = self._apply_document_change(document, "编辑未分类", mutate_create)
+        sync_changed = (
+            self._sync_project_group_templates(label="同步项目全局类别", labels={target_label})
+            if apply_to_project
+            else False
+        )
+        self._update_ui_for_current_document()
+        self._focus_current_canvas()
+        if apply_to_project:
+            if changed or sync_changed or template_added:
+                self.statusBar().showMessage(f"已更新项目全局类别: {target_label}", 3000)
+            else:
+                self.statusBar().showMessage(f"项目全局类别已存在: {target_label}", 3000)
+            return
+        if changed:
+            self.statusBar().showMessage("未分类已迁移到新类别", 3000)
 
     def delete_active_group(self) -> None:
         document = self.current_document()
@@ -5467,6 +5811,14 @@ class MainWindow(QMainWindow):
             )
         )
         has_named_active_group = bool(document and document.get_group(document.active_group_id) is not None)
+        has_editable_active_group = bool(
+            has_named_active_group
+            or (
+                document
+                and document.active_group_id is None
+                and document.should_show_uncategorized_entry()
+            )
+        )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
@@ -5476,12 +5828,12 @@ class MainWindow(QMainWindow):
         if self._delete_all_measurements_button is not None:
             self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
         self.add_group_action.setEnabled(has_document and not preview_active)
-        self.rename_group_action.setEnabled(has_named_active_group and not preview_active)
+        self.rename_group_action.setEnabled(has_editable_active_group and not preview_active)
         self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
         if self._add_group_button is not None:
             self._add_group_button.setEnabled(has_document and not preview_active)
         if self._rename_group_button is not None:
-            self._rename_group_button.setEnabled(has_named_active_group and not preview_active)
+            self._rename_group_button.setEnabled(has_editable_active_group and not preview_active)
         if self.delete_group_button is not None:
             self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
         has_preset = bool(self._calibration_presets())
@@ -5734,7 +6086,7 @@ class MainWindow(QMainWindow):
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")
         focus_tooltip = "实时预览分析：景深合成"
-        map_tooltip = "地图构建功能开发中，当前版本暂不可用。"
+        map_tooltip = "地图构建首版仅支持 Microview 实时预览。"
         if self.MAP_BUILD_AVAILABLE and selected is not None and selected.backend_key == "microview":
             map_tooltip = "实时预览分析：地图构建"
         focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
@@ -5751,7 +6103,7 @@ class MainWindow(QMainWindow):
 
     def _preview_analysis_intro_text(self, mode: str) -> str:
         if mode == "map_build":
-            return "移动样品台并适当切换焦距，系统会先对每个 tile 做景深合成，再实时拼接地图。按 Enter 或 F 结束，Esc 取消。"
+            return "移动样品台到相邻视野，保持 20%-40% 重叠并等待静止；系统会先合成每个 tile，再拼接可靠地图。按 Enter 或 F 结束，Esc 取消。"
         return "尽量均匀地从一个焦距移动到另一个焦距，系统会持续采样并合成清晰图像。按 Enter 或 F 结束，Esc 取消。"
 
     def _analysis_mode_label(self, mode: str) -> str:
@@ -5781,7 +6133,7 @@ class MainWindow(QMainWindow):
         if not self._preview_analysis_supported(mode):
             message = "该功能需要实时预览已提供可用分析帧。"
             if mode == "map_build":
-                message = "地图构建功能开发中，当前版本暂不可用。"
+                message = "地图构建首版仅支持 Microview 实时预览。"
             self._sync_preview_analysis_buttons()
             QMessageBox.information(self, self._analysis_mode_label(mode), message)
             return

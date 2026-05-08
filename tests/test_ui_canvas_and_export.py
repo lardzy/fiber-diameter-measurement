@@ -31,6 +31,10 @@ from fdm.settings import (
     MagicSegmentToolMode,
     MeasurementEndpointStyle,
     OpenImageViewMode,
+    RawRecordDataSource,
+    RawRecordExportRule,
+    RawRecordMeasurementFilter,
+    RawRecordTemplate,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
 )
@@ -634,7 +638,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.deleteLater()
             self.app.processEvents()
 
-    def test_map_build_button_shows_developing_message_when_unavailable(self) -> None:
+    def test_map_build_button_is_enabled_for_microview_preview(self) -> None:
         window = MainWindow()
         try:
             fake_device = type("Device", (), {"backend_key": "microview", "id": "microview:0", "name": "Microview #1"})()
@@ -649,11 +653,25 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window._focus_stack_button.isEnabled())
             self.assertTrue(window._map_build_button.isEnabled())
             self.assertIsNone(window._map_build_status_label)
-            with patch.object(QMessageBox, "information", return_value=QMessageBox.StandardButton.Ok) as mock_information:
-                window._map_build_button.click()
-            mock_information.assert_called_once()
-            self.assertIn("开发中", mock_information.call_args.args[2])
             self.assertFalse(window._map_build_button.isChecked())
+            self.assertIn("地图构建", window._map_build_button.toolTip())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_map_build_button_remains_disabled_for_non_microview_preview(self) -> None:
+        window = MainWindow()
+        try:
+            fake_device = type("Device", (), {"backend_key": "qt_multimedia", "id": "usb:0", "name": "USB Camera"})()
+            window._preview_active = True
+            window._capture_manager.selected_device = lambda: fake_device  # type: ignore[method-assign]
+            window._capture_manager.can_request_analysis_frame = lambda: True  # type: ignore[method-assign]
+
+            window._update_preview_analysis_controls()
+
+            self.assertIsNotNone(window._map_build_button)
+            self.assertFalse(window._map_build_button.isEnabled())
+            self.assertIn("Microview", window._map_build_button.toolTip())
         finally:
             window._reset_workspace()
             window.close()
@@ -969,9 +987,56 @@ class CanvasAndExportTests(unittest.TestCase):
                 save_dialog.assert_called_once()
                 dir_dialog.assert_not_called()
                 dialog_path = save_dialog.call_args.args[2]
-                self.assertEqual(dialog_path, str(Path(tmp_dir) / "纤维测量结果.xlsx"))
+                self.assertEqual(Path(dialog_path).resolve(), (Path(tmp_dir) / "纤维测量结果.xlsx").resolve())
                 self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
                 self.assertEqual(window._app_settings.recent_export_dir, str(Path(tmp_dir).resolve()))
+        finally:
+            window.close()
+
+    def test_export_results_uses_template_name_as_default_excel_filename(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_template_name.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                window._app_settings.recent_export_dir = ""
+                template_path = Path(tmp_dir) / "面积法原始记录模板.xlsm"
+                template_path.write_bytes(b"placeholder")
+                window._app_settings.raw_record_templates = [
+                    RawRecordTemplate(name="面积法", path=str(template_path))
+                ]
+                chosen_output = Path(tmp_dir) / "filled_record.xlsm"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.CURRENT,
+                    raw_record_template_path=str(template_path),
+                )
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "启用宏的 Excel 工作簿 (*.xlsm)")) as save_dialog,
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                default_path = Path(save_dialog.call_args.args[2])
+                self.assertEqual(default_path.resolve(), (Path(tmp_dir) / "面积法原始记录模板.xlsm").resolve())
+                self.assertEqual(export_project.call_args.kwargs["single_output_path"], chosen_output)
+                self.assertIsNotNone(export_project.call_args.kwargs["raw_record_template"])
         finally:
             window.close()
 
@@ -1007,6 +1072,54 @@ class CanvasAndExportTests(unittest.TestCase):
                 warning_box.assert_called_once()
                 self.assertIn("文件可能正在被其他程序占用", warning_box.call_args.args[2])
                 self.assertIn(str(chosen_output), warning_box.call_args.args[2])
+        finally:
+            window.close()
+
+    def test_export_results_falls_back_when_raw_record_template_is_missing(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image_path = Path(tmp_dir) / "export_raw_template_missing.png"
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                document.initialize_runtime_state()
+                self._load_document_into_window(window, document, image)
+                missing_template = Path(tmp_dir) / "missing_template.xlsm"
+                window._app_settings.raw_record_templates = [
+                    RawRecordTemplate(name="缺失模板", path=str(missing_template))
+                ]
+                window._app_settings.last_raw_record_template_path = str(missing_template)
+                chosen_output = Path(tmp_dir) / "fallback.xlsx"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.CURRENT,
+                    raw_record_template_path=str(missing_template),
+                )
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(chosen_output), "Excel 工作簿 (*.xlsx)")),
+                    patch.object(window.export_service, "export_project", return_value={"xlsx": chosen_output}) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.warning") as warning_box,
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                warning_box.assert_called_once()
+                self.assertIn("找不到已选择的原始记录模板", warning_box.call_args.args[2])
+                self.assertEqual(window._app_settings.last_raw_record_template_path, "")
+                self.assertIsNone(export_project.call_args.kwargs["raw_record_template"])
+                self.assertEqual(export_project.call_args.kwargs["selection"].raw_record_template_path, "")
         finally:
             window.close()
 
@@ -2192,6 +2305,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_add_existing_project_global_group_reuses_template_color_across_documents(self) -> None:
@@ -2256,6 +2370,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_group_action_button_uses_edit_label(self) -> None:
@@ -2292,9 +2407,86 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(updated)
             self.assertEqual(updated.label, "棉花")
             self.assertEqual(updated.color, "#e07a5f")
+            self.assertTrue(dialogs[0]._show_apply_to_project)
+            self.assertFalse(dialogs[0]._apply_to_project.isChecked())
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_group_globalizes_existing_group_without_local_change(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_edit_globalize_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_edit_globalize_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            group = first.create_group(color="#1F7A8C", label="棉")
+            first.set_active_group(group.id)
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#1F7A8C", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual([(template.label, template.color) for template in window.project.project_group_templates], [("棉", "#1f7a8c")])
+            self.assertIsNotNone(first.find_group_by_label("棉"))
+            self.assertIsNotNone(second.find_group_by_label("棉"))
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_project_global_group_renames_template_instead_of_adding_one(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_rename_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_edit_global_rename_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            first_group = first.create_group(color="#1F7A8C", label="棉")
+            second.create_group(color="#1F7A8C", label="棉")
+            first.set_active_group(first_group.id)
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉花", "#E07A5F", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual([(template.label, template.color) for template in window.project.project_group_templates], [("棉花", "#e07a5f")])
+            self.assertIsNone(first.find_group_by_label("棉"))
+            self.assertIsNone(second.find_group_by_label("棉"))
+            self.assertEqual(first.find_group_by_label("棉花").color, "#e07a5f")
+            self.assertEqual(second.find_group_by_label("棉花").color, "#e07a5f")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_edit_template_bound_group_color_syncs_project_template_and_documents(self) -> None:
@@ -2320,7 +2512,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 return dialog_self.DialogCode.Accepted
 
             def fake_values(dialog_self):
-                return ("棉", "#E07A5F", False)
+                return ("棉", "#E07A5F", True)
 
             with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
                 window.rename_active_group()
@@ -2376,6 +2568,186 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             for dialog in dialogs:
                 dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_group_to_existing_cancel_does_not_add_global_template(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_merge_cancel_global.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            document.create_group(color="#1F7A8C", label="棉")
+            hemp = document.create_group(color="#E07A5F", label="麻")
+            document.set_active_group(hemp.id)
+            self._load_document_into_window(window, document, image)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values), patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.No,
+            ):
+                window.rename_active_group()
+
+            self.assertEqual(window.project.project_group_templates, [])
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉", "麻"])
+            self.assertEqual(document.active_group_id, hemp.id)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_uncategorized_creates_group_and_moves_measurements(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_edit.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(80, 10)),
+            )
+            document.add_measurement(measurement)
+            document.set_measurement_group(measurement.id, None)
+            document.set_active_group(None)
+            self._load_document_into_window(window, document, image)
+            document.set_active_group(None)
+            window._update_action_states()
+            self.assertTrue(window.rename_group_action.isEnabled())
+            self.assertIsNotNone(window._rename_group_button)
+            self.assertTrue(window._rename_group_button.isEnabled())
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            group = document.sorted_groups()[0]
+            self.assertEqual(document.measurements[0].fiber_group_id, group.id)
+            self.assertEqual(document.active_group_id, group.id)
+            self.assertEqual(group.color, "#22c55e")
+            self.assertEqual(document.uncategorized_measurement_count(), 0)
+            self.assertTrue(dialogs[0]._show_apply_to_project)
+            self.assertFalse(dialogs[0]._apply_to_project.isChecked())
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_uncategorized_global_syncs_project_templates(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            first = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_global_a.png", image_size=(220, 140))
+            second = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_global_b.png", image_size=(220, 140))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=first.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(80, 10)),
+            )
+            first.add_measurement(measurement)
+            first.set_measurement_group(measurement.id, None)
+            first.set_active_group(None)
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+            window._set_current_document(first.id)
+            first.set_active_group(None)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", True)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values):
+                window.rename_active_group()
+
+            self.assertEqual([(template.label, template.color) for template in window.project.project_group_templates], [("棉", "#22c55e")])
+            first_group = first.find_group_by_label("棉")
+            second_group = second.find_group_by_label("棉")
+            self.assertIsNotNone(first_group)
+            self.assertIsNotNone(second_group)
+            self.assertEqual(first.measurements[0].fiber_group_id, first_group.id)
+            self.assertEqual(first.active_group_id, first_group.id)
+            self.assertEqual(second_group.color, "#22c55e")
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
+            window.close()
+
+    def test_edit_uncategorized_to_existing_group_merges_without_new_group(self) -> None:
+        window = MainWindow()
+        dialogs: list[FiberGroupDialog] = []
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(id=new_id("image"), path="/tmp/group_uncategorized_merge.png", image_size=(220, 140))
+            document.initialize_runtime_state()
+            existing = document.create_group(color="#1F7A8C", label="棉")
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(10, 10), Point(80, 10)),
+            )
+            document.add_measurement(measurement)
+            document.set_measurement_group(measurement.id, None)
+            document.set_active_group(None)
+            self._load_document_into_window(window, document, image)
+            document.set_active_group(None)
+
+            def fake_exec(dialog_self) -> int:
+                dialogs.append(dialog_self)
+                return dialog_self.DialogCode.Accepted
+
+            def fake_values(dialog_self):
+                return ("棉", "#22C55E", False)
+
+            with patch.object(FiberGroupDialog, "exec", fake_exec), patch.object(FiberGroupDialog, "values", fake_values), patch(
+                "fdm.ui.main_window.QMessageBox.question",
+                return_value=QMessageBox.StandardButton.Yes,
+            ):
+                window.rename_active_group()
+
+            self.assertEqual([group.label for group in document.sorted_groups()], ["棉"])
+            self.assertEqual(document.measurements[0].fiber_group_id, existing.id)
+            self.assertEqual(document.active_group_id, existing.id)
+            self.assertEqual(document.get_group(existing.id).color, "#1F7A8C")
+            self.assertEqual(document.uncategorized_measurement_count(), 0)
+        finally:
+            for dialog in dialogs:
+                dialog.close()
+            window._reset_workspace()
             window.close()
 
     def test_delete_project_global_group_adds_local_suppression(self) -> None:
@@ -3853,6 +4225,64 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_settings_dialog_raw_record_rule_locks_filter_for_result_sources(self) -> None:
+        settings = AppSettings(
+            raw_record_templates=[
+                RawRecordTemplate(
+                    name="原始记录",
+                    path="/tmp/raw-record-template.xlsm",
+                    rules=[
+                        RawRecordExportRule(
+                            data_source=RawRecordDataSource.AREA_RESULT,
+                            field_name="单位",
+                            measurement_filter=RawRecordMeasurementFilter.ALL,
+                            sheet_name="原始数据",
+                            start_cell="B2",
+                        )
+                    ],
+                )
+            ]
+        )
+        dialog = SettingsDialog(settings, document=None)
+        try:
+            source_combo = dialog._raw_record_rule_table.cellWidget(0, 0)
+            field_combo = dialog._raw_record_rule_table.cellWidget(0, 1)
+            filter_combo = dialog._raw_record_rule_table.cellWidget(0, 2)
+            end_cell_item = dialog._raw_record_rule_table.item(0, 5)
+            self.assertIsInstance(source_combo, QComboBox)
+            self.assertIsInstance(field_combo, QComboBox)
+            self.assertIsInstance(filter_combo, QComboBox)
+            self.assertEqual(field_combo.currentText(), "结果")
+            self.assertFalse(field_combo.isEnabled())
+            self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.AREA)
+            self.assertEqual(filter_combo.currentText(), "自动: 面积")
+            self.assertFalse(filter_combo.isEnabled())
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.MEASUREMENT_FIELD))
+            self.app.processEvents()
+            self.assertTrue(field_combo.isEnabled())
+            self.assertTrue(filter_combo.isEnabled())
+            self.assertEqual(filter_combo.currentText(), "面积")
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.UNIQUE_FIELD_RANGE))
+            self.app.processEvents()
+            self.assertTrue(field_combo.isEnabled())
+            self.assertTrue(filter_combo.isEnabled())
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+
+            source_combo.setCurrentIndex(source_combo.findData(RawRecordDataSource.DIAMETER_RESULT))
+            self.app.processEvents()
+            self.assertEqual(field_combo.currentText(), "结果")
+            self.assertFalse(field_combo.isEnabled())
+            self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.LINE)
+            self.assertEqual(filter_combo.currentText(), "自动: 直径/线段")
+            self.assertFalse(filter_combo.isEnabled())
+            self.assertTrue(bool(end_cell_item.flags() & Qt.ItemFlag.ItemIsEditable))
+        finally:
+            dialog.close()
+
     def test_settings_dialog_scale_overlay_length_uses_current_calibration_unit_suffix(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
@@ -4046,6 +4476,52 @@ class CanvasAndExportTests(unittest.TestCase):
                     window._open_dropped_paths([project_path, image_path])
                 open_images_mock.assert_not_called()
                 load_project_mock.assert_not_called()
+                message_mock.assert_called_once()
+        finally:
+            window.close()
+
+    def test_drop_open_imports_single_settings_json_after_confirmation(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                settings_path = Path(tmp_dir) / "settings.json"
+                settings_path.write_text(json.dumps(AppSettings(theme_mode=AppThemeMode.LIGHT).to_dict()), encoding="utf-8")
+                target_path = Path(tmp_dir) / "current-settings.json"
+                imported_settings = AppSettings(theme_mode=AppThemeMode.LIGHT)
+
+                with (
+                    patch("fdm.ui.main_window.QMessageBox.question", return_value=QMessageBox.StandardButton.Yes),
+                    patch("fdm.ui.main_window.QMessageBox.information") as info_mock,
+                    patch("fdm.ui.main_window.AppSettingsIO.replace_with_file", return_value=(imported_settings, target_path)) as replace_mock,
+                    patch.object(window, "_activate_app_settings") as activate_mock,
+                ):
+                    window._open_dropped_paths([settings_path])
+
+                replace_mock.assert_called_once_with(settings_path)
+                activate_mock.assert_called_once_with(imported_settings)
+                info_mock.assert_called_once()
+        finally:
+            window.close()
+
+    def test_drop_open_requires_settings_json_to_be_dropped_alone(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                settings_path = root / "settings.json"
+                image_path = root / "fiber.png"
+                settings_path.write_text("{}", encoding="utf-8")
+                image_path.write_bytes(b"fake")
+
+                with (
+                    patch.object(window, "_import_settings_from_path") as import_mock,
+                    patch.object(window, "_open_image_requests") as open_images_mock,
+                    patch("fdm.ui.main_window.QMessageBox.information") as message_mock,
+                ):
+                    window._open_dropped_paths([settings_path, image_path])
+
+                import_mock.assert_not_called()
+                open_images_mock.assert_not_called()
                 message_mock.assert_called_once()
         finally:
             window.close()
