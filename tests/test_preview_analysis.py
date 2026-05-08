@@ -262,6 +262,24 @@ class PreviewAnalysisTests(unittest.TestCase):
                 self.assertLess(abs(analyzer._tiles[1].x - shift), 8.0)  # noqa: SLF001
                 self.assertLess(abs(analyzer._tiles[1].y), 6.0)  # noqa: SLF001
 
+    def test_map_build_accepts_high_overlap_small_stage_moves(self) -> None:
+        scene = self._make_map_scene()
+        for shift in (24, 48, 64):
+            with self.subTest(shift=shift):
+                frame_a = self._crop_map_frame(scene, x=80)
+                frame_b = self._crop_map_frame(scene, x=80 + shift)
+                analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+                self._feed_stable_position(analyzer, frame_a, count=3)
+                report_b = self._feed_stable_position(analyzer, frame_b, count=4)
+                result = analyzer.finalize()
+
+                self.assertEqual(report_b.motion_state, "tile_committed")
+                self.assertFalse(result.image.isNull())
+                self.assertEqual(result.tile_count, 2)
+                self.assertLess(abs(analyzer._tiles[1].x - shift), 8.0)  # noqa: SLF001
+                self.assertLess(abs(analyzer._tiles[1].y), 6.0)  # noqa: SLF001
+
     def test_map_build_waits_for_three_stable_frames_before_sampling(self) -> None:
         base = self._make_map_base()
         frame = bgr_array_to_qimage(base)

@@ -142,9 +142,9 @@ class _TileEdge:
 @dataclass(slots=True)
 class _MapRegistrationConfig:
     min_overlap: float = 0.15
-    max_overlap: float = 0.60
+    max_overlap: float = 0.95
     min_phase_response: float = 0.08
-    min_ncc: float = 0.42
+    min_ncc: float = 0.55
     min_texture_std: float = 4.0
     max_seed_correction_px: float = 56.0
     min_edge_weight: float = 0.12
@@ -652,7 +652,7 @@ class MapBuildAnalyzer:
         )
         if not registration.accepted:
             if registration.reason == "overlap":
-                self._reject_candidate("overlap", "候选位置重叠不在 15%-60% 范围内，未创建新 tile")
+                self._reject_candidate("overlap", "候选位置重叠不在 15%-95% 范围内，未创建新 tile")
             elif registration.reason == "ambiguous":
                 self._reject_candidate("ambiguous", "候选位置纹理重复，匹配不唯一，未创建新 tile")
             else:
@@ -875,7 +875,7 @@ def _registration_seed_candidates(
         else:
             add(0.0, coarse_dy)
 
-    overlap_guesses = (0.20, 0.35, 0.50)
+    overlap_guesses = (0.20, 0.35, 0.50, 0.80, 0.90)
     for overlap in overlap_guesses:
         shift_x = width_a * (1.0 - overlap)
         shift_y = height_a * (1.0 - overlap)
