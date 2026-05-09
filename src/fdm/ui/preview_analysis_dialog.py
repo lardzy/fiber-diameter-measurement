@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QImage
-from PySide6.QtWidgets import QDialog, QHBoxLayout, QLabel, QProgressBar, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtGui import QGuiApplication, QImage
+from PySide6.QtWidgets import QDialog, QFrame, QGridLayout, QHBoxLayout, QLabel, QProgressBar, QPushButton, QToolButton, QVBoxLayout, QWidget
 
 from fdm.models import ImageDocument, new_id
 from fdm.ui.canvas import DocumentCanvas
@@ -17,17 +17,25 @@ class PreviewAnalysisDialog(QDialog):
         title: str,
         *,
         intro_text: str,
+        compact: bool = False,
+        parameters_title: str = "",
         parent=None,
     ) -> None:
         super().__init__(parent)
         self.setModal(False)
         self.setWindowTitle(title)
-        self.resize(1100, 760)
+        if compact:
+            self._apply_compact_geometry(parent)
+        else:
+            self.resize(1100, 760)
         self._ignore_close_signal = False
         self._busy = False
         self._document: ImageDocument | None = None
+        self._parameter_value_labels: list[QLabel] = []
 
         layout = QVBoxLayout(self)
+        layout.setContentsMargins(12 if compact else 16, 12 if compact else 16, 12 if compact else 16, 12 if compact else 16)
+        layout.setSpacing(8 if compact else 10)
         self._summary_label = QLabel(intro_text)
         self._summary_label.setWordWrap(True)
         layout.addWidget(self._summary_label)
@@ -35,6 +43,32 @@ class PreviewAnalysisDialog(QDialog):
         self._status_label = QLabel("等待采样…")
         self._status_label.setWordWrap(True)
         layout.addWidget(self._status_label)
+
+        self._parameters_toggle = QToolButton(self)
+        self._parameters_toggle.setCheckable(True)
+        self._parameters_toggle.setChecked(False)
+        self._parameters_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self._parameters_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        self._parameters_toggle.setText(parameters_title or "关键参数")
+        self._parameters_toggle.toggled.connect(self._on_parameters_toggled)
+        self._parameters_panel = QFrame(self)
+        self._parameters_panel.setObjectName("preview_analysis_parameters_panel")
+        self._parameters_panel.setVisible(False)
+        self._parameters_panel.setStyleSheet(
+            "QFrame#preview_analysis_parameters_panel {"
+            " background: rgba(35, 44, 54, 24);"
+            " border: 1px solid rgba(65, 82, 98, 52);"
+            " border-radius: 8px;"
+            "}"
+        )
+        self._parameters_layout = QGridLayout(self._parameters_panel)
+        self._parameters_layout.setContentsMargins(10, 8, 10, 8)
+        self._parameters_layout.setHorizontalSpacing(12)
+        self._parameters_layout.setVerticalSpacing(5)
+        layout.addWidget(self._parameters_toggle)
+        layout.addWidget(self._parameters_panel)
+        if not parameters_title:
+            self._parameters_toggle.setVisible(False)
 
         self.canvas = DocumentCanvas(self)
         self.canvas.set_read_only(True)
@@ -84,6 +118,24 @@ class PreviewAnalysisDialog(QDialog):
         self._busy_overlay.raise_()
         self._sync_busy_overlay_geometry()
 
+    def set_parameter_items(self, items: list[tuple[str, str]]) -> None:
+        self._clear_parameter_items()
+        self._parameters_toggle.setVisible(bool(items))
+        if not items:
+            self._parameters_panel.setVisible(False)
+            return
+        for index, (name, value) in enumerate(items):
+            row = index // 2
+            column = (index % 2) * 2
+            name_label = QLabel(name, self._parameters_panel)
+            name_label.setStyleSheet("color: #667085; font-size: 11px;")
+            value_label = QLabel(value, self._parameters_panel)
+            value_label.setStyleSheet("font-weight: 600; font-size: 12px;")
+            value_label.setWordWrap(True)
+            self._parameters_layout.addWidget(name_label, row, column)
+            self._parameters_layout.addWidget(value_label, row, column + 1)
+            self._parameter_value_labels.append(value_label)
+
     def set_summary(self, text: str) -> None:
         self._summary_label.setText(text)
 
@@ -125,6 +177,30 @@ class PreviewAnalysisDialog(QDialog):
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
         self._sync_busy_overlay_geometry()
+
+    def _apply_compact_geometry(self, parent) -> None:
+        screen = parent.screen() if parent is not None and hasattr(parent, "screen") else QGuiApplication.primaryScreen()
+        if screen is None:
+            self.resize(620, 440)
+            return
+        available = screen.availableGeometry()
+        width = min(max(520, int(available.width() * 0.38)), 720, max(360, available.width() - 48))
+        height = min(max(360, int(available.height() * 0.42)), 520, max(300, available.height() - 48))
+        x = available.x() + available.width() - width - 24
+        y = available.y() + 24
+        self.setGeometry(x, y, width, height)
+
+    def _clear_parameter_items(self) -> None:
+        while self._parameters_layout.count():
+            item = self._parameters_layout.takeAt(0)
+            widget = item.widget()
+            if widget is not None:
+                widget.deleteLater()
+        self._parameter_value_labels.clear()
+
+    def _on_parameters_toggled(self, checked: bool) -> None:
+        self._parameters_toggle.setArrowType(Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow)
+        self._parameters_panel.setVisible(checked)
 
     def _sync_busy_overlay_geometry(self) -> None:
         self._busy_overlay.setGeometry(self.rect())

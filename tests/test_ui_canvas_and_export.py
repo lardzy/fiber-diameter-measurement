@@ -579,6 +579,23 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_preview_analysis_dialog_parameter_panel_defaults_collapsed(self) -> None:
+        dialog = PreviewAnalysisDialog("地图构建", intro_text="测试", compact=True, parameters_title="地图构建参数")
+        try:
+            dialog.set_parameter_items([("采样间隔", "90 ms"), ("静止确认", "2 帧")])
+
+            self.assertTrue(dialog._parameters_toggle.isVisibleTo(dialog))
+            self.assertFalse(dialog._parameters_toggle.isChecked())
+            self.assertFalse(dialog._parameters_panel.isVisibleTo(dialog))
+
+            dialog._parameters_toggle.click()
+
+            self.assertTrue(dialog._parameters_toggle.isChecked())
+            self.assertTrue(dialog._parameters_panel.isVisibleTo(dialog))
+            self.assertEqual(len(dialog._parameter_value_labels), 2)
+        finally:
+            dialog.close()
+
     def test_preview_analysis_dialog_busy_state_disables_controls_and_shortcuts(self) -> None:
         dialog = PreviewAnalysisDialog("景深合成", intro_text="测试")
         try:
@@ -591,7 +608,7 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
             dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
 
-            self.assertTrue(dialog._busy_overlay.isVisible())
+            self.assertTrue(dialog._busy_overlay.isVisibleTo(dialog))
             self.assertEqual(dialog._busy_label.text(), "正在完成景深合成，请稍候…")
             self.assertGreaterEqual(dialog._busy_panel.minimumWidth(), 420)
             self.assertFalse(dialog._finish_button.isEnabled())

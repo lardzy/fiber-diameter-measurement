@@ -11,9 +11,10 @@ from PySide6.QtGui import QImage
 from fdm.runtime_logging import append_runtime_log
 from fdm.settings import FocusStackProfile
 
-MAP_BUILD_ANALYSIS_INTERVAL_MS = 150
-MAP_BUILD_MAX_TILE_FRAMES = 4
-MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS = 500
+MAP_BUILD_ANALYSIS_INTERVAL_MS = 90
+MAP_BUILD_STABLE_REQUIRED_FRAMES = 2
+MAP_BUILD_MAX_TILE_FRAMES = 3
+MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS = 250
 
 
 def _ensure_cv_numpy():
@@ -177,6 +178,16 @@ class _MapRegistrationConfig:
             "ambiguity_margin": self.ambiguity_margin,
             "ambiguity_distance_px": self.ambiguity_distance_px,
         }
+
+
+def map_build_parameter_defaults() -> dict[str, Any]:
+    return {
+        "analysis_interval_ms": MAP_BUILD_ANALYSIS_INTERVAL_MS,
+        "stable_required_frames": MAP_BUILD_STABLE_REQUIRED_FRAMES,
+        "max_tile_frames": MAP_BUILD_MAX_TILE_FRAMES,
+        "preview_refresh_interval_ms": MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS,
+        "registration_thresholds": _MapRegistrationConfig().as_metadata(),
+    }
 
 
 @dataclass(slots=True)
@@ -360,7 +371,7 @@ class MapBuildAnalyzer:
         self._stable_streak = 0
         self._unstable_streak = 0
         self._stable_window: list[_MapMotionFrame] = []
-        self._stable_required = 3
+        self._stable_required = MAP_BUILD_STABLE_REQUIRED_FRAMES
         self._last_message = "等待移动样品台并采样"
         self._stable_step_threshold_px: float | None = None
         self._tile_freeze_threshold_px: float | None = None
@@ -511,7 +522,9 @@ class MapBuildAnalyzer:
             "rejected_ambiguous_frames": self._rejected_ambiguous_frames,
             "stable_accept_count": self._stable_accept_count,
             "map_build_interval_ms": MAP_BUILD_ANALYSIS_INTERVAL_MS,
+            "stable_required_frames": MAP_BUILD_STABLE_REQUIRED_FRAMES,
             "max_tile_frames": MAP_BUILD_MAX_TILE_FRAMES,
+            "preview_refresh_interval_ms": MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS,
             "preview_render_count": self._preview_render_count,
             "skipped_tile_frames": self._skipped_tile_frames,
             "registration_thresholds": self._registration_config.as_metadata(),
