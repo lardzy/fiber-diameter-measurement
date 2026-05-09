@@ -579,20 +579,17 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
-    def test_preview_analysis_dialog_parameter_panel_defaults_collapsed(self) -> None:
-        dialog = PreviewAnalysisDialog("地图构建", intro_text="测试", compact=True, parameters_title="地图构建参数")
+    def test_preview_analysis_dialog_state_banner_is_prominent_at_top(self) -> None:
+        dialog = PreviewAnalysisDialog("地图构建", intro_text="测试", compact=True, show_state_banner=True)
         try:
-            dialog.set_parameter_items([("采样间隔", "90 ms"), ("静止确认", "2 帧")])
+            self.assertTrue(dialog._state_banner.isVisibleTo(dialog))
+            self.assertEqual(dialog.layout().itemAt(0).widget(), dialog._state_banner)
 
-            self.assertTrue(dialog._parameters_toggle.isVisibleTo(dialog))
-            self.assertFalse(dialog._parameters_toggle.isChecked())
-            self.assertFalse(dialog._parameters_panel.isVisibleTo(dialog))
+            dialog.set_state_banner("等待静止", "保持不动，正在确认稳定 1/2", "settling")
 
-            dialog._parameters_toggle.click()
-
-            self.assertTrue(dialog._parameters_toggle.isChecked())
-            self.assertTrue(dialog._parameters_panel.isVisibleTo(dialog))
-            self.assertEqual(len(dialog._parameter_value_labels), 2)
+            self.assertEqual(dialog._state_title_label.text(), "状态：等待静止")
+            self.assertEqual(dialog._state_detail_label.text(), "保持不动，正在确认稳定 1/2")
+            self.assertIn("#B45309", dialog._state_title_label.styleSheet())
         finally:
             dialog.close()
 

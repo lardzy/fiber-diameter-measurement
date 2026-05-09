@@ -89,13 +89,10 @@ from fdm.services.preview_analysis import (
     FocusStackRenderConfig,
     FocusStackReport,
     MAP_BUILD_ANALYSIS_INTERVAL_MS,
-    MAP_BUILD_MAX_TILE_FRAMES,
-    MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS,
     MAP_BUILD_STABLE_REQUIRED_FRAMES,
     MapBuildFinalResult,
     MapBuildReport,
     log_preview_analysis_perf,
-    map_build_parameter_defaults,
 )
 from fdm.services.prompt_segmentation import (
     PromptSegmentationResult,
@@ -6131,36 +6128,29 @@ class MainWindow(QMainWindow):
             return MAP_BUILD_ANALYSIS_INTERVAL_MS
         return self.PREVIEW_ANALYSIS_INTERVAL_MS
 
-    def _map_build_parameter_items(self, report: MapBuildReport | None = None) -> list[tuple[str, str]]:
-        defaults = map_build_parameter_defaults()
-        thresholds = defaults.get("registration_thresholds", {})
-        motion_labels = {
-            "settling": "等待稳定",
-            "sampling": "采样中",
-            "moving": "移动中",
-            "candidate_rejected": "候选拒绝",
-            "tile_committed": "已创建 tile",
+    def _map_build_state_banner(self, report: MapBuildReport) -> tuple[str, str, str]:
+        state_map = {
+            "moving": ("正在移动", "moving"),
+            "settling": ("等待静止", "settling"),
+            "sampling": ("正在采样", "sampling"),
+            "tile_committed": ("已创建新 tile", "success"),
+            "candidate_rejected": ("候选位置未通过", "warning"),
         }
-        items = [
-            ("采样间隔", f"{MAP_BUILD_ANALYSIS_INTERVAL_MS} ms"),
-            ("静止确认", f"{MAP_BUILD_STABLE_REQUIRED_FRAMES} 帧"),
-            ("Tile 融合上限", f"{MAP_BUILD_MAX_TILE_FRAMES} 帧"),
-            ("预览刷新", f"{MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS} ms"),
-            ("推荐重叠", "20%-40%"),
-            ("允许重叠", f"{float(thresholds.get('min_overlap', 0.0)):.0%}-{float(thresholds.get('max_overlap', 0.0)):.0%}"),
-            ("NCC 阈值", f"{float(thresholds.get('min_ncc', 0.0)):.2f}"),
-            ("响应阈值", f"{float(thresholds.get('min_phase_response', 0.0)):.2f}"),
-        ]
-        if report is not None:
-            items = [
-                ("状态", motion_labels.get(report.motion_state, report.motion_state)),
-                ("稳定帧", f"{min(report.stable_streak, MAP_BUILD_STABLE_REQUIRED_FRAMES)}/{MAP_BUILD_STABLE_REQUIRED_FRAMES}"),
-                ("位移", f"{report.translation_px:.1f} px"),
-                ("响应", f"{report.correlation_response:.3f}"),
-                ("Tile", str(report.tile_count)),
-                ("采样/接受", f"{report.sampled_frames}/{report.accepted_frames}"),
-            ] + items
-        return items
+        title, tone = state_map.get(report.motion_state, (report.motion_state, "neutral"))
+        stable_count = min(report.stable_streak, MAP_BUILD_STABLE_REQUIRED_FRAMES)
+        if report.motion_state == "moving":
+            detail = f"请移动到相邻视野后停稳 | 位移 {report.translation_px:.1f}px | tile {report.tile_count}"
+        elif report.motion_state == "settling":
+            detail = f"保持不动，正在确认稳定 {stable_count}/{MAP_BUILD_STABLE_REQUIRED_FRAMES} | 位移 {report.translation_px:.1f}px"
+        elif report.motion_state == "sampling":
+            detail = f"当前视野已稳定，正在积累 tile | tile {report.tile_count} | 接受 {report.accepted_frames} 帧"
+        elif report.motion_state == "tile_committed":
+            detail = f"新 tile 已加入地图 | tile {report.tile_count} | 响应 {report.correlation_response:.2f}"
+        elif report.motion_state == "candidate_rejected":
+            detail = "当前位置匹配不可靠，请增加纹理或调整到 20%-40% 重叠后再停稳。"
+        else:
+            detail = report.message
+        return title, detail, tone
 
     def _current_focus_stack_render_config(self) -> FocusStackRenderConfig:
         return FocusStackRenderConfig(
@@ -6191,11 +6181,9 @@ class MainWindow(QMainWindow):
             self._analysis_mode_label(mode),
             intro_text=self._preview_analysis_intro_text(mode),
             compact=mode == "map_build",
-            parameters_title="地图构建参数" if mode == "map_build" else "",
+            show_state_banner=mode == "map_build",
             parent=self,
         )
-        if mode == "map_build":
-            dialog.set_parameter_items(self._map_build_parameter_items())
         dialog.finishRequested.connect(self._finalize_preview_analysis_session)
         dialog.cancelRequested.connect(lambda: self._cancel_preview_analysis_session())
         return dialog
@@ -6345,8 +6333,9 @@ class MainWindow(QMainWindow):
             return
         if isinstance(payload, MapBuildReport):
             self._preview_analysis_dialog.set_result_image(payload.preview_image)
+            title, detail, tone = self._map_build_state_banner(payload)
+            self._preview_analysis_dialog.set_state_banner(title, detail, tone)
             self._preview_analysis_dialog.set_status(payload.message)
-            self._preview_analysis_dialog.set_parameter_items(self._map_build_parameter_items(payload))
             self.statusBar().showMessage(payload.message, 2500)
 
     def _add_project_asset_image(self, image: QImage, *, metadata: dict[str, object] | None = None, status_message: str) -> None:

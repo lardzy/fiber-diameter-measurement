@@ -180,16 +180,6 @@ class _MapRegistrationConfig:
         }
 
 
-def map_build_parameter_defaults() -> dict[str, Any]:
-    return {
-        "analysis_interval_ms": MAP_BUILD_ANALYSIS_INTERVAL_MS,
-        "stable_required_frames": MAP_BUILD_STABLE_REQUIRED_FRAMES,
-        "max_tile_frames": MAP_BUILD_MAX_TILE_FRAMES,
-        "preview_refresh_interval_ms": MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS,
-        "registration_thresholds": _MapRegistrationConfig().as_metadata(),
-    }
-
-
 @dataclass(slots=True)
 class _RegistrationCandidate:
     dx: float
