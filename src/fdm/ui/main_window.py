@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
@@ -87,8 +88,10 @@ from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
     FocusStackReport,
+    MAP_BUILD_ANALYSIS_INTERVAL_MS,
     MapBuildFinalResult,
     MapBuildReport,
+    log_preview_analysis_perf,
 )
 from fdm.services.prompt_segmentation import (
     PromptSegmentationResult,
@@ -294,6 +297,7 @@ class MainWindow(QMainWindow):
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
     MAP_BUILD_AVAILABLE = True
+    PREVIEW_ANALYSIS_INTERVAL_MS = 300
     TABLE_COL_GROUP = 0
     TABLE_COL_KIND = 1
     TABLE_COL_RESULT = 2
@@ -419,10 +423,11 @@ class MainWindow(QMainWindow):
         self._preview_analysis_thread: QThread | None = None
         self._preview_analysis_worker: FocusStackSessionWorker | MapBuildSessionWorker | None = None
         self._preview_analysis_timer = QTimer(self)
-        self._preview_analysis_timer.setInterval(300)
+        self._preview_analysis_timer.setInterval(self.PREVIEW_ANALYSIS_INTERVAL_MS)
         self._preview_analysis_timer.timeout.connect(self._request_preview_analysis_frame)
         self._preview_analysis_request_id = 0
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at: float | None = None
         self._preview_analysis_finalizing = False
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
@@ -6117,6 +6122,11 @@ class MainWindow(QMainWindow):
             return "正在完成地图构建，请稍候…"
         return "正在完成景深合成，请稍候…"
 
+    def _preview_analysis_interval_ms(self, mode: str) -> int:
+        if mode == "map_build":
+            return MAP_BUILD_ANALYSIS_INTERVAL_MS
+        return self.PREVIEW_ANALYSIS_INTERVAL_MS
+
     def _current_focus_stack_render_config(self) -> FocusStackRenderConfig:
         return FocusStackRenderConfig(
             profile=self._app_settings.focus_stack_profile or FocusStackProfile.BALANCED,
@@ -6160,6 +6170,7 @@ class MainWindow(QMainWindow):
         self._clear_magic_segment_sessions()
         self._preview_analysis_mode = mode
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         self._preview_analysis_finalizing = False
         self._preview_analysis_dialog = self._create_preview_analysis_dialog(mode)
         self._preview_analysis_dialog.show()
@@ -6185,6 +6196,7 @@ class MainWindow(QMainWindow):
 
         self._preview_analysis_thread = thread
         self._preview_analysis_worker = worker
+        self._preview_analysis_timer.setInterval(self._preview_analysis_interval_ms(mode))
         self._preview_analysis_timer.start()
         self._request_preview_analysis_frame()
         self.statusBar().showMessage(f"{self._analysis_mode_label(mode)}已启动", 3000)
@@ -6193,6 +6205,7 @@ class MainWindow(QMainWindow):
     def _teardown_preview_analysis_session(self, *, cancel_worker: bool, status_message: str | None = None) -> None:
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         self._preview_analysis_finalizing = False
         worker = self._preview_analysis_worker
         thread = self._preview_analysis_thread
@@ -6227,6 +6240,7 @@ class MainWindow(QMainWindow):
         self._preview_analysis_finalizing = True
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         if self._preview_analysis_dialog is not None:
             busy_message = self._preview_analysis_finalize_message(self._preview_analysis_mode)
             self._preview_analysis_dialog.set_status(busy_message)
@@ -6244,13 +6258,23 @@ class MainWindow(QMainWindow):
             return
         self._preview_analysis_request_id += 1
         request_id = self._preview_analysis_request_id
+        started_at = perf_counter()
         if self._capture_manager.request_analysis_frame(request_id):
             self._preview_analysis_request_pending = True
+            self._preview_analysis_request_started_at = started_at
 
     def _on_preview_analysis_frame_ready(self, request_id: int, image: object) -> None:
         if request_id != self._preview_analysis_request_id:
             return
+        started_at = self._preview_analysis_request_started_at
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
+        if started_at is not None:
+            log_preview_analysis_perf(
+                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request",
+                (perf_counter() - started_at) * 1000.0,
+                detail=f"request_id={request_id}",
+            )
         if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
             return
         if isinstance(image, QImage) and not image.isNull():
@@ -6259,7 +6283,15 @@ class MainWindow(QMainWindow):
     def _on_preview_analysis_frame_failed(self, request_id: int, message: str) -> None:
         if request_id != self._preview_analysis_request_id:
             return
+        started_at = self._preview_analysis_request_started_at
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
+        if started_at is not None:
+            log_preview_analysis_perf(
+                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request failed",
+                (perf_counter() - started_at) * 1000.0,
+                detail=f"request_id={request_id}, message={message}",
+            )
         if self._preview_analysis_dialog is not None:
             self._preview_analysis_dialog.set_status(message)
         self.statusBar().showMessage(message, 4000)

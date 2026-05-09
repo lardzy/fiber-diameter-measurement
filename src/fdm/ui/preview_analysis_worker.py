@@ -105,6 +105,7 @@ class MapBuildSessionWorker(QObject):
         except Exception as exc:  # noqa: BLE001
             self.failed.emit(str(exc))
             return
+        perf = self._analyzer.last_performance_metrics()
         log_preview_analysis_perf(
             "Map build preprocess",
             (perf_counter() - started_at) * 1000.0,
@@ -115,7 +116,13 @@ class MapBuildSessionWorker(QObject):
                 f"motion_state={report.motion_state}, "
                 f"stable={report.stable_streak}, "
                 f"translation_px={report.translation_px:.2f}, "
-                f"response={report.correlation_response:.4f}"
+                f"response={report.correlation_response:.4f}, "
+                f"light_ms={float(perf.get('light_motion_prep_ms', 0.0)):.2f}, "
+                f"motion_ms={float(perf.get('motion_eval_ms', 0.0)):.2f}, "
+                f"promote_ms={float(perf.get('full_frame_promote_ms', 0.0)):.2f}, "
+                f"registration_ms={float(perf.get('registration_ms', 0.0)):.2f}, "
+                f"preview_ms={float(perf.get('preview_render_ms', 0.0)):.2f}, "
+                f"preview_rendered={bool(perf.get('preview_rendered', False))}"
             ),
         )
         self.previewUpdated.emit(report)

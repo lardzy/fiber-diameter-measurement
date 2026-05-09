@@ -41,6 +41,7 @@ from fdm.settings import (
 from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -672,6 +673,16 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._map_build_button)
             self.assertFalse(window._map_build_button.isEnabled())
             self.assertIn("Microview", window._map_build_button.toolTip())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_map_build_uses_faster_analysis_interval_than_focus_stack(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window._preview_analysis_interval_ms("focus_stack"), window.PREVIEW_ANALYSIS_INTERVAL_MS)
+            self.assertEqual(window._preview_analysis_interval_ms("map_build"), MAP_BUILD_ANALYSIS_INTERVAL_MS)
+            self.assertLess(window._preview_analysis_interval_ms("map_build"), window._preview_analysis_interval_ms("focus_stack"))
         finally:
             window._reset_workspace()
             window.close()
