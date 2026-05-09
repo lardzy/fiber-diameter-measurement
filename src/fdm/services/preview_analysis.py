@@ -3,12 +3,18 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime
 import math
+from time import perf_counter
 from typing import Any
 
 from PySide6.QtGui import QImage
 
 from fdm.runtime_logging import append_runtime_log
 from fdm.settings import FocusStackProfile
+
+MAP_BUILD_ANALYSIS_INTERVAL_MS = 90
+MAP_BUILD_STABLE_REQUIRED_FRAMES = 2
+MAP_BUILD_MAX_TILE_FRAMES = 3
+MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS = 250
 
 
 def _ensure_cv_numpy():
@@ -111,6 +117,15 @@ class _PreparedFrame:
     focus_map: Any
     small_gray: Any
     sharpness: float
+
+
+@dataclass(slots=True)
+class _MapMotionFrame:
+    image: QImage
+    small_gray: Any
+    full_shape: tuple[int, int]
+    sharpness: float
+    prepared: _PreparedFrame | None = None
 
 
 @dataclass(slots=True)
@@ -331,6 +346,7 @@ class MapBuildAnalyzer:
         self._rejected_overlap_frames = 0
         self._rejected_ambiguous_frames = 0
         self._stable_accept_count = 0
+        self._skipped_tile_frames = 0
         self._tiles: list[_TileRecord] = []
         self._edges: list[_TileEdge] = []
         self._current_accumulator = FocusAccumulator()
@@ -339,13 +355,13 @@ class MapBuildAnalyzer:
         self._pending_current_edge: _TileEdge | None = None
         self._last_tile_delta: tuple[float, float] | None = None
         self._tile_counter = 0
-        self._previous_frame: _PreparedFrame | None = None
+        self._previous_frame: _MapMotionFrame | None = None
         self._transition_pending = False
         self._is_stable = False
         self._stable_streak = 0
         self._unstable_streak = 0
-        self._stable_window: list[_PreparedFrame] = []
-        self._stable_required = 3
+        self._stable_window: list[_MapMotionFrame] = []
+        self._stable_required = MAP_BUILD_STABLE_REQUIRED_FRAMES
         self._last_message = "等待移动样品台并采样"
         self._stable_step_threshold_px: float | None = None
         self._tile_freeze_threshold_px: float | None = None
@@ -355,9 +371,17 @@ class MapBuildAnalyzer:
         self._last_response = 0.0
         self._last_quality_score = 0.0
         self._last_motion_state = "moving"
+        self._preview_image_cache = QImage()
+        self._preview_dirty = True
+        self._preview_render_count = 0
+        self._last_preview_render_at = 0.0
+        self._last_perf_metrics: dict[str, float | int | bool] = {}
 
     def add_frame(self, image: QImage) -> MapBuildReport:
-        frame = _prepare_frame(image)
+        self._reset_perf_metrics()
+        light_started = perf_counter()
+        frame = _prepare_map_motion_frame(image)
+        self._last_perf_metrics["light_motion_prep_ms"] = (perf_counter() - light_started) * 1000.0
         self._sampled_frames += 1
         self._initialize_thresholds(frame)
         self._last_quality_score = frame.sharpness
@@ -372,8 +396,9 @@ class MapBuildAnalyzer:
             self._last_motion_state = "settling"
             return self._build_report()
 
+        motion_started = perf_counter()
         step_phase_dx, step_phase_dy, step_response = _estimate_translation(self._previous_frame.small_gray, frame.small_gray)
-        step_scale = _small_frame_scale(frame.gray.shape, frame.small_gray.shape)
+        step_scale = _small_frame_scale(frame.full_shape, frame.small_gray.shape)
         step_dx = -step_phase_dx * step_scale
         step_dy = -step_phase_dy * step_scale
         step_translation = math.hypot(step_dx, step_dy)
@@ -396,6 +421,7 @@ class MapBuildAnalyzer:
             origin_dx = -origin_phase_dx * step_scale
             origin_dy = -origin_phase_dy * step_scale
             origin_translation = math.hypot(origin_dx, origin_dy)
+        self._last_perf_metrics["motion_eval_ms"] = (perf_counter() - motion_started) * 1000.0
 
         if self._current_accumulator.has_frames() and origin_translation <= float(self._resume_origin_threshold_px or 4.0):
             self._transition_pending = False
@@ -416,7 +442,7 @@ class MapBuildAnalyzer:
             if self._is_stable and stable_anchor is not None:
                 self._current_origin_small = stable_anchor.small_gray
                 self._current_predicted_position = (0.0, 0.0)
-                self._accept_prepared_frame(stable_anchor)
+                self._accept_motion_frame(stable_anchor)
                 self._last_message = self._sampling_message("开始采样首个 tile")
                 self._last_motion_state = "sampling"
             else:
@@ -450,8 +476,13 @@ class MapBuildAnalyzer:
             return self._build_report()
 
         candidate = stable_anchor if newly_stable and stable_anchor is not None else frame
-        if self._accept_prepared_frame(candidate):
+        accept_status = self._accept_motion_frame(candidate)
+        if accept_status == "accepted":
             self._last_message = self._sampling_message("当前 tile 继续采样")
+        elif accept_status == "full":
+            self._last_message = self._sampling_message(
+                f"当前 tile 已采够 {MAP_BUILD_MAX_TILE_FRAMES} 帧，继续监测移动"
+            )
         else:
             self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近，已跳过"
         self._last_motion_state = "sampling"
@@ -480,6 +511,12 @@ class MapBuildAnalyzer:
             "rejected_overlap_frames": self._rejected_overlap_frames,
             "rejected_ambiguous_frames": self._rejected_ambiguous_frames,
             "stable_accept_count": self._stable_accept_count,
+            "map_build_interval_ms": MAP_BUILD_ANALYSIS_INTERVAL_MS,
+            "stable_required_frames": MAP_BUILD_STABLE_REQUIRED_FRAMES,
+            "max_tile_frames": MAP_BUILD_MAX_TILE_FRAMES,
+            "preview_refresh_interval_ms": MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS,
+            "preview_render_count": self._preview_render_count,
+            "skipped_tile_frames": self._skipped_tile_frames,
             "registration_thresholds": self._registration_config.as_metadata(),
             "created_at": datetime.now().isoformat(timespec="seconds"),
         }
@@ -492,6 +529,54 @@ class MapBuildAnalyzer:
         )
 
     def _build_report(self) -> MapBuildReport:
+        preview_image = self._preview_image_cache
+        has_preview_content = bool(self._tiles) or self._current_accumulator.has_frames()
+        now = perf_counter()
+        elapsed_since_render_ms = (now - self._last_preview_render_at) * 1000.0 if self._last_preview_render_at else math.inf
+        should_render = (
+            has_preview_content
+            and (
+                self._preview_dirty
+                or preview_image.isNull()
+                or elapsed_since_render_ms >= MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS
+            )
+        )
+        if should_render:
+            preview_started = perf_counter()
+            preview_image = self._render_preview_image()
+            self._last_perf_metrics["preview_render_ms"] = (perf_counter() - preview_started) * 1000.0
+            self._last_perf_metrics["preview_rendered"] = True
+            self._preview_image_cache = preview_image.copy()
+            self._preview_dirty = False
+            self._last_preview_render_at = now
+            self._preview_render_count += 1
+        else:
+            self._last_perf_metrics["preview_render_ms"] = 0.0
+            self._last_perf_metrics["preview_rendered"] = False
+        warning = self._low_confidence_warning()
+        message = (
+            f"采样 {self._sampled_frames} 帧 | 接受 {self._accepted_frames} 帧 | tile {max(1, len(self._tiles))}"
+        )
+        if warning:
+            message += f" | {warning}"
+        elif self._last_message:
+            message += f" | {self._last_message}"
+        low_confidence = bool(warning or "未创建新 tile" in self._last_message)
+        return MapBuildReport(
+            preview_image=preview_image.copy() if not preview_image.isNull() else QImage(),
+            sampled_frames=self._sampled_frames,
+            accepted_frames=self._accepted_frames,
+            tile_count=len(self._tiles) + (1 if self._current_accumulator.has_frames() else 0),
+            message=message,
+            low_confidence=low_confidence,
+            motion_state=self._motion_state(),
+            stable_streak=self._stable_streak,
+            translation_px=self._last_translation_px,
+            correlation_response=self._last_response,
+            quality_score=self._last_quality_score,
+        )
+
+    def _render_preview_image(self) -> QImage:
         preview_tiles = list(self._tiles)
         if self._current_accumulator.has_frames():
             current_preview = self._current_accumulator.preview_image(self._render_config)
@@ -507,28 +592,7 @@ class MapBuildAnalyzer:
                     )
                 ]
         mosaic = _render_mosaic(preview_tiles, max_dimension=2400) if preview_tiles else None
-        warning = self._low_confidence_warning()
-        message = (
-            f"采样 {self._sampled_frames} 帧 | 接受 {self._accepted_frames} 帧 | tile {max(1, len(self._tiles))}"
-        )
-        if warning:
-            message += f" | {warning}"
-        elif self._last_message:
-            message += f" | {self._last_message}"
-        low_confidence = bool(warning or "未创建新 tile" in self._last_message)
-        return MapBuildReport(
-            preview_image=bgr_array_to_qimage(mosaic) if mosaic is not None else QImage(),
-            sampled_frames=self._sampled_frames,
-            accepted_frames=self._accepted_frames,
-            tile_count=len(self._tiles) + (1 if self._current_accumulator.has_frames() else 0),
-            message=message,
-            low_confidence=low_confidence,
-            motion_state=self._motion_state(),
-            stable_streak=self._stable_streak,
-            translation_px=self._last_translation_px,
-            correlation_response=self._last_response,
-            quality_score=self._last_quality_score,
-        )
+        return bgr_array_to_qimage(mosaic) if mosaic is not None else QImage()
 
     def _finalize_current_tile(self) -> _TileRecord | None:
         if not self._current_accumulator.has_frames():
@@ -553,6 +617,7 @@ class MapBuildAnalyzer:
         self._optimize_tile_positions()
         self._current_accumulator = FocusAccumulator()
         self._current_origin_small = None
+        self._mark_preview_dirty()
         return tile
 
     def _optimize_tile_positions(self) -> None:
@@ -619,8 +684,8 @@ class MapBuildAnalyzer:
             return self._settling_message()
         return "运动中，暂停入图"
 
-    def _initialize_thresholds(self, frame: _PreparedFrame) -> None:
-        short_side = min(frame.bgr.shape[0], frame.bgr.shape[1])
+    def _initialize_thresholds(self, frame: _MapMotionFrame) -> None:
+        short_side = min(frame.full_shape[0], frame.full_shape[1])
         if self._stable_step_threshold_px is None:
             self._stable_step_threshold_px = max(2.0, short_side * 0.005)
         if self._tile_freeze_threshold_px is None:
@@ -628,10 +693,13 @@ class MapBuildAnalyzer:
         if self._resume_origin_threshold_px is None:
             self._resume_origin_threshold_px = max(4.0, float(self._tile_freeze_threshold_px or 6.0) * 0.65)
 
-    def _try_commit_candidate_tile(self, candidate_frames: list[_PreparedFrame], *, coarse_dx: float, coarse_dy: float) -> None:
+    def _try_commit_candidate_tile(self, candidate_frames: list[_MapMotionFrame], *, coarse_dx: float, coarse_dy: float) -> None:
+        registration_started = perf_counter()
         reference_tile = self._current_tile_preview_record()
-        candidate_bgr = _fuse_prepared_frames(candidate_frames, self._render_config)
+        prepared_candidates = [self._promote_motion_frame(candidate) for candidate in candidate_frames]
+        candidate_bgr = _fuse_prepared_frames(prepared_candidates, self._render_config)
         if reference_tile is None or candidate_bgr is None:
+            self._last_perf_metrics["registration_ms"] = (perf_counter() - registration_started) * 1000.0
             self._reject_candidate("registration", "候选 tile 图像为空，未创建新 tile")
             return
         candidate_gray = _to_gray(candidate_bgr)
@@ -650,6 +718,7 @@ class MapBuildAnalyzer:
             coarse_dy=coarse_dy,
             last_delta=self._last_tile_delta,
         )
+        self._last_perf_metrics["registration_ms"] = (perf_counter() - registration_started) * 1000.0
         if not registration.accepted:
             if registration.reason == "overlap":
                 self._reject_candidate("overlap", "候选位置重叠不在 15%-95% 范围内，未创建新 tile")
@@ -673,9 +742,9 @@ class MapBuildAnalyzer:
         )
         self._current_accumulator = FocusAccumulator()
         accepted_any = False
-        for candidate in candidate_frames:
-            accepted_any = self._accept_prepared_frame(candidate) or accepted_any
-        anchor = self._best_prepared_frame(candidate_frames)
+        for candidate in prepared_candidates:
+            accepted_any = self._accept_prepared_frame(candidate) == "accepted" or accepted_any
+        anchor = self._best_prepared_frame(prepared_candidates)
         self._current_origin_small = anchor.small_gray if anchor is not None else candidate_frames[-1].small_gray
         self._current_predicted_position = (
             previous_tile.x + registration.dx,
@@ -719,8 +788,9 @@ class MapBuildAnalyzer:
             self._rejected_registration_frames += 1
         self._last_message = message
         self._last_motion_state = "candidate_rejected"
+        self._mark_preview_dirty()
 
-    def _best_stable_frame(self) -> _PreparedFrame | None:
+    def _best_stable_frame(self) -> _MapMotionFrame | None:
         if not self._stable_window:
             return None
         return max(self._stable_window, key=lambda frame: frame.sharpness)
@@ -732,12 +802,12 @@ class MapBuildAnalyzer:
 
     def _update_stability_gate(
         self,
-        frame: _PreparedFrame,
+        frame: _MapMotionFrame,
         *,
         translation_px: float,
         response: float,
         allow_soft_stable: bool,
-    ) -> tuple[bool, _PreparedFrame | None]:
+    ) -> tuple[bool, _MapMotionFrame | None]:
         stable_threshold = float(self._stable_step_threshold_px or 2.0)
         stationary = translation_px <= stable_threshold and response >= self._stable_response_threshold
         soft_stationary = allow_soft_stable and translation_px <= stable_threshold * 0.55
@@ -745,7 +815,7 @@ class MapBuildAnalyzer:
             self._stable_streak += 1
             self._unstable_streak = 0
             self._stable_window.append(frame)
-            max_window = max(4, self._stable_required + 1)
+            max_window = max(MAP_BUILD_MAX_TILE_FRAMES, self._stable_required + 1)
             if len(self._stable_window) > max_window:
                 self._stable_window = self._stable_window[-max_window:]
             newly_stable = not self._is_stable and self._stable_streak >= self._stable_required
@@ -761,12 +831,49 @@ class MapBuildAnalyzer:
         self._stable_window.clear()
         return False, None
 
-    def _accept_prepared_frame(self, frame: _PreparedFrame) -> bool:
+    def _accept_motion_frame(self, frame: _MapMotionFrame) -> str:
+        if self._current_accumulator.accepted_frames >= MAP_BUILD_MAX_TILE_FRAMES:
+            self._skipped_tile_frames += 1
+            return "full"
+        return self._accept_prepared_frame(self._promote_motion_frame(frame))
+
+    def _accept_prepared_frame(self, frame: _PreparedFrame) -> str:
+        if self._current_accumulator.accepted_frames >= MAP_BUILD_MAX_TILE_FRAMES:
+            self._skipped_tile_frames += 1
+            return "full"
         accepted = self._current_accumulator.add_prepared_frame(frame)
         if accepted:
             self._accepted_frames += 1
             self._stable_accept_count += 1
-        return accepted
+            self._mark_preview_dirty()
+            return "accepted"
+        return "duplicate"
+
+    def _promote_motion_frame(self, frame: _MapMotionFrame) -> _PreparedFrame:
+        if frame.prepared is None:
+            started = perf_counter()
+            frame.prepared = _prepare_frame(frame.image)
+            self._last_perf_metrics["full_frame_promote_ms"] = (
+                float(self._last_perf_metrics.get("full_frame_promote_ms", 0.0))
+                + (perf_counter() - started) * 1000.0
+            )
+        return frame.prepared
+
+    def _mark_preview_dirty(self) -> None:
+        self._preview_dirty = True
+
+    def _reset_perf_metrics(self) -> None:
+        self._last_perf_metrics = {
+            "light_motion_prep_ms": 0.0,
+            "motion_eval_ms": 0.0,
+            "full_frame_promote_ms": 0.0,
+            "registration_ms": 0.0,
+            "preview_render_ms": 0.0,
+            "preview_rendered": False,
+        }
+
+    def last_performance_metrics(self) -> dict[str, float | int | bool]:
+        return dict(self._last_perf_metrics)
 
 
 def _fuse_prepared_frames(frames: list[_PreparedFrame], render_config: FocusStackRenderConfig) -> Any | None:
@@ -956,6 +1063,29 @@ def _prepare_frame(image: QImage) -> _PreparedFrame:
         focus_map=focus_map,
         small_gray=small_gray,
         sharpness=sharpness,
+    )
+
+
+def _prepare_map_motion_frame(image: QImage) -> _MapMotionFrame:
+    cv2, np = _ensure_cv_numpy()
+    if image.isNull():
+        raise RuntimeError("当前分析帧为空。")
+    gray_image = image.convertToFormat(QImage.Format.Format_Grayscale8)
+    buffer = gray_image.constBits()
+    array = np.frombuffer(buffer, dtype=np.uint8, count=gray_image.sizeInBytes())
+    array = array.reshape((gray_image.height(), gray_image.bytesPerLine()))
+    gray = array[:, : gray_image.width()].copy()
+    scale = min(1.0, 256.0 / max(gray.shape[0], gray.shape[1]))
+    if scale < 1.0:
+        small_gray = cv2.resize(gray, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+    else:
+        small_gray = gray
+    small_focus = _focus_measure(small_gray)
+    return _MapMotionFrame(
+        image=image.copy(),
+        small_gray=small_gray,
+        full_shape=gray.shape[:2],
+        sharpness=float(small_focus.mean()),
     )
 
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -15,10 +16,13 @@ try:
         FocusStackAnalyzer,
         MapBuildAnalyzer,
         FocusStackRenderConfig,
+        MAP_BUILD_MAX_TILE_FRAMES,
+        MAP_BUILD_STABLE_REQUIRED_FRAMES,
         _focus_measure,
         bgr_array_to_qimage,
         qimage_to_bgr_array,
     )
+    import fdm.services.preview_analysis as preview_analysis
     from fdm.settings import FocusStackProfile
 
     PREVIEW_ANALYSIS_READY = True
@@ -31,9 +35,12 @@ except ModuleNotFoundError:
     MapBuildAnalyzer = None
     FocusStackRenderConfig = None
     FocusStackProfile = None
+    MAP_BUILD_MAX_TILE_FRAMES = 0
+    MAP_BUILD_STABLE_REQUIRED_FRAMES = 0
     _focus_measure = None
     bgr_array_to_qimage = None
     qimage_to_bgr_array = None
+    preview_analysis = None
 
 
 @unittest.skipUnless(PREVIEW_ANALYSIS_READY, "requires numpy, opencv-python and PySide6")
@@ -248,8 +255,8 @@ class PreviewAnalysisTests(unittest.TestCase):
                 frame_b = self._crop_map_frame(scene, x=80 + shift)
                 analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
 
-                report_a = self._feed_stable_position(analyzer, frame_a, count=3)
-                report_b = self._feed_stable_position(analyzer, frame_b, count=4)
+                report_a = self._feed_stable_position(analyzer, frame_a, count=2)
+                report_b = self._feed_stable_position(analyzer, frame_b, count=3)
                 result = analyzer.finalize()
 
                 self.assertEqual(report_a.motion_state, "sampling")
@@ -259,6 +266,12 @@ class PreviewAnalysisTests(unittest.TestCase):
                 self.assertGreater(result.image.width(), frame_a.width())
                 self.assertEqual(result.metadata.get("edge_count"), 1)
                 self.assertIn("registration_thresholds", result.metadata)
+                self.assertEqual(result.metadata.get("map_build_interval_ms"), 90)
+                self.assertEqual(result.metadata.get("stable_required_frames"), MAP_BUILD_STABLE_REQUIRED_FRAMES)
+                self.assertEqual(result.metadata.get("max_tile_frames"), MAP_BUILD_MAX_TILE_FRAMES)
+                self.assertIn("preview_refresh_interval_ms", result.metadata)
+                self.assertIn("preview_render_count", result.metadata)
+                self.assertIn("skipped_tile_frames", result.metadata)
                 self.assertLess(abs(analyzer._tiles[1].x - shift), 8.0)  # noqa: SLF001
                 self.assertLess(abs(analyzer._tiles[1].y), 6.0)  # noqa: SLF001
 
@@ -270,8 +283,8 @@ class PreviewAnalysisTests(unittest.TestCase):
                 frame_b = self._crop_map_frame(scene, x=80 + shift)
                 analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
 
-                self._feed_stable_position(analyzer, frame_a, count=3)
-                report_b = self._feed_stable_position(analyzer, frame_b, count=4)
+                self._feed_stable_position(analyzer, frame_a, count=2)
+                report_b = self._feed_stable_position(analyzer, frame_b, count=3)
                 result = analyzer.finalize()
 
                 self.assertEqual(report_b.motion_state, "tile_committed")
@@ -280,7 +293,57 @@ class PreviewAnalysisTests(unittest.TestCase):
                 self.assertLess(abs(analyzer._tiles[1].x - shift), 8.0)  # noqa: SLF001
                 self.assertLess(abs(analyzer._tiles[1].y), 6.0)  # noqa: SLF001
 
-    def test_map_build_waits_for_three_stable_frames_before_sampling(self) -> None:
+    def test_map_build_caps_tile_fusion_frames_but_keeps_monitoring_motion(self) -> None:
+        scene = self._make_map_scene()
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+        first_position = [
+            self._crop_map_frame(scene, x=80),
+            self._crop_map_frame(scene, x=80),
+            self._crop_map_frame(scene, x=80),
+            self._crop_map_frame(scene, x=80, blur_sigma=0.8),
+            self._crop_map_frame(scene, x=80, blur_sigma=1.4),
+            self._crop_map_frame(scene, x=80, blur_sigma=2.0),
+            self._crop_map_frame(scene, x=80, blur_sigma=2.6),
+            self._crop_map_frame(scene, x=80, blur_sigma=3.2),
+        ]
+
+        report = None
+        for frame in first_position:
+            report = analyzer.add_frame(frame)
+        self.assertIsNotNone(report)
+        self.assertEqual(report.accepted_frames, MAP_BUILD_MAX_TILE_FRAMES)
+        self.assertIn("已采够", report.message)
+        self.assertGreater(analyzer._skipped_tile_frames, 0)  # noqa: SLF001
+
+        shifted = self._crop_map_frame(scene, x=288)
+        committed = self._feed_stable_position(analyzer, shifted, count=3)
+        result = analyzer.finalize()
+
+        self.assertEqual(committed.motion_state, "tile_committed")
+        self.assertEqual(result.tile_count, 2)
+        self.assertEqual(result.metadata.get("skipped_tile_frames"), analyzer._skipped_tile_frames)  # noqa: SLF001
+
+    def test_map_build_uses_light_motion_path_for_settling_and_cached_preview(self) -> None:
+        scene = self._make_map_scene()
+        stable = self._crop_map_frame(scene, x=80)
+        moving = self._crop_map_frame(scene, x=245, blur_sigma=4.0)
+        shifted = self._crop_map_frame(scene, x=288)
+        analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
+
+        with patch.object(preview_analysis, "_prepare_frame", wraps=preview_analysis._prepare_frame) as prepare_frame:
+            analyzer.add_frame(stable)
+            self.assertEqual(prepare_frame.call_count, 0)
+            analyzer.add_frame(stable)
+            self.assertEqual(prepare_frame.call_count, 1)
+
+            preview_render_count = analyzer._preview_render_count  # noqa: SLF001
+            analyzer.add_frame(moving)
+            analyzer.add_frame(shifted)
+
+            self.assertEqual(prepare_frame.call_count, 1)
+            self.assertEqual(analyzer._preview_render_count, preview_render_count)  # noqa: SLF001
+
+    def test_map_build_waits_for_required_stable_frames_before_sampling(self) -> None:
         base = self._make_map_base()
         frame = bgr_array_to_qimage(base)
         analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
@@ -290,10 +353,11 @@ class PreviewAnalysisTests(unittest.TestCase):
         report_c = analyzer.add_frame(frame)
 
         self.assertEqual(report_a.motion_state, "settling")
-        self.assertEqual(report_b.motion_state, "settling")
+        self.assertEqual(report_b.motion_state, "sampling")
         self.assertEqual(report_c.motion_state, "sampling")
+        self.assertEqual(report_b.accepted_frames, 1)
         self.assertEqual(report_c.accepted_frames, 1)
-        self.assertIn("已静止", report_c.message)
+        self.assertIn("已静止", report_b.message)
 
     def test_map_build_rejects_moving_blurred_frames_until_new_tile_is_stable(self) -> None:
         scene = self._make_map_scene()
@@ -302,7 +366,7 @@ class PreviewAnalysisTests(unittest.TestCase):
         shifted = self._crop_map_frame(scene, x=288)
         analyzer = MapBuildAnalyzer(device_id="microview:0", device_name="Microview #1")
 
-        steady_report = self._feed_stable_position(analyzer, stable, count=3)
+        steady_report = self._feed_stable_position(analyzer, stable, count=2)
         moving_report = analyzer.add_frame(moving)
         settling_a = analyzer.add_frame(shifted)
         settling_b = analyzer.add_frame(shifted)
@@ -315,8 +379,8 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertIn("等待静止", moving_report.message)
         self.assertIn(settling_a.motion_state, {"moving", "settling"})
         self.assertEqual(settling_b.motion_state, "settling")
-        self.assertEqual(settling_c.motion_state, "settling")
-        self.assertEqual(stable_report.motion_state, "tile_committed")
+        self.assertEqual(settling_c.motion_state, "tile_committed")
+        self.assertEqual(stable_report.motion_state, "sampling")
         self.assertEqual(result.tile_count, 2)
 
     def test_map_build_focus_only_changes_are_allowed_inside_same_tile(self) -> None:

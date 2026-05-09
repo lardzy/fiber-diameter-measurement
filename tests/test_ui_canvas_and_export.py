@@ -41,6 +41,7 @@ from fdm.settings import (
 from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -578,6 +579,20 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_preview_analysis_dialog_state_banner_is_prominent_at_top(self) -> None:
+        dialog = PreviewAnalysisDialog("地图构建", intro_text="测试", compact=True, show_state_banner=True)
+        try:
+            self.assertTrue(dialog._state_banner.isVisibleTo(dialog))
+            self.assertEqual(dialog.layout().itemAt(0).widget(), dialog._state_banner)
+
+            dialog.set_state_banner("等待静止", "保持不动，正在确认稳定 1/2", "settling")
+
+            self.assertEqual(dialog._state_title_label.text(), "状态：等待静止")
+            self.assertEqual(dialog._state_detail_label.text(), "保持不动，正在确认稳定 1/2")
+            self.assertIn("#B45309", dialog._state_title_label.styleSheet())
+        finally:
+            dialog.close()
+
     def test_preview_analysis_dialog_busy_state_disables_controls_and_shortcuts(self) -> None:
         dialog = PreviewAnalysisDialog("景深合成", intro_text="测试")
         try:
@@ -590,7 +605,7 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
             dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
 
-            self.assertTrue(dialog._busy_overlay.isVisible())
+            self.assertTrue(dialog._busy_overlay.isVisibleTo(dialog))
             self.assertEqual(dialog._busy_label.text(), "正在完成景深合成，请稍候…")
             self.assertGreaterEqual(dialog._busy_panel.minimumWidth(), 420)
             self.assertFalse(dialog._finish_button.isEnabled())
@@ -672,6 +687,16 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._map_build_button)
             self.assertFalse(window._map_build_button.isEnabled())
             self.assertIn("Microview", window._map_build_button.toolTip())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_map_build_uses_faster_analysis_interval_than_focus_stack(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertEqual(window._preview_analysis_interval_ms("focus_stack"), window.PREVIEW_ANALYSIS_INTERVAL_MS)
+            self.assertEqual(window._preview_analysis_interval_ms("map_build"), MAP_BUILD_ANALYSIS_INTERVAL_MS)
+            self.assertLess(window._preview_analysis_interval_ms("map_build"), window._preview_analysis_interval_ms("focus_stack"))
         finally:
             window._reset_workspace()
             window.close()

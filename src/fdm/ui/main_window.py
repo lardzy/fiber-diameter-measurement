@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
+from time import perf_counter
 
 from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPointF, QRectF, QSize, Qt, QThread, QTimer
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
@@ -87,8 +88,11 @@ from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
     FocusStackReport,
+    MAP_BUILD_ANALYSIS_INTERVAL_MS,
+    MAP_BUILD_STABLE_REQUIRED_FRAMES,
     MapBuildFinalResult,
     MapBuildReport,
+    log_preview_analysis_perf,
 )
 from fdm.services.prompt_segmentation import (
     PromptSegmentationResult,
@@ -294,6 +298,7 @@ class MainWindow(QMainWindow):
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
     SUPPORTED_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
     MAP_BUILD_AVAILABLE = True
+    PREVIEW_ANALYSIS_INTERVAL_MS = 300
     TABLE_COL_GROUP = 0
     TABLE_COL_KIND = 1
     TABLE_COL_RESULT = 2
@@ -419,10 +424,11 @@ class MainWindow(QMainWindow):
         self._preview_analysis_thread: QThread | None = None
         self._preview_analysis_worker: FocusStackSessionWorker | MapBuildSessionWorker | None = None
         self._preview_analysis_timer = QTimer(self)
-        self._preview_analysis_timer.setInterval(300)
+        self._preview_analysis_timer.setInterval(self.PREVIEW_ANALYSIS_INTERVAL_MS)
         self._preview_analysis_timer.timeout.connect(self._request_preview_analysis_frame)
         self._preview_analysis_request_id = 0
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at: float | None = None
         self._preview_analysis_finalizing = False
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
@@ -6117,6 +6123,35 @@ class MainWindow(QMainWindow):
             return "正在完成地图构建，请稍候…"
         return "正在完成景深合成，请稍候…"
 
+    def _preview_analysis_interval_ms(self, mode: str) -> int:
+        if mode == "map_build":
+            return MAP_BUILD_ANALYSIS_INTERVAL_MS
+        return self.PREVIEW_ANALYSIS_INTERVAL_MS
+
+    def _map_build_state_banner(self, report: MapBuildReport) -> tuple[str, str, str]:
+        state_map = {
+            "moving": ("正在移动", "moving"),
+            "settling": ("等待静止", "settling"),
+            "sampling": ("正在采样", "sampling"),
+            "tile_committed": ("已创建新 tile", "success"),
+            "candidate_rejected": ("候选位置未通过", "warning"),
+        }
+        title, tone = state_map.get(report.motion_state, (report.motion_state, "neutral"))
+        stable_count = min(report.stable_streak, MAP_BUILD_STABLE_REQUIRED_FRAMES)
+        if report.motion_state == "moving":
+            detail = f"请移动到相邻视野后停稳 | 位移 {report.translation_px:.1f}px | tile {report.tile_count}"
+        elif report.motion_state == "settling":
+            detail = f"保持不动，正在确认稳定 {stable_count}/{MAP_BUILD_STABLE_REQUIRED_FRAMES} | 位移 {report.translation_px:.1f}px"
+        elif report.motion_state == "sampling":
+            detail = f"当前视野已稳定，正在积累 tile | tile {report.tile_count} | 接受 {report.accepted_frames} 帧"
+        elif report.motion_state == "tile_committed":
+            detail = f"新 tile 已加入地图 | tile {report.tile_count} | 响应 {report.correlation_response:.2f}"
+        elif report.motion_state == "candidate_rejected":
+            detail = "当前位置匹配不可靠，请增加纹理或调整到 20%-40% 重叠后再停稳。"
+        else:
+            detail = report.message
+        return title, detail, tone
+
     def _current_focus_stack_render_config(self) -> FocusStackRenderConfig:
         return FocusStackRenderConfig(
             profile=self._app_settings.focus_stack_profile or FocusStackProfile.BALANCED,
@@ -6145,6 +6180,8 @@ class MainWindow(QMainWindow):
         dialog = PreviewAnalysisDialog(
             self._analysis_mode_label(mode),
             intro_text=self._preview_analysis_intro_text(mode),
+            compact=mode == "map_build",
+            show_state_banner=mode == "map_build",
             parent=self,
         )
         dialog.finishRequested.connect(self._finalize_preview_analysis_session)
@@ -6160,6 +6197,7 @@ class MainWindow(QMainWindow):
         self._clear_magic_segment_sessions()
         self._preview_analysis_mode = mode
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         self._preview_analysis_finalizing = False
         self._preview_analysis_dialog = self._create_preview_analysis_dialog(mode)
         self._preview_analysis_dialog.show()
@@ -6185,6 +6223,7 @@ class MainWindow(QMainWindow):
 
         self._preview_analysis_thread = thread
         self._preview_analysis_worker = worker
+        self._preview_analysis_timer.setInterval(self._preview_analysis_interval_ms(mode))
         self._preview_analysis_timer.start()
         self._request_preview_analysis_frame()
         self.statusBar().showMessage(f"{self._analysis_mode_label(mode)}已启动", 3000)
@@ -6193,6 +6232,7 @@ class MainWindow(QMainWindow):
     def _teardown_preview_analysis_session(self, *, cancel_worker: bool, status_message: str | None = None) -> None:
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         self._preview_analysis_finalizing = False
         worker = self._preview_analysis_worker
         thread = self._preview_analysis_thread
@@ -6227,6 +6267,7 @@ class MainWindow(QMainWindow):
         self._preview_analysis_finalizing = True
         self._preview_analysis_timer.stop()
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
         if self._preview_analysis_dialog is not None:
             busy_message = self._preview_analysis_finalize_message(self._preview_analysis_mode)
             self._preview_analysis_dialog.set_status(busy_message)
@@ -6244,13 +6285,23 @@ class MainWindow(QMainWindow):
             return
         self._preview_analysis_request_id += 1
         request_id = self._preview_analysis_request_id
+        started_at = perf_counter()
         if self._capture_manager.request_analysis_frame(request_id):
             self._preview_analysis_request_pending = True
+            self._preview_analysis_request_started_at = started_at
 
     def _on_preview_analysis_frame_ready(self, request_id: int, image: object) -> None:
         if request_id != self._preview_analysis_request_id:
             return
+        started_at = self._preview_analysis_request_started_at
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
+        if started_at is not None:
+            log_preview_analysis_perf(
+                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request",
+                (perf_counter() - started_at) * 1000.0,
+                detail=f"request_id={request_id}",
+            )
         if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
             return
         if isinstance(image, QImage) and not image.isNull():
@@ -6259,7 +6310,15 @@ class MainWindow(QMainWindow):
     def _on_preview_analysis_frame_failed(self, request_id: int, message: str) -> None:
         if request_id != self._preview_analysis_request_id:
             return
+        started_at = self._preview_analysis_request_started_at
         self._preview_analysis_request_pending = False
+        self._preview_analysis_request_started_at = None
+        if started_at is not None:
+            log_preview_analysis_perf(
+                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request failed",
+                (perf_counter() - started_at) * 1000.0,
+                detail=f"request_id={request_id}, message={message}",
+            )
         if self._preview_analysis_dialog is not None:
             self._preview_analysis_dialog.set_status(message)
         self.statusBar().showMessage(message, 4000)
@@ -6274,6 +6333,8 @@ class MainWindow(QMainWindow):
             return
         if isinstance(payload, MapBuildReport):
             self._preview_analysis_dialog.set_result_image(payload.preview_image)
+            title, detail, tone = self._map_build_state_banner(payload)
+            self._preview_analysis_dialog.set_state_banner(title, detail, tone)
             self._preview_analysis_dialog.set_status(payload.message)
             self.statusBar().showMessage(payload.message, 2500)
 
