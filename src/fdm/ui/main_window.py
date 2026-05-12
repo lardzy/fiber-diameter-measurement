@@ -110,7 +110,7 @@ from fdm.services.reference_instance_propagation import (
 )
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
-from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode
+from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, magic_prompt_visual
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
@@ -577,6 +577,7 @@ class MainWindow(QMainWindow):
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
 
         self.settings_action = QAction("设置", self)
+        self.settings_action.setMenuRole(QAction.MenuRole.NoRole)
         self.settings_action.setIcon(themed_icon("rename", color="#D7E3FC"))
         self.settings_action.triggered.connect(self.open_settings_dialog)
 
@@ -674,6 +675,8 @@ class MainWindow(QMainWindow):
         export_menu = file_menu.addMenu("导出")
         for action in self.export_actions:
             export_menu.addAction(action)
+        file_menu.addSeparator()
+        file_menu.addAction(self.settings_action)
 
         edit_menu = self.menuBar().addMenu("编辑")
         edit_menu.addAction(self.undo_action)
@@ -684,13 +687,12 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.add_group_action)
         edit_menu.addAction(self.rename_group_action)
         edit_menu.addAction(self.delete_group_action)
-        edit_menu.addSeparator()
-        edit_menu.addAction(self.settings_action)
+
+        tool_menu = self.menuBar().addMenu("工具")
+        for action in self._mode_actions.values():
+            tool_menu.addAction(action)
 
         view_menu = self.menuBar().addMenu("视图")
-        for action in self._mode_actions.values():
-            view_menu.addAction(action)
-        view_menu.addSeparator()
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.actual_size_action)
 
@@ -5953,6 +5955,15 @@ class MainWindow(QMainWindow):
                 self._magic_prompt_label.setText("拖框或点已确认面积作为参考")
         if self._magic_toggle_button is not None:
             self._magic_toggle_button.setVisible(standard_mode or fiber_quick_mode)
+            if standard_mode:
+                visual = magic_prompt_visual(prompt_type)
+                self._magic_toggle_button.setText(f"{visual.button_label}(R)")
+                self._magic_toggle_button.setProperty("magicPrompt", visual.prompt_type)
+            else:
+                self._magic_toggle_button.setText("正负(R)")
+                self._magic_toggle_button.setProperty("magicPrompt", "")
+            self._measurement_tool_strip._apply_button_palette(self._magic_toggle_button)
+            refresh_widget_theme(self._magic_toggle_button)
             self._magic_toggle_button.setEnabled(
                 has_document
                 and (standard_mode or fiber_quick_mode)
@@ -6391,6 +6402,7 @@ class MainWindow(QMainWindow):
             return
         prompt_type = canvas.cycle_magic_segment_prompt_type()
         self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
+        self._update_magic_segment_controls()
         self._focus_current_canvas()
 
     def _cycle_active_magic_prompt_type(self) -> None:
@@ -6885,6 +6897,9 @@ class MainWindow(QMainWindow):
                     if self._confirm_current_magic_subtract_shape():
                         event.accept()
                         return
+                    return
+                if event.key() == Qt.Key.Key_S:
+                    return
                 if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
                     self._commit_magic_segment_preview()
                     event.accept()

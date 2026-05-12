@@ -809,6 +809,16 @@ class MeasurementToolStrip(QWidget):
             context_tool_disabled_text = "#9AA5B1"
             context_tool_hover = "rgba(255, 255, 255, 16)"
             context_tool_pressed = "rgba(255, 255, 255, 20)"
+            positive_prompt_background = "#064E3B"
+            positive_prompt_border = "#34D399"
+            positive_prompt_text = "#ECFDF5"
+            positive_prompt_hover = "#0F6B50"
+            positive_prompt_pressed = "#075A43"
+            negative_prompt_background = "#7F1D1D"
+            negative_prompt_border = "#F87171"
+            negative_prompt_text = "#FEF2F2"
+            negative_prompt_hover = "#991F1F"
+            negative_prompt_pressed = "#861A1A"
             chip_background = "#F6F1E8"
             chip_text = "#182430"
             header_background = "#E8F1F2"
@@ -830,6 +840,16 @@ class MeasurementToolStrip(QWidget):
             context_tool_disabled_text = "#51606F"
             context_tool_hover = "rgba(31, 41, 51, 9)"
             context_tool_pressed = "rgba(31, 41, 51, 14)"
+            positive_prompt_background = "#D1FAE5"
+            positive_prompt_border = "#059669"
+            positive_prompt_text = "#064E3B"
+            positive_prompt_hover = "#A7F3D0"
+            positive_prompt_pressed = "#6EE7B7"
+            negative_prompt_background = "#FEE2E2"
+            negative_prompt_border = "#DC2626"
+            negative_prompt_text = "#7F1D1D"
+            negative_prompt_hover = "#FECACA"
+            negative_prompt_pressed = "#FCA5A5"
             chip_background = "#F5EFD9"
             chip_text = "#4D3B1F"
             header_background = "#E7F1F4"
@@ -909,6 +929,34 @@ class MeasurementToolStrip(QWidget):
             QToolButton[contextTool="true"]:disabled {{
                 color: {context_tool_disabled_text};
             }}
+            QToolButton[contextTool="true"][magicPrompt="positive"] {{
+                background: {positive_prompt_background};
+                border: 1px solid {positive_prompt_border};
+                color: {positive_prompt_text};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="positive"]:hover {{
+                background: {positive_prompt_hover};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="positive"]:pressed {{
+                background: {positive_prompt_pressed};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="negative"] {{
+                background: {negative_prompt_background};
+                border: 1px solid {negative_prompt_border};
+                color: {negative_prompt_text};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="negative"]:hover {{
+                background: {negative_prompt_hover};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="negative"]:pressed {{
+                background: {negative_prompt_pressed};
+            }}
+            QToolButton[contextTool="true"][magicPrompt="positive"]:disabled,
+            QToolButton[contextTool="true"][magicPrompt="negative"]:disabled {{
+                border: 1px solid {context_tool_border};
+                background: {context_tool_background};
+                color: {context_tool_disabled_text};
+            }}
         """
 
     def _apply_button_palette(self, button: QToolButton) -> None:
@@ -917,7 +965,13 @@ class MeasurementToolStrip(QWidget):
             normal_color = "#F3F4F6" if dark_theme else "#1F2933"
             disabled_color = "#9AA5B1" if dark_theme else "#51606F"
         elif button.property("contextTool"):
-            normal_color = "#F3F4F6" if dark_theme else "#1F2933"
+            magic_prompt = button.property("magicPrompt")
+            if magic_prompt == "positive":
+                normal_color = "#ECFDF5" if dark_theme else "#064E3B"
+            elif magic_prompt == "negative":
+                normal_color = "#FEF2F2" if dark_theme else "#7F1D1D"
+            else:
+                normal_color = "#F3F4F6" if dark_theme else "#1F2933"
             disabled_color = "#9AA5B1" if dark_theme else "#51606F"
         else:
             return

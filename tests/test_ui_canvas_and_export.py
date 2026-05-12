@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
-    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMenu, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -48,7 +48,7 @@ from fdm.services.snap_service import SnapResult
 from fdm.project_io import ProjectIO
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate
+    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate, magic_prompt_visual
     from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -60,6 +60,7 @@ else:
     DocumentCanvas = object  # type: ignore[assignment]
     MagicSegmentOperationMode = object  # type: ignore[assignment]
     ReferenceInstancePreviewCandidate = object  # type: ignore[assignment]
+    magic_prompt_visual = None  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
@@ -1511,6 +1512,10 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_measurement_tool_strip_uses_dark_text_in_light_palette(self) -> None:
+        app_palette = QPalette(self.app.palette())
+        light_palette = QPalette(app_palette)
+        light_palette.setColor(QPalette.ColorRole.Window, QColor("#F7F8FA"))
+        self.app.setPalette(light_palette)
         strip = MeasurementToolStrip()
         try:
             palette = strip.palette()
@@ -1520,16 +1525,27 @@ class CanvasAndExportTests(unittest.TestCase):
             primary_button = strip.addModeAction("select", action)
             context_button = QToolButton(strip)
             context_button.setProperty("contextTool", True)
+            positive_prompt_button = QToolButton(strip)
+            positive_prompt_button.setProperty("contextTool", True)
+            positive_prompt_button.setProperty("magicPrompt", "positive")
+            negative_prompt_button = QToolButton(strip)
+            negative_prompt_button.setProperty("contextTool", True)
+            negative_prompt_button.setProperty("magicPrompt", "negative")
             strip._apply_theme_styles()
 
             stylesheet = strip.styleSheet()
             self.assertIn("background: #F5F7FA;", stylesheet)
             self.assertIn("color: #1F2933;", stylesheet)
             self.assertIn("background: #DDF3EF;", stylesheet)
+            self.assertIn('QToolButton[contextTool="true"][magicPrompt="positive"]', stylesheet)
+            self.assertIn('QToolButton[contextTool="true"][magicPrompt="negative"]', stylesheet)
             self.assertEqual(primary_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
             self.assertEqual(context_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#1f2933")
+            self.assertEqual(positive_prompt_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#064e3b")
+            self.assertEqual(negative_prompt_button.palette().color(QPalette.ColorRole.ButtonText).name(), "#7f1d1d")
         finally:
             strip.close()
+            self.app.setPalette(app_palette)
 
     def test_measurement_tool_strip_theme_refresh_repolishes_tool_buttons_and_updates_split_buttons(self) -> None:
         class RecordingSplitButton(OverlayToolSplitButton):
@@ -1561,6 +1577,42 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertFalse(application_icon().isNull())
             self.assertFalse(window.windowIcon().isNull())
+        finally:
+            window.close()
+
+    def test_main_window_menu_structure_separates_tools_view_and_settings(self) -> None:
+        window = MainWindow()
+        try:
+            top_level_actions = window.menuBar().actions()
+            top_level_texts = [action.text() for action in top_level_actions]
+            self.assertIn("工具", top_level_texts)
+            self.assertIn("视图", top_level_texts)
+            self.assertNotIn("设置", top_level_texts)
+            self.assertNotIn(window.settings_action, top_level_actions)
+            self.assertEqual(window.settings_action.menuRole(), QAction.MenuRole.NoRole)
+
+            menus = {
+                menu.title(): menu
+                for menu in window.menuBar().findChildren(QMenu)
+                if menu.parent() is window.menuBar()
+            }
+            file_menu = menus["文件"]
+            edit_menu = menus["编辑"]
+            tool_menu = menus["工具"]
+            view_menu = menus["视图"]
+
+            file_actions = [action for action in file_menu.actions() if not action.isSeparator()]
+            self.assertIn(window.settings_action, file_actions)
+            edit_actions = [action for action in edit_menu.actions() if not action.isSeparator()]
+            self.assertNotIn(window.settings_action, edit_actions)
+            self.assertNotIn("设置", [action.text() for action in edit_actions])
+
+            view_actions = [action for action in view_menu.actions() if not action.isSeparator()]
+            self.assertEqual(view_actions, [window.fit_action, window.actual_size_action])
+            for action in window._mode_actions.values():
+                self.assertIn(action, tool_menu.actions())
+                self.assertNotIn(action, view_menu.actions())
+            self.assertNotIn(window.settings_action, tool_menu.actions())
         finally:
             window.close()
 
@@ -2891,8 +2943,11 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
             self.assertIsNotNone(window._magic_prompt_label)
 
-            window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
             window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            self.app.processEvents()
             self.assertTrue(window._measurement_tool_strip.isMagicContextVisible())
             self.assertTrue(window._measurement_tool_strip.isContextInline())
             self.assertTrue(window._magic_prompt_label.isHidden())
@@ -2909,6 +2964,107 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._measurement_tool_strip.isMagicContextVisible())
         finally:
             window.close()
+
+    def test_standard_magic_prompt_button_reflects_positive_negative_state(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(48, 48, QImage.Format.Format_RGB32)
+            image.fill(QColor("#F7F7F7"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_prompt_button.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            window._update_magic_segment_controls()
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "positive")
+            self.assertEqual(window._magic_toggle_button.text(), "正采样(R)")
+            self.assertEqual(window._magic_toggle_button.property("magicPrompt"), "positive")
+            self.assertTrue(window._magic_toggle_button.isEnabled())
+
+            window._cycle_magic_segment_prompt_type()
+
+            self.assertEqual(canvas.current_magic_segment_prompt_type(), "negative")
+            self.assertEqual(window._magic_toggle_button.text(), "负采样(R)")
+            self.assertEqual(window._magic_toggle_button.property("magicPrompt"), "negative")
+
+            window.set_tool_mode(MagicSegmentToolMode.FIBER_QUICK)
+            window._update_magic_segment_controls()
+
+            self.assertEqual(window._magic_toggle_button.text(), "正负(R)")
+            self.assertEqual(window._magic_toggle_button.property("magicPrompt"), "")
+        finally:
+            window.close()
+
+    def test_magic_prompt_visuals_and_canvas_hint_use_distinct_prompt_state(self) -> None:
+        positive_visual = magic_prompt_visual("positive")
+        negative_visual = magic_prompt_visual("negative")
+        self.assertEqual(positive_visual.button_label, "正采样")
+        self.assertEqual(negative_visual.button_label, "负采样")
+        self.assertEqual(positive_visual.prompt_label, "正采样点")
+        self.assertEqual(negative_visual.prompt_label, "负采样点")
+        self.assertNotEqual(positive_visual.marker_color, negative_visual.marker_color)
+        self.assertNotEqual(positive_visual.chip_background, negative_visual.chip_background)
+        self.assertGreaterEqual(positive_visual.chip_background[3], 200)
+        self.assertGreaterEqual(negative_visual.chip_background[3], 200)
+
+        canvas = DocumentCanvas()
+        try:
+            image = QImage(96, 72, QImage.Format.Format_RGB32)
+            image.fill(QColor("#20242A"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_prompt_hint.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            canvas.resize(420, 220)
+            canvas.set_document(document, image)
+            canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            canvas.set_magic_segment_prompt_type("negative")
+
+            status_target = QImage(420, 64, QImage.Format.Format_ARGB32)
+            status_target.fill(QColor(0, 0, 0, 0))
+            status_painter = QPainter(status_target)
+            try:
+                canvas._draw_magic_prompt_status_label(
+                    status_painter,
+                    prompt_type="negative",
+                    operation_text="当前编辑：第一形状",
+                    busy=True,
+                )
+            finally:
+                status_painter.end()
+
+            marker_calls: list[tuple[str, bool]] = []
+
+            def record_prompt_points(painter, points, color, *, positive):
+                marker_calls.append((color.name().casefold(), positive))
+
+            target = QImage(420, 220, QImage.Format.Format_ARGB32)
+            target.fill(QColor(0, 0, 0, 0))
+            painter = QPainter(target)
+            try:
+                with (
+                    patch.object(canvas, "_draw_magic_prompt_points", side_effect=record_prompt_points),
+                    patch.object(canvas, "_draw_magic_prompt_status_label") as status_label,
+                ):
+                    canvas._draw_magic_segment_preview(painter)
+            finally:
+                painter.end()
+
+            status_label.assert_called_once()
+            self.assertEqual(status_label.call_args.kwargs["prompt_type"], "negative")
+            self.assertIn("当前编辑：第一形状", status_label.call_args.kwargs["operation_text"])
+            self.assertIn((positive_visual.marker_color.casefold(), True), marker_calls)
+            self.assertIn((negative_visual.marker_color.casefold(), False), marker_calls)
+        finally:
+            canvas.close()
 
     def test_preview_analysis_controls_live_in_context_row(self) -> None:
         window = MainWindow()

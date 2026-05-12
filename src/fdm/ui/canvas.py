@@ -59,6 +59,39 @@ class MagicSegmentOperationMode:
     SUBTRACT = "subtract"
 
 
+@dataclass(frozen=True, slots=True)
+class MagicPromptVisual:
+    prompt_type: str
+    button_label: str
+    prompt_label: str
+    marker_color: str
+    chip_background: tuple[int, int, int, int]
+    chip_border: str
+    chip_text: str
+
+
+def magic_prompt_visual(prompt_type: str) -> MagicPromptVisual:
+    if prompt_type == "negative":
+        return MagicPromptVisual(
+            prompt_type="negative",
+            button_label="负采样",
+            prompt_label="负采样点",
+            marker_color="#EF4444",
+            chip_background=(127, 29, 29, 220),
+            chip_border="#F87171",
+            chip_text="#FFFFFF",
+        )
+    return MagicPromptVisual(
+        prompt_type="positive",
+        button_label="正采样",
+        prompt_label="正采样点",
+        marker_color="#22C55E",
+        chip_background=(6, 78, 59, 220),
+        chip_border="#34D399",
+        chip_text="#FFFFFF",
+    )
+
+
 @dataclass(slots=True)
 class MeasurementIndexEntry:
     measurement: Measurement
@@ -2443,13 +2476,13 @@ class DocumentCanvas(QWidget):
         self._draw_magic_prompt_points(
             painter,
             self._magic_segment.positive_points_for_stage(active_stage),
-            QColor("#34D399"),
+            QColor(magic_prompt_visual("positive").marker_color),
             positive=True,
         )
         self._draw_magic_prompt_points(
             painter,
             self._magic_segment.negative_points_for_stage(active_stage),
-            QColor("#F87171"),
+            QColor(magic_prompt_visual("negative").marker_color),
             positive=False,
         )
         self._draw_roi_debug_box(
@@ -2459,7 +2492,6 @@ class DocumentCanvas(QWidget):
         )
 
         prompt_type = self._magic_segment.prompt_type_for_stage(active_stage)
-        prompt_text = "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"
         operation_text = (
             "当前编辑：剔除形状"
             if active_stage == MagicSegmentOperationMode.SUBTRACT
@@ -2467,12 +2499,12 @@ class DocumentCanvas(QWidget):
         )
         if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_segment.confirmed_subtract_count() > 0:
             operation_text += f" / 已确认 {self._magic_segment.confirmed_subtract_count()} 块"
-        if self._magic_segment.busy:
-            prompt_text += " / 推理中..."
-        rect = QRectF(14.0, 14.0, 360.0, 32.0)
-        painter.fillRect(rect, QColor(16, 24, 32, 188))
-        painter.setPen(QPen(QColor("#FFFFFF"), 1))
-        painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, f"{prompt_text}  {operation_text}")
+        self._draw_magic_prompt_status_label(
+            painter,
+            prompt_type=prompt_type,
+            operation_text=operation_text,
+            busy=self._magic_segment.busy,
+        )
 
     def _draw_reference_instance_preview(self, painter: QPainter) -> None:
         if self._image is None:
@@ -2558,6 +2590,59 @@ class DocumentCanvas(QWidget):
         painter.fillRect(rect, QColor(16, 24, 32, 188))
         painter.setPen(QPen(QColor("#FFFFFF"), 1))
         painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label_text)
+
+    def _draw_magic_prompt_status_label(
+        self,
+        painter: QPainter,
+        *,
+        prompt_type: str,
+        operation_text: str,
+        busy: bool,
+    ) -> None:
+        visual = magic_prompt_visual(prompt_type)
+        prefix_text = "当前提示："
+        suffix_text = f"  {operation_text}"
+        if busy:
+            suffix_text += " / 推理中..."
+
+        metrics = painter.fontMetrics()
+        label_height = 34.0
+        chip_height = 22.0
+        outer_padding = 10.0
+        gap = 7.0
+        chip_padding = 10.0
+        prefix_width = float(metrics.horizontalAdvance(prefix_text))
+        chip_width = float(metrics.horizontalAdvance(visual.prompt_label)) + chip_padding * 2
+        suffix_width = float(metrics.horizontalAdvance(suffix_text))
+        desired_width = outer_padding * 2 + prefix_width + gap + chip_width + gap + suffix_width
+        max_width = max(180.0, float(self.width()) - 28.0) if self.width() > 0 else desired_width
+        label_width = min(max(desired_width, 300.0), max_width)
+        rect = QRectF(14.0, 14.0, label_width, label_height)
+
+        painter.save()
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(16, 24, 32, 205))
+        painter.drawRoundedRect(rect, 7.0, 7.0)
+
+        x = rect.left() + outer_padding
+        prefix_rect = QRectF(x, rect.top(), prefix_width, label_height)
+        painter.setPen(QPen(QColor("#F7F4EA"), 1))
+        painter.drawText(prefix_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, prefix_text)
+        x += prefix_width + gap
+
+        chip_rect = QRectF(x, rect.top() + (label_height - chip_height) / 2, chip_width, chip_height)
+        painter.setBrush(QColor(*visual.chip_background))
+        painter.setPen(QPen(QColor(visual.chip_border), 1.2))
+        painter.drawRoundedRect(chip_rect, 6.0, 6.0)
+        painter.setPen(QPen(QColor(visual.chip_text), 1))
+        painter.drawText(chip_rect, Qt.AlignmentFlag.AlignCenter, visual.prompt_label)
+        x += chip_width + gap
+
+        suffix_rect = QRectF(x, rect.top(), max(0.0, rect.right() - x - outer_padding), label_height)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.setPen(QPen(QColor("#F7F4EA"), 1))
+        painter.drawText(suffix_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, suffix_text)
+        painter.restore()
 
     def _draw_magic_area_preview(
         self,
