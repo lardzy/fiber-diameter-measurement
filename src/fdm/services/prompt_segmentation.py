@@ -213,15 +213,40 @@ def _centered_square_crop(
     center: Point,
     side: int,
     image_size: tuple[int, int],
+    bounds: tuple[int, int, int, int] | None = None,
 ) -> tuple[int, int, int, int]:
     image_h, image_w = image_size
-    crop_side = max(1, min(int(side), image_h, image_w))
+    if bounds is None:
+        bounds = (0, 0, image_w, image_h)
+    bx0, by0, bx1, by1 = bounds
+    bounds_w = max(1, bx1 - bx0)
+    bounds_h = max(1, by1 - by0)
+    crop_side = max(1, min(int(side), image_h, image_w, bounds_w, bounds_h))
     half = crop_side / 2.0
     x0 = int(round(center.x - half))
     y0 = int(round(center.y - half))
-    x0 = max(0, min(x0, image_w - crop_side))
-    y0 = max(0, min(y0, image_h - crop_side))
+    x0 = max(bx0, min(x0, bx1 - crop_side))
+    y0 = max(by0, min(y0, by1 - crop_side))
     return x0, y0, x0 + crop_side, y0 + crop_side
+
+
+def _normalize_roi_constraint_box(
+    roi_constraint_box: tuple[int, int, int, int] | None,
+    *,
+    image_size: tuple[int, int],
+) -> tuple[int, int, int, int] | None:
+    if roi_constraint_box is None:
+        return None
+    image_h, image_w = image_size
+    try:
+        x0, y0, x1, y1 = [int(round(value)) for value in roi_constraint_box]
+    except (TypeError, ValueError):
+        return None
+    x0 = max(0, min(x0, image_w - 1))
+    y0 = max(0, min(y0, image_h - 1))
+    x1 = max(x0 + 1, min(x1, image_w))
+    y1 = max(y0 + 1, min(y1, image_h))
+    return x0, y0, x1, y1
 
 
 def initial_interactive_segmentation_crop_box(
@@ -247,7 +272,16 @@ def initial_interactive_segmentation_crop_box(
 
 def _crop_points_to_local(points: list[Point], crop_box: tuple[int, int, int, int]) -> list[Point]:
     x0, y0, _x1, _y1 = crop_box
-    return [Point(point.x - x0, point.y - y0) for point in points]
+    return [
+        Point(point.x - x0, point.y - y0)
+        for point in points
+        if _point_in_crop(point, crop_box)
+    ]
+
+
+def _point_in_crop(point: Point, crop_box: tuple[int, int, int, int]) -> bool:
+    x0, y0, x1, y1 = crop_box
+    return x0 <= point.x < x1 and y0 <= point.y < y1
 
 
 def _expand_mask_from_crop(crop_mask, *, crop_box: tuple[int, int, int, int], image_shape: tuple[int, int]):
@@ -873,6 +907,7 @@ class PromptSegmentationService:
         negative_points: list[Point],
         tool_mode: str = MagicSegmentToolMode.STANDARD,
         roi_enabled: bool = False,
+        roi_constraint_box: tuple[int, int, int, int] | None = None,
         cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
@@ -891,6 +926,7 @@ class PromptSegmentationService:
                 positive_points=positive_points,
                 negative_points=negative_points,
                 tool_mode=tool_mode,
+                roi_constraint_box=roi_constraint_box,
                 cancel_check=cancel_check,
             )
         return self._predict_polygon_for_rgb_array(
@@ -909,12 +945,21 @@ class PromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str,
+        roi_constraint_box: tuple[int, int, int, int] | None,
         cancel_check: Callable[[], bool] | None,
     ) -> PromptSegmentationResult:
         image_h, image_w = cv_image.shape[:2]
-        image_long_side = max(image_h, image_w)
+        constraint_box = _normalize_roi_constraint_box(roi_constraint_box, image_size=(image_h, image_w))
+        constraint_bounds = constraint_box or (0, 0, image_w, image_h)
+        bounds_w = max(1, constraint_bounds[2] - constraint_bounds[0])
+        bounds_h = max(1, constraint_bounds[3] - constraint_bounds[1])
+        image_long_side = max(bounds_h, bounds_w)
         latest_positive = positive_points[-1] if positive_points else _prompt_centroid(positive_points)
         center = latest_positive or _prompt_centroid(positive_points) or Point(image_w / 2.0, image_h / 2.0)
+        center = Point(
+            max(constraint_bounds[0], min(center.x, constraint_bounds[2] - 1)),
+            max(constraint_bounds[1], min(center.y, constraint_bounds[3] - 1)),
+        )
         prompt_long_side = _prompt_bbox_long_side(positive_points, negative_points)
         initial_side = int(round(max(ROI_CROP_MIN_SIDE, 4.0 * prompt_long_side)))
         initial_side = max(ROI_CROP_MIN_SIDE, min(initial_side, ROI_CROP_MAX_INITIAL_SIDE))
@@ -927,12 +972,17 @@ class PromptSegmentationService:
             if cancel_check is not None and cancel_check():
                 raise RuntimeError("请求已取消。")
             requested_side = int(round(initial_side * (ROI_CROP_SCALE_FACTOR**round_idx)))
-            crop_side = max(ROI_CROP_MIN_SIDE, min(requested_side, max_side, image_h, image_w))
+            crop_side = max(1, min(max(ROI_CROP_MIN_SIDE, requested_side), max_side, image_h, image_w, bounds_w, bounds_h))
             if tool_mode == MagicSegmentToolMode.STANDARD and (round_idx == max_rounds - 1 or crop_side >= image_long_side):
-                crop_box = (0, 0, image_w, image_h)
-                used_full_image = True
+                crop_box = constraint_bounds
+                used_full_image = constraint_box is None
             else:
-                crop_box = _centered_square_crop(center=center, side=crop_side, image_size=(image_h, image_w))
+                crop_box = _centered_square_crop(
+                    center=center,
+                    side=crop_side,
+                    image_size=(image_h, image_w),
+                    bounds=constraint_bounds,
+                )
             x0, y0, x1, y1 = crop_box
             crop_image = cv_image[y0:y1, x0:x1].copy()
             crop_positive = _crop_points_to_local(positive_points, crop_box)
@@ -947,6 +997,7 @@ class PromptSegmentationService:
                     "segmentation_roi_round": round_idx + 1,
                     "segmentation_used_full_image": used_full_image,
                     "segmentation_crop_box": crop_box,
+                    "segmentation_roi_constraint_box": constraint_box,
                 },
             )
             expanded_mask = _expand_mask_from_crop(crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w))
@@ -966,6 +1017,7 @@ class PromptSegmentationService:
                     "segmentation_roi_round": round_idx + 1,
                     "segmentation_used_full_image": used_full_image,
                     "segmentation_crop_box": crop_box,
+                    "segmentation_roi_constraint_box": constraint_box,
                 },
             )
             if selected_mask is not None and not _roi_result_needs_expansion(selected_mask, crop_box=crop_box):
@@ -976,20 +1028,46 @@ class PromptSegmentationService:
             last_result.mask,
             crop_box=last_result.metadata.get("segmentation_crop_box", (0, 0, image_w, image_h)),
         ):
+            x0, y0, x1, y1 = constraint_bounds
+            fallback_crop = cv_image[y0:y1, x0:x1].copy()
+            fallback_positive = _crop_points_to_local(positive_points, constraint_bounds)
+            fallback_negative = _crop_points_to_local(negative_points, constraint_bounds)
+            fallback_signature = f"{x0}:{y0}:{x1}:{y1}"
             fallback_result = self._predict_polygon_for_rgb_array(
-                cv_image,
-                cache_key=cache_key,
-                positive_points=positive_points,
-                negative_points=negative_points,
+                fallback_crop,
+                cache_key=f"{cache_key}|roi={fallback_signature}|fallback",
+                positive_points=fallback_positive,
+                negative_points=fallback_negative,
                 metadata_extra={
                     "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                    "segmentation_used_full_image": True,
-                    "segmentation_crop_box": (0, 0, image_w, image_h),
+                    "segmentation_used_full_image": constraint_box is None,
+                    "segmentation_crop_box": constraint_bounds,
+                    "segmentation_roi_constraint_box": constraint_box,
                     "segmentation_fallback_from_roi": True,
                 },
             )
             if fallback_result.mask is not None:
-                return fallback_result
+                expanded_mask = _expand_mask_from_crop(fallback_result.mask, crop_box=constraint_bounds, image_shape=(image_h, image_w))
+                selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+                    expanded_mask,
+                    positive_points=positive_points,
+                    negative_points=negative_points,
+                )
+                return PromptSegmentationResult(
+                    mask=selected_mask.copy() if selected_mask is not None else None,
+                    polygon_px=polygon,
+                    area_rings_px=area_rings,
+                    area_px=magic_mask_area_px(selected_mask),
+                    metadata={
+                        **fallback_result.metadata,
+                        **geometry_stats,
+                        "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
+                        "segmentation_used_full_image": constraint_box is None,
+                        "segmentation_crop_box": constraint_bounds,
+                        "segmentation_roi_constraint_box": constraint_box,
+                        "segmentation_fallback_from_roi": True,
+                    },
+                )
             return PromptSegmentationResult(
                 mask=None,
                 polygon_px=[],
@@ -998,7 +1076,9 @@ class PromptSegmentationService:
                 metadata={
                     "reason": "roi_unstable",
                     "segmentation_roi_round": int(last_result.metadata.get("segmentation_roi_round", 0) or 0),
-                    "segmentation_used_full_image": True,
+                    "segmentation_used_full_image": constraint_box is None,
+                    "segmentation_crop_box": constraint_bounds,
+                    "segmentation_roi_constraint_box": constraint_box,
                     "segmentation_fallback_from_roi": True,
                 },
             )

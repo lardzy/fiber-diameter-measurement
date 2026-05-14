@@ -11,7 +11,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
-    from PySide6.QtCore import QPoint, QPointF, Qt, QThread, QItemSelectionModel
+    from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
     from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMenu, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
@@ -54,7 +54,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.rendering import draw_area_measurement, draw_scale_overlay, measurement_display_text_with_settings
+    from fdm.ui.rendering import draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     DocumentCanvas = object  # type: ignore[assignment]
@@ -71,6 +71,7 @@ else:
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
+    draw_measurements = object  # type: ignore[assignment]
     draw_scale_overlay = object  # type: ignore[assignment]
     measurement_display_text_with_settings = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
@@ -414,6 +415,23 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
+
+    def test_temporary_line_preview_uses_configured_endpoint_style(self) -> None:
+        _document, _image, canvas = self._create_canvas_document()
+        canvas.set_settings(AppSettings(measurement_endpoint_style=MeasurementEndpointStyle.ARROW_OUTSIDE))
+        image = QImage(canvas.size(), QImage.Format.Format_ARGB32)
+        image.fill(QColor("#00000000"))
+        painter = QPainter(image)
+        try:
+            for tool_mode in ("manual", "snap", "calibration"):
+                canvas.set_tool_mode(tool_mode)
+                canvas._drawing_line = Line(Point(20, 20), Point(80, 70))
+                with patch("fdm.ui.canvas.draw_endpoint_style") as endpoint_mock:
+                    canvas._draw_preview(painter)
+                endpoint_mock.assert_called_once()
+                self.assertEqual(endpoint_mock.call_args.args[4], MeasurementEndpointStyle.ARROW_OUTSIDE)
+        finally:
+            painter.end()
 
     def test_line_hit_test_keeps_tolerance_when_point_is_outside_exact_bounds(self) -> None:
         document, _, canvas = self._create_canvas_document()
@@ -1401,7 +1419,7 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动测量", "计数", "边缘吸附", "面积测量", "标准魔棒", "比例尺标定", "叠加标注"],
+                ["浏览", "手动线段", "计数", "边缘吸附", "多边形面积", "标准魔棒", "比例尺标定", "文字"],
             )
             visible_actions = [
                 window._mode_actions[key]
@@ -1422,12 +1440,16 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(all(not action.icon().isNull() for action in visible_actions))
             self.assertFalse(window.open_images_action.icon().isNull())
             self.assertFalse(window.save_project_action.icon().isNull())
+            file_toolbar_buttons = [button.text() for button in window._file_toolbar.findChildren(QToolButton)]
+            self.assertNotIn("点号", file_toolbar_buttons)
+            self.assertNotIn("编号开", file_toolbar_buttons)
+            self.assertNotIn("编号关", file_toolbar_buttons)
             self.assertIsInstance(window._manual_tool_button, OverlayToolSplitButton)
-            self.assertEqual(window._manual_tool_button.text(), "手动测量")
+            self.assertEqual(window._manual_tool_button.text(), "手动线段")
             self.assertEqual(window._manual_tool_button.currentToolKind(), "manual")
             self.assertIs(window._manual_tool_menu.parent(), window)
             self.assertIsInstance(window._area_tool_button, OverlayToolSplitButton)
-            self.assertEqual(window._area_tool_button.text(), "面积测量")
+            self.assertEqual(window._area_tool_button.text(), "多边形面积")
             self.assertEqual(window._area_tool_button.currentToolKind(), "polygon_area")
             self.assertIs(window._area_tool_menu.parent(), window)
             self.assertIsInstance(window._magic_tool_button, OverlayToolSplitButton)
@@ -1435,7 +1457,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._magic_tool_button.currentToolKind(), MagicSegmentToolMode.STANDARD)
             self.assertIs(window._magic_tool_menu.parent(), window)
             self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
-            self.assertEqual(window._overlay_tool_button.text(), "叠加标注")
+            self.assertEqual(window._overlay_tool_button.text(), "文字")
             self.assertLessEqual(window._overlay_tool_button.expandedWidthHint(), 120)
             self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
             self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.TEXT)
@@ -1470,6 +1492,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.ARROW)
 
             self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.ARROW)
+            self.assertEqual(window._overlay_tool_button.text(), "箭头")
             self.assertIn("当前：箭头", window._overlay_tool_button.toolTip())
             self.assertTrue(window._overlay_subtool_actions[OverlayAnnotationKind.ARROW].isChecked())
 
@@ -1477,6 +1500,27 @@ class CanvasAndExportTests(unittest.TestCase):
             window._update_action_states()
 
             self.assertFalse(window._overlay_tool_button.isEnabled())
+        finally:
+            window.close()
+
+    def test_measurement_split_buttons_update_text_with_current_subtool(self) -> None:
+        window = MainWindow()
+        try:
+            self.assertIsInstance(window._manual_tool_button, OverlayToolSplitButton)
+            self.assertIsInstance(window._area_tool_button, OverlayToolSplitButton)
+            self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
+
+            window.set_tool_mode("continuous_manual")
+            self.assertEqual(window._manual_tool_button.text(), "连续测量")
+            self.assertEqual(window._manual_tool_button.currentToolKind(), "continuous_manual")
+
+            window.set_tool_mode("freehand_area")
+            self.assertEqual(window._area_tool_button.text(), "自由形状面积")
+            self.assertEqual(window._area_tool_button.currentToolKind(), "freehand_area")
+
+            window.set_tool_mode("overlay", overlay_kind=OverlayAnnotationKind.RECT)
+            self.assertEqual(window._overlay_tool_button.text(), "矩形")
+            self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.RECT)
         finally:
             window.close()
 
@@ -2116,6 +2160,7 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             document.initialize_runtime_state()
             self._load_document_into_window(window, document, image)
+            window._magic_standard_add_roi_enabled = False
 
             class FakeRequested:
                 def __init__(self) -> None:
@@ -2163,6 +2208,158 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             self.assertEqual(fake_worker.requested.payload.tool_mode, MagicSegmentToolMode.STANDARD)
             self.assertEqual(fake_worker.requested.payload.active_stage, MagicSegmentOperationMode.ADD)
+            self.assertIsNone(fake_worker.requested.payload.roi_constraint_box)
+            self.assertFalse(fake_worker.requested.payload.roi_enabled)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_standard_magic_roi_state_is_independent_by_operation_mode(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/standard_roi_modes.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window._canvases[document.id]
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+
+            canvas._magic_segment.active_stage = MagicSegmentOperationMode.ADD
+            window._update_magic_segment_controls()
+            self.assertFalse(window._magic_roi_button.isChecked())
+
+            window._toggle_active_magic_roi()
+            self.assertTrue(window._magic_standard_add_roi_enabled)
+            self.assertTrue(window._magic_standard_subtract_roi_enabled)
+
+            canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
+            window._update_magic_segment_controls()
+            self.assertTrue(window._magic_roi_button.isChecked())
+
+            window._toggle_active_magic_roi()
+            self.assertTrue(window._magic_standard_add_roi_enabled)
+            self.assertFalse(window._magic_standard_subtract_roi_enabled)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_magic_segment_subtract_roi_request_uses_primary_bounds_constraint(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/subtract_constraint.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window._canvases[document.id]
+            canvas._magic_segment.primary_polygon = [
+                Point(20, 20),
+                Point(80, 20),
+                Point(80, 60),
+                Point(20, 60),
+            ]
+            window._magic_standard_subtract_roi_enabled = True
+            window._app_settings.magic_segment_standard_subtract_roi_enabled = True
+            window._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds = True
+
+            class FakeRequested:
+                def __init__(self) -> None:
+                    self.payload = None
+
+                def emit(self, payload) -> None:
+                    self.payload = payload
+
+            class FakeWorker:
+                def __init__(self) -> None:
+                    self.requested = FakeRequested()
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.last_registered = (document_id, request_id)
+
+            fake_worker = FakeWorker()
+            window._prompt_seg_worker = fake_worker
+
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker", return_value=None),
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 8,
+                        "positive_points": [Point(30, 30)],
+                        "negative_points": [],
+                        "tool_mode": MagicSegmentToolMode.STANDARD,
+                        "active_stage": MagicSegmentOperationMode.SUBTRACT,
+                    },
+                )
+
+            self.assertIsNotNone(fake_worker.requested.payload)
+            self.assertEqual(fake_worker.requested.payload.roi_constraint_box, (20, 20, 81, 61))
+            self.assertTrue(fake_worker.requested.payload.roi_enabled)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_magic_segment_subtract_roi_rejects_positive_point_outside_primary_bounds(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(220, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="captures/subtract_constraint_outside.png",
+                image_size=(image.width(), image.height()),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window._canvases[document.id]
+            canvas._magic_segment.request_id = 11
+            canvas._magic_segment.busy = True
+            canvas._magic_segment.subtract_positive_points = [Point(120, 90)]
+            canvas._magic_segment.primary_polygon = [
+                Point(20, 20),
+                Point(80, 20),
+                Point(80, 60),
+                Point(20, 60),
+            ]
+            window._magic_standard_subtract_roi_enabled = True
+            window._app_settings.magic_segment_standard_subtract_roi_enabled = True
+            window._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds = True
+
+            with (
+                patch.object(window, "_ensure_prompt_segmentation_worker") as ensure_mock,
+                patch("fdm.ui.main_window.resolve_interactive_segmentation_backend", return_value=(MagicSegmentModelVariant.EDGE_SAM_3X, None)),
+                patch("fdm.ui.main_window.interactive_segmentation_models_ready", return_value=True),
+            ):
+                window._on_canvas_magic_segment_requested(
+                    document.id,
+                    {
+                        "request_id": 11,
+                        "positive_points": [Point(120, 90)],
+                        "negative_points": [],
+                        "tool_mode": MagicSegmentToolMode.STANDARD,
+                        "active_stage": MagicSegmentOperationMode.SUBTRACT,
+                    },
+                )
+
+            ensure_mock.assert_not_called()
+            self.assertFalse(canvas._magic_segment.busy)
+            self.assertEqual(canvas._magic_segment.subtract_positive_points, [])
         finally:
             window._reset_workspace()
             window.close()
@@ -4376,6 +4573,9 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._scale_overlay_length_spin.setValue(27.5)
             dialog._scale_overlay_font_size.setValue(24)
             dialog._overlay_line_width.setValue(4.5)
+            dialog._show_count_numbers.setChecked(True)
+            dialog._count_number_size.setValue(20)
+            dialog._count_number_color.setProperty("color_value", "#123ABC")
             dialog._focus_stack_profile_combo.setCurrentIndex(dialog._focus_stack_profile_combo.findData(FocusStackProfile.SHARP))
             dialog._focus_stack_sharpen_slider.setValue(65)
             updated = dialog.app_settings()
@@ -4386,6 +4586,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(updated.overlay_line_width, 4.5)
             self.assertEqual(updated.focus_stack_profile, FocusStackProfile.SHARP)
             self.assertEqual(updated.focus_stack_sharpen_strength, 65)
+            self.assertTrue(updated.show_count_numbers)
+            self.assertEqual(updated.count_number_font_size, 20)
+            self.assertEqual(updated.count_number_color, "#123ABC")
         finally:
             dialog.close()
 
@@ -4397,6 +4600,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
             self.assertFalse(dialog._measurement_label_background.isChecked())
             self.assertEqual(dialog._endpoint_style_combo.currentData(), MeasurementEndpointStyle.BAR)
+            self.assertFalse(dialog._show_count_numbers.isChecked())
+            self.assertEqual(dialog._count_number_size.value(), 12)
+            self.assertEqual(dialog._count_number_color.property("color_value"), "#FFFFFF")
             self.assertEqual(dialog._open_view_mode_combo.currentData(), OpenImageViewMode.FIT)
             self.assertEqual(dialog._scale_overlay_mode_combo.currentData(), ScaleOverlayPlacementMode.BOTTOM_RIGHT)
             self.assertEqual(dialog._scale_overlay_style_combo.currentData(), ScaleOverlayStyle.TICKS)
@@ -4434,6 +4640,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsInstance(field_combo, QComboBox)
             self.assertIsInstance(filter_combo, QComboBox)
             self.assertEqual(field_combo.currentText(), "结果")
+            self.assertGreaterEqual(field_combo.findText("纤维结果序号"), 0)
+            self.assertGreaterEqual(field_combo.findText("纤维类别结果序号"), 0)
             self.assertFalse(field_combo.isEnabled())
             self.assertEqual(filter_combo.currentData(), RawRecordMeasurementFilter.AREA)
             self.assertEqual(filter_combo.currentText(), "自动: 面积")
@@ -4755,6 +4963,43 @@ class CanvasAndExportTests(unittest.TestCase):
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
 
+    def test_count_number_button_toggles_setting_and_canvas(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            image = QImage(120, 80, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/count_number_toggle.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            self.assertIsInstance(window._count_numbers_button, QToolButton)
+            self.assertFalse(window._measurement_tool_strip.isCountContextVisible())
+            self.assertFalse(window._count_numbers_button.isChecked())
+            self.assertEqual(window._count_numbers_button.text(), "编号关")
+
+            window.set_tool_mode("count")
+            self.assertTrue(window._measurement_tool_strip.isCountContextVisible())
+            self.assertEqual(window._count_numbers_button.text(), "编号关")
+
+            with patch("fdm.ui.main_window.AppSettingsIO.save", return_value=Path("/tmp/settings.json")) as save_mock:
+                window._count_numbers_button.setChecked(True)
+
+            self.assertTrue(window._app_settings.show_count_numbers)
+            self.assertTrue(window._canvases[document.id]._settings.show_count_numbers)
+            self.assertEqual(window._count_numbers_button.text(), "编号开")
+            save_mock.assert_called_once()
+
+            window.set_tool_mode("manual")
+            self.assertFalse(window._measurement_tool_strip.isCountContextVisible())
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
     def test_count_hit_test_uses_latest_point_with_many_measurements(self) -> None:
         document, image, canvas = self._create_canvas_document()
         group = document.ensure_default_group()
@@ -4779,20 +5024,21 @@ class CanvasAndExportTests(unittest.TestCase):
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
-            self.assertEqual(dialog._tabs.count(), 6)
+            self.assertEqual(dialog._tabs.count(), 7)
             self.assertEqual(dialog._tabs.tabText(0), "测量标注")
             self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
             self.assertEqual(dialog._tabs.tabText(2), "图像处理")
             self.assertEqual(dialog._tabs.tabText(3), "叠加标注")
             self.assertEqual(dialog._tabs.tabText(4), "面积识别")
-            self.assertEqual(dialog._tabs.tabText(5), "当前图片")
+            self.assertEqual(dialog._tabs.tabText(5), "原始记录模板")
+            self.assertEqual(dialog._tabs.tabText(6), "当前图片")
             self.assertLessEqual(dialog.width(), 720)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
             self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
-            self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "测量线与端点"])
+            self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "计数点编号", "测量线与端点"])
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
             self.assertEqual(
@@ -4800,7 +5046,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 MagicSegmentModelVariant.EDGE_SAM_3X,
             )
             self.assertFalse(dialog._magic_segment_fill_draft_holes_checkbox.isChecked())
-            self.assertFalse(dialog._magic_segment_standard_roi_checkbox.isChecked())
+            self.assertFalse(dialog._magic_segment_standard_add_roi_checkbox.isChecked())
+            self.assertTrue(dialog._magic_segment_standard_subtract_roi_checkbox.isChecked())
+            self.assertTrue(dialog._magic_segment_restrict_subtract_roi_checkbox.isChecked())
             self.assertTrue(dialog._fiber_quick_roi_checkbox.isChecked())
             self.assertTrue(dialog._fiber_quick_edge_trim_checkbox.isChecked())
             self.assertAlmostEqual(dialog._fiber_quick_line_extension_spin.value(), 0.0)
@@ -4817,7 +5065,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 dialog._magic_segment_model_variant_combo.findData(MagicSegmentModelVariant.EDGE_SAM_3X)
             )
             dialog._magic_segment_fill_draft_holes_checkbox.setChecked(True)
-            dialog._magic_segment_standard_roi_checkbox.setChecked(True)
+            dialog._magic_segment_standard_add_roi_checkbox.setChecked(True)
+            dialog._magic_segment_standard_subtract_roi_checkbox.setChecked(False)
+            dialog._magic_segment_restrict_subtract_roi_checkbox.setChecked(False)
             dialog._fiber_quick_roi_checkbox.setChecked(False)
             dialog._fiber_quick_edge_trim_checkbox.setChecked(False)
             dialog._fiber_quick_line_extension_spin.setValue(3.5)
@@ -4827,6 +5077,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(collected.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
             self.assertTrue(collected.magic_segment_fill_draft_holes_enabled)
             self.assertTrue(collected.magic_segment_standard_roi_enabled)
+            self.assertTrue(collected.magic_segment_standard_add_roi_enabled)
+            self.assertFalse(collected.magic_segment_standard_subtract_roi_enabled)
+            self.assertFalse(collected.magic_segment_restrict_subtract_roi_to_primary_bounds)
             self.assertFalse(collected.fiber_quick_roi_enabled)
             self.assertFalse(collected.fiber_quick_edge_trim_enabled)
             self.assertAlmostEqual(collected.fiber_quick_line_extension_px, 3.5)
@@ -5164,6 +5417,39 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual(vertex_hit, (measurement.id, "vertex", 0, 0))
         self.assertEqual(center_hit, (measurement.id, "center", None, None))
+
+    def test_count_number_rendering_uses_visible_points_and_measurement_order(self) -> None:
+        document, _, _canvas = self._create_canvas_document()
+        for index, point in enumerate([Point(5, 5), Point(20, 20), Point(150, 100)]):
+            document.add_measurement(
+                Measurement(
+                    id=f"count_{index}",
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    measurement_kind="count",
+                    mode="count",
+                    point_px=point,
+                )
+            )
+        image = QImage(200, 120, QImage.Format.Format_ARGB32)
+        image.fill(QColor("#000000"))
+        painter = QPainter(image)
+        captured: list[tuple[QPointF, int]] = []
+        try:
+            with patch("fdm.ui.rendering._draw_count_number_labels", side_effect=lambda _p, label_points, _s, **_kwargs: captured.extend(label_points)):
+                draw_measurements(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x, point.y),
+                    AppSettings(show_count_numbers=True),
+                    line_width=2.0,
+                    endpoint_radius=4.0,
+                    visible_rect=QRectF(0, 0, 40, 40),
+                )
+        finally:
+            painter.end()
+
+        self.assertEqual([number for _point, number in captured], [1, 2])
 
     def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
         document, _, _canvas = self._create_canvas_document()

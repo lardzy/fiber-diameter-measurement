@@ -534,6 +534,10 @@ class ModelsProjectIOTests(unittest.TestCase):
             measurement_label_parallel_to_line=True,
             measurement_label_background_enabled=False,
             measurement_endpoint_style="bar",
+            show_count_numbers=True,
+            count_number_font_family="Arial",
+            count_number_font_size=18,
+            count_number_color="#112233",
             scale_overlay_style=ScaleOverlayStyle.TICKS,
             scale_overlay_length_value=220.0,
             scale_overlay_color="#ABCDEF",
@@ -547,7 +551,9 @@ class ModelsProjectIOTests(unittest.TestCase):
             focus_stack_sharpen_strength=60,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
             magic_segment_fill_draft_holes_enabled=True,
-            magic_segment_standard_roi_enabled=True,
+            magic_segment_standard_add_roi_enabled=True,
+            magic_segment_standard_subtract_roi_enabled=False,
+            magic_segment_restrict_subtract_roi_to_primary_bounds=False,
             fiber_quick_roi_enabled=False,
             fiber_quick_edge_trim_enabled=False,
             fiber_quick_line_extension_px=3.5,
@@ -568,6 +574,10 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.measurement_label_parallel_to_line)
         self.assertFalse(loaded.measurement_label_background_enabled)
         self.assertEqual(loaded.measurement_endpoint_style, "bar")
+        self.assertTrue(loaded.show_count_numbers)
+        self.assertEqual(loaded.count_number_font_family, "Arial")
+        self.assertEqual(loaded.count_number_font_size, 18)
+        self.assertEqual(loaded.count_number_color, "#112233")
         self.assertEqual(loaded.scale_overlay_style, ScaleOverlayStyle.TICKS)
         self.assertAlmostEqual(loaded.scale_overlay_length_value, 220.0)
         self.assertEqual(loaded.scale_overlay_color, "#ABCDEF")
@@ -582,6 +592,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
         self.assertTrue(loaded.magic_segment_fill_draft_holes_enabled)
         self.assertTrue(loaded.magic_segment_standard_roi_enabled)
+        self.assertTrue(loaded.magic_segment_standard_add_roi_enabled)
+        self.assertFalse(loaded.magic_segment_standard_subtract_roi_enabled)
+        self.assertFalse(loaded.magic_segment_restrict_subtract_roi_to_primary_bounds)
         self.assertFalse(loaded.fiber_quick_roi_enabled)
         self.assertFalse(loaded.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(loaded.fiber_quick_line_extension_px, 3.5)
@@ -624,6 +637,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertFalse(settings.measurement_label_background_enabled)
         self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
+        self.assertFalse(settings.show_count_numbers)
+        self.assertEqual(settings.count_number_font_size, 12)
+        self.assertEqual(settings.count_number_color, "#FFFFFF")
         self.assertEqual(settings.open_image_view_mode, OpenImageViewMode.FIT)
         self.assertEqual(settings.scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.TICKS)
@@ -638,6 +654,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         self.assertFalse(settings.magic_segment_fill_draft_holes_enabled)
         self.assertFalse(settings.magic_segment_standard_roi_enabled)
+        self.assertFalse(settings.magic_segment_standard_add_roi_enabled)
+        self.assertTrue(settings.magic_segment_standard_subtract_roi_enabled)
+        self.assertTrue(settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
         self.assertTrue(settings.fiber_quick_roi_enabled)
         self.assertTrue(settings.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 0.0)
@@ -658,6 +677,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 "overlay_line_width": 1000,
                 "focus_stack_profile": "unknown",
                 "focus_stack_sharpen_strength": 1000,
+                "count_number_font_size": 999,
                 "magic_segment_model_variant": "unknown",
                 "fiber_quick_line_extension_px": 999,
             }
@@ -674,8 +694,18 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(settings.overlay_line_width, 24.0)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
+        self.assertEqual(settings.count_number_font_size, 96)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
         self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 20.0)
+
+    def test_app_settings_migrates_legacy_standard_magic_roi_to_add_mode(self) -> None:
+        disabled = AppSettings.from_dict({"magic_segment_standard_roi_enabled": False})
+        enabled = AppSettings.from_dict({"magic_segment_standard_roi_enabled": True})
+
+        self.assertFalse(disabled.magic_segment_standard_add_roi_enabled)
+        self.assertTrue(disabled.magic_segment_standard_subtract_roi_enabled)
+        self.assertTrue(enabled.magic_segment_standard_add_roi_enabled)
+        self.assertTrue(enabled.magic_segment_standard_subtract_roi_enabled)
 
     def test_app_settings_from_dict_ignores_legacy_complex_magic_segment_field(self) -> None:
         settings = AppSettings.from_dict(

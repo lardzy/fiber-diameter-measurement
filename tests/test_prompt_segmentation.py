@@ -193,6 +193,50 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertTrue(bool(result.metadata["segmentation_used_full_image"]))
         self.assertTrue(bool(result.metadata["segmentation_fallback_from_roi"]))
 
+    def test_predict_polygon_roi_constraint_limits_standard_fallback_crop(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        crop_shapes: list[tuple[int, int]] = []
+
+        def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
+            height, width = crop_image.shape[:2]
+            crop_shapes.append((height, width))
+            mask = np.zeros((height, width), dtype=bool)
+            mask[:, :] = True
+            return type("R", (), {
+                "mask": mask,
+                "polygon_px": [],
+                "area_rings_px": [],
+                "area_px": float(mask.sum()),
+                "metadata": dict(metadata_extra),
+            })()
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((900, 1200, 3), dtype=np.uint8)),
+            patch.object(service, "_predict_polygon_for_rgb_array", side_effect=fake_predict),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="roi-constraint",
+                positive_points=[Point(310, 220)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                roi_enabled=True,
+                roi_constraint_box=(280, 180, 520, 420),
+            )
+
+        self.assertIsNotNone(result.mask)
+        self.assertTrue(crop_shapes)
+        self.assertTrue(all(height <= 240 and width <= 240 for height, width in crop_shapes))
+        self.assertEqual(result.metadata["segmentation_crop_box"], (280, 180, 520, 420))
+        self.assertEqual(result.metadata["segmentation_roi_constraint_box"], (280, 180, 520, 420))
+        self.assertFalse(bool(result.metadata["segmentation_used_full_image"]))
+        self.assertTrue(bool(result.metadata["segmentation_fallback_from_roi"]))
+
     def test_run_encoder_uses_uint8_input_tensor(self) -> None:
         try:
             import numpy as np

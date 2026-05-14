@@ -499,6 +499,10 @@ class SettingsDialog(QDialog):
             measurement_label_decimals=self._measurement_label_decimals.value(),
             measurement_label_parallel_to_line=self._measurement_label_parallel.isChecked(),
             measurement_label_background_enabled=self._measurement_label_background.isChecked(),
+            show_count_numbers=self._show_count_numbers.isChecked(),
+            count_number_font_family=self._count_number_font.currentFont().family(),
+            count_number_font_size=self._count_number_size.value(),
+            count_number_color=self._count_number_color.property("color_value") or self._initial_settings.count_number_color,
             measurement_endpoint_style=self._endpoint_style_combo.currentData(),
             default_measurement_color=self._default_measurement_color.property("color_value") or self._initial_settings.default_measurement_color,
             open_image_view_mode=self._open_view_mode_combo.currentData(),
@@ -518,7 +522,10 @@ class SettingsDialog(QDialog):
             focus_stack_sharpen_strength=self._focus_stack_sharpen_slider.value(),
             magic_segment_model_variant=self._magic_segment_model_variant_combo.currentData(),
             magic_segment_fill_draft_holes_enabled=self._magic_segment_fill_draft_holes_checkbox.isChecked(),
-            magic_segment_standard_roi_enabled=self._magic_segment_standard_roi_checkbox.isChecked(),
+            magic_segment_standard_roi_enabled=self._magic_segment_standard_add_roi_checkbox.isChecked(),
+            magic_segment_standard_add_roi_enabled=self._magic_segment_standard_add_roi_checkbox.isChecked(),
+            magic_segment_standard_subtract_roi_enabled=self._magic_segment_standard_subtract_roi_checkbox.isChecked(),
+            magic_segment_restrict_subtract_roi_to_primary_bounds=self._magic_segment_restrict_subtract_roi_checkbox.isChecked(),
             fiber_quick_roi_enabled=self._fiber_quick_roi_checkbox.isChecked(),
             fiber_quick_edge_trim_enabled=self._fiber_quick_edge_trim_checkbox.isChecked(),
             fiber_quick_line_extension_px=self._fiber_quick_line_extension_spin.value(),
@@ -626,6 +633,14 @@ class SettingsDialog(QDialog):
         self._measurement_label_parallel.setChecked(settings.measurement_label_parallel_to_line)
         self._measurement_label_background = QCheckBox("显示结果文字浅黑底")
         self._measurement_label_background.setChecked(settings.measurement_label_background_enabled)
+        self._show_count_numbers = QCheckBox("显示计数点编号")
+        self._show_count_numbers.setChecked(settings.show_count_numbers)
+        self._count_number_font = NoWheelFontComboBox()
+        self._count_number_font.setCurrentFont(QFont(settings.count_number_font_family))
+        self._count_number_size = NoWheelSpinBox()
+        self._count_number_size.setRange(8, 96)
+        self._count_number_size.setValue(settings.count_number_font_size)
+        self._count_number_color = self._create_color_button(settings.count_number_color)
         self._endpoint_style_combo = NoWheelComboBox()
         self._endpoint_style_combo.addItem("圆点", MeasurementEndpointStyle.CIRCLE)
         self._endpoint_style_combo.addItem("内侧箭头", MeasurementEndpointStyle.ARROW_INSIDE)
@@ -642,12 +657,20 @@ class SettingsDialog(QDialog):
         label_form.addRow("", self._measurement_label_parallel)
         label_form.addRow("", self._measurement_label_background)
 
+        count_group = QGroupBox("计数点编号")
+        count_form = QFormLayout(count_group)
+        count_form.addRow("", self._show_count_numbers)
+        count_form.addRow("编号字体", self._count_number_font)
+        count_form.addRow("编号字号", self._count_number_size)
+        count_form.addRow("编号颜色", self._count_number_color)
+
         measurement_group = QGroupBox("测量线与端点")
         measurement_form = QFormLayout(measurement_group)
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
         layout.addWidget(label_group)
+        layout.addWidget(count_group)
         layout.addWidget(measurement_group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
@@ -698,8 +721,12 @@ class SettingsDialog(QDialog):
         )
         self._magic_segment_fill_draft_holes_checkbox = QCheckBox("草稿阶段自动填充内部孔洞")
         self._magic_segment_fill_draft_holes_checkbox.setChecked(settings.magic_segment_fill_draft_holes_enabled)
-        self._magic_segment_standard_roi_checkbox = QCheckBox("标准魔棒默认启用 ROI")
-        self._magic_segment_standard_roi_checkbox.setChecked(settings.magic_segment_standard_roi_enabled)
+        self._magic_segment_standard_add_roi_checkbox = QCheckBox("标准魔棒添加模式默认启用 ROI")
+        self._magic_segment_standard_add_roi_checkbox.setChecked(settings.magic_segment_standard_add_roi_enabled)
+        self._magic_segment_standard_subtract_roi_checkbox = QCheckBox("标准魔棒剔除模式默认启用 ROI")
+        self._magic_segment_standard_subtract_roi_checkbox.setChecked(settings.magic_segment_standard_subtract_roi_enabled)
+        self._magic_segment_restrict_subtract_roi_checkbox = QCheckBox("剔除模式 ROI 限制在第一形状范围内")
+        self._magic_segment_restrict_subtract_roi_checkbox.setChecked(settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
         self._fiber_quick_roi_checkbox = QCheckBox("快速测径默认启用 ROI")
         self._fiber_quick_roi_checkbox.setChecked(settings.fiber_quick_roi_enabled)
         self._fiber_quick_edge_trim_checkbox = QCheckBox("快速测径启用边缘剔除")
@@ -720,7 +747,9 @@ class SettingsDialog(QDialog):
         quick_hint.setWordWrap(True)
         magic_segment_form.addRow("标准模型", self._magic_segment_model_variant_combo)
         magic_segment_form.addRow("", self._magic_segment_fill_draft_holes_checkbox)
-        magic_segment_form.addRow("", self._magic_segment_standard_roi_checkbox)
+        magic_segment_form.addRow("", self._magic_segment_standard_add_roi_checkbox)
+        magic_segment_form.addRow("", self._magic_segment_standard_subtract_roi_checkbox)
+        magic_segment_form.addRow("", self._magic_segment_restrict_subtract_roi_checkbox)
         magic_segment_form.addRow("", self._fiber_quick_roi_checkbox)
         magic_segment_form.addRow("", self._fiber_quick_edge_trim_checkbox)
         magic_segment_form.addRow("快速测径扩展像素", self._fiber_quick_line_extension_spin)

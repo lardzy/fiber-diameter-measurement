@@ -21,6 +21,7 @@ from fdm.services.export_service import (
     ExportSelection,
     ExportService,
 )
+from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
 from fdm.settings import (
     AppSettings,
     RawRecordDataSource,
@@ -933,6 +934,77 @@ class ExportServiceTests(unittest.TestCase):
 
         self.assertEqual(measurement_rows[0]["纤维类别序号"], second_group.number)
         self.assertEqual([row["纤维类别序号"] for row in fiber_rows], [first_group.number, second_group.number])
+
+    def test_measurement_rows_include_kind_and_category_result_sequences_across_documents(self) -> None:
+        first_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/result_sequence_a.png",
+            image_size=(400, 300),
+        )
+        first_document.initialize_runtime_state()
+        cotton = first_document.create_group(color="#1F7A8C", label="棉")
+        flax = first_document.create_group(color="#E07A5F", label="麻")
+        first_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=first_document.id,
+                fiber_group_id=cotton.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        first_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=first_document.id,
+                fiber_group_id=flax.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(20, 0)),
+            )
+        )
+        first_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=first_document.id,
+                fiber_group_id=cotton.id,
+                mode="polygon_area",
+                measurement_kind="area",
+                polygon_px=[Point(0, 0), Point(8, 0), Point(8, 8), Point(0, 8)],
+            )
+        )
+        second_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/result_sequence_b.png",
+            image_size=(400, 300),
+        )
+        second_document.initialize_runtime_state()
+        cotton_b = second_document.create_group(color="#1F7A8C", label="棉")
+        second_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=second_document.id,
+                fiber_group_id=cotton_b.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(30, 0)),
+            )
+        )
+        second_document.add_measurement(
+            Measurement(
+                id=new_id("meas"),
+                image_id=second_document.id,
+                fiber_group_id=cotton_b.id,
+                mode="count",
+                measurement_kind="count",
+                point_px=Point(5, 6),
+            )
+        )
+
+        rows = ExportService().build_measurement_rows([first_document, second_document])
+
+        self.assertIn("纤维结果序号", RAW_RECORD_FIELD_NAMES)
+        self.assertIn("纤维类别结果序号", RAW_RECORD_FIELD_NAMES)
+        self.assertEqual([row["纤维结果序号"] for row in rows], [1, 2, 1, 3, 1])
+        self.assertEqual([row["纤维类别结果序号"] for row in rows], [1, 1, 1, 2, 1])
 
     def test_area_measurement_rows_include_polygon_fields(self) -> None:
         document = ImageDocument(

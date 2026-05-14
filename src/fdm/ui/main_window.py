@@ -338,7 +338,8 @@ class MainWindow(QMainWindow):
         self._measure_toolbar: QToolBar | None = None
         self._measurement_tool_strip: MeasurementToolStrip | None = None
         self._magic_tool_mode = MagicSegmentToolMode.STANDARD
-        self._magic_standard_roi_enabled = bool(self._app_settings.magic_segment_standard_roi_enabled)
+        self._magic_standard_add_roi_enabled = bool(self._app_settings.magic_segment_standard_add_roi_enabled)
+        self._magic_standard_subtract_roi_enabled = bool(self._app_settings.magic_segment_standard_subtract_roi_enabled)
         self._fiber_quick_roi_enabled = bool(self._app_settings.fiber_quick_roi_enabled)
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._magic_tool_menu: QMenu | None = None
@@ -387,6 +388,7 @@ class MainWindow(QMainWindow):
         self._magic_confirm_subtract_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
+        self._count_controls_widget: QWidget | None = None
         self._preview_analysis_widget: QWidget | None = None
         self._path_controls_widget: QWidget | None = None
         self._path_complete_button: QToolButton | None = None
@@ -394,6 +396,7 @@ class MainWindow(QMainWindow):
         self._focus_stack_button: QToolButton | None = None
         self._map_build_button: QToolButton | None = None
         self._map_build_status_label: QLabel | None = None
+        self._count_numbers_button: QToolButton | None = None
         self._add_preset_button: QPushButton | None = None
         self._edit_preset_button: QPushButton | None = None
         self._delete_preset_button: QPushButton | None = None
@@ -739,6 +742,7 @@ class MainWindow(QMainWindow):
 
         self._measure_toolbar = None
         self._measurement_tool_strip = self._build_measurement_tool_strip()
+        self._update_count_numbers_button()
 
     def _build_measurement_tool_strip(self) -> MeasurementToolStrip:
         strip = MeasurementToolStrip(self)
@@ -746,6 +750,8 @@ class MainWindow(QMainWindow):
         self._manual_tool_button = self._build_manual_tool_button()
         strip.addSplitModeButton("manual", self._manual_tool_button, aliases=["continuous_manual"])
         strip.addModeAction("count", self._mode_actions["count"])
+        self._count_controls_widget = self._build_count_controls()
+        strip.setCountContextWidget(self._count_controls_widget)
         strip.addModeAction("snap", self._mode_actions["snap"])
         self._area_tool_button = self._build_area_tool_button()
         strip.addSplitModeButton("polygon_area", self._area_tool_button, aliases=["freehand_area"])
@@ -762,6 +768,21 @@ class MainWindow(QMainWindow):
         strip.setPathContextWidget(self._path_controls_widget)
         strip.setActiveMode(self._tool_mode)
         return strip
+
+    def _build_count_controls(self) -> QWidget:
+        container = QWidget(self)
+        layout = FlowLayout(container, h_spacing=6, v_spacing=6)
+        container.setLayout(layout)
+
+        self._count_numbers_button = QToolButton(container)
+        self._count_numbers_button.setProperty("contextTool", True)
+        self._count_numbers_button.setCheckable(True)
+        self._count_numbers_button.setText("编号关")
+        self._count_numbers_button.setToolTip("显示或隐藏当前图片的计数编号")
+        self._count_numbers_button.toggled.connect(self._toggle_count_numbers)
+        layout.addWidget(self._count_numbers_button)
+
+        return container
 
     def _build_magic_segment_controls(self) -> QWidget:
         container = QWidget(self)
@@ -1021,6 +1042,7 @@ class MainWindow(QMainWindow):
         tooltip = f"手动测量（当前：{self._manual_tool_label(active_mode)}）"
         if self._manual_tool_button is not None:
             self._manual_tool_button.blockSignals(True)
+            self._manual_tool_button.setText(self._manual_tool_label(active_mode))
             self._manual_tool_button.setChecked(self._tool_mode in {mode for mode, _ in self._manual_tool_definitions()})
             self._manual_tool_button.setCurrentTool(active_mode, icon)
             self._manual_tool_button.setToolTip(tooltip)
@@ -1055,6 +1077,7 @@ class MainWindow(QMainWindow):
         tooltip = f"面积测量（当前：{self._area_tool_label(active_mode)}）"
         if self._area_tool_button is not None:
             self._area_tool_button.blockSignals(True)
+            self._area_tool_button.setText(self._area_tool_label(active_mode))
             self._area_tool_button.setChecked(self._tool_mode in {mode for mode, _ in self._area_tool_definitions()})
             self._area_tool_button.setCurrentTool(active_mode, icon)
             self._area_tool_button.setToolTip(tooltip)
@@ -1156,6 +1179,7 @@ class MainWindow(QMainWindow):
         icon = self._overlay_tool_icon(active=self._tool_mode == "overlay")
         if self._overlay_tool_button is not None:
             self._overlay_tool_button.blockSignals(True)
+            self._overlay_tool_button.setText(self._overlay_tool_label(self._overlay_tool_kind))
             self._overlay_tool_button.setChecked(self._tool_mode == "overlay")
             self._overlay_tool_button.setCurrentTool(self._overlay_tool_kind, icon)
             self._overlay_tool_button.setToolTip(tooltip)
@@ -1474,6 +1498,7 @@ class MainWindow(QMainWindow):
         self._sync_magic_tool_button()
         self._sync_overlay_tool_button()
         self._update_magic_segment_controls()
+        self._update_count_numbers_button()
         self._update_path_drawing_controls()
 
     def current_document(self) -> ImageDocument | None:
@@ -2066,6 +2091,35 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
             return False
         return True
+
+    def _update_count_numbers_button(self) -> None:
+        if self._count_numbers_button is None or self._measurement_tool_strip is None:
+            return
+        is_visible = self._tool_mode == "count" and not self._preview_active
+        self._measurement_tool_strip.setCountContextVisible(is_visible)
+        self._count_numbers_button.blockSignals(True)
+        self._count_numbers_button.setChecked(bool(self._app_settings.show_count_numbers))
+        self._count_numbers_button.setText("编号开" if self._app_settings.show_count_numbers else "编号关")
+        has_document = bool(getattr(self, "_document_order", []))
+        self._count_numbers_button.setEnabled(has_document and is_visible)
+        self._count_numbers_button.blockSignals(False)
+        if is_visible:
+            self._measurement_tool_strip._refresh_context_visibility()  # noqa: SLF001
+            layout = self._count_controls_widget.layout() if self._count_controls_widget is not None else None
+            if layout is not None:
+                layout.invalidate()
+                layout.activate()
+            if self._count_controls_widget is not None:
+                self._count_controls_widget.updateGeometry()
+                self._count_controls_widget.adjustSize()
+            self._measurement_tool_strip.updateGeometry()
+
+    def _toggle_count_numbers(self, checked: bool) -> None:
+        self._app_settings.show_count_numbers = bool(checked)
+        self._refresh_canvases_for_settings()
+        self._save_app_settings(context="计数点编号")
+        self._update_count_numbers_button()
+        self.statusBar().showMessage("计数编号已显示" if checked else "计数编号已隐藏", 2000)
 
     def _restore_initial_window_geometry(self) -> None:
         geometry_token = str(self._app_settings.main_window_geometry or "").strip()
@@ -3729,8 +3783,10 @@ class MainWindow(QMainWindow):
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip._apply_theme_styles()
         self._apply_tool_menu_stylesheets()
-        self._magic_standard_roi_enabled = bool(settings.magic_segment_standard_roi_enabled)
+        self._magic_standard_add_roi_enabled = bool(settings.magic_segment_standard_add_roi_enabled)
+        self._magic_standard_subtract_roi_enabled = bool(settings.magic_segment_standard_subtract_roi_enabled)
         self._fiber_quick_roi_enabled = bool(settings.fiber_quick_roi_enabled)
+        self._update_count_numbers_button()
         if settings.selected_capture_device_id:
             self._capture_manager.set_selected_device(settings.selected_capture_device_id)
         self._update_capture_device_ui()
@@ -4598,7 +4654,23 @@ class MainWindow(QMainWindow):
         positive_points = list(payload.get("positive_points", []))
         negative_points = list(payload.get("negative_points", []))
         active_stage = str(payload.get("active_stage", MagicSegmentOperationMode.ADD) or MagicSegmentOperationMode.ADD)
-        roi_enabled = self._current_magic_roi_enabled(tool_mode)
+        roi_enabled = self._current_magic_roi_enabled(tool_mode, operation_mode=active_stage)
+        roi_constraint_box = None
+        if (
+            is_magic_segment_tool_mode(tool_mode)
+            and active_stage == MagicSegmentOperationMode.SUBTRACT
+            and roi_enabled
+            and self._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds
+        ):
+            roi_constraint_box = canvas.magic_segment_primary_bounds()
+            if roi_constraint_box is not None and any(
+                not canvas.point_in_box(point, roi_constraint_box)
+                for point in positive_points
+            ):
+                canvas.reject_magic_segment_subtract_points_outside_primary_bounds(request_id)
+                self._update_magic_segment_controls()
+                self.statusBar().showMessage("剔除模式 ROI 已限制在第一形状范围内，请在第一形状内部添加正采样点。", 5000)
+                return
         if not positive_points:
             if is_fiber_quick_tool_mode(tool_mode):
                 canvas.fail_fiber_quick_result(request_id)
@@ -4639,6 +4711,7 @@ class MainWindow(QMainWindow):
                 active_stage=active_stage,
                 model_variant=requested_variant,
                 roi_enabled=roi_enabled,
+                roi_constraint_box=roi_constraint_box,
             )
         )
         self._update_magic_segment_controls()
@@ -5879,6 +5952,7 @@ class MainWindow(QMainWindow):
             self._overlay_tool_button.setEnabled(not preview_active)
         self._update_path_drawing_controls()
         self._update_magic_segment_controls()
+        self._update_count_numbers_button()
         self._update_preview_analysis_controls()
         self._sync_manual_tool_button()
         self._sync_area_tool_button()
@@ -5898,25 +5972,50 @@ class MainWindow(QMainWindow):
             return "剔除(T)"
         return "添加(T)"
 
-    def _current_magic_roi_enabled(self, tool_mode: str | None = None) -> bool:
+    def _current_magic_roi_enabled(self, tool_mode: str | None = None, *, operation_mode: str | None = None) -> bool:
         active_mode = str(tool_mode or self._tool_mode or "").strip()
         if is_fiber_quick_tool_mode(active_mode):
             return bool(self._fiber_quick_roi_enabled)
         if is_magic_segment_tool_mode(active_mode):
-            return bool(self._magic_standard_roi_enabled)
+            active_operation = operation_mode
+            if active_operation is None:
+                canvas = self.current_canvas()
+                active_operation = (
+                    canvas.current_magic_segment_operation_mode()
+                    if canvas is not None
+                    else MagicSegmentOperationMode.ADD
+                )
+            if active_operation == MagicSegmentOperationMode.SUBTRACT:
+                return bool(self._magic_standard_subtract_roi_enabled)
+            return bool(self._magic_standard_add_roi_enabled)
         return False
 
-    def _set_magic_roi_enabled(self, tool_mode: str, enabled: bool) -> None:
+    def _set_magic_roi_enabled(self, tool_mode: str, enabled: bool, *, operation_mode: str | None = None) -> None:
         if is_fiber_quick_tool_mode(tool_mode):
             self._fiber_quick_roi_enabled = bool(enabled)
         elif is_magic_segment_tool_mode(tool_mode):
-            self._magic_standard_roi_enabled = bool(enabled)
+            if operation_mode == MagicSegmentOperationMode.SUBTRACT:
+                self._magic_standard_subtract_roi_enabled = bool(enabled)
+            else:
+                self._magic_standard_add_roi_enabled = bool(enabled)
 
     def _toggle_active_magic_roi(self) -> None:
         if not (is_magic_segment_tool_mode(self._tool_mode) or is_fiber_quick_tool_mode(self._tool_mode)):
             return
-        self._set_magic_roi_enabled(self._tool_mode, not self._current_magic_roi_enabled())
-        state_text = "启用" if self._current_magic_roi_enabled() else "关闭"
+        operation_mode = None
+        if is_magic_segment_tool_mode(self._tool_mode):
+            canvas = self.current_canvas()
+            operation_mode = (
+                canvas.current_magic_segment_operation_mode()
+                if canvas is not None
+                else MagicSegmentOperationMode.ADD
+            )
+        self._set_magic_roi_enabled(
+            self._tool_mode,
+            not self._current_magic_roi_enabled(operation_mode=operation_mode),
+            operation_mode=operation_mode,
+        )
+        state_text = "启用" if self._current_magic_roi_enabled(operation_mode=operation_mode) else "关闭"
         self.statusBar().showMessage(f"已{state_text}ROI局部分割", 2500)
         self._update_magic_segment_controls()
 
@@ -5971,8 +6070,9 @@ class MainWindow(QMainWindow):
             )
         if self._magic_roi_button is not None:
             self._magic_roi_button.setVisible(standard_mode or fiber_quick_mode)
-            self._magic_roi_button.setChecked(self._current_magic_roi_enabled())
-            self._magic_roi_button.setText(f"ROI{'开' if self._current_magic_roi_enabled() else '关'}(Y)")
+            roi_enabled = self._current_magic_roi_enabled(operation_mode=operation_mode)
+            self._magic_roi_button.setChecked(roi_enabled)
+            self._magic_roi_button.setText(f"ROI{'开' if roi_enabled else '关'}(Y)")
             self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)

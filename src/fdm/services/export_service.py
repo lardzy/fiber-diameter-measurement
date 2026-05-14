@@ -445,10 +445,17 @@ class ExportService:
 
     def build_measurement_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
+        result_sequence_by_kind: dict[str, int] = {}
+        category_sequence_by_kind_and_group: dict[tuple[str, str], int] = {}
         for document in documents:
             group_lookup = {group.id: group for group in document.fiber_groups}
             for measurement in document.measurements:
                 group = group_lookup.get(measurement.fiber_group_id or "")
+                kind_key = measurement.measurement_kind or ""
+                group_key = group.label if group is not None else UNCATEGORIZED_LABEL
+                result_sequence_by_kind[kind_key] = result_sequence_by_kind.get(kind_key, 0) + 1
+                category_key = (kind_key, group_key)
+                category_sequence_by_kind_and_group[category_key] = category_sequence_by_kind_and_group.get(category_key, 0) + 1
                 hole_area_value = self._measurement_hole_area_value(measurement, document)
                 base_row = OrderedDict(
                     [
@@ -460,6 +467,8 @@ class ExportService:
                         ("模式", self._format_measurement_mode(measurement.mode)),
                         ("状态", self._format_measurement_status(measurement.status)),
                         ("置信度", round(measurement.confidence, 4)),
+                        ("纤维结果序号", result_sequence_by_kind[kind_key]),
+                        ("纤维类别结果序号", category_sequence_by_kind_and_group[category_key]),
                     ]
                 )
                 if measurement.measurement_kind == "line":

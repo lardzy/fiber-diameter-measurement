@@ -751,6 +751,7 @@ class MeasurementToolStrip(QWidget):
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._overlay_button: OverlayToolSplitButton | None = None
         self._magic_context_widget: QWidget | None = None
+        self._count_context_widget: QWidget | None = None
         self._preview_context_widget: QWidget | None = None
         self._path_context_widget: QWidget | None = None
         self._compact_mode = False
@@ -1076,6 +1077,12 @@ class MeasurementToolStrip(QWidget):
         widget.setVisible(False)
         self._refresh_context_visibility()
 
+    def setCountContextWidget(self, widget: QWidget) -> None:
+        self._count_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
     def setPreviewContextWidget(self, widget: QWidget) -> None:
         self._preview_context_widget = widget
         self._context_layout.addWidget(widget)
@@ -1135,6 +1142,14 @@ class MeasurementToolStrip(QWidget):
     def isMagicContextVisible(self) -> bool:
         return bool(self._magic_context_widget and not self._magic_context_widget.isHidden())
 
+    def setCountContextVisible(self, visible: bool) -> None:
+        if self._count_context_widget is not None:
+            self._count_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isCountContextVisible(self) -> bool:
+        return bool(self._count_context_widget and not self._count_context_widget.isHidden())
+
     def setPreviewContextVisible(self, visible: bool) -> None:
         if self._preview_context_widget is not None:
             self._preview_context_widget.setVisible(bool(visible))
@@ -1152,7 +1167,12 @@ class MeasurementToolStrip(QWidget):
         return bool(self._path_context_widget and not self._path_context_widget.isHidden())
 
     def _refresh_context_visibility(self) -> None:
-        visible = self.isMagicContextVisible() or self.isPreviewContextVisible() or self.isPathContextVisible()
+        visible = (
+            self.isMagicContextVisible()
+            or self.isCountContextVisible()
+            or self.isPreviewContextVisible()
+            or self.isPathContextVisible()
+        )
         if not visible:
             self._context_placement = "hidden"
             self._apply_context_placement()
@@ -1201,6 +1221,8 @@ class MeasurementToolStrip(QWidget):
     def _current_context_widget(self) -> QWidget | None:
         if self.isMagicContextVisible() and self._magic_context_widget is not None:
             return self._magic_context_widget
+        if self.isCountContextVisible() and self._count_context_widget is not None:
+            return self._count_context_widget
         if self.isPreviewContextVisible() and self._preview_context_widget is not None:
             return self._preview_context_widget
         if self.isPathContextVisible() and self._path_context_widget is not None:

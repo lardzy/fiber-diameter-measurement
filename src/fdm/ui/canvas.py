@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import math
 import time
 
 import cv2
@@ -46,6 +47,7 @@ from fdm.settings import (
 from fdm.ui.rendering import (
     area_rings_path,
     annotation_rect,
+    draw_endpoint_style,
     draw_overlay_annotations,
     draw_measurements,
     draw_preview_scale_anchor,
@@ -544,6 +546,30 @@ class DocumentCanvas(QWidget):
     def current_magic_segment_operation_mode(self) -> str:
         return self._magic_segment.active_stage
 
+    def magic_segment_primary_bounds(self) -> tuple[int, int, int, int] | None:
+        if self._image is None:
+            return None
+        points: list[Point] = []
+        if self._magic_segment.primary_rings:
+            for ring in self._magic_segment.primary_rings:
+                points.extend(ring)
+        else:
+            points.extend(self._magic_segment.primary_polygon)
+        if len(points) < 3:
+            return None
+        min_x = max(0, int(math.floor(min(point.x for point in points))))
+        min_y = max(0, int(math.floor(min(point.y for point in points))))
+        max_x = min(self._image.width(), int(math.ceil(max(point.x for point in points))) + 1)
+        max_y = min(self._image.height(), int(math.ceil(max(point.y for point in points))) + 1)
+        if max_x <= min_x or max_y <= min_y:
+            return None
+        return min_x, min_y, max_x, max_y
+
+    @staticmethod
+    def point_in_box(point: Point, box: tuple[int, int, int, int]) -> bool:
+        x0, y0, x1, y1 = box
+        return x0 <= point.x < x1 and y0 <= point.y < y1
+
     def has_magic_segment_session(self) -> bool:
         return bool(
             self._magic_segment.has_points()
@@ -707,6 +733,26 @@ class DocumentCanvas(QWidget):
 
     def confirmed_magic_subtract_shape_count(self) -> int:
         return self._magic_segment.confirmed_subtract_count()
+
+    def reject_magic_segment_subtract_points_outside_primary_bounds(self, request_id: int) -> int:
+        if request_id != self._magic_segment.request_id:
+            return 0
+        bounds = self.magic_segment_primary_bounds()
+        removed = 0
+        if bounds is not None:
+            before = len(self._magic_segment.subtract_positive_points)
+            self._magic_segment.subtract_positive_points = [
+                point
+                for point in self._magic_segment.subtract_positive_points
+                if self.point_in_box(point, bounds)
+            ]
+            removed = before - len(self._magic_segment.subtract_positive_points)
+        self._magic_segment.busy = False
+        self._magic_segment.inflight_request_id = 0
+        self._magic_segment.pending_recompute = False
+        self.update()
+        self._emit_magic_segment_session_changed()
+        return removed
 
     def confirm_current_magic_subtract_shape(self) -> dict[str, object]:
         result = {
@@ -1958,11 +2004,18 @@ class DocumentCanvas(QWidget):
         if preview_line is not None:
             color = QColor("#FF7F50") if self._tool_mode == "calibration" else QColor("#F4D35E")
             painter.setPen(QPen(color, 2, Qt.PenStyle.DashLine))
-            painter.drawLine(self.image_to_widget(preview_line.start), self.image_to_widget(preview_line.end))
-            painter.setBrush(color)
-            painter.setPen(QPen(QColor("#0B0B0B"), 1))
-            painter.drawEllipse(self.image_to_widget(preview_line.start), 6, 6)
-            painter.drawEllipse(self.image_to_widget(preview_line.end), 6, 6)
+            start_point = self.image_to_widget(preview_line.start)
+            end_point = self.image_to_widget(preview_line.end)
+            painter.drawLine(start_point, end_point)
+            draw_endpoint_style(
+                painter,
+                QPointF(start_point),
+                QPointF(end_point),
+                color,
+                self._settings.measurement_endpoint_style,
+                line_width=2.0,
+                endpoint_radius=6.0,
+            )
 
         preview_points = self._drag_area_preview_points or self._drawing_polygon_points
         preview_rings = self._drag_area_preview_rings or []

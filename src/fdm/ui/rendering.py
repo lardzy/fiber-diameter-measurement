@@ -4,12 +4,14 @@ from dataclasses import dataclass
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen, QPolygonF
+from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen, QPolygonF, QStaticText
 
 from fdm.area_display import area_geometry_for_display
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
+
+_COUNT_LABEL_CACHE: dict[tuple[str, str, int], QStaticText] = {}
 
 
 @dataclass(slots=True)
@@ -351,11 +353,14 @@ def draw_measurements(
     show_area_handles: bool = False,
     visible_rect: QRectF | None = None,
 ) -> None:
-    count_measurements: list[Measurement] = []
-    selected_count_measurement: Measurement | None = None
+    count_measurements: list[tuple[Measurement, int]] = []
+    selected_count_measurement: tuple[Measurement, int] | None = None
     visible_padding = max(12.0, endpoint_radius * 4.0)
+    count_index = 0
     for measurement in document.measurements:
         selected = measurement.id == selected_measurement_id
+        if measurement.measurement_kind == "count":
+            count_index += 1
         if visible_rect is not None and not selected and not _measurement_intersects_rect(
             measurement,
             visible_rect,
@@ -364,9 +369,9 @@ def draw_measurements(
             continue
         if measurement.measurement_kind == "count":
             if selected:
-                selected_count_measurement = measurement
+                selected_count_measurement = (measurement, count_index)
             else:
-                count_measurements.append(measurement)
+                count_measurements.append((measurement, count_index))
             continue
         if measurement.measurement_kind == "area":
             draw_area_measurement(
@@ -440,14 +445,16 @@ def draw_measurements(
         endpoint_radius=endpoint_radius,
     )
     if selected_count_measurement is not None:
+        selected_measurement, selected_number = selected_count_measurement
         draw_count_measurement(
             painter,
             document,
-            selected_count_measurement,
+            selected_measurement,
             image_to_output,
             settings,
             endpoint_radius=endpoint_radius,
             selected=True,
+            count_number=selected_number,
         )
 
 
@@ -548,6 +555,7 @@ def draw_count_measurement(
     *,
     endpoint_radius: float,
     selected: bool,
+    count_number: int | None = None,
 ) -> None:
     if measurement.point_px is None:
         return
@@ -563,15 +571,29 @@ def draw_count_measurement(
         painter.drawEllipse(point, inner_radius * 1.02, inner_radius * 1.02)
         painter.setBrush(color)
         painter.drawEllipse(point, inner_radius * 0.72, inner_radius * 0.72)
+        _draw_count_number_label(
+            painter,
+            point,
+            settings,
+            endpoint_radius=endpoint_radius,
+            count_number=count_number,
+        )
         return
     painter.setBrush(color)
     painter.drawEllipse(point, inner_radius, inner_radius)
+    _draw_count_number_label(
+        painter,
+        point,
+        settings,
+        endpoint_radius=endpoint_radius,
+        count_number=count_number,
+    )
 
 
 def draw_count_measurements_batch(
     painter: QPainter,
     document: ImageDocument,
-    measurements: list[Measurement],
+    measurements: list[tuple[Measurement, int]],
     image_to_output,
     settings: AppSettings,
     *,
@@ -582,11 +604,15 @@ def draw_count_measurements_batch(
     outline_radius = endpoint_radius * 1.35
     inner_radius = endpoint_radius * 0.9
     grouped_points: dict[str, list[QPointF]] = {}
-    for measurement in measurements:
+    label_points: list[tuple[QPointF, int]] = []
+    for measurement, count_number in measurements:
         if measurement.point_px is None:
             continue
+        point = image_to_output(measurement.point_px)
         color = measurement_color(document, measurement, settings).name()
-        grouped_points.setdefault(color, []).append(image_to_output(measurement.point_px))
+        grouped_points.setdefault(color, []).append(point)
+        if settings.show_count_numbers:
+            label_points.append((point, count_number))
     if not grouped_points:
         return
     painter.setPen(Qt.PenStyle.NoPen)
@@ -598,6 +624,74 @@ def draw_count_measurements_batch(
         painter.setBrush(QColor(color_name))
         for point in points:
             painter.drawEllipse(point, inner_radius, inner_radius)
+    _draw_count_number_labels(
+        painter,
+        label_points,
+        settings,
+        endpoint_radius=endpoint_radius,
+    )
+
+
+def _count_label_static_text(text: str, font: QFont) -> QStaticText:
+    key = (text, font.family(), int(round(font.pointSizeF() if font.pointSizeF() > 0 else font.pixelSize())))
+    cached = _COUNT_LABEL_CACHE.get(key)
+    if cached is not None:
+        return cached
+    if len(_COUNT_LABEL_CACHE) > 5000:
+        _COUNT_LABEL_CACHE.clear()
+    static = QStaticText(text)
+    try:
+        static.setPerformanceHint(QStaticText.PerformanceHint.AggressiveCaching)
+    except AttributeError:
+        pass
+    _COUNT_LABEL_CACHE[key] = static
+    return static
+
+
+def _draw_count_number_labels(
+    painter: QPainter,
+    label_points: list[tuple[QPointF, int]],
+    settings: AppSettings,
+    *,
+    endpoint_radius: float,
+) -> None:
+    if not settings.show_count_numbers or not label_points:
+        return
+    font = QFont(settings.count_number_font_family)
+    font.setPointSize(max(8, int(settings.count_number_font_size)))
+    painter.save()
+    painter.setFont(font)
+    color = QColor(settings.count_number_color)
+    outline = QColor("#0B0B0B")
+    offset_x = endpoint_radius * 1.35
+    offset_y = -endpoint_radius * 2.05
+    for point, count_number in label_points:
+        static = _count_label_static_text(str(count_number), font)
+        anchor = QPointF(point.x() + offset_x, point.y() + offset_y)
+        painter.setPen(outline)
+        for dx, dy in ((1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)):
+            painter.drawStaticText(QPointF(anchor.x() + dx, anchor.y() + dy), static)
+        painter.setPen(color)
+        painter.drawStaticText(anchor, static)
+    painter.restore()
+
+
+def _draw_count_number_label(
+    painter: QPainter,
+    point: QPointF,
+    settings: AppSettings,
+    *,
+    endpoint_radius: float,
+    count_number: int | None,
+) -> None:
+    if count_number is None:
+        return
+    _draw_count_number_labels(
+        painter,
+        [(point, count_number)],
+        settings,
+        endpoint_radius=endpoint_radius,
+    )
 
 
 def draw_area_measurement(

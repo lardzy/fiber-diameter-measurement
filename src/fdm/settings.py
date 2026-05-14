@@ -403,6 +403,10 @@ class AppSettings:
     measurement_label_decimals: int = 2
     measurement_label_parallel_to_line: bool = False
     measurement_label_background_enabled: bool = False
+    show_count_numbers: bool = False
+    count_number_font_family: str = "Microsoft YaHei UI"
+    count_number_font_size: int = 12
+    count_number_color: str = "#FFFFFF"
     measurement_endpoint_style: str = MeasurementEndpointStyle.BAR
     default_measurement_color: str = "#E0FBFC"
     open_image_view_mode: str = OpenImageViewMode.FIT
@@ -423,6 +427,9 @@ class AppSettings:
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
     magic_segment_fill_draft_holes_enabled: bool = False
     magic_segment_standard_roi_enabled: bool = False
+    magic_segment_standard_add_roi_enabled: bool = False
+    magic_segment_standard_subtract_roi_enabled: bool = True
+    magic_segment_restrict_subtract_roi_to_primary_bounds: bool = True
     fiber_quick_roi_enabled: bool = True
     fiber_quick_edge_trim_enabled: bool = True
     fiber_quick_line_extension_px: float = 0.0
@@ -443,6 +450,7 @@ class AppSettings:
         normalized = replace(self)
         normalized.theme_mode = normalize_theme_mode(self.theme_mode)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
+        normalized.count_number_font_size = self._normalize_font_size(self.count_number_font_size, minimum=8, maximum=96)
         normalized.measurement_label_decimals = self._normalize_measurement_label_decimals(self.measurement_label_decimals)
         normalized.measurement_endpoint_style = self._normalize_measurement_endpoint_style(self.measurement_endpoint_style)
         normalized.open_image_view_mode = self._normalize_open_image_view_mode(self.open_image_view_mode)
@@ -688,6 +696,10 @@ class AppSettings:
             "measurement_label_decimals": normalized.measurement_label_decimals,
             "measurement_label_parallel_to_line": normalized.measurement_label_parallel_to_line,
             "measurement_label_background_enabled": normalized.measurement_label_background_enabled,
+            "show_count_numbers": normalized.show_count_numbers,
+            "count_number_font_family": normalized.count_number_font_family,
+            "count_number_font_size": normalized.count_number_font_size,
+            "count_number_color": normalized.count_number_color,
             "measurement_endpoint_style": normalized.measurement_endpoint_style,
             "default_measurement_color": normalized.default_measurement_color,
             "open_image_view_mode": normalized.open_image_view_mode,
@@ -707,7 +719,10 @@ class AppSettings:
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
             "magic_segment_fill_draft_holes_enabled": normalized.magic_segment_fill_draft_holes_enabled,
-            "magic_segment_standard_roi_enabled": normalized.magic_segment_standard_roi_enabled,
+            "magic_segment_standard_roi_enabled": normalized.magic_segment_standard_add_roi_enabled,
+            "magic_segment_standard_add_roi_enabled": normalized.magic_segment_standard_add_roi_enabled,
+            "magic_segment_standard_subtract_roi_enabled": normalized.magic_segment_standard_subtract_roi_enabled,
+            "magic_segment_restrict_subtract_roi_to_primary_bounds": normalized.magic_segment_restrict_subtract_roi_to_primary_bounds,
             "fiber_quick_roi_enabled": normalized.fiber_quick_roi_enabled,
             "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
             "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
@@ -742,6 +757,14 @@ class AppSettings:
         )
         settings.measurement_label_parallel_to_line = bool(payload.get("measurement_label_parallel_to_line", settings.measurement_label_parallel_to_line))
         settings.measurement_label_background_enabled = bool(payload.get("measurement_label_background_enabled", settings.measurement_label_background_enabled))
+        settings.show_count_numbers = bool(payload.get("show_count_numbers", settings.show_count_numbers))
+        settings.count_number_font_family = str(payload.get("count_number_font_family", settings.count_number_font_family))
+        settings.count_number_font_size = cls._normalize_font_size(
+            payload.get("count_number_font_size", settings.count_number_font_size),
+            minimum=8,
+            maximum=96,
+        )
+        settings.count_number_color = str(payload.get("count_number_color", settings.count_number_color))
         settings.measurement_endpoint_style = cls._normalize_measurement_endpoint_style(
             payload.get("measurement_endpoint_style", settings.measurement_endpoint_style)
         )
@@ -788,10 +811,27 @@ class AppSettings:
                 settings.magic_segment_fill_draft_holes_enabled,
             )
         )
-        settings.magic_segment_standard_roi_enabled = bool(
+        legacy_standard_roi = payload.get("magic_segment_standard_roi_enabled", None)
+        legacy_standard_roi_enabled = bool(legacy_standard_roi) if legacy_standard_roi is not None else None
+        settings.magic_segment_standard_add_roi_enabled = bool(
             payload.get(
-                "magic_segment_standard_roi_enabled",
-                settings.magic_segment_standard_roi_enabled,
+                "magic_segment_standard_add_roi_enabled",
+                legacy_standard_roi_enabled
+                if legacy_standard_roi_enabled is not None
+                else settings.magic_segment_standard_add_roi_enabled,
+            )
+        )
+        settings.magic_segment_standard_subtract_roi_enabled = bool(
+            payload.get(
+                "magic_segment_standard_subtract_roi_enabled",
+                True if legacy_standard_roi_enabled is None else (True if legacy_standard_roi_enabled else settings.magic_segment_standard_subtract_roi_enabled),
+            )
+        )
+        settings.magic_segment_standard_roi_enabled = settings.magic_segment_standard_add_roi_enabled
+        settings.magic_segment_restrict_subtract_roi_to_primary_bounds = bool(
+            payload.get(
+                "magic_segment_restrict_subtract_roi_to_primary_bounds",
+                settings.magic_segment_restrict_subtract_roi_to_primary_bounds,
             )
         )
         settings.fiber_quick_roi_enabled = bool(
