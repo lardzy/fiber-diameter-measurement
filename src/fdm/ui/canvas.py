@@ -202,6 +202,7 @@ class PromptSegmentationSession:
     confirmed_subtract_masks: list[object] = field(default_factory=list)
     primary_debug_payload: dict[str, object] = field(default_factory=dict)
     subtract_debug_payload: dict[str, object] = field(default_factory=dict)
+    small_object_workspace_box: tuple[int, int, int, int] | None = None
     request_id: int = 0
     inflight_request_id: int = 0
     pending_stage: str = MagicSegmentOperationMode.ADD
@@ -565,6 +566,9 @@ class DocumentCanvas(QWidget):
             return None
         return min_x, min_y, max_x, max_y
 
+    def magic_segment_small_object_workspace_box(self) -> tuple[int, int, int, int] | None:
+        return self._magic_segment.small_object_workspace_box
+
     @staticmethod
     def point_in_box(point: Point, box: tuple[int, int, int, int]) -> bool:
         x0, y0, x1, y1 = box
@@ -651,6 +655,9 @@ class DocumentCanvas(QWidget):
             "negative_points": list(self._magic_segment.negative_points_for_stage(stage)),
             "tool_mode": self._tool_mode,
             "active_stage": stage,
+            "small_object_workspace_box": self._magic_segment.small_object_workspace_box
+            if stage == MagicSegmentOperationMode.SUBTRACT
+            else None,
         }
 
     def dequeue_pending_magic_segment_request(self, completed_request_id: int) -> dict[str, object] | None:
@@ -716,6 +723,7 @@ class DocumentCanvas(QWidget):
             self._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
         else:
             self._magic_segment.active_stage = MagicSegmentOperationMode.ADD
+            self._magic_segment.small_object_workspace_box = None
         self.update()
         self._emit_magic_segment_session_changed()
         return self._magic_segment.active_stage
@@ -750,6 +758,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment.busy = False
         self._magic_segment.inflight_request_id = 0
         self._magic_segment.pending_recompute = False
+        self._magic_segment.small_object_workspace_box = None
         self.update()
         self._emit_magic_segment_session_changed()
         return removed
@@ -771,6 +780,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment.subtract_rings = []
         self._magic_segment.subtract_mask = None
         self._magic_segment.subtract_debug_payload = {}
+        self._magic_segment.small_object_workspace_box = None
         self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
         self.update()
         self._emit_magic_segment_session_changed()
@@ -790,6 +800,19 @@ class DocumentCanvas(QWidget):
             return None
         self._magic_segment.busy = False
         stage = self._magic_segment.pending_stage
+        debug_payload = dict(debug_payload or {})
+        if stage == MagicSegmentOperationMode.SUBTRACT:
+            self._update_magic_small_object_workspace(debug_payload)
+            if mask is None and debug_payload.get("small_object_reject_reason"):
+                self._magic_segment.set_debug_payload_for_stage(stage, debug_payload)
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return {
+                    "stage": stage,
+                    "has_preview": len(self._magic_segment.polygon_for_stage(stage)) >= 3
+                    or bool(self._magic_segment.rings_for_stage(stage)),
+                    "rejected": True,
+                }
         draft_mask = normalize_magic_draft_mask(mask)
         draft_polygon = self._normalize_magic_polygon(polygon_points)
         draft_rings = self._normalize_magic_rings(area_rings_points)
@@ -818,7 +841,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
         self._magic_segment.set_rings_for_stage(stage, self._clone_magic_rings(draft_rings))
         self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
-        self._magic_segment.set_debug_payload_for_stage(stage, dict(debug_payload or {}))
+        self._magic_segment.set_debug_payload_for_stage(stage, debug_payload)
         self.update()
         self._emit_magic_segment_session_changed()
         return {
@@ -837,6 +860,24 @@ class DocumentCanvas(QWidget):
         self._magic_segment = PromptSegmentationSession()
         self.update()
         self._emit_magic_segment_session_changed()
+
+    def _update_magic_small_object_workspace(self, debug_payload: dict[str, object]) -> None:
+        if not bool(debug_payload.get("small_object_enhancement_used")):
+            self._magic_segment.small_object_workspace_box = None
+            return
+        box = debug_payload.get("small_object_workspace_box")
+        if not isinstance(box, (tuple, list)) or len(box) != 4:
+            self._magic_segment.small_object_workspace_box = None
+            return
+        try:
+            x0, y0, x1, y1 = [int(round(float(value))) for value in box]
+        except (TypeError, ValueError):
+            self._magic_segment.small_object_workspace_box = None
+            return
+        if x1 <= x0 or y1 <= y0:
+            self._magic_segment.small_object_workspace_box = None
+            return
+        self._magic_segment.small_object_workspace_box = (x0, y0, x1, y1)
 
     def apply_reference_instance_result(
         self,

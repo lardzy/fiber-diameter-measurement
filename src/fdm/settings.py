@@ -430,6 +430,8 @@ class AppSettings:
     magic_segment_standard_add_roi_enabled: bool = False
     magic_segment_standard_subtract_roi_enabled: bool = True
     magic_segment_restrict_subtract_roi_to_primary_bounds: bool = True
+    magic_segment_small_object_subtract_enhancement_enabled: bool = True
+    magic_segment_small_object_roi_area_threshold_px: int = 160000
     fiber_quick_roi_enabled: bool = True
     fiber_quick_edge_trim_enabled: bool = True
     fiber_quick_line_extension_px: float = 0.0
@@ -463,6 +465,9 @@ class AppSettings:
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
+        normalized.magic_segment_small_object_roi_area_threshold_px = self._normalize_magic_small_object_roi_area_threshold_px(
+            self.magic_segment_small_object_roi_area_threshold_px
+        )
         normalized.fiber_quick_line_extension_px = self._normalize_fiber_quick_line_extension_px(self.fiber_quick_line_extension_px)
         normalized.recent_export_dir = self._normalize_recent_directory(self.recent_export_dir)
         normalized.recent_project_dir = self._normalize_recent_directory(self.recent_project_dir)
@@ -640,6 +645,14 @@ class AppSettings:
         return MagicSegmentModelVariant.EDGE_SAM_3X
 
     @staticmethod
+    def _normalize_magic_small_object_roi_area_threshold_px(value: int | float | str | None) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = 160000
+        return max(4096, min(4_000_000, numeric))
+
+    @staticmethod
     def _normalize_fiber_quick_line_extension_px(value: int | float | str | None) -> float:
         try:
             numeric = float(value)
@@ -723,6 +736,8 @@ class AppSettings:
             "magic_segment_standard_add_roi_enabled": normalized.magic_segment_standard_add_roi_enabled,
             "magic_segment_standard_subtract_roi_enabled": normalized.magic_segment_standard_subtract_roi_enabled,
             "magic_segment_restrict_subtract_roi_to_primary_bounds": normalized.magic_segment_restrict_subtract_roi_to_primary_bounds,
+            "magic_segment_small_object_subtract_enhancement_enabled": normalized.magic_segment_small_object_subtract_enhancement_enabled,
+            "magic_segment_small_object_roi_area_threshold_px": normalized.magic_segment_small_object_roi_area_threshold_px,
             "fiber_quick_roi_enabled": normalized.fiber_quick_roi_enabled,
             "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
             "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
@@ -832,6 +847,18 @@ class AppSettings:
             payload.get(
                 "magic_segment_restrict_subtract_roi_to_primary_bounds",
                 settings.magic_segment_restrict_subtract_roi_to_primary_bounds,
+            )
+        )
+        settings.magic_segment_small_object_subtract_enhancement_enabled = bool(
+            payload.get(
+                "magic_segment_small_object_subtract_enhancement_enabled",
+                settings.magic_segment_small_object_subtract_enhancement_enabled,
+            )
+        )
+        settings.magic_segment_small_object_roi_area_threshold_px = cls._normalize_magic_small_object_roi_area_threshold_px(
+            payload.get(
+                "magic_segment_small_object_roi_area_threshold_px",
+                settings.magic_segment_small_object_roi_area_threshold_px,
             )
         )
         settings.fiber_quick_roi_enabled = bool(

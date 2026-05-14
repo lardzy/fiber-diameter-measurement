@@ -33,6 +33,12 @@ ROI_CROP_SCALE_FACTOR = 1.8
 ROI_CROP_STANDARD_MAX_ROUNDS = 4
 ROI_CROP_FIBER_QUICK_MAX_ROUNDS = 3
 ROI_CROP_ACCEPT_AREA_RATIO = 0.70
+SMALL_OBJECT_ENHANCEMENT_TARGET_LONG_SIDE = 1024
+SMALL_OBJECT_ENHANCEMENT_MAX_SCALE = 4.0
+SMALL_OBJECT_ENHANCEMENT_MAX_MASK_AREA_RATIO = 0.97
+SMALL_OBJECT_WORKSPACE_MIN_SIDE = 128
+SMALL_OBJECT_WORKSPACE_MAX_SIDE = 384
+SMALL_OBJECT_WORKSPACE_CONTEXT_PADDING = 24
 
 
 @dataclass(slots=True)
@@ -48,6 +54,13 @@ class PromptSegmentationResult:
 class _EmbeddingEntry:
     image_embeddings: object
     original_size: tuple[int, int]
+
+
+@dataclass(slots=True)
+class _MaskCandidate:
+    mask: object
+    stability: float
+    index: int
 
 
 @dataclass(slots=True)
@@ -282,6 +295,246 @@ def _crop_points_to_local(points: list[Point], crop_box: tuple[int, int, int, in
 def _point_in_crop(point: Point, crop_box: tuple[int, int, int, int]) -> bool:
     x0, y0, x1, y1 = crop_box
     return x0 <= point.x < x1 and y0 <= point.y < y1
+
+
+def _box_area(box: tuple[int, int, int, int]) -> int:
+    x0, y0, x1, y1 = box
+    return max(0, int(x1) - int(x0)) * max(0, int(y1) - int(y0))
+
+
+def _all_points_in_box(points: list[Point], box: tuple[int, int, int, int]) -> bool:
+    return all(_point_in_crop(point, box) for point in points)
+
+
+def _normalize_workspace_box(
+    workspace_box: tuple[int, int, int, int] | None,
+    *,
+    bounds: tuple[int, int, int, int],
+    image_size: tuple[int, int],
+) -> tuple[int, int, int, int] | None:
+    if workspace_box is None:
+        return None
+    image_h, image_w = image_size
+    bx0, by0, bx1, by1 = bounds
+    try:
+        x0, y0, x1, y1 = [int(round(value)) for value in workspace_box]
+    except (TypeError, ValueError):
+        return None
+    x0 = max(bx0, min(x0, image_w - 1))
+    y0 = max(by0, min(y0, image_h - 1))
+    x1 = min(bx1, max(x0 + 1, min(x1, image_w)))
+    y1 = min(by1, max(y0 + 1, min(y1, image_h)))
+    if x1 <= x0 or y1 <= y0:
+        return None
+    return x0, y0, x1, y1
+
+
+def _small_object_context_bounds(
+    bounds: tuple[int, int, int, int],
+    *,
+    image_size: tuple[int, int],
+) -> tuple[int, int, int, int]:
+    image_h, image_w = image_size
+    bx0, by0, bx1, by1 = bounds
+    bounds_w = max(1, bx1 - bx0)
+    bounds_h = max(1, by1 - by0)
+    grow_x = max(SMALL_OBJECT_WORKSPACE_CONTEXT_PADDING, int(round((SMALL_OBJECT_WORKSPACE_MIN_SIDE - bounds_w) / 2.0)))
+    grow_y = max(SMALL_OBJECT_WORKSPACE_CONTEXT_PADDING, int(round((SMALL_OBJECT_WORKSPACE_MIN_SIDE - bounds_h) / 2.0)))
+    return (
+        max(0, bx0 - grow_x),
+        max(0, by0 - grow_y),
+        min(image_w, bx1 + grow_x),
+        min(image_h, by1 + grow_y),
+    )
+
+
+def _small_object_workspace_box(
+    *,
+    image_size: tuple[int, int],
+    bounds: tuple[int, int, int, int],
+    positive_points: list[Point],
+    negative_points: list[Point],
+    requested_workspace_box: tuple[int, int, int, int] | None,
+) -> tuple[int, int, int, int]:
+    context_bounds = _small_object_context_bounds(bounds, image_size=image_size)
+    existing = _normalize_workspace_box(requested_workspace_box, bounds=context_bounds, image_size=image_size)
+    prompt_points = list(positive_points) + list(negative_points)
+    context_w = max(1, context_bounds[2] - context_bounds[0])
+    context_h = max(1, context_bounds[3] - context_bounds[1])
+    min_side = max(1, min(SMALL_OBJECT_WORKSPACE_MIN_SIDE, context_w, context_h))
+    if (
+        existing is not None
+        and _all_points_in_box(prompt_points, existing)
+        and min(existing[2] - existing[0], existing[3] - existing[1]) >= min_side
+    ):
+        return existing
+    image_h, image_w = image_size
+    bx0, by0, bx1, by1 = context_bounds
+    bounds_w = max(1, bx1 - bx0)
+    bounds_h = max(1, by1 - by0)
+    prompt_long_side = _prompt_bbox_long_side(positive_points, negative_points)
+    requested_side = int(round(max(min_side, 6.0 * prompt_long_side)))
+    requested_side = max(min_side, min(requested_side, SMALL_OBJECT_WORKSPACE_MAX_SIDE))
+    crop_side = max(1, min(requested_side, image_h, image_w, bounds_w, bounds_h))
+    center = positive_points[-1] if positive_points else _prompt_centroid(prompt_points)
+    center = center or Point((bounds[0] + bounds[2]) / 2.0, (bounds[1] + bounds[3]) / 2.0)
+    center = Point(
+        max(bx0, min(center.x, bx1 - 1)),
+        max(by0, min(center.y, by1 - 1)),
+    )
+    return _centered_square_crop(center=center, side=crop_side, image_size=image_size, bounds=context_bounds)
+
+
+def _enhance_small_object_crop(crop_image):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    height, width = crop_image.shape[:2]
+    long_side = max(1, height, width)
+    scale = min(
+        SMALL_OBJECT_ENHANCEMENT_MAX_SCALE,
+        max(1.0, SMALL_OBJECT_ENHANCEMENT_TARGET_LONG_SIDE / float(long_side)),
+    )
+    scaled_width = max(1, int(round(width * scale)))
+    scaled_height = max(1, int(round(height * scale)))
+    if scaled_width != width or scaled_height != height:
+        working = cv2.resize(crop_image, (scaled_width, scaled_height), interpolation=cv2.INTER_CUBIC)
+    else:
+        working = crop_image.copy()
+    try:
+        lab = cv2.cvtColor(working, cv2.COLOR_RGB2LAB)
+        clahe = cv2.createCLAHE(clipLimit=1.6, tileGridSize=(8, 8))
+        lab[:, :, 0] = clahe.apply(lab[:, :, 0])
+        working = cv2.cvtColor(lab, cv2.COLOR_LAB2RGB)
+        blur = cv2.GaussianBlur(working, (0, 0), 0.8)
+        working = cv2.addWeighted(working, 1.15, blur, -0.15, 0)
+    except cv2.error:
+        working = np.asarray(working, dtype=np.uint8).copy()
+    return np.ascontiguousarray(working.astype(np.uint8, copy=False)), float(scale)
+
+
+def _points_to_enhanced_local(points: list[Point], crop_box: tuple[int, int, int, int], *, scale: float) -> list[Point]:
+    x0, y0, _x1, _y1 = crop_box
+    return [
+        Point((point.x - x0) * scale, (point.y - y0) * scale)
+        for point in points
+        if _point_in_crop(point, crop_box)
+    ]
+
+
+def _resize_mask_to_crop(mask, *, crop_size: tuple[int, int]):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    if mask is None:
+        return None
+    crop_h, crop_w = crop_size
+    mask_uint8 = np.asarray(mask, dtype=np.uint8)
+    if mask_uint8.shape[:2] != (crop_h, crop_w):
+        mask_uint8 = cv2.resize(mask_uint8, (crop_w, crop_h), interpolation=cv2.INTER_NEAREST)
+    return mask_uint8.astype(bool)
+
+
+def _clip_crop_mask_to_box(crop_mask, *, crop_box: tuple[int, int, int, int], clip_box: tuple[int, int, int, int]):
+    if crop_mask is None:
+        return None
+    clipped = crop_mask.copy()
+    x0, y0, x1, y1 = crop_box
+    cx0, cy0, cx1, cy1 = clip_box
+    keep_x0 = max(x0, cx0) - x0
+    keep_y0 = max(y0, cy0) - y0
+    keep_x1 = min(x1, cx1) - x0
+    keep_y1 = min(y1, cy1) - y0
+    if keep_x1 <= keep_x0 or keep_y1 <= keep_y0:
+        clipped[:, :] = False
+        return clipped
+    if keep_y0 > 0:
+        clipped[:keep_y0, :] = False
+    if keep_y1 < clipped.shape[0]:
+        clipped[keep_y1:, :] = False
+    if keep_x0 > 0:
+        clipped[:, :keep_x0] = False
+    if keep_x1 < clipped.shape[1]:
+        clipped[:, keep_x1:] = False
+    return clipped
+
+
+def _rgb_array_to_qimage(rgb_array):
+    try:
+        import numpy as np
+    except ImportError as exc:
+        raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
+    from PySide6.QtGui import QImage
+
+    image = np.ascontiguousarray(rgb_array.astype(np.uint8, copy=False))
+    height, width = image.shape[:2]
+    return QImage(image.data, width, height, image.strides[0], QImage.Format.Format_RGB888).copy()
+
+
+def _small_object_reject_reason(selected_mask, *, workspace_box: tuple[int, int, int, int]) -> str:
+    if selected_mask is None:
+        return "empty_mask"
+    bounds = _component_bounds(selected_mask)
+    if bounds is None:
+        return "empty_mask"
+    workspace_area = max(1, _box_area(workspace_box))
+    if (magic_mask_area_px(selected_mask) / workspace_area) >= SMALL_OBJECT_ENHANCEMENT_MAX_MASK_AREA_RATIO:
+        return "mask_too_large"
+    x0, y0, x1, y1 = workspace_box
+    min_x, min_y, max_x, max_y = bounds
+    touch_count = int(min_x <= x0) + int(min_y <= y0) + int(max_x >= (x1 - 1)) + int(max_y >= (y1 - 1))
+    if touch_count >= 4:
+        return "touches_workspace_edges"
+    return ""
+
+
+def _small_object_touch_count(selected_mask, *, workspace_box: tuple[int, int, int, int]) -> int:
+    bounds = _component_bounds(selected_mask)
+    if bounds is None:
+        return 0
+    x0, y0, x1, y1 = workspace_box
+    min_x, min_y, max_x, max_y = bounds
+    return int(min_x <= x0) + int(min_y <= y0) + int(max_x >= (x1 - 1)) + int(max_y >= (y1 - 1))
+
+
+def _score_small_object_candidate(
+    selected_mask,
+    *,
+    geometry_stats: dict[str, object],
+    stability: float,
+    workspace_box: tuple[int, int, int, int],
+) -> tuple[float, dict[str, object]]:
+    area = magic_mask_area_px(selected_mask)
+    workspace_area = max(1, _box_area(workspace_box))
+    area_ratio = area / workspace_area
+    positive_hits = int(geometry_stats.get("selected_positive_hits", 0) or 0)
+    negative_hits = int(geometry_stats.get("selected_negative_hits", 0) or 0)
+    touch_count = _small_object_touch_count(selected_mask, workspace_box=workspace_box)
+    if selected_mask is None or area <= 0.0:
+        score = -1_000_000.0
+    else:
+        # In small-object mode, SAM's most stable candidate is often the whole local texture island.
+        # Prefer candidates that satisfy prompts while remaining compact and away from the crop edge.
+        compact_bonus = max(0.0, 1.0 - min(area_ratio, 1.0)) * 30.0
+        large_penalty = max(0.0, area_ratio - 0.35) * 120.0
+        score = (
+            positive_hits * 140.0
+            - negative_hits * 180.0
+            - touch_count * 22.0
+            - large_penalty
+            + compact_bonus
+            + float(stability) * 8.0
+        )
+    return score, {
+        "small_object_selected_area_ratio": area_ratio,
+        "small_object_selected_touch_count": touch_count,
+        "small_object_selected_positive_hits": positive_hits,
+        "small_object_selected_negative_hits": negative_hits,
+        "small_object_selected_stability": float(stability),
+        "small_object_selected_score": float(score),
+    }
 
 
 def _expand_mask_from_crop(crop_mask, *, crop_box: tuple[int, int, int, int], image_shape: tuple[int, int]):
@@ -906,8 +1159,12 @@ class PromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str = MagicSegmentToolMode.STANDARD,
+        active_stage: str | None = None,
         roi_enabled: bool = False,
         roi_constraint_box: tuple[int, int, int, int] | None = None,
+        small_object_enhancement_enabled: bool = False,
+        small_object_roi_area_threshold_px: int = 160000,
+        small_object_workspace_box: tuple[int, int, int, int] | None = None,
         cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
@@ -926,7 +1183,11 @@ class PromptSegmentationService:
                 positive_points=positive_points,
                 negative_points=negative_points,
                 tool_mode=tool_mode,
+                active_stage=active_stage,
                 roi_constraint_box=roi_constraint_box,
+                small_object_enhancement_enabled=small_object_enhancement_enabled,
+                small_object_roi_area_threshold_px=small_object_roi_area_threshold_px,
+                small_object_workspace_box=small_object_workspace_box,
                 cancel_check=cancel_check,
             )
         return self._predict_polygon_for_rgb_array(
@@ -934,7 +1195,7 @@ class PromptSegmentationService:
             cache_key=cache_key,
             positive_points=positive_points,
             negative_points=negative_points,
-            metadata_extra={},
+            metadata_extra={"small_object_enhancement_used": False},
         )
 
     def _predict_polygon_auto_roi(
@@ -945,7 +1206,11 @@ class PromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str,
+        active_stage: str | None,
         roi_constraint_box: tuple[int, int, int, int] | None,
+        small_object_enhancement_enabled: bool,
+        small_object_roi_area_threshold_px: int,
+        small_object_workspace_box: tuple[int, int, int, int] | None,
         cancel_check: Callable[[], bool] | None,
     ) -> PromptSegmentationResult:
         image_h, image_w = cv_image.shape[:2]
@@ -965,6 +1230,23 @@ class PromptSegmentationService:
         initial_side = max(ROI_CROP_MIN_SIDE, min(initial_side, ROI_CROP_MAX_INITIAL_SIDE))
         max_rounds = ROI_CROP_STANDARD_MAX_ROUNDS if tool_mode == MagicSegmentToolMode.STANDARD else ROI_CROP_FIBER_QUICK_MAX_ROUNDS
         max_side = image_long_side if tool_mode == MagicSegmentToolMode.STANDARD else min(1024, int(round(image_long_side * 0.6)))
+        initial_crop_side = max(1, min(max(ROI_CROP_MIN_SIDE, initial_side), max_side, image_h, image_w, bounds_w, bounds_h))
+        if (
+            tool_mode == MagicSegmentToolMode.STANDARD
+            and str(active_stage or "") == "subtract"
+            and constraint_box is not None
+            and small_object_enhancement_enabled
+            and (initial_crop_side * initial_crop_side) <= max(1, int(small_object_roi_area_threshold_px))
+        ):
+            return self._predict_polygon_small_object_roi(
+                cv_image,
+                cache_key=cache_key,
+                positive_points=positive_points,
+                negative_points=negative_points,
+                roi_constraint_box=constraint_box,
+                small_object_workspace_box=small_object_workspace_box,
+                cancel_check=cancel_check,
+            )
         last_result = PromptSegmentationResult(mask=None, polygon_px=[], area_rings_px=[], area_px=0.0, metadata={})
         used_full_image = False
 
@@ -998,6 +1280,7 @@ class PromptSegmentationService:
                     "segmentation_used_full_image": used_full_image,
                     "segmentation_crop_box": crop_box,
                     "segmentation_roi_constraint_box": constraint_box,
+                    "small_object_enhancement_used": False,
                 },
             )
             expanded_mask = _expand_mask_from_crop(crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w))
@@ -1018,6 +1301,7 @@ class PromptSegmentationService:
                     "segmentation_used_full_image": used_full_image,
                     "segmentation_crop_box": crop_box,
                     "segmentation_roi_constraint_box": constraint_box,
+                    "small_object_enhancement_used": False,
                 },
             )
             if selected_mask is not None and not _roi_result_needs_expansion(selected_mask, crop_box=crop_box):
@@ -1044,6 +1328,7 @@ class PromptSegmentationService:
                     "segmentation_crop_box": constraint_bounds,
                     "segmentation_roi_constraint_box": constraint_box,
                     "segmentation_fallback_from_roi": True,
+                    "small_object_enhancement_used": False,
                 },
             )
             if fallback_result.mask is not None:
@@ -1066,6 +1351,7 @@ class PromptSegmentationService:
                         "segmentation_crop_box": constraint_bounds,
                         "segmentation_roi_constraint_box": constraint_box,
                         "segmentation_fallback_from_roi": True,
+                        "small_object_enhancement_used": False,
                     },
                 )
             return PromptSegmentationResult(
@@ -1080,9 +1366,156 @@ class PromptSegmentationService:
                     "segmentation_crop_box": constraint_bounds,
                     "segmentation_roi_constraint_box": constraint_box,
                     "segmentation_fallback_from_roi": True,
+                    "small_object_enhancement_used": False,
                 },
             )
         return last_result
+
+    def _predict_polygon_small_object_roi(
+        self,
+        cv_image,
+        *,
+        cache_key: str,
+        positive_points: list[Point],
+        negative_points: list[Point],
+        roi_constraint_box: tuple[int, int, int, int],
+        small_object_workspace_box: tuple[int, int, int, int] | None,
+        cancel_check: Callable[[], bool] | None,
+    ) -> PromptSegmentationResult:
+        if cancel_check is not None and cancel_check():
+            raise RuntimeError("请求已取消。")
+        image_h, image_w = cv_image.shape[:2]
+        workspace_box = _small_object_workspace_box(
+            image_size=(image_h, image_w),
+            bounds=roi_constraint_box,
+            positive_points=positive_points,
+            negative_points=negative_points,
+            requested_workspace_box=small_object_workspace_box,
+        )
+        x0, y0, x1, y1 = workspace_box
+        crop_image = cv_image[y0:y1, x0:x1].copy()
+        enhanced_image, scale = _enhance_small_object_crop(crop_image)
+        enhanced_positive = _points_to_enhanced_local(positive_points, workspace_box, scale=scale)
+        enhanced_negative = _points_to_enhanced_local(negative_points, workspace_box, scale=scale)
+        if not enhanced_positive:
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata={
+                    "reason": "small_object_positive_outside_workspace",
+                    "segmentation_roi_round": 1,
+                    "segmentation_used_full_image": False,
+                    "segmentation_crop_box": workspace_box,
+                    "segmentation_roi_constraint_box": roi_constraint_box,
+                    "small_object_enhancement_used": True,
+                    "small_object_workspace_box": workspace_box,
+                    "small_object_scale": scale,
+                    "small_object_enhanced_size": (int(enhanced_image.shape[1]), int(enhanced_image.shape[0])),
+                    "small_object_reject_reason": "positive_outside_workspace",
+                    "small_object_preview_image": _rgb_array_to_qimage(enhanced_image),
+                },
+            )
+        signature = f"{x0}:{y0}:{x1}:{y1}:scale={scale:.3f}"
+        enhanced_cache_key = f"{cache_key}|small-object={signature}"
+        enhanced_embedding = self._embedding_for_rgb_array(enhanced_image, cache_key=enhanced_cache_key)
+        candidates = self._predict_mask_candidates_from_embedding(
+            enhanced_embedding,
+            positive_points=enhanced_positive,
+            negative_points=enhanced_negative,
+        )
+        best_result: dict[str, object] | None = None
+        for candidate in candidates:
+            crop_mask = _resize_mask_to_crop(candidate.mask, crop_size=(y1 - y0, x1 - x0))
+            crop_mask = _clip_crop_mask_to_box(crop_mask, crop_box=workspace_box, clip_box=roi_constraint_box)
+            expanded_mask = _expand_mask_from_crop(crop_mask, crop_box=workspace_box, image_shape=(image_h, image_w))
+            selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
+                expanded_mask,
+                positive_points=positive_points,
+                negative_points=negative_points,
+            )
+            score, score_metadata = _score_small_object_candidate(
+                selected_mask,
+                geometry_stats=geometry_stats,
+                stability=candidate.stability,
+                workspace_box=workspace_box,
+            )
+            candidate_result = {
+                "candidate": candidate,
+                "score": score,
+                "score_metadata": score_metadata,
+                "selected_mask": selected_mask,
+                "area_rings": area_rings,
+                "polygon": polygon,
+                "geometry_stats": geometry_stats,
+            }
+            if best_result is None or score > float(best_result["score"]):
+                best_result = candidate_result
+        if best_result is None:
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata={
+                    "reason": "small_object_no_mask_candidate",
+                    "segmentation_roi_round": 1,
+                    "segmentation_used_full_image": False,
+                    "segmentation_crop_box": workspace_box,
+                    "segmentation_roi_constraint_box": roi_constraint_box,
+                    "small_object_enhancement_used": True,
+                    "small_object_workspace_box": workspace_box,
+                    "small_object_scale": scale,
+                    "small_object_enhanced_size": (int(enhanced_image.shape[1]), int(enhanced_image.shape[0])),
+                    "small_object_reject_reason": "empty_mask",
+                    "small_object_candidate_count": 0,
+                    "small_object_preview_image": _rgb_array_to_qimage(enhanced_image),
+                },
+            )
+        best_candidate = best_result["candidate"]
+        selected_mask = best_result["selected_mask"]
+        area_rings = best_result["area_rings"]
+        polygon = best_result["polygon"]
+        geometry_stats = best_result["geometry_stats"]
+        reject_reason = _small_object_reject_reason(selected_mask, workspace_box=workspace_box)
+        metadata = {
+            **geometry_stats,
+            "segmentation_roi_round": 1,
+            "segmentation_used_full_image": False,
+            "segmentation_crop_box": workspace_box,
+            "segmentation_roi_constraint_box": roi_constraint_box,
+            "positive_points": len(positive_points),
+            "negative_points": len(negative_points),
+            "cache_size": len(self._embedding_cache),
+            "cache_key": enhanced_cache_key,
+            "model_variant": self._model_variant,
+            "small_object_enhancement_used": True,
+            "small_object_workspace_box": workspace_box,
+            "small_object_scale": scale,
+            "small_object_enhanced_size": (int(enhanced_image.shape[1]), int(enhanced_image.shape[0])),
+            "small_object_reject_reason": reject_reason,
+            "small_object_candidate_count": len(candidates),
+            "small_object_selected_candidate_index": int(getattr(best_candidate, "index", 0) or 0),
+            "small_object_preview_image": _rgb_array_to_qimage(enhanced_image),
+            **dict(best_result["score_metadata"]),
+        }
+        if reject_reason:
+            metadata["reason"] = "small_object_enhancement_rejected"
+            return PromptSegmentationResult(
+                mask=None,
+                polygon_px=[],
+                area_rings_px=[],
+                area_px=0.0,
+                metadata=metadata,
+            )
+        return PromptSegmentationResult(
+            mask=selected_mask.copy() if selected_mask is not None else None,
+            polygon_px=polygon,
+            area_rings_px=area_rings,
+            area_px=magic_mask_area_px(selected_mask),
+            metadata=metadata,
+        )
 
     def _predict_polygon_for_rgb_array(
         self,
@@ -1284,6 +1717,22 @@ class PromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
     ):
+        candidates = self._predict_mask_candidates_from_embedding(
+            embedding,
+            positive_points=positive_points,
+            negative_points=negative_points,
+        )
+        if not candidates:
+            raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} decoder 未返回可用掩码。")
+        return max(candidates, key=lambda candidate: candidate.stability).mask
+
+    def _predict_mask_candidates_from_embedding(
+        self,
+        embedding: _EmbeddingEntry,
+        *,
+        positive_points: list[Point],
+        negative_points: list[Point],
+    ) -> list[_MaskCandidate]:
         try:
             import numpy as np
         except ImportError as exc:
@@ -1309,11 +1758,20 @@ class PromptSegmentationService:
                 break
         if masks is None:
             raise RuntimeError(f"{magic_segment_model_label(self._model_variant)} decoder 未返回掩码张量。")
-        scores = self._calculate_stability_score(masks[0], 0.0, 1.0)
-        max_score_index = int(scores.argmax())
-        mask = masks[0, max_score_index]
+        candidate_logits = np.asarray(masks)[0]
+        if candidate_logits.ndim == 2:
+            candidate_logits = candidate_logits.reshape((1, *candidate_logits.shape))
+        elif candidate_logits.ndim > 3:
+            candidate_logits = candidate_logits.reshape((-1, candidate_logits.shape[-2], candidate_logits.shape[-1]))
+        scores = self._calculate_stability_score(candidate_logits, 0.0, 1.0)
         input_size = self._get_preprocess_shape(*embedding.original_size, self._effective_target_length())
-        return self._postprocess_masks(mask, input_size=input_size, original_size=embedding.original_size) > 0.0
+        candidates: list[_MaskCandidate] = []
+        flat_scores = np.asarray(scores, dtype=float).reshape(-1)
+        for index, mask in enumerate(candidate_logits):
+            postprocessed = self._postprocess_masks(mask, input_size=input_size, original_size=embedding.original_size) > 0.0
+            stability = float(flat_scores[index]) if index < flat_scores.size else 0.0
+            candidates.append(_MaskCandidate(mask=postprocessed, stability=stability, index=index))
+        return candidates
 
     def _mask_to_polygon(self, mask) -> list[Point]:
         return magic_mask_to_polygon(mask)
@@ -1407,6 +1865,12 @@ class LightHQSamPromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str = MagicSegmentToolMode.STANDARD,
+        active_stage: str | None = None,
+        roi_enabled: bool = False,
+        roi_constraint_box: tuple[int, int, int, int] | None = None,
+        small_object_enhancement_enabled: bool = False,
+        small_object_roi_area_threshold_px: int = 160000,
+        small_object_workspace_box: tuple[int, int, int, int] | None = None,
         cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
@@ -1459,6 +1923,7 @@ class LightHQSamPromptSegmentationService:
                 "cache_key": cache_key,
                 "model_variant": self._model_variant,
                 "inference_ms": inference_ms,
+                "small_object_enhancement_used": False,
                 **geometry_stats,
             },
         )
@@ -1554,6 +2019,12 @@ class EfficientSamSPromptSegmentationService:
         positive_points: list[Point],
         negative_points: list[Point],
         tool_mode: str = MagicSegmentToolMode.STANDARD,
+        active_stage: str | None = None,
+        roi_enabled: bool = False,
+        roi_constraint_box: tuple[int, int, int, int] | None = None,
+        small_object_enhancement_enabled: bool = False,
+        small_object_roi_area_threshold_px: int = 160000,
+        small_object_workspace_box: tuple[int, int, int, int] | None = None,
         cancel_check: Callable[[], bool] | None = None,
     ) -> PromptSegmentationResult:
         if not positive_points:
@@ -1612,6 +2083,7 @@ class EfficientSamSPromptSegmentationService:
                 "cache_key": cache_key,
                 "model_variant": self._model_variant,
                 "inference_ms": inference_ms,
+                "small_object_enhancement_used": False,
                 **geometry_stats,
             },
         )

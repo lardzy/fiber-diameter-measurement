@@ -554,6 +554,8 @@ class ModelsProjectIOTests(unittest.TestCase):
             magic_segment_standard_add_roi_enabled=True,
             magic_segment_standard_subtract_roi_enabled=False,
             magic_segment_restrict_subtract_roi_to_primary_bounds=False,
+            magic_segment_small_object_subtract_enhancement_enabled=False,
+            magic_segment_small_object_roi_area_threshold_px=120000,
             fiber_quick_roi_enabled=False,
             fiber_quick_edge_trim_enabled=False,
             fiber_quick_line_extension_px=3.5,
@@ -595,6 +597,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.magic_segment_standard_add_roi_enabled)
         self.assertFalse(loaded.magic_segment_standard_subtract_roi_enabled)
         self.assertFalse(loaded.magic_segment_restrict_subtract_roi_to_primary_bounds)
+        self.assertFalse(loaded.magic_segment_small_object_subtract_enhancement_enabled)
+        self.assertEqual(loaded.magic_segment_small_object_roi_area_threshold_px, 120000)
         self.assertFalse(loaded.fiber_quick_roi_enabled)
         self.assertFalse(loaded.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(loaded.fiber_quick_line_extension_px, 3.5)
@@ -657,6 +661,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertFalse(settings.magic_segment_standard_add_roi_enabled)
         self.assertTrue(settings.magic_segment_standard_subtract_roi_enabled)
         self.assertTrue(settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
+        self.assertTrue(settings.magic_segment_small_object_subtract_enhancement_enabled)
+        self.assertEqual(settings.magic_segment_small_object_roi_area_threshold_px, 160000)
         self.assertTrue(settings.fiber_quick_roi_enabled)
         self.assertTrue(settings.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 0.0)
@@ -679,6 +685,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 "focus_stack_sharpen_strength": 1000,
                 "count_number_font_size": 999,
                 "magic_segment_model_variant": "unknown",
+                "magic_segment_small_object_roi_area_threshold_px": 999999999,
                 "fiber_quick_line_extension_px": 999,
             }
         )
@@ -696,6 +703,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.focus_stack_sharpen_strength, 100)
         self.assertEqual(settings.count_number_font_size, 96)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)
+        self.assertEqual(settings.magic_segment_small_object_roi_area_threshold_px, 4000000)
         self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 20.0)
 
     def test_app_settings_migrates_legacy_standard_magic_roi_to_add_mode(self) -> None:

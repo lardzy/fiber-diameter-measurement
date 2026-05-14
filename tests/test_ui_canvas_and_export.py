@@ -1419,7 +1419,7 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动线段", "计数", "边缘吸附", "多边形面积", "标准魔棒", "比例尺标定", "文字"],
+                ["浏览", "手动线段", "计数", "边缘吸附", "多边形面积", "标准魔棒", "标定", "文字"],
             )
             visible_actions = [
                 window._mode_actions[key]
@@ -2234,6 +2234,7 @@ class CanvasAndExportTests(unittest.TestCase):
             canvas._magic_segment.active_stage = MagicSegmentOperationMode.ADD
             window._update_magic_segment_controls()
             self.assertFalse(window._magic_roi_button.isChecked())
+            self.assertTrue(window._magic_small_object_button.isHidden())
 
             window._toggle_active_magic_roi()
             self.assertTrue(window._magic_standard_add_roi_enabled)
@@ -2242,10 +2243,14 @@ class CanvasAndExportTests(unittest.TestCase):
             canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
             window._update_magic_segment_controls()
             self.assertTrue(window._magic_roi_button.isChecked())
+            self.assertFalse(window._magic_small_object_button.isHidden())
+            self.assertTrue(window._magic_small_object_button.isChecked())
+            self.assertEqual(window._magic_small_object_button.text(), "小洞开")
 
             window._toggle_active_magic_roi()
             self.assertTrue(window._magic_standard_add_roi_enabled)
             self.assertFalse(window._magic_standard_subtract_roi_enabled)
+            self.assertTrue(window._magic_small_object_button.isHidden())
         finally:
             window._reset_workspace()
             window.close()
@@ -2310,6 +2315,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(fake_worker.requested.payload)
             self.assertEqual(fake_worker.requested.payload.roi_constraint_box, (20, 20, 81, 61))
             self.assertTrue(fake_worker.requested.payload.roi_enabled)
+            self.assertTrue(fake_worker.requested.payload.small_object_enhancement_enabled)
+            self.assertEqual(fake_worker.requested.payload.small_object_roi_area_threshold_px, 160000)
+            self.assertIsNone(fake_worker.requested.payload.small_object_workspace_box)
         finally:
             window._reset_workspace()
             window.close()
@@ -5049,6 +5057,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(dialog._magic_segment_standard_add_roi_checkbox.isChecked())
             self.assertTrue(dialog._magic_segment_standard_subtract_roi_checkbox.isChecked())
             self.assertTrue(dialog._magic_segment_restrict_subtract_roi_checkbox.isChecked())
+            self.assertTrue(dialog._magic_segment_small_object_enhancement_checkbox.isChecked())
+            self.assertEqual(dialog._magic_segment_small_object_threshold_spin.value(), 160000)
             self.assertTrue(dialog._fiber_quick_roi_checkbox.isChecked())
             self.assertTrue(dialog._fiber_quick_edge_trim_checkbox.isChecked())
             self.assertAlmostEqual(dialog._fiber_quick_line_extension_spin.value(), 0.0)
@@ -5068,6 +5078,8 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog._magic_segment_standard_add_roi_checkbox.setChecked(True)
             dialog._magic_segment_standard_subtract_roi_checkbox.setChecked(False)
             dialog._magic_segment_restrict_subtract_roi_checkbox.setChecked(False)
+            dialog._magic_segment_small_object_enhancement_checkbox.setChecked(False)
+            dialog._magic_segment_small_object_threshold_spin.setValue(120000)
             dialog._fiber_quick_roi_checkbox.setChecked(False)
             dialog._fiber_quick_edge_trim_checkbox.setChecked(False)
             dialog._fiber_quick_line_extension_spin.setValue(3.5)
@@ -5080,6 +5092,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(collected.magic_segment_standard_add_roi_enabled)
             self.assertFalse(collected.magic_segment_standard_subtract_roi_enabled)
             self.assertFalse(collected.magic_segment_restrict_subtract_roi_to_primary_bounds)
+            self.assertFalse(collected.magic_segment_small_object_subtract_enhancement_enabled)
+            self.assertEqual(collected.magic_segment_small_object_roi_area_threshold_px, 120000)
             self.assertFalse(collected.fiber_quick_roi_enabled)
             self.assertFalse(collected.fiber_quick_edge_trim_enabled)
             self.assertAlmostEqual(collected.fiber_quick_line_extension_px, 3.5)

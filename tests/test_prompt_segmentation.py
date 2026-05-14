@@ -237,6 +237,228 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertFalse(bool(result.metadata["segmentation_used_full_image"]))
         self.assertTrue(bool(result.metadata["segmentation_fallback_from_roi"]))
 
+    def test_predict_polygon_small_object_enhancement_maps_mask_back_to_image(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        crop_shapes: list[tuple[int, int]] = []
+
+        def fake_embedding(crop_image, *, cache_key):
+            crop_shapes.append(crop_image.shape[:2])
+            return object()
+
+        def fake_candidates(_embedding, *, positive_points, negative_points):
+            height, width = crop_shapes[-1]
+            mask = np.zeros((height, width), dtype=bool)
+            center = positive_points[-1]
+            cx = int(round(center.x))
+            cy = int(round(center.y))
+            mask[max(0, cy - 36):min(height, cy + 36), max(0, cx - 36):min(width, cx + 36)] = True
+            return [type("C", (), {"mask": mask, "stability": 0.7, "index": 0})()]
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((600, 600, 3), dtype=np.uint8)),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=fake_embedding),
+            patch.object(service, "_predict_mask_candidates_from_embedding", side_effect=fake_candidates),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="small-object",
+                positive_points=[Point(180, 180)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                active_stage="subtract",
+                roi_enabled=True,
+                roi_constraint_box=(100, 100, 356, 356),
+                small_object_enhancement_enabled=True,
+                small_object_roi_area_threshold_px=160000,
+            )
+
+        self.assertIsNotNone(result.mask)
+        self.assertEqual(crop_shapes, [(512, 512)])
+        self.assertTrue(bool(result.metadata["small_object_enhancement_used"]))
+        self.assertEqual(result.metadata["small_object_workspace_box"], (116, 116, 244, 244))
+        self.assertAlmostEqual(float(result.metadata["small_object_scale"]), 4.0)
+        self.assertEqual(result.metadata["small_object_enhanced_size"], (512, 512))
+        self.assertEqual(result.metadata["small_object_reject_reason"], "")
+        self.assertEqual(result.metadata["small_object_candidate_count"], 1)
+
+    def test_predict_polygon_small_object_enhancement_prefers_compact_candidate(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        crop_shapes: list[tuple[int, int]] = []
+
+        def fake_embedding(crop_image, *, cache_key):
+            crop_shapes.append(crop_image.shape[:2])
+            return object()
+
+        def fake_candidates(_embedding, *, positive_points, negative_points):
+            height, width = crop_shapes[-1]
+            large_mask = np.ones((height, width), dtype=bool)
+            compact_mask = np.zeros((height, width), dtype=bool)
+            center = positive_points[-1]
+            cx = int(round(center.x))
+            cy = int(round(center.y))
+            compact_mask[max(0, cy - 32):min(height, cy + 32), max(0, cx - 32):min(width, cx + 32)] = True
+            return [
+                type("C", (), {"mask": large_mask, "stability": 0.98, "index": 0})(),
+                type("C", (), {"mask": compact_mask, "stability": 0.45, "index": 1})(),
+            ]
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((600, 600, 3), dtype=np.uint8)),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=fake_embedding),
+            patch.object(service, "_predict_mask_candidates_from_embedding", side_effect=fake_candidates),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="small-object-candidates",
+                positive_points=[Point(180, 180)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                active_stage="subtract",
+                roi_enabled=True,
+                roi_constraint_box=(100, 100, 356, 356),
+                small_object_enhancement_enabled=True,
+                small_object_roi_area_threshold_px=160000,
+            )
+
+        self.assertIsNotNone(result.mask)
+        self.assertEqual(result.metadata["small_object_selected_candidate_index"], 1)
+        self.assertLess(float(result.metadata["small_object_selected_area_ratio"]), 0.1)
+        self.assertEqual(result.metadata["small_object_reject_reason"], "")
+
+    def test_predict_polygon_small_object_enhancement_rejects_oversized_mask(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+
+        def fake_embedding(crop_image, *, cache_key):
+            return object()
+
+        def fake_candidates(_embedding, *, positive_points, negative_points):
+            height, width = 512, 512
+            mask = np.ones((height, width), dtype=bool)
+            return [type("C", (), {"mask": mask, "stability": 0.9, "index": 0})()]
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((600, 600, 3), dtype=np.uint8)),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=fake_embedding),
+            patch.object(service, "_predict_mask_candidates_from_embedding", side_effect=fake_candidates),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="small-object-reject",
+                positive_points=[Point(180, 180)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                active_stage="subtract",
+                roi_enabled=True,
+                roi_constraint_box=(100, 100, 356, 356),
+                small_object_enhancement_enabled=True,
+                small_object_roi_area_threshold_px=160000,
+            )
+
+        self.assertIsNone(result.mask)
+        self.assertTrue(bool(result.metadata["small_object_enhancement_used"]))
+        self.assertEqual(result.metadata["small_object_reject_reason"], "mask_too_large")
+
+    def test_predict_polygon_small_object_enhancement_reuses_workspace_for_refinement(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        requested_workspace = (120, 120, 376, 376)
+
+        def fake_embedding(crop_image, *, cache_key):
+            return object()
+
+        def fake_candidates(_embedding, *, positive_points, negative_points):
+            height, width = 1024, 1024
+            mask = np.zeros((height, width), dtype=bool)
+            center = positive_points[-1]
+            cx = int(round(center.x))
+            cy = int(round(center.y))
+            mask[max(0, cy - 32):min(height, cy + 32), max(0, cx - 32):min(width, cx + 32)] = True
+            return [type("C", (), {"mask": mask, "stability": 0.6, "index": 0})()]
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((600, 600, 3), dtype=np.uint8)),
+            patch.object(service, "_embedding_for_rgb_array", side_effect=fake_embedding),
+            patch.object(service, "_predict_mask_candidates_from_embedding", side_effect=fake_candidates),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="small-object-reuse",
+                positive_points=[Point(180, 180), Point(210, 210)],
+                negative_points=[Point(230, 180)],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                active_stage="subtract",
+                roi_enabled=True,
+                roi_constraint_box=(100, 100, 500, 500),
+                small_object_enhancement_enabled=True,
+                small_object_roi_area_threshold_px=160000,
+                small_object_workspace_box=requested_workspace,
+            )
+
+        self.assertIsNotNone(result.mask)
+        self.assertEqual(result.metadata["small_object_workspace_box"], requested_workspace)
+
+    def test_predict_polygon_small_object_enhancement_respects_area_threshold(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        service = PromptSegmentationService(encoder_path="/tmp/encoder.onnx", decoder_path="/tmp/decoder.onnx")
+        crop_shapes: list[tuple[int, int]] = []
+
+        def fake_predict(crop_image, *, cache_key, positive_points, negative_points, metadata_extra):
+            height, width = crop_image.shape[:2]
+            crop_shapes.append((height, width))
+            mask = np.zeros((height, width), dtype=bool)
+            mask[height // 3:height // 2, width // 3:width // 2] = True
+            return type("R", (), {
+                "mask": mask,
+                "polygon_px": [],
+                "area_rings_px": [],
+                "area_px": float(mask.sum()),
+                "metadata": dict(metadata_extra),
+            })()
+
+        with (
+            patch.object(service, "_image_to_rgb_array", return_value=np.zeros((600, 600, 3), dtype=np.uint8)),
+            patch.object(service, "_predict_polygon_for_rgb_array", side_effect=fake_predict),
+        ):
+            result = service.predict_polygon(
+                image=object(),
+                cache_key="small-object-threshold",
+                positive_points=[Point(180, 180)],
+                negative_points=[],
+                tool_mode=MagicSegmentToolMode.STANDARD,
+                active_stage="subtract",
+                roi_enabled=True,
+                roi_constraint_box=(100, 100, 356, 356),
+                small_object_enhancement_enabled=True,
+                small_object_roi_area_threshold_px=4096,
+            )
+
+        self.assertTrue(crop_shapes)
+        self.assertNotEqual(crop_shapes[0], (1024, 1024))
+        self.assertFalse(bool(result.metadata["small_object_enhancement_used"]))
+
     def test_run_encoder_uses_uint8_input_tensor(self) -> None:
         try:
             import numpy as np

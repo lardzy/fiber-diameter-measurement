@@ -5,8 +5,8 @@ from datetime import datetime
 from pathlib import Path
 from time import perf_counter
 
-from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPointF, QRectF, QSize, Qt, QThread, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPixmap
+from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPoint, QPointF, QRect, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -293,6 +293,137 @@ class PresetImportPlanEntry:
     final_name: str
 
 
+class SmallObjectEnhancementPreviewWindow(QWidget):
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(
+            parent,
+            Qt.WindowType.Tool
+            | Qt.WindowType.FramelessWindowHint
+            | Qt.WindowType.WindowStaysOnTopHint,
+        )
+        self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating, True)
+        self.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.setFixedSize(300, 300)
+        self._image: QImage | None = None
+        self._workspace_box: tuple[int, int, int, int] | None = None
+        self._scale = 1.0
+        self._enhanced_size: tuple[int, int] | None = None
+        self._positive_points: list[Point] = []
+        self._negative_points: list[Point] = []
+        self._polygon_px: list[Point] = []
+        self._reject_reason = ""
+
+    def set_preview(self, metadata: dict[str, object], polygon_px: list[Point]) -> bool:
+        image = metadata.get("small_object_preview_image")
+        box = metadata.get("small_object_workspace_box")
+        if not isinstance(image, QImage) or image.isNull() or not isinstance(box, (tuple, list)) or len(box) != 4:
+            self.hide()
+            return False
+        try:
+            workspace_box = tuple(int(round(float(value))) for value in box)
+            scale = float(metadata.get("small_object_scale", 1.0) or 1.0)
+        except (TypeError, ValueError):
+            self.hide()
+            return False
+        if workspace_box[2] <= workspace_box[0] or workspace_box[3] <= workspace_box[1]:
+            self.hide()
+            return False
+        self._image = image.copy()
+        self._workspace_box = workspace_box
+        self._scale = max(1.0, scale)
+        enhanced_size = metadata.get("small_object_enhanced_size")
+        if isinstance(enhanced_size, (tuple, list)) and len(enhanced_size) == 2:
+            try:
+                self._enhanced_size = (int(enhanced_size[0]), int(enhanced_size[1]))
+            except (TypeError, ValueError):
+                self._enhanced_size = None
+        else:
+            self._enhanced_size = None
+        positive_points = metadata.get("positive_points_px")
+        negative_points = metadata.get("negative_points_px")
+        self._positive_points = [point for point in positive_points if isinstance(point, Point)] if isinstance(positive_points, list) else []
+        self._negative_points = [point for point in negative_points if isinstance(point, Point)] if isinstance(negative_points, list) else []
+        self._polygon_px = [point for point in polygon_px if isinstance(point, Point)]
+        self._reject_reason = str(metadata.get("small_object_reject_reason", "") or "").strip()
+        self.update()
+        return True
+
+    def paintEvent(self, _event) -> None:  # noqa: N802
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.fillRect(self.rect(), QColor(8, 13, 21, 238))
+        if self._image is None or self._workspace_box is None:
+            painter.end()
+            return
+        padding = 10
+        footer_height = 28
+        image_rect = QRectF(
+            padding,
+            padding,
+            max(1, self.width() - padding * 2),
+            max(1, self.height() - padding * 2 - footer_height),
+        )
+        scaled = self._image.scaled(
+            image_rect.size().toSize(),
+            Qt.AspectRatioMode.KeepAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
+        )
+        target = QRectF(
+            image_rect.x() + (image_rect.width() - scaled.width()) / 2.0,
+            image_rect.y() + (image_rect.height() - scaled.height()) / 2.0,
+            scaled.width(),
+            scaled.height(),
+        )
+        painter.drawImage(target, scaled)
+        sx = target.width() / max(1, self._image.width())
+        sy = target.height() / max(1, self._image.height())
+
+        def map_point(point: Point) -> QPointF:
+            x0, y0, _x1, _y1 = self._workspace_box or (0, 0, 1, 1)
+            return QPointF(
+                target.x() + (point.x - x0) * self._scale * sx,
+                target.y() + (point.y - y0) * self._scale * sy,
+            )
+
+        if len(self._polygon_px) >= 3:
+            polygon = QPolygonF([map_point(point) for point in self._polygon_px])
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#050505"), 4.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.drawPolygon(polygon)
+            painter.setPen(QPen(QColor("#F87171"), 2.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            painter.drawPolygon(polygon)
+
+        for positive, points in ((True, self._positive_points), (False, self._negative_points)):
+            color = QColor("#34D399" if positive else "#FB7185")
+            for point in points:
+                if not DocumentCanvas.point_in_box(point, self._workspace_box):
+                    continue
+                widget_point = map_point(point)
+                painter.setPen(QPen(QColor("#050505"), 2.0))
+                painter.setBrush(color)
+                painter.drawEllipse(widget_point, 5.0, 5.0)
+                painter.setPen(QPen(QColor("#FFFFFF"), 2.0, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap))
+                painter.drawLine(QPointF(widget_point.x() - 3.0, widget_point.y()), QPointF(widget_point.x() + 3.0, widget_point.y()))
+                if positive:
+                    painter.drawLine(QPointF(widget_point.x(), widget_point.y() - 3.0), QPointF(widget_point.x(), widget_point.y() + 3.0))
+
+        painter.setPen(QColor("#E5E7EB"))
+        font = QFont(self.font())
+        font.setPointSize(10)
+        painter.setFont(font)
+        size_text = ""
+        if self._enhanced_size is not None:
+            size_text = f"  {self._enhanced_size[0]}x{self._enhanced_size[1]}"
+        state_text = "  请补点" if self._reject_reason else ""
+        painter.drawText(
+            QRectF(padding, self.height() - footer_height, self.width() - padding * 2, footer_height - 4),
+            Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft,
+            f"小洞 x{self._scale:.1f}{size_text}{state_text}",
+        )
+        painter.end()
+
+
 class MainWindow(QMainWindow):
     IMAGE_FILTER = "图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
@@ -384,10 +515,12 @@ class MainWindow(QMainWindow):
         self._magic_prompt_label: QLabel | None = None
         self._magic_toggle_button: QToolButton | None = None
         self._magic_roi_button: QToolButton | None = None
+        self._magic_small_object_button: QToolButton | None = None
         self._magic_operation_button: QToolButton | None = None
         self._magic_confirm_subtract_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
         self._magic_cancel_button: QToolButton | None = None
+        self._small_object_preview_window: SmallObjectEnhancementPreviewWindow | None = None
         self._count_controls_widget: QWidget | None = None
         self._preview_analysis_widget: QWidget | None = None
         self._path_controls_widget: QWidget | None = None
@@ -643,7 +776,7 @@ class MainWindow(QMainWindow):
             (MagicSegmentToolMode.STANDARD, "标准魔棒"),
             (MagicSegmentToolMode.REFERENCE, "同类扩选"),
             (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
-            ("calibration", "比例尺标定"),
+            ("calibration", "标定"),
             ("overlay", "叠加标注"),
         ]:
             action = QAction(label, self)
@@ -805,6 +938,14 @@ class MainWindow(QMainWindow):
         self._magic_roi_button.clicked.connect(self._toggle_active_magic_roi)
         layout.addWidget(self._magic_roi_button)
 
+        self._magic_small_object_button = QToolButton(container)
+        self._magic_small_object_button.setProperty("contextTool", True)
+        self._magic_small_object_button.setCheckable(True)
+        self._magic_small_object_button.setText("小洞开")
+        self._magic_small_object_button.setToolTip("剔除小目标时使用局部上采样增强")
+        self._magic_small_object_button.toggled.connect(self._toggle_magic_small_object_enhancement)
+        layout.addWidget(self._magic_small_object_button)
+
         self._magic_operation_button = QToolButton(container)
         self._magic_operation_button.setProperty("contextTool", True)
         self._magic_operation_button.setText("添加(T)")
@@ -813,7 +954,7 @@ class MainWindow(QMainWindow):
 
         self._magic_confirm_subtract_button = QToolButton(container)
         self._magic_confirm_subtract_button.setProperty("contextTool", True)
-        self._magic_confirm_subtract_button.setText("加一块(S)")
+        self._magic_confirm_subtract_button.setText("加洞(S)")
         self._magic_confirm_subtract_button.setToolTip("确认当前剔除形状，并继续添加下一块剔除区域")
         self._magic_confirm_subtract_button.clicked.connect(self._confirm_current_magic_subtract_shape)
         layout.addWidget(self._magic_confirm_subtract_button)
@@ -3787,6 +3928,7 @@ class MainWindow(QMainWindow):
         self._magic_standard_subtract_roi_enabled = bool(settings.magic_segment_standard_subtract_roi_enabled)
         self._fiber_quick_roi_enabled = bool(settings.fiber_quick_roi_enabled)
         self._update_count_numbers_button()
+        self._update_magic_segment_controls()
         if settings.selected_capture_device_id:
             self._capture_manager.set_selected_device(settings.selected_capture_device_id)
         self._update_capture_device_ui()
@@ -4656,6 +4798,8 @@ class MainWindow(QMainWindow):
         active_stage = str(payload.get("active_stage", MagicSegmentOperationMode.ADD) or MagicSegmentOperationMode.ADD)
         roi_enabled = self._current_magic_roi_enabled(tool_mode, operation_mode=active_stage)
         roi_constraint_box = None
+        small_object_enhancement_enabled = False
+        small_object_workspace_box = None
         if (
             is_magic_segment_tool_mode(tool_mode)
             and active_stage == MagicSegmentOperationMode.SUBTRACT
@@ -4671,6 +4815,16 @@ class MainWindow(QMainWindow):
                 self._update_magic_segment_controls()
                 self.statusBar().showMessage("剔除模式 ROI 已限制在第一形状范围内，请在第一形状内部添加正采样点。", 5000)
                 return
+            if roi_constraint_box is not None and self._app_settings.magic_segment_small_object_subtract_enhancement_enabled:
+                small_object_enhancement_enabled = True
+                workspace_payload = payload.get("small_object_workspace_box")
+                if isinstance(workspace_payload, (tuple, list)) and len(workspace_payload) == 4:
+                    try:
+                        small_object_workspace_box = tuple(int(round(float(value))) for value in workspace_payload)
+                    except (TypeError, ValueError):
+                        small_object_workspace_box = None
+                if small_object_workspace_box is None:
+                    small_object_workspace_box = canvas.magic_segment_small_object_workspace_box()
         if not positive_points:
             if is_fiber_quick_tool_mode(tool_mode):
                 canvas.fail_fiber_quick_result(request_id)
@@ -4712,6 +4866,9 @@ class MainWindow(QMainWindow):
                 model_variant=requested_variant,
                 roi_enabled=roi_enabled,
                 roi_constraint_box=roi_constraint_box,
+                small_object_enhancement_enabled=small_object_enhancement_enabled,
+                small_object_roi_area_threshold_px=self._app_settings.magic_segment_small_object_roi_area_threshold_px,
+                small_object_workspace_box=small_object_workspace_box,
             )
         )
         self._update_magic_segment_controls()
@@ -4811,6 +4968,12 @@ class MainWindow(QMainWindow):
                 )
                 self.statusBar().showMessage("快速测径已完成分割，正在异步计算直径线。", 5000)
             else:
+                small_object_used = bool(result.metadata.get("small_object_enhancement_used"))
+                small_object_reject_reason = str(result.metadata.get("small_object_reject_reason", "") or "").strip()
+                if small_object_used:
+                    self._show_small_object_preview(canvas, result.metadata, result.polygon_px)
+                else:
+                    self._hide_small_object_preview()
                 apply_result = canvas.apply_magic_segment_result(
                     request_id,
                     result.mask,
@@ -4822,12 +4985,22 @@ class MainWindow(QMainWindow):
                         "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
                         "component_area_px": result.metadata.get("component_area_px"),
                         "reason": result.metadata.get("reason"),
+                        "small_object_enhancement_used": result.metadata.get("small_object_enhancement_used"),
+                        "small_object_workspace_box": result.metadata.get("small_object_workspace_box"),
+                        "small_object_scale": result.metadata.get("small_object_scale"),
+                        "small_object_enhanced_size": result.metadata.get("small_object_enhanced_size"),
+                        "small_object_reject_reason": result.metadata.get("small_object_reject_reason"),
                     },
                 )
                 if apply_result is None:
                     self._update_magic_segment_controls()
                     return
-                if result.mask is None or not bool(apply_result.get("has_preview", False)):
+                if small_object_reject_reason:
+                    self.statusBar().showMessage(
+                        f"小目标增强未生成稳定剔除区域：{self._small_object_reject_label(small_object_reject_reason)}，请继续补点。",
+                        5000,
+                    )
+                elif result.mask is None or not bool(apply_result.get("has_preview", False)):
                     self.statusBar().showMessage("魔棒分割失败: 未找到稳定目标区域。", 5000)
                 self._dispatch_pending_magic_segment_request(document_id, request_id)
             if apply_result is None:
@@ -5000,6 +5173,7 @@ class MainWindow(QMainWindow):
 
     def _reset_workspace(self) -> None:
         self.stop_live_preview()
+        self._hide_small_object_preview()
         self._clear_prompt_segmentation_cache()
         self.project = ProjectState.empty()
         self._project_path = None
@@ -6019,12 +6193,44 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已{state_text}ROI局部分割", 2500)
         self._update_magic_segment_controls()
 
+    def _magic_small_object_enhancement_context_active(
+        self,
+        *,
+        tool_mode: str | None = None,
+        operation_mode: str | None = None,
+        roi_enabled: bool | None = None,
+    ) -> bool:
+        active_tool = str(tool_mode or self._tool_mode or "").strip()
+        if not is_magic_segment_tool_mode(active_tool):
+            return False
+        active_operation = operation_mode
+        if active_operation is None:
+            canvas = self.current_canvas()
+            active_operation = (
+                canvas.current_magic_segment_operation_mode()
+                if canvas is not None
+                else MagicSegmentOperationMode.ADD
+            )
+        if active_operation != MagicSegmentOperationMode.SUBTRACT:
+            return False
+        active_roi = self._current_magic_roi_enabled(active_tool, operation_mode=active_operation) if roi_enabled is None else bool(roi_enabled)
+        return bool(active_roi and self._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
+
+    def _toggle_magic_small_object_enhancement(self, checked: bool) -> None:
+        self._app_settings.magic_segment_small_object_subtract_enhancement_enabled = bool(checked)
+        if not checked:
+            self._hide_small_object_preview()
+        self._save_app_settings(context="小洞")
+        self._update_magic_segment_controls()
+        self.statusBar().showMessage("小洞已开启" if checked else "小洞已关闭", 2500)
+
     def _update_magic_segment_controls(self) -> None:
         if self._magic_controls_widget is None or self._measurement_tool_strip is None:
             return
         is_visible = is_magic_toolbar_tool_mode(self._tool_mode) and not self._preview_active
         self._measurement_tool_strip.setMagicContextVisible(is_visible)
         if not is_visible:
+            self._hide_small_object_preview()
             return
         canvas = self.current_canvas()
         has_document = canvas is not None and canvas.document_id is not None
@@ -6074,6 +6280,23 @@ class MainWindow(QMainWindow):
             self._magic_roi_button.setChecked(roi_enabled)
             self._magic_roi_button.setText(f"ROI{'开' if roi_enabled else '关'}(Y)")
             self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
+        else:
+            roi_enabled = self._current_magic_roi_enabled(operation_mode=operation_mode)
+        if self._magic_small_object_button is not None:
+            small_object_context = self._magic_small_object_enhancement_context_active(
+                tool_mode=self._tool_mode,
+                operation_mode=operation_mode,
+                roi_enabled=roi_enabled,
+            )
+            enabled = bool(self._app_settings.magic_segment_small_object_subtract_enhancement_enabled)
+            self._magic_small_object_button.setVisible(small_object_context)
+            self._magic_small_object_button.blockSignals(True)
+            self._magic_small_object_button.setChecked(enabled)
+            self._magic_small_object_button.setText(f"小洞{'开' if enabled else '关'}")
+            self._magic_small_object_button.blockSignals(False)
+            self._magic_small_object_button.setEnabled(has_document and small_object_context and not busy)
+            if not small_object_context or not enabled:
+                self._hide_small_object_preview()
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
@@ -6134,6 +6357,83 @@ class MainWindow(QMainWindow):
         self._magic_controls_widget.updateGeometry()
         self._magic_controls_widget.adjustSize()
         self._measurement_tool_strip.updateGeometry()
+
+    def _ensure_small_object_preview_window(self) -> SmallObjectEnhancementPreviewWindow:
+        if self._small_object_preview_window is None:
+            self._small_object_preview_window = SmallObjectEnhancementPreviewWindow(self)
+        return self._small_object_preview_window
+
+    def _hide_small_object_preview(self) -> None:
+        if self._small_object_preview_window is not None:
+            self._small_object_preview_window.hide()
+
+    def _small_object_reject_label(self, reason: str) -> str:
+        return {
+            "empty_mask": "未找到目标",
+            "mask_too_large": "结果过大",
+            "touches_workspace_edges": "结果触及工作区边缘",
+            "positive_outside_workspace": "正采样点超出工作区",
+        }.get(reason, "置信度不足")
+
+    def _show_small_object_preview(
+        self,
+        canvas: DocumentCanvas,
+        metadata: dict[str, object],
+        polygon_px: list[Point],
+    ) -> None:
+        if not self._magic_small_object_enhancement_context_active():
+            self._hide_small_object_preview()
+            return
+        preview = self._ensure_small_object_preview_window()
+        if not preview.set_preview(metadata, polygon_px):
+            return
+        box = metadata.get("small_object_workspace_box")
+        if isinstance(box, (tuple, list)) and len(box) == 4:
+            self._position_small_object_preview(preview, canvas, box)
+        preview.show()
+        preview.raise_()
+
+    def _position_small_object_preview(
+        self,
+        preview: SmallObjectEnhancementPreviewWindow,
+        canvas: DocumentCanvas,
+        box: object,
+    ) -> None:
+        try:
+            x0, y0, x1, y1 = [float(value) for value in box]  # type: ignore[arg-type]
+        except (TypeError, ValueError):
+            return
+        top_left = canvas.image_to_widget(Point(x0, y0))
+        bottom_right = canvas.image_to_widget(Point(x1, y1))
+        roi_rect = QRectF(top_left, bottom_right).normalized()
+        roi_global_top_left = canvas.mapToGlobal(QPoint(int(roi_rect.left()), int(roi_rect.top())))
+        roi_global = QRect(
+            roi_global_top_left.x(),
+            roi_global_top_left.y(),
+            max(1, int(round(roi_rect.width()))),
+            max(1, int(round(roi_rect.height()))),
+        )
+        margin = 12
+        size = preview.size()
+        screen = QGuiApplication.screenAt(roi_global.center()) or canvas.screen() or QGuiApplication.primaryScreen()
+        available = screen.availableGeometry() if screen is not None else QRect(0, 0, 1280, 720)
+        candidates = [
+            QRect(roi_global.right() + margin, roi_global.top(), size.width(), size.height()),
+            QRect(roi_global.left() - size.width() - margin, roi_global.top(), size.width(), size.height()),
+            QRect(roi_global.left(), roi_global.bottom() + margin, size.width(), size.height()),
+            QRect(roi_global.left(), roi_global.top() - size.height() - margin, size.width(), size.height()),
+        ]
+        for candidate in candidates:
+            if available.contains(candidate) and not candidate.intersects(roi_global):
+                preview.move(candidate.topLeft())
+                return
+        x = min(max(available.left(), roi_global.right() + margin), max(available.left(), available.right() - size.width()))
+        y = min(max(available.top(), roi_global.top()), max(available.top(), available.bottom() - size.height()))
+        fallback = QRect(int(x), int(y), size.width(), size.height())
+        if fallback.intersects(roi_global):
+            x = max(available.left(), available.right() - size.width())
+            y = available.top()
+        preview.move(QPoint(int(x), int(y)))
 
     def _commit_active_path_drawing(self) -> bool:
         canvas = self.current_canvas()
@@ -6546,6 +6846,7 @@ class MainWindow(QMainWindow):
         confirm_result = canvas.confirm_current_magic_subtract_shape()
         if not bool(confirm_result.get("confirmed", False)):
             return False
+        self._hide_small_object_preview()
         count = int(confirm_result.get("count", 0) or 0)
         self.statusBar().showMessage(f"已确认剔除形状 {count} 块，可继续添加下一块。", 3000)
         self._update_magic_segment_controls()
@@ -6569,6 +6870,8 @@ class MainWindow(QMainWindow):
             messages.append("结果裂成多个独立块，已按规则仅保留最大连通区域。")
         if messages:
             self.statusBar().showMessage(" ".join(messages), 4000)
+        if committed:
+            self._hide_small_object_preview()
         self._update_magic_segment_controls()
         self._focus_current_canvas()
         return committed
@@ -6751,6 +7054,7 @@ class MainWindow(QMainWindow):
             self._prompt_seg_worker.cancel_document(canvas.document_id)
         if canvas.has_magic_segment_session():
             canvas.clear_magic_segment_session()
+            self._hide_small_object_preview()
             self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
@@ -6790,6 +7094,7 @@ class MainWindow(QMainWindow):
         self._focus_current_canvas()
 
     def _clear_magic_segment_sessions(self, *, except_document_id: str | None = None) -> None:
+        should_hide_small_object_preview = except_document_id is None
         for document_id, canvas in self._canvases.items():
             if document_id == except_document_id:
                 continue
@@ -6797,6 +7102,7 @@ class MainWindow(QMainWindow):
                 if self._prompt_seg_worker is not None:
                     self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_magic_segment_session()
+                should_hide_small_object_preview = True
             if canvas.has_reference_instance_session():
                 canvas.clear_reference_instance_session()
             if canvas.has_fiber_quick_session():
@@ -6805,6 +7111,8 @@ class MainWindow(QMainWindow):
                 if self._prompt_seg_worker is not None:
                     self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_fiber_quick_session()
+        if should_hide_small_object_preview:
+            self._hide_small_object_preview()
 
     def _overlay_metrics(self, width: int, height: int, render_mode: str) -> dict[str, float]:
         metrics = overlay_metrics(width, height, render_mode)
@@ -7156,6 +7464,7 @@ class MainWindow(QMainWindow):
             event.ignore()
             return
         self._persist_window_geometry()
+        self._hide_small_object_preview()
         self.stop_live_preview()
         self._clear_prompt_segmentation_cache()
         self._shutdown_background_threads()

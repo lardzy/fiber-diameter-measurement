@@ -27,6 +27,9 @@ class PromptSegmentationRequest:
     model_variant: str
     roi_enabled: bool
     roi_constraint_box: tuple[int, int, int, int] | None = None
+    small_object_enhancement_enabled: bool = False
+    small_object_roi_area_threshold_px: int = 160000
+    small_object_workspace_box: tuple[int, int, int, int] | None = None
 
 
 class PromptSegmentationWorker(QObject):
@@ -71,8 +74,12 @@ class PromptSegmentationWorker(QObject):
                 positive_points=list(request.positive_points),
                 negative_points=list(request.negative_points),
                 tool_mode=request.tool_mode,
+                active_stage=request.active_stage,
                 roi_enabled=bool(request.roi_enabled),
                 roi_constraint_box=request.roi_constraint_box,
+                small_object_enhancement_enabled=bool(request.small_object_enhancement_enabled),
+                small_object_roi_area_threshold_px=int(request.small_object_roi_area_threshold_px),
+                small_object_workspace_box=request.small_object_workspace_box,
                 cancel_check=lambda: self._is_request_cancelled(request.document_id),
             )
             if self._is_request_cancelled(request.document_id):
