@@ -2896,10 +2896,10 @@ class MainWindow(QMainWindow):
         box.setIcon(QMessageBox.Icon.Question)
         box.setWindowTitle("应用标定预设")
         box.setText(f"将预设“{preset.name}”应用到哪里？")
-        current_button = box.addButton("当前图片", QMessageBox.ButtonRole.AcceptRole)
-        project_button = box.addButton("项目所有图片", QMessageBox.ButtonRole.ActionRole)
+        project_button = box.addButton("项目所有图片", QMessageBox.ButtonRole.AcceptRole)
+        current_button = box.addButton("当前图片", QMessageBox.ButtonRole.ActionRole)
         cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
-        box.setDefaultButton(current_button)
+        box.setDefaultButton(project_button)
         box.setEscapeButton(cancel_button)
         box.exec()
         if box.clickedButton() == project_button:

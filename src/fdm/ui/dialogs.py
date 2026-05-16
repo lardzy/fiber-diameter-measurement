@@ -126,6 +126,7 @@ class CalibrationInputDialog(QDialog):
         self._unit_combo = QComboBox()
         self._unit_combo.addItems(["um", "mm"])
         self._apply_to_project = QCheckBox("应用到当前项目（当前及后续打开图片）")
+        self._apply_to_project.setChecked(True)
 
         form = QFormLayout()
         form.addRow("真实长度", self._length_spin)
@@ -316,8 +317,8 @@ class ExportOptionsDialog(QDialog):
         scope_layout = QVBoxLayout(scope_group)
         self._scope_current = QRadioButton("当前图片")
         self._scope_all = QRadioButton("全部已打开图片")
-        self._scope_current.setChecked(selection.scope != ExportScope.ALL_OPEN)
-        self._scope_all.setChecked(selection.scope == ExportScope.ALL_OPEN)
+        self._scope_current.setChecked(not allow_all_scope)
+        self._scope_all.setChecked(allow_all_scope)
         self._scope_all.setEnabled(allow_all_scope)
         scope_layout.addWidget(self._scope_current)
         scope_layout.addWidget(self._scope_all)

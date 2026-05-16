@@ -49,7 +49,7 @@ from fdm.project_io import ProjectIO
 
 if PYSIDE_AVAILABLE:
     from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate, magic_prompt_visual
-    from fdm.ui.dialogs import FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
+    from fdm.ui.dialogs import CalibrationInputDialog, ExportOptionsDialog, FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.main_window import MainWindow
@@ -61,6 +61,8 @@ else:
     MagicSegmentOperationMode = object  # type: ignore[assignment]
     ReferenceInstancePreviewCandidate = object  # type: ignore[assignment]
     magic_prompt_visual = None  # type: ignore[assignment]
+    CalibrationInputDialog = object  # type: ignore[assignment]
+    ExportOptionsDialog = object  # type: ignore[assignment]
     FiberGroupDialog = object  # type: ignore[assignment]
     SettingsDialog = object  # type: ignore[assignment]
     ShortcutHelpDialog = object  # type: ignore[assignment]
@@ -1037,6 +1039,26 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_export_options_defaults_scope_to_all_open_when_available(self) -> None:
+        dialog = ExportOptionsDialog(
+            ExportSelection(include_excel=True, scope=ExportScope.CURRENT),
+            allow_all_scope=True,
+        )
+        try:
+            self.assertEqual(dialog.selection().scope, ExportScope.ALL_OPEN)
+        finally:
+            dialog.close()
+
+    def test_export_options_falls_back_to_current_when_all_open_unavailable(self) -> None:
+        dialog = ExportOptionsDialog(
+            ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN),
+            allow_all_scope=False,
+        )
+        try:
+            self.assertEqual(dialog.selection().scope, ExportScope.CURRENT)
+        finally:
+            dialog.close()
+
     def test_export_results_uses_template_name_as_default_excel_filename(self) -> None:
         window = MainWindow()
         try:
@@ -1749,6 +1771,48 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(pixel_distance, 100.0)
             self.assertAlmostEqual(actual_distance, 10.0)
             self.assertEqual(unit, "um")
+        finally:
+            window.close()
+
+    def test_calibration_input_defaults_to_apply_current_project(self) -> None:
+        dialog = CalibrationInputDialog()
+        try:
+            _actual_length, _unit, apply_to_project = dialog.values()
+            self.assertTrue(apply_to_project)
+        finally:
+            dialog.close()
+
+    def test_apply_preset_prompt_puts_project_all_first_and_default(self) -> None:
+        window = MainWindow()
+        try:
+            window.project.documents = [
+                ImageDocument(id=new_id("image"), path="/tmp/preset_scope_a.png", image_size=(10, 10)),
+                ImageDocument(id=new_id("image"), path="/tmp/preset_scope_b.png", image_size=(10, 10)),
+            ]
+            preset = CalibrationPreset(name="40x", pixels_per_unit=12.5, unit="um")
+            added_labels: list[str] = []
+            captured: dict[str, str | None] = {}
+            original_add_button = QMessageBox.addButton
+
+            def tracking_add_button(box: QMessageBox, text: str, role: QMessageBox.ButtonRole):
+                button = original_add_button(box, text, role)
+                added_labels.append(text)
+                return button
+
+            def fake_exec(box: QMessageBox) -> int:
+                default_button = box.defaultButton()
+                captured["default"] = default_button.text() if default_button is not None else None
+                return 0
+
+            with (
+                patch("fdm.ui.main_window.QMessageBox.addButton", new=tracking_add_button),
+                patch("fdm.ui.main_window.QMessageBox.exec", new=fake_exec),
+            ):
+                result = window._prompt_preset_apply_scope(preset)
+
+            self.assertIsNone(result)
+            self.assertEqual(added_labels[:2], ["项目所有图片", "当前图片"])
+            self.assertEqual(captured["default"], "项目所有图片")
         finally:
             window.close()
 
