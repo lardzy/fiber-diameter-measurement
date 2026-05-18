@@ -776,6 +776,17 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(window._calibration_status_title_label.text(), "未标定")
         self.assertEqual(window.calibration_label.text(), "测量仅显示 px，无法输出真实尺寸")
         self.assertFalse(window._calibration_start_button.isHidden())
+        self.assertEqual(window._calibration_start_button.text(), "开始标定")
+        self.assertIs(window._calibration_start_button.parentWidget(), window._calibration_card_action_row)
+        self.assertIs(window._calibration_details_button.parentWidget(), window._calibration_card_action_row)
+        self.assertIs(window._apply_preset_button.parentWidget(), window._calibration_preset_action_row)
+        self.assertIs(window._import_cu_preset_button.parentWidget(), window._calibration_preset_action_row)
+        self.assertLess(
+            window._calibration_preset_action_row.layout().indexOf(window._apply_preset_button),
+            window._calibration_preset_action_row.layout().indexOf(window._import_cu_preset_button),
+        )
+        self.assertIn("font-weight: 700", window._calibration_start_button.styleSheet())
+        self.assertIn("font-weight: 700", window._apply_preset_button.styleSheet())
         self.assertIn("font-weight: 800", window._calibration_status_title_label.styleSheet())
 
     def test_calibration_card_shows_calibrated_summary(self) -> None:
@@ -803,6 +814,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(window._calibration_status_title_label.text(), "已标定 · 20x")
         self.assertEqual(window.calibration_label.text(), "0.2 um/px")
         self.assertTrue(window._calibration_start_button.isHidden())
+        self.assertEqual(window._apply_preset_button.styleSheet(), "")
 
     def test_calibration_details_are_scrollable_and_do_not_expand_for_long_sidecar_name(self) -> None:
         window = MainWindow()

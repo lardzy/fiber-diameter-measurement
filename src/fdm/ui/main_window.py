@@ -569,6 +569,8 @@ class MainWindow(QMainWindow):
         self._calibration_details_button: QPushButton | None = None
         self._calibration_details_label: QLabel | None = None
         self._calibration_start_button: QPushButton | None = None
+        self._calibration_card_action_row: QWidget | None = None
+        self._calibration_preset_action_row: QWidget | None = None
         self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -1586,15 +1588,21 @@ class MainWindow(QMainWindow):
         card_layout.addWidget(self._calibration_status_summary_label)
         self.calibration_label = self._calibration_status_summary_label
 
-        self._calibration_start_button = QPushButton("开始图内标定", self._calibration_status_card)
+        self._calibration_card_action_row = QWidget(self._calibration_status_card)
+        card_action_layout = QHBoxLayout(self._calibration_card_action_row)
+        card_action_layout.setContentsMargins(0, 0, 0, 0)
+        card_action_layout.setSpacing(8)
+
+        self._calibration_start_button = QPushButton("开始标定", self._calibration_card_action_row)
         self._calibration_start_button.setIcon(themed_icon("calibration", color="#FF7F50"))
         self._calibration_start_button.clicked.connect(lambda checked=False: self.set_tool_mode("calibration"))
-        card_layout.addWidget(self._calibration_start_button)
+        card_action_layout.addWidget(self._calibration_start_button, 1)
 
-        self._calibration_details_button = QPushButton("查看详情", self._calibration_status_card)
+        self._calibration_details_button = QPushButton("查看详情", self._calibration_card_action_row)
         self._calibration_details_button.setCheckable(True)
         self._calibration_details_button.toggled.connect(self._toggle_calibration_details)
-        card_layout.addWidget(self._calibration_details_button)
+        card_action_layout.addWidget(self._calibration_details_button, 1)
+        card_layout.addWidget(self._calibration_card_action_row)
 
         self._calibration_details_label = QLabel("", self._calibration_status_card)
         self._calibration_details_label.setWordWrap(True)
@@ -1631,14 +1639,21 @@ class MainWindow(QMainWindow):
         preset_row.addWidget(self._edit_preset_button)
         preset_row.addWidget(self._delete_preset_button)
         calibration_layout.addLayout(preset_row)
-        self._import_cu_preset_button = QPushButton("导入CU标尺")
-        self._import_cu_preset_button.setIcon(themed_icon("preset_import", color="#D7E3FC"))
-        self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
-        calibration_layout.addWidget(self._import_cu_preset_button)
-        self._apply_preset_button = QPushButton("应用预设")
+        self._calibration_preset_action_row = QWidget(calibration_box)
+        preset_action_layout = QHBoxLayout(self._calibration_preset_action_row)
+        preset_action_layout.setContentsMargins(0, 0, 0, 0)
+        preset_action_layout.setSpacing(8)
+
+        self._apply_preset_button = QPushButton("应用预设", self._calibration_preset_action_row)
         self._apply_preset_button.setIcon(themed_icon("preset_apply", color="#D7E3FC"))
         self._apply_preset_button.clicked.connect(self.apply_selected_preset)
-        calibration_layout.addWidget(self._apply_preset_button)
+        preset_action_layout.addWidget(self._apply_preset_button, 1)
+
+        self._import_cu_preset_button = QPushButton("导入CU标尺", self._calibration_preset_action_row)
+        self._import_cu_preset_button.setIcon(themed_icon("preset_import", color="#D7E3FC"))
+        self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
+        preset_action_layout.addWidget(self._import_cu_preset_button, 1)
+        calibration_layout.addWidget(self._calibration_preset_action_row)
         top_layout.addWidget(calibration_box)
 
         measurement_box = QGroupBox("测量记录")
@@ -1884,6 +1899,52 @@ class MainWindow(QMainWindow):
         if self._calibration_details_button is not None:
             self._calibration_details_button.setText("收起详情" if checked else "查看详情")
 
+    def _calibration_primary_button_stylesheet(self, *, prominent: bool) -> str:
+        if not prominent:
+            return ""
+        if self._is_dark_palette():
+            background = "#FF8A5B"
+            hover = "#FF9D73"
+            pressed = "#E96F41"
+            text = "#1B120E"
+            border = "#FFC1A8"
+            disabled_background = "#5A3628"
+            disabled_text = "#BFA397"
+        else:
+            background = "#E85D3D"
+            hover = "#F06F4F"
+            pressed = "#C94D32"
+            text = "#FFFFFF"
+            border = "#FCA58A"
+            disabled_background = "#F7C8BB"
+            disabled_text = "#8A5A4C"
+        return f"""
+            QPushButton {{
+                background: {background};
+                color: {text};
+                border: 1px solid {border};
+                border-radius: 7px;
+                padding: 6px 10px;
+                font-weight: 700;
+            }}
+            QPushButton:hover {{
+                background: {hover};
+            }}
+            QPushButton:pressed {{
+                background: {pressed};
+            }}
+            QPushButton:disabled {{
+                background: {disabled_background};
+                color: {disabled_text};
+            }}
+        """
+
+    def _set_calibration_action_prominence(self, prominent: bool) -> None:
+        stylesheet = self._calibration_primary_button_stylesheet(prominent=prominent)
+        for button in (self._calibration_start_button, self._apply_preset_button):
+            if button is not None:
+                button.setStyleSheet(stylesheet)
+
     def _set_calibration_status_card(
         self,
         *,
@@ -1937,6 +1998,7 @@ class MainWindow(QMainWindow):
             self._calibration_details_button.setText("收起详情" if self._calibration_details_button.isChecked() else "查看详情")
         if self._calibration_start_button is not None:
             self._calibration_start_button.setVisible(show_start_button)
+        self._set_calibration_action_prominence(status == "uncalibrated")
 
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         self._set_calibration_status_card(
