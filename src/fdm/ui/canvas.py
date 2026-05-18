@@ -61,6 +61,19 @@ class MagicSegmentOperationMode:
     SUBTRACT = "subtract"
 
 
+class MagicSegmentSubtractInputMode:
+    SMART = "smart"
+    POLYGON = "polygon"
+    FREEHAND = "freehand"
+
+    @classmethod
+    def normalize(cls, value: str | None) -> str:
+        normalized = str(value or "").strip()
+        if normalized in {cls.SMART, cls.POLYGON, cls.FREEHAND}:
+            return normalized
+        return cls.SMART
+
+
 @dataclass(frozen=True, slots=True)
 class MagicPromptVisual:
     prompt_type: str
@@ -185,6 +198,7 @@ class MeasurementSpatialIndex:
 @dataclass(slots=True)
 class PromptSegmentationSession:
     active_stage: str = MagicSegmentOperationMode.ADD
+    subtract_input_mode: str = MagicSegmentSubtractInputMode.SMART
     primary_prompt_type: str = "positive"
     subtract_prompt_type: str = "positive"
     primary_positive_points: list[Point] = field(default_factory=list)
@@ -587,6 +601,61 @@ class DocumentCanvas(QWidget):
     def is_magic_segment_busy(self) -> bool:
         return self._magic_segment.busy
 
+    def current_magic_subtract_input_mode(self) -> str:
+        return MagicSegmentSubtractInputMode.normalize(self._magic_segment.subtract_input_mode)
+
+    def set_magic_subtract_input_mode(self, mode: str) -> bool:
+        normalized = MagicSegmentSubtractInputMode.normalize(mode)
+        if normalized == self._magic_segment.subtract_input_mode:
+            return True
+        self._cancel_area_drawing()
+        self._magic_segment.subtract_input_mode = normalized
+        self._emit_magic_segment_session_changed()
+        self.update()
+        return True
+
+    def has_magic_manual_subtract_draft(self) -> bool:
+        return bool(
+            is_magic_segment_tool_mode(self._tool_mode)
+            and self._magic_segment.active_stage == MagicSegmentOperationMode.SUBTRACT
+            and self.current_magic_subtract_input_mode()
+            in {MagicSegmentSubtractInputMode.POLYGON, MagicSegmentSubtractInputMode.FREEHAND}
+            and (self._drawing_freehand_active or self._drawing_polygon_points)
+        )
+
+    def complete_magic_manual_subtract_draft(self) -> bool:
+        if not self.has_magic_manual_subtract_draft() or self._drawing_freehand_active:
+            return False
+        if len(self._drawing_polygon_points) < 3:
+            return False
+        return self._complete_magic_manual_subtract_polygon(list(self._drawing_polygon_points))
+
+    def cancel_magic_subtract_draft(self) -> bool:
+        if self.has_magic_manual_subtract_draft():
+            self._cancel_area_drawing()
+            self._emit_magic_segment_session_changed()
+            return True
+        if (
+            not is_magic_segment_tool_mode(self._tool_mode)
+            or self._magic_segment.active_stage != MagicSegmentOperationMode.SUBTRACT
+        ):
+            return False
+        has_subtract_draft = bool(
+            self._magic_segment.subtract_positive_points
+            or self._magic_segment.subtract_negative_points
+            or self._magic_segment.subtract_polygon
+            or self._magic_segment.subtract_rings
+            or self._magic_segment.subtract_mask is not None
+            or self._magic_segment.subtract_debug_payload
+            or self._magic_segment.small_object_workspace_box is not None
+        )
+        if not has_subtract_draft:
+            return False
+        self._clear_current_magic_subtract_draft()
+        self._emit_magic_segment_session_changed()
+        self.update()
+        return True
+
     def has_reference_instance_session(self) -> bool:
         return self._reference_instance.has_session()
 
@@ -773,6 +842,15 @@ class DocumentCanvas(QWidget):
         self._magic_segment.confirmed_subtract_masks.append(self._clone_magic_mask(self._magic_segment.subtract_mask))
         self._magic_segment.confirmed_subtract_polygons.append(self._clone_magic_polygon(self._magic_segment.subtract_polygon))
         self._magic_segment.confirmed_subtract_rings.append(self._clone_magic_rings(self._magic_segment.subtract_rings))
+        self._clear_current_magic_subtract_draft()
+        self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        self.update()
+        self._emit_magic_segment_session_changed()
+        result["confirmed"] = True
+        result["count"] = self._magic_segment.confirmed_subtract_count()
+        return result
+
+    def _clear_current_magic_subtract_draft(self) -> None:
         self._magic_segment.subtract_positive_points.clear()
         self._magic_segment.subtract_negative_points.clear()
         self._magic_segment.subtract_prompt_type = "positive"
@@ -781,12 +859,6 @@ class DocumentCanvas(QWidget):
         self._magic_segment.subtract_mask = None
         self._magic_segment.subtract_debug_payload = {}
         self._magic_segment.small_object_workspace_box = None
-        self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
-        self.update()
-        self._emit_magic_segment_session_changed()
-        result["confirmed"] = True
-        result["count"] = self._magic_segment.confirmed_subtract_count()
-        return result
 
     def apply_magic_segment_result(
         self,
@@ -1183,6 +1255,49 @@ class DocumentCanvas(QWidget):
             return None
         return mask.astype(bool)
 
+    def _magic_manual_subtract_mode_active(self, mode: str | None = None) -> bool:
+        if not is_magic_segment_tool_mode(self._tool_mode):
+            return False
+        if self._magic_segment.active_stage != MagicSegmentOperationMode.SUBTRACT:
+            return False
+        active_mode = self.current_magic_subtract_input_mode()
+        if mode is not None:
+            return active_mode == mode
+        return active_mode in {MagicSegmentSubtractInputMode.POLYGON, MagicSegmentSubtractInputMode.FREEHAND}
+
+    def _complete_magic_manual_subtract_polygon(self, polygon_points: list[Point]) -> bool:
+        if len(polygon_points) < 3:
+            return False
+        mask = self._magic_polygon_to_mask(polygon_points)
+        if mask is None:
+            self._cancel_area_drawing()
+            self._emit_magic_segment_session_changed()
+            return False
+        selected_mask, selected_rings, selected_polygon, stats = magic_mask_to_geometry(mask, select_prompt_component=False)
+        if selected_mask is None or (len(selected_polygon) < 3 and not selected_rings):
+            self._cancel_area_drawing()
+            self._emit_magic_segment_session_changed()
+            return False
+        self._magic_segment.subtract_positive_points.clear()
+        self._magic_segment.subtract_negative_points.clear()
+        self._magic_segment.subtract_prompt_type = "positive"
+        self._magic_segment.subtract_mask = self._clone_magic_mask(selected_mask)
+        self._magic_segment.subtract_rings = self._clone_magic_rings(selected_rings)
+        self._magic_segment.subtract_polygon = self._clone_magic_polygon(
+            selected_polygon if len(selected_polygon) >= 3 else selected_rings[0]
+        )
+        self._magic_segment.subtract_debug_payload = {
+            "manual_subtract_input_mode": self.current_magic_subtract_input_mode(),
+            "manual_subtract_point_count": len(polygon_points),
+            "manual_subtract_stats": stats,
+        }
+        self._magic_segment.small_object_workspace_box = None
+        self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
+        self._cancel_area_drawing()
+        self._emit_magic_segment_session_changed()
+        self.update()
+        return True
+
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
             return
@@ -1254,6 +1369,20 @@ class DocumentCanvas(QWidget):
     def keyPressEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Space and not getattr(event, "isAutoRepeat", lambda: False)():
             self.set_temporary_grab_pressed(True)
+            event.accept()
+            return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F)
+            and self.complete_magic_manual_subtract_draft()
+        ):
+            event.accept()
+            return
+        if (
+            event.key() == Qt.Key.Key_Escape
+            and is_magic_segment_tool_mode(self._tool_mode)
+            and self.cancel_magic_subtract_draft()
+        ):
             event.accept()
             return
         if (
@@ -1369,6 +1498,25 @@ class DocumentCanvas(QWidget):
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             active_stage = self._magic_segment.active_stage
+            if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_manual_subtract_mode_active():
+                if self._magic_segment.busy:
+                    return
+                if self.current_magic_subtract_input_mode() == MagicSegmentSubtractInputMode.POLYGON:
+                    if self._can_close_polygon_with_point(point):
+                        self._complete_magic_manual_subtract_polygon(list(self._drawing_polygon_points))
+                        return
+                    self._drawing_polygon_points.append(point)
+                    self._area_hover_point = point
+                    self.update()
+                    self._emit_magic_segment_session_changed()
+                    return
+                self._drawing_polygon_points = [point]
+                self._area_hover_point = point
+                self._drawing_freehand_active = True
+                self._freehand_last_sample_at = time.monotonic()
+                self.update()
+                self._emit_magic_segment_session_changed()
+                return
             if self._magic_segment.prompt_type_for_stage(active_stage) == "negative":
                 self._magic_segment.negative_points_for_stage(active_stage).append(point)
             else:
@@ -1664,7 +1812,13 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
-        if self._tool_mode in {"polygon_area", "continuous_manual"} and self._drawing_polygon_points:
+        if (
+            (
+                self._tool_mode in {"polygon_area", "continuous_manual"}
+                or self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON)
+            )
+            and self._drawing_polygon_points
+        ):
             self._area_hover_point = self._clamp_to_image(image_point, pixel_center=False)
             self.update()
             return
@@ -1818,6 +1972,11 @@ class DocumentCanvas(QWidget):
 
         if self._drawing_freehand_active:
             polygon_points = list(self._drawing_polygon_points)
+            if self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.FREEHAND):
+                if not self._complete_magic_manual_subtract_polygon(polygon_points):
+                    self._cancel_area_drawing()
+                    self._emit_magic_segment_session_changed()
+                return
             self._cancel_area_drawing()
             if len(polygon_points) >= 3:
                 self._complete_area_measurement("freehand_area", polygon_points)
@@ -1942,13 +2101,23 @@ class DocumentCanvas(QWidget):
             return
         if (
             event.button() == Qt.MouseButton.LeftButton
-            and self._tool_mode in {"polygon_area", "continuous_manual"}
+            and (
+                self._tool_mode in {"polygon_area", "continuous_manual"}
+                or self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON)
+            )
             and len(self._drawing_polygon_points) >= 1
         ):
             point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
             if distance(point, self._drawing_polygon_points[-1]) > 1.0:
                 self._drawing_polygon_points.append(point)
                 self.pathSessionChanged.emit(self._document.id)
+                if self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON):
+                    self._emit_magic_segment_session_changed()
+            if self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON):
+                if len(self._drawing_polygon_points) >= 3:
+                    self._complete_magic_manual_subtract_polygon(list(self._drawing_polygon_points))
+                    event.accept()
+                    return
             if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 3:
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 event.accept()
@@ -2040,6 +2209,74 @@ class DocumentCanvas(QWidget):
             render_mode="screen_scale_full_image",
         )
 
+    def _draw_pending_path_preview(
+        self,
+        painter: QPainter,
+        preview_points: list[Point],
+        preview_rings: list[list[Point]],
+        *,
+        magic_manual_subtract_preview: bool,
+    ) -> None:
+        if not preview_points:
+            return
+        preview_fill = QColor(248, 113, 113, 52) if magic_manual_subtract_preview else QColor(244, 211, 94, 56)
+        preview_stroke = QColor("#F87171") if magic_manual_subtract_preview else QColor("#F4D35E")
+        if self._drag_area_preview_points is not None and preview_rings:
+            fill_path = area_rings_path(preview_rings, self.image_to_widget)
+            if self._show_area_fill:
+                painter.setBrush(preview_fill)
+                painter.setPen(Qt.PenStyle.NoPen)
+                if fill_path.elementCount() > 0:
+                    painter.drawPath(fill_path)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            for ring in preview_rings:
+                if len(ring) >= 3:
+                    painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+            painter.setPen(QPen(preview_stroke, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            for ring in preview_rings:
+                if len(ring) >= 3:
+                    painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+            painter.setBrush(preview_stroke)
+            painter.setPen(QPen(QColor("#0B0B0B"), 1))
+            for ring in preview_rings:
+                for point in ring:
+                    painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
+        else:
+            polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
+            if self._show_area_fill and len(preview_points) >= 3:
+                painter.setBrush(preview_fill)
+            else:
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                painter.drawPolygon(polygon)
+            else:
+                painter.drawPolyline(polygon)
+            painter.setPen(QPen(preview_stroke, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
+            if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
+                painter.drawPolygon(polygon)
+            else:
+                painter.drawPolyline(polygon)
+            painter.setBrush(preview_stroke)
+            painter.setPen(QPen(QColor("#0B0B0B"), 1))
+            for point in preview_points:
+                painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
+        if self._tool_mode in {"polygon_area", "continuous_manual"} and self._area_hover_point is not None and self._drawing_polygon_points:
+            painter.setPen(QPen(preview_stroke, 1.2, Qt.PenStyle.DashLine))
+            painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
+            if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
+                painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
+        elif (
+            self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON)
+            and self._area_hover_point is not None
+            and self._drawing_polygon_points
+        ):
+            painter.setPen(QPen(preview_stroke, 1.2, Qt.PenStyle.DashLine))
+            painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
+            if len(self._drawing_polygon_points) >= 2:
+                painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
+
     def _draw_preview(self, painter: QPainter) -> None:
         preview_line = self._drag_preview_line or self._drawing_line
         if preview_line is not None:
@@ -2060,53 +2297,14 @@ class DocumentCanvas(QWidget):
 
         preview_points = self._drag_area_preview_points or self._drawing_polygon_points
         preview_rings = self._drag_area_preview_rings or []
-        if preview_points:
-            if self._drag_area_preview_points is not None and preview_rings:
-                fill_path = area_rings_path(preview_rings, self.image_to_widget)
-                if self._show_area_fill:
-                    painter.setBrush(QColor(244, 211, 94, 56))
-                    painter.setPen(Qt.PenStyle.NoPen)
-                    if fill_path.elementCount() > 0:
-                        painter.drawPath(fill_path)
-                painter.setBrush(Qt.BrushStyle.NoBrush)
-                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                for ring in preview_rings:
-                    if len(ring) >= 3:
-                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
-                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                for ring in preview_rings:
-                    if len(ring) >= 3:
-                        painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
-                painter.setBrush(QColor("#F4D35E"))
-                painter.setPen(QPen(QColor("#0B0B0B"), 1))
-                for ring in preview_rings:
-                    for point in ring:
-                        painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
-            else:
-                polygon = QPolygonF([self.image_to_widget(point) for point in preview_points])
-                if self._show_area_fill and len(preview_points) >= 3:
-                    painter.setBrush(QColor(244, 211, 94, 56))
-                else:
-                    painter.setBrush(Qt.BrushStyle.NoBrush)
-                painter.setPen(QPen(QColor("#0B0B0B"), 3, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                    painter.drawPolygon(polygon)
-                else:
-                    painter.drawPolyline(polygon)
-                painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-                if len(preview_points) >= 3 and (self._drag_area_preview_points is not None or self._drawing_freehand_active):
-                    painter.drawPolygon(polygon)
-                else:
-                    painter.drawPolyline(polygon)
-                painter.setBrush(QColor("#F4D35E"))
-                painter.setPen(QPen(QColor("#0B0B0B"), 1))
-                for point in preview_points:
-                    painter.drawEllipse(self.image_to_widget(point), 4.5, 4.5)
-            if self._tool_mode in {"polygon_area", "continuous_manual"} and self._area_hover_point is not None and self._drawing_polygon_points:
-                painter.setPen(QPen(QColor("#F4D35E"), 1.2, Qt.PenStyle.DashLine))
-                painter.drawLine(self.image_to_widget(self._drawing_polygon_points[-1]), self.image_to_widget(self._area_hover_point))
-                if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 2:
-                    painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
+        magic_manual_subtract_preview = bool(preview_points and self._magic_manual_subtract_mode_active())
+        if preview_points and not magic_manual_subtract_preview:
+            self._draw_pending_path_preview(
+                painter,
+                preview_points,
+                preview_rings,
+                magic_manual_subtract_preview=False,
+            )
 
         preview_overlay = self._drag_overlay_preview
         if preview_overlay is not None:
@@ -2145,6 +2343,22 @@ class DocumentCanvas(QWidget):
             self._draw_fiber_quick_preview(painter)
         elif is_reference_propagation_tool_mode(self._tool_mode) or self._reference_instance.has_session():
             self._draw_reference_instance_preview(painter)
+
+        if preview_points and magic_manual_subtract_preview:
+            self._draw_pending_path_preview(
+                painter,
+                preview_points,
+                preview_rings,
+                magic_manual_subtract_preview=True,
+            )
+
+        if self._tool_mode == "calibration":
+            self._draw_magic_prompt_status_label(
+                painter,
+                prompt_type=None,
+                operation_text="标定 · 拖拽标尺线 · Shift 锁定水平/垂直 · Ctrl 吸附像素中心",
+                busy=False,
+            )
 
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
@@ -2567,32 +2781,38 @@ class DocumentCanvas(QWidget):
         )
 
         active_stage = self._magic_segment.active_stage
-        self._draw_magic_prompt_points(
-            painter,
-            self._magic_segment.positive_points_for_stage(active_stage),
-            QColor(magic_prompt_visual("positive").marker_color),
-            positive=True,
-        )
-        self._draw_magic_prompt_points(
-            painter,
-            self._magic_segment.negative_points_for_stage(active_stage),
-            QColor(magic_prompt_visual("negative").marker_color),
-            positive=False,
-        )
+        subtract_input_mode = self.current_magic_subtract_input_mode()
+        show_prompt = active_stage != MagicSegmentOperationMode.SUBTRACT or subtract_input_mode == MagicSegmentSubtractInputMode.SMART
+        if show_prompt:
+            self._draw_magic_prompt_points(
+                painter,
+                self._magic_segment.positive_points_for_stage(active_stage),
+                QColor(magic_prompt_visual("positive").marker_color),
+                positive=True,
+            )
+            self._draw_magic_prompt_points(
+                painter,
+                self._magic_segment.negative_points_for_stage(active_stage),
+                QColor(magic_prompt_visual("negative").marker_color),
+                positive=False,
+            )
         self._draw_roi_debug_box(
             painter,
             self._magic_segment.debug_payload_for_stage(active_stage).get("segmentation_crop_box"),
             stroke_color=QColor("#F4D35E"),
         )
 
-        prompt_type = self._magic_segment.prompt_type_for_stage(active_stage)
-        operation_text = (
-            "当前编辑：剔除形状"
-            if active_stage == MagicSegmentOperationMode.SUBTRACT
-            else "当前编辑：第一形状"
-        )
-        if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_segment.confirmed_subtract_count() > 0:
-            operation_text += f" / 已确认 {self._magic_segment.confirmed_subtract_count()} 块"
+        prompt_type = self._magic_segment.prompt_type_for_stage(active_stage) if show_prompt else None
+        if active_stage == MagicSegmentOperationMode.SUBTRACT:
+            subtract_label = {
+                MagicSegmentSubtractInputMode.POLYGON: "多边形剔除",
+                MagicSegmentSubtractInputMode.FREEHAND: "自由圈选剔除",
+            }.get(subtract_input_mode, "智能剔除")
+            operation_text = f"标准魔棒 · {subtract_label}"
+            if self._magic_segment.confirmed_subtract_count() > 0:
+                operation_text += f" · 已加入 {self._magic_segment.confirmed_subtract_count()} 块"
+        else:
+            operation_text = "标准魔棒 · 添加主体"
         self._draw_magic_prompt_status_label(
             painter,
             prompt_type=prompt_type,
@@ -2689,13 +2909,13 @@ class DocumentCanvas(QWidget):
         self,
         painter: QPainter,
         *,
-        prompt_type: str,
+        prompt_type: str | None,
         operation_text: str,
         busy: bool,
     ) -> None:
-        visual = magic_prompt_visual(prompt_type)
-        prefix_text = "当前提示："
-        suffix_text = f"  {operation_text}"
+        visual = magic_prompt_visual(prompt_type or "positive") if prompt_type is not None else None
+        prefix_text = "当前提示：" if visual is not None else ""
+        suffix_text = f"  {operation_text}" if visual is not None else operation_text
         if busy:
             suffix_text += " / 推理中..."
 
@@ -2706,9 +2926,11 @@ class DocumentCanvas(QWidget):
         gap = 7.0
         chip_padding = 10.0
         prefix_width = float(metrics.horizontalAdvance(prefix_text))
-        chip_width = float(metrics.horizontalAdvance(visual.prompt_label)) + chip_padding * 2
+        chip_width = float(metrics.horizontalAdvance(visual.prompt_label)) + chip_padding * 2 if visual is not None else 0.0
         suffix_width = float(metrics.horizontalAdvance(suffix_text))
-        desired_width = outer_padding * 2 + prefix_width + gap + chip_width + gap + suffix_width
+        desired_width = outer_padding * 2 + suffix_width
+        if visual is not None:
+            desired_width += prefix_width + gap + chip_width + gap
         max_width = max(180.0, float(self.width()) - 28.0) if self.width() > 0 else desired_width
         label_width = min(max(desired_width, 300.0), max_width)
         rect = QRectF(14.0, 14.0, label_width, label_height)
@@ -2719,18 +2941,19 @@ class DocumentCanvas(QWidget):
         painter.drawRoundedRect(rect, 7.0, 7.0)
 
         x = rect.left() + outer_padding
-        prefix_rect = QRectF(x, rect.top(), prefix_width, label_height)
-        painter.setPen(QPen(QColor("#F7F4EA"), 1))
-        painter.drawText(prefix_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, prefix_text)
-        x += prefix_width + gap
+        if visual is not None:
+            prefix_rect = QRectF(x, rect.top(), prefix_width, label_height)
+            painter.setPen(QPen(QColor("#F7F4EA"), 1))
+            painter.drawText(prefix_rect, Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft, prefix_text)
+            x += prefix_width + gap
 
-        chip_rect = QRectF(x, rect.top() + (label_height - chip_height) / 2, chip_width, chip_height)
-        painter.setBrush(QColor(*visual.chip_background))
-        painter.setPen(QPen(QColor(visual.chip_border), 1.2))
-        painter.drawRoundedRect(chip_rect, 6.0, 6.0)
-        painter.setPen(QPen(QColor(visual.chip_text), 1))
-        painter.drawText(chip_rect, Qt.AlignmentFlag.AlignCenter, visual.prompt_label)
-        x += chip_width + gap
+            chip_rect = QRectF(x, rect.top() + (label_height - chip_height) / 2, chip_width, chip_height)
+            painter.setBrush(QColor(*visual.chip_background))
+            painter.setPen(QPen(QColor(visual.chip_border), 1.2))
+            painter.drawRoundedRect(chip_rect, 6.0, 6.0)
+            painter.setPen(QPen(QColor(visual.chip_text), 1))
+            painter.drawText(chip_rect, Qt.AlignmentFlag.AlignCenter, visual.prompt_label)
+            x += chip_width + gap
 
         suffix_rect = QRectF(x, rect.top(), max(0.0, rect.right() - x - outer_padding), label_height)
         painter.setBrush(Qt.BrushStyle.NoBrush)

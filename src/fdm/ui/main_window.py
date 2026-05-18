@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGu
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
+    QCheckBox,
     QComboBox,
     QDialog,
     QDialogButtonBox,
@@ -44,6 +45,7 @@ from PySide6.QtWidgets import (
     QToolButton,
     QVBoxLayout,
     QWidget,
+    QWidgetAction,
 )
 
 from fdm import __version__
@@ -110,7 +112,7 @@ from fdm.services.reference_instance_propagation import (
 )
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
-from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, magic_prompt_visual
+from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, MagicSegmentSubtractInputMode, magic_prompt_visual
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
@@ -471,6 +473,9 @@ class MainWindow(QMainWindow):
         self._magic_tool_mode = MagicSegmentToolMode.STANDARD
         self._magic_standard_add_roi_enabled = bool(self._app_settings.magic_segment_standard_add_roi_enabled)
         self._magic_standard_subtract_roi_enabled = bool(self._app_settings.magic_segment_standard_subtract_roi_enabled)
+        self._magic_standard_subtract_input_mode = MagicSegmentSubtractInputMode.normalize(
+            getattr(self._app_settings, "magic_segment_standard_subtract_input_mode", MagicSegmentSubtractInputMode.SMART)
+        )
         self._fiber_quick_roi_enabled = bool(self._app_settings.fiber_quick_roi_enabled)
         self._magic_tool_button: OverlayToolSplitButton | None = None
         self._magic_tool_menu: QMenu | None = None
@@ -516,6 +521,14 @@ class MainWindow(QMainWindow):
         self._magic_toggle_button: QToolButton | None = None
         self._magic_roi_button: QToolButton | None = None
         self._magic_small_object_button: QToolButton | None = None
+        self._magic_options_button: QToolButton | None = None
+        self._magic_options_menu: QMenu | None = None
+        self._magic_roi_option_checkbox: QCheckBox | None = None
+        self._magic_small_object_option_checkbox: QCheckBox | None = None
+        self._magic_small_object_option_hint: QLabel | None = None
+        self._magic_subtract_mode_button: QToolButton | None = None
+        self._magic_subtract_mode_menu: QMenu | None = None
+        self._magic_subtract_mode_actions: dict[str, QAction] = {}
         self._magic_operation_button: QToolButton | None = None
         self._magic_confirm_subtract_button: QToolButton | None = None
         self._magic_complete_button: QToolButton | None = None
@@ -550,6 +563,12 @@ class MainWindow(QMainWindow):
         self._image_resolution_label: QLabel | None = None
         self._preview_notice_label: QLabel | None = None
         self._calibration_label_scroll: QScrollArea | None = None
+        self._calibration_status_card: QFrame | None = None
+        self._calibration_status_title_label: QLabel | None = None
+        self._calibration_status_summary_label: QLabel | None = None
+        self._calibration_details_button: QPushButton | None = None
+        self._calibration_details_label: QLabel | None = None
+        self._calibration_start_button: QPushButton | None = None
         self._version_label: QLabel | None = None
         self._preview_active = False
         self._preview_document: ImageDocument | None = None
@@ -925,32 +944,32 @@ class MainWindow(QMainWindow):
         self._magic_prompt_label.setProperty("contextLabel", True)
         layout.addWidget(self._magic_prompt_label)
 
+        self._magic_operation_button = QToolButton(container)
+        self._magic_operation_button.setProperty("contextTool", True)
+        self._magic_operation_button.setText("添加(T)")
+        self._magic_operation_button.clicked.connect(self._cycle_magic_segment_operation_mode)
+        layout.addWidget(self._magic_operation_button)
+
+        self._magic_subtract_mode_button = QToolButton(container)
+        self._magic_subtract_mode_button.setProperty("contextTool", True)
+        self._magic_subtract_mode_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._magic_subtract_mode_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self._magic_subtract_mode_menu = self._build_magic_subtract_mode_menu(self._magic_subtract_mode_button)
+        self._magic_subtract_mode_button.setMenu(self._magic_subtract_mode_menu)
+        layout.addWidget(self._magic_subtract_mode_button)
+
         self._magic_toggle_button = QToolButton(container)
         self._magic_toggle_button.setProperty("contextTool", True)
         self._magic_toggle_button.setText("正负(R)")
         self._magic_toggle_button.clicked.connect(self._cycle_active_magic_prompt_type)
         layout.addWidget(self._magic_toggle_button)
 
-        self._magic_roi_button = QToolButton(container)
-        self._magic_roi_button.setProperty("contextTool", True)
-        self._magic_roi_button.setCheckable(True)
-        self._magic_roi_button.setText("ROI开(Y)")
-        self._magic_roi_button.clicked.connect(self._toggle_active_magic_roi)
-        layout.addWidget(self._magic_roi_button)
-
-        self._magic_small_object_button = QToolButton(container)
-        self._magic_small_object_button.setProperty("contextTool", True)
-        self._magic_small_object_button.setCheckable(True)
-        self._magic_small_object_button.setText("小洞开")
-        self._magic_small_object_button.setToolTip("剔除小目标时使用局部上采样增强")
-        self._magic_small_object_button.toggled.connect(self._toggle_magic_small_object_enhancement)
-        layout.addWidget(self._magic_small_object_button)
-
-        self._magic_operation_button = QToolButton(container)
-        self._magic_operation_button.setProperty("contextTool", True)
-        self._magic_operation_button.setText("添加(T)")
-        self._magic_operation_button.clicked.connect(self._cycle_magic_segment_operation_mode)
-        layout.addWidget(self._magic_operation_button)
+        self._magic_options_button = QToolButton(container)
+        self._magic_options_button.setProperty("contextTool", True)
+        self._magic_options_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._magic_options_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
+        self._magic_options_button.setMenu(self._build_magic_options_menu(self._magic_options_button))
+        layout.addWidget(self._magic_options_button)
 
         self._magic_confirm_subtract_button = QToolButton(container)
         self._magic_confirm_subtract_button.setProperty("contextTool", True)
@@ -961,17 +980,69 @@ class MainWindow(QMainWindow):
 
         self._magic_complete_button = QToolButton(container)
         self._magic_complete_button.setProperty("contextTool", True)
-        self._magic_complete_button.setText("确认(Enter/F)")
+        self._magic_complete_button.setText("完成")
+        self._magic_complete_button.setToolTip("提交当前魔棒结果（Enter / F）")
         self._magic_complete_button.clicked.connect(self._commit_active_magic_preview)
         layout.addWidget(self._magic_complete_button)
 
         self._magic_cancel_button = QToolButton(container)
         self._magic_cancel_button.setProperty("contextTool", True)
-        self._magic_cancel_button.setText("取消(Esc)")
+        self._magic_cancel_button.setText("取消")
+        self._magic_cancel_button.setToolTip("取消当前魔棒会话或草稿（Esc）")
         self._magic_cancel_button.clicked.connect(self._cancel_active_magic_session)
         layout.addWidget(self._magic_cancel_button)
 
         return container
+
+    def _build_magic_subtract_mode_menu(self, parent: QWidget) -> QMenu:
+        menu = QMenu(parent)
+        action_group = QActionGroup(menu)
+        action_group.setExclusive(True)
+        definitions = [
+            (MagicSegmentSubtractInputMode.SMART, "智能剔除"),
+            (MagicSegmentSubtractInputMode.POLYGON, "多边形剔除"),
+            (MagicSegmentSubtractInputMode.FREEHAND, "自由圈选剔除"),
+        ]
+        for mode, label in definitions:
+            action = QAction(label, menu)
+            action.setCheckable(True)
+            action.triggered.connect(lambda checked=False, value=mode: self._set_magic_subtract_input_mode(value))
+            menu.addAction(action)
+            action_group.addAction(action)
+            self._magic_subtract_mode_actions[mode] = action
+        return menu
+
+    def _build_magic_options_menu(self, parent: QWidget) -> QMenu:
+        menu = QMenu(parent)
+        panel = QWidget(menu)
+        layout = QVBoxLayout(panel)
+        layout.setContentsMargins(12, 10, 12, 10)
+        layout.setSpacing(8)
+
+        title = QLabel("魔棒选项", panel)
+        title.setStyleSheet("font-weight: 700;")
+        layout.addWidget(title)
+
+        self._magic_roi_option_checkbox = QCheckBox("ROI 局部分割", panel)
+        self._magic_roi_option_checkbox.setToolTip("只在当前 ROI 区域内进行魔棒识别或剔除，快捷键 Y")
+        self._magic_roi_option_checkbox.toggled.connect(self._set_active_magic_roi_checked)
+        layout.addWidget(self._magic_roi_option_checkbox)
+
+        self._magic_small_object_option_checkbox = QCheckBox("小洞增强", panel)
+        self._magic_small_object_option_checkbox.setToolTip("标准魔棒剔除小目标时使用局部上采样增强")
+        self._magic_small_object_option_checkbox.toggled.connect(self._toggle_magic_small_object_enhancement)
+        layout.addWidget(self._magic_small_object_option_checkbox)
+
+        self._magic_small_object_option_hint = QLabel("仅在标准魔棒的智能剔除、ROI 开启时可用", panel)
+        self._magic_small_object_option_hint.setWordWrap(True)
+        self._magic_small_object_option_hint.setStyleSheet(f"color: {self._status_color('muted')};")
+        layout.addWidget(self._magic_small_object_option_hint)
+
+        widget_action = QWidgetAction(menu)
+        widget_action.setDefaultWidget(panel)
+        menu.addAction(widget_action)
+        self._magic_options_menu = menu
+        return menu
 
     def _build_preview_analysis_controls(self) -> QWidget:
         container = QWidget(self)
@@ -1498,19 +1569,48 @@ class MainWindow(QMainWindow):
         self._preview_notice_label.setWordWrap(True)
         self._preview_notice_label.setStyleSheet("color: #F4D35E;")
         self._preview_notice_label.hide()
-        calibration_layout.addWidget(self._preview_notice_label)
-        self.calibration_label = QLabel("当前图片未标定")
-        self.calibration_label.setWordWrap(True)
-        self.calibration_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self._calibration_status_card = QFrame(calibration_box)
+        self._calibration_status_card.setObjectName("calibrationStatusCard")
+        card_layout = QVBoxLayout(self._calibration_status_card)
+        card_layout.setContentsMargins(12, 10, 12, 10)
+        card_layout.setSpacing(6)
+
+        self._calibration_status_title_label = QLabel("未标定", self._calibration_status_card)
+        self._calibration_status_title_label.setWordWrap(True)
+        self._calibration_status_title_label.setStyleSheet("font-weight: 800;")
+        card_layout.addWidget(self._calibration_status_title_label)
+
+        self._calibration_status_summary_label = QLabel("测量仅显示 px，无法输出真实尺寸", self._calibration_status_card)
+        self._calibration_status_summary_label.setWordWrap(True)
+        self._calibration_status_summary_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        card_layout.addWidget(self._calibration_status_summary_label)
+        self.calibration_label = self._calibration_status_summary_label
+
+        self._calibration_start_button = QPushButton("开始图内标定", self._calibration_status_card)
+        self._calibration_start_button.setIcon(themed_icon("calibration", color="#FF7F50"))
+        self._calibration_start_button.clicked.connect(lambda checked=False: self.set_tool_mode("calibration"))
+        card_layout.addWidget(self._calibration_start_button)
+
+        self._calibration_details_button = QPushButton("查看详情", self._calibration_status_card)
+        self._calibration_details_button.setCheckable(True)
+        self._calibration_details_button.toggled.connect(self._toggle_calibration_details)
+        card_layout.addWidget(self._calibration_details_button)
+
+        self._calibration_details_label = QLabel("", self._calibration_status_card)
+        self._calibration_details_label.setWordWrap(True)
+        self._calibration_details_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         self._calibration_label_scroll = QScrollArea()
-        self._calibration_label_scroll.setWidget(self.calibration_label)
+        self._calibration_label_scroll.setWidget(self._calibration_details_label)
         self._calibration_label_scroll.setWidgetResizable(True)
         self._calibration_label_scroll.setFrameShape(QFrame.Shape.NoFrame)
         self._calibration_label_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         self._calibration_label_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        self._calibration_label_scroll.setMinimumHeight(88)
+        self._calibration_label_scroll.setMinimumHeight(72)
         self._calibration_label_scroll.setMaximumHeight(118)
-        calibration_layout.addWidget(self._calibration_label_scroll)
+        self._calibration_label_scroll.hide()
+        card_layout.addWidget(self._calibration_label_scroll)
+
+        calibration_layout.addWidget(self._calibration_status_card)
         self.preset_combo = QComboBox()
         self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
@@ -1629,6 +1729,8 @@ class MainWindow(QMainWindow):
         self._tool_mode = mode
         for canvas in self._canvases.values():
             canvas.set_tool_mode(mode, overlay_kind=self._overlay_tool_kind)
+            if is_magic_segment_tool_mode(mode):
+                self._sync_canvas_magic_subtract_input_mode(canvas)
         if mode in self._mode_actions:
             self._mode_actions[mode].setChecked(True)
             self.statusBar().showMessage(f"当前工具: {self._mode_actions[mode].text()}", 3000)
@@ -1776,15 +1878,74 @@ class MainWindow(QMainWindow):
         for label in self._group_header_labels:
             label.setStyleSheet(f"color: {muted}; padding: 0 0 2px 0;")
 
+    def _toggle_calibration_details(self, checked: bool) -> None:
+        if self._calibration_label_scroll is not None:
+            self._calibration_label_scroll.setVisible(bool(checked))
+        if self._calibration_details_button is not None:
+            self._calibration_details_button.setText("收起详情" if checked else "查看详情")
+
+    def _set_calibration_status_card(
+        self,
+        *,
+        title: str,
+        summary: str,
+        status: str,
+        details: str = "",
+        show_start_button: bool = False,
+    ) -> None:
+        if self._calibration_status_title_label is None or self._calibration_status_summary_label is None:
+            return
+        palette = {
+            "uncalibrated": ("#FEF2F2", "#FCA5A5", "#7F1D1D", "#991B1B"),
+            "calibrated": ("#ECFDF5", "#6EE7B7", "#064E3B", "#047857"),
+            "preview": ("#F1F5F9", "#CBD5E1", "#334155", "#475569"),
+            "warning": ("#FFFBEB", "#FCD34D", "#78350F", "#92400E"),
+        }.get(status, ("#F8FAFC", "#CBD5E1", "#1F2937", "#475569"))
+        background, border, title_color, text_color = palette
+        if self._is_dark_palette():
+            palette = {
+                "uncalibrated": ("#3F1518", "#F87171", "#FEE2E2", "#FECACA"),
+                "calibrated": ("#063C33", "#34D399", "#ECFDF5", "#A7F3D0"),
+                "preview": ("#1F2937", "#64748B", "#E5E7EB", "#CBD5E1"),
+                "warning": ("#3B2A08", "#FBBF24", "#FEF3C7", "#FDE68A"),
+            }.get(status, ("#1F2937", "#64748B", "#E5E7EB", "#CBD5E1"))
+            background, border, title_color, text_color = palette
+        if self._calibration_status_card is not None:
+            self._calibration_status_card.setStyleSheet(
+                "QFrame#calibrationStatusCard {"
+                f"background: {background};"
+                f"border: 1px solid {border};"
+                "border-radius: 8px;"
+                "}"
+            )
+        self._calibration_status_title_label.setText(title)
+        self._calibration_status_title_label.setStyleSheet(f"font-weight: 800; color: {title_color};")
+        self._calibration_status_summary_label.setText(summary)
+        self._calibration_status_summary_label.setToolTip("\n".join(part for part in [title, summary, details] if part))
+        self._calibration_status_summary_label.setStyleSheet(f"color: {text_color};")
+        self.calibration_label = self._calibration_status_summary_label
+        if self._calibration_details_label is not None:
+            self._calibration_details_label.setText(details)
+            self._calibration_details_label.setToolTip(details)
+            self._calibration_details_label.setStyleSheet(f"color: {text_color};")
+        if self._calibration_details_button is not None:
+            has_details = bool(details.strip())
+            self._calibration_details_button.setVisible(has_details)
+            self._calibration_details_button.setEnabled(has_details)
+            if not has_details:
+                self._calibration_details_button.setChecked(False)
+            self._calibration_details_button.setText("收起详情" if self._calibration_details_button.isChecked() else "查看详情")
+        if self._calibration_start_button is not None:
+            self._calibration_start_button.setVisible(show_start_button)
+
     def _set_calibration_label(self, text: str, *, status: str) -> None:
-        color_key = {
-            "uncalibrated": "danger",
-            "calibrated": "info",
-            "preview": "muted",
-        }.get(status, "default")
-        self.calibration_label.setText(text)
-        self.calibration_label.setToolTip(text)
-        self.calibration_label.setStyleSheet(f"color: {self._status_color(color_key)};")
+        self._set_calibration_status_card(
+            title=text.splitlines()[0] if text else "",
+            summary=text,
+            status=status,
+            details=text,
+            show_start_button=status == "uncalibrated",
+        )
 
     def _update_preset_combo_tooltip(self, text: str) -> None:
         self.preset_combo.setToolTip(text)
@@ -3571,6 +3732,8 @@ class MainWindow(QMainWindow):
         canvas.set_document(document, image)
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
+        if is_magic_segment_tool_mode(self._tool_mode):
+            self._sync_canvas_magic_subtract_input_mode(canvas)
         canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
@@ -3926,7 +4089,13 @@ class MainWindow(QMainWindow):
         self._apply_tool_menu_stylesheets()
         self._magic_standard_add_roi_enabled = bool(settings.magic_segment_standard_add_roi_enabled)
         self._magic_standard_subtract_roi_enabled = bool(settings.magic_segment_standard_subtract_roi_enabled)
+        self._magic_standard_subtract_input_mode = MagicSegmentSubtractInputMode.normalize(
+            getattr(settings, "magic_segment_standard_subtract_input_mode", MagicSegmentSubtractInputMode.SMART)
+        )
         self._fiber_quick_roi_enabled = bool(settings.fiber_quick_roi_enabled)
+        if is_magic_segment_tool_mode(self._tool_mode):
+            for canvas in self._canvases.values():
+                self._sync_canvas_magic_subtract_input_mode(canvas)
         self._update_count_numbers_button()
         self._update_magic_segment_controls()
         if settings.selected_capture_device_id:
@@ -4813,7 +4982,7 @@ class MainWindow(QMainWindow):
             ):
                 canvas.reject_magic_segment_subtract_points_outside_primary_bounds(request_id)
                 self._update_magic_segment_controls()
-                self.statusBar().showMessage("剔除模式 ROI 已限制在第一形状范围内，请在第一形状内部添加正采样点。", 5000)
+                self.statusBar().showMessage("剔除模式 ROI 已限制在主体范围内，请在主体内部添加正采样点。", 5000)
                 return
             if roi_constraint_box is not None and self._app_settings.magic_segment_small_object_subtract_enhancement_enabled:
                 small_object_enhancement_enabled = True
@@ -5282,6 +5451,8 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
+            if is_magic_segment_tool_mode(self._tool_mode):
+                self._sync_canvas_magic_subtract_input_mode(canvas)
             self._apply_open_view_mode(canvas)
         self._update_ui_for_current_document()
 
@@ -5747,21 +5918,43 @@ class MainWindow(QMainWindow):
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         if self._preview_active:
-            self._set_calibration_label("实时预览中", status="preview")
+            self._set_calibration_status_card(
+                title="实时预览中",
+                summary="图片编辑与标定已暂停",
+                status="preview",
+                details="实时预览中，图片编辑、测量记录编辑与标定操作暂时不可用。",
+                show_start_button=False,
+            )
             return
         if document is None or document.calibration is None:
-            self._set_calibration_label("当前图片未标定", status="uncalibrated")
+            self._set_calibration_status_card(
+                title="未标定",
+                summary="测量仅显示 px，无法输出真实尺寸",
+                status="uncalibrated",
+                details="请使用图内标定或应用标定预设后再进行真实尺寸测量。",
+                show_start_button=True,
+            )
             return
         calibration = document.calibration
-        lines = [
-            calibration.source_label or self._format_calibration_mode(calibration.mode),
-            f"{self._format_calibration_mode(calibration.mode)}\n{calibration.pixels_per_unit:.4f} px/{calibration.unit}",
+        source_label = calibration.source_label or self._format_calibration_mode(calibration.mode)
+        unit_per_px = 1.0 / calibration.pixels_per_unit if calibration.pixels_per_unit > 0 else 0.0
+        details = [
+            f"标定来源: {source_label}",
+            f"标定模式: {self._format_calibration_mode(calibration.mode)}",
+            f"换算关系: {calibration.pixels_per_unit:.4f} px/{calibration.unit}",
+            f"像素尺寸: {unit_per_px:.6g} {calibration.unit}/px",
         ]
         if calibration.mode == "project_default" or not document.uses_sidecar():
-            lines.append("保存位置: 当前项目")
+            details.append("保存位置: 当前项目")
         else:
-            lines.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
-        self._set_calibration_label("\n".join(lines), status="calibrated")
+            details.append(f"侧车: {Path(document.sidecar_path or document.default_sidecar_path()).name}")
+        self._set_calibration_status_card(
+            title=f"已标定 · {source_label}",
+            summary=f"{unit_per_px:.6g} {calibration.unit}/px",
+            status="calibrated",
+            details="\n".join(details),
+            show_start_button=False,
+        )
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
         self._table_rebuilding = True
@@ -6139,12 +6332,69 @@ class MainWindow(QMainWindow):
     def _magic_operation_label_text(self, operation_mode: str) -> str:
         if operation_mode == MagicSegmentOperationMode.SUBTRACT:
             return "当前编辑：剔除形状"
-        return "当前编辑：第一形状"
+        return "当前编辑：主体"
 
     def _magic_operation_button_text(self, operation_mode: str) -> str:
         if operation_mode == MagicSegmentOperationMode.SUBTRACT:
             return "剔除(T)"
         return "添加(T)"
+
+    def _magic_subtract_input_label(self, mode: str) -> str:
+        return {
+            MagicSegmentSubtractInputMode.POLYGON: "多边形剔除",
+            MagicSegmentSubtractInputMode.FREEHAND: "自由圈选剔除",
+        }.get(MagicSegmentSubtractInputMode.normalize(mode), "智能剔除")
+
+    def _magic_subtract_input_tooltip(self, mode: str) -> str:
+        return {
+            MagicSegmentSubtractInputMode.POLYGON: "点击添加顶点，双击、靠近起点点击或 Enter 闭合剔除区域",
+            MagicSegmentSubtractInputMode.FREEHAND: "按住拖拽圈出要剔除的区域，松手后生成剔除草稿",
+        }.get(MagicSegmentSubtractInputMode.normalize(mode), "点选目标并由魔棒生成剔除草稿")
+
+    def _remember_magic_subtract_input_mode(self, mode: str) -> str:
+        normalized = MagicSegmentSubtractInputMode.normalize(mode)
+        self._magic_standard_subtract_input_mode = normalized
+        if getattr(self._app_settings, "magic_segment_standard_subtract_input_mode", None) != normalized:
+            self._app_settings.magic_segment_standard_subtract_input_mode = normalized
+            self._save_app_settings(context="剔除方式")
+        return normalized
+
+    def _sync_canvas_magic_subtract_input_mode(self, canvas: DocumentCanvas | None) -> None:
+        if canvas is None or canvas.has_magic_manual_subtract_draft():
+            return
+        canvas.set_magic_subtract_input_mode(self._magic_standard_subtract_input_mode)
+
+    def _confirm_discard_magic_manual_subtract_draft(self, title: str, text: str) -> bool:
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle(title)
+        box.setText(text)
+        discard_button = box.addButton("丢弃草稿并切换", QMessageBox.ButtonRole.DestructiveRole)
+        cancel_button = box.addButton("取消切换", QMessageBox.ButtonRole.RejectRole)
+        box.setDefaultButton(cancel_button)
+        box.exec()
+        return box.clickedButton() == discard_button
+
+    def _set_magic_subtract_input_mode(self, mode: str) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or not is_magic_segment_tool_mode(self._tool_mode):
+            return
+        normalized = MagicSegmentSubtractInputMode.normalize(mode)
+        if canvas.current_magic_subtract_input_mode() == normalized:
+            self._remember_magic_subtract_input_mode(normalized)
+            self._update_magic_segment_controls()
+            return
+        if canvas.has_magic_manual_subtract_draft():
+            if not self._confirm_discard_magic_manual_subtract_draft(
+                "切换剔除方式",
+                "当前剔除区域尚未闭合。要丢弃草稿并切换剔除方式吗？",
+            ):
+                self._update_magic_segment_controls()
+                return
+        normalized = self._remember_magic_subtract_input_mode(normalized)
+        canvas.set_magic_subtract_input_mode(normalized)
+        self.statusBar().showMessage(f"已切换为{self._magic_subtract_input_label(normalized)}", 2500)
+        self._update_magic_segment_controls()
 
     def _current_magic_roi_enabled(self, tool_mode: str | None = None, *, operation_mode: str | None = None) -> bool:
         active_mode = str(tool_mode or self._tool_mode or "").strip()
@@ -6172,6 +6422,26 @@ class MainWindow(QMainWindow):
                 self._magic_standard_subtract_roi_enabled = bool(enabled)
             else:
                 self._magic_standard_add_roi_enabled = bool(enabled)
+
+    def _set_active_magic_roi_checked(self, checked: bool) -> None:
+        if not (is_magic_segment_tool_mode(self._tool_mode) or is_fiber_quick_tool_mode(self._tool_mode)):
+            return
+        operation_mode = None
+        if is_magic_segment_tool_mode(self._tool_mode):
+            canvas = self.current_canvas()
+            operation_mode = (
+                canvas.current_magic_segment_operation_mode()
+                if canvas is not None
+                else MagicSegmentOperationMode.ADD
+            )
+        checked = bool(checked)
+        if self._current_magic_roi_enabled(operation_mode=operation_mode) == checked:
+            self._update_magic_segment_controls()
+            return
+        self._set_magic_roi_enabled(self._tool_mode, checked, operation_mode=operation_mode)
+        state_text = "启用" if checked else "关闭"
+        self.statusBar().showMessage(f"已{state_text}ROI局部分割", 2500)
+        self._update_magic_segment_controls()
 
     def _toggle_active_magic_roi(self) -> None:
         if not (is_magic_segment_tool_mode(self._tool_mode) or is_fiber_quick_tool_mode(self._tool_mode)):
@@ -6213,6 +6483,13 @@ class MainWindow(QMainWindow):
             )
         if active_operation != MagicSegmentOperationMode.SUBTRACT:
             return False
+        canvas = self.current_canvas()
+        if (
+            canvas is not None
+            and is_magic_segment_tool_mode(active_tool)
+            and canvas.current_magic_subtract_input_mode() != MagicSegmentSubtractInputMode.SMART
+        ):
+            return False
         active_roi = self._current_magic_roi_enabled(active_tool, operation_mode=active_operation) if roi_enabled is None else bool(roi_enabled)
         return bool(active_roi and self._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
 
@@ -6243,23 +6520,40 @@ class MainWindow(QMainWindow):
                 if canvas is not None
                 else MagicSegmentOperationMode.ADD
             )
+            subtract_input_mode = (
+                canvas.current_magic_subtract_input_mode()
+                if canvas is not None
+                else MagicSegmentSubtractInputMode.SMART
+            )
             busy = bool(canvas and canvas.is_magic_segment_busy())
         elif fiber_quick_mode:
             prompt_type = canvas.current_fiber_quick_prompt_type() if canvas is not None else "positive"
             operation_mode = MagicSegmentOperationMode.ADD
+            subtract_input_mode = MagicSegmentSubtractInputMode.SMART
             busy = bool(canvas and canvas.is_fiber_quick_busy())
         else:
             prompt_type = "positive"
             operation_mode = MagicSegmentOperationMode.ADD
+            subtract_input_mode = MagicSegmentSubtractInputMode.SMART
             busy = bool(canvas and canvas.is_reference_instance_busy())
         if self._magic_prompt_label is not None:
-            self._magic_prompt_label.setVisible(not standard_mode and not fiber_quick_mode)
+            self._magic_prompt_label.setVisible(False)
             if not standard_mode and not fiber_quick_mode and canvas is not None and canvas.has_reference_instance_preview():
                 self._magic_prompt_label.setText("候选预览")
             elif not standard_mode and not fiber_quick_mode:
                 self._magic_prompt_label.setText("拖框或点已确认面积作为参考")
         if self._magic_toggle_button is not None:
-            self._magic_toggle_button.setVisible(standard_mode or fiber_quick_mode)
+            show_prompt_toggle = (
+                fiber_quick_mode
+                or (
+                    standard_mode
+                    and (
+                        operation_mode != MagicSegmentOperationMode.SUBTRACT
+                        or subtract_input_mode == MagicSegmentSubtractInputMode.SMART
+                    )
+                )
+            )
+            self._magic_toggle_button.setVisible(show_prompt_toggle)
             if standard_mode:
                 visual = magic_prompt_visual(prompt_type)
                 self._magic_toggle_button.setText(f"{visual.button_label}(R)")
@@ -6271,46 +6565,69 @@ class MainWindow(QMainWindow):
             refresh_widget_theme(self._magic_toggle_button)
             self._magic_toggle_button.setEnabled(
                 has_document
-                and (standard_mode or fiber_quick_mode)
+                and show_prompt_toggle
                 and (fiber_quick_mode or not busy)
             )
-        if self._magic_roi_button is not None:
-            self._magic_roi_button.setVisible(standard_mode or fiber_quick_mode)
-            roi_enabled = self._current_magic_roi_enabled(operation_mode=operation_mode)
-            self._magic_roi_button.setChecked(roi_enabled)
-            self._magic_roi_button.setText(f"ROI{'开' if roi_enabled else '关'}(Y)")
-            self._magic_roi_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
-        else:
-            roi_enabled = self._current_magic_roi_enabled(operation_mode=operation_mode)
-        if self._magic_small_object_button is not None:
-            small_object_context = self._magic_small_object_enhancement_context_active(
-                tool_mode=self._tool_mode,
-                operation_mode=operation_mode,
-                roi_enabled=roi_enabled,
-            )
-            enabled = bool(self._app_settings.magic_segment_small_object_subtract_enhancement_enabled)
-            self._magic_small_object_button.setVisible(small_object_context)
-            self._magic_small_object_button.blockSignals(True)
-            self._magic_small_object_button.setChecked(enabled)
-            self._magic_small_object_button.setText(f"小洞{'开' if enabled else '关'}")
-            self._magic_small_object_button.blockSignals(False)
-            self._magic_small_object_button.setEnabled(has_document and small_object_context and not busy)
-            if not small_object_context or not enabled:
-                self._hide_small_object_preview()
+        roi_enabled = self._current_magic_roi_enabled(operation_mode=operation_mode)
+        small_object_context = self._magic_small_object_enhancement_context_active(
+            tool_mode=self._tool_mode,
+            operation_mode=operation_mode,
+            roi_enabled=roi_enabled,
+        )
+        small_object_enabled = bool(self._app_settings.magic_segment_small_object_subtract_enhancement_enabled)
+        if not small_object_context or not small_object_enabled:
+            self._hide_small_object_preview()
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
             self._magic_operation_button.setEnabled(has_document and standard_mode and not busy)
+        if self._magic_subtract_mode_button is not None:
+            self._magic_subtract_mode_button.setVisible(standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT)
+            self._magic_subtract_mode_button.setText(f"剔除方式：{self._magic_subtract_input_label(subtract_input_mode)}")
+            self._magic_subtract_mode_button.setToolTip(self._magic_subtract_input_tooltip(subtract_input_mode))
+            self._magic_subtract_mode_button.setEnabled(has_document and standard_mode and not busy)
+        for mode, action in self._magic_subtract_mode_actions.items():
+            action.setChecked(mode == subtract_input_mode)
+            action.setEnabled(has_document and standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT and not busy)
+        if self._magic_options_button is not None:
+            self._magic_options_button.setVisible(standard_mode or fiber_quick_mode)
+            self._magic_options_button.setText("选项")
+            self._magic_options_button.setToolTip(
+                f"工具选项：ROI {'开启' if roi_enabled else '关闭'}；"
+                f"小洞增强 {'开启' if small_object_enabled else '关闭'}"
+            )
+            self._magic_options_button.setEnabled(has_document and (standard_mode or fiber_quick_mode))
+        if self._magic_roi_option_checkbox is not None:
+            self._magic_roi_option_checkbox.blockSignals(True)
+            self._magic_roi_option_checkbox.setChecked(roi_enabled)
+            self._magic_roi_option_checkbox.setEnabled(has_document and (standard_mode or fiber_quick_mode))
+            self._magic_roi_option_checkbox.blockSignals(False)
+        if self._magic_small_object_option_checkbox is not None:
+            self._magic_small_object_option_checkbox.blockSignals(True)
+            self._magic_small_object_option_checkbox.setChecked(small_object_enabled)
+            self._magic_small_object_option_checkbox.setEnabled(has_document and small_object_context and not busy)
+            self._magic_small_object_option_checkbox.blockSignals(False)
+        if self._magic_small_object_option_hint is not None:
+            if small_object_context:
+                self._magic_small_object_option_hint.setText("小洞增强已可用于当前智能剔除")
+            else:
+                self._magic_small_object_option_hint.setText("仅在标准魔棒的智能剔除、ROI 开启时可用")
         if self._magic_confirm_subtract_button is not None:
             self._magic_confirm_subtract_button.setVisible(standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT)
+            self._magic_confirm_subtract_button.setText("加洞(S)")
             self._magic_confirm_subtract_button.setEnabled(
                 bool(canvas and canvas.can_confirm_current_magic_subtract_shape())
             )
         if self._magic_complete_button is not None:
             self._magic_complete_button.setText(
-                "确认(Enter/F)"
+                "完成"
                 if standard_mode
-                else ("确认(Enter/F)" if fiber_quick_mode else "加入(Enter/F)")
+                else ("完成" if fiber_quick_mode else "加入")
+            )
+            self._magic_complete_button.setToolTip(
+                "提交当前魔棒结果（Enter / F）"
+                if standard_mode
+                else ("确认快速测径结果（Enter / F）" if fiber_quick_mode else "加入参考实例结果（Enter / F）")
             )
             self._magic_complete_button.setEnabled(
                 bool(
@@ -6334,7 +6651,8 @@ class MainWindow(QMainWindow):
                 )
             )
         if self._magic_cancel_button is not None:
-            self._magic_cancel_button.setText("取消(Esc)")
+            self._magic_cancel_button.setText("取消")
+            self._magic_cancel_button.setToolTip("取消当前魔棒会话或草稿（Esc）")
             self._magic_cancel_button.setEnabled(
                 bool(
                     canvas
@@ -6454,7 +6772,7 @@ class MainWindow(QMainWindow):
     def _update_path_drawing_controls(self) -> None:
         if self._path_controls_widget is None or self._measurement_tool_strip is None:
             return
-        is_visible = self._tool_mode in {"polygon_area", "continuous_manual"} and not self._preview_active
+        is_visible = False
         self._measurement_tool_strip.setPathContextVisible(is_visible)
         if not is_visible:
             return
@@ -6800,6 +7118,11 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
             return
+        if (
+            canvas.current_magic_segment_operation_mode() == MagicSegmentOperationMode.SUBTRACT
+            and canvas.current_magic_subtract_input_mode() != MagicSegmentSubtractInputMode.SMART
+        ):
+            return
         prompt_type = canvas.cycle_magic_segment_prompt_type()
         self.statusBar().showMessage(self._magic_prompt_label_text(prompt_type), 2500)
         self._update_magic_segment_controls()
@@ -6825,8 +7148,18 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
             return
+        if canvas.has_magic_manual_subtract_draft():
+            if not self._confirm_discard_magic_manual_subtract_draft(
+                "切换编辑状态",
+                "当前剔除区域尚未闭合。要丢弃草稿并切换编辑状态吗？",
+            ):
+                self._update_magic_segment_controls()
+                return
+            canvas.cancel_magic_subtract_draft()
         before_mode = canvas.current_magic_segment_operation_mode()
         operation_mode = canvas.cycle_magic_segment_operation_mode()
+        if operation_mode == MagicSegmentOperationMode.SUBTRACT:
+            canvas.set_magic_subtract_input_mode(self._magic_standard_subtract_input_mode)
         if before_mode == MagicSegmentOperationMode.ADD and operation_mode == MagicSegmentOperationMode.ADD:
             self.statusBar().showMessage("请先完成第一个形状草稿", 2500)
         else:
@@ -7052,6 +7385,11 @@ class MainWindow(QMainWindow):
             return
         if self._prompt_seg_worker is not None and canvas.document_id is not None:
             self._prompt_seg_worker.cancel_document(canvas.document_id)
+        if canvas.cancel_magic_subtract_draft():
+            self.statusBar().showMessage("已取消当前剔除草稿", 2500)
+            self._update_magic_segment_controls()
+            self._focus_current_canvas()
+            return
         if canvas.has_magic_segment_session():
             canvas.clear_magic_segment_session()
             self._hide_small_object_preview()
@@ -7298,6 +7636,19 @@ class MainWindow(QMainWindow):
                     event.accept()
                     return
                 if (
+                    canvas is not None
+                    and canvas.current_magic_segment_operation_mode() == MagicSegmentOperationMode.SUBTRACT
+                    and event.key() in (Qt.Key.Key_1, Qt.Key.Key_2, Qt.Key.Key_3)
+                ):
+                    mode_by_key = {
+                        Qt.Key.Key_1: MagicSegmentSubtractInputMode.SMART,
+                        Qt.Key.Key_2: MagicSegmentSubtractInputMode.POLYGON,
+                        Qt.Key.Key_3: MagicSegmentSubtractInputMode.FREEHAND,
+                    }
+                    self._set_magic_subtract_input_mode(mode_by_key[event.key()])
+                    event.accept()
+                    return
+                if (
                     event.key() == Qt.Key.Key_S
                     and canvas is not None
                     and canvas.current_magic_segment_operation_mode() == MagicSegmentOperationMode.SUBTRACT
@@ -7309,6 +7660,11 @@ class MainWindow(QMainWindow):
                 if event.key() == Qt.Key.Key_S:
                     return
                 if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
+                    if canvas is not None and canvas.complete_magic_manual_subtract_draft():
+                        self.statusBar().showMessage("已生成剔除草稿，可点击加入剔除继续", 2500)
+                        self._update_magic_segment_controls()
+                        event.accept()
+                        return
                     self._commit_magic_segment_preview()
                     event.accept()
                     return

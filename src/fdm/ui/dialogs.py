@@ -427,6 +427,7 @@ class ShortcutHelpDialog(QDialog):
                     "R  在正采样点 / 负采样点之间切换",
                     "Y  切换 ROI 限制区域",
                     "T  在添加模式 / 剔除模式之间切换",
+                    "1 / 2 / 3  在智能 / 多边形 / 自由圈选剔除之间切换",
                     "S  确认当前剔除形状并继续添加下一块（仅剔除模式）",
                     "Enter / F  完成当前魔棒遮罩",
                     "Esc  放弃当前测量线、多边形、自由形状或魔棒草稿",
@@ -526,6 +527,7 @@ class SettingsDialog(QDialog):
             magic_segment_standard_roi_enabled=self._magic_segment_standard_add_roi_checkbox.isChecked(),
             magic_segment_standard_add_roi_enabled=self._magic_segment_standard_add_roi_checkbox.isChecked(),
             magic_segment_standard_subtract_roi_enabled=self._magic_segment_standard_subtract_roi_checkbox.isChecked(),
+            magic_segment_standard_subtract_input_mode=self._initial_settings.magic_segment_standard_subtract_input_mode,
             magic_segment_restrict_subtract_roi_to_primary_bounds=self._magic_segment_restrict_subtract_roi_checkbox.isChecked(),
             magic_segment_small_object_subtract_enhancement_enabled=self._magic_segment_small_object_enhancement_checkbox.isChecked(),
             magic_segment_small_object_roi_area_threshold_px=self._magic_segment_small_object_threshold_spin.value(),
@@ -728,7 +730,7 @@ class SettingsDialog(QDialog):
         self._magic_segment_standard_add_roi_checkbox.setChecked(settings.magic_segment_standard_add_roi_enabled)
         self._magic_segment_standard_subtract_roi_checkbox = QCheckBox("标准魔棒剔除模式默认启用 ROI")
         self._magic_segment_standard_subtract_roi_checkbox.setChecked(settings.magic_segment_standard_subtract_roi_enabled)
-        self._magic_segment_restrict_subtract_roi_checkbox = QCheckBox("剔除模式 ROI 限制在第一形状范围内")
+        self._magic_segment_restrict_subtract_roi_checkbox = QCheckBox("剔除模式 ROI 限制在主体范围内")
         self._magic_segment_restrict_subtract_roi_checkbox.setChecked(settings.magic_segment_restrict_subtract_roi_to_primary_bounds)
         self._magic_segment_small_object_enhancement_checkbox = QCheckBox("剔除小目标增强")
         self._magic_segment_small_object_enhancement_checkbox.setChecked(settings.magic_segment_small_object_subtract_enhancement_enabled)
@@ -749,11 +751,11 @@ class SettingsDialog(QDialog):
         self._fiber_quick_line_extension_spin.setSuffix(" px")
         magic_hint = QLabel("标准魔棒与同类扩选都会复用这里的 EdgeSAM / EdgeSAM-3x 设置；若缺失高精度模型文件，运行时会自动回退到标准模型。")
         magic_hint.setWordWrap(True)
-        fill_holes_hint = QLabel("开启后，标准魔棒的第一形状与剔除形状草稿都会先填充内部孔洞；同类扩选不受此开关影响。")
+        fill_holes_hint = QLabel("开启后，标准魔棒的主体与剔除形状草稿都会先填充内部孔洞；同类扩选不受此开关影响。")
         fill_holes_hint.setWordWrap(True)
         roi_hint = QLabel("ROI 开关会同时出现在标准魔棒与快速测径右侧工具区，快捷键为 Y。快速测径在 ROI 失败时仍会自动回退到整图分割。")
         roi_hint.setWordWrap(True)
-        small_object_hint = QLabel("剔除模式启用 ROI 且限制在第一形状内时，小 ROI 会进入局部上采样增强工作区，便于处理低分辨率下的细小剔除目标。")
+        small_object_hint = QLabel("剔除模式启用 ROI 且限制在主体内时，小 ROI 会进入局部上采样增强工作区，便于处理低分辨率下的细小剔除目标。")
         small_object_hint.setWordWrap(True)
         quick_hint = QLabel("快速测径确认后会在后台异步生成线段；边缘剔除只影响快速测径，不影响标准魔棒与同类扩选。")
         quick_hint.setWordWrap(True)

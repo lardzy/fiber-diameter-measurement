@@ -48,7 +48,7 @@ from fdm.services.snap_service import SnapResult
 from fdm.project_io import ProjectIO
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, ReferenceInstancePreviewCandidate, magic_prompt_visual
+    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, MagicSegmentSubtractInputMode, ReferenceInstancePreviewCandidate, magic_prompt_visual
     from fdm.ui.dialogs import CalibrationInputDialog, ExportOptionsDialog, FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -59,6 +59,7 @@ if PYSIDE_AVAILABLE:
 else:
     DocumentCanvas = object  # type: ignore[assignment]
     MagicSegmentOperationMode = object  # type: ignore[assignment]
+    MagicSegmentSubtractInputMode = object  # type: ignore[assignment]
     ReferenceInstancePreviewCandidate = object  # type: ignore[assignment]
     magic_prompt_visual = None  # type: ignore[assignment]
     CalibrationInputDialog = object  # type: ignore[assignment]
@@ -141,6 +142,7 @@ class FakeMouseEvent:
         self._position = position
         self._button = button if button is not None else (Qt.MouseButton.LeftButton if PYSIDE_AVAILABLE else None)
         self._modifiers = modifiers if modifiers is not None else (Qt.KeyboardModifier.NoModifier if PYSIDE_AVAILABLE else None)
+        self.accepted = False
 
     def position(self) -> QPointF:
         return self._position
@@ -150,6 +152,9 @@ class FakeMouseEvent:
 
     def modifiers(self):
         return self._modifiers
+
+    def accept(self) -> None:
+        self.accepted = True
 
 
 class FakeKeyEvent:
@@ -658,6 +663,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 def set_busy(self, active: bool, text: str) -> None:
                     busy_calls.append((active, text))
 
+                def close_silently(self) -> None:
+                    pass
+
             window._preview_analysis_mode = "focus_stack"
             window._preview_analysis_worker = FakeWorker()
             window._preview_analysis_dialog = FakeDialog()  # type: ignore[assignment]
@@ -749,7 +757,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIn("像素尺寸: 200 x 100 px", label_text)
         self.assertIn("实际尺寸: 20 x 10 um", label_text)
 
-    def test_calibration_label_uses_red_for_uncalibrated_document(self) -> None:
+    def test_calibration_card_shows_uncalibrated_state(self) -> None:
         window = MainWindow()
         image = QImage(120, 80, QImage.Format.Format_RGB32)
         image.fill(QColor("#FFFFFF"))
@@ -765,11 +773,12 @@ class CanvasAndExportTests(unittest.TestCase):
             image,
         )
 
-        self.assertEqual(window.calibration_label.text(), "当前图片未标定")
-        self.assertIn(window._status_color("danger"), window.calibration_label.styleSheet())
-        self.assertIs(window._calibration_label_scroll.widget(), window.calibration_label)
+        self.assertEqual(window._calibration_status_title_label.text(), "未标定")
+        self.assertEqual(window.calibration_label.text(), "测量仅显示 px，无法输出真实尺寸")
+        self.assertFalse(window._calibration_start_button.isHidden())
+        self.assertIn("font-weight: 800", window._calibration_status_title_label.styleSheet())
 
-    def test_calibration_label_uses_blue_for_calibrated_document(self) -> None:
+    def test_calibration_card_shows_calibrated_summary(self) -> None:
         window = MainWindow()
         image = QImage(120, 80, QImage.Format.Format_RGB32)
         image.fill(QColor("#FFFFFF"))
@@ -791,10 +800,11 @@ class CanvasAndExportTests(unittest.TestCase):
             image,
         )
 
-        self.assertIn("20x", window.calibration_label.text())
-        self.assertIn(window._status_color("info"), window.calibration_label.styleSheet())
+        self.assertEqual(window._calibration_status_title_label.text(), "已标定 · 20x")
+        self.assertEqual(window.calibration_label.text(), "0.2 um/px")
+        self.assertTrue(window._calibration_start_button.isHidden())
 
-    def test_calibration_label_is_scrollable_and_does_not_require_expanding_width_for_long_sidecar_name(self) -> None:
+    def test_calibration_details_are_scrollable_and_do_not_expand_for_long_sidecar_name(self) -> None:
         window = MainWindow()
         image = QImage(120, 80, QImage.Format.Format_RGB32)
         image.fill(QColor("#FFFFFF"))
@@ -821,8 +831,9 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertTrue(window.calibration_label.wordWrap())
         self.assertEqual(window.calibration_label.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Ignored)
-        self.assertIn("侧车:", window.calibration_label.text())
-        self.assertIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window.calibration_label.toolTip())
+        self.assertNotIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window.calibration_label.text())
+        self.assertIn("侧车:", window._calibration_details_label.text())
+        self.assertIn("this_is_a_very_long_sidecar_filename_for_calibration_display_test_1234567890.fdm.json", window._calibration_details_label.toolTip())
         self.assertIsNotNone(window._calibration_label_scroll)
         self.assertEqual(window._calibration_label_scroll.verticalScrollBarPolicy(), Qt.ScrollBarPolicy.ScrollBarAsNeeded)
         self.assertEqual(window._calibration_label_scroll.maximumHeight(), 118)
@@ -919,6 +930,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertIn(str(old_image), warning_text)
                 self.assertIn(str(moved_image.resolve()), warning_text)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_save_project_dialog_defaults_to_first_image_directory_without_history(self) -> None:
@@ -949,6 +961,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertEqual(args[2], str(Path(tmp_dir) / "fiber_measurement.fdmproj"))
                 self.assertEqual(window._app_settings.recent_project_dir, str(Path(tmp_dir).resolve()))
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_overlay_exports_render_visible_pixels_in_all_modes(self) -> None:
@@ -1849,6 +1862,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertTrue(all(document.calibration.mode == "project_default" for document in window.project.documents))
                 self.assertFalse(any(Path(document.default_sidecar_path()).exists() for document in window.project.documents))
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_add_loaded_document_can_prefer_project_default_over_sidecar(self) -> None:
@@ -1891,6 +1905,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 payload = json.loads(Path(sidecar_source.default_sidecar_path()).read_text(encoding="utf-8"))
                 self.assertEqual(payload, original_payload)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_add_loaded_document_applies_project_group_templates(self) -> None:
@@ -1919,6 +1934,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual([group.label for group in loaded.sorted_groups()], ["棉", "莱赛尔"])
             self.assertFalse(loaded.dirty_flags.session_dirty)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_area_auto_recognition_uses_shared_project_group_order_across_documents(self) -> None:
@@ -2297,8 +2313,8 @@ class CanvasAndExportTests(unittest.TestCase):
 
             canvas._magic_segment.active_stage = MagicSegmentOperationMode.ADD
             window._update_magic_segment_controls()
-            self.assertFalse(window._magic_roi_button.isChecked())
-            self.assertTrue(window._magic_small_object_button.isHidden())
+            self.assertFalse(window._magic_roi_option_checkbox.isChecked())
+            self.assertFalse(window._magic_small_object_option_checkbox.isEnabled())
 
             window._toggle_active_magic_roi()
             self.assertTrue(window._magic_standard_add_roi_enabled)
@@ -2306,15 +2322,57 @@ class CanvasAndExportTests(unittest.TestCase):
 
             canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
             window._update_magic_segment_controls()
-            self.assertTrue(window._magic_roi_button.isChecked())
-            self.assertFalse(window._magic_small_object_button.isHidden())
-            self.assertTrue(window._magic_small_object_button.isChecked())
-            self.assertEqual(window._magic_small_object_button.text(), "小洞开")
+            self.assertTrue(window._magic_roi_option_checkbox.isChecked())
+            self.assertTrue(window._magic_small_object_option_checkbox.isEnabled())
+            self.assertTrue(window._magic_small_object_option_checkbox.isChecked())
+            self.assertEqual(window._magic_options_button.text(), "选项")
+            self.assertIn("小洞增强 开启", window._magic_options_button.toolTip())
 
             window._toggle_active_magic_roi()
             self.assertTrue(window._magic_standard_add_roi_enabled)
             self.assertFalse(window._magic_standard_subtract_roi_enabled)
-            self.assertTrue(window._magic_small_object_button.isHidden())
+            self.assertFalse(window._magic_small_object_option_checkbox.isEnabled())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_standard_magic_subtract_input_mode_remembers_last_choice(self) -> None:
+        settings = AppSettings(magic_segment_standard_subtract_input_mode=MagicSegmentSubtractInputMode.FREEHAND)
+        with (
+            patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings),
+            patch("fdm.ui.main_window.AppSettingsIO.save", return_value=Path("/tmp/settings.json")) as save_mock,
+        ):
+            window = MainWindow()
+        try:
+            image = QImage(120, 90, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_subtract_memory.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            self.assertEqual(canvas.current_magic_subtract_input_mode(), MagicSegmentSubtractInputMode.FREEHAND)
+
+            window._set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+
+            self.assertEqual(window._magic_standard_subtract_input_mode, MagicSegmentSubtractInputMode.POLYGON)
+            self.assertEqual(window._app_settings.magic_segment_standard_subtract_input_mode, MagicSegmentSubtractInputMode.POLYGON)
+            self.assertEqual(canvas.current_magic_subtract_input_mode(), MagicSegmentSubtractInputMode.POLYGON)
+            self.assertTrue(save_mock.called)
+
+            canvas.clear_magic_segment_session()
+            canvas._magic_segment.primary_polygon = [Point(10, 10), Point(90, 10), Point(90, 70), Point(10, 70)]
+            canvas._magic_segment.primary_mask = self._rect_mask(image.width(), image.height(), (10, 10, 90, 70))
+            window._cycle_magic_segment_operation_mode()
+
+            self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.SUBTRACT)
+            self.assertEqual(canvas.current_magic_subtract_input_mode(), MagicSegmentSubtractInputMode.POLYGON)
         finally:
             window._reset_workspace()
             window.close()
@@ -3119,6 +3177,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._apply_project_group_templates_to_document(document))
             self.assertIsNone(document.find_group_by_label("棉"))
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_settings_group_color_update_syncs_template_bound_groups(self) -> None:
@@ -3270,6 +3329,38 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_standard_magic_subtract_manual_modes_hide_prompt_toggle(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(80, 60, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_subtract_modes.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            canvas._magic_segment.primary_polygon = [Point(10, 10), Point(70, 10), Point(70, 50), Point(10, 50)]
+            canvas._magic_segment.primary_mask = self._rect_mask(image.width(), image.height(), (10, 10, 70, 50))
+            canvas.cycle_magic_segment_operation_mode()
+            canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+            window._update_magic_segment_controls()
+
+            self.assertTrue(window._magic_toggle_button.isHidden())
+            self.assertFalse(window._magic_subtract_mode_button.isHidden())
+            self.assertEqual(window._magic_subtract_mode_button.text(), "剔除方式：多边形剔除")
+            self.assertFalse(window._magic_options_button.isHidden())
+            self.assertEqual(window._magic_confirm_subtract_button.text(), "加洞(S)")
+            self.assertIsNone(window._magic_roi_button)
+            self.assertIsNone(window._magic_small_object_button)
+        finally:
+            window.close()
+
     def test_magic_prompt_visuals_and_canvas_hint_use_distinct_prompt_state(self) -> None:
         positive_visual = magic_prompt_visual("positive")
         negative_visual = magic_prompt_visual("negative")
@@ -3304,7 +3395,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas._draw_magic_prompt_status_label(
                     status_painter,
                     prompt_type="negative",
-                    operation_text="当前编辑：第一形状",
+                    operation_text="标准魔棒 · 添加主体",
                     busy=True,
                 )
             finally:
@@ -3329,11 +3420,55 @@ class CanvasAndExportTests(unittest.TestCase):
 
             status_label.assert_called_once()
             self.assertEqual(status_label.call_args.kwargs["prompt_type"], "negative")
-            self.assertIn("当前编辑：第一形状", status_label.call_args.kwargs["operation_text"])
+            self.assertIn("标准魔棒 · 添加主体", status_label.call_args.kwargs["operation_text"])
             self.assertIn((positive_visual.marker_color.casefold(), True), marker_calls)
             self.assertIn((negative_visual.marker_color.casefold(), False), marker_calls)
         finally:
             canvas.close()
+
+    def test_magic_manual_subtract_draft_draws_above_magic_masks(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+        canvas._magic_segment.primary_polygon = [Point(10, 10), Point(80, 10), Point(80, 60), Point(10, 60)]
+        canvas._magic_segment.primary_mask = self._rect_mask(image.width(), image.height(), (10, 10, 80, 60))
+        canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+        canvas._drawing_polygon_points = [Point(24, 24), Point(54, 24), Point(54, 46)]
+        canvas._area_hover_point = Point(28, 46)
+
+        calls: list[str] = []
+        target = QImage(180, 140, QImage.Format.Format_ARGB32)
+        target.fill(QColor(0, 0, 0, 0))
+        painter = QPainter(target)
+        try:
+            with (
+                patch.object(canvas, "_draw_magic_segment_preview", side_effect=lambda painter: calls.append("magic")),
+                patch.object(canvas, "_draw_pending_path_preview", side_effect=lambda *args, **kwargs: calls.append("draft")),
+            ):
+                canvas._draw_preview(painter)
+        finally:
+            painter.end()
+
+        self.assertEqual(calls, ["magic", "draft"])
+
+    def test_calibration_tool_draws_constraint_hint_on_canvas(self) -> None:
+        _document, _image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("calibration")
+
+        target = QImage(180, 140, QImage.Format.Format_ARGB32)
+        target.fill(QColor(0, 0, 0, 0))
+        painter = QPainter(target)
+        try:
+            with patch.object(canvas, "_draw_magic_prompt_status_label") as status_label:
+                canvas._draw_preview(painter)
+        finally:
+            painter.end()
+
+        status_label.assert_called_once()
+        operation_text = status_label.call_args.kwargs["operation_text"]
+        self.assertIn("标定", operation_text)
+        self.assertIn("Shift", operation_text)
+        self.assertIn("Ctrl", operation_text)
 
     def test_preview_analysis_controls_live_in_context_row(self) -> None:
         window = MainWindow()
@@ -3565,7 +3700,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertAlmostEqual(commits[0][2]["point_px"].x, 42.0)
         self.assertAlmostEqual(commits[0][2]["point_px"].y, 58.0)
 
-    def test_path_controls_complete_continuous_measurement_in_main_window(self) -> None:
+    def test_continuous_manual_completes_without_path_context_controls(self) -> None:
         window = MainWindow()
         try:
             image = QImage(240, 160, QImage.Format.Format_RGB32)
@@ -3584,14 +3719,14 @@ class CanvasAndExportTests(unittest.TestCase):
             canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
             canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
 
-            self.assertTrue(window._measurement_tool_strip.isPathContextVisible())
-            self.assertTrue(window._path_complete_button.isEnabled())
-            window._path_complete_button.click()
+            self.assertFalse(window._measurement_tool_strip.isPathContextVisible())
+            self.assertTrue(canvas.commit_pending_path())
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].measurement_kind, "polyline")
             self.assertEqual(document.measurements[0].mode, "continuous_manual")
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_magic_segment_tool_emits_request_and_commits_preview(self) -> None:
@@ -3622,6 +3757,73 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][1], "magic_segment")
         self.assertEqual(commits[0][2]["measurement_kind"], "area")
+
+    def test_magic_segment_polygon_subtract_creates_subtract_draft_without_measurement(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, self._rect_mask(image.width(), image.height(), (20, 20, 170, 100)))
+        canvas.cycle_magic_segment_operation_mode()
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+
+        points = [Point(40, 35), Point(95, 35), Point(90, 80), Point(45, 75)]
+        for point in points:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(points[0]), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(commits, [])
+        self.assertEqual(document.measurements, [])
+        self.assertIsNotNone(canvas._magic_segment.subtract_mask)
+        self.assertTrue(canvas.can_confirm_current_magic_subtract_shape())
+        confirm_result = canvas.confirm_current_magic_subtract_shape()
+        self.assertTrue(confirm_result["confirmed"])
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+
+    def test_magic_segment_freehand_subtract_creates_subtract_draft_without_measurement(self) -> None:
+        document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+        commits: list[tuple[str, str, object]] = []
+        canvas.lineCommitted.connect(lambda document_id, mode, payload: commits.append((document_id, mode, payload)))
+
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, self._rect_mask(image.width(), image.height(), (20, 20, 170, 100)))
+        canvas.cycle_magic_segment_operation_mode()
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.FREEHAND)
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(40, 35)), button=Qt.MouseButton.LeftButton))
+        for point in [Point(95, 35), Point(95, 80), Point(42, 82)]:
+            canvas._freehand_last_sample_at -= 1.0
+            canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(Point(42, 82)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(commits, [])
+        self.assertEqual(document.measurements, [])
+        self.assertIsNotNone(canvas._magic_segment.subtract_mask)
+        self.assertTrue(canvas.can_confirm_current_magic_subtract_shape())
+
+    def test_magic_segment_switching_subtract_input_preserves_committed_subtract_shapes(self) -> None:
+        _document, image, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+        canvas._magic_segment.request_id = 1
+        canvas._magic_segment.pending_stage = MagicSegmentOperationMode.ADD
+        canvas.apply_magic_segment_result(1, self._rect_mask(image.width(), image.height(), (20, 20, 170, 100)))
+        canvas.cycle_magic_segment_operation_mode()
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+        self.assertTrue(canvas._magic_segment.primary_polygon)
+
+        for point in [Point(40, 35), Point(95, 35), Point(90, 80), Point(40, 35)]:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+        self.assertTrue(canvas.confirm_current_magic_subtract_shape()["confirmed"])
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.SMART)
+
+        self.assertTrue(canvas._magic_segment.primary_polygon)
+        self.assertEqual(canvas.confirmed_magic_subtract_shape_count(), 1)
+        self.assertEqual(canvas.current_magic_subtract_input_mode(), MagicSegmentSubtractInputMode.SMART)
 
     def test_magic_segment_tool_queues_refinement_while_busy(self) -> None:
         document, _image, canvas = self._create_canvas_document()
@@ -4256,6 +4458,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(document.measurements), 0)
             self.assertEqual(len(document.overlay_annotations), 1)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_delete_measurements_by_category_respects_scope(self) -> None:
@@ -4308,6 +4511,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(first_document.fiber_groups), 2)
             self.assertEqual(len(second_document.fiber_groups), 1)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_delete_all_measurements_supports_project_scope(self) -> None:
@@ -4344,6 +4548,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(first_document.measurements), 0)
             self.assertEqual(len(second_document.measurements), 0)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_overlay_shape_create_and_edit_roundtrip_through_main_window(self) -> None:
@@ -5283,6 +5488,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.set_tool_mode(MagicSegmentToolMode.REFERENCE)
             self.app.processEvents()
             reference_width = window._measurement_tool_strip._current_context_size().width()  # noqa: SLF001
+            self.assertTrue(window._magic_prompt_label.isHidden())  # noqa: SLF001
 
             window.set_tool_mode(MagicSegmentToolMode.STANDARD)
             self.app.processEvents()
@@ -5295,7 +5501,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertGreater(standard_width, reference_width)
             self.assertGreater(fiber_quick_width, reference_width)
             self.assertFalse(window._magic_toggle_button.isHidden())  # noqa: SLF001
-            self.assertFalse(window._magic_roi_button.isHidden())  # noqa: SLF001
+            self.assertFalse(window._magic_options_button.isHidden())  # noqa: SLF001
         finally:
             window.close()
 
