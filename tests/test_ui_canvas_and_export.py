@@ -352,7 +352,11 @@ class CanvasAndExportTests(unittest.TestCase):
 
         canvas.mouseMoveEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
 
-        self.assertEqual(canvas._drawing_line, Line(start=start, end=end))
+        self.assertIsNotNone(canvas._drawing_line)
+        self.assertAlmostEqual(canvas._drawing_line.start.x, start.x)
+        self.assertAlmostEqual(canvas._drawing_line.start.y, start.y)
+        self.assertAlmostEqual(canvas._drawing_line.end.x, end.x)
+        self.assertAlmostEqual(canvas._drawing_line.end.y, end.y)
 
         canvas.mousePressEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
         canvas.mouseReleaseEvent(FakeMouseEvent(end_pos, button=Qt.MouseButton.LeftButton))
@@ -360,7 +364,11 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(commits), 1)
         self.assertEqual(commits[0][0], document.id)
         self.assertEqual(commits[0][1], "snap")
-        self.assertEqual(commits[0][2], Line(start=start, end=end))
+        committed_line = commits[0][2]
+        self.assertAlmostEqual(committed_line.start.x, start.x)
+        self.assertAlmostEqual(committed_line.start.y, start.y)
+        self.assertAlmostEqual(committed_line.end.x, end.x)
+        self.assertAlmostEqual(committed_line.end.y, end.y)
         self.assertIsNone(canvas._drawing_line)
         self.assertFalse(canvas._line_commit_on_second_click)
 
@@ -785,8 +793,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window._calibration_preset_action_row.layout().indexOf(window._apply_preset_button),
             window._calibration_preset_action_row.layout().indexOf(window._import_cu_preset_button),
         )
-        self.assertIn("font-weight: 700", window._calibration_start_button.styleSheet())
-        self.assertIn("font-weight: 700", window._apply_preset_button.styleSheet())
+        self.assertEqual(window._calibration_start_button.styleSheet(), "")
+        self.assertEqual(window._apply_preset_button.styleSheet(), "")
         self.assertIn("font-weight: 800", window._calibration_status_title_label.styleSheet())
 
     def test_calibration_card_shows_calibrated_summary(self) -> None:
@@ -3712,7 +3720,23 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertAlmostEqual(commits[0][2]["point_px"].x, 42.0)
         self.assertAlmostEqual(commits[0][2]["point_px"].y, 58.0)
 
-    def test_continuous_manual_completes_without_path_context_controls(self) -> None:
+    def test_path_context_controls_show_for_line_and_area_tools_except_count(self) -> None:
+        window = MainWindow()
+        try:
+            for mode in ("manual", "continuous_manual", "snap", "polygon_area", "freehand_area"):
+                window.set_tool_mode(mode)
+                self.assertTrue(window._measurement_tool_strip.isPathContextVisible(), mode)
+                self.assertEqual(window._path_complete_button.text(), "完成")
+                self.assertEqual(window._path_cancel_button.text(), "取消")
+                button_texts = [button.text() for button in window._path_controls_widget.findChildren(QToolButton)]
+                self.assertNotIn("路径测量", button_texts)
+
+            window.set_tool_mode("count")
+            self.assertFalse(window._measurement_tool_strip.isPathContextVisible())
+        finally:
+            window.close()
+
+    def test_continuous_manual_completes_from_path_context_controls(self) -> None:
         window = MainWindow()
         try:
             image = QImage(240, 160, QImage.Format.Format_RGB32)
@@ -3731,12 +3755,58 @@ class CanvasAndExportTests(unittest.TestCase):
             canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
             canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
 
-            self.assertFalse(window._measurement_tool_strip.isPathContextVisible())
-            self.assertTrue(canvas.commit_pending_path())
+            self.assertTrue(window._measurement_tool_strip.isPathContextVisible())
+            self.assertTrue(window._path_complete_button.isEnabled())
+            window._path_complete_button.click()
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].measurement_kind, "polyline")
             self.assertEqual(document.measurements[0].mode, "continuous_manual")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_manual_and_snap_lines_complete_from_path_context_controls(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/line_path_controls.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode("manual")
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(20, 20)), button=Qt.MouseButton.LeftButton))
+            canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(90, 30)), button=Qt.MouseButton.LeftButton))
+            self.assertTrue(window._path_complete_button.isEnabled())
+            window._path_complete_button.click()
+
+            self.assertEqual(len(document.measurements), 1)
+            self.assertEqual(document.measurements[0].mode, "manual")
+
+            window.set_tool_mode("snap")
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(30, 50)), button=Qt.MouseButton.LeftButton))
+            canvas.mouseMoveEvent(FakeMouseEvent(canvas.image_to_widget(Point(120, 80)), button=Qt.MouseButton.LeftButton))
+            self.assertTrue(window._path_complete_button.isEnabled())
+            with patch.object(window.snap_service, "snap_measurement") as snap_mock:
+                snap_mock.return_value = SnapResult(
+                    original_line=Line(Point(30, 50), Point(120, 80)),
+                    snapped_line=Line(Point(31, 50), Point(121, 80)),
+                    diameter_px=94.9,
+                    confidence=0.9,
+                    status="snapped",
+                    debug_payload={},
+                )
+                window._path_complete_button.click()
+
+            self.assertEqual(len(document.measurements), 2)
+            self.assertEqual(document.measurements[1].mode, "snap")
         finally:
             window._reset_workspace()
             window.close()

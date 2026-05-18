@@ -1081,23 +1081,17 @@ class MainWindow(QMainWindow):
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
         container.setLayout(layout)
 
-        header_button = QToolButton(container)
-        header_button.setProperty("contextTool", True)
-        header_button.setText("路径测量")
-        header_button.setCursor(Qt.CursorShape.ArrowCursor)
-        header_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        header_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
-        layout.addWidget(header_button)
-
         self._path_complete_button = QToolButton(container)
         self._path_complete_button.setProperty("contextTool", True)
-        self._path_complete_button.setText("完成 (Enter / F)")
+        self._path_complete_button.setText("完成")
+        self._path_complete_button.setToolTip("完成当前绘制（Enter / F）")
         self._path_complete_button.clicked.connect(self._commit_active_path_drawing)
         layout.addWidget(self._path_complete_button)
 
         self._path_cancel_button = QToolButton(container)
         self._path_cancel_button.setProperty("contextTool", True)
-        self._path_cancel_button.setText("取消 (Esc)")
+        self._path_cancel_button.setText("取消")
+        self._path_cancel_button.setToolTip("取消当前绘制（Esc）")
         self._path_cancel_button.clicked.connect(self._cancel_active_path_drawing)
         layout.addWidget(self._path_cancel_button)
 
@@ -1899,51 +1893,10 @@ class MainWindow(QMainWindow):
         if self._calibration_details_button is not None:
             self._calibration_details_button.setText("收起详情" if checked else "查看详情")
 
-    def _calibration_primary_button_stylesheet(self, *, prominent: bool) -> str:
-        if not prominent:
-            return ""
-        if self._is_dark_palette():
-            background = "#FF8A5B"
-            hover = "#FF9D73"
-            pressed = "#E96F41"
-            text = "#1B120E"
-            border = "#FFC1A8"
-            disabled_background = "#5A3628"
-            disabled_text = "#BFA397"
-        else:
-            background = "#E85D3D"
-            hover = "#F06F4F"
-            pressed = "#C94D32"
-            text = "#FFFFFF"
-            border = "#FCA58A"
-            disabled_background = "#F7C8BB"
-            disabled_text = "#8A5A4C"
-        return f"""
-            QPushButton {{
-                background: {background};
-                color: {text};
-                border: 1px solid {border};
-                border-radius: 7px;
-                padding: 6px 10px;
-                font-weight: 700;
-            }}
-            QPushButton:hover {{
-                background: {hover};
-            }}
-            QPushButton:pressed {{
-                background: {pressed};
-            }}
-            QPushButton:disabled {{
-                background: {disabled_background};
-                color: {disabled_text};
-            }}
-        """
-
-    def _set_calibration_action_prominence(self, prominent: bool) -> None:
-        stylesheet = self._calibration_primary_button_stylesheet(prominent=prominent)
+    def _clear_calibration_action_prominence(self) -> None:
         for button in (self._calibration_start_button, self._apply_preset_button):
             if button is not None:
-                button.setStyleSheet(stylesheet)
+                button.setStyleSheet("")
 
     def _set_calibration_status_card(
         self,
@@ -1998,7 +1951,7 @@ class MainWindow(QMainWindow):
             self._calibration_details_button.setText("收起详情" if self._calibration_details_button.isChecked() else "查看详情")
         if self._calibration_start_button is not None:
             self._calibration_start_button.setVisible(show_start_button)
-        self._set_calibration_action_prominence(status == "uncalibrated")
+        self._clear_calibration_action_prominence()
 
     def _set_calibration_label(self, text: str, *, status: str) -> None:
         self._set_calibration_status_card(
@@ -6834,7 +6787,11 @@ class MainWindow(QMainWindow):
     def _update_path_drawing_controls(self) -> None:
         if self._path_controls_widget is None or self._measurement_tool_strip is None:
             return
-        is_visible = False
+        is_visible = (
+            self._tool_mode
+            in {"manual", "continuous_manual", "snap", "polygon_area", "freehand_area"}
+            and not self._preview_active
+        )
         self._measurement_tool_strip.setPathContextVisible(is_visible)
         if not is_visible:
             return

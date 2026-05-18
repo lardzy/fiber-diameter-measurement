@@ -681,7 +681,7 @@ class DocumentCanvas(QWidget):
         return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
 
     def has_pending_path_drawing(self) -> bool:
-        return bool(self._drawing_polygon_points or self._drawing_freehand_active)
+        return bool(self._drawing_polygon_points or self._drawing_freehand_active or self._drawing_line is not None)
 
     def can_commit_pending_path(self) -> bool:
         if self._drawing_freehand_active:
@@ -690,6 +690,8 @@ class DocumentCanvas(QWidget):
             return len(self._drawing_polygon_points) >= 3
         if self._tool_mode == "continuous_manual":
             return len(self._drawing_polygon_points) >= 2
+        if self._tool_mode in {"manual", "snap"} and self._drawing_line is not None:
+            return line_length(self._drawing_line) >= 1.0
         return False
 
     def commit_pending_path(self) -> bool:
@@ -701,12 +703,27 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "continuous_manual":
             self._complete_continuous_measurement(list(self._drawing_polygon_points))
             return True
+        if (
+            self._tool_mode in {"manual", "snap"}
+            and self._document is not None
+            and self._drawing_line is not None
+        ):
+            line = self._drawing_line
+            self._cancel_line_drawing()
+            if line_length(line) < 1.0:
+                return False
+            self.lineCommitted.emit(self._document.id, self._tool_mode, line)
+            self.update()
+            return True
         return False
 
     def cancel_pending_path(self) -> bool:
         if not self.has_pending_path_drawing():
             return False
-        self._cancel_area_drawing()
+        if self._drawing_line is not None:
+            self._cancel_line_drawing()
+        else:
+            self._cancel_area_drawing()
         return True
 
     def _begin_magic_segment_request(self, stage: str) -> dict[str, object] | None:
@@ -1837,6 +1854,8 @@ class DocumentCanvas(QWidget):
                 snap_anchor=True,
             )
             self._drawing_line = Line(start=start, end=end)
+            if self.document_id is not None:
+                self.pathSessionChanged.emit(self.document_id)
             self.update()
             return
 
@@ -2696,11 +2715,19 @@ class DocumentCanvas(QWidget):
         self._drawing_anchor_raw = anchor
         self._drawing_line = Line(start=anchor, end=anchor)
         self._line_commit_on_second_click = commit_on_second_click
+        if self.document_id is not None:
+            self.pathSessionChanged.emit(self.document_id)
 
     def _cancel_line_drawing(self) -> None:
+        had_line = self._drawing_line is not None
+        document_id = self.document_id
         self._drawing_anchor_raw = None
         self._drawing_line = None
         self._line_commit_on_second_click = False
+        if had_line and document_id is not None:
+            self.pathSessionChanged.emit(document_id)
+        if had_line:
+            self.update()
 
     def _commit_click_line(self, image_point: Point, modifiers: Qt.KeyboardModifiers) -> None:
         if self._document is None or self._drawing_anchor_raw is None:
