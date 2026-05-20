@@ -48,7 +48,14 @@ from fdm.services.snap_service import SnapResult
 from fdm.project_io import ProjectIO
 
 if PYSIDE_AVAILABLE:
-    from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, MagicSegmentSubtractInputMode, ReferenceInstancePreviewCandidate, magic_prompt_visual
+    from fdm.ui.canvas import (
+        AreaEditOperationMode,
+        DocumentCanvas,
+        MagicSegmentOperationMode,
+        MagicSegmentSubtractInputMode,
+        ReferenceInstancePreviewCandidate,
+        magic_prompt_visual,
+    )
     from fdm.ui.dialogs import CalibrationInputDialog, ExportOptionsDialog, FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
@@ -57,6 +64,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.rendering import draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
+    AreaEditOperationMode = object  # type: ignore[assignment]
     DocumentCanvas = object  # type: ignore[assignment]
     MagicSegmentOperationMode = object  # type: ignore[assignment]
     MagicSegmentSubtractInputMode = object  # type: ignore[assignment]
@@ -430,6 +438,36 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNone(canvas._dragging_handle)
         self.assertIsNotNone(canvas._drawing_line)
+
+    def test_polygon_area_uses_tight_close_threshold(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode("polygon_area")
+        canvas._zoom = 1.0
+        start = Point(20, 20)
+        canvas._drawing_polygon_points = [start, Point(90, 20), Point(90, 80)]
+
+        self.assertLess(canvas._polygon_close_tolerance(), canvas._selected_endpoint_tolerance())
+        self.assertFalse(canvas._can_close_polygon_with_point(Point(start.x + 6.0, start.y)))
+        self.assertTrue(canvas._can_close_polygon_with_point(Point(start.x + 4.0, start.y)))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(start.x + 6.0, start.y)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(document.measurements, [])
+        self.assertEqual(len(canvas._drawing_polygon_points), 4)
+
+    def test_magic_polygon_subtract_uses_tight_close_threshold(self) -> None:
+        _document, _, canvas = self._create_canvas_document()
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+        canvas._zoom = 1.0
+        canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
+        canvas.set_magic_subtract_input_mode(MagicSegmentSubtractInputMode.POLYGON)
+        start = Point(24, 24)
+        canvas._drawing_polygon_points = [start, Point(96, 24), Point(96, 78)]
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(start.x + 6.0, start.y)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(len(canvas._drawing_polygon_points), 4)
+        self.assertIsNone(canvas._magic_segment.subtract_mask)
 
     def test_temporary_line_preview_uses_configured_endpoint_style(self) -> None:
         _document, _image, canvas = self._create_canvas_document()
@@ -3360,6 +3398,31 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_standard_magic_subtract_operation_button_uses_negative_style(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(48, 48, QImage.Format.Format_RGB32)
+            image.fill(QColor("#F7F7F7"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/magic_operation_button.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+
+            window.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._magic_segment.primary_polygon = [Point(8, 8), Point(40, 8), Point(40, 40), Point(8, 40)]
+
+            window._cycle_magic_segment_operation_mode()
+
+            self.assertEqual(window._magic_operation_button.text(), "剔除(T)")
+            self.assertEqual(window._magic_operation_button.property("magicPrompt"), "negative")
+        finally:
+            window.close()
+
     def test_standard_magic_subtract_manual_modes_hide_prompt_toggle(self) -> None:
         window = MainWindow()
         try:
@@ -3739,12 +3802,54 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertTrue(window._measurement_tool_strip.isPathContextVisible(), mode)
                 self.assertEqual(window._path_complete_button.text(), "完成")
                 self.assertEqual(window._path_cancel_button.text(), "取消")
+                self.assertTrue(window._area_operation_button.isHidden())
                 button_texts = [button.text() for button in window._path_controls_widget.findChildren(QToolButton)]
                 self.assertNotIn("路径测量", button_texts)
 
             window.set_tool_mode("count")
             self.assertFalse(window._measurement_tool_strip.isPathContextVisible())
         finally:
+            window.close()
+
+    def test_area_tools_show_add_subtract_toggle_for_selected_area(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(180, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/area_toggle.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                measurement_kind="area",
+                mode="polygon_area",
+                polygon_px=[Point(20, 20), Point(120, 20), Point(120, 100), Point(20, 100)],
+            )
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+
+            window.set_tool_mode("polygon_area")
+            self.assertFalse(window._area_operation_button.isHidden())
+            self.assertEqual(window._area_operation_button.text(), "添加(T)")
+            self.assertEqual(window._area_operation_button.property("magicPrompt"), "")
+
+            window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
+
+            self.assertEqual(window._area_operation_button.text(), "剔除(T)")
+            self.assertEqual(window._area_operation_button.property("magicPrompt"), "negative")
+            self.assertEqual(window.current_canvas().current_area_edit_operation_mode(), AreaEditOperationMode.SUBTRACT)
+
+            window.set_tool_mode("freehand_area")
+
+            self.assertEqual(window._area_operation_button.text(), "添加(T)")
+            self.assertEqual(window.current_canvas().current_area_edit_operation_mode(), AreaEditOperationMode.ADD)
+        finally:
+            window._reset_workspace()
             window.close()
 
     def test_continuous_manual_completes_from_path_context_controls(self) -> None:
@@ -3818,6 +3923,44 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertEqual(len(document.measurements), 2)
             self.assertEqual(document.measurements[1].mode, "snap")
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_area_add_mode_keeps_creating_new_measurements_when_area_is_selected(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(180, 140, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/area_add_mode.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            existing = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                measurement_kind="area",
+                mode="polygon_area",
+                polygon_px=[Point(20, 20), Point(80, 20), Point(80, 80), Point(20, 80)],
+            )
+            document.add_measurement(existing)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            window.set_tool_mode("polygon_area")
+            self.assertEqual(canvas.current_area_edit_operation_mode(), AreaEditOperationMode.ADD)
+            for point in [Point(100, 30), Point(140, 30), Point(140, 70), Point(100, 70)]:
+                canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+            window._path_complete_button.click()
+
+            self.assertEqual(len(document.measurements), 2)
+            self.assertEqual(document.measurements[-1].measurement_kind, "area")
+            self.assertNotEqual(document.measurements[-1].id, existing.id)
+            self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
         finally:
             window._reset_workspace()
             window.close()
@@ -5997,6 +6140,125 @@ class CanvasAndExportTests(unittest.TestCase):
         hit = canvas._hit_test_selected_area_handle(Point(42.5, 42.5))
 
         self.assertEqual(hit, (measurement.id, "vertex", 1, 0))
+
+    def test_polygon_area_subtract_edits_selected_area_without_new_measurement(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(120, 20), Point(120, 100), Point(20, 100)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        canvas.set_tool_mode("polygon_area")
+        canvas.set_area_edit_operation_mode(AreaEditOperationMode.SUBTRACT)
+        edits: list[object] = []
+        commits: list[object] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: edits.append(payload))
+        canvas.lineCommitted.connect(lambda *_args: commits.append(_args))
+
+        for point in [Point(48, 42), Point(82, 42), Point(82, 72), Point(48, 72)]:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+
+        self.assertTrue(canvas.commit_pending_path())
+
+        self.assertEqual(commits, [])
+        self.assertEqual(len(edits), 1)
+        payload = edits[0]
+        self.assertEqual(payload["measurement_kind"], "area")
+        self.assertEqual(payload["mode"], "polygon_area")
+        self.assertGreaterEqual(len(payload["area_rings_px"]), 2)
+        self.assertLess(payload["exact_area_px"], measurement.area_px)
+        self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
+
+    def test_polygon_area_subtract_can_cut_selected_area_edge(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(120, 20), Point(120, 100), Point(20, 100)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        canvas.set_tool_mode("polygon_area")
+        canvas.set_area_edit_operation_mode(AreaEditOperationMode.SUBTRACT)
+        edits: list[object] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: edits.append(payload))
+
+        for point in [Point(10, 42), Point(54, 42), Point(54, 72), Point(10, 72)]:
+            canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(point), button=Qt.MouseButton.LeftButton))
+
+        self.assertTrue(canvas.commit_pending_path())
+
+        self.assertEqual(len(edits), 1)
+        self.assertEqual(len(edits[0]["area_rings_px"]), 1)
+        self.assertLess(edits[0]["exact_area_px"], measurement.area_px)
+
+    def test_freehand_area_subtract_edits_selected_area_without_new_measurement(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="freehand_area",
+            polygon_px=[Point(20, 20), Point(120, 20), Point(120, 100), Point(20, 100)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        canvas.set_tool_mode("freehand_area")
+        canvas.set_area_edit_operation_mode(AreaEditOperationMode.SUBTRACT)
+        edits: list[object] = []
+        commits: list[object] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: edits.append(payload))
+        canvas.lineCommitted.connect(lambda *_args: commits.append(_args))
+
+        canvas.mousePressEvent(FakeMouseEvent(canvas.image_to_widget(Point(48, 42)), button=Qt.MouseButton.LeftButton))
+        canvas._drawing_polygon_points = [Point(48, 42), Point(82, 42), Point(82, 72), Point(48, 72)]
+        canvas.mouseReleaseEvent(FakeMouseEvent(canvas.image_to_widget(Point(48, 72)), button=Qt.MouseButton.LeftButton))
+
+        self.assertEqual(commits, [])
+        self.assertEqual(len(edits), 1)
+        self.assertGreaterEqual(len(edits[0]["area_rings_px"]), 2)
+        self.assertLess(edits[0]["exact_area_px"], measurement.area_px)
+
+    def test_area_subtract_rejects_non_intersecting_and_split_results(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            measurement_kind="area",
+            fiber_group_id=None,
+            mode="polygon_area",
+            polygon_px=[Point(20, 20), Point(120, 20), Point(120, 100), Point(20, 100)],
+        )
+        measurement.recalculate(None)
+        document.add_measurement(measurement)
+        canvas.set_tool_mode("polygon_area")
+        canvas.set_area_edit_operation_mode(AreaEditOperationMode.SUBTRACT)
+        edits: list[object] = []
+        rejections: list[str] = []
+        canvas.measurementEdited.connect(lambda _document_id, _measurement_id, payload: edits.append(payload))
+        canvas.areaEditRejected.connect(lambda _document_id, reason: rejections.append(reason))
+
+        canvas._complete_area_subtract_polygon(
+            [Point(140, 20), Point(170, 20), Point(170, 60), Point(140, 60)]
+        )
+        canvas._complete_area_subtract_polygon(
+            [Point(58, 18), Point(82, 18), Point(82, 102), Point(58, 102)]
+        )
+
+        self.assertEqual(edits, [])
+        self.assertEqual(
+            rejections,
+            ["剔除区域未与当前面积相交", "当前版本不支持剔除后拆成多个独立区域"],
+        )
 
     def test_unselected_magic_segment_hit_test_uses_simplified_geometry_until_selected(self) -> None:
         document, _image, canvas = self._create_canvas_document()

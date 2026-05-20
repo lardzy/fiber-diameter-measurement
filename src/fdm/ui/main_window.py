@@ -112,7 +112,13 @@ from fdm.services.reference_instance_propagation import (
 )
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
-from fdm.ui.canvas import DocumentCanvas, MagicSegmentOperationMode, MagicSegmentSubtractInputMode, magic_prompt_visual
+from fdm.ui.canvas import (
+    AreaEditOperationMode,
+    DocumentCanvas,
+    MagicSegmentOperationMode,
+    MagicSegmentSubtractInputMode,
+    magic_prompt_visual,
+)
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
@@ -537,6 +543,7 @@ class MainWindow(QMainWindow):
         self._count_controls_widget: QWidget | None = None
         self._preview_analysis_widget: QWidget | None = None
         self._path_controls_widget: QWidget | None = None
+        self._area_operation_button: QToolButton | None = None
         self._path_complete_button: QToolButton | None = None
         self._path_cancel_button: QToolButton | None = None
         self._focus_stack_button: QToolButton | None = None
@@ -1079,6 +1086,13 @@ class MainWindow(QMainWindow):
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
         container.setLayout(layout)
+
+        self._area_operation_button = QToolButton(container)
+        self._area_operation_button.setProperty("contextTool", True)
+        self._area_operation_button.setText("添加(T)")
+        self._area_operation_button.setToolTip("切换当前面积工具的添加/剔除状态（T）")
+        self._area_operation_button.clicked.connect(self._cycle_area_edit_operation_mode)
+        layout.addWidget(self._area_operation_button)
 
         self._path_complete_button = QToolButton(container)
         self._path_complete_button.setProperty("contextTool", True)
@@ -3741,6 +3755,7 @@ class MainWindow(QMainWindow):
         canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
         canvas.pathSessionChanged.connect(self._on_canvas_path_session_changed)
+        canvas.areaEditRejected.connect(self._on_canvas_area_edit_rejected)
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
         canvas.overlaySelected.connect(self._on_canvas_overlay_selected)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
@@ -5052,6 +5067,12 @@ class MainWindow(QMainWindow):
     def _on_canvas_path_session_changed(self, document_id: str) -> None:
         current_document = self.current_document()
         if current_document is not None and current_document.id == document_id:
+            self._update_path_drawing_controls()
+
+    def _on_canvas_area_edit_rejected(self, document_id: str, reason: str) -> None:
+        current_document = self.current_document()
+        if current_document is not None and current_document.id == document_id:
+            self.statusBar().showMessage(reason, 4000)
             self._update_path_drawing_controls()
 
     def _dispatch_pending_magic_segment_request(self, document_id: str, completed_request_id: int) -> bool:
@@ -6582,6 +6603,12 @@ class MainWindow(QMainWindow):
         if self._magic_operation_button is not None:
             self._magic_operation_button.setVisible(standard_mode)
             self._magic_operation_button.setText(self._magic_operation_button_text(operation_mode))
+            self._magic_operation_button.setProperty(
+                "magicPrompt",
+                "negative" if operation_mode == MagicSegmentOperationMode.SUBTRACT else "",
+            )
+            self._measurement_tool_strip._apply_button_palette(self._magic_operation_button)
+            refresh_widget_theme(self._magic_operation_button)
             self._magic_operation_button.setEnabled(has_document and standard_mode and not busy)
         if self._magic_subtract_mode_button is not None:
             self._magic_subtract_mode_button.setVisible(standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT)
@@ -6763,6 +6790,29 @@ class MainWindow(QMainWindow):
         self._update_path_drawing_controls()
         return committed
 
+    def _cycle_area_edit_operation_mode(self) -> bool:
+        canvas = self.current_canvas()
+        if canvas is None or not canvas.has_selected_area_measurement():
+            return False
+        if canvas.has_area_edit_draft():
+            self.statusBar().showMessage("请先完成或取消当前绘制后再切换添加/剔除。", 3000)
+            return False
+        current_mode = canvas.current_area_edit_operation_mode()
+        next_mode = (
+            AreaEditOperationMode.SUBTRACT
+            if current_mode == AreaEditOperationMode.ADD
+            else AreaEditOperationMode.ADD
+        )
+        canvas.set_area_edit_operation_mode(next_mode)
+        status_message = (
+            "面积工具已切换为剔除"
+            if next_mode == AreaEditOperationMode.SUBTRACT
+            else "面积工具已切换为添加"
+        )
+        self.statusBar().showMessage(status_message, 2500)
+        self._update_path_drawing_controls()
+        return True
+
     def _cancel_active_path_drawing(self) -> bool:
         canvas = self.current_canvas()
         if canvas is None:
@@ -6781,8 +6831,33 @@ class MainWindow(QMainWindow):
         )
         self._measurement_tool_strip.setPathContextVisible(is_visible)
         if not is_visible:
+            if self._area_operation_button is not None:
+                self._area_operation_button.setVisible(False)
             return
         canvas = self.current_canvas()
+        show_area_operation = bool(
+            canvas
+            and self._tool_mode in {"polygon_area", "freehand_area"}
+            and canvas.has_selected_area_measurement()
+        )
+        if self._area_operation_button is not None:
+            self._area_operation_button.setVisible(show_area_operation)
+            area_operation_mode = (
+                canvas.current_area_edit_operation_mode()
+                if canvas is not None
+                else AreaEditOperationMode.ADD
+            )
+            subtract_active = area_operation_mode == AreaEditOperationMode.SUBTRACT
+            self._area_operation_button.setText("剔除(T)" if subtract_active else "添加(T)")
+            self._area_operation_button.setToolTip(
+                "当前会从选中面积中剔除绘制区域（T）"
+                if subtract_active
+                else "当前会绘制新的面积测量（T）"
+            )
+            self._area_operation_button.setProperty("magicPrompt", "negative" if subtract_active else "")
+            self._area_operation_button.setEnabled(show_area_operation)
+            self._measurement_tool_strip._apply_button_palette(self._area_operation_button)
+            refresh_widget_theme(self._area_operation_button)
         if self._path_complete_button is not None:
             self._path_complete_button.setEnabled(bool(canvas and canvas.can_commit_pending_path()))
         if self._path_cancel_button is not None:
@@ -7618,7 +7693,11 @@ class MainWindow(QMainWindow):
                 self._cancel_preview_analysis_session()
                 event.accept()
                 return
-        if self._tool_mode in {"polygon_area", "continuous_manual"} and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+        if self._tool_mode in {"polygon_area", "freehand_area", "continuous_manual"} and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            if self._tool_mode in {"polygon_area", "freehand_area"} and event.key() == Qt.Key.Key_T:
+                self._cycle_area_edit_operation_mode()
+                event.accept()
+                return
             if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
                 if self._commit_active_path_drawing():
                     event.accept()

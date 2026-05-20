@@ -5,6 +5,7 @@ import math
 import time
 
 import cv2
+import numpy as np
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF, QWheelEvent
@@ -59,6 +60,18 @@ from fdm.ui.rendering import (
 class MagicSegmentOperationMode:
     ADD = "add"
     SUBTRACT = "subtract"
+
+
+class AreaEditOperationMode:
+    ADD = "add"
+    SUBTRACT = "subtract"
+
+    @classmethod
+    def normalize(cls, value: str | None) -> str:
+        normalized = str(value or "").strip()
+        if normalized in {cls.ADD, cls.SUBTRACT}:
+            return normalized
+        return cls.ADD
 
 
 class MagicSegmentSubtractInputMode:
@@ -386,6 +399,7 @@ class DocumentCanvas(QWidget):
     scaleAnchorPicked = Signal(str, object)
     magicSegmentRequested = Signal(str, object)
     magicSegmentSessionChanged = Signal(str)
+    areaEditRejected = Signal(str, str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -406,6 +420,7 @@ class DocumentCanvas(QWidget):
         self._area_hover_point: Point | None = None
         self._drawing_freehand_active = False
         self._freehand_last_sample_at = 0.0
+        self._area_edit_operation_mode = AreaEditOperationMode.ADD
 
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
@@ -528,6 +543,8 @@ class DocumentCanvas(QWidget):
         if mode != self._tool_mode:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
+            if mode in {"polygon_area", "freehand_area"}:
+                self._area_edit_operation_mode = AreaEditOperationMode.ADD
             if is_magic_segment_tool_mode(self._tool_mode) or not is_magic_segment_tool_mode(mode):
                 self.clear_magic_segment_session()
             if is_reference_propagation_tool_mode(self._tool_mode) or not is_reference_propagation_tool_mode(mode):
@@ -680,6 +697,25 @@ class DocumentCanvas(QWidget):
     def is_fiber_quick_busy(self) -> bool:
         return self._fiber_quick.segmentation_busy or self._fiber_quick.geometry_busy
 
+    def current_area_edit_operation_mode(self) -> str:
+        return AreaEditOperationMode.normalize(self._area_edit_operation_mode)
+
+    def set_area_edit_operation_mode(self, mode: str) -> bool:
+        normalized = AreaEditOperationMode.normalize(mode)
+        if normalized == self._area_edit_operation_mode:
+            return False
+        self._area_edit_operation_mode = normalized
+        self.update()
+        return True
+
+    def has_selected_area_measurement(self) -> bool:
+        return self._selected_area_measurement() is not None
+
+    def has_area_edit_draft(self) -> bool:
+        return self._tool_mode in {"polygon_area", "freehand_area"} and bool(
+            self._drawing_polygon_points or self._drawing_freehand_active
+        )
+
     def has_pending_path_drawing(self) -> bool:
         return bool(self._drawing_polygon_points or self._drawing_freehand_active or self._drawing_line is not None)
 
@@ -698,6 +734,8 @@ class DocumentCanvas(QWidget):
         if not self.can_commit_pending_path():
             return False
         if self._tool_mode == "polygon_area":
+            if self._area_subtract_mode_active():
+                return self._complete_area_subtract_polygon(list(self._drawing_polygon_points))
             self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
             return True
         if self._tool_mode == "continuous_manual":
@@ -1272,6 +1310,25 @@ class DocumentCanvas(QWidget):
             return None
         return mask.astype(bool)
 
+    def _selected_area_measurement(self) -> Measurement | None:
+        if self._document is None:
+            return None
+        measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
+        if (
+            measurement is None
+            or measurement.measurement_kind != "area"
+            or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px)
+        ):
+            return None
+        return measurement
+
+    def _area_subtract_mode_active(self) -> bool:
+        return (
+            self._tool_mode in {"polygon_area", "freehand_area"}
+            and self.current_area_edit_operation_mode() == AreaEditOperationMode.SUBTRACT
+            and self._selected_area_measurement() is not None
+        )
+
     def _magic_manual_subtract_mode_active(self, mode: str | None = None) -> bool:
         if not is_magic_segment_tool_mode(self._tool_mode):
             return False
@@ -1315,10 +1372,91 @@ class DocumentCanvas(QWidget):
         self.update()
         return True
 
+    def _area_measurement_to_mask(self, measurement: Measurement):
+        if self._image is None:
+            return None
+        mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
+
+        def contour(points: list[Point]):
+            return np.array(
+                [
+                    [
+                        int(clamp(round(point.x), 0, self._image.width() - 1)),
+                        int(clamp(round(point.y), 0, self._image.height() - 1)),
+                    ]
+                    for point in points
+                ],
+                dtype=np.int32,
+            )
+
+        if measurement.area_rings_px:
+            outer = measurement.area_rings_px[0]
+            if len(outer) >= 3:
+                cv2.fillPoly(mask, [contour(outer)], 1)
+            for hole in measurement.area_rings_px[1:]:
+                if len(hole) >= 3:
+                    cv2.fillPoly(mask, [contour(hole)], 0)
+        elif len(measurement.polygon_px) >= 3:
+            cv2.fillPoly(mask, [contour(measurement.polygon_px)], 1)
+        if not mask.any():
+            return None
+        return mask.astype(bool)
+
+    def _area_mask_component_count(self, mask) -> int:
+        component_count, _labels = cv2.connectedComponents(np.asarray(mask, dtype=np.uint8), connectivity=8)
+        return max(0, int(component_count) - 1)
+
+    def _reject_area_subtract(self, reason: str) -> bool:
+        document_id = self.document_id
+        self._cancel_area_drawing()
+        if document_id is not None:
+            self.areaEditRejected.emit(document_id, reason)
+        return False
+
+    def _complete_area_subtract_polygon(self, polygon_points: list[Point]) -> bool:
+        measurement = self._selected_area_measurement()
+        if self._document is None or measurement is None or len(polygon_points) < 3:
+            return False
+        source_mask = self._area_measurement_to_mask(measurement)
+        subtract_mask = self._magic_polygon_to_mask(polygon_points)
+        if source_mask is None or subtract_mask is None:
+            return self._reject_area_subtract("剔除区域无效，未修改")
+        if not np.any(source_mask & subtract_mask):
+            return self._reject_area_subtract("剔除区域未与当前面积相交")
+        result_mask = source_mask & ~subtract_mask
+        if not np.any(result_mask):
+            return self._reject_area_subtract("剔除后无剩余面积，未修改")
+        if self._area_mask_component_count(result_mask) > 1:
+            return self._reject_area_subtract("当前版本不支持剔除后拆成多个独立区域")
+        selected_mask, result_rings, result_polygon, _stats = magic_mask_to_geometry(
+            result_mask,
+            select_prompt_component=False,
+        )
+        if selected_mask is None or (len(result_polygon) < 3 and not result_rings):
+            return self._reject_area_subtract("剔除结果无有效面积，未修改")
+        if result_rings and len(result_polygon) < 3:
+            result_polygon = list(result_rings[0])
+        self._cancel_area_drawing()
+        self.measurementEdited.emit(
+            self._document.id,
+            measurement.id,
+            {
+                "measurement_kind": "area",
+                "mode": measurement.mode,
+                "polygon_px": result_polygon,
+                "area_rings_px": result_rings,
+                "exact_area_px": magic_mask_area_px(selected_mask),
+            },
+        )
+        return True
+
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
             return
+        previous_measurement_id = self._document.view_state.selected_measurement_id
         self._document.select_measurement(measurement_id)
+        if previous_measurement_id != measurement_id and self._tool_mode in {"polygon_area", "freehand_area"}:
+            self._area_edit_operation_mode = AreaEditOperationMode.ADD
         self.update()
 
     def set_selected_overlay_annotation(self, overlay_id: str | None) -> None:
@@ -1639,13 +1777,18 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "polygon_area":
             if not self._point_in_image(image_point):
                 return
-            self._document.select_measurement(None)
+            subtract_active = self._area_subtract_mode_active()
+            if not subtract_active:
+                self._document.select_measurement(None)
+                self.measurementSelected.emit(self._document.id, "")
             self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
             self.overlaySelected.emit(self._document.id, "")
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._can_close_polygon_with_point(point):
+                if subtract_active:
+                    self._complete_area_subtract_polygon(list(self._drawing_polygon_points))
+                    return
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 return
             self._drawing_polygon_points.append(point)
@@ -1674,9 +1817,10 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "freehand_area":
             if not self._point_in_image(image_point):
                 return
-            self._document.select_measurement(None)
+            if not self._area_subtract_mode_active():
+                self._document.select_measurement(None)
+                self.measurementSelected.emit(self._document.id, "")
             self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
             self.overlaySelected.emit(self._document.id, "")
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
@@ -1996,6 +2140,10 @@ class DocumentCanvas(QWidget):
                     self._cancel_area_drawing()
                     self._emit_magic_segment_session_changed()
                 return
+            if self._area_subtract_mode_active():
+                if not self._complete_area_subtract_polygon(polygon_points) and self.has_pending_path_drawing():
+                    self._cancel_area_drawing()
+                return
             self._cancel_area_drawing()
             if len(polygon_points) >= 3:
                 self._complete_area_measurement("freehand_area", polygon_points)
@@ -2137,6 +2285,14 @@ class DocumentCanvas(QWidget):
                     self._complete_magic_manual_subtract_polygon(list(self._drawing_polygon_points))
                     event.accept()
                     return
+            if (
+                self._tool_mode == "polygon_area"
+                and self._area_subtract_mode_active()
+                and len(self._drawing_polygon_points) >= 3
+            ):
+                self._complete_area_subtract_polygon(list(self._drawing_polygon_points))
+                event.accept()
+                return
             if self._tool_mode == "polygon_area" and len(self._drawing_polygon_points) >= 3:
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 event.accept()
@@ -2234,12 +2390,12 @@ class DocumentCanvas(QWidget):
         preview_points: list[Point],
         preview_rings: list[list[Point]],
         *,
-        magic_manual_subtract_preview: bool,
+        destructive_preview: bool,
     ) -> None:
         if not preview_points:
             return
-        preview_fill = QColor(248, 113, 113, 52) if magic_manual_subtract_preview else QColor(244, 211, 94, 56)
-        preview_stroke = QColor("#F87171") if magic_manual_subtract_preview else QColor("#F4D35E")
+        preview_fill = QColor(248, 113, 113, 52) if destructive_preview else QColor(244, 211, 94, 56)
+        preview_stroke = QColor("#F87171") if destructive_preview else QColor("#F4D35E")
         if self._drag_area_preview_points is not None and preview_rings:
             fill_path = area_rings_path(preview_rings, self.image_to_widget)
             if self._show_area_fill:
@@ -2316,13 +2472,19 @@ class DocumentCanvas(QWidget):
 
         preview_points = self._drag_area_preview_points or self._drawing_polygon_points
         preview_rings = self._drag_area_preview_rings or []
-        magic_manual_subtract_preview = bool(preview_points and self._magic_manual_subtract_mode_active())
-        if preview_points and not magic_manual_subtract_preview:
+        destructive_area_preview = bool(
+            preview_points
+            and (
+                self._magic_manual_subtract_mode_active()
+                or self._area_subtract_mode_active()
+            )
+        )
+        if preview_points and not destructive_area_preview:
             self._draw_pending_path_preview(
                 painter,
                 preview_points,
                 preview_rings,
-                magic_manual_subtract_preview=False,
+                destructive_preview=False,
             )
 
         preview_overlay = self._drag_overlay_preview
@@ -2363,12 +2525,12 @@ class DocumentCanvas(QWidget):
         elif is_reference_propagation_tool_mode(self._tool_mode) or self._reference_instance.has_session():
             self._draw_reference_instance_preview(painter)
 
-        if preview_points and magic_manual_subtract_preview:
+        if preview_points and destructive_area_preview:
             self._draw_pending_path_preview(
                 painter,
                 preview_points,
                 preview_rings,
-                magic_manual_subtract_preview=True,
+                destructive_preview=True,
             )
 
         if self._tool_mode == "calibration":
@@ -2501,6 +2663,10 @@ class DocumentCanvas(QWidget):
 
     def _endpoint_tolerance(self) -> float:
         return max(3.0, 6.0 / max(self._zoom, 0.001))
+
+    def _polygon_close_tolerance(self) -> float:
+        # Closing is a drawing gesture, so keep it tighter than selected-handle picking.
+        return 5.0 / max(self._zoom, 0.001)
 
     def _hit_test_selected_overlay_handle(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None or self._document.selected_overlay_id is None:
@@ -3075,6 +3241,8 @@ class DocumentCanvas(QWidget):
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
+        self._drag_area_preview_rings = None
+        self._drag_area_origin_rings = None
         self._drag_area_press_point = None
         if document_id is not None:
             self.pathSessionChanged.emit(document_id)
@@ -3094,7 +3262,10 @@ class DocumentCanvas(QWidget):
         self._freehand_last_sample_at = now
 
     def _can_close_polygon_with_point(self, point: Point) -> bool:
-        return len(self._drawing_polygon_points) >= 3 and distance(point, self._drawing_polygon_points[0]) <= self._selected_endpoint_tolerance()
+        return (
+            len(self._drawing_polygon_points) >= 3
+            and distance(point, self._drawing_polygon_points[0]) <= self._polygon_close_tolerance()
+        )
 
     def _complete_area_measurement(self, mode: str, polygon_points: list[Point]) -> None:
         document_id = self._document.id if self._document is not None else None
