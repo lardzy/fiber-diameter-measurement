@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
-    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QListView, QMenu, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -823,6 +823,17 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(window.calibration_label.text(), "0.2 um/px")
         self.assertTrue(window._calibration_start_button.isHidden())
         self.assertEqual(window._apply_preset_button.styleSheet(), "")
+
+    def test_live_preview_does_not_show_legacy_floating_edit_disabled_notice(self) -> None:
+        window = MainWindow()
+        try:
+            window._on_live_preview_state_changed(True)
+
+            self.assertEqual(window._calibration_status_title_label.text(), "实时预览中")
+            label_texts = [label.text() for label in window.findChildren(QLabel)]
+            self.assertNotIn("实时预览中，图片编辑已禁用", label_texts)
+        finally:
+            window.close()
 
     def test_calibration_details_are_scrollable_and_do_not_expand_for_long_sidecar_name(self) -> None:
         window = MainWindow()

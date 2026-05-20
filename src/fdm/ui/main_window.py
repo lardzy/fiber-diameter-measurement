@@ -561,7 +561,6 @@ class MainWindow(QMainWindow):
         self._microview_preview_scroll: QScrollArea | None = None
         self._preview_status_label: QLabel | None = None
         self._image_resolution_label: QLabel | None = None
-        self._preview_notice_label: QLabel | None = None
         self._calibration_label_scroll: QScrollArea | None = None
         self._calibration_status_card: QFrame | None = None
         self._calibration_status_title_label: QLabel | None = None
@@ -1561,10 +1560,6 @@ class MainWindow(QMainWindow):
 
         calibration_box = QGroupBox("标定")
         calibration_layout = QVBoxLayout(calibration_box)
-        self._preview_notice_label = QLabel("实时预览中，图片编辑已禁用")
-        self._preview_notice_label.setWordWrap(True)
-        self._preview_notice_label.setStyleSheet("color: #F4D35E;")
-        self._preview_notice_label.hide()
         self._calibration_status_card = QFrame(calibration_box)
         self._calibration_status_card.setObjectName("calibrationStatusCard")
         card_layout = QVBoxLayout(self._calibration_status_card)
@@ -1847,9 +1842,6 @@ class MainWindow(QMainWindow):
             MagicSegmentToolMode.REFERENCE,
             MagicSegmentToolMode.FIBER_QUICK,
         }.issubset(self._mode_actions):
-            if self._preview_notice_label is not None:
-                warning = "#F4D35E" if self._is_dark_palette() else "#A66A00"
-                self._preview_notice_label.setStyleSheet(f"color: {warning};")
             return
         self._mode_actions["select"].setIcon(themed_icon("select", color=self._tool_icon_color("select")))
         self._mode_actions["count"].setIcon(themed_icon("count", color=self._tool_icon_color("count")))
@@ -1863,9 +1855,6 @@ class MainWindow(QMainWindow):
         self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color=self._tool_icon_color("calibration")))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
-        if self._preview_notice_label is not None:
-            warning = "#F4D35E" if self._is_dark_palette() else "#A66A00"
-            self._preview_notice_label.setStyleSheet(f"color: {warning};")
         if self._manual_tool_button is not None:
             self._sync_manual_tool_button()
         if self._area_tool_button is not None:
@@ -2257,8 +2246,6 @@ class MainWindow(QMainWindow):
         if not active and self._preview_analysis_mode != "none":
             self._cancel_preview_analysis_session()
         self._preview_active = active
-        if self._preview_notice_label is not None:
-            self._preview_notice_label.setVisible(active)
         if self._center_stack is not None and self._preview_page is not None:
             self._center_stack.setCurrentWidget(self._preview_page if active else self.tab_widget)
         if active:
