@@ -1021,7 +1021,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 with (
                     patch.object(window, "_persist_project_assets", return_value=True),
                     patch.object(window, "_save_app_settings", return_value=True),
-                    patch("fdm.ui.main_window.ProjectIO.save"),
+                    patch("fdm.ui.project_session_controller.ProjectIO.save"),
                     patch("fdm.ui.main_window.QFileDialog.getSaveFileName", return_value=(str(Path(tmp_dir) / "named_project.fdmproj"), window.PROJECT_FILTER)) as save_dialog,
                 ):
                     self.assertTrue(window.save_project())

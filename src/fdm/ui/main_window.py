@@ -64,10 +64,8 @@ from fdm.models import (
     UNCATEGORIZED_LABEL,
     normalize_group_label,
     new_id,
-    project_assets_root,
     project_capture_root,
 )
-from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.settings import (
     AppSettings,
     AppSettingsIO,
@@ -80,12 +78,12 @@ from fdm.settings import (
     is_magic_toolbar_tool_mode,
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
-    resolve_resource_relative_path,
     settings_file_path,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection, ExportService
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.group_manager import GroupManager
 from fdm.services.preview_analysis import (
     FocusStackFinalResult,
     FocusStackRenderConfig,
@@ -129,11 +127,13 @@ from fdm.ui.dialogs import (
     ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
+from fdm.ui.export_controller import ExportController
 from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
+from fdm.ui.project_session_controller import ProjectSessionController
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
 from fdm.ui.reference_instance_worker import (
     ReferenceInstancePropagationRequest,
@@ -614,6 +614,8 @@ class MainWindow(QMainWindow):
         self.export_service = ExportService()
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
+        self.project_session_controller = ProjectSessionController(self)
+        self.export_controller = ExportController(self)
 
         self._build_ui()
         self._refresh_theme_sensitive_icons()
@@ -1441,7 +1443,7 @@ class MainWindow(QMainWindow):
         color_header = QLabel("颜色")
         color_header.setFixedWidth(36)
         name_header = QLabel("类别")
-        count_header = QLabel("当前/总数")
+        count_header = QLabel("（当前/总数）")
         count_header.setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
         count_header.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self._group_header_labels = [color_header, name_header, count_header]
@@ -2065,6 +2067,11 @@ class MainWindow(QMainWindow):
         for document in self.project.documents:
             if document.source_type != "filesystem":
                 continue
+            token = str(document.path or "").strip()
+            if token:
+                direct_path = Path(token).expanduser()
+                if direct_path.is_absolute():
+                    return direct_path.parent
             try:
                 resolved = self._resolved_document_path(document)
             except Exception:
@@ -2114,6 +2121,33 @@ class MainWindow(QMainWindow):
             ".xlsm": "启用宏的 Excel 工作簿 (*.xlsm)",
             ".csv": "CSV 文件 (*.csv)",
         }.get(suffix, "所有文件 (*)")
+
+    def _create_export_options_dialog(self, preset: ExportSelection) -> ExportOptionsDialog:
+        return ExportOptionsDialog(
+            preset,
+            allow_all_scope=len(self.project.documents) > 1,
+            raw_record_templates=self._app_settings.raw_record_templates,
+            last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
+            parent=self,
+        )
+
+    def _select_export_save_path(self, default_path: Path, file_filter: str) -> str:
+        selected_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "选择导出文件",
+            str(default_path),
+            file_filter,
+        )
+        return selected_path
+
+    def _select_export_directory(self, default_dir: Path) -> str:
+        return QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
+
+    def _show_export_information(self, title: str, message: str) -> None:
+        QMessageBox.information(self, title, message)
+
+    def _show_export_warning(self, title: str, message: str) -> None:
+        QMessageBox.warning(self, title, message)
 
     def _document_has_unsaved_project_changes(self, document: ImageDocument) -> bool:
         return document.dirty_flags.session_dirty or (not document.uses_sidecar() and document.dirty_flags.calibration_dirty)
@@ -2332,19 +2366,32 @@ class MainWindow(QMainWindow):
             counter += 1
 
     def _persist_project_assets(self, target_path: Path) -> bool:
-        for document in self.project.documents:
-            if not document.is_project_asset():
-                continue
-            image = self._images.get(document.id)
-            if image is None or image.isNull():
-                QMessageBox.warning(self, "保存项目", f"无法找到项目内图片数据: {self._document_display_name(document)}")
-                return False
-            output_path = project_assets_root(target_path) / document.path
-            output_path.parent.mkdir(parents=True, exist_ok=True)
-            if not image.save(str(output_path), "PNG"):
-                QMessageBox.warning(self, "保存项目", f"写入项目内图片失败: {output_path}")
-                return False
-        return True
+        return self.project_session_controller.persist_project_assets(target_path)
+
+    def _project_asset_image_for_save(self, document: ImageDocument) -> QImage | None:
+        return self._images.get(document.id)
+
+    def _show_project_information(self, title: str, message: str) -> None:
+        QMessageBox.information(self, title, message)
+
+    def _show_project_warning(self, title: str, message: str) -> None:
+        QMessageBox.warning(self, title, message)
+
+    def _select_project_save_path(self, default_path: Path) -> str:
+        selected_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "保存项目",
+            str(default_path),
+            self.PROJECT_FILTER,
+        )
+        return selected_path
+
+    def _select_project_open_path(self) -> str:
+        path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
+        return path
+
+    def _show_status_message(self, message: str, timeout_ms: int = 0) -> None:
+        self.statusBar().showMessage(message, timeout_ms)
 
     def capture_current_frame(self) -> None:
         was_preview_active = self._capture_manager.is_preview_active()
@@ -2700,17 +2747,18 @@ class MainWindow(QMainWindow):
         box.exec()
         return box.clickedButton() == project_button
 
+    def _group_manager(self) -> GroupManager:
+        return GroupManager(
+            self.project,
+            color_palette=self._color_palette,
+            color_normalizer=lambda value, fallback="#1F7A8C": self._normalize_group_color(value, fallback=fallback),
+        )
+
     def _project_group_template_for_label(self, label: str) -> ProjectGroupTemplate | None:
-        token = normalize_group_label(label)
-        if not token:
-            return None
-        for template in self.project.project_group_templates:
-            if normalize_group_label(template.label) == token:
-                return template
-        return None
+        return self._group_manager().project_group_template_for_label(label)
 
     def _next_group_color(self, document: ImageDocument) -> str:
-        return self._color_palette[(document.next_group_number() - 1) % len(self._color_palette)]
+        return self._group_manager().next_group_color(document)
 
     def _normalize_group_color(self, color_value: str, *, fallback: str = "#1F7A8C") -> str:
         color = QColor(str(color_value or "").strip())
@@ -2722,60 +2770,17 @@ class MainWindow(QMainWindow):
         return "#1f7a8c"
 
     def _ensure_project_group_template(self, *, label: str, color: str) -> bool:
-        token = normalize_group_label(label)
-        if not token or self._project_group_template_for_label(token) is not None:
-            return False
-        self.project.project_group_templates.append(
-            ProjectGroupTemplate(label=token, color=self._normalize_group_color(color)),
-        )
-        return True
+        return self._group_manager().ensure_project_group_template(label=label, color=color)
 
     def _set_project_group_template_color(self, *, label: str, color: str) -> bool:
-        template = self._project_group_template_for_label(label)
-        if template is None:
-            return False
-        normalized_color = self._normalize_group_color(color, fallback=template.color)
-        if template.color == normalized_color:
-            return False
-        template.color = normalized_color
-        return True
+        return self._group_manager().set_project_group_template_color(label=label, color=color)
 
     def _apply_project_group_template_edit(self, *, original_label: str, target_label: str, color: str) -> bool:
-        target_token = normalize_group_label(target_label)
-        if not target_token:
-            return False
-        original_token = normalize_group_label(original_label)
-        normalized_color = self._normalize_group_color(color)
-        original_template = self._project_group_template_for_label(original_token) if original_token else None
-        target_template = self._project_group_template_for_label(target_token)
-        changed = False
-        if original_template is not None:
-            if target_template is not None and target_template is not original_template:
-                if target_template.color != normalized_color:
-                    target_template.color = normalized_color
-                    changed = True
-                self.project.project_group_templates = [
-                    template
-                    for template in self.project.project_group_templates
-                    if template is not original_template
-                ]
-                return True
-            if normalize_group_label(original_template.label) != target_token:
-                original_template.label = target_token
-                changed = True
-            if original_template.color != normalized_color:
-                original_template.color = normalized_color
-                changed = True
-            return changed
-        if target_template is not None:
-            if target_template.color != normalized_color:
-                target_template.color = normalized_color
-                return True
-            return False
-        self.project.project_group_templates.append(
-            ProjectGroupTemplate(label=target_token, color=normalized_color),
+        return self._group_manager().apply_project_group_template_edit(
+            original_label=original_label,
+            target_label=target_label,
+            color=color,
         )
-        return True
 
     def _apply_project_group_templates_to_document(
         self,
@@ -2783,39 +2788,10 @@ class MainWindow(QMainWindow):
         *,
         labels: set[str] | None = None,
     ) -> bool:
-        changed = False
-        for template in self.project.project_group_templates:
-            token = normalize_group_label(template.label)
-            if (
-                not token
-                or (labels is not None and token not in labels)
-                or document.is_project_group_label_suppressed(token)
-            ):
-                continue
-            _group, ensured_changed = self._ensure_document_named_group(
-                document,
-                label=token,
-                color=template.color,
-                activate=False,
-                sync_color=True,
-            )
-            changed = ensured_changed or changed
-        if document.active_group_id is None and document.can_delete_uncategorized_entry():
-            changed = document.hide_uncategorized_entry() or changed
-        return changed
+        return self._group_manager().apply_project_group_templates_to_document(document, labels=labels)
 
     def _sync_project_group_templates(self, *, label: str, labels: set[str] | None = None) -> bool:
-        any_changed = False
-        for document in self.project.documents:
-            before = document.snapshot_state()
-            changed = self._apply_project_group_templates_to_document(document, labels=labels)
-            after = document.snapshot_state()
-            if changed and document.history is not None and before != after:
-                document.history.push(label, before, after)
-                any_changed = True
-            elif changed:
-                any_changed = True
-        return any_changed
+        return self._group_manager().sync_project_group_templates(history_label=label, labels=labels)
 
     def _sync_project_group_template_edit_to_documents(
         self,
@@ -2825,50 +2801,12 @@ class MainWindow(QMainWindow):
         color: str,
         history_label: str,
     ) -> bool:
-        target_token = normalize_group_label(target_label)
-        if not target_token:
-            return False
-        original_token = normalize_group_label(original_label)
-        normalized_color = self._normalize_group_color(color)
-        any_changed = False
-        for document in self.project.documents:
-            before = document.snapshot_state()
-            changed = False
-            original_group = document.find_group_by_label(original_token) if original_token else None
-            target_group = document.find_group_by_label(target_token)
-            if original_group is not None and target_group is not None and original_group.id != target_group.id:
-                changed = document.merge_group_into(original_group.id, target_group.id) or changed
-                target_group = document.find_group_by_label(target_token)
-            elif original_group is not None:
-                if normalize_group_label(original_group.label) != target_token:
-                    original_group.label = target_token
-                    changed = True
-                target_group = original_group
-            elif target_group is None:
-                target_group, ensured_changed = self._ensure_document_named_group(
-                    document,
-                    label=target_token,
-                    color=normalized_color,
-                    activate=False,
-                    sync_color=True,
-                )
-                changed = ensured_changed or changed
-            if target_group is not None and target_group.color != normalized_color:
-                target_group.color = normalized_color
-                changed = True
-            if original_token and original_token != target_token:
-                changed = document.unsuppress_project_group_label(original_token) or changed
-            changed = document.unsuppress_project_group_label(target_token) or changed
-            if changed:
-                document.rebuild_group_memberships()
-                document.refresh_dirty_flags()
-            after = document.snapshot_state()
-            if changed and document.history is not None and before != after:
-                document.history.push(history_label, before, after)
-                any_changed = True
-            elif changed:
-                any_changed = True
-        return any_changed
+        return self._group_manager().sync_project_group_template_edit_to_documents(
+            original_label=original_label,
+            target_label=target_label,
+            color=color,
+            history_label=history_label,
+        )
 
     def _clear_group_suppression_when_present(self, document: ImageDocument, label: str) -> None:
         if document.find_group_by_label(label) is not None:
@@ -2883,85 +2821,19 @@ class MainWindow(QMainWindow):
         activate: bool,
         sync_color: bool = False,
     ) -> tuple[FiberGroup | None, bool]:
-        token = normalize_group_label(label)
-        if not token:
-            return None, False
-        normalized_color = self._normalize_group_color(color)
-        changed = False
-        matches = document.groups_by_label(token)
-        if matches:
-            canonical = matches[0]
-            for duplicate in matches[1:]:
-                if document.merge_group_into(duplicate.id, canonical.id):
-                    changed = True
-            if sync_color and canonical.color != normalized_color:
-                canonical.color = normalized_color
-                changed = True
-            if activate and document.active_group_id != canonical.id:
-                document.set_active_group(canonical.id)
-                changed = True
-        else:
-            active_group_id = document.active_group_id
-            canonical = document.create_group(color=normalized_color, label=token)
-            if activate or active_group_id is None:
-                document.set_active_group(canonical.id)
-            elif active_group_id != canonical.id:
-                document.set_active_group(active_group_id)
-            changed = True
-        changed = document.unsuppress_project_group_label(token) or changed
-        return canonical, changed
+        return self._group_manager().ensure_document_named_group(
+            document,
+            label=label,
+            color=color,
+            activate=activate,
+            sync_color=sync_color,
+        )
 
     def _area_inference_group_color_for_label(self, label: str) -> str:
-        token = normalize_group_label(label)
-        if not token:
-            return self._color_palette[0]
-        template = self._project_group_template_for_label(token)
-        if template is not None:
-            return template.color
-        for document in self.project.documents:
-            group = document.find_group_by_label(token)
-            if group is not None:
-                return group.color
-        template_count = len(
-            [
-                template
-                for template in self.project.project_group_templates
-                if normalize_group_label(template.label)
-            ]
-        )
-        return self._color_palette[template_count % len(self._color_palette)]
+        return self._group_manager().area_inference_group_color_for_label(label)
 
     def _resolve_area_inference_group_colors(self, labels: list[str]) -> dict[str, str]:
-        resolved_colors: dict[str, str] = {}
-        template_count = len(
-            [
-                template
-                for template in self.project.project_group_templates
-                if normalize_group_label(template.label)
-            ]
-        )
-        fallback_offset = 0
-        for label in labels:
-            token = normalize_group_label(label)
-            if not token or token in resolved_colors:
-                continue
-            template = self._project_group_template_for_label(token)
-            if template is not None:
-                resolved_colors[token] = template.color
-                continue
-            existing_color = None
-            for document in self.project.documents:
-                group = document.find_group_by_label(token)
-                if group is not None:
-                    existing_color = group.color
-                    break
-            if existing_color is not None:
-                resolved_colors[token] = existing_color
-                continue
-            palette_index = (template_count + fallback_offset) % len(self._color_palette)
-            resolved_colors[token] = self._color_palette[palette_index]
-            fallback_offset += 1
-        return resolved_colors
+        return self._group_manager().resolve_area_inference_group_colors(labels)
 
     def _resolved_area_inference_group_labels(
         self,
@@ -3780,253 +3652,22 @@ class MainWindow(QMainWindow):
         self._update_ui_for_current_document()
 
     def save_project(self, path: str | None = None) -> bool:
-        if not self.project.documents:
-            QMessageBox.information(self, "保存项目", "请先打开图片。")
-            return False
-        target_path = Path(path) if path else self._project_path
-        if target_path is None:
-            default_dir = self._preferred_dialog_directory(recent_dir=self._app_settings.recent_project_dir)
-            selected_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "保存项目",
-                str(default_dir / "fiber_measurement.fdmproj"),
-                self.PROJECT_FILTER,
-            )
-            if not selected_path:
-                return False
-            target_path = self._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
-        self.project.version = __version__
-        if not self._persist_project_assets(target_path):
-            return False
-        ProjectIO.save(self.project, target_path)
-        self._project_path = target_path
-        self._remember_recent_directory(setting_name="recent_project_dir", directory=target_path.parent, context="保存项目")
-        for document in self.project.documents:
-            document.mark_session_saved()
-            document.mark_calibration_saved()
-        self._mark_project_saved()
-        self._update_ui_for_current_document()
-        self.statusBar().showMessage(f"项目已保存: {target_path}", 5000)
-        return True
+        return self.project_session_controller.save_project(path)
 
     def load_project(self) -> None:
-        path, _ = QFileDialog.getOpenFileName(self, "打开项目", "", self.PROJECT_FILTER)
-        if not path:
-            return
-        self._load_project_from_path(Path(path))
+        self.project_session_controller.load_project()
 
     def _load_project_from_path(self, path: str | Path) -> None:
-        self.stop_live_preview()
-        if self._load_thread is not None:
-            QMessageBox.information(self, "打开项目", "当前仍有图片在加载，请稍候。")
-            return
-        if not self._confirm_close_documents(self.project.documents):
-            return
-        project_path = Path(path).expanduser().resolve()
-        project = ProjectIO.load(project_path)
-        imported_count = self._merge_legacy_calibration_presets(project.calibration_presets)
-        missing_paths = []
-        self._reset_workspace()
-        self._project_path = project_path
-        self.project = ProjectState(
-            version=project.version,
-            documents=[],
-            project_default_calibration=project.project_default_calibration,
-            project_group_templates=list(project.project_group_templates),
-        )
-        self.project.metadata = project.metadata
-        self._refresh_preset_combo()
-        load_items: list[tuple[str, ImageDocument | None]] = []
-        repaired_paths: list[str] = []
-        repaired_path_count = 0
-        for document in project.documents:
-            resolution = resolve_document_load_path(document, self._project_path)
-            if resolution is not None:
-                resolved_path = resolution.path
-                if document.source_type == "filesystem":
-                    original_absolute_path = str(document.absolute_path or document.path or "").strip()
-                    document.path = str(resolved_path)
-                    document.absolute_path = str(resolved_path)
-                    if resolution.repaired_from_missing_absolute:
-                        repaired_path_count += 1
-                        repaired_paths.append(f"{original_absolute_path} -> {resolved_path}")
-                load_items.append((str(resolved_path), document))
-            else:
-                missing_paths.append(str(document.resolved_path(self._project_path)))
-        self._pending_project_load_snapshot = True
-        self._open_image_requests(
-            load_items,
-            context_label="打开项目",
-            missing_paths=missing_paths,
-            repaired_paths=repaired_paths,
-        )
-        if self._load_thread is None:
-            self._mark_project_saved()
-            self._pending_project_load_snapshot = False
-        message = f"项目已加载: {project_path}"
-        if imported_count:
-            message += f"；已导入 {imported_count} 个旧版标定预设"
-        if repaired_path_count:
-            message += f"；已自动修复 {repaired_path_count} 张图片路径"
-        self.statusBar().showMessage(message, 5000)
+        self.project_session_controller.load_project_from_path(path)
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
-        if not self.project.documents:
-            QMessageBox.information(self, "导出结果", "当前没有可导出的图片。")
-            return
-        preset = preset or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
-        dialog = ExportOptionsDialog(
-            preset,
-            allow_all_scope=len(self.project.documents) > 1,
-            raw_record_templates=self._app_settings.raw_record_templates,
-            last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
-            parent=self,
-        )
-        if dialog.exec() != dialog.DialogCode.Accepted:
-            return
-        selection = dialog.selection()
-        if not selection.any_selected():
-            QMessageBox.information(self, "导出结果", "请至少选择一种导出内容。")
-            return
-        raw_record_template = self._prepare_raw_record_template_for_export(selection)
-        target_documents = self.project.documents if selection.scope == ExportScope.ALL_OPEN else ([self.current_document()] if self.current_document() else [])
-        target_documents = [document for document in target_documents if document is not None]
-        planned_outputs = self.export_service.planned_outputs(target_documents, selection)
-        if not planned_outputs:
-            QMessageBox.information(self, "导出结果", "按当前导出内容设置，没有可生成的文件。")
-            return
-        default_dir = self._preferred_dialog_directory(recent_dir=self._app_settings.recent_export_dir)
-        single_output_path: Path | None = None
-        if len(planned_outputs) == 1:
-            selected_path, _ = QFileDialog.getSaveFileName(
-                self,
-                "选择导出文件",
-                str(default_dir / planned_outputs[0].filename),
-                self._single_export_dialog_filter(planned_outputs[0].filename),
-            )
-            if not selected_path:
-                return
-            single_output_path = self._normalize_dialog_save_path(selected_path, planned_outputs[0].filename)
-            expected_suffix = Path(planned_outputs[0].filename).suffix.lower()
-            if expected_suffix in {".xlsx", ".xlsm"} and single_output_path.suffix.lower() != expected_suffix:
-                single_output_path = single_output_path.with_suffix(expected_suffix)
-            output_dir = str(single_output_path.parent)
-        else:
-            output_dir = QFileDialog.getExistingDirectory(self, "选择导出目录", str(default_dir))
-            if not output_dir:
-                return
-        progress = self._create_blocking_progress_dialog(
-            title="导出结果",
-            label_text="正在准备导出...",
-            maximum=max(1, len(planned_outputs)),
-        )
-        current_output_path: Path | None = None
-
-        def on_export_progress(completed_steps: int, total_steps: int, label: str, path: Path | None) -> None:
-            nonlocal current_output_path
-            if path is not None:
-                current_output_path = path
-            self._update_blocking_progress_dialog(
-                progress,
-                completed_steps=completed_steps,
-                total_steps=total_steps,
-                label=label,
-                path=path,
-            )
-
-        progress.show()
-        progress.raise_()
-        progress.activateWindow()
-        self._pump_modal_progress_events()
-        try:
-            outputs = self.export_service.export_project(
-                self.project,
-                output_dir,
-                selection=selection,
-                documents=target_documents,
-                overlay_renderer=self._render_overlay_image,
-                single_output_path=single_output_path,
-                raw_record_template=raw_record_template,
-                progress_callback=on_export_progress,
-            )
-        except Exception as exc:
-            self._close_progress_dialog(progress)
-            QMessageBox.warning(
-                self,
-                "导出失败",
-                self._format_export_failure_message(exc, export_path=current_output_path),
-            )
-            return
-        self._close_progress_dialog(progress)
-        if not outputs:
-            QMessageBox.information(self, "导出结果", "没有生成任何文件。")
-            return
-        template_fallback_message = str(outputs.pop("_template_fallback_message", "") or "")
-        if template_fallback_message:
-            QMessageBox.warning(
-                self,
-                "原始记录模板",
-                "原始记录模板导出失败，已自动回退到默认 Excel 文档。\n\n"
-                f"{template_fallback_message}",
-            )
-        export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
-        self._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
-        output_labels = {
-            "measurement_overlays": "测量叠加图",
-            "scale_overlays": "比例尺叠加图",
-            "combined_overlays": "测量+比例尺叠加图",
-            "scale_jsons": "比例尺 JSON",
-            "image_summary_csv": "图片汇总 CSV",
-            "fiber_details_csv": "纤维种类汇总 CSV",
-            "measurement_details_csv": "测量明细 CSV",
-            "xlsx": "Excel 工作簿",
-        }
-        summary_lines = []
-        for key, value in outputs.items():
-            label = output_labels.get(key, key)
-            if isinstance(value, list):
-                summary_lines.append(f"{label}: {len(value)} 个文件")
-            else:
-                summary_lines.append(f"{label}: {value}")
-        location_text = str(outputs.get("xlsx", single_output_path)) if single_output_path is not None else str(output_dir)
-        QMessageBox.information(self, "导出完成", f"结果已导出到:\n{location_text}\n\n" + "\n".join(summary_lines))
+        self.export_controller.export_results(preset)
 
     def _prepare_raw_record_template_for_export(self, selection: ExportSelection) -> RawRecordTemplate | None:
-        selected_path = str(selection.raw_record_template_path or "").strip() if selection.include_excel else ""
-        template = self._raw_record_template_for_path(selected_path) if selected_path else None
-        if selected_path:
-            resolved_path = resolve_resource_relative_path(selected_path)
-            if template is None or not resolved_path.exists():
-                QMessageBox.warning(
-                    self,
-                    "原始记录模板",
-                    "找不到已选择的原始记录模板，已自动回退到默认 Excel 文档：\n"
-                    f"{selected_path}",
-                )
-                selected_path = ""
-                template = None
-        selection.raw_record_template_path = selected_path
-        if self._app_settings.last_raw_record_template_path != selected_path:
-            self._app_settings.last_raw_record_template_path = selected_path
-            self._save_app_settings(context="导出结果")
-        return template
+        return self.export_controller.prepare_raw_record_template_for_export(selection)
 
     def _raw_record_template_for_path(self, template_path: str) -> RawRecordTemplate | None:
-        token = str(template_path or "").strip()
-        if not token:
-            return None
-        token_key = token.casefold()
-        token_resolved = resolve_resource_relative_path(token)
-        for template in self._app_settings.raw_record_templates:
-            candidate = str(template.path or "").strip()
-            if candidate.casefold() == token_key:
-                return template
-            try:
-                if resolve_resource_relative_path(candidate).resolve() == token_resolved.resolve():
-                    return template
-            except OSError:
-                continue
-        return None
+        return self.export_controller.raw_record_template_for_path(template_path)
 
     def fit_current_image(self) -> None:
         canvas = self.current_canvas()
@@ -5792,25 +5433,18 @@ class MainWindow(QMainWindow):
     def _populate_group_list(self, document: ImageDocument | None) -> None:
         self._group_list_rebuilding = True
         self.group_list.clear()
-        if document is not None:
-            if document.should_show_uncategorized_entry():
-                self._add_group_list_item(
-                    label=UNCATEGORIZED_LABEL,
-                    color=self._app_settings.default_measurement_color,
-                    current_count=document.uncategorized_measurement_count(),
-                    project_count=self._project_uncategorized_measurement_count(document),
-                    group_id=None,
-                    selected=document.active_group_id is None,
-                )
-            for group in document.sorted_groups():
-                self._add_group_list_item(
-                    label=group.display_name(),
-                    color=group.color,
-                    current_count=len(group.measurement_ids),
-                    project_count=self._project_measurement_count_for_group_label(group.label, document),
-                    group_id=group.id,
-                    selected=document.active_group_id == group.id,
-                )
+        for row in self._group_manager().group_rows(
+            document,
+            default_uncategorized_color=self._app_settings.default_measurement_color,
+        ):
+            self._add_group_list_item(
+                label=row.label,
+                color=row.color,
+                current_count=row.current_count,
+                project_count=row.project_count,
+                group_id=row.group_id,
+                selected=row.selected,
+            )
         self._group_list_rebuilding = False
 
     def _add_group_list_item(
@@ -5850,10 +5484,11 @@ class MainWindow(QMainWindow):
                 widget.setSelected(item.isSelected())
 
     def _refresh_group_list_counts(self, document: ImageDocument) -> None:
-        expected_group_ids: list[str | None] = []
-        if document.should_show_uncategorized_entry():
-            expected_group_ids.append(None)
-        expected_group_ids.extend(group.id for group in document.sorted_groups())
+        rows = self._group_manager().group_rows(
+            document,
+            default_uncategorized_color=self._app_settings.default_measurement_color,
+        )
+        expected_group_ids = [row.group_id for row in rows]
         current_group_ids = [
             self.group_list.item(index).data(Qt.ItemDataRole.UserRole)
             for index in range(self.group_list.count())
@@ -5863,27 +5498,15 @@ class MainWindow(QMainWindow):
             return
         self._group_list_rebuilding = True
         try:
-            for index, group_id in enumerate(expected_group_ids):
+            for index, row in enumerate(rows):
                 item = self.group_list.item(index)
-                if group_id is None:
-                    current_count = document.uncategorized_measurement_count()
-                    project_count = self._project_uncategorized_measurement_count(document)
-                    selected = document.active_group_id is None
-                else:
-                    group = document.get_group(group_id)
-                    if group is None:
-                        self._populate_group_list(document)
-                        return
-                    current_count = len(group.measurement_ids)
-                    project_count = self._project_measurement_count_for_group_label(group.label, document)
-                    selected = document.active_group_id == group.id
-                item.setData(Qt.ItemDataRole.UserRole + 1, current_count)
-                item.setData(Qt.ItemDataRole.UserRole + 3, project_count)
-                item.setSelected(selected)
+                item.setData(Qt.ItemDataRole.UserRole + 1, row.current_count)
+                item.setData(Qt.ItemDataRole.UserRole + 3, row.project_count)
+                item.setSelected(row.selected)
                 widget = self.group_list.itemWidget(item)
                 if isinstance(widget, FiberGroupListItemWidget):
-                    widget.setCounts(current_count, project_count)
-                    widget.setSelected(selected)
+                    widget.setCounts(row.current_count, row.project_count)
+                    widget.setSelected(row.selected)
         finally:
             self._group_list_rebuilding = False
 
@@ -5904,26 +5527,13 @@ class MainWindow(QMainWindow):
             self.group_list.scrollToItem(target_item, QAbstractItemView.ScrollHint.PositionAtCenter)
 
     def _documents_for_group_counts(self, current_document: ImageDocument | None) -> list[ImageDocument]:
-        documents = list(self.project.documents)
-        if current_document is not None and all(document.id != current_document.id for document in documents):
-            documents.append(current_document)
-        return documents
+        return self._group_manager().documents_for_group_counts(current_document)
 
     def _project_measurement_count_for_group_label(self, label: str, current_document: ImageDocument | None = None) -> int:
-        token = normalize_group_label(label)
-        total = 0
-        for document in self._documents_for_group_counts(current_document):
-            if token:
-                for group in document.groups_by_label(token):
-                    total += len(group.measurement_ids)
-            else:
-                for group in document.sorted_groups():
-                    if not normalize_group_label(group.label):
-                        total += len(group.measurement_ids)
-        return total
+        return self._group_manager().project_measurement_count_for_group_label(label, current_document)
 
     def _project_uncategorized_measurement_count(self, current_document: ImageDocument | None = None) -> int:
-        return sum(document.uncategorized_measurement_count() for document in self._documents_for_group_counts(current_document))
+        return self._group_manager().project_uncategorized_measurement_count(current_document)
 
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()

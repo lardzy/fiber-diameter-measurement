@@ -100,8 +100,8 @@ class ReferenceInstancePropagationTests(unittest.TestCase):
             def clear_cache(self) -> None:
                 return
 
-            def predict_polygon(self, *, image, cache_key, positive_points, negative_points):
-                del image, cache_key, positive_points, negative_points
+            def predict_polygon(self, *, image, cache_key, positive_points, negative_points, tool_mode=None):
+                del image, cache_key, positive_points, negative_points, tool_mode
                 return PromptSegmentationResult(
                     mask=self._mask.copy(),
                     polygon_px=[Point(74, 20), Point(106, 20), Point(106, 48), Point(74, 48)],
@@ -133,4 +133,3 @@ class ReferenceInstancePropagationTests(unittest.TestCase):
         right = [Point(40, 10), Point(60, 10), Point(60, 30), Point(40, 30)]
 
         self.assertAlmostEqual(area_geometry_iou(left, [], right, []), 0.0)
-

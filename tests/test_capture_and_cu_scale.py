@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import ctypes
@@ -35,8 +36,10 @@ except ModuleNotFoundError:
     _microview_buffer_to_qimage = None
 
 try:
+    from PySide6.QtCore import QCoreApplication
     from PySide6.QtGui import QColor, QImage
 except ModuleNotFoundError:
+    QCoreApplication = None
     QColor = None
     QImage = None
 
@@ -183,7 +186,10 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual(received, [(32, 24)])
         self.assertIsNone(manager.last_frame())
 
-    @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
+    @unittest.skipIf(
+        CaptureSessionManager is None or QCoreApplication is None or QImage is None or QColor is None,
+        "PySide6 not installed",
+    )
     def test_capture_session_manager_routes_analysis_frames(self) -> None:
         class WorkingBackend(CaptureBackend):
             backend_key = "microview"
@@ -229,6 +235,8 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         )
 
         self.assertTrue(manager.request_analysis_frame(7))
+        app = QCoreApplication.instance() or QCoreApplication([])
+        app.processEvents()
 
         self.assertEqual(backend.request_ids, [7])
         self.assertEqual(received, [(7, 64, 48)])
