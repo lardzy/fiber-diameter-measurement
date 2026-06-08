@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from time import perf_counter
 
-from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPoint, QPointF, QRect, QRectF, QSize, Qt, QThread, QTimer
+from PySide6.QtCore import QByteArray, QEvent, QEventLoop, QPoint, QPointF, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
@@ -92,7 +91,6 @@ from fdm.services.preview_analysis import (
     MAP_BUILD_STABLE_REQUIRED_FRAMES,
     MapBuildFinalResult,
     MapBuildReport,
-    log_preview_analysis_perf,
 )
 from fdm.services.prompt_segmentation import (
     PromptSegmentationResult,
@@ -126,22 +124,29 @@ from fdm.ui.dialogs import (
     SettingsDialog,
     ShortcutHelpDialog,
 )
-from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
+from fdm.ui.area_inference_worker import AreaInferenceRequest
+from fdm.ui.background_task_controller import AreaInferenceBatchState, BackgroundTaskController, BatchLoadState
 from fdm.ui.export_controller import ExportController
 from fdm.ui.icons import application_icon, themed_icon
-from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
+from fdm.ui.image_loader import ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
+from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-from fdm.ui.preview_analysis_worker import FocusStackSessionWorker, MapBuildSessionWorker
 from fdm.ui.project_session_controller import ProjectSessionController
-from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest, PromptSegmentationWorker
-from fdm.ui.reference_instance_worker import (
-    ReferenceInstancePropagationRequest,
-    ReferenceInstancePropagationWorker,
-)
-from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest, FiberQuickGeometryWorker
+from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest
+from fdm.ui.reference_instance_worker import ReferenceInstancePropagationRequest
+from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
+from fdm.ui.thread_task_manager import (
+    TASK_AREA_INFERENCE,
+    TASK_FIBER_QUICK_COMMIT_GEOMETRY,
+    TASK_FIBER_QUICK_GEOMETRY,
+    TASK_IMAGE_LOAD,
+    TASK_PROMPT_SEGMENTATION,
+    TASK_REFERENCE_INSTANCE,
+    ThreadTaskManager,
+)
 from fdm.ui.widgets import (
     FiberGroupListItemWidget,
     FlowLayout,
@@ -266,32 +271,6 @@ except ModuleNotFoundError as exc:
 
     def format_cu_scale_record_summary(record) -> str:
         raise RuntimeError(f"当前版本缺少 CU 标尺导入模块，无法导入标尺。\n{_cu_scale_import_error_message}")
-
-
-@dataclass(slots=True)
-class BatchLoadState:
-    context_label: str
-    total: int
-    skipped_count: int = 0
-    completed_count: int = 0
-    loaded_count: int = 0
-    failed_count: int = 0
-    cancelled: bool = False
-    failures: list[str] | None = None
-    missing_paths: list[str] | None = None
-    repaired_paths: list[str] | None = None
-
-
-@dataclass(slots=True)
-class AreaInferenceBatchState:
-    total: int
-    model_name: str = ""
-    update_project_group_templates: bool = True
-    completed_count: int = 0
-    failed_count: int = 0
-    cancelled: bool = False
-    failures: list[str] | None = None
-    global_group_labels: list[str] = field(default_factory=list)
 
 
 @dataclass(slots=True)
@@ -499,22 +478,6 @@ class MainWindow(QMainWindow):
         self._left_panel_splitter: QSplitter | None = None
         self._right_panel: QWidget | None = None
         self._group_header_labels: list[QLabel] = []
-        self._load_thread: QThread | None = None
-        self._load_worker: ImageBatchLoaderWorker | None = None
-        self._load_progress_dialog: QProgressDialog | None = None
-        self._load_state: BatchLoadState | None = None
-        self._area_infer_thread: QThread | None = None
-        self._area_infer_worker: AreaBatchInferenceWorker | None = None
-        self._area_infer_progress_dialog: QProgressDialog | None = None
-        self._area_infer_state: AreaInferenceBatchState | None = None
-        self._prompt_seg_thread: QThread | None = None
-        self._prompt_seg_worker: PromptSegmentationWorker | None = None
-        self._fiber_quick_geometry_thread: QThread | None = None
-        self._fiber_quick_geometry_worker: FiberQuickGeometryWorker | None = None
-        self._fiber_quick_commit_geometry_thread: QThread | None = None
-        self._fiber_quick_commit_geometry_worker: FiberQuickGeometryWorker | None = None
-        self._reference_instance_thread: QThread | None = None
-        self._reference_instance_worker: ReferenceInstancePropagationWorker | None = None
         self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
         self._fiber_quick_geometry_request_ids: set[tuple[str, int]] = set()
         self._fiber_quick_background_job_serial = 0
@@ -582,17 +545,6 @@ class MainWindow(QMainWindow):
         self._preview_document: ImageDocument | None = None
         self._capture_devices: list[CaptureDevice] = []
         self._microview_optimize_hints_shown: set[str] = set()
-        self._preview_analysis_mode = "none"
-        self._preview_analysis_dialog: PreviewAnalysisDialog | None = None
-        self._preview_analysis_thread: QThread | None = None
-        self._preview_analysis_worker: FocusStackSessionWorker | MapBuildSessionWorker | None = None
-        self._preview_analysis_timer = QTimer(self)
-        self._preview_analysis_timer.setInterval(self.PREVIEW_ANALYSIS_INTERVAL_MS)
-        self._preview_analysis_timer.timeout.connect(self._request_preview_analysis_frame)
-        self._preview_analysis_request_id = 0
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at: float | None = None
-        self._preview_analysis_finalizing = False
         self._project_clean_snapshot: dict[str, object] | None = None
         self._pending_project_load_snapshot = False
         self._capture_manager = CaptureSessionManager(
@@ -614,6 +566,13 @@ class MainWindow(QMainWindow):
         self.export_service = ExportService()
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
+        self.thread_task_manager = ThreadTaskManager(parent=self)
+        self.background_task_controller = BackgroundTaskController(self, self.thread_task_manager)
+        self.preview_analysis_task_controller = PreviewAnalysisTaskController(
+            self,
+            self.thread_task_manager,
+            parent=self,
+        )
         self.project_session_controller = ProjectSessionController(self)
         self.export_controller = ExportController(self)
 
@@ -631,6 +590,160 @@ class MainWindow(QMainWindow):
         self._restore_initial_window_geometry()
         self._update_ui_for_current_document()
         self._mark_project_saved()
+
+    @property
+    def _load_thread(self):
+        return self.background_task_controller.thread(TASK_IMAGE_LOAD)
+
+    @_load_thread.setter
+    def _load_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_IMAGE_LOAD, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_IMAGE_LOAD, value)
+
+    @property
+    def _load_worker(self):
+        return self.background_task_controller.worker(TASK_IMAGE_LOAD)
+
+    @_load_worker.setter
+    def _load_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_IMAGE_LOAD, value)
+
+    @property
+    def _load_state(self) -> BatchLoadState | None:
+        return self.background_task_controller.load_state
+
+    @property
+    def _area_infer_thread(self):
+        return self.background_task_controller.thread(TASK_AREA_INFERENCE)
+
+    @_area_infer_thread.setter
+    def _area_infer_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_AREA_INFERENCE, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_AREA_INFERENCE, value)
+
+    @property
+    def _area_infer_worker(self):
+        return self.background_task_controller.worker(TASK_AREA_INFERENCE)
+
+    @_area_infer_worker.setter
+    def _area_infer_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_AREA_INFERENCE, value)
+
+    @property
+    def _area_infer_state(self) -> AreaInferenceBatchState | None:
+        return self.background_task_controller.area_infer_state
+
+    @property
+    def _prompt_seg_thread(self):
+        return self.background_task_controller.thread(TASK_PROMPT_SEGMENTATION)
+
+    @_prompt_seg_thread.setter
+    def _prompt_seg_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_PROMPT_SEGMENTATION, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_PROMPT_SEGMENTATION, value)
+
+    @property
+    def _prompt_seg_worker(self):
+        return self.background_task_controller.worker(TASK_PROMPT_SEGMENTATION)
+
+    @_prompt_seg_worker.setter
+    def _prompt_seg_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_PROMPT_SEGMENTATION, value)
+
+    @property
+    def _fiber_quick_geometry_thread(self):
+        return self.background_task_controller.thread(TASK_FIBER_QUICK_GEOMETRY)
+
+    @_fiber_quick_geometry_thread.setter
+    def _fiber_quick_geometry_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_FIBER_QUICK_GEOMETRY, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_FIBER_QUICK_GEOMETRY, value)
+
+    @property
+    def _fiber_quick_geometry_worker(self):
+        return self.background_task_controller.worker(TASK_FIBER_QUICK_GEOMETRY)
+
+    @_fiber_quick_geometry_worker.setter
+    def _fiber_quick_geometry_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_FIBER_QUICK_GEOMETRY, value)
+
+    @property
+    def _fiber_quick_commit_geometry_thread(self):
+        return self.background_task_controller.thread(TASK_FIBER_QUICK_COMMIT_GEOMETRY)
+
+    @_fiber_quick_commit_geometry_thread.setter
+    def _fiber_quick_commit_geometry_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_FIBER_QUICK_COMMIT_GEOMETRY, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_FIBER_QUICK_COMMIT_GEOMETRY, value)
+
+    @property
+    def _fiber_quick_commit_geometry_worker(self):
+        return self.background_task_controller.worker(TASK_FIBER_QUICK_COMMIT_GEOMETRY)
+
+    @_fiber_quick_commit_geometry_worker.setter
+    def _fiber_quick_commit_geometry_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_FIBER_QUICK_COMMIT_GEOMETRY, value)
+
+    @property
+    def _reference_instance_thread(self):
+        return self.background_task_controller.thread(TASK_REFERENCE_INSTANCE)
+
+    @_reference_instance_thread.setter
+    def _reference_instance_thread(self, value) -> None:
+        if value is None:
+            self.thread_task_manager.stop(TASK_REFERENCE_INSTANCE, cancel=False)
+        else:
+            self.background_task_controller.register_external_thread(TASK_REFERENCE_INSTANCE, value)
+
+    @property
+    def _reference_instance_worker(self):
+        return self.background_task_controller.worker(TASK_REFERENCE_INSTANCE)
+
+    @_reference_instance_worker.setter
+    def _reference_instance_worker(self, value) -> None:
+        self.background_task_controller.set_worker_override(TASK_REFERENCE_INSTANCE, value)
+
+    @property
+    def _preview_analysis_mode(self) -> str:
+        return self.preview_analysis_task_controller.mode
+
+    @_preview_analysis_mode.setter
+    def _preview_analysis_mode(self, value: str) -> None:
+        self.preview_analysis_task_controller.mode = value
+
+    @property
+    def _preview_analysis_dialog(self):
+        return self.preview_analysis_task_controller.dialog
+
+    @_preview_analysis_dialog.setter
+    def _preview_analysis_dialog(self, value) -> None:
+        self.preview_analysis_task_controller.dialog = value
+
+    @property
+    def _preview_analysis_worker(self):
+        return self.preview_analysis_task_controller.worker
+
+    @_preview_analysis_worker.setter
+    def _preview_analysis_worker(self, value) -> None:
+        self.preview_analysis_task_controller.worker = value
+
+    @property
+    def _preview_analysis_finalizing(self) -> bool:
+        return self.preview_analysis_task_controller.finalizing
+
+    @_preview_analysis_finalizing.setter
+    def _preview_analysis_finalizing(self, value: bool) -> None:
+        self.preview_analysis_task_controller.finalizing = bool(value)
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
@@ -2393,6 +2506,15 @@ class MainWindow(QMainWindow):
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None:
         self.statusBar().showMessage(message, timeout_ms)
 
+    def is_image_loading(self) -> bool:
+        return self.background_task_controller.is_image_loading()
+
+    def _show_area_inference_warning(self, message: str) -> None:
+        QMessageBox.warning(self, "面积自动识别", message)
+
+    def _request_capture_analysis_frame(self, request_id: int) -> bool:
+        return self._capture_manager.request_analysis_frame(request_id)
+
     def capture_current_frame(self) -> None:
         was_preview_active = self._capture_manager.is_preview_active()
         selected_device = self._selected_capture_device()
@@ -3214,7 +3336,7 @@ class MainWindow(QMainWindow):
         missing_paths: list[str] | None = None,
         repaired_paths: list[str] | None = None,
     ) -> None:
-        if self._load_thread is not None:
+        if self.is_image_loading():
             QMessageBox.information(self, context_label, "当前仍有图片在加载，请稍候。")
             return
         requests, skipped_count, focus_document_id = self._prepare_image_load_requests(items)
@@ -3278,87 +3400,25 @@ class MainWindow(QMainWindow):
         missing_paths: list[str] | None = None,
         repaired_paths: list[str] | None = None,
     ) -> None:
-        self._load_state = BatchLoadState(
+        self.background_task_controller.start_batch_image_load(
+            requests,
             context_label=context_label,
-            total=len(requests),
             skipped_count=skipped_count,
-            failures=[],
-            missing_paths=list(missing_paths or []),
-            repaired_paths=list(repaired_paths or []),
+            missing_paths=missing_paths,
+            repaired_paths=repaired_paths,
         )
-        progress = self._create_progress_dialog(
-            title=context_label,
-            label_text="准备加载图片...",
-            maximum=len(requests),
-        )
-        self._load_progress_dialog = progress
-
-        thread = QThread(self)
-        worker = ImageBatchLoaderWorker(requests, skipped_count=skipped_count)
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.progress.connect(self._on_batch_load_progress)
-        worker.loaded.connect(self._on_batch_load_loaded)
-        worker.failed.connect(self._on_batch_load_failed)
-        worker.finished.connect(self._on_batch_load_finished)
-        worker.finished.connect(thread.quit)
-        worker.finished.connect(worker.deleteLater)
-        thread.finished.connect(thread.deleteLater)
-        progress.canceled.connect(worker.cancel)
-
-        self._load_thread = thread
-        self._load_worker = worker
-        thread.start()
-        progress.show()
 
     def _on_batch_load_progress(self, index: int, total: int, path: str) -> None:
-        if self._load_progress_dialog is None:
-            return
-        completed = self._load_state.completed_count if self._load_state is not None else 0
-        self._load_progress_dialog.setMaximum(total)
-        self._load_progress_dialog.setValue(completed)
-        self._load_progress_dialog.setLabelText(f"正在加载 ({index}/{total})\n{Path(path).name}")
+        self.background_task_controller._on_batch_load_progress(index, total, path)
 
     def _on_batch_load_loaded(self, request: ImageLoadRequest, image: QImage) -> None:
-        state = self._load_state
-        if state is not None:
-            state.completed_count += 1
-            state.loaded_count += 1
-        self._add_loaded_document(request, image)
-        if self._load_progress_dialog is not None and state is not None:
-            self._load_progress_dialog.setValue(state.completed_count)
+        self.background_task_controller._on_batch_load_loaded(request, image)
 
     def _on_batch_load_failed(self, path: str, reason: str) -> None:
-        state = self._load_state
-        if state is not None:
-            state.completed_count += 1
-            state.failed_count += 1
-            if state.failures is not None:
-                state.failures.append(f"{Path(path).name}: {reason}")
-        if self._load_progress_dialog is not None and state is not None:
-            self._load_progress_dialog.setValue(state.completed_count)
+        self.background_task_controller._on_batch_load_failed(path, reason)
 
     def _on_batch_load_finished(self, cancelled: bool, loaded_count: int, skipped_count: int, failed_count: int) -> None:
-        state = self._load_state
-        if state is None:
-            return
-        state.cancelled = cancelled
-        state.loaded_count = loaded_count
-        state.skipped_count = skipped_count
-        state.failed_count = failed_count
-        state.completed_count = state.total
-        if self._load_progress_dialog is not None:
-            self._load_progress_dialog.setValue(state.total)
-            self._load_progress_dialog.close()
-            self._load_progress_dialog.deleteLater()
-            self._load_progress_dialog = None
-        self._show_batch_load_summary(state)
-        if self._pending_project_load_snapshot:
-            self._mark_project_saved()
-            self._pending_project_load_snapshot = False
-        self._load_thread = None
-        self._load_worker = None
-        self._load_state = None
+        self.background_task_controller._on_batch_load_finished(cancelled, loaded_count, skipped_count, failed_count)
 
     def _show_batch_load_summary(self, state: BatchLoadState) -> None:
         summary_lines: list[str] = []
@@ -3403,88 +3463,19 @@ class MainWindow(QMainWindow):
         *,
         model_name: str,
     ) -> None:
-        self._area_infer_state = AreaInferenceBatchState(
-            total=len(requests),
-            model_name=model_name,
-            update_project_group_templates=len(requests) > 1,
-            failures=[],
-        )
-        progress = self._create_progress_dialog(
-            title="面积自动识别",
-            label_text=f"正在识别 (1/{len(requests)})\n{Path(requests[0].image_path).name}",
-            maximum=len(requests),
-        )
-        self._area_infer_progress_dialog = progress
-
-        thread = QThread(self)
-        worker = AreaBatchInferenceWorker(requests, settings=self._app_settings)
-        worker.moveToThread(thread)
-        thread.started.connect(worker.run)
-        worker.progress.connect(self._on_area_inference_progress)
-        worker.succeeded.connect(self._on_area_inference_succeeded)
-        worker.failed.connect(self._on_area_inference_failed)
-        worker.finished.connect(self._on_area_inference_finished)
-        worker.finished.connect(thread.quit)
-        worker.finished.connect(worker.deleteLater)
-        thread.finished.connect(thread.deleteLater)
-        progress.canceled.connect(worker.cancel)
-
-        self._area_infer_thread = thread
-        self._area_infer_worker = worker
-        thread.start()
-        progress.show()
+        self.background_task_controller.start_area_inference_batch(requests, model_name=model_name)
 
     def _ensure_prompt_segmentation_worker(self) -> None:
-        if self._prompt_seg_thread is not None and self._prompt_seg_worker is not None:
-            return
-        thread = QThread(self)
-        worker = PromptSegmentationWorker()
-        worker.moveToThread(thread)
-        worker.succeeded.connect(self._on_prompt_segmentation_succeeded)
-        worker.failed.connect(self._on_prompt_segmentation_failed)
-        thread.finished.connect(worker.deleteLater)
-        thread.start()
-        self._prompt_seg_thread = thread
-        self._prompt_seg_worker = worker
+        self.background_task_controller.ensure_prompt_segmentation_worker()
 
     def _ensure_fiber_quick_geometry_worker(self) -> None:
-        if self._fiber_quick_geometry_thread is not None and self._fiber_quick_geometry_worker is not None:
-            return
-        thread = QThread(self)
-        worker = FiberQuickGeometryWorker()
-        worker.moveToThread(thread)
-        worker.succeeded.connect(self._on_fiber_quick_geometry_succeeded)
-        worker.failed.connect(self._on_fiber_quick_geometry_failed)
-        thread.finished.connect(worker.deleteLater)
-        thread.start()
-        self._fiber_quick_geometry_thread = thread
-        self._fiber_quick_geometry_worker = worker
+        self.background_task_controller.ensure_fiber_quick_geometry_worker()
 
     def _ensure_fiber_quick_commit_geometry_worker(self) -> None:
-        if self._fiber_quick_commit_geometry_thread is not None and self._fiber_quick_commit_geometry_worker is not None:
-            return
-        thread = QThread(self)
-        worker = FiberQuickGeometryWorker(coalesce_latest=False)
-        worker.moveToThread(thread)
-        worker.succeeded.connect(self._on_fiber_quick_commit_geometry_succeeded)
-        worker.failed.connect(self._on_fiber_quick_commit_geometry_failed)
-        thread.finished.connect(worker.deleteLater)
-        thread.start()
-        self._fiber_quick_commit_geometry_thread = thread
-        self._fiber_quick_commit_geometry_worker = worker
+        self.background_task_controller.ensure_fiber_quick_commit_geometry_worker()
 
     def _ensure_reference_instance_worker(self) -> None:
-        if self._reference_instance_thread is not None and self._reference_instance_worker is not None:
-            return
-        thread = QThread(self)
-        worker = ReferenceInstancePropagationWorker()
-        worker.moveToThread(thread)
-        worker.succeeded.connect(self._on_reference_instance_succeeded)
-        worker.failed.connect(self._on_reference_instance_failed)
-        thread.finished.connect(worker.deleteLater)
-        thread.start()
-        self._reference_instance_thread = thread
-        self._reference_instance_worker = worker
+        self.background_task_controller.ensure_reference_instance_worker()
 
     def _clear_prompt_segmentation_cache(self) -> None:
         if self._prompt_seg_worker is None:
@@ -3513,64 +3504,16 @@ class MainWindow(QMainWindow):
         return service
 
     def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
-        if self._area_infer_progress_dialog is None:
-            return
-        completed = self._area_infer_state.completed_count if self._area_infer_state is not None else 0
-        self._area_infer_progress_dialog.setMaximum(total)
-        self._area_infer_progress_dialog.setValue(completed)
-        self._area_infer_progress_dialog.setLabelText(f"正在识别 ({index}/{total})\n{Path(path).name}")
+        self.background_task_controller._on_area_inference_progress(index, total, path)
 
     def _on_area_inference_succeeded(self, document_id: str, instances: object) -> None:
-        state = self._area_infer_state
-        if state is not None:
-            state.completed_count += 1
-        document = self.project.get_document(document_id)
-        if document is not None and isinstance(instances, list):
-            self._apply_area_inference_result(
-                document,
-                instances,
-                global_group_labels=state.global_group_labels if state is not None else None,
-                model_name=state.model_name if state is not None else "",
-                update_project_group_templates=bool(state.update_project_group_templates) if state is not None else True,
-            )
-        if self._area_infer_progress_dialog is not None and state is not None:
-            self._area_infer_progress_dialog.setValue(state.completed_count)
+        self.background_task_controller._on_area_inference_succeeded(document_id, instances)
 
     def _on_area_inference_failed(self, document_id: str, path: str, reason: str) -> None:
-        del document_id
-        state = self._area_infer_state
-        if state is not None:
-            state.completed_count += 1
-            state.failed_count += 1
-            if state.failures is not None:
-                state.failures.append(f"{Path(path).name}: {reason}")
-        if self._area_infer_progress_dialog is not None and state is not None:
-            self._area_infer_progress_dialog.setValue(state.completed_count)
+        self.background_task_controller._on_area_inference_failed(document_id, path, reason)
 
     def _on_area_inference_finished(self, cancelled: bool, completed_count: int, failed_count: int) -> None:
-        state = self._area_infer_state
-        if state is None:
-            return
-        state.cancelled = cancelled
-        state.completed_count = completed_count
-        state.failed_count = failed_count
-        if self._area_infer_progress_dialog is not None:
-            self._area_infer_progress_dialog.setValue(state.total)
-            self._area_infer_progress_dialog.close()
-            self._area_infer_progress_dialog.deleteLater()
-            self._area_infer_progress_dialog = None
-
-        if state.failures:
-            QMessageBox.warning(self, "面积自动识别", "以下图片识别失败:\n" + "\n".join(state.failures[:10]))
-        if completed_count > 0:
-            self.statusBar().showMessage(
-                f"面积自动识别已处理 {completed_count - failed_count} / {completed_count} 张图片",
-                6000,
-            )
-
-        self._area_infer_thread = None
-        self._area_infer_worker = None
-        self._area_infer_state = None
+        self.background_task_controller._on_area_inference_finished(cancelled, completed_count, failed_count)
 
     def _add_loaded_document(self, request: ImageLoadRequest, image: QImage) -> None:
         absolute_path = request.path
@@ -6171,10 +6114,13 @@ class MainWindow(QMainWindow):
             busy = bool(canvas and canvas.is_reference_instance_busy())
         if self._magic_prompt_label is not None:
             self._magic_prompt_label.setVisible(False)
+            show_reference_prompt = self._measurement_tool_strip.isContextInline()
             if not standard_mode and not fiber_quick_mode and canvas is not None and canvas.has_reference_instance_preview():
                 self._magic_prompt_label.setText("候选预览")
+                self._magic_prompt_label.setVisible(show_reference_prompt)
             elif not standard_mode and not fiber_quick_mode:
                 self._magic_prompt_label.setText("拖框或点已确认面积作为参考")
+                self._magic_prompt_label.setVisible(show_reference_prompt)
         if self._magic_toggle_button is not None:
             show_prompt_toggle = (
                 fiber_quick_mode
@@ -6609,139 +6555,28 @@ class MainWindow(QMainWindow):
         return dialog
 
     def _start_preview_analysis_session(self, mode: str) -> None:
-        if mode not in {"focus_stack", "map_build"}:
-            return
-        selected = self._selected_capture_device()
-        if selected is None:
-            return
-        self._clear_magic_segment_sessions()
-        self._preview_analysis_mode = mode
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at = None
-        self._preview_analysis_finalizing = False
-        self._preview_analysis_dialog = self._create_preview_analysis_dialog(mode)
-        self._preview_analysis_dialog.show()
-        self._preview_analysis_dialog.raise_()
-        self._preview_analysis_dialog.activateWindow()
-
-        thread = QThread(self)
-        worker = (
-            FocusStackSessionWorker(
-                device_id=selected.id,
-                device_name=selected.name,
-                render_config=self._current_focus_stack_render_config(),
-            )
-            if mode == "focus_stack"
-            else MapBuildSessionWorker(device_id=selected.id, device_name=selected.name)
-        )
-        worker.moveToThread(thread)
-        worker.previewUpdated.connect(self._on_preview_analysis_worker_preview)
-        worker.finished.connect(self._on_preview_analysis_worker_finished)
-        worker.failed.connect(self._on_preview_analysis_worker_failed)
-        thread.finished.connect(worker.deleteLater)
-        thread.start()
-
-        self._preview_analysis_thread = thread
-        self._preview_analysis_worker = worker
-        self._preview_analysis_timer.setInterval(self._preview_analysis_interval_ms(mode))
-        self._preview_analysis_timer.start()
-        self._request_preview_analysis_frame()
-        self.statusBar().showMessage(f"{self._analysis_mode_label(mode)}已启动", 3000)
-        self._update_action_states()
+        self.preview_analysis_task_controller.start_session(mode)
 
     def _teardown_preview_analysis_session(self, *, cancel_worker: bool, status_message: str | None = None) -> None:
-        self._preview_analysis_timer.stop()
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at = None
-        self._preview_analysis_finalizing = False
-        worker = self._preview_analysis_worker
-        thread = self._preview_analysis_thread
-        dialog = self._preview_analysis_dialog
-        self._preview_analysis_worker = None
-        self._preview_analysis_thread = None
-        self._preview_analysis_dialog = None
-        self._preview_analysis_mode = "none"
-        if worker is not None and cancel_worker:
-            try:
-                worker.cancelRequested.emit()
-            except Exception:
-                pass
-        if thread is not None:
-            thread.quit()
-            thread.wait(2000)
-        if dialog is not None:
-            dialog.close_silently()
-        if status_message:
-            self.statusBar().showMessage(status_message, 4000)
-        self._update_action_states()
+        self.preview_analysis_task_controller.teardown(
+            cancel_worker=cancel_worker,
+            status_message=status_message,
+        )
 
     def _cancel_preview_analysis_session(self, *, message: str | None = None) -> None:
-        if self._preview_analysis_mode == "none":
-            self._sync_preview_analysis_buttons()
-            return
-        self._teardown_preview_analysis_session(cancel_worker=True, status_message=message)
+        self.preview_analysis_task_controller.cancel(message=message)
 
     def _finalize_preview_analysis_session(self) -> None:
-        if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
-            return
-        self._preview_analysis_finalizing = True
-        self._preview_analysis_timer.stop()
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at = None
-        if self._preview_analysis_dialog is not None:
-            busy_message = self._preview_analysis_finalize_message(self._preview_analysis_mode)
-            self._preview_analysis_dialog.set_status(busy_message)
-            self._preview_analysis_dialog.set_busy(True, busy_message)
-        self._preview_analysis_worker.finalizeRequested.emit()
-        self._update_action_states()
+        self.preview_analysis_task_controller.finalize()
 
     def _request_preview_analysis_frame(self) -> None:
-        if (
-            self._preview_analysis_mode == "none"
-            or self._preview_analysis_worker is None
-            or self._preview_analysis_request_pending
-            or self._preview_analysis_finalizing
-        ):
-            return
-        self._preview_analysis_request_id += 1
-        request_id = self._preview_analysis_request_id
-        started_at = perf_counter()
-        if self._capture_manager.request_analysis_frame(request_id):
-            self._preview_analysis_request_pending = True
-            self._preview_analysis_request_started_at = started_at
+        self.preview_analysis_task_controller.request_frame()
 
     def _on_preview_analysis_frame_ready(self, request_id: int, image: object) -> None:
-        if request_id != self._preview_analysis_request_id:
-            return
-        started_at = self._preview_analysis_request_started_at
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at = None
-        if started_at is not None:
-            log_preview_analysis_perf(
-                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request",
-                (perf_counter() - started_at) * 1000.0,
-                detail=f"request_id={request_id}",
-            )
-        if self._preview_analysis_mode == "none" or self._preview_analysis_worker is None or self._preview_analysis_finalizing:
-            return
-        if isinstance(image, QImage) and not image.isNull():
-            self._preview_analysis_worker.frameSubmitted.emit(image.copy())
+        self.preview_analysis_task_controller.on_frame_ready(request_id, image)
 
     def _on_preview_analysis_frame_failed(self, request_id: int, message: str) -> None:
-        if request_id != self._preview_analysis_request_id:
-            return
-        started_at = self._preview_analysis_request_started_at
-        self._preview_analysis_request_pending = False
-        self._preview_analysis_request_started_at = None
-        if started_at is not None:
-            log_preview_analysis_perf(
-                f"{self._analysis_mode_label(self._preview_analysis_mode)} frame request failed",
-                (perf_counter() - started_at) * 1000.0,
-                detail=f"request_id={request_id}, message={message}",
-            )
-        if self._preview_analysis_dialog is not None:
-            self._preview_analysis_dialog.set_status(message)
-        self.statusBar().showMessage(message, 4000)
+        self.preview_analysis_task_controller.on_frame_failed(request_id, message)
 
     def _on_preview_analysis_worker_preview(self, payload: object) -> None:
         if self._preview_analysis_dialog is None:
@@ -7439,76 +7274,19 @@ class MainWindow(QMainWindow):
     def _shutdown_background_threads(self) -> None:
         if self._preview_analysis_mode != "none":
             self._teardown_preview_analysis_session(cancel_worker=True)
-
-        if self._load_worker is not None:
-            try:
-                self._load_worker.cancel()
-            except Exception:
-                pass
-        if self._load_thread is not None:
-            self._load_thread.quit()
-            self._load_thread.wait(2000)
-        if self._load_progress_dialog is not None:
-            self._load_progress_dialog.close()
-            self._load_progress_dialog.deleteLater()
-        self._load_thread = None
-        self._load_worker = None
-        self._load_progress_dialog = None
-        self._load_state = None
-
-        if self._area_infer_worker is not None:
-            try:
-                self._area_infer_worker.cancel()
-            except Exception:
-                pass
-        if self._area_infer_thread is not None:
-            self._area_infer_thread.quit()
-            self._area_infer_thread.wait(2000)
-        if self._area_infer_progress_dialog is not None:
-            self._area_infer_progress_dialog.close()
-            self._area_infer_progress_dialog.deleteLater()
-        self._area_infer_thread = None
-        self._area_infer_worker = None
-        self._area_infer_progress_dialog = None
-        self._area_infer_state = None
-
-        if self._fiber_quick_geometry_worker is not None:
-            for document_id in list(self._canvases.keys()):
-                self._fiber_quick_geometry_worker.cancel_document(document_id)
-        if self._fiber_quick_geometry_thread is not None:
-            self._fiber_quick_geometry_thread.quit()
-            self._fiber_quick_geometry_thread.wait(2000)
-        self._fiber_quick_geometry_thread = None
-        self._fiber_quick_geometry_worker = None
+        document_ids = list(self._canvases.keys())
+        commit_document_ids = {
+            document_id
+            for document_id, _request_id in self._fiber_quick_background_jobs.keys()
+        }
+        commit_document_ids.update(document_ids)
+        self.background_task_controller.shutdown_all(
+            document_ids=document_ids,
+            commit_document_ids=list(commit_document_ids),
+        )
         self._fiber_quick_geometry_request_ids.clear()
-
-        if self._fiber_quick_commit_geometry_worker is not None:
-            document_ids = {document_id for document_id, _request_id in self._fiber_quick_background_jobs.keys()}
-            document_ids.update(self._canvases.keys())
-            for document_id in document_ids:
-                self._fiber_quick_commit_geometry_worker.cancel_document(document_id)
-        if self._fiber_quick_commit_geometry_thread is not None:
-            self._fiber_quick_commit_geometry_thread.quit()
-            self._fiber_quick_commit_geometry_thread.wait(2000)
-        self._fiber_quick_commit_geometry_thread = None
-        self._fiber_quick_commit_geometry_worker = None
         self._fiber_quick_background_jobs.clear()
-
-        if self._prompt_seg_worker is not None:
-            for document_id in list(self._canvases.keys()):
-                self._prompt_seg_worker.cancel_document(document_id)
-        if self._prompt_seg_thread is not None:
-            self._prompt_seg_thread.quit()
-            self._prompt_seg_thread.wait(2000)
-        self._prompt_seg_thread = None
-        self._prompt_seg_worker = None
         self._prompt_request_tool_modes.clear()
-
-        if self._reference_instance_thread is not None:
-            self._reference_instance_thread.quit()
-            self._reference_instance_thread.wait(1500)
-        self._reference_instance_thread = None
-        self._reference_instance_worker = None
 
     def closeEvent(self, event: QCloseEvent) -> None:
         if not self._confirm_close_documents(self.project.documents):

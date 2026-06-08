@@ -4821,7 +4821,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(updated.start_px.x, 26.0)
             self.assertAlmostEqual(updated.end_px.x, 110.0)
         finally:
-            window.close()
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
 
     def test_overlay_rect_and_circle_snap_to_square_with_shift(self) -> None:
         document, _, canvas = self._create_canvas_document()
@@ -5751,7 +5752,10 @@ class CanvasAndExportTests(unittest.TestCase):
 
         dialog = SettingsDialog(AppSettings(), document=document)
         try:
-            self.assertEqual(self._group_titles_in_tab(dialog, 5), ["类别颜色", "比例尺锚点"])
+            current_image_tab = next(
+                index for index in range(dialog._tabs.count()) if dialog._tabs.tabText(index) == "当前图片"
+            )
+            self.assertEqual(self._group_titles_in_tab(dialog, current_image_tab), ["类别颜色", "比例尺锚点"])
         finally:
             dialog.close()
 
@@ -5823,8 +5827,11 @@ class CanvasAndExportTests(unittest.TestCase):
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings(main_window_geometry=geometry_token)):
             window = MainWindow()
         try:
-            self.assertGreaterEqual(window.width(), 880)
-            self.assertGreaterEqual(window.height(), 640)
+            available = window.screen().availableGeometry() if window.screen() is not None else None
+            expected_width = 880 if available is None else min(880, max(1, available.width() - 2))
+            expected_height = 640 if available is None else min(640, max(1, available.height() - 2))
+            self.assertGreaterEqual(window.width(), expected_width)
+            self.assertGreaterEqual(window.height(), expected_height)
         finally:
             window.close()
 
@@ -6413,7 +6420,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(measurement.snapped_line_px, snapped_line)
             self.assertEqual(window._format_measurement_mode(measurement.mode), "边缘吸附")
         finally:
-            window.close()
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
 
     def test_prepare_image_load_requests_skips_duplicates(self) -> None:
         window = MainWindow()

@@ -12,7 +12,6 @@ from fdm.settings import AppSettings
 class ProjectSessionHost(Protocol):
     project: ProjectState
     _project_path: Path | None
-    _load_thread: object | None
     _pending_project_load_snapshot: bool
     _app_settings: AppSettings
 
@@ -40,6 +39,7 @@ class ProjectSessionHost(Protocol):
     def _mark_project_saved(self) -> None: ...
     def _update_ui_for_current_document(self) -> None: ...
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None: ...
+    def is_image_loading(self) -> bool: ...
     def stop_live_preview(self) -> None: ...
 
 
@@ -88,7 +88,7 @@ class ProjectSessionController:
     def load_project_from_path(self, path: str | Path) -> None:
         host = self._host
         host.stop_live_preview()
-        if host._load_thread is not None:
+        if host.is_image_loading():
             host._show_project_information("打开项目", "当前仍有图片在加载，请稍候。")
             return
         if not host._confirm_close_documents(host.project.documents):
@@ -131,7 +131,7 @@ class ProjectSessionController:
             missing_paths=missing_paths,
             repaired_paths=repaired_paths,
         )
-        if host._load_thread is None:
+        if not host.is_image_loading():
             host._mark_project_saved()
             host._pending_project_load_snapshot = False
         message = f"项目已加载: {project_path}"

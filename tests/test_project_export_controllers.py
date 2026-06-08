@@ -24,7 +24,6 @@ class _ProjectHost:
         document.initialize_runtime_state()
         self.project = ProjectState(version=PROJECT_VERSION, documents=[document])
         self._project_path = None
-        self._load_thread = None
         self._pending_project_load_snapshot = False
         self._app_settings = AppSettings(recent_project_dir="")
         self.tmp_dir = tmp_dir
@@ -75,6 +74,9 @@ class _ProjectHost:
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None:
         del timeout_ms
         self.status_message = message
+
+    def is_image_loading(self) -> bool:
+        return False
 
     def _select_project_open_path(self) -> str:
         return ""
