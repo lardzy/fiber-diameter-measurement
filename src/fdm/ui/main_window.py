@@ -6436,7 +6436,7 @@ class MainWindow(QMainWindow):
         ):
             return False
         if mode == "map_build":
-            return self.MAP_BUILD_AVAILABLE and selected.backend_key == "microview"
+            return self.MAP_BUILD_AVAILABLE
         return True
 
     def _sync_preview_analysis_buttons(self) -> None:
@@ -6458,9 +6458,9 @@ class MainWindow(QMainWindow):
         focus_supported = self._preview_analysis_supported("focus_stack")
         map_supported = self._preview_analysis_supported("map_build")
         focus_tooltip = "实时预览分析：景深合成"
-        map_tooltip = "地图构建首版仅支持 Microview 实时预览。"
-        if self.MAP_BUILD_AVAILABLE and selected is not None and selected.backend_key == "microview":
-            map_tooltip = "实时预览分析：地图构建"
+        map_tooltip = "实时预览分析：地图构建"
+        if not self.MAP_BUILD_AVAILABLE:
+            map_tooltip = "当前版本未启用地图构建。"
         focus_enabled = is_visible and focus_supported and not self._preview_analysis_finalizing
         map_enabled = is_visible and not self._preview_analysis_finalizing and (
             map_supported or not self.MAP_BUILD_AVAILABLE
@@ -6534,7 +6534,7 @@ class MainWindow(QMainWindow):
         if not self._preview_analysis_supported(mode):
             message = "该功能需要实时预览已提供可用分析帧。"
             if mode == "map_build":
-                message = "地图构建首版仅支持 Microview 实时预览。"
+                message = "地图构建需要实时预览已提供可用分析帧。"
             self._sync_preview_analysis_buttons()
             QMessageBox.information(self, self._analysis_mode_label(mode), message)
             return

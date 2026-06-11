@@ -812,7 +812,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_map_build_button_remains_disabled_for_non_microview_preview(self) -> None:
+    def test_map_build_button_is_enabled_for_usb_preview_with_analysis_frames(self) -> None:
         window = MainWindow()
         try:
             fake_device = type("Device", (), {"backend_key": "qt_multimedia", "id": "usb:0", "name": "USB Camera"})()
@@ -823,8 +823,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window._update_preview_analysis_controls()
 
             self.assertIsNotNone(window._map_build_button)
-            self.assertFalse(window._map_build_button.isEnabled())
-            self.assertIn("Microview", window._map_build_button.toolTip())
+            self.assertTrue(window._map_build_button.isEnabled())
+            self.assertIn("地图构建", window._map_build_button.toolTip())
         finally:
             window._reset_workspace()
             window.close()
