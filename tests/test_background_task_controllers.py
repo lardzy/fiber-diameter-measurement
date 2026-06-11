@@ -20,6 +20,7 @@ try:
     from fdm.ui.background_task_controller import BackgroundTaskController, BatchLoadState
     from fdm.ui.image_loader import ImageLoadRequest
     from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
+    from fdm.ui.preview_analysis_worker import MapBuildSessionWorker
     from fdm.ui.thread_task_manager import ThreadTaskManager
 
     QT_CONTROLLER_AVAILABLE = True
@@ -36,6 +37,7 @@ except ModuleNotFoundError:
     BatchLoadState = None
     ImageLoadRequest = None
     PreviewAnalysisTaskController = None
+    MapBuildSessionWorker = None
     ThreadTaskManager = None
     new_id = None
     QT_CONTROLLER_AVAILABLE = False
@@ -170,7 +172,7 @@ class _FakeDialog:
         self.shown = False
         self.closed = False
         self.statuses: list[str] = []
-        self.busy: list[tuple[bool, str]] = []
+        self.busy: list[tuple[bool, str, bool]] = []
 
     def show(self) -> None:
         self.shown = True
@@ -187,8 +189,8 @@ class _FakeDialog:
     def set_status(self, text: str) -> None:
         self.statuses.append(text)
 
-    def set_busy(self, active: bool, text: str) -> None:
-        self.busy.append((active, text))
+    def set_busy(self, active: bool, text: str, *, allow_cancel: bool = False) -> None:
+        self.busy.append((active, text, allow_cancel))
 
 
 class _FakeSignal:
@@ -429,7 +431,55 @@ class PreviewAnalysisTaskControllerTests(unittest.TestCase):
         self.assertEqual(len(frame_signal.emitted), 1)
         self.assertEqual(finalize_signal.emitted, ["emit"])
         self.assertTrue(controller.finalizing)
-        self.assertEqual(host.dialog.busy, [(True, "正在完成景深合成，请稍候…")])
+        self.assertEqual(host.dialog.busy, [(True, "正在完成景深合成，请稍候…", True)])
+
+    def test_preview_analysis_cancel_while_finalizing_calls_worker_cancel(self) -> None:
+        host = _PreviewHost()
+        manager = ThreadTaskManager(parent=_app())
+        controller = PreviewAnalysisTaskController(host, manager, parent=_app())
+
+        class Worker:
+            def __init__(self) -> None:
+                self.cancelled = 0
+
+            def cancel(self) -> None:
+                self.cancelled += 1
+
+        worker = Worker()
+        controller.mode = "map_build"
+        controller.dialog = host.dialog
+        controller.worker = worker
+        controller.finalizing = True
+
+        controller.cancel(message="cancelled")
+
+        self.assertEqual(worker.cancelled, 1)
+        self.assertEqual(controller.mode, "none")
+        self.assertFalse(controller.finalizing)
+        self.assertTrue(host.dialog.closed)
+        self.assertIn("cancelled", host.status_messages[-1])
+
+    def test_map_build_worker_suppresses_finished_when_cancelled_during_finalize(self) -> None:
+        worker_holder: dict[str, object] = {}
+
+        class FakeAnalyzer:
+            def __init__(self, *, device_id: str, device_name: str) -> None:
+                del device_id, device_name
+
+            def finalize(self) -> object:
+                worker = worker_holder["worker"]
+                worker.cancel()
+                return object()
+
+        with patch("fdm.ui.preview_analysis_worker.MapBuildAnalyzer", FakeAnalyzer):
+            worker = MapBuildSessionWorker(device_id="microview:0", device_name="Microview #1")
+            worker_holder["worker"] = worker
+            finished: list[object] = []
+            worker.finished.connect(lambda payload: finished.append(payload))
+
+            worker.finalize()
+
+        self.assertEqual(finished, [])
 
 
 if __name__ == "__main__":

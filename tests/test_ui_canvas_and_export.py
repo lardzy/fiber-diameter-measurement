@@ -42,7 +42,7 @@ from fdm.settings import (
 from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
-from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS
+from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult
@@ -683,8 +683,43 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertGreaterEqual(dialog._busy_panel.minimumWidth(), 420)
             self.assertFalse(dialog._finish_button.isEnabled())
             self.assertFalse(dialog._cancel_button.isEnabled())
+            self.assertFalse(dialog._busy_cancel_button.isVisible())
             self.assertEqual(triggered, [])
             self.assertEqual(cancelled, [])
+
+            dialog.set_busy(False)
+            dialog.set_busy(True, "正在完成地图构建，请稍候…", allow_cancel=True)
+            dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+            dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_F))
+            dialog.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Escape))
+            dialog._busy_cancel_button.click()
+
+            self.assertFalse(dialog._finish_button.isEnabled())
+            self.assertTrue(dialog._cancel_button.isEnabled())
+            self.assertTrue(dialog._busy_cancel_button.isVisibleTo(dialog))
+            self.assertEqual(triggered, [])
+            self.assertEqual(cancelled, ["cancel", "cancel"])
+        finally:
+            dialog.close_silently()
+
+    def test_preview_analysis_dialog_preview_update_does_not_steal_cancel_focus(self) -> None:
+        dialog = PreviewAnalysisDialog("地图构建", intro_text="测试", compact=True, show_state_banner=True)
+        try:
+            dialog.show()
+            self.app.processEvents()
+            image = QImage(80, 60, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            dialog.set_result_image(image)
+            dialog._cancel_button.setFocus()
+            self.app.processEvents()
+
+            dialog.set_result_image(image)
+            self.app.processEvents()
+
+            self.assertFalse(dialog._finish_button.autoDefault())
+            self.assertFalse(dialog._cancel_button.autoDefault())
+            self.assertIs(self.app.focusWidget(), dialog._cancel_button)
+            self.assertFalse(dialog._finish_button.isDefault())
         finally:
             dialog.close_silently()
 
@@ -707,8 +742,8 @@ class CanvasAndExportTests(unittest.TestCase):
                 def set_status(self, text: str) -> None:
                     statuses.append(text)
 
-                def set_busy(self, active: bool, text: str) -> None:
-                    busy_calls.append((active, text))
+                def set_busy(self, active: bool, text: str, *, allow_cancel: bool = False) -> None:
+                    busy_calls.append((active, text, allow_cancel))
 
                 def close_silently(self) -> None:
                     pass
@@ -723,7 +758,34 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(window._preview_analysis_finalizing)
             self.assertEqual(finalize_calls, ["finalize"])
             self.assertEqual(statuses, ["正在完成景深合成，请稍候…"])
-            self.assertEqual(busy_calls, [(True, "正在完成景深合成，请稍候…")])
+            self.assertEqual(busy_calls, [(True, "正在完成景深合成，请稍候…", True)])
+        finally:
+            window._reset_workspace()
+            window.deleteLater()
+            self.app.processEvents()
+
+    def test_preview_analysis_late_finished_after_cancel_is_ignored(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(24, 18, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            payload = MapBuildFinalResult(
+                image=image,
+                sampled_frames=4,
+                accepted_frames=4,
+                tile_count=2,
+                metadata={"analysis_mode": "map_build"},
+            )
+            window._preview_analysis_mode = "none"
+
+            with patch.object(window, "_add_project_asset_image") as add_mock, patch.object(
+                window,
+                "stop_live_preview",
+            ) as stop_mock:
+                window._on_preview_analysis_worker_finished(payload)
+
+            add_mock.assert_not_called()
+            stop_mock.assert_not_called()
         finally:
             window._reset_workspace()
             window.deleteLater()

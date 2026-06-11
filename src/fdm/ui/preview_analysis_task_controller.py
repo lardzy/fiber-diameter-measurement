@@ -88,7 +88,7 @@ class PreviewAnalysisTaskController:
             TASK_PREVIEW_ANALYSIS,
             worker_factory=worker_factory,
             connect_signals=connect,
-            cancel_callback=lambda worker: _emit_signal(worker, "cancelRequested"),
+            cancel_callback=_cancel_worker,
         )
         self._timer.setInterval(self._host._preview_analysis_interval_ms(mode))
         self._timer.start()
@@ -107,7 +107,7 @@ class PreviewAnalysisTaskController:
         self.dialog = None
         self.mode = "none"
         if worker_override is not None and cancel_worker:
-            _emit_signal(worker_override, "cancelRequested")
+            _cancel_worker(worker_override)
         self._tasks.stop(TASK_PREVIEW_ANALYSIS, cancel=cancel_worker)
         if dialog is not None:
             close_silently = getattr(dialog, "close_silently", None)
@@ -138,7 +138,7 @@ class PreviewAnalysisTaskController:
                 set_status(busy_message)
             set_busy = getattr(self.dialog, "set_busy", None)
             if callable(set_busy):
-                set_busy(True, busy_message)
+                set_busy(True, busy_message, allow_cancel=True)
         _emit_signal(worker, "finalizeRequested")
         self._host._update_action_states()
 
@@ -204,3 +204,14 @@ def _emit_signal(worker: object, signal_name: str) -> None:
         signal.emit()
     except Exception:
         pass
+
+
+def _cancel_worker(worker: object) -> None:
+    cancel = getattr(worker, "cancel", None)
+    if callable(cancel):
+        try:
+            cancel()
+            return
+        except Exception:
+            pass
+    _emit_signal(worker, "cancelRequested")

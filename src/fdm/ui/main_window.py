@@ -6616,6 +6616,8 @@ class MainWindow(QMainWindow):
 
     def _on_preview_analysis_worker_finished(self, payload: object) -> None:
         mode = self._preview_analysis_mode
+        if mode == "none":
+            return
         if isinstance(payload, FocusStackFinalResult):
             image = payload.image
             metadata = dict(payload.metadata)

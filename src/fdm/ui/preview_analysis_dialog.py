@@ -30,6 +30,7 @@ class PreviewAnalysisDialog(QDialog):
             self.resize(1100, 760)
         self._ignore_close_signal = False
         self._busy = False
+        self._busy_allow_cancel = False
         self._document: ImageDocument | None = None
 
         layout = QVBoxLayout(self)
@@ -69,9 +70,13 @@ class PreviewAnalysisDialog(QDialog):
         buttons_row = QHBoxLayout()
         buttons_row.addStretch(1)
         self._finish_button = QPushButton("结束")
+        self._finish_button.setAutoDefault(False)
+        self._finish_button.setDefault(False)
         self._finish_button.clicked.connect(self.finishRequested.emit)
         buttons_row.addWidget(self._finish_button)
         self._cancel_button = QPushButton("取消")
+        self._cancel_button.setAutoDefault(False)
+        self._cancel_button.setDefault(False)
         self._cancel_button.clicked.connect(self.cancelRequested.emit)
         buttons_row.addWidget(self._cancel_button)
         layout.addLayout(buttons_row)
@@ -102,8 +107,14 @@ class PreviewAnalysisDialog(QDialog):
         self._busy_progress.setRange(0, 0)
         self._busy_progress.setTextVisible(False)
         self._busy_progress.setMinimumHeight(14)
+        self._busy_cancel_button = QPushButton("取消")
+        self._busy_cancel_button.setAutoDefault(False)
+        self._busy_cancel_button.setDefault(False)
+        self._busy_cancel_button.clicked.connect(self.cancelRequested.emit)
+        self._busy_cancel_button.setVisible(False)
         busy_panel_layout.addWidget(self._busy_label)
         busy_panel_layout.addWidget(self._busy_progress)
+        busy_panel_layout.addWidget(self._busy_cancel_button, 0, Qt.AlignmentFlag.AlignCenter)
         overlay_layout.addWidget(self._busy_panel, 0, Qt.AlignmentFlag.AlignCenter)
         overlay_layout.addStretch(1)
         self._busy_overlay.raise_()
@@ -153,22 +164,26 @@ class PreviewAnalysisDialog(QDialog):
             self.canvas.fit_to_view()
         else:
             self.canvas.set_image(image)
-        self.canvas.focus_canvas()
 
     def close_silently(self) -> None:
         self._ignore_close_signal = True
         self.close()
         self._ignore_close_signal = False
 
-    def set_busy(self, active: bool, text: str = "正在处理，请稍候…") -> None:
+    def set_busy(self, active: bool, text: str = "正在处理，请稍候…", *, allow_cancel: bool = False) -> None:
         self._busy = active
+        self._busy_allow_cancel = bool(active and allow_cancel)
         self._busy_label.setText(text)
         self._finish_button.setEnabled(not active)
-        self._cancel_button.setEnabled(not active)
+        self._cancel_button.setEnabled(not active or self._busy_allow_cancel)
+        self._busy_cancel_button.setVisible(self._busy_allow_cancel)
+        self._busy_cancel_button.setEnabled(self._busy_allow_cancel)
         self.canvas.setEnabled(not active)
         self._busy_overlay.setVisible(active)
         if active:
             self._busy_overlay.raise_()
+            if self._busy_allow_cancel:
+                self._busy_cancel_button.setFocus(Qt.FocusReason.OtherFocusReason)
         self._busy_overlay.update()
 
     def resizeEvent(self, event) -> None:
@@ -194,6 +209,8 @@ class PreviewAnalysisDialog(QDialog):
 
     def keyPressEvent(self, event) -> None:
         if self._busy:
+            if event.key() == Qt.Key.Key_Escape and self._busy_allow_cancel:
+                self.cancelRequested.emit()
             event.accept()
             return
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
@@ -208,6 +225,8 @@ class PreviewAnalysisDialog(QDialog):
 
     def closeEvent(self, event) -> None:
         if self._busy and not self._ignore_close_signal:
+            if self._busy_allow_cancel:
+                self.cancelRequested.emit()
             event.ignore()
             return
         if not self._ignore_close_signal:
