@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
 import sys
+import time
 import unittest
 from unittest.mock import patch
 
@@ -6447,6 +6448,38 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(focus_document_id, existing_document.id)
         finally:
             window.close()
+
+    def test_open_folder_ignores_standalone_sidecar_files_and_finishes_batch_load(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            folder = Path(tmp_dir)
+            image_paths: list[Path] = []
+            for index in range(2):
+                image_path = folder / f"image_{index}.png"
+                image = QImage(48, 32, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                self.assertTrue(image.save(str(image_path), "PNG"))
+                image_paths.append(image_path)
+            (folder / "orphan.fdm.json").write_text(json.dumps({"calibration": None}), encoding="utf-8")
+            (folder / "notes.txt").write_text("not an image", encoding="utf-8")
+
+            window = MainWindow()
+            try:
+                with patch("fdm.ui.main_window.QFileDialog.getExistingDirectory", return_value=str(folder)):
+                    window.open_folder()
+                deadline = time.monotonic() + 3.0
+                while time.monotonic() < deadline and window.is_image_loading():
+                    self.app.processEvents()
+                    time.sleep(0.01)
+                self.app.processEvents()
+
+                self.assertFalse(window.is_image_loading())
+                self.assertEqual(
+                    [Path(document.path).name for document in window.project.documents],
+                    [path.name for path in image_paths],
+                )
+            finally:
+                with patch.object(window, "_confirm_close_documents", return_value=True):
+                    window.close()
 
     def test_batch_loader_worker_reports_progress_and_failures(self) -> None:
         with TemporaryDirectory() as tmp_dir:

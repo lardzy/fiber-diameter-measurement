@@ -10,6 +10,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
+    from PySide6.QtCore import QThread
     from PySide6.QtGui import QColor, QImage
     from PySide6.QtWidgets import QApplication
 
@@ -23,6 +24,7 @@ try:
 
     QT_CONTROLLER_AVAILABLE = True
 except ModuleNotFoundError:
+    QThread = None
     QColor = None
     QImage = None
     QApplication = None
@@ -59,6 +61,7 @@ def _spin_until(predicate, *, timeout_s: float = 2.0) -> None:
 
 class _FakeProgress:
     def __init__(self) -> None:
+        self.canceled = _FakeSignal()
         self.shown = False
         self.closed = False
         self.deleted = False
@@ -97,6 +100,8 @@ class _BackgroundHost:
         self.applied_area: list[tuple[str, list[object]]] = []
         self.warnings: list[str] = []
         self.status_messages: list[str] = []
+        self.loaded_callback_threads: list[QThread] = []
+        self.area_callback_threads: list[QThread] = []
 
     def _create_progress_dialog(self, *, title: str, label_text: str, maximum: int):
         del title, label_text, maximum
@@ -106,6 +111,7 @@ class _BackgroundHost:
 
     def _add_loaded_document(self, request: ImageLoadRequest, image: QImage) -> None:
         del image
+        self.loaded_callback_threads.append(QThread.currentThread())
         self.loaded.append(request.path)
 
     def _show_batch_load_summary(self, state: BatchLoadState) -> None:
@@ -124,6 +130,7 @@ class _BackgroundHost:
         update_project_group_templates: bool,
     ) -> None:
         del global_group_labels, model_name, update_project_group_templates
+        self.area_callback_threads.append(QThread.currentThread())
         self.applied_area.append((document.id, instances))
 
     def _show_area_inference_warning(self, message: str) -> None:
@@ -187,9 +194,16 @@ class _FakeDialog:
 class _FakeSignal:
     def __init__(self) -> None:
         self.emitted: list[object] = []
+        self._callbacks: list[object] = []
+
+    def connect(self, callback, *args) -> None:
+        del args
+        self._callbacks.append(callback)
 
     def emit(self, *args) -> None:
         self.emitted.append(args if args else "emit")
+        for callback in list(self._callbacks):
+            callback(*args)
 
 
 class _PreviewHost:
@@ -276,6 +290,31 @@ class BackgroundTaskControllerTests(unittest.TestCase):
             self.assertEqual(host.summaries[0].failed_count, 1)
             self.assertTrue(host.progresses[0].closed)
 
+    def test_batch_load_callbacks_run_on_gui_thread(self) -> None:
+        app = _app()
+        with TemporaryDirectory() as tmp:
+            paths: list[Path] = []
+            for index in range(2):
+                image_path = Path(tmp) / f"image-{index}.png"
+                image = QImage(32, 24, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                image.save(str(image_path))
+                paths.append(image_path)
+            host = _BackgroundHost()
+            manager = ThreadTaskManager(parent=app)
+            controller = BackgroundTaskController(host, manager, parent=app)
+
+            controller.start_batch_image_load(
+                [ImageLoadRequest(path=str(path)) for path in paths],
+                context_label="打开文件夹",
+                skipped_count=0,
+            )
+            _spin_until(lambda: controller.load_state is None)
+
+            self.assertEqual(host.loaded, [str(path) for path in paths])
+            self.assertTrue(host.loaded_callback_threads)
+            self.assertTrue(all(thread is app.thread() for thread in host.loaded_callback_threads))
+
     def test_area_inference_controller_applies_success_and_reports_failure(self) -> None:
         document = ImageDocument(id=new_id("image"), path="/tmp/area-controller.png", image_size=(80, 60))
         document.initialize_runtime_state()
@@ -303,6 +342,26 @@ class BackgroundTaskControllerTests(unittest.TestCase):
         self.assertEqual(len(host.warnings), 1)
         self.assertIn("bad image", host.warnings[0])
         self.assertTrue(host.progresses[0].closed)
+
+    def test_area_inference_callbacks_run_on_gui_thread(self) -> None:
+        app = _app()
+        document = ImageDocument(id=new_id("image"), path="/tmp/area-thread.png", image_size=(80, 60))
+        document.initialize_runtime_state()
+        host = _BackgroundHost(ProjectState(version="test", documents=[document]))
+        manager = ThreadTaskManager(parent=app)
+        controller = BackgroundTaskController(host, manager, parent=app)
+
+        class _Result:
+            instances = ["ok"]
+
+        request = AreaInferenceRequest(document_id=document.id, image_path="/tmp/good.png", model_name="棉", model_file="m.pth")
+        with patch("fdm.ui.area_inference_worker.AreaInferenceService.infer_image", return_value=_Result()):
+            controller.start_area_inference_batch([request], model_name="棉")
+            _spin_until(lambda: controller.area_infer_state is None)
+
+        self.assertEqual(host.applied_area, [(document.id, ["ok"])])
+        self.assertTrue(host.area_callback_threads)
+        self.assertTrue(all(thread is app.thread() for thread in host.area_callback_threads))
 
     def test_persistent_workers_are_ensured_and_shutdown(self) -> None:
         host = _BackgroundHost()

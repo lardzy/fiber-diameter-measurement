@@ -567,7 +567,7 @@ class MainWindow(QMainWindow):
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
         self.thread_task_manager = ThreadTaskManager(parent=self)
-        self.background_task_controller = BackgroundTaskController(self, self.thread_task_manager)
+        self.background_task_controller = BackgroundTaskController(self, self.thread_task_manager, parent=self)
         self.preview_analysis_task_controller = PreviewAnalysisTaskController(
             self,
             self.thread_task_manager,

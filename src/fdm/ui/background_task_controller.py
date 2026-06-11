@@ -4,6 +4,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Protocol, cast
 
+from PySide6.QtCore import QObject, Qt
 from PySide6.QtGui import QImage
 
 from fdm.models import ImageDocument, ProjectState
@@ -82,8 +83,15 @@ class BackgroundTaskHost(Protocol):
     def _on_reference_instance_failed(self, document_id: str, request_id: int, reason: str) -> None: ...
 
 
-class BackgroundTaskController:
-    def __init__(self, host: BackgroundTaskHost, task_manager: ThreadTaskManager) -> None:
+class BackgroundTaskController(QObject):
+    def __init__(
+        self,
+        host: BackgroundTaskHost,
+        task_manager: ThreadTaskManager,
+        *,
+        parent: QObject | None = None,
+    ) -> None:
+        super().__init__(parent)
         self._host = host
         self._tasks = task_manager
         self._load_progress_dialog = None
@@ -134,11 +142,12 @@ class BackgroundTaskController:
             loader.failed.connect(self._on_batch_load_failed)
             loader.finished.connect(self._on_batch_load_finished)
 
-        self._tasks.start_one_shot(
+        handle = self._tasks.start_one_shot(
             TASK_IMAGE_LOAD,
             worker_factory=lambda: ImageBatchLoaderWorker(requests, skipped_count=skipped_count),
             connect_signals=connect,
         )
+        _connect_progress_cancel(progress, handle.worker)
         progress.show()
 
     def _on_batch_load_progress(self, index: int, total: int, path: str) -> None:
@@ -210,11 +219,12 @@ class BackgroundTaskController:
             area_worker.failed.connect(self._on_area_inference_failed)
             area_worker.finished.connect(self._on_area_inference_finished)
 
-        self._tasks.start_one_shot(
+        handle = self._tasks.start_one_shot(
             TASK_AREA_INFERENCE,
             worker_factory=lambda: AreaBatchInferenceWorker(requests, settings=self._host._app_settings),
             connect_signals=connect,
         )
+        _connect_progress_cancel(progress, handle.worker)
         progress.show()
 
     def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
@@ -418,3 +428,15 @@ def _wait_ms_for_task(task_name: str) -> int:
     if task_name == TASK_REFERENCE_INSTANCE:
         return REFERENCE_INSTANCE_WAIT_MS
     return DEFAULT_WAIT_MS
+
+
+def _connect_progress_cancel(progress: object, worker: object) -> None:
+    cancel = getattr(worker, "cancel", None)
+    canceled = getattr(progress, "canceled", None)
+    connect = getattr(canceled, "connect", None)
+    if not callable(cancel) or not callable(connect):
+        return
+    try:
+        connect(cancel, Qt.ConnectionType.QueuedConnection)
+    except TypeError:
+        connect(cancel)
