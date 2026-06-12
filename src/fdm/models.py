@@ -41,6 +41,10 @@ def project_capture_root(project_path: str | Path) -> Path:
     return project_assets_root(project_path) / "captures"
 
 
+def project_slide_root(project_path: str | Path) -> Path:
+    return project_assets_root(project_path) / "slides"
+
+
 def format_measurement_label_value(value: float, unit: str, decimals: int) -> str:
     decimals = max(0, min(8, int(decimals)))
     formatted = f"{value:.{decimals}f}"
@@ -583,6 +587,7 @@ class ImageDocument:
     path: str
     image_size: tuple[int, int]
     source_type: str = "filesystem"
+    document_kind: str = "image"
     absolute_path: str | None = None
     calibration: Calibration | None = None
     fiber_groups: list[FiberGroup] = field(default_factory=list)
@@ -625,10 +630,13 @@ class ImageDocument:
         return f"{self.resolved_path()}.fdm.json"
 
     def uses_sidecar(self) -> bool:
-        return self.source_type == "filesystem" and bool(str(self.path).strip())
+        return self.document_kind == "image" and self.source_type == "filesystem" and bool(str(self.path).strip())
 
     def is_project_asset(self) -> bool:
         return self.source_type == "project_asset"
+
+    def is_digital_slide(self) -> bool:
+        return self.document_kind == "digital_slide"
 
     def resolved_path(self, project_path: str | Path | None = None) -> Path:
         token = str(self.path or "").strip()
@@ -1259,6 +1267,7 @@ class ImageDocument:
             "id": self.id,
             "path": self.path,
             "source_type": self.source_type,
+            "document_kind": self.document_kind,
             "image_size": list(self.image_size),
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
@@ -1291,6 +1300,7 @@ class ImageDocument:
             id=str(payload["id"]),
             path=str(payload["path"]),
             source_type=str(payload.get("source_type", "filesystem")),
+            document_kind=str(payload.get("document_kind", "image")),
             absolute_path=str(payload["absolute_path"]) if payload.get("absolute_path") else None,
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,

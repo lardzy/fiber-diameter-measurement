@@ -6,6 +6,7 @@ from typing import Protocol
 from fdm import __version__
 from fdm.models import ImageDocument, ProjectState, project_assets_root
 from fdm.project_io import ProjectIO, resolve_document_load_path
+from fdm.services.digital_slide_store import copy_slide_file
 from fdm.settings import AppSettings
 
 
@@ -145,6 +146,26 @@ class ProjectSessionController:
         host = self._host
         for document in host.project.documents:
             if not document.is_project_asset():
+                continue
+            if document.is_digital_slide():
+                slide_meta = document.metadata.get("digital_slide", {})
+                source_token = str(slide_meta.get("working_path", "")).strip() if isinstance(slide_meta, dict) else ""
+                slide_target_path = project_assets_root(target_path) / document.path
+                source_path = Path(source_token).expanduser() if source_token else slide_target_path
+                if not source_path.exists():
+                    host._show_project_warning(
+                        "保存项目",
+                        f"无法找到项目内数字化切片数据: {host._document_display_name(document)}",
+                    )
+                    return False
+                try:
+                    copy_slide_file(source_path, slide_target_path)
+                except OSError as exc:
+                    host._show_project_warning("保存项目", f"写入数字化切片失败: {slide_target_path}\n{exc}")
+                    return False
+                if isinstance(slide_meta, dict):
+                    slide_meta["working_path"] = str(slide_target_path)
+                    document.metadata["digital_slide"] = slide_meta
                 continue
             image = host._project_asset_image_for_save(document)
             if image is None or image.isNull():

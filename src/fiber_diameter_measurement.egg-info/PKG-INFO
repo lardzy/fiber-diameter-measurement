@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: fiber-diameter-measurement
-Version: 0.3.2
+Version: 0.3.3
 Summary: Offline desktop software for fiber diameter measurement.
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
@@ -13,6 +13,7 @@ Requires-Dist: pandas>=2.2
 Requires-Dist: openpyxl>=3.1
 Requires-Dist: onnxruntime>=1.18
 Requires-Dist: Pillow>=10.4
+Requires-Dist: pyserial>=3.5
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2; extra == "dev"
 Provides-Extra: area-infer
