@@ -402,7 +402,7 @@ class DigitalSlideWriteWorker(QObject):
 class DigitalSlideZRangeRail(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumSize(88, 220)
+        self.setMinimumSize(112, 220)
         self._soft_limit = 200_000
         self._current_z = 0
         self._lower_z: int | None = None
@@ -423,7 +423,7 @@ class DigitalSlideZRangeRail(QFrame):
         rect = self.rect().adjusted(8, 10, -8, -10)
         rail_x = rect.center().x()
         top = rect.top() + 16
-        bottom = rect.bottom() - 16
+        bottom = rect.bottom() - 30
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setPen(QPen(QColor("#64748B"), 2))
         painter.drawLine(rail_x, top, rail_x, bottom)
@@ -452,7 +452,11 @@ class DigitalSlideZRangeRail(QFrame):
         painter.setPen(QPen(QColor("#FED7AA"), 2))
         painter.drawEllipse(QPoint(rail_x, current_y), 6, 6)
         painter.setPen(QPen(QColor("#F97316"), 1))
-        painter.drawText(rect.left(), rect.bottom(), f"当前 Z={self._current_z}")
+        painter.drawText(
+            QRectF(rect.left(), rect.bottom() - 20, rect.width(), 20),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            f"当前 Z={self._current_z}",
+        )
 
     def _value_to_y(self, value: int, top: int, bottom: int) -> int:
         limit = max(1, self._soft_limit)
@@ -2084,19 +2088,25 @@ class MainWindow(QMainWindow):
 
         z_box = QGroupBox("Z 采集范围", container)
         z_layout = QHBoxLayout(z_box)
+        z_layout.setAlignment(Qt.AlignmentFlag.AlignVCenter)
         z_form_panel = QWidget(z_box)
+        z_form_panel.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Maximum)
         z_form = QFormLayout(z_form_panel)
         self._digital_slide_z_lower_edit = QLineEdit(z_form_panel)
         self._digital_slide_z_lower_edit.setPlaceholderText("未设置")
         self._digital_slide_z_lower_edit.setMaximumWidth(128)
+        self._set_optional_int_edit(self._digital_slide_z_lower_edit, self._app_settings.digital_slide_z_capture_lower)
         self._digital_slide_z_upper_edit = QLineEdit(z_form_panel)
         self._digital_slide_z_upper_edit.setPlaceholderText("未设置")
         self._digital_slide_z_upper_edit.setMaximumWidth(128)
-        self._digital_slide_z_step_spin = self._make_digital_slide_spinbox(1, 1_000_000, self._app_settings.digital_slide_z_jog_step, suffix=" steps")
+        self._set_optional_int_edit(self._digital_slide_z_upper_edit, self._app_settings.digital_slide_z_capture_upper)
+        self._digital_slide_z_step_spin = self._make_digital_slide_spinbox(1, 1_000_000, self._app_settings.digital_slide_z_capture_step, suffix=" steps")
         self._digital_slide_z_step_spin.setMaximumWidth(150)
         self._digital_slide_z_lower_edit.textChanged.connect(self._sync_digital_slide_task_state)
         self._digital_slide_z_upper_edit.textChanged.connect(self._sync_digital_slide_task_state)
-        self._digital_slide_z_step_spin.valueChanged.connect(lambda _value: self._sync_digital_slide_task_state())
+        self._digital_slide_z_lower_edit.editingFinished.connect(self._remember_digital_slide_z_capture_settings)
+        self._digital_slide_z_upper_edit.editingFinished.connect(self._remember_digital_slide_z_capture_settings)
+        self._digital_slide_z_step_spin.valueChanged.connect(lambda _value: self._on_digital_slide_z_capture_step_changed())
         set_upper_button = QPushButton("上限", z_form_panel)
         set_upper_button.setMinimumHeight(32)
         set_upper_button.clicked.connect(lambda checked=False: self._set_digital_slide_z_bound("upper"))
@@ -2120,7 +2130,7 @@ class MainWindow(QMainWindow):
         z_form.addRow("Z 步距", self._digital_slide_z_step_spin)
         z_form.addRow(bound_buttons)
         self._digital_slide_z_rail = DigitalSlideZRangeRail(z_box)
-        z_layout.addWidget(z_form_panel, 1)
+        z_layout.addWidget(z_form_panel, 0, Qt.AlignmentFlag.AlignVCenter)
         z_layout.addWidget(self._digital_slide_z_rail)
         layout.addWidget(z_box)
 
@@ -3745,6 +3755,19 @@ class MainWindow(QMainWindow):
             return
         edit.setText("" if value is None else str(int(value)))
 
+    def _remember_digital_slide_z_capture_settings(self) -> None:
+        if self._slide_acquisition_active():
+            return
+        self._app_settings.digital_slide_z_capture_lower = self._parse_optional_int_edit(self._digital_slide_z_lower_edit)
+        self._app_settings.digital_slide_z_capture_upper = self._parse_optional_int_edit(self._digital_slide_z_upper_edit)
+        if self._digital_slide_z_step_spin is not None:
+            self._app_settings.digital_slide_z_capture_step = int(self._digital_slide_z_step_spin.value())
+        self._save_app_settings(context="数字化切片Z采集范围")
+
+    def _on_digital_slide_z_capture_step_changed(self) -> None:
+        self._sync_digital_slide_task_state()
+        self._remember_digital_slide_z_capture_settings()
+
     def _digital_slide_output_path(self) -> Path | None:
         token = self._digital_slide_output_path_edit.text().strip() if self._digital_slide_output_path_edit is not None else ""
         if not token:
@@ -3801,6 +3824,7 @@ class MainWindow(QMainWindow):
             self._set_optional_int_edit(self._digital_slide_z_upper_edit, current_z)
         else:
             self._set_optional_int_edit(self._digital_slide_z_lower_edit, current_z)
+        self._remember_digital_slide_z_capture_settings()
         self._sync_digital_slide_task_state()
 
     def _on_digital_slide_rows_cols_edited(self) -> None:
@@ -4162,6 +4186,21 @@ class MainWindow(QMainWindow):
         if z_limit > 0 and (abs(z_lower) > z_limit or abs(z_upper) > z_limit):
             QMessageBox.warning(self, "数字化切片", f"Z 上下限不能超过软限位 +/-{z_limit} steps。")
             return
+        current_z = int(self._slide_motion.relative_pos.get(AXIS_Z, 0))
+        if current_z < z_lower or current_z > z_upper:
+            response = QMessageBox.question(
+                self,
+                "当前 Z 不在采集范围内",
+                (
+                    f"当前 Z={current_z} steps，不在采集范围 {z_lower} ~ {z_upper} steps 内。\n"
+                    "开始后设备会按采集流程移动到 Z 下限并继续采集，是否继续？"
+                ),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+        self._remember_digital_slide_z_capture_settings()
         focus_levels = list(range(z_lower, z_upper + 1, max(1, z_step)))
         if not focus_levels or focus_levels[-1] != z_upper:
             focus_levels.append(z_upper)
@@ -6280,6 +6319,19 @@ class MainWindow(QMainWindow):
             self._digital_slide_focus_jog_step_spin.blockSignals(True)
             self._digital_slide_focus_jog_step_spin.setValue(settings.digital_slide_z_jog_step)
             self._digital_slide_focus_jog_step_spin.blockSignals(False)
+        if self._digital_slide_z_lower_edit is not None:
+            self._digital_slide_z_lower_edit.blockSignals(True)
+            self._set_optional_int_edit(self._digital_slide_z_lower_edit, settings.digital_slide_z_capture_lower)
+            self._digital_slide_z_lower_edit.blockSignals(False)
+        if self._digital_slide_z_upper_edit is not None:
+            self._digital_slide_z_upper_edit.blockSignals(True)
+            self._set_optional_int_edit(self._digital_slide_z_upper_edit, settings.digital_slide_z_capture_upper)
+            self._digital_slide_z_upper_edit.blockSignals(False)
+        if self._digital_slide_z_step_spin is not None:
+            self._digital_slide_z_step_spin.blockSignals(True)
+            self._digital_slide_z_step_spin.setValue(settings.digital_slide_z_capture_step)
+            self._digital_slide_z_step_spin.blockSignals(False)
+        self._sync_digital_slide_task_state()
         self._update_capture_device_ui()
         self._refresh_preset_combo()
         self._refresh_canvases_for_settings()

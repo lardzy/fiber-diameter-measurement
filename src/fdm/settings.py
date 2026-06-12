@@ -455,6 +455,9 @@ class AppSettings:
     digital_slide_z_soft_limit: int = 200_000
     digital_slide_xy_jog_step: int = 5000
     digital_slide_z_jog_step: int = 1000
+    digital_slide_z_capture_lower: int | None = None
+    digital_slide_z_capture_upper: int | None = None
+    digital_slide_z_capture_step: int = 1000
     digital_slide_jog_rate: int = 12
     digital_slide_motor_output_enabled: bool = True
     digital_slide_x_stage_step: int = 5000
@@ -509,6 +512,9 @@ class AppSettings:
         normalized.digital_slide_z_soft_limit = self._normalize_int_range(self.digital_slide_z_soft_limit, default=200_000, minimum=0, maximum=10_000_000)
         normalized.digital_slide_xy_jog_step = self._normalize_int_range(self.digital_slide_xy_jog_step, default=5000, minimum=1, maximum=1_000_000)
         normalized.digital_slide_z_jog_step = self._normalize_int_range(self.digital_slide_z_jog_step, default=1000, minimum=1, maximum=1_000_000)
+        normalized.digital_slide_z_capture_lower = self._normalize_optional_signed_int(self.digital_slide_z_capture_lower, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_z_capture_upper = self._normalize_optional_signed_int(self.digital_slide_z_capture_upper, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_z_capture_step = self._normalize_int_range(self.digital_slide_z_capture_step, default=1000, minimum=1, maximum=1_000_000)
         normalized.digital_slide_jog_rate = self._normalize_int_range(self.digital_slide_jog_rate, default=12, minimum=1, maximum=50)
         normalized.digital_slide_x_stage_step = self._normalize_signed_int_range(self.digital_slide_x_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
         normalized.digital_slide_y_stage_step = self._normalize_signed_int_range(self.digital_slide_y_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
@@ -768,6 +774,19 @@ class AppSettings:
         return max(int(minimum), min(int(maximum), numeric))
 
     @staticmethod
+    def _normalize_optional_signed_int(value: int | float | str | None, *, minimum: int, maximum: int) -> int | None:
+        if value is None:
+            return None
+        token = str(value).strip()
+        if not token:
+            return None
+        try:
+            numeric = int(round(float(token)))
+        except (TypeError, ValueError):
+            return None
+        return max(int(minimum), min(int(maximum), numeric))
+
+    @staticmethod
     def _normalize_optional_width(value: int | float | str | None, *, default: int) -> int:
         try:
             numeric = int(round(float(value)))
@@ -858,6 +877,9 @@ class AppSettings:
             "digital_slide_z_soft_limit": normalized.digital_slide_z_soft_limit,
             "digital_slide_xy_jog_step": normalized.digital_slide_xy_jog_step,
             "digital_slide_z_jog_step": normalized.digital_slide_z_jog_step,
+            "digital_slide_z_capture_lower": normalized.digital_slide_z_capture_lower,
+            "digital_slide_z_capture_upper": normalized.digital_slide_z_capture_upper,
+            "digital_slide_z_capture_step": normalized.digital_slide_z_capture_step,
             "digital_slide_jog_rate": normalized.digital_slide_jog_rate,
             "digital_slide_motor_output_enabled": normalized.digital_slide_motor_output_enabled,
             "digital_slide_x_stage_step": normalized.digital_slide_x_stage_step,
@@ -1073,6 +1095,22 @@ class AppSettings:
         )
         settings.digital_slide_z_jog_step = cls._normalize_int_range(
             payload.get("digital_slide_z_jog_step", settings.digital_slide_z_jog_step),
+            default=1000,
+            minimum=1,
+            maximum=1_000_000,
+        )
+        settings.digital_slide_z_capture_lower = cls._normalize_optional_signed_int(
+            payload.get("digital_slide_z_capture_lower", settings.digital_slide_z_capture_lower),
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_z_capture_upper = cls._normalize_optional_signed_int(
+            payload.get("digital_slide_z_capture_upper", settings.digital_slide_z_capture_upper),
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_z_capture_step = cls._normalize_int_range(
+            payload.get("digital_slide_z_capture_step", settings.digital_slide_z_capture_step),
             default=1000,
             minimum=1,
             maximum=1_000_000,

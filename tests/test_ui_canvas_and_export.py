@@ -1251,10 +1251,80 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._digital_slide_z_step_spin.value(), 2222)
 
             with patch.object(window, "_save_app_settings"):
-                window._activate_app_settings(AppSettings(digital_slide_xy_jog_step=4321, digital_slide_z_jog_step=987))
+                window._activate_app_settings(
+                    AppSettings(
+                        digital_slide_xy_jog_step=4321,
+                        digital_slide_z_jog_step=987,
+                        digital_slide_z_capture_step=2222,
+                    )
+                )
             self.assertEqual(window._digital_slide_xy_jog_step_spin.value(), 4321)
             self.assertEqual(window._digital_slide_focus_jog_step_spin.value(), 987)
             self.assertEqual(window._digital_slide_z_step_spin.value(), 2222)
+        finally:
+            window.close()
+
+    def test_digital_slide_z_capture_range_is_restored_and_persisted(self) -> None:
+        settings = AppSettings(
+            digital_slide_z_capture_lower=-1200,
+            digital_slide_z_capture_upper=2400,
+            digital_slide_z_capture_step=300,
+        )
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings):
+            window = MainWindow()
+        try:
+            self.assertIsNotNone(window._digital_slide_z_lower_edit)
+            self.assertIsNotNone(window._digital_slide_z_upper_edit)
+            self.assertIsNotNone(window._digital_slide_z_step_spin)
+            self.assertEqual(window._digital_slide_z_lower_edit.text(), "-1200")
+            self.assertEqual(window._digital_slide_z_upper_edit.text(), "2400")
+            self.assertEqual(window._digital_slide_z_step_spin.value(), 300)
+
+            window._digital_slide_z_lower_edit.setText("-1500")
+            window._digital_slide_z_upper_edit.setText("2600")
+            with patch.object(window, "_save_app_settings") as save_mock:
+                window._digital_slide_z_step_spin.setValue(500)
+                window._remember_digital_slide_z_capture_settings()
+
+            self.assertGreaterEqual(save_mock.call_count, 2)
+            self.assertEqual(window._app_settings.digital_slide_z_capture_lower, -1500)
+            self.assertEqual(window._app_settings.digital_slide_z_capture_upper, 2600)
+            self.assertEqual(window._app_settings.digital_slide_z_capture_step, 500)
+            restored = AppSettings.from_dict(window._app_settings.to_dict())
+            self.assertEqual(restored.digital_slide_z_capture_lower, -1500)
+            self.assertEqual(restored.digital_slide_z_capture_upper, 2600)
+            self.assertEqual(restored.digital_slide_z_capture_step, 500)
+        finally:
+            window.close()
+
+    def test_digital_slide_start_confirms_when_current_z_is_outside_capture_range(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._slide_motion.enabled = True
+            window._slide_motion.relative_pos[AXIS_Z] = 500
+            window._latest_preview_frame = preview_frame.copy()
+            self.assertIsNotNone(window._digital_slide_cols_edit)
+            self.assertIsNotNone(window._digital_slide_rows_edit)
+            self.assertIsNotNone(window._digital_slide_z_lower_edit)
+            self.assertIsNotNone(window._digital_slide_z_upper_edit)
+            self.assertIsNotNone(window._digital_slide_output_path_edit)
+            window._digital_slide_cols_edit.setText("1")
+            window._digital_slide_rows_edit.setText("1")
+            window._digital_slide_z_lower_edit.setText("-10")
+            window._digital_slide_z_upper_edit.setText("10")
+            with TemporaryDirectory() as tmp_dir:
+                window._digital_slide_output_path_edit.setText(str(Path(tmp_dir) / "z_outside.fdmslide"))
+                with patch("fdm.ui.main_window.QMessageBox.question", return_value=QMessageBox.StandardButton.No) as question_mock:
+                    window._start_digital_slide_acquisition()
+
+            question_mock.assert_called_once()
+            self.assertIn("当前 Z=500", question_mock.call_args.args[2])
+            self.assertIsNone(window._slide_acquisition_store)
         finally:
             window.close()
 
