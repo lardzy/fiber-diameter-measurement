@@ -461,6 +461,7 @@ class SettingsDialog(QDialog):
         settings: AppSettings,
         *,
         document: ImageDocument | None,
+        digital_slide_locked: bool = False,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -478,7 +479,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._build_scale_overlay_tab(settings), "比例尺叠加")
         self._tabs.addTab(self._build_image_processing_tab(settings), "图像处理")
         self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
-        self._tabs.addTab(self._build_digital_slide_tab(settings), "数字化切片")
+        self._tabs.addTab(self._build_digital_slide_tab(settings, locked=digital_slide_locked), "数字化切片")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
         self._tabs.addTab(self._build_raw_record_templates_tab(settings), "原始记录模板")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
@@ -913,9 +914,14 @@ class SettingsDialog(QDialog):
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
-    def _build_digital_slide_tab(self, settings: AppSettings) -> QWidget:
+    def _build_digital_slide_tab(self, settings: AppSettings, *, locked: bool = False) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
+        if locked:
+            locked_hint = QLabel("数字化切片正在采集中，本页参数已锁定；本次采集会继续使用开始时的参数快照。")
+            locked_hint.setWordWrap(True)
+            locked_hint.setStyleSheet("font-weight: 700; color: #B45309;")
+            layout.addWidget(locked_hint)
 
         capture_group = QGroupBox("采集与预览")
         capture_form = QFormLayout(capture_group)
@@ -1061,6 +1067,8 @@ class SettingsDialog(QDialog):
         layout.addWidget(advanced_group)
         layout.addWidget(browsing_group)
         layout.addStretch(1)
+        for group in (capture_group, motion_group, advanced_group, browsing_group):
+            group.setEnabled(not locked)
         return self._wrap_settings_page(page)
 
     def _add_digital_slide_width_options(self, combo: QComboBox, *, current: int, options: tuple[int, ...]) -> None:

@@ -52,6 +52,17 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "overlay_line": "mdi6.vector-line",
     "overlay_arrow": "mdi6.arrow-top-right",
     "area_auto": "mdi6.image-filter-center-focus-strong",
+    "digital_slide_start": "fa5s.play",
+    "digital_slide_stop": "fa5s.stop",
+    "direction_up": "mdi6.arrow-up",
+    "direction_down": "mdi6.arrow-down",
+    "direction_left": "mdi6.arrow-left",
+    "direction_right": "mdi6.arrow-right",
+    "direction_top_left": "mdi6.arrow-top-left",
+    "direction_top_right": "mdi6.arrow-top-right",
+    "direction_bottom_left": "mdi6.arrow-bottom-left",
+    "direction_bottom_right": "mdi6.arrow-bottom-right",
+    "direction_clear": "fa5s.times",
 }
 
 
@@ -367,6 +378,49 @@ def _draw_overlay_arrow(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.drawLine(end, right)
 
 
+def _draw_play(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(color)
+    painter.drawPolygon(
+        QPolygonF(
+            [
+                QPointF(rect.left() + rect.width() * 0.28, rect.top() + rect.height() * 0.18),
+                QPointF(rect.right() - rect.width() * 0.22, rect.center().y()),
+                QPointF(rect.left() + rect.width() * 0.28, rect.bottom() - rect.height() * 0.18),
+            ]
+        )
+    )
+
+
+def _draw_stop(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(Qt.PenStyle.NoPen)
+    painter.setBrush(color)
+    painter.drawRoundedRect(rect.adjusted(4.5, 4.5, -4.5, -4.5), 2.0, 2.0)
+
+
+def _draw_clear(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 2.0))
+    painter.drawLine(QPointF(rect.left() + 5.0, rect.top() + 5.0), QPointF(rect.right() - 5.0, rect.bottom() - 5.0))
+    painter.drawLine(QPointF(rect.right() - 5.0, rect.top() + 5.0), QPointF(rect.left() + 5.0, rect.bottom() - 5.0))
+
+
+def _draw_direction(dx: float, dy: float) -> Callable[[QPainter, QColor, QRectF], None]:
+    def draw(painter: QPainter, color: QColor, rect: QRectF) -> None:
+        center = rect.center()
+        length = min(rect.width(), rect.height()) * 0.34
+        end = QPointF(center.x() + dx * length, center.y() + dy * length)
+        start = QPointF(center.x() - dx * length * 0.55, center.y() - dy * length * 0.55)
+        painter.setPen(_pen(color, 1.9))
+        painter.drawLine(start, end)
+        side_x, side_y = -dy, dx
+        head = min(rect.width(), rect.height()) * 0.16
+        back = QPointF(end.x() - dx * head, end.y() - dy * head)
+        painter.drawLine(end, QPointF(back.x() + side_x * head * 0.65, back.y() + side_y * head * 0.65))
+        painter.drawLine(end, QPointF(back.x() - side_x * head * 0.65, back.y() - side_y * head * 0.65))
+
+    return draw
+
+
 _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "select": _draw_select,
     "manual": _draw_manual,
@@ -395,6 +449,17 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "overlay_circle": _draw_overlay_circle,
     "overlay_line": _draw_overlay_line,
     "overlay_arrow": _draw_overlay_arrow,
+    "digital_slide_start": _draw_play,
+    "digital_slide_stop": _draw_stop,
+    "direction_up": _draw_direction(0.0, -1.0),
+    "direction_down": _draw_direction(0.0, 1.0),
+    "direction_left": _draw_direction(-1.0, 0.0),
+    "direction_right": _draw_direction(1.0, 0.0),
+    "direction_top_left": _draw_direction(-1.0, -1.0),
+    "direction_top_right": _draw_direction(1.0, -1.0),
+    "direction_bottom_left": _draw_direction(-1.0, 1.0),
+    "direction_bottom_right": _draw_direction(1.0, 1.0),
+    "direction_clear": _draw_clear,
 }
 
 
@@ -406,6 +471,8 @@ _STANDARD_ICONS: dict[str, QStyle.StandardPixmap] = {
     "close_all": QStyle.StandardPixmap.SP_DialogCloseButton,
     "capture_device": QStyle.StandardPixmap.SP_ComputerIcon,
     "live_preview": QStyle.StandardPixmap.SP_MediaPlay,
+    "digital_slide_start": QStyle.StandardPixmap.SP_MediaPlay,
+    "digital_slide_stop": QStyle.StandardPixmap.SP_MediaStop,
     "capture_frame": QStyle.StandardPixmap.SP_DialogOpenButton,
     "undo": QStyle.StandardPixmap.SP_ArrowBack,
     "redo": QStyle.StandardPixmap.SP_ArrowForward,
