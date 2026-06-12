@@ -4,7 +4,6 @@ from time import perf_counter
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QKeyEvent, QWheelEvent
-from PySide6.QtWidgets import QWidget
 
 from fdm.geometry import Point
 from fdm.models import ImageDocument
@@ -45,9 +44,6 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_done = False
         image = self._render_current_viewport()
         super().set_document(document, image)
-        self._initial_fit_pending = False
-        self._initial_fit_done = False
-        self._initial_fit_attempts = 0
         self._clamp_viewport()
         self.schedule_initial_fit()
 
@@ -138,11 +134,6 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         self.set_focus_index(self._focus_index + (1 if effective_delta > 0 else -1))
         event.accept()
-
-    def resizeEvent(self, event) -> None:
-        QWidget.resizeEvent(self, event)
-        if self._initial_fit_pending and self._image is not None:
-            QTimer.singleShot(0, self._apply_initial_fit)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_M:
@@ -297,13 +288,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._initial_fit_attempts += 1
             QTimer.singleShot(50, self._apply_initial_fit)
             return
-        self._initial_fit_attempts += 1
-        super().fit_to_view()
-        if self._initial_fit_attempts < 6:
-            QTimer.singleShot(50, self._apply_initial_fit)
-            return
-        self._initial_fit_pending = False
-        self._initial_fit_done = True
+        self.fit_to_view()
 
     def _zoom_current_viewport(self, event: QWheelEvent) -> None:
         if self._image is None:

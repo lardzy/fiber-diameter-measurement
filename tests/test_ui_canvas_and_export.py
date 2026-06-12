@@ -1097,43 +1097,40 @@ class CanvasAndExportTests(unittest.TestCase):
             finally:
                 store.close()
 
-    def test_digital_slide_initial_fit_retries_after_layout_resize(self) -> None:
-        with TemporaryDirectory() as tmp_dir:
-            slide_path = Path(tmp_dir) / "sample.fdmslide"
-            store = DigitalSlideStore.create(
-                slide_path,
-                DigitalSlideManifest(
-                    version=1,
-                    width=100,
-                    height=80,
-                    viewport_width=100,
-                    viewport_height=80,
-                    focus_levels=[0],
-                ),
-            )
-            document = ImageDocument(
-                id=new_id("slide"),
-                path=str(slide_path),
-                image_size=(100, 80),
-                document_kind="digital_slide",
-            )
-            document.initialize_runtime_state()
-            canvas = DigitalSlideCanvas()
-            canvas.resize(80, 80)
-            try:
-                canvas.set_slide_document(document, store)
-                canvas._apply_initial_fit()
-                self.assertTrue(canvas._initial_fit_pending)
-
-                canvas.resize(500, 300)
-                for _ in range(6):
-                    canvas._apply_initial_fit()
-
-                self.assertFalse(canvas._initial_fit_pending)
-                self.assertTrue(canvas._initial_fit_done)
-                self.assertAlmostEqual(canvas._zoom, min((500 - 40) / 100, (300 - 40) / 80))
-            finally:
+    def test_digital_slide_fits_after_preview_is_stopped(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "sample.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1,
+                        width=1200,
+                        height=900,
+                        viewport_width=1200,
+                        viewport_height=900,
+                        focus_levels=[0],
+                    ),
+                )
                 store.close()
+
+                window._add_digital_slide_document_from_path(slide_path, document=None)
+                canvas = window.current_canvas()
+                self.assertIsNotNone(canvas)
+                canvas.actual_size()
+                self.assertAlmostEqual(canvas._zoom, 1.0)
+                window._preview_active = True
+                if window._center_stack is not None and window._preview_page is not None:
+                    window._center_stack.setCurrentWidget(window._preview_page)
+
+                window._on_live_preview_state_changed(False)
+                self.app.processEvents()
+
+                self.assertFalse(window._preview_active)
+                self.assertLess(canvas._zoom, 1.0)
+        finally:
+            window.close()
 
     def test_digital_slide_focus_wheel_jogs_focus_without_zoom_path(self) -> None:
         window = MainWindow()

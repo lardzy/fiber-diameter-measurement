@@ -2924,6 +2924,15 @@ class MainWindow(QMainWindow):
             self._clear_prompt_segmentation_cache()
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
+        if not active:
+            QTimer.singleShot(0, self._fit_current_digital_slide_after_preview_stop)
+
+    def _fit_current_digital_slide_after_preview_stop(self) -> None:
+        if self._preview_active:
+            return
+        canvas = self._current_digital_slide_canvas()
+        if canvas is not None:
+            canvas.fit_to_view()
 
     def _on_live_preview_frame_ready(self, image: object) -> None:
         if not self._preview_active or self._is_native_preview():
