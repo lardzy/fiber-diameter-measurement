@@ -5,9 +5,10 @@ import json
 import os
 import subprocess
 import sys
+import threading
 from dataclasses import dataclass
 from pathlib import Path
-from time import perf_counter
+from time import perf_counter, sleep
 from typing import Callable
 
 from PySide6.QtCore import QObject, QProcess, QProcessEnvironment, Qt, QTimer, Signal, Slot
@@ -23,6 +24,9 @@ QMediaDevices = None
 QVideoSink = None
 _QT_MULTIMEDIA_IMPORT_ATTEMPTED = False
 _QT_MULTIMEDIA_IMPORT_ERROR: Exception | None = None
+cv2 = None
+_OPENCV_IMPORT_ATTEMPTED = False
+_OPENCV_IMPORT_ERROR: Exception | None = None
 
 
 @dataclass(slots=True)
@@ -69,6 +73,10 @@ class CaptureBackend:
     def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
         return None
 
+    def capture_fresh_frame(self, device: CaptureDevice, *, timeout_ms: int = 2000) -> QImage | None:
+        del timeout_ms
+        return self.capture_still_frame(device)
+
     def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
         return False
 
@@ -97,6 +105,7 @@ class CaptureBackend:
 
 def available_capture_backends() -> list[CaptureBackend]:
     return [
+        OpenCVCaptureBackend(),
         MicroviewIsolatedBackend(),
         QtVideoCaptureBackend(),
     ]
@@ -217,6 +226,20 @@ class CaptureSessionManager(QObject):
         if device is None or backend is None or not backend.can_capture_still(device):
             return None
         image = backend.capture_still_frame(device)
+        if image is None or image.isNull():
+            return None
+        if backend.preview_kind(device) == "frame_stream":
+            self._last_frame = image.copy()
+        return image.copy()
+
+    def capture_fresh_frame(self, *, timeout_ms: int = 2000) -> QImage | None:
+        device = self.selected_device()
+        if device is None:
+            return None
+        backend = self._active_backend if self.is_preview_active() and self._active_device_id == device.id else self._backend_for_device(device)
+        if backend is None or not backend.can_capture_still(device):
+            return None
+        image = backend.capture_fresh_frame(device, timeout_ms=timeout_ms)
         if image is None or image.isNull():
             return None
         if backend.preview_kind(device) == "frame_stream":
@@ -408,6 +431,273 @@ class CaptureSessionManager(QObject):
 
     def _deliver_analysis_error_threadsafe(self, generation: int, request_id: int, message: str) -> None:
         self._deliverAnalysisError.emit(generation, request_id, message)
+
+
+class OpenCVCaptureBackend(CaptureBackend):
+    backend_key = "opencv"
+    _DEFAULT_CAMERA_INDICES = range(5)
+    _PREVIEW_INTERVAL_SECONDS = 1.0 / 30.0
+
+    def __init__(
+        self,
+        *,
+        camera_indices: list[int] | None = None,
+        backend_preferences: list[int | None] | None = None,
+        preview_interval_seconds: float | None = None,
+    ) -> None:
+        self._camera_indices = list(camera_indices) if camera_indices is not None else list(self._DEFAULT_CAMERA_INDICES)
+        self._backend_preferences = list(backend_preferences) if backend_preferences is not None else None
+        self._preview_interval_seconds = (
+            float(preview_interval_seconds)
+            if preview_interval_seconds is not None
+            else self._PREVIEW_INTERVAL_SECONDS
+        )
+        self._device_info: dict[str, dict[str, object]] = {}
+        self._capture = None
+        self._capture_lock = threading.Lock()
+        self._preview_thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
+        self._active_device_id = ""
+        self._active_resolution: tuple[int, int] | None = None
+        self._last_frame: QImage | None = None
+        self._last_frame_timestamp = 0.0
+        self._last_capture_diagnostics = ""
+
+    def list_devices(self) -> list[CaptureDevice]:
+        cv2_module = _load_opencv()
+        devices: list[CaptureDevice] = []
+        self._device_info.clear()
+        for index in self._camera_indices:
+            opened = self._open_first_available_capture(int(index), cv2_module=cv2_module)
+            if opened is None:
+                continue
+            capture, api = opened
+            try:
+                image = self._read_qimage_from_capture(capture, timeout_ms=700)
+            finally:
+                self._release_capture(capture)
+            if image is None or image.isNull():
+                continue
+            device_id = f"{self.backend_key}:{int(index)}"
+            resolution = (image.width(), image.height())
+            api_label = _opencv_backend_label(api)
+            detail = f"{resolution[0]} x {resolution[1]} px"
+            if api_label:
+                detail = f"{detail}, {api_label}"
+            devices.append(
+                CaptureDevice(
+                    id=device_id,
+                    name=f"OpenCV Camera #{int(index)}",
+                    backend_key=self.backend_key,
+                    native_id={"index": int(index), "api": api},
+                    detail=detail,
+                )
+            )
+            self._device_info[device_id] = {"resolution": resolution, "api": api}
+        return devices
+
+    def preview_resolution(self, device: CaptureDevice) -> tuple[int, int] | None:
+        if self._active_device_id == device.id and self._active_resolution is not None:
+            return self._active_resolution
+        info = self._device_info.get(device.id, {})
+        resolution = info.get("resolution")
+        if isinstance(resolution, tuple) and len(resolution) == 2:
+            return int(resolution[0]), int(resolution[1])
+        return None
+
+    def start_preview(
+        self,
+        device: CaptureDevice,
+        *,
+        preview_target: object | None = None,
+        frame_callback: Callable[[QImage], None],
+        error_callback: Callable[[str], None],
+    ) -> None:
+        del preview_target
+        self.stop_preview()
+        opened = self._open_capture_for_device(device)
+        if opened is None:
+            raise RuntimeError(self._last_capture_diagnostics or "OpenCV 相机打开失败。")
+        capture, _api = opened
+        first_image = self._read_qimage_from_capture(capture, timeout_ms=1500)
+        if first_image is None or first_image.isNull():
+            self._release_capture(capture)
+            raise RuntimeError(self._last_capture_diagnostics or "OpenCV 相机未返回有效图像。")
+        self._capture = capture
+        self._stop_event.clear()
+        self._active_device_id = device.id
+        self._active_resolution = (first_image.width(), first_image.height())
+        self._last_frame = first_image.copy()
+        self._last_frame_timestamp = perf_counter()
+        frame_callback(first_image.copy())
+        self._preview_thread = threading.Thread(
+            target=self._preview_loop,
+            args=(capture, frame_callback, error_callback),
+            name=f"fdm-opencv-preview-{device.id}",
+            daemon=True,
+        )
+        self._preview_thread.start()
+
+    def stop_preview(self) -> None:
+        self._stop_event.set()
+        thread = self._preview_thread
+        if thread is not None and thread.is_alive():
+            thread.join(timeout=1.5)
+        with self._capture_lock:
+            if self._capture is not None:
+                self._release_capture(self._capture)
+        self._capture = None
+        self._preview_thread = None
+        self._active_device_id = ""
+        self._active_resolution = None
+        self._last_frame = None
+        self._last_frame_timestamp = 0.0
+        self._stop_event.clear()
+
+    def can_capture_still(self, device: CaptureDevice) -> bool:
+        del device
+        return True
+
+    def capture_still_frame(self, device: CaptureDevice) -> QImage | None:
+        return self.capture_fresh_frame(device, timeout_ms=2000)
+
+    def capture_fresh_frame(self, device: CaptureDevice, *, timeout_ms: int = 2000) -> QImage | None:
+        if self._active_device_id == device.id and self._capture is not None:
+            with self._capture_lock:
+                image = self._read_qimage_from_capture(self._capture, timeout_ms=timeout_ms)
+            if image is not None and not image.isNull():
+                self._last_frame = image.copy()
+                self._last_frame_timestamp = perf_counter()
+            return image
+        opened = self._open_capture_for_device(device)
+        if opened is None:
+            return None
+        capture, _api = opened
+        try:
+            return self._read_qimage_from_capture(capture, timeout_ms=timeout_ms)
+        finally:
+            self._release_capture(capture)
+
+    def can_request_analysis_frame(self, device: CaptureDevice) -> bool:
+        del device
+        return self._active_device_id != "" and self._last_frame is not None and not self._last_frame.isNull()
+
+    def request_analysis_frame(
+        self,
+        device: CaptureDevice,
+        *,
+        request_id: int,
+        frame_callback: Callable[[int, QImage], None],
+        error_callback: Callable[[int, str], None],
+    ) -> None:
+        image = self.capture_fresh_frame(device, timeout_ms=1000)
+        if image is None or image.isNull():
+            error_callback(request_id, self._last_capture_diagnostics or "OpenCV 相机未返回有效分析帧。")
+            return
+        frame_callback(request_id, image)
+
+    def active_warning(self) -> str:
+        return ""
+
+    def last_capture_diagnostics(self) -> str:
+        return self._last_capture_diagnostics
+
+    def _preview_loop(
+        self,
+        capture,
+        frame_callback: Callable[[QImage], None],
+        error_callback: Callable[[str], None],
+    ) -> None:
+        consecutive_failures = 0
+        while not self._stop_event.is_set():
+            with self._capture_lock:
+                image = self._read_qimage_from_capture(capture, timeout_ms=250)
+            if image is None or image.isNull():
+                consecutive_failures += 1
+                if consecutive_failures >= 10:
+                    error_callback(self._last_capture_diagnostics or "OpenCV 相机连续读取失败。")
+                    return
+                sleep(0.05)
+                continue
+            consecutive_failures = 0
+            self._last_frame = image.copy()
+            self._last_frame_timestamp = perf_counter()
+            frame_callback(image)
+            sleep(max(0.0, self._preview_interval_seconds))
+
+    def _open_capture_for_device(self, device: CaptureDevice):
+        index, api = self._device_index_and_api(device)
+        if api is not None:
+            capture = self._open_capture(index, api, cv2_module=_load_opencv())
+            if capture is not None:
+                return capture, api
+        return self._open_first_available_capture(index, cv2_module=_load_opencv())
+
+    def _open_first_available_capture(self, index: int, *, cv2_module):
+        for api in self._api_preferences(cv2_module):
+            capture = self._open_capture(index, api, cv2_module=cv2_module)
+            if capture is not None:
+                return capture, api
+        return None
+
+    def _open_capture(self, index: int, api: int | None, *, cv2_module):
+        try:
+            capture = cv2_module.VideoCapture(int(index)) if api is None else cv2_module.VideoCapture(int(index), int(api))
+        except Exception as exc:
+            self._last_capture_diagnostics = f"OpenCV 相机 {index} 打开异常: {exc}"
+            return None
+        try:
+            if not capture.isOpened():
+                self._release_capture(capture)
+                self._last_capture_diagnostics = f"OpenCV 相机 {index} 无法打开。"
+                return None
+        except Exception as exc:
+            self._release_capture(capture)
+            self._last_capture_diagnostics = f"OpenCV 相机 {index} 状态检查失败: {exc}"
+            return None
+        self._last_capture_diagnostics = ""
+        return capture
+
+    def _read_qimage_from_capture(self, capture, *, timeout_ms: int) -> QImage | None:
+        deadline = perf_counter() + max(0.05, timeout_ms / 1000.0)
+        while perf_counter() <= deadline:
+            try:
+                ok, frame = capture.read()
+            except Exception as exc:
+                self._last_capture_diagnostics = f"OpenCV 相机读帧异常: {exc}"
+                return None
+            if ok and frame is not None:
+                image = _opencv_frame_to_qimage(frame)
+                if not image.isNull():
+                    self._last_capture_diagnostics = ""
+                    return image
+            self._last_capture_diagnostics = "OpenCV 相机未返回有效图像。"
+            sleep(0.02)
+        return None
+
+    def _api_preferences(self, cv2_module) -> list[int | None]:
+        if self._backend_preferences is not None:
+            return list(self._backend_preferences)
+        preferences: list[int | None] = []
+        if sys.platform == "win32" and hasattr(cv2_module, "CAP_DSHOW"):
+            preferences.append(int(cv2_module.CAP_DSHOW))
+        preferences.append(None)
+        return preferences
+
+    def _device_index_and_api(self, device: CaptureDevice) -> tuple[int, int | None]:
+        native = device.native_id
+        if isinstance(native, dict):
+            index = int(native.get("index", 0))
+            api = native.get("api")
+            return index, int(api) if api is not None else None
+        return int(native), None
+
+    @staticmethod
+    def _release_capture(capture) -> None:
+        try:
+            capture.release()
+        except Exception:
+            pass
 
 
 class QtVideoCaptureBackend(CaptureBackend):
@@ -1629,6 +1919,70 @@ def _qt_video_frame_to_qimage(frame) -> QImage:
     return image.copy()
 
 
+def _load_opencv():
+    global cv2, _OPENCV_IMPORT_ATTEMPTED, _OPENCV_IMPORT_ERROR
+    if cv2 is not None:
+        return cv2
+    if _OPENCV_IMPORT_ATTEMPTED:
+        if _OPENCV_IMPORT_ERROR is not None:
+            raise RuntimeError(f"OpenCV 加载失败: {_OPENCV_IMPORT_ERROR}") from _OPENCV_IMPORT_ERROR
+        return cv2
+    _OPENCV_IMPORT_ATTEMPTED = True
+    try:
+        import cv2 as _cv2
+    except Exception as exc:  # pragma: no cover - dependency/runtime specific
+        _OPENCV_IMPORT_ERROR = exc
+        raise RuntimeError(f"OpenCV 加载失败: {exc}") from exc
+    cv2 = _cv2
+    return cv2
+
+
+def _opencv_frame_to_qimage(frame) -> QImage:
+    cv2_module = _load_opencv()
+    shape = getattr(frame, "shape", ())
+    if len(shape) == 2:
+        height, width = int(shape[0]), int(shape[1])
+        gray = _ensure_contiguous_array(frame)
+        return QImage(gray.data, width, height, width, QImage.Format.Format_Grayscale8).copy()
+    if len(shape) != 3:
+        return QImage()
+    height, width, channels = int(shape[0]), int(shape[1]), int(shape[2])
+    if channels == 3:
+        rgb = cv2_module.cvtColor(frame, cv2_module.COLOR_BGR2RGB)
+        rgb = _ensure_contiguous_array(rgb)
+        return QImage(rgb.data, width, height, channels * width, QImage.Format.Format_RGB888).copy()
+    if channels == 4:
+        rgba = cv2_module.cvtColor(frame, cv2_module.COLOR_BGRA2RGBA)
+        rgba = _ensure_contiguous_array(rgba)
+        return QImage(rgba.data, width, height, channels * width, QImage.Format.Format_RGBA8888).copy()
+    return QImage()
+
+
+def _ensure_contiguous_array(array):
+    flags = getattr(array, "flags", None)
+    try:
+        if flags is not None and bool(flags["C_CONTIGUOUS"]):
+            return array
+    except Exception:
+        pass
+    try:
+        return array.copy()
+    except Exception:
+        return array
+
+
+def _opencv_backend_label(api: int | None) -> str:
+    if api is None:
+        return "default"
+    try:
+        cv2_module = _load_opencv()
+        if hasattr(cv2_module, "CAP_DSHOW") and int(api) == int(cv2_module.CAP_DSHOW):
+            return "DirectShow"
+    except Exception:
+        pass
+    return f"api {api}"
+
+
 def _load_qt_multimedia() -> None:
     global QCamera, QCameraDevice, QMediaCaptureSession, QMediaDevices, QVideoSink
     global _QT_MULTIMEDIA_IMPORT_ATTEMPTED, _QT_MULTIMEDIA_IMPORT_ERROR
@@ -1659,6 +2013,7 @@ def _qt_multimedia_error_detail() -> str:
 
 def _format_backend_error(backend: CaptureBackend, exc: Exception) -> str:
     name = {
+        "opencv": "OpenCV 相机",
         "microview": "Microview SDK",
         "qt_multimedia": "USB 相机",
     }.get(backend.backend_key, backend.backend_key)

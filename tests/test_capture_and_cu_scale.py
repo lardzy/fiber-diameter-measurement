@@ -25,6 +25,7 @@ try:
         CaptureDevice,
         CaptureSessionManager,
         MicroviewCaptureBackend,
+        OpenCVCaptureBackend,
         _microview_buffer_to_qimage,
     )
 except ModuleNotFoundError:
@@ -33,6 +34,7 @@ except ModuleNotFoundError:
     CaptureDevice = None
     CaptureSessionManager = None
     MicroviewCaptureBackend = None
+    OpenCVCaptureBackend = None
     _microview_buffer_to_qimage = None
 
 try:
@@ -142,6 +144,110 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual([device.id for device in devices], ["qt_multimedia:usb-1"])
         self.assertEqual(manager.selected_device_id(), "qt_multimedia:usb-1")
         self.assertEqual(manager.device_refresh_warnings(), ["Microview SDK: sdk load failed"])
+
+    @unittest.skipIf(capture_module is None, "PySide6 not installed")
+    def test_default_capture_backends_prefer_opencv_for_do3think_target(self) -> None:
+        backends = capture_module.available_capture_backends()
+
+        self.assertEqual([backend.backend_key for backend in backends[:3]], ["opencv", "microview", "qt_multimedia"])
+
+    @unittest.skipIf(OpenCVCaptureBackend is None or QImage is None or QColor is None, "PySide6 not installed")
+    def test_opencv_capture_backend_lists_device_and_converts_bgr_frame(self) -> None:
+        import numpy as np
+
+        class FakeCapture:
+            def __init__(self, index: int, api: int | None = None) -> None:
+                self.index = index
+                self.api = api
+                self.released = False
+
+            def isOpened(self) -> bool:
+                return self.index == 0
+
+            def read(self):
+                frame = np.zeros((2, 3, 3), dtype=np.uint8)
+                frame[0, 0] = [10, 20, 30]
+                return True, frame
+
+            def release(self) -> None:
+                self.released = True
+
+        class FakeCV2:
+            CAP_DSHOW = 700
+            COLOR_BGR2RGB = 1
+            COLOR_BGRA2RGBA = 2
+
+            @staticmethod
+            def VideoCapture(index: int, api: int | None = None):
+                return FakeCapture(index, api)
+
+            @staticmethod
+            def cvtColor(frame, code: int):
+                if code == FakeCV2.COLOR_BGR2RGB:
+                    return frame[:, :, ::-1].copy()
+                if code == FakeCV2.COLOR_BGRA2RGBA:
+                    return frame[:, :, [2, 1, 0, 3]].copy()
+                raise AssertionError(f"unexpected conversion code: {code}")
+
+        original_cv2 = capture_module.cv2
+        original_attempted = capture_module._OPENCV_IMPORT_ATTEMPTED
+        original_error = capture_module._OPENCV_IMPORT_ERROR
+        capture_module.cv2 = FakeCV2
+        capture_module._OPENCV_IMPORT_ATTEMPTED = True
+        capture_module._OPENCV_IMPORT_ERROR = None
+        try:
+            backend = OpenCVCaptureBackend(camera_indices=[0, 1], backend_preferences=[FakeCV2.CAP_DSHOW])
+            devices = backend.list_devices()
+            image = backend.capture_fresh_frame(devices[0], timeout_ms=50)
+        finally:
+            capture_module.cv2 = original_cv2
+            capture_module._OPENCV_IMPORT_ATTEMPTED = original_attempted
+            capture_module._OPENCV_IMPORT_ERROR = original_error
+
+        self.assertEqual([device.id for device in devices], ["opencv:0"])
+        self.assertEqual(devices[0].name, "OpenCV Camera #0")
+        self.assertIn("3 x 2", devices[0].detail)
+        self.assertIsNotNone(image)
+        self.assertEqual((image.width(), image.height()), (3, 2))
+        pixel = QColor(image.pixel(0, 0))
+        self.assertEqual((pixel.red(), pixel.green(), pixel.blue()), (30, 20, 10))
+
+    @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
+    def test_capture_session_manager_uses_backend_fresh_frame(self) -> None:
+        class FreshBackend(CaptureBackend):
+            backend_key = "opencv"
+
+            def __init__(self) -> None:
+                self.timeouts: list[int] = []
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [CaptureDevice(id="opencv:0", name="OpenCV Camera #0", backend_key=self.backend_key, native_id=0)]
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                return None
+
+            def stop_preview(self) -> None:
+                return None
+
+            def can_capture_still(self, device: CaptureDevice) -> bool:
+                return True
+
+            def capture_fresh_frame(self, device: CaptureDevice, *, timeout_ms: int = 2000) -> QImage | None:
+                self.timeouts.append(timeout_ms)
+                image = QImage(17, 13, QImage.Format.Format_RGB32)
+                image.fill(QColor("#CCE3DE"))
+                return image
+
+        backend = FreshBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+
+        image = manager.capture_fresh_frame(timeout_ms=1234)
+
+        self.assertEqual(backend.timeouts, [1234])
+        self.assertIsNotNone(image)
+        self.assertEqual((image.width(), image.height()), (17, 13))
+        self.assertEqual((manager.last_frame().width(), manager.last_frame().height()), (17, 13))
 
     @unittest.skipIf(CaptureSessionManager is None or QImage is None or QColor is None, "PySide6 not installed")
     def test_capture_session_manager_ignores_stale_frames_after_stop(self) -> None:

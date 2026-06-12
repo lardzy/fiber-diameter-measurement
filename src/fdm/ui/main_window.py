@@ -241,6 +241,9 @@ except ModuleNotFoundError as exc:
         def capture_still_frame(self) -> QImage | None:
             return None
 
+        def capture_fresh_frame(self, *, timeout_ms: int = 2000) -> QImage | None:
+            return None
+
         def preview_resolution(self) -> tuple[int, int] | None:
             return None
 
@@ -512,6 +515,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_mode = False
         self.digital_slide_action: QAction | None = None
         self._digital_slide_status_label: QLabel | None = None
+        self._digital_slide_camera_label: QLabel | None = None
         self._digital_slide_progress_label: QLabel | None = None
         self._digital_slide_position_label: QLabel | None = None
         self._digital_slide_port_combo: QComboBox | None = None
@@ -2020,6 +2024,10 @@ class MainWindow(QMainWindow):
         self._digital_slide_status_label = QLabel("尚未检查", connection_box)
         self._digital_slide_status_label.setWordWrap(True)
         connection_layout.addWidget(self._digital_slide_status_label)
+        self._digital_slide_camera_label = QLabel("相机: 未检查", connection_box)
+        self._digital_slide_camera_label.setWordWrap(True)
+        self._digital_slide_camera_label.setStyleSheet(f"color: {self._status_color('muted')};")
+        connection_layout.addWidget(self._digital_slide_camera_label)
         layout.addWidget(connection_box)
 
         stage_box = QGroupBox("样品台 / 对焦", panel)
@@ -2074,6 +2082,7 @@ class MainWindow(QMainWindow):
         scroll.setWidget(panel)
         self._refresh_digital_slide_ports(prefer_auto=True)
         self._sync_digital_slide_position_label()
+        self._sync_digital_slide_camera_label()
         return scroll
 
     def _make_digital_slide_spinbox(self, minimum: int, maximum: int, value: int, *, suffix: str = "") -> QSpinBox:
@@ -2584,6 +2593,7 @@ class MainWindow(QMainWindow):
             if selected is not None:
                 self._app_settings.selected_capture_device_id = selected.id
         self._update_capture_device_ui()
+        self._sync_digital_slide_camera_label()
         self._update_action_states()
 
     def _refresh_capture_devices(self) -> None:
@@ -2592,6 +2602,7 @@ class MainWindow(QMainWindow):
         if selected is not None and not self._app_settings.selected_capture_device_id:
             self._app_settings.selected_capture_device_id = selected.id
         self._update_capture_device_ui()
+        self._sync_digital_slide_camera_label()
         self._update_action_states()
 
     def _set_selected_capture_device(self, device_id: str) -> None:
@@ -2608,6 +2619,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(f"当前采集设备: {selected.name}", 4000)
         self._show_active_capture_warning()
         self._update_capture_device_ui()
+        self._sync_digital_slide_camera_label()
         self._update_action_states()
         if restart_preview:
             self.start_live_preview()
@@ -2726,6 +2738,7 @@ class MainWindow(QMainWindow):
             self._preview_status_label.setText(f"正在预览: {label}  ({image.width()} x {image.height()})")
         if self._image_resolution_label is not None:
             self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
+        self._sync_digital_slide_camera_label()
         self._update_action_states()
 
     def _clear_preview_surface_state(self) -> None:
@@ -2964,6 +2977,33 @@ class MainWindow(QMainWindow):
             self._digital_slide_status_label.setText(message)
         self.statusBar().showMessage(message, 3000)
 
+    def _sync_digital_slide_camera_label(self) -> None:
+        if self._digital_slide_camera_label is None:
+            return
+        selected = self._selected_capture_device()
+        if selected is None:
+            self._digital_slide_camera_label.setText("相机: 未选择")
+            return
+        backend_name = {
+            "opencv": "OpenCV / Do3think",
+            "microview": "Microview",
+            "qt_multimedia": "Qt Multimedia",
+        }.get(selected.backend_key, selected.backend_key)
+        lines = [f"相机: {selected.name}", f"后端: {backend_name}"]
+        resolution = self._capture_manager.preview_resolution()
+        if resolution is not None:
+            lines.append(f"分辨率: {resolution[0]} x {resolution[1]} px")
+        else:
+            last_frame = self._capture_manager.last_frame()
+            if last_frame is not None and not last_frame.isNull():
+                lines.append(f"最后帧: {last_frame.width()} x {last_frame.height()} px")
+        detail = str(getattr(selected, "detail", "")).strip()
+        if detail:
+            lines.append(detail)
+        if selected.backend_key != "opencv":
+            lines.append("目标设备建议选择 OpenCV Do3think 相机。")
+        self._digital_slide_camera_label.setText("\n".join(lines))
+
     def _sync_digital_slide_position_label(self) -> None:
         if self._digital_slide_position_label is None:
             return
@@ -3037,7 +3077,7 @@ class MainWindow(QMainWindow):
         if not self._slide_motion.enabled:
             QMessageBox.information(self, "数字化切片", "请先启用电机输出。")
             return
-        frame = self._capture_manager.last_frame()
+        frame = self._capture_manager.capture_fresh_frame(timeout_ms=2000)
         resolution = self._capture_manager.preview_resolution()
         if frame is not None and not frame.isNull():
             view_width, view_height = frame.width(), frame.height()
@@ -3160,7 +3200,7 @@ class MainWindow(QMainWindow):
             return
         item = self._slide_acquisition_plan[self._slide_acquisition_index]
         try:
-            frame = self._capture_manager.capture_still_frame() if self._capture_manager.can_capture_still() else self._capture_manager.last_frame()
+            frame = self._capture_manager.capture_fresh_frame(timeout_ms=2000)
         except Exception as exc:
             self._fail_digital_slide_acquisition(f"采集失败：{exc}")
             return

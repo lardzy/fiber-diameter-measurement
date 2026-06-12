@@ -40,6 +40,7 @@ from fdm.settings import (
     ScaleOverlayStyle,
 )
 from fdm.services.area_inference import AreaInstanceResult
+from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
@@ -602,6 +603,54 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(call_order, ["stop", "capture"])
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
+
+    def test_digital_slide_tile_capture_uses_fresh_frame_path(self) -> None:
+        window = MainWindow()
+        fresh_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        fresh_frame.fill(QColor("#CCE3DE"))
+        calls: list[int] = []
+        window._capture_manager.capture_fresh_frame = lambda *, timeout_ms=2000: calls.append(timeout_ms) or fresh_frame.copy()  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = lambda: (_ for _ in ()).throw(AssertionError("stale capture path"))  # type: ignore[method-assign]
+        window._capture_manager.last_frame = lambda: (_ for _ in ()).throw(AssertionError("stale frame path"))  # type: ignore[method-assign]
+        window._schedule_next_digital_slide_move = lambda *args, **kwargs: None  # type: ignore[method-assign]
+
+        with TemporaryDirectory() as tmp_dir:
+            store = DigitalSlideStore.create(
+                Path(tmp_dir) / "sample.fdmslide",
+                DigitalSlideManifest(
+                    version=1,
+                    width=16,
+                    height=12,
+                    viewport_width=16,
+                    viewport_height=12,
+                    focus_levels=[0],
+                ),
+            )
+            try:
+                window._slide_acquisition_store = store
+                window._slide_acquisition_plan = [
+                    {
+                        "z_index": 0,
+                        "global_x": 0,
+                        "global_y": 0,
+                        "stage_x": 0,
+                        "stage_y": 0,
+                        "focus_z": 0,
+                        "row": 0,
+                        "col": 0,
+                    }
+                ]
+                window._slide_acquisition_index = 0
+
+                window._capture_next_digital_slide_frame()
+
+                self.assertEqual(calls, [2000])
+                self.assertEqual(window._slide_acquisition_index, 1)
+                self.assertEqual(store.tile_count(), 1)
+            finally:
+                window._slide_acquisition_store = None
+                store.close()
+                window.close()
 
     def test_live_preview_stop_clears_preview_canvas_and_late_frame_is_ignored(self) -> None:
         window = MainWindow()
