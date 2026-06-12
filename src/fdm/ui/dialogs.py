@@ -423,6 +423,13 @@ class ShortcutHelpDialog(QDialog):
                     "V  切换面积填充显示",
                     "1-9  切换当前激活纤维类别",
                     "",
+                    "数字化切片浏览",
+                    "M  切换步进移动 / 平滑移动",
+                    "方向键  移动当前视场",
+                    "Shift+方向键  按整视场移动",
+                    "鼠标滚轮  切换焦层",
+                    "Ctrl+鼠标滚轮  缩放当前视场",
+                    "",
                     "面积与魔棒",
                     "R  在正采样点 / 负采样点之间切换",
                     "Y  切换 ROI 限制区域",
@@ -471,6 +478,7 @@ class SettingsDialog(QDialog):
         self._tabs.addTab(self._build_scale_overlay_tab(settings), "比例尺叠加")
         self._tabs.addTab(self._build_image_processing_tab(settings), "图像处理")
         self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
+        self._tabs.addTab(self._build_digital_slide_tab(settings), "数字化切片")
         self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
         self._tabs.addTab(self._build_raw_record_templates_tab(settings), "原始记录模板")
         self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
@@ -546,6 +554,28 @@ class SettingsDialog(QDialog):
             last_raw_record_template_path=self._initial_settings.last_raw_record_template_path,
             main_window_geometry=self._initial_settings.main_window_geometry,
             main_window_is_maximized=self._initial_settings.main_window_is_maximized,
+            digital_slide_last_output_path=self._initial_settings.digital_slide_last_output_path,
+            digital_slide_preview_max_width=int(self._digital_slide_preview_width_combo.currentData() or 0),
+            digital_slide_capture_max_width=int(self._digital_slide_capture_width_combo.currentData() or 0),
+            digital_slide_xy_soft_limit=self._digital_slide_xy_soft_limit_spin.value(),
+            digital_slide_z_soft_limit=self._digital_slide_z_soft_limit_spin.value(),
+            digital_slide_xy_jog_step=self._digital_slide_xy_jog_step_spin.value(),
+            digital_slide_z_jog_step=self._digital_slide_z_jog_step_spin.value(),
+            digital_slide_jog_rate=self._digital_slide_jog_rate_spin.value(),
+            digital_slide_motor_output_enabled=self._digital_slide_motor_output_checkbox.isChecked(),
+            digital_slide_x_stage_step=self._digital_slide_x_stage_step_spin.value(),
+            digital_slide_y_stage_step=self._digital_slide_y_stage_step_spin.value(),
+            digital_slide_overlap_percent=self._digital_slide_overlap_spin.value(),
+            digital_slide_pixel_stride_mode=self._digital_slide_pixel_stride_mode_combo.currentData(),
+            digital_slide_x_pixel_stride=self._digital_slide_x_pixel_stride_spin.value(),
+            digital_slide_y_pixel_stride=self._digital_slide_y_pixel_stride_spin.value(),
+            digital_slide_blend_width=self._digital_slide_blend_width_spin.value(),
+            digital_slide_xy_settle_ms=self._digital_slide_xy_settle_spin.value(),
+            digital_slide_xy_post_settle_ms=self._digital_slide_xy_post_settle_spin.value(),
+            digital_slide_z_settle_ms=self._digital_slide_z_settle_spin.value(),
+            digital_slide_z_post_settle_ms=self._digital_slide_z_post_settle_spin.value(),
+            digital_slide_discard_frames=self._digital_slide_discard_frames_spin.value(),
+            digital_slide_focus_wheel_step=self._digital_slide_focus_wheel_slider.value(),
         )
 
     def area_model_mappings(self) -> list[AreaModelMapping]:
@@ -612,6 +642,9 @@ class SettingsDialog(QDialog):
 
     def _update_focus_stack_sharpen_label(self, value: int) -> None:
         self._focus_stack_sharpen_value_label.setText(f"{value}%")
+
+    def _update_digital_slide_focus_wheel_label(self, value: int) -> None:
+        self._digital_slide_focus_wheel_value_label.setText(f"{value} 层/格")
 
     def _scale_overlay_length_unit(self) -> str:
         calibration = self._document.calibration if self._document is not None else None
@@ -879,6 +912,163 @@ class SettingsDialog(QDialog):
         layout.addWidget(shape_group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
+
+    def _build_digital_slide_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        capture_group = QGroupBox("采集与预览")
+        capture_form = QFormLayout(capture_group)
+        self._digital_slide_preview_width_combo = NoWheelComboBox()
+        self._add_digital_slide_width_options(
+            self._digital_slide_preview_width_combo,
+            current=settings.digital_slide_preview_max_width,
+            options=(960, 1280, 1600, 2400),
+        )
+        self._digital_slide_capture_width_combo = NoWheelComboBox()
+        self._add_digital_slide_width_options(
+            self._digital_slide_capture_width_combo,
+            current=settings.digital_slide_capture_max_width,
+            options=(1600, 2400, 3200),
+        )
+        self._digital_slide_overlap_spin = NoWheelSpinBox()
+        self._digital_slide_overlap_spin.setRange(0, 90)
+        self._digital_slide_overlap_spin.setSuffix(" %")
+        self._digital_slide_overlap_spin.setValue(settings.digital_slide_overlap_percent)
+        self._digital_slide_blend_width_spin = NoWheelSpinBox()
+        self._digital_slide_blend_width_spin.setRange(0, 10000)
+        self._digital_slide_blend_width_spin.setSuffix(" px")
+        self._digital_slide_blend_width_spin.setValue(settings.digital_slide_blend_width)
+        capture_form.addRow("预览最大宽度", self._digital_slide_preview_width_combo)
+        capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
+        capture_form.addRow("视场重叠", self._digital_slide_overlap_spin)
+        capture_form.addRow("重叠融合宽度", self._digital_slide_blend_width_spin)
+
+        motion_group = QGroupBox("运动控制")
+        motion_form = QFormLayout(motion_group)
+        self._digital_slide_xy_soft_limit_spin = NoWheelSpinBox()
+        self._digital_slide_xy_soft_limit_spin.setRange(0, 10_000_000)
+        self._digital_slide_xy_soft_limit_spin.setSingleStep(10_000)
+        self._digital_slide_xy_soft_limit_spin.setSuffix(" steps")
+        self._digital_slide_xy_soft_limit_spin.setValue(settings.digital_slide_xy_soft_limit)
+        self._digital_slide_z_soft_limit_spin = NoWheelSpinBox()
+        self._digital_slide_z_soft_limit_spin.setRange(0, 10_000_000)
+        self._digital_slide_z_soft_limit_spin.setSingleStep(5000)
+        self._digital_slide_z_soft_limit_spin.setSuffix(" steps")
+        self._digital_slide_z_soft_limit_spin.setValue(settings.digital_slide_z_soft_limit)
+        self._digital_slide_xy_jog_step_spin = NoWheelSpinBox()
+        self._digital_slide_xy_jog_step_spin.setRange(1, 1_000_000)
+        self._digital_slide_xy_jog_step_spin.setSingleStep(100)
+        self._digital_slide_xy_jog_step_spin.setSuffix(" steps")
+        self._digital_slide_xy_jog_step_spin.setValue(settings.digital_slide_xy_jog_step)
+        self._digital_slide_z_jog_step_spin = NoWheelSpinBox()
+        self._digital_slide_z_jog_step_spin.setRange(1, 1_000_000)
+        self._digital_slide_z_jog_step_spin.setSingleStep(100)
+        self._digital_slide_z_jog_step_spin.setSuffix(" steps")
+        self._digital_slide_z_jog_step_spin.setValue(settings.digital_slide_z_jog_step)
+        self._digital_slide_jog_rate_spin = NoWheelSpinBox()
+        self._digital_slide_jog_rate_spin.setRange(1, 50)
+        self._digital_slide_jog_rate_spin.setSuffix(" 次/秒")
+        self._digital_slide_jog_rate_spin.setValue(settings.digital_slide_jog_rate)
+        self._digital_slide_motor_output_checkbox = QCheckBox("进入数字化切片界面后自动启用电机输出")
+        self._digital_slide_motor_output_checkbox.setChecked(settings.digital_slide_motor_output_enabled)
+        motion_form.addRow("XY 软限位", self._digital_slide_xy_soft_limit_spin)
+        motion_form.addRow("Z 软限位", self._digital_slide_z_soft_limit_spin)
+        motion_form.addRow("XY 步距", self._digital_slide_xy_jog_step_spin)
+        motion_form.addRow("对焦步距", self._digital_slide_z_jog_step_spin)
+        motion_form.addRow("长按速度", self._digital_slide_jog_rate_spin)
+        motion_form.addRow("", self._digital_slide_motor_output_checkbox)
+
+        advanced_group = QGroupBox("高级采集")
+        advanced_form = QFormLayout(advanced_group)
+        self._digital_slide_x_stage_step_spin = NoWheelSpinBox()
+        self._digital_slide_x_stage_step_spin.setRange(-10_000_000, 10_000_000)
+        self._digital_slide_x_stage_step_spin.setSingleStep(100)
+        self._digital_slide_x_stage_step_spin.setSuffix(" steps")
+        self._digital_slide_x_stage_step_spin.setValue(settings.digital_slide_x_stage_step)
+        self._digital_slide_y_stage_step_spin = NoWheelSpinBox()
+        self._digital_slide_y_stage_step_spin.setRange(-10_000_000, 10_000_000)
+        self._digital_slide_y_stage_step_spin.setSingleStep(100)
+        self._digital_slide_y_stage_step_spin.setSuffix(" steps")
+        self._digital_slide_y_stage_step_spin.setValue(settings.digital_slide_y_stage_step)
+        self._digital_slide_pixel_stride_mode_combo = NoWheelComboBox()
+        self._digital_slide_pixel_stride_mode_combo.addItem("按视场重叠自动", "auto_overlap")
+        self._digital_slide_pixel_stride_mode_combo.addItem("手动像素步距", "manual_pixels")
+        self._digital_slide_pixel_stride_mode_combo.setCurrentIndex(
+            max(0, self._digital_slide_pixel_stride_mode_combo.findData(settings.digital_slide_pixel_stride_mode))
+        )
+        self._digital_slide_x_pixel_stride_spin = NoWheelSpinBox()
+        self._digital_slide_x_pixel_stride_spin.setRange(1, 100_000)
+        self._digital_slide_x_pixel_stride_spin.setSuffix(" px")
+        self._digital_slide_x_pixel_stride_spin.setValue(settings.digital_slide_x_pixel_stride)
+        self._digital_slide_y_pixel_stride_spin = NoWheelSpinBox()
+        self._digital_slide_y_pixel_stride_spin.setRange(1, 100_000)
+        self._digital_slide_y_pixel_stride_spin.setSuffix(" px")
+        self._digital_slide_y_pixel_stride_spin.setValue(settings.digital_slide_y_pixel_stride)
+        self._digital_slide_xy_settle_spin = NoWheelSpinBox()
+        self._digital_slide_xy_settle_spin.setRange(0, 10_000)
+        self._digital_slide_xy_settle_spin.setSuffix(" ms")
+        self._digital_slide_xy_settle_spin.setValue(settings.digital_slide_xy_settle_ms)
+        self._digital_slide_xy_post_settle_spin = NoWheelSpinBox()
+        self._digital_slide_xy_post_settle_spin.setRange(0, 5000)
+        self._digital_slide_xy_post_settle_spin.setSuffix(" ms")
+        self._digital_slide_xy_post_settle_spin.setValue(settings.digital_slide_xy_post_settle_ms)
+        self._digital_slide_z_settle_spin = NoWheelSpinBox()
+        self._digital_slide_z_settle_spin.setRange(0, 10_000)
+        self._digital_slide_z_settle_spin.setSuffix(" ms")
+        self._digital_slide_z_settle_spin.setValue(settings.digital_slide_z_settle_ms)
+        self._digital_slide_z_post_settle_spin = NoWheelSpinBox()
+        self._digital_slide_z_post_settle_spin.setRange(0, 5000)
+        self._digital_slide_z_post_settle_spin.setSuffix(" ms")
+        self._digital_slide_z_post_settle_spin.setValue(settings.digital_slide_z_post_settle_ms)
+        self._digital_slide_discard_frames_spin = NoWheelSpinBox()
+        self._digital_slide_discard_frames_spin.setRange(0, 20)
+        self._digital_slide_discard_frames_spin.setSuffix(" 帧")
+        self._digital_slide_discard_frames_spin.setValue(settings.digital_slide_discard_frames)
+        advanced_form.addRow("X 自动采集步距", self._digital_slide_x_stage_step_spin)
+        advanced_form.addRow("Y 自动采集步距", self._digital_slide_y_stage_step_spin)
+        advanced_form.addRow("像素步距模式", self._digital_slide_pixel_stride_mode_combo)
+        advanced_form.addRow("X 像素步距", self._digital_slide_x_pixel_stride_spin)
+        advanced_form.addRow("Y 像素步距", self._digital_slide_y_pixel_stride_spin)
+        advanced_form.addRow("XY 停稳等待", self._digital_slide_xy_settle_spin)
+        advanced_form.addRow("XY 停稳后等待", self._digital_slide_xy_post_settle_spin)
+        advanced_form.addRow("Z 停稳等待", self._digital_slide_z_settle_spin)
+        advanced_form.addRow("Z 停稳后等待", self._digital_slide_z_post_settle_spin)
+        advanced_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
+
+        browsing_group = QGroupBox("浏览与快捷键")
+        browsing_form = QFormLayout(browsing_group)
+        wheel_row = QWidget()
+        wheel_layout = QHBoxLayout(wheel_row)
+        wheel_layout.setContentsMargins(0, 0, 0, 0)
+        self._digital_slide_focus_wheel_slider = NoWheelSlider(Qt.Orientation.Horizontal)
+        self._digital_slide_focus_wheel_slider.setRange(1, 10)
+        self._digital_slide_focus_wheel_slider.setValue(settings.digital_slide_focus_wheel_step)
+        self._digital_slide_focus_wheel_value_label = QLabel()
+        self._digital_slide_focus_wheel_value_label.setMinimumWidth(70)
+        self._digital_slide_focus_wheel_value_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._digital_slide_focus_wheel_slider.valueChanged.connect(self._update_digital_slide_focus_wheel_label)
+        self._update_digital_slide_focus_wheel_label(self._digital_slide_focus_wheel_slider.value())
+        wheel_layout.addWidget(self._digital_slide_focus_wheel_slider, 1)
+        wheel_layout.addWidget(self._digital_slide_focus_wheel_value_label)
+        shortcuts = QLabel("M 切换步进/平滑移动；方向键移动视场；Shift+方向键按整视场移动；Ctrl+滚轮缩放；普通滚轮切换焦层。")
+        shortcuts.setWordWrap(True)
+        browsing_form.addRow("焦层滚轮速度", wheel_row)
+        browsing_form.addRow("快捷键", shortcuts)
+
+        layout.addWidget(capture_group)
+        layout.addWidget(motion_group)
+        layout.addWidget(advanced_group)
+        layout.addWidget(browsing_group)
+        layout.addStretch(1)
+        return self._wrap_settings_page(page)
+
+    def _add_digital_slide_width_options(self, combo: QComboBox, *, current: int, options: tuple[int, ...]) -> None:
+        for width in options:
+            combo.addItem(f"{width} px", int(width))
+        combo.addItem("原始尺寸", 0)
+        index = combo.findData(int(current))
+        combo.setCurrentIndex(index if index >= 0 else 0)
 
     def _build_area_models_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()

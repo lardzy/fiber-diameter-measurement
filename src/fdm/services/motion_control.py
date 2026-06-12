@@ -154,8 +154,12 @@ class MotionController(QObject):
     def set_soft_limit(self, axis: str, value: int) -> None:
         self.soft_limits[axis] = max(0, int(value))
 
-    def reset_relative_zero(self) -> None:
-        self.relative_pos = {AXIS_X: 0, AXIS_Y: 0, AXIS_Z: 0}
+    def reset_relative_zero(self, axes: set[str] | tuple[str, ...] | list[str] | None = None) -> None:
+        if axes is None:
+            axes = (AXIS_X, AXIS_Y, AXIS_Z)
+        for axis in axes:
+            if axis in {AXIS_X, AXIS_Y, AXIS_Z}:
+                self.relative_pos[axis] = 0
         self.positionChanged.emit(dict(self.relative_pos))
 
     def check_available(self) -> tuple[bool, str]:

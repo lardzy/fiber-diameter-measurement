@@ -40,7 +40,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         origin = slide_meta.get("viewport_origin")
         if isinstance(origin, (list, tuple)) and len(origin) >= 2:
             self._viewport_origin = Point(float(origin[0]), float(origin[1]))
-        self._focus_index = self._normalized_focus_index(int(slide_meta.get("focus_index", 0) or 0))
+        if "focus_index" in slide_meta:
+            focus_index = int(slide_meta.get("focus_index", 0) or 0)
+        else:
+            focus_index = max(0, len(self._slide_manifest.focus_levels) // 2)
+        self._focus_index = self._normalized_focus_index(focus_index)
         self._initial_fit_done = False
         image = self._render_current_viewport()
         super().set_document(document, image)
@@ -132,7 +136,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         effective_delta = delta_y if delta_y != 0 else delta_x
         if effective_delta == 0:
             return
-        self.set_focus_index(self._focus_index + (1 if effective_delta > 0 else -1))
+        wheel_step = max(1, int(getattr(self._settings, "digital_slide_focus_wheel_step", 1) or 1))
+        self.set_focus_index(self._focus_index + (wheel_step if effective_delta > 0 else -wheel_step))
         event.accept()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
