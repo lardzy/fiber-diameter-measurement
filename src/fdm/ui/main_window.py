@@ -603,6 +603,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_right_panel: QWidget | None = None
         self._digital_slide_mode = False
         self.digital_slide_action: QAction | None = None
+        self.digital_slide_smooth_navigation_action: QAction | None = None
         self._digital_slide_status_label: QLabel | None = None
         self._digital_slide_camera_label: QLabel | None = None
         self._digital_slide_progress_label: QLabel | None = None
@@ -616,12 +617,18 @@ class MainWindow(QMainWindow):
         self._digital_slide_cols_spin: QSpinBox | None = None
         self._digital_slide_rows_spin: QSpinBox | None = None
         self._digital_slide_overlap_spin: QSpinBox | None = None
+        self._digital_slide_pixel_stride_mode_combo: QComboBox | None = None
+        self._digital_slide_x_pixel_stride_spin: QSpinBox | None = None
+        self._digital_slide_y_pixel_stride_spin: QSpinBox | None = None
+        self._digital_slide_blend_width_spin: QSpinBox | None = None
         self._digital_slide_x_stage_step_spin: QSpinBox | None = None
         self._digital_slide_y_stage_step_spin: QSpinBox | None = None
         self._digital_slide_z_lower_spin: QSpinBox | None = None
         self._digital_slide_z_upper_spin: QSpinBox | None = None
         self._digital_slide_z_step_spin: QSpinBox | None = None
         self._digital_slide_settle_spin: QSpinBox | None = None
+        self._digital_slide_post_settle_delay_spin: QSpinBox | None = None
+        self._digital_slide_discard_frames_spin: QSpinBox | None = None
         self._digital_slide_xy_step_spin: QSpinBox | None = None
         self._digital_slide_z_manual_step_spin: QSpinBox | None = None
         self._digital_slide_jog_rate_spin: QSpinBox | None = None
@@ -706,7 +713,7 @@ class MainWindow(QMainWindow):
         self._slide_jog_request: dict[str, object] | None = None
         self._slide_acquisition_timer = QTimer(self)
         self._slide_acquisition_timer.setSingleShot(True)
-        self._slide_acquisition_timer.timeout.connect(self._capture_next_digital_slide_frame)
+        self._slide_acquisition_timer.timeout.connect(self._on_slide_acquisition_timer_timeout)
         self._slide_acquisition_plan: list[dict[str, int]] = []
         self._slide_acquisition_index = 0
         self._slide_acquisition_store: DigitalSlideStore | None = None
@@ -723,9 +730,13 @@ class MainWindow(QMainWindow):
             dict[str, int],
         ] | None = None
         self._slide_acquisition_viewport_size: tuple[int, int] | None = None
+        self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_frame_marker = 0
         self._slide_acquisition_wait_started_at = 0.0
+        self._slide_acquisition_settle_started_at = 0.0
         self._slide_acquisition_move_ms = 0.0
+        self._slide_acquisition_settle_ms = 0.0
+        self._slide_acquisition_required_discard_frames = 0
         self._slide_acquisition_last_write_ms = 0.0
         self._capture_devices: list[CaptureDevice] = []
         self._microview_optimize_hints_shown: set[str] = set()
@@ -1046,6 +1057,14 @@ class MainWindow(QMainWindow):
         self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
 
+        self.digital_slide_smooth_navigation_action = QAction("平滑移动", self)
+        self.digital_slide_smooth_navigation_action.setCheckable(True)
+        self.digital_slide_smooth_navigation_action.setShortcut("M")
+        self.digital_slide_smooth_navigation_action.setIcon(themed_icon("select", color="#D7E3FC"))
+        self.digital_slide_smooth_navigation_action.setToolTip("切换数字化切片方向键步进/平滑移动")
+        self.digital_slide_smooth_navigation_action.triggered.connect(self._set_current_digital_slide_smooth_navigation)
+        self.digital_slide_smooth_navigation_action.setEnabled(False)
+
         self.settings_action = QAction("设置", self)
         self.settings_action.setMenuRole(QAction.MenuRole.NoRole)
         self.settings_action.setIcon(themed_icon("rename", color="#D7E3FC"))
@@ -1165,6 +1184,7 @@ class MainWindow(QMainWindow):
         view_menu = self.menuBar().addMenu("视图")
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.actual_size_action)
+        view_menu.addAction(self.digital_slide_smooth_navigation_action)
 
         help_menu = self.menuBar().addMenu("帮助")
         help_menu.addAction(self.shortcuts_help_action)
@@ -1195,6 +1215,7 @@ class MainWindow(QMainWindow):
         file_toolbar.addSeparator()
         file_toolbar.addAction(self.fit_action)
         file_toolbar.addAction(self.actual_size_action)
+        file_toolbar.addAction(self.digital_slide_smooth_navigation_action)
         file_toolbar.addSeparator()
         file_toolbar.addAction(self.close_current_action)
         file_toolbar.addAction(self.close_all_action)
@@ -1861,12 +1882,21 @@ class MainWindow(QMainWindow):
         self._digital_slide_cols_spin = self._make_digital_slide_spinbox(1, 200, 3)
         self._digital_slide_rows_spin = self._make_digital_slide_spinbox(1, 200, 3)
         self._digital_slide_overlap_spin = self._make_digital_slide_spinbox(0, 90, 20, suffix=" %")
+        self._digital_slide_pixel_stride_mode_combo = QComboBox(capture_box)
+        self._digital_slide_pixel_stride_mode_combo.addItem("按重叠自动", "auto_overlap")
+        self._digital_slide_pixel_stride_mode_combo.addItem("手动像素步距", "manual_pixels")
+        self._digital_slide_pixel_stride_mode_combo.currentIndexChanged.connect(self._sync_digital_slide_pixel_stride_controls)
+        self._digital_slide_x_pixel_stride_spin = self._make_digital_slide_spinbox(1, 100000, 1280, suffix=" px")
+        self._digital_slide_y_pixel_stride_spin = self._make_digital_slide_spinbox(1, 100000, 960, suffix=" px")
+        self._digital_slide_blend_width_spin = self._make_digital_slide_spinbox(0, 10000, 48, suffix=" px")
         self._digital_slide_x_stage_step_spin = self._make_digital_slide_spinbox(1, 10000000, 17500, suffix=" steps")
         self._digital_slide_y_stage_step_spin = self._make_digital_slide_spinbox(1, 10000000, 14000, suffix=" steps")
         self._digital_slide_z_lower_spin = self._make_digital_slide_spinbox(-10000000, 10000000, -1400, suffix=" steps")
         self._digital_slide_z_upper_spin = self._make_digital_slide_spinbox(-10000000, 10000000, 1400, suffix=" steps")
         self._digital_slide_z_step_spin = self._make_digital_slide_spinbox(1, 1000000, 200, suffix=" steps")
         self._digital_slide_settle_spin = self._make_digital_slide_spinbox(0, 10000, 200, suffix=" ms")
+        self._digital_slide_post_settle_delay_spin = self._make_digital_slide_spinbox(0, 5000, 100, suffix=" ms")
+        self._digital_slide_discard_frames_spin = self._make_digital_slide_spinbox(0, 20, 2, suffix=" 帧")
         self._digital_slide_capture_width_combo = QComboBox(capture_box)
         self._digital_slide_capture_width_combo.addItem("1600 px", 1600)
         self._digital_slide_capture_width_combo.addItem("2400 px", 2400)
@@ -1877,12 +1907,19 @@ class MainWindow(QMainWindow):
         capture_form.addRow("行数", self._digital_slide_rows_spin)
         capture_form.addRow("视场重叠", self._digital_slide_overlap_spin)
         capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
+        capture_form.addRow("像素步距模式", self._digital_slide_pixel_stride_mode_combo)
+        capture_form.addRow("X 像素步距", self._digital_slide_x_pixel_stride_spin)
+        capture_form.addRow("Y 像素步距", self._digital_slide_y_pixel_stride_spin)
+        capture_form.addRow("重叠融合宽度", self._digital_slide_blend_width_spin)
         capture_form.addRow("X 行内步距", self._digital_slide_x_stage_step_spin)
         capture_form.addRow("Y 换行步距", self._digital_slide_y_stage_step_spin)
         capture_form.addRow("Z 下限", self._digital_slide_z_lower_spin)
         capture_form.addRow("Z 上限", self._digital_slide_z_upper_spin)
         capture_form.addRow("Z 步距", self._digital_slide_z_step_spin)
         capture_form.addRow("停稳等待", self._digital_slide_settle_spin)
+        capture_form.addRow("停稳后等待", self._digital_slide_post_settle_delay_spin)
+        capture_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
+        self._sync_digital_slide_pixel_stride_controls()
         capture_buttons = QHBoxLayout()
         self._digital_slide_start_button = QPushButton("开始", capture_box)
         self._digital_slide_start_button.clicked.connect(self._start_digital_slide_acquisition)
@@ -2530,7 +2567,10 @@ class MainWindow(QMainWindow):
             view_text = ""
             if isinstance(canvas, DigitalSlideCanvas):
                 origin = canvas.viewport_origin()
-                view_text = f"    |    视场: X={int(origin.x)}, Y={int(origin.y)}, 焦层={canvas.focus_index() + 1}"
+                view_text = (
+                    f"    |    视场: X={int(origin.x)}, Y={int(origin.y)}, 焦层={canvas.focus_index() + 1}"
+                    f"    |    移动: {canvas.navigation_mode_label()}"
+                )
             self._image_resolution_label.setText(f"数字化切片: {width_px} x {height_px} px{view_text}")
             return
         width_px, height_px = target_document.image_size
@@ -3143,6 +3183,18 @@ class MainWindow(QMainWindow):
         if self._digital_slide_timing_label is not None:
             self._digital_slide_timing_label.setText(message)
 
+    def _digital_slide_pixel_stride_mode(self) -> str:
+        if self._digital_slide_pixel_stride_mode_combo is None:
+            return "auto_overlap"
+        data = self._digital_slide_pixel_stride_mode_combo.currentData()
+        return "manual_pixels" if data == "manual_pixels" else "auto_overlap"
+
+    def _sync_digital_slide_pixel_stride_controls(self) -> None:
+        manual = self._digital_slide_pixel_stride_mode() == "manual_pixels"
+        for widget in (self._digital_slide_x_pixel_stride_spin, self._digital_slide_y_pixel_stride_spin):
+            if widget is not None:
+                widget.setEnabled(manual)
+
     def _digital_slide_capture_max_width(self) -> int | None:
         if self._digital_slide_capture_width_combo is None:
             return 1600
@@ -3319,8 +3371,26 @@ class MainWindow(QMainWindow):
         cols = self._digital_slide_cols_spin.value() if self._digital_slide_cols_spin is not None else 1
         rows = self._digital_slide_rows_spin.value() if self._digital_slide_rows_spin is not None else 1
         overlap = (self._digital_slide_overlap_spin.value() if self._digital_slide_overlap_spin is not None else 20) / 100.0
-        pixel_stride_x = max(1, int(round(view_width * (1.0 - overlap))))
-        pixel_stride_y = max(1, int(round(view_height * (1.0 - overlap))))
+        auto_pixel_stride_x = max(1, int(round(view_width * (1.0 - overlap))))
+        auto_pixel_stride_y = max(1, int(round(view_height * (1.0 - overlap))))
+        pixel_stride_mode = self._digital_slide_pixel_stride_mode()
+        if pixel_stride_mode == "manual_pixels":
+            pixel_stride_x = (
+                self._digital_slide_x_pixel_stride_spin.value()
+                if self._digital_slide_x_pixel_stride_spin is not None
+                else auto_pixel_stride_x
+            )
+            pixel_stride_y = (
+                self._digital_slide_y_pixel_stride_spin.value()
+                if self._digital_slide_y_pixel_stride_spin is not None
+                else auto_pixel_stride_y
+            )
+        else:
+            pixel_stride_x = auto_pixel_stride_x
+            pixel_stride_y = auto_pixel_stride_y
+        x_stage_step = self._digital_slide_x_stage_step_spin.value() if self._digital_slide_x_stage_step_spin is not None else 17500
+        y_stage_step = self._digital_slide_y_stage_step_spin.value() if self._digital_slide_y_stage_step_spin is not None else 14000
+        blend_width = self._digital_slide_blend_width_spin.value() if self._digital_slide_blend_width_spin is not None else 48
         image_width = view_width + ((cols - 1) * pixel_stride_x)
         image_height = view_height + ((rows - 1) * pixel_stride_y)
         relative_path, output_path = self._next_digital_slide_output_paths()
@@ -3337,7 +3407,12 @@ class MainWindow(QMainWindow):
                 "columns": cols,
                 "rows": rows,
                 "overlap": overlap,
+                "stage_step": [x_stage_step, y_stage_step],
+                "pixel_stride_mode": pixel_stride_mode,
                 "pixel_stride": [pixel_stride_x, pixel_stride_y],
+                "calibrated_pixel_stride": [pixel_stride_x, pixel_stride_y],
+                "auto_pixel_stride": [auto_pixel_stride_x, auto_pixel_stride_y],
+                "blend_width": blend_width,
                 "source_frame_size": [source_width, source_height],
                 "stored_frame_size": [view_width, view_height],
                 "capture_max_width": capture_max_width if capture_max_width is not None else "original",
@@ -3382,7 +3457,11 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_viewport_size = (view_width, view_height)
         self._slide_acquisition_frame_marker = self._preview_frame_serial
         self._slide_acquisition_wait_started_at = 0.0
+        self._slide_acquisition_settle_started_at = 0.0
+        self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_move_ms = 0.0
+        self._slide_acquisition_settle_ms = 0.0
+        self._slide_acquisition_required_discard_frames = 0
         self._slide_acquisition_last_write_ms = 0.0
         if self._digital_slide_start_button is not None:
             self._digital_slide_start_button.setEnabled(False)
@@ -3438,10 +3517,43 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             self._fail_digital_slide_acquisition(f"移动失败：{exc}")
             return
-        self._slide_acquisition_frame_marker = self._preview_frame_serial
-        self._slide_acquisition_wait_started_at = perf_counter()
+        self._slide_acquisition_settle_started_at = perf_counter()
+        self._slide_acquisition_wait_started_at = 0.0
+        self._slide_acquisition_timer_phase = "settle"
         settle_ms = self._digital_slide_settle_spin.value() if self._digital_slide_settle_spin is not None else 200
         self._slide_acquisition_timer.start(max(0, settle_ms if delay_ms is None else delay_ms))
+
+    def _on_slide_acquisition_timer_timeout(self) -> None:
+        if self._slide_acquisition_timer_phase == "settle":
+            self._begin_digital_slide_frame_wait()
+            return
+        self._capture_next_digital_slide_frame()
+
+    def _begin_digital_slide_frame_wait(self) -> None:
+        if self._slide_acquisition_store is None:
+            return
+        self._slide_acquisition_settle_ms = (
+            (perf_counter() - self._slide_acquisition_settle_started_at) * 1000.0
+            if self._slide_acquisition_settle_started_at > 0
+            else 0.0
+        )
+        self._slide_acquisition_frame_marker = self._preview_frame_serial
+        self._slide_acquisition_wait_started_at = perf_counter()
+        self._slide_acquisition_required_discard_frames = (
+            self._digital_slide_discard_frames_spin.value() if self._digital_slide_discard_frames_spin is not None else 2
+        )
+        self._slide_acquisition_timer_phase = "capture"
+        post_settle_ms = (
+            self._digital_slide_post_settle_delay_spin.value()
+            if self._digital_slide_post_settle_delay_spin is not None
+            else 100
+        )
+        self._set_digital_slide_timing(
+            f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
+            f"停稳 {self._slide_acquisition_settle_ms:.0f} ms | "
+            f"丢弃 0/{self._slide_acquisition_required_discard_frames} 帧"
+        )
+        self._slide_acquisition_timer.start(max(0, post_settle_ms))
 
     def _capture_next_digital_slide_frame(self) -> None:
         store = self._slide_acquisition_store
@@ -3450,15 +3562,21 @@ class MainWindow(QMainWindow):
         item = self._slide_acquisition_plan[self._slide_acquisition_index]
         wait_started_at = self._slide_acquisition_wait_started_at or perf_counter()
         frame_wait_ms = (perf_counter() - wait_started_at) * 1000.0
-        if self._preview_frame_serial <= self._slide_acquisition_frame_marker and frame_wait_ms < 1000.0:
+        new_frame_count = max(0, self._preview_frame_serial - self._slide_acquisition_frame_marker)
+        required_discard_frames = max(0, int(self._slide_acquisition_required_discard_frames))
+        if new_frame_count <= required_discard_frames and frame_wait_ms < 2000.0:
             self._set_digital_slide_timing(
-                f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | 等帧 {frame_wait_ms:.0f} ms"
+                f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
+                f"停稳 {self._slide_acquisition_settle_ms:.0f} ms | "
+                f"丢弃 {min(new_frame_count, required_discard_frames)}/{required_discard_frames} 帧 | "
+                f"等帧 {frame_wait_ms:.0f} ms"
             )
             self._slide_acquisition_timer.start(50)
             return
+        if new_frame_count <= 0:
+            self._fail_digital_slide_acquisition("采集失败：等待新视场图像超时")
+            return
         frame = self._latest_preview_frame
-        if frame is None or frame.isNull():
-            frame = self._capture_manager.last_frame()
         if frame is None or frame.isNull():
             self._fail_digital_slide_acquisition("采集失败：未获取到有效图像")
             return
@@ -3490,6 +3608,8 @@ class MainWindow(QMainWindow):
             tile,
             scaled_frame,
             {
+                "settle_ms": self._slide_acquisition_settle_ms,
+                "discarded_frames": float(min(new_frame_count, required_discard_frames)),
                 "frame_wait_ms": frame_wait_ms,
                 "scale_ms": scale_ms,
             },
@@ -3522,6 +3642,8 @@ class MainWindow(QMainWindow):
         )
         self._set_digital_slide_timing(
             f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
+            f"停稳 {timings.get('settle_ms', 0.0):.0f} ms | "
+            f"丢弃 {timings.get('discarded_frames', 0.0):.0f} 帧 | "
             f"等帧 {timings.get('frame_wait_ms', 0.0):.0f} ms | "
             f"缩放 {timings.get('scale_ms', 0.0):.0f} ms | "
             f"入队 {timings.get('enqueue_ms', 0.0):.0f} ms | "
@@ -3577,6 +3699,7 @@ class MainWindow(QMainWindow):
 
     def _request_digital_slide_acquisition_finish(self, *, status: str, message: str) -> None:
         self._slide_acquisition_timer.stop()
+        self._slide_acquisition_timer_phase = "idle"
         writer = self._slide_acquisition_writer
         if writer is not None and writer.is_running():
             self._slide_acquisition_finishing = (status, message)
@@ -3590,6 +3713,7 @@ class MainWindow(QMainWindow):
 
     def _request_digital_slide_acquisition_discard(self, *, message: str) -> None:
         self._slide_acquisition_timer.stop()
+        self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_pending_write = None
         writer = self._slide_acquisition_writer
         if writer is not None and writer.is_running():
@@ -3634,6 +3758,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_discard_message = None
         self._slide_acquisition_pending_write = None
         self._slide_acquisition_viewport_size = None
+        self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_timer.stop()
         if self._digital_slide_start_button is not None:
             self._digital_slide_start_button.setEnabled(True)
@@ -3672,6 +3797,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_discard_message = None
         self._slide_acquisition_pending_write = None
         self._slide_acquisition_viewport_size = None
+        self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_timer.stop()
         if store is not None:
             store.close()
@@ -4864,6 +4990,7 @@ class MainWindow(QMainWindow):
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
+        canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
 
         self.project.documents.append(target_document)
         self._document_order.append(target_document.id)
@@ -4878,7 +5005,7 @@ class MainWindow(QMainWindow):
         self.image_list.addItem(list_item)
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
-        canvas.fit_to_view()
+        canvas.schedule_initial_fit()
         self._update_ui_for_current_document()
 
     def _on_digital_slide_viewport_changed(self, x: int, y: int, focus_index: int) -> None:
@@ -4886,6 +5013,37 @@ class MainWindow(QMainWindow):
         if document is None or not document.is_digital_slide():
             return
         self._update_image_resolution_label(document)
+
+    def _current_digital_slide_canvas(self) -> DigitalSlideCanvas | None:
+        document = self.current_document()
+        if document is None or not document.is_digital_slide():
+            return None
+        canvas = self._canvases.get(document.id)
+        return canvas if isinstance(canvas, DigitalSlideCanvas) else None
+
+    def _set_current_digital_slide_smooth_navigation(self, checked: bool) -> None:
+        canvas = self._current_digital_slide_canvas()
+        if canvas is None:
+            self._sync_digital_slide_navigation_action()
+            return
+        canvas.set_navigation_mode("smooth" if checked else "step")
+        self._sync_digital_slide_navigation_action()
+        self._update_image_resolution_label()
+
+    def _on_digital_slide_navigation_mode_changed(self, mode: str) -> None:
+        self._sync_digital_slide_navigation_action()
+        self._update_image_resolution_label()
+
+    def _sync_digital_slide_navigation_action(self) -> None:
+        action = self.digital_slide_smooth_navigation_action
+        if action is None:
+            return
+        canvas = self._current_digital_slide_canvas()
+        enabled = canvas is not None and not self._preview_active
+        action.blockSignals(True)
+        action.setEnabled(enabled)
+        action.setChecked(bool(canvas is not None and canvas.navigation_mode() == "smooth"))
+        action.blockSignals(False)
 
     def save_project(self, path: str | None = None) -> bool:
         return self.project_session_controller.save_project(path)
@@ -6361,6 +6519,8 @@ class MainWindow(QMainWindow):
                 self._sync_canvas_magic_subtract_input_mode(canvas)
             if current_document is None or not current_document.is_digital_slide():
                 self._apply_open_view_mode(canvas)
+            elif isinstance(canvas, DigitalSlideCanvas):
+                canvas.schedule_initial_fit()
         self._update_ui_for_current_document()
 
     def _on_image_list_changed(self, row: int) -> None:
@@ -7207,6 +7367,7 @@ class MainWindow(QMainWindow):
         self._sync_area_tool_button()
         self._sync_magic_tool_button()
         self._sync_overlay_tool_button()
+        self._sync_digital_slide_navigation_action()
 
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
         return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"

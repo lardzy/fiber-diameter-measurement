@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QPointF, QRectF, Qt, Signal
+from time import perf_counter
+
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QKeyEvent, QWheelEvent
 
 from fdm.geometry import Point
@@ -11,6 +13,7 @@ from fdm.ui.canvas import DocumentCanvas
 
 class DigitalSlideCanvas(DocumentCanvas):
     viewportChanged = Signal(int, int, int)
+    navigationModeChanged = Signal(str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -18,6 +21,16 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._slide_manifest: DigitalSlideManifest | None = None
         self._viewport_origin = Point(0.0, 0.0)
         self._focus_index = 0
+        self._initial_fit_pending = False
+        self._initial_fit_done = False
+        self._initial_fit_attempts = 0
+        self._navigation_mode = "step"
+        self._smooth_nav_keys: set[int] = set()
+        self._smooth_nav_shift = False
+        self._smooth_nav_last_at = 0.0
+        self._smooth_nav_timer = QTimer(self)
+        self._smooth_nav_timer.setInterval(33)
+        self._smooth_nav_timer.timeout.connect(self._apply_smooth_navigation)
 
     def set_slide_document(self, document: ImageDocument, store: DigitalSlideStore) -> None:
         self._slide_store = store
@@ -28,10 +41,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         if isinstance(origin, (list, tuple)) and len(origin) >= 2:
             self._viewport_origin = Point(float(origin[0]), float(origin[1]))
         self._focus_index = self._normalized_focus_index(int(slide_meta.get("focus_index", 0) or 0))
+        self._initial_fit_done = False
         image = self._render_current_viewport()
         super().set_document(document, image)
         self._clamp_viewport()
-        self.fit_to_view()
+        self.schedule_initial_fit()
 
     def set_image(self, image: QImage) -> None:
         self._image = image
@@ -42,6 +56,26 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def viewport_origin(self) -> Point:
         return Point(self._viewport_origin.x, self._viewport_origin.y)
+
+    def navigation_mode(self) -> str:
+        return self._navigation_mode
+
+    def navigation_mode_label(self) -> str:
+        return "平滑移动" if self._navigation_mode == "smooth" else "步进移动"
+
+    def set_navigation_mode(self, mode: str) -> None:
+        mode = "smooth" if mode == "smooth" else "step"
+        if mode == self._navigation_mode:
+            return
+        self._navigation_mode = mode
+        self._smooth_nav_keys.clear()
+        self._smooth_nav_timer.stop()
+        self._smooth_nav_last_at = 0.0
+        self.navigationModeChanged.emit(mode)
+
+    def toggle_navigation_mode(self) -> str:
+        self.set_navigation_mode("smooth" if self._navigation_mode != "smooth" else "step")
+        return self._navigation_mode
 
     def move_viewport_by(self, dx: float, dy: float) -> None:
         self._viewport_origin = Point(self._viewport_origin.x + dx, self._viewport_origin.y + dy)
@@ -66,12 +100,32 @@ class DigitalSlideCanvas(DocumentCanvas):
         )
 
     def fit_to_view(self) -> None:
+        self._initial_fit_pending = False
         if self._image is None:
             return
+        self._initial_fit_done = True
         super().fit_to_view()
+
+    def actual_size(self) -> None:
+        self._initial_fit_pending = False
+        if self._image is None:
+            return
+        self._initial_fit_done = True
+        super().actual_size()
+
+    def schedule_initial_fit(self) -> None:
+        if self._initial_fit_done or self._initial_fit_pending:
+            return
+        self._initial_fit_pending = True
+        self._initial_fit_attempts = 0
+        QTimer.singleShot(0, self._apply_initial_fit)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self._slide_manifest is None:
+            return
+        modifiers = getattr(event, "modifiers", lambda: Qt.KeyboardModifier.NoModifier)()
+        if modifiers & Qt.KeyboardModifier.ControlModifier:
+            super().wheelEvent(event)
             return
         delta_y = event.angleDelta().y()
         delta_x = event.angleDelta().x()
@@ -82,12 +136,20 @@ class DigitalSlideCanvas(DocumentCanvas):
         event.accept()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
+        if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_M:
+            self.toggle_navigation_mode()
+            event.accept()
+            return
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() in {
             Qt.Key.Key_Left,
             Qt.Key.Key_Right,
             Qt.Key.Key_Up,
             Qt.Key.Key_Down,
         }:
+            if self._navigation_mode == "smooth":
+                self._begin_smooth_navigation(event)
+                event.accept()
+                return
             step_x, step_y = self._navigation_step()
             if event.key() == Qt.Key.Key_Left:
                 self.move_viewport_by(-step_x, 0)
@@ -105,6 +167,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             Qt.Key.Key_Up,
             Qt.Key.Key_Down,
         }:
+            if self._navigation_mode == "smooth":
+                self._begin_smooth_navigation(event)
+                event.accept()
+                return
             step_x = float(self._image.width() if self._image is not None else 0)
             step_y = float(self._image.height() if self._image is not None else 0)
             if event.key() == Qt.Key.Key_Left:
@@ -118,6 +184,20 @@ class DigitalSlideCanvas(DocumentCanvas):
             event.accept()
             return
         super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event: QKeyEvent) -> None:
+        if (
+            self._navigation_mode == "smooth"
+            and event.key() in {Qt.Key.Key_Left, Qt.Key.Key_Right, Qt.Key.Key_Up, Qt.Key.Key_Down}
+        ):
+            if not getattr(event, "isAutoRepeat", lambda: False)():
+                self._smooth_nav_keys.discard(int(event.key()))
+                if not self._smooth_nav_keys:
+                    self._smooth_nav_timer.stop()
+                    self._smooth_nav_last_at = 0.0
+            event.accept()
+            return
+        super().keyReleaseEvent(event)
 
     def _image_size(self) -> tuple[int, int] | None:
         if self._document is None:
@@ -165,6 +245,51 @@ class DigitalSlideCanvas(DocumentCanvas):
             return 0.0, 0.0
         return max(1.0, self._image.width() * 0.25), max(1.0, self._image.height() * 0.25)
 
+    def _begin_smooth_navigation(self, event: QKeyEvent) -> None:
+        if getattr(event, "isAutoRepeat", lambda: False)():
+            return
+        self._smooth_nav_keys.add(int(event.key()))
+        self._smooth_nav_shift = event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+        self._smooth_nav_last_at = perf_counter()
+        if not self._smooth_nav_timer.isActive():
+            self._smooth_nav_timer.start()
+        self._apply_smooth_navigation()
+
+    def _apply_smooth_navigation(self) -> None:
+        if self._image is None or not self._smooth_nav_keys:
+            self._smooth_nav_timer.stop()
+            self._smooth_nav_last_at = 0.0
+            return
+        now = perf_counter()
+        previous = self._smooth_nav_last_at or now
+        self._smooth_nav_last_at = now
+        dt = max(0.001, min(0.12, now - previous))
+        multiplier = 3.0 if self._smooth_nav_shift else 1.0
+        speed = 0.75 * multiplier
+        step_x = max(1.0, self._image.width() * speed * dt)
+        step_y = max(1.0, self._image.height() * speed * dt)
+        dx = 0.0
+        dy = 0.0
+        if int(Qt.Key.Key_Left) in self._smooth_nav_keys:
+            dx -= step_x
+        if int(Qt.Key.Key_Right) in self._smooth_nav_keys:
+            dx += step_x
+        if int(Qt.Key.Key_Up) in self._smooth_nav_keys:
+            dy -= step_y
+        if int(Qt.Key.Key_Down) in self._smooth_nav_keys:
+            dy += step_y
+        if dx or dy:
+            self.move_viewport_by(dx, dy)
+
+    def _apply_initial_fit(self) -> None:
+        if not self._initial_fit_pending or self._image is None:
+            return
+        if (self.width() < 120 or self.height() < 120) and self._initial_fit_attempts < 6:
+            self._initial_fit_attempts += 1
+            QTimer.singleShot(50, self._apply_initial_fit)
+            return
+        self.fit_to_view()
+
     def _clamp_viewport(self) -> None:
         if self._slide_manifest is None:
             return
@@ -181,12 +306,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self._slide_store is None or self._slide_manifest is None:
             return QImage()
         self._clamp_viewport()
+        metadata = self._slide_manifest.metadata if isinstance(self._slide_manifest.metadata, dict) else {}
+        try:
+            blend_width = int(metadata.get("blend_width", 0) or 0)
+        except (TypeError, ValueError):
+            blend_width = 0
         return self._slide_store.render_viewport(
             x=int(round(self._viewport_origin.x)),
             y=int(round(self._viewport_origin.y)),
             width=self._slide_manifest.viewport_width,
             height=self._slide_manifest.viewport_height,
             z_index=self._focus_index,
+            blend_width=blend_width,
         )
 
     def _reload_viewport(self) -> None:

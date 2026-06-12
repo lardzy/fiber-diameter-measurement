@@ -62,6 +62,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.dialogs import CalibrationInputDialog, ExportOptionsDialog, FiberGroupDialog, SettingsDialog, ShortcutHelpDialog
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
+    from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
     from fdm.ui.main_window import MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
     from fdm.ui.rendering import draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings
@@ -82,6 +83,7 @@ else:
     ImageBatchLoaderWorker = object  # type: ignore[assignment]
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
+    DigitalSlideCanvas = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
@@ -137,9 +139,17 @@ class ScaleOverlayRecordingPainter:
 
 
 class FakeWheelEvent:
-    def __init__(self, position: QPointF, *, delta_x: int = 0, delta_y: int = 0) -> None:
+    def __init__(
+        self,
+        position: QPointF,
+        *,
+        delta_x: int = 0,
+        delta_y: int = 0,
+        modifiers=None,
+    ) -> None:
         self._position = position
         self._delta = QPoint(delta_x, delta_y)
+        self._modifiers = modifiers if modifiers is not None else Qt.KeyboardModifier.NoModifier
         self.accepted = False
 
     def position(self) -> QPointF:
@@ -147,6 +157,9 @@ class FakeWheelEvent:
 
     def angleDelta(self) -> QPoint:
         return self._delta
+
+    def modifiers(self):
+        return self._modifiers
 
     def accept(self) -> None:
         self.accepted = True
@@ -692,6 +705,202 @@ class CanvasAndExportTests(unittest.TestCase):
                 window._slide_acquisition_writer = None
                 store.close()
                 window.close()
+
+    def test_digital_slide_tile_capture_waits_for_post_marker_frames(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        window._latest_preview_frame = preview_frame.copy()
+        window._preview_frame_serial = 5
+        window._slide_acquisition_frame_marker = 5
+        window._slide_acquisition_wait_started_at = time.perf_counter()
+        window._slide_acquisition_required_discard_frames = 2
+        window._slide_acquisition_viewport_size = (16, 12)
+
+        class FakeWriter:
+            def __init__(self) -> None:
+                self.items: list[tuple[object, QImage]] = []
+
+            def enqueue(self, tile, image: QImage) -> bool:
+                self.items.append((tile, image.copy()))
+                return True
+
+            def is_running(self) -> bool:
+                return True
+
+        writer = FakeWriter()
+        window._slide_acquisition_writer = writer  # type: ignore[assignment]
+
+        with TemporaryDirectory() as tmp_dir:
+            store = DigitalSlideStore.create(
+                Path(tmp_dir) / "sample.fdmslide",
+                DigitalSlideManifest(
+                    version=1,
+                    width=16,
+                    height=12,
+                    viewport_width=16,
+                    viewport_height=12,
+                    focus_levels=[0],
+                ),
+            )
+            try:
+                window._slide_acquisition_store = store
+                window._slide_acquisition_plan = [
+                    {
+                        "z_index": 0,
+                        "global_x": 0,
+                        "global_y": 0,
+                        "stage_x": 0,
+                        "stage_y": 0,
+                        "focus_z": 0,
+                        "row": 0,
+                        "col": 0,
+                    }
+                ]
+                window._slide_acquisition_index = 0
+
+                window._capture_next_digital_slide_frame()
+
+                self.assertEqual(window._slide_acquisition_index, 0)
+                self.assertEqual(writer.items, [])
+                self.assertTrue(window._slide_acquisition_timer.isActive())
+            finally:
+                window._slide_acquisition_timer.stop()
+                window._slide_acquisition_store = None
+                window._slide_acquisition_writer = None
+                store.close()
+                window.close()
+
+    def test_digital_slide_start_records_manual_stride_metadata(self) -> None:
+        class FakeSignal:
+            def connect(self, *args, **kwargs) -> None:
+                pass
+
+        class FakeWriter:
+            def __init__(self, path, *, max_queue_size: int = 3) -> None:
+                self.path = path
+                self.max_queue_size = max_queue_size
+                self.tileWritten = FakeSignal()
+                self.failed = FakeSignal()
+                self.drained = FakeSignal()
+                self.started = False
+
+            def start(self) -> None:
+                self.started = True
+
+            def is_running(self) -> bool:
+                return self.started
+
+        window = MainWindow()
+        preview_frame = QImage(2000, 1000, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._slide_motion.enabled = True
+            window._latest_preview_frame = preview_frame.copy()
+            window._preview_frame_serial = 1
+            self.assertIsNotNone(window._digital_slide_cols_spin)
+            self.assertIsNotNone(window._digital_slide_rows_spin)
+            self.assertIsNotNone(window._digital_slide_pixel_stride_mode_combo)
+            self.assertIsNotNone(window._digital_slide_x_pixel_stride_spin)
+            self.assertIsNotNone(window._digital_slide_y_pixel_stride_spin)
+            self.assertIsNotNone(window._digital_slide_blend_width_spin)
+            self.assertIsNotNone(window._digital_slide_x_stage_step_spin)
+            self.assertIsNotNone(window._digital_slide_y_stage_step_spin)
+            window._digital_slide_cols_spin.setValue(2)
+            window._digital_slide_rows_spin.setValue(2)
+            window._digital_slide_pixel_stride_mode_combo.setCurrentIndex(
+                window._digital_slide_pixel_stride_mode_combo.findData("manual_pixels")
+            )
+            window._digital_slide_x_pixel_stride_spin.setValue(1234)
+            window._digital_slide_y_pixel_stride_spin.setValue(567)
+            window._digital_slide_blend_width_spin.setValue(32)
+            window._digital_slide_x_stage_step_spin.setValue(111)
+            window._digital_slide_y_stage_step_spin.setValue(222)
+
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "manual.fdmslide"
+                window._next_digital_slide_output_paths = (  # type: ignore[method-assign]
+                    lambda: ("slides/manual.fdmslide", slide_path)
+                )
+                window._schedule_next_digital_slide_move = lambda *args, **kwargs: None  # type: ignore[method-assign]
+                with patch("fdm.ui.main_window.DigitalSlideWriteWorker", FakeWriter):
+                    window._start_digital_slide_acquisition()
+
+                store = DigitalSlideStore(slide_path)
+                try:
+                    manifest = store.read_manifest()
+                    self.assertEqual((manifest.viewport_width, manifest.viewport_height), (1600, 800))
+                    self.assertEqual((manifest.width, manifest.height), (2834, 1367))
+                    self.assertEqual(manifest.metadata["pixel_stride_mode"], "manual_pixels")
+                    self.assertEqual(manifest.metadata["calibrated_pixel_stride"], [1234, 567])
+                    self.assertEqual(manifest.metadata["stage_step"], [111, 222])
+                    self.assertEqual(manifest.metadata["blend_width"], 32)
+                    self.assertEqual(manifest.metadata["capture_scale"], 0.8)
+                finally:
+                    store.close()
+        finally:
+            window._slide_acquisition_timer.stop()
+            window._slide_acquisition_store = None
+            window._slide_acquisition_writer = None
+            window._slide_acquisition_path = None
+            window.close()
+
+    def test_digital_slide_canvas_wheel_focus_and_ctrl_zoom_are_separate(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            slide_path = Path(tmp_dir) / "sample.fdmslide"
+            store = DigitalSlideStore.create(
+                slide_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=200,
+                    height=120,
+                    viewport_width=100,
+                    viewport_height=80,
+                    focus_levels=[-100, 0, 100],
+                ),
+            )
+            document = ImageDocument(
+                id=new_id("slide"),
+                path=str(slide_path),
+                image_size=(200, 120),
+                document_kind="digital_slide",
+            )
+            document.initialize_runtime_state()
+            canvas = DigitalSlideCanvas()
+            canvas.resize(320, 240)
+            try:
+                canvas.set_slide_document(document, store)
+                canvas.actual_size()
+
+                initial_zoom = canvas._zoom
+                canvas.wheelEvent(FakeWheelEvent(QPointF(60, 40), delta_y=120))
+                self.assertEqual(canvas.focus_index(), 1)
+                self.assertAlmostEqual(canvas._zoom, initial_zoom)
+
+                canvas.wheelEvent(
+                    FakeWheelEvent(
+                        QPointF(60, 40),
+                        delta_y=120,
+                        modifiers=Qt.KeyboardModifier.ControlModifier,
+                    )
+                )
+                self.assertEqual(canvas.focus_index(), 1)
+                self.assertGreater(canvas._zoom, initial_zoom)
+
+                canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
+                self.assertEqual(canvas.navigation_mode(), "smooth")
+                press = FakeKeyEvent(Qt.Key.Key_Right)
+                canvas.keyPressEvent(press)
+                self.assertTrue(press.accepted)
+                self.assertTrue(canvas._smooth_nav_timer.isActive())
+                release = FakeKeyEvent(Qt.Key.Key_Right)
+                canvas.keyReleaseEvent(release)
+                self.assertTrue(release.accepted)
+                self.assertFalse(canvas._smooth_nav_timer.isActive())
+            finally:
+                store.close()
 
     def test_digital_slide_focus_wheel_jogs_focus_without_zoom_path(self) -> None:
         window = MainWindow()
@@ -1940,7 +2149,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertNotIn("设置", [action.text() for action in edit_actions])
 
             view_actions = [action for action in view_menu.actions() if not action.isSeparator()]
-            self.assertEqual(view_actions, [window.fit_action, window.actual_size_action])
+            self.assertEqual(
+                view_actions,
+                [window.fit_action, window.actual_size_action, window.digital_slide_smooth_navigation_action],
+            )
             for action in window._mode_actions.values():
                 self.assertIn(action, tool_menu.actions())
                 self.assertNotIn(action, view_menu.actions())
@@ -5078,6 +5290,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 store.close()
 
                 window._add_digital_slide_document_from_path(slide_path, document=None)
+                self.app.processEvents()
                 canvas = window.current_canvas()
 
                 self.assertIsNotNone(canvas)

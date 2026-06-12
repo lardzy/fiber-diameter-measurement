@@ -55,6 +55,10 @@ def test_digital_slide_store_writes_manifest_and_renders_viewport(tmp_path: Path
         assert viewport.height() == 80
         assert QColor(viewport.pixel(5, 10)).red() > 200
         assert QColor(viewport.pixel(50, 10)).green() > 200
+        blended = store.render_viewport(x=70, y=0, width=100, height=80, z_index=1, blend_width=48)
+        blend_color = QColor(blended.pixel(15, 10))
+        assert blend_color.red() > 80
+        assert blend_color.green() > 80
     finally:
         store.close()
 

@@ -8,8 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
-from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRectF
-from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF
+from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 
 
 DIGITAL_SLIDE_SUFFIX = ".fdmslide"
@@ -269,12 +269,38 @@ class DigitalSlideStore:
             )
         return tiles
 
-    def render_viewport(self, *, x: int, y: int, width: int, height: int, z_index: int) -> QImage:
+    def render_viewport(
+        self,
+        *,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        z_index: int,
+        blend_width: int = 0,
+    ) -> QImage:
         output = QImage(max(1, int(width)), max(1, int(height)), QImage.Format.Format_RGB32)
         output.fill(QColor("#101820"))
         painter = QPainter(output)
         if not painter.isActive():
             return output
+        covered_regions: list[QRect] = []
+        blend_width = max(0, int(blend_width))
+
+        def draw_sub_rect(target_rect: QRect, *, source_left: int, source_top: int, target_left: int, target_top: int) -> None:
+            if target_rect.isEmpty():
+                return
+            painter.drawImage(
+                QRectF(target_rect),
+                image,
+                QRectF(
+                    source_left + target_rect.left() - target_left,
+                    source_top + target_rect.top() - target_top,
+                    target_rect.width(),
+                    target_rect.height(),
+                ),
+            )
+
         for tile, image in self.read_tiles_for_viewport(x=x, y=y, width=width, height=height, z_index=z_index):
             source_left = max(0, int(x) - tile.x)
             source_top = max(0, int(y) - tile.y)
@@ -284,11 +310,69 @@ class DigitalSlideStore:
                 continue
             target_left = tile.x + source_left - int(x)
             target_top = tile.y + source_top - int(y)
-            painter.drawImage(
-                QRectF(target_left, target_top, source_right - source_left, source_bottom - source_top),
-                image,
-                QRectF(source_left, source_top, source_right - source_left, source_bottom - source_top),
+            target_rect = QRect(
+                int(target_left),
+                int(target_top),
+                int(source_right - source_left),
+                int(source_bottom - source_top),
             )
+            if blend_width <= 0 or not covered_regions:
+                draw_sub_rect(
+                    target_rect,
+                    source_left=source_left,
+                    source_top=source_top,
+                    target_left=target_left,
+                    target_top=target_top,
+                )
+                covered_regions.append(target_rect)
+                continue
+
+            overlap_region = QRegion()
+            for covered_rect in covered_regions:
+                intersection = target_rect.intersected(covered_rect)
+                if not intersection.isEmpty():
+                    overlap_region = overlap_region.united(QRegion(intersection))
+            if overlap_region.isEmpty():
+                draw_sub_rect(
+                    target_rect,
+                    source_left=source_left,
+                    source_top=source_top,
+                    target_left=target_left,
+                    target_top=target_top,
+                )
+                covered_regions.append(target_rect)
+                continue
+
+            edge_region = QRegion()
+            edge_width = min(blend_width, max(1, target_rect.width()))
+            edge_height = min(blend_width, max(1, target_rect.height()))
+            edge_region = edge_region.united(QRegion(QRect(target_rect.left(), target_rect.top(), edge_width, target_rect.height())))
+            edge_region = edge_region.united(QRegion(QRect(target_rect.right() - edge_width + 1, target_rect.top(), edge_width, target_rect.height())))
+            edge_region = edge_region.united(QRegion(QRect(target_rect.left(), target_rect.top(), target_rect.width(), edge_height)))
+            edge_region = edge_region.united(QRegion(QRect(target_rect.left(), target_rect.bottom() - edge_height + 1, target_rect.width(), edge_height)))
+            blend_region = overlap_region.intersected(edge_region)
+            opaque_region = QRegion(target_rect).subtracted(blend_region)
+            painter.setOpacity(1.0)
+            for rect in opaque_region:
+                draw_sub_rect(
+                    rect,
+                    source_left=source_left,
+                    source_top=source_top,
+                    target_left=target_left,
+                    target_top=target_top,
+                )
+            if not blend_region.isEmpty():
+                painter.setOpacity(0.5)
+                for rect in blend_region:
+                    draw_sub_rect(
+                        rect,
+                        source_left=source_left,
+                        source_top=source_top,
+                        target_left=target_left,
+                        target_top=target_top,
+                    )
+                painter.setOpacity(1.0)
+            covered_regions.append(target_rect)
         painter.end()
         return output
 
