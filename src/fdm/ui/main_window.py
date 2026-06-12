@@ -628,6 +628,8 @@ class MainWindow(QMainWindow):
         self._digital_slide_z_step_spin: QSpinBox | None = None
         self._digital_slide_settle_spin: QSpinBox | None = None
         self._digital_slide_post_settle_delay_spin: QSpinBox | None = None
+        self._digital_slide_z_settle_spin: QSpinBox | None = None
+        self._digital_slide_z_post_settle_delay_spin: QSpinBox | None = None
         self._digital_slide_discard_frames_spin: QSpinBox | None = None
         self._digital_slide_xy_step_spin: QSpinBox | None = None
         self._digital_slide_z_manual_step_spin: QSpinBox | None = None
@@ -734,8 +736,18 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_frame_marker = 0
         self._slide_acquisition_wait_started_at = 0.0
         self._slide_acquisition_settle_started_at = 0.0
+        self._slide_acquisition_post_settle_started_at = 0.0
         self._slide_acquisition_move_ms = 0.0
         self._slide_acquisition_settle_ms = 0.0
+        self._slide_acquisition_post_settle_ms = 0.0
+        self._slide_acquisition_xy_moved = False
+        self._slide_acquisition_z_moved = False
+        self._slide_acquisition_xy_settle_wait_ms = 0
+        self._slide_acquisition_z_settle_wait_ms = 0
+        self._slide_acquisition_xy_post_wait_ms = 0
+        self._slide_acquisition_z_post_wait_ms = 0
+        self._slide_acquisition_settle_wait_ms = 0
+        self._slide_acquisition_post_wait_ms = 0
         self._slide_acquisition_required_discard_frames = 0
         self._slide_acquisition_last_write_ms = 0.0
         self._capture_devices: list[CaptureDevice] = []
@@ -1889,13 +1901,15 @@ class MainWindow(QMainWindow):
         self._digital_slide_x_pixel_stride_spin = self._make_digital_slide_spinbox(1, 100000, 1280, suffix=" px")
         self._digital_slide_y_pixel_stride_spin = self._make_digital_slide_spinbox(1, 100000, 960, suffix=" px")
         self._digital_slide_blend_width_spin = self._make_digital_slide_spinbox(0, 10000, 48, suffix=" px")
-        self._digital_slide_x_stage_step_spin = self._make_digital_slide_spinbox(1, 10000000, 17500, suffix=" steps")
-        self._digital_slide_y_stage_step_spin = self._make_digital_slide_spinbox(1, 10000000, 14000, suffix=" steps")
+        self._digital_slide_x_stage_step_spin = self._make_digital_slide_spinbox(-10000000, 10000000, 17500, suffix=" steps")
+        self._digital_slide_y_stage_step_spin = self._make_digital_slide_spinbox(-10000000, 10000000, 14000, suffix=" steps")
         self._digital_slide_z_lower_spin = self._make_digital_slide_spinbox(-10000000, 10000000, -1400, suffix=" steps")
         self._digital_slide_z_upper_spin = self._make_digital_slide_spinbox(-10000000, 10000000, 1400, suffix=" steps")
         self._digital_slide_z_step_spin = self._make_digital_slide_spinbox(1, 1000000, 200, suffix=" steps")
         self._digital_slide_settle_spin = self._make_digital_slide_spinbox(0, 10000, 200, suffix=" ms")
         self._digital_slide_post_settle_delay_spin = self._make_digital_slide_spinbox(0, 5000, 100, suffix=" ms")
+        self._digital_slide_z_settle_spin = self._make_digital_slide_spinbox(0, 10000, 80, suffix=" ms")
+        self._digital_slide_z_post_settle_delay_spin = self._make_digital_slide_spinbox(0, 5000, 40, suffix=" ms")
         self._digital_slide_discard_frames_spin = self._make_digital_slide_spinbox(0, 20, 2, suffix=" 帧")
         self._digital_slide_capture_width_combo = QComboBox(capture_box)
         self._digital_slide_capture_width_combo.addItem("1600 px", 1600)
@@ -1916,8 +1930,10 @@ class MainWindow(QMainWindow):
         capture_form.addRow("Z 下限", self._digital_slide_z_lower_spin)
         capture_form.addRow("Z 上限", self._digital_slide_z_upper_spin)
         capture_form.addRow("Z 步距", self._digital_slide_z_step_spin)
-        capture_form.addRow("停稳等待", self._digital_slide_settle_spin)
-        capture_form.addRow("停稳后等待", self._digital_slide_post_settle_delay_spin)
+        capture_form.addRow("XY 停稳等待", self._digital_slide_settle_spin)
+        capture_form.addRow("XY 停稳后等待", self._digital_slide_post_settle_delay_spin)
+        capture_form.addRow("Z 停稳等待", self._digital_slide_z_settle_spin)
+        capture_form.addRow("Z 停稳后等待", self._digital_slide_z_post_settle_delay_spin)
         capture_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
         self._sync_digital_slide_pixel_stride_controls()
         capture_buttons = QHBoxLayout()
@@ -3390,6 +3406,25 @@ class MainWindow(QMainWindow):
             pixel_stride_y = auto_pixel_stride_y
         x_stage_step = self._digital_slide_x_stage_step_spin.value() if self._digital_slide_x_stage_step_spin is not None else 17500
         y_stage_step = self._digital_slide_y_stage_step_spin.value() if self._digital_slide_y_stage_step_spin is not None else 14000
+        if cols > 1 and x_stage_step == 0:
+            QMessageBox.warning(self, "数字化切片", "列数大于 1 时，X 行内步距不能为 0。")
+            return
+        if rows > 1 and y_stage_step == 0:
+            QMessageBox.warning(self, "数字化切片", "行数大于 1 时，Y 换行步距不能为 0。")
+            return
+        xy_settle_ms = self._digital_slide_settle_spin.value() if self._digital_slide_settle_spin is not None else 200
+        xy_post_settle_ms = (
+            self._digital_slide_post_settle_delay_spin.value()
+            if self._digital_slide_post_settle_delay_spin is not None
+            else 100
+        )
+        z_settle_ms = self._digital_slide_z_settle_spin.value() if self._digital_slide_z_settle_spin is not None else 80
+        z_post_settle_ms = (
+            self._digital_slide_z_post_settle_delay_spin.value()
+            if self._digital_slide_z_post_settle_delay_spin is not None
+            else 40
+        )
+        discard_frames = self._digital_slide_discard_frames_spin.value() if self._digital_slide_discard_frames_spin is not None else 2
         blend_width = self._digital_slide_blend_width_spin.value() if self._digital_slide_blend_width_spin is not None else 48
         image_width = view_width + ((cols - 1) * pixel_stride_x)
         image_height = view_height + ((rows - 1) * pixel_stride_y)
@@ -3417,6 +3452,11 @@ class MainWindow(QMainWindow):
                 "stored_frame_size": [view_width, view_height],
                 "capture_max_width": capture_max_width if capture_max_width is not None else "original",
                 "capture_scale": capture_scale,
+                "xy_settle_ms": xy_settle_ms,
+                "xy_post_settle_ms": xy_post_settle_ms,
+                "z_settle_ms": z_settle_ms,
+                "z_post_settle_ms": z_post_settle_ms,
+                "discard_frames": discard_frames,
             },
         )
         try:
@@ -3458,9 +3498,19 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_frame_marker = self._preview_frame_serial
         self._slide_acquisition_wait_started_at = 0.0
         self._slide_acquisition_settle_started_at = 0.0
+        self._slide_acquisition_post_settle_started_at = 0.0
         self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_move_ms = 0.0
         self._slide_acquisition_settle_ms = 0.0
+        self._slide_acquisition_post_settle_ms = 0.0
+        self._slide_acquisition_xy_moved = False
+        self._slide_acquisition_z_moved = False
+        self._slide_acquisition_xy_settle_wait_ms = xy_settle_ms
+        self._slide_acquisition_z_settle_wait_ms = z_settle_ms
+        self._slide_acquisition_xy_post_wait_ms = xy_post_settle_ms
+        self._slide_acquisition_z_post_wait_ms = z_post_settle_ms
+        self._slide_acquisition_settle_wait_ms = 0
+        self._slide_acquisition_post_wait_ms = 0
         self._slide_acquisition_required_discard_frames = 0
         self._slide_acquisition_last_write_ms = 0.0
         if self._digital_slide_start_button is not None:
@@ -3501,6 +3551,13 @@ class MainWindow(QMainWindow):
                     )
         return plan
 
+    def _slide_acquisition_wait_summary(self) -> str:
+        xy_settle = self._slide_acquisition_xy_settle_wait_ms if self._slide_acquisition_xy_moved else 0
+        z_settle = self._slide_acquisition_z_settle_wait_ms if self._slide_acquisition_z_moved else 0
+        xy_post = self._slide_acquisition_xy_post_wait_ms if self._slide_acquisition_xy_moved else 0
+        z_post = self._slide_acquisition_z_post_wait_ms if self._slide_acquisition_z_moved else 0
+        return f"XY停稳 {xy_settle} ms | Z停稳 {z_settle} ms | XY后等 {xy_post} ms | Z后等 {z_post} ms"
+
     def _schedule_next_digital_slide_move(self, *, delay_ms: int | None = None) -> None:
         if self._slide_acquisition_store is None:
             return
@@ -3510,31 +3567,94 @@ class MainWindow(QMainWindow):
         item = self._slide_acquisition_plan[self._slide_acquisition_index]
         try:
             move_started_at = perf_counter()
-            self._slide_motion.move_to(AXIS_X, item["stage_x"], label="自动采集 X")
-            self._slide_motion.move_to(AXIS_Y, item["stage_y"], label="自动采集 Y")
-            self._slide_motion.move_to(AXIS_Z, item["focus_z"], label="自动采集 Z")
+            current_x = int(self._slide_motion.relative_pos.get(AXIS_X, 0))
+            current_y = int(self._slide_motion.relative_pos.get(AXIS_Y, 0))
+            current_z = int(self._slide_motion.relative_pos.get(AXIS_Z, 0))
+            target_x = int(item["stage_x"])
+            target_y = int(item["stage_y"])
+            target_z = int(item["focus_z"])
+            self._slide_acquisition_xy_moved = current_x != target_x or current_y != target_y
+            self._slide_acquisition_z_moved = current_z != target_z
+            if current_x != target_x and not self._slide_motion.move_to(AXIS_X, target_x, label="自动采集 X"):
+                self._fail_digital_slide_acquisition(f"移动失败：X 未能移动到 {target_x} steps")
+                return
+            if current_y != target_y and not self._slide_motion.move_to(AXIS_Y, target_y, label="自动采集 Y"):
+                self._fail_digital_slide_acquisition(f"移动失败：Y 未能移动到 {target_y} steps")
+                return
+            if current_z != target_z and not self._slide_motion.move_to(AXIS_Z, target_z, label="自动采集 Z"):
+                self._fail_digital_slide_acquisition(f"移动失败：Z 未能移动到 {target_z} steps")
+                return
             self._slide_acquisition_move_ms = (perf_counter() - move_started_at) * 1000.0
         except Exception as exc:
             self._fail_digital_slide_acquisition(f"移动失败：{exc}")
             return
+        self._slide_acquisition_xy_settle_wait_ms = (
+            self._digital_slide_settle_spin.value() if self._digital_slide_settle_spin is not None else 200
+        )
+        self._slide_acquisition_xy_post_wait_ms = (
+            self._digital_slide_post_settle_delay_spin.value()
+            if self._digital_slide_post_settle_delay_spin is not None
+            else 100
+        )
+        self._slide_acquisition_z_settle_wait_ms = (
+            self._digital_slide_z_settle_spin.value() if self._digital_slide_z_settle_spin is not None else 80
+        )
+        self._slide_acquisition_z_post_wait_ms = (
+            self._digital_slide_z_post_settle_delay_spin.value()
+            if self._digital_slide_z_post_settle_delay_spin is not None
+            else 40
+        )
+        xy_settle_wait_ms = self._slide_acquisition_xy_settle_wait_ms if self._slide_acquisition_xy_moved else 0
+        z_settle_wait_ms = self._slide_acquisition_z_settle_wait_ms if self._slide_acquisition_z_moved else 0
+        xy_post_wait_ms = self._slide_acquisition_xy_post_wait_ms if self._slide_acquisition_xy_moved else 0
+        z_post_wait_ms = self._slide_acquisition_z_post_wait_ms if self._slide_acquisition_z_moved else 0
+        self._slide_acquisition_settle_wait_ms = max(xy_settle_wait_ms, z_settle_wait_ms)
+        if delay_ms is not None:
+            self._slide_acquisition_settle_wait_ms = max(0, int(delay_ms))
+        self._slide_acquisition_post_wait_ms = max(xy_post_wait_ms, z_post_wait_ms)
         self._slide_acquisition_settle_started_at = perf_counter()
+        self._slide_acquisition_post_settle_started_at = 0.0
         self._slide_acquisition_wait_started_at = 0.0
+        self._slide_acquisition_settle_ms = 0.0
+        self._slide_acquisition_post_settle_ms = 0.0
         self._slide_acquisition_timer_phase = "settle"
-        settle_ms = self._digital_slide_settle_spin.value() if self._digital_slide_settle_spin is not None else 200
-        self._slide_acquisition_timer.start(max(0, settle_ms if delay_ms is None else delay_ms))
+        self._set_digital_slide_timing(
+            f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | {self._slide_acquisition_wait_summary()}"
+        )
+        self._slide_acquisition_timer.start(max(0, self._slide_acquisition_settle_wait_ms))
 
     def _on_slide_acquisition_timer_timeout(self) -> None:
         if self._slide_acquisition_timer_phase == "settle":
+            self._begin_digital_slide_post_settle_wait()
+            return
+        if self._slide_acquisition_timer_phase == "post_settle":
             self._begin_digital_slide_frame_wait()
             return
         self._capture_next_digital_slide_frame()
 
-    def _begin_digital_slide_frame_wait(self) -> None:
+    def _begin_digital_slide_post_settle_wait(self) -> None:
         if self._slide_acquisition_store is None:
             return
         self._slide_acquisition_settle_ms = (
             (perf_counter() - self._slide_acquisition_settle_started_at) * 1000.0
             if self._slide_acquisition_settle_started_at > 0
+            else 0.0
+        )
+        self._slide_acquisition_post_settle_started_at = perf_counter()
+        self._slide_acquisition_timer_phase = "post_settle"
+        self._set_digital_slide_timing(
+            f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
+            f"停稳 {self._slide_acquisition_settle_ms:.0f}/{self._slide_acquisition_settle_wait_ms} ms | "
+            f"{self._slide_acquisition_wait_summary()}"
+        )
+        self._slide_acquisition_timer.start(max(0, self._slide_acquisition_post_wait_ms))
+
+    def _begin_digital_slide_frame_wait(self) -> None:
+        if self._slide_acquisition_store is None:
+            return
+        self._slide_acquisition_post_settle_ms = (
+            (perf_counter() - self._slide_acquisition_post_settle_started_at) * 1000.0
+            if self._slide_acquisition_post_settle_started_at > 0
             else 0.0
         )
         self._slide_acquisition_frame_marker = self._preview_frame_serial
@@ -3543,17 +3663,13 @@ class MainWindow(QMainWindow):
             self._digital_slide_discard_frames_spin.value() if self._digital_slide_discard_frames_spin is not None else 2
         )
         self._slide_acquisition_timer_phase = "capture"
-        post_settle_ms = (
-            self._digital_slide_post_settle_delay_spin.value()
-            if self._digital_slide_post_settle_delay_spin is not None
-            else 100
-        )
         self._set_digital_slide_timing(
             f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
             f"停稳 {self._slide_acquisition_settle_ms:.0f} ms | "
+            f"后等 {self._slide_acquisition_post_settle_ms:.0f}/{self._slide_acquisition_post_wait_ms} ms | "
             f"丢弃 0/{self._slide_acquisition_required_discard_frames} 帧"
         )
-        self._slide_acquisition_timer.start(max(0, post_settle_ms))
+        self._slide_acquisition_timer.start(0)
 
     def _capture_next_digital_slide_frame(self) -> None:
         store = self._slide_acquisition_store
@@ -3568,6 +3684,7 @@ class MainWindow(QMainWindow):
             self._set_digital_slide_timing(
                 f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
                 f"停稳 {self._slide_acquisition_settle_ms:.0f} ms | "
+                f"后等 {self._slide_acquisition_post_settle_ms:.0f} ms | "
                 f"丢弃 {min(new_frame_count, required_discard_frames)}/{required_discard_frames} 帧 | "
                 f"等帧 {frame_wait_ms:.0f} ms"
             )
@@ -3609,6 +3726,7 @@ class MainWindow(QMainWindow):
             scaled_frame,
             {
                 "settle_ms": self._slide_acquisition_settle_ms,
+                "post_settle_ms": self._slide_acquisition_post_settle_ms,
                 "discarded_frames": float(min(new_frame_count, required_discard_frames)),
                 "frame_wait_ms": frame_wait_ms,
                 "scale_ms": scale_ms,
@@ -3643,6 +3761,7 @@ class MainWindow(QMainWindow):
         self._set_digital_slide_timing(
             f"耗时: 移动 {self._slide_acquisition_move_ms:.0f} ms | "
             f"停稳 {timings.get('settle_ms', 0.0):.0f} ms | "
+            f"后等 {timings.get('post_settle_ms', 0.0):.0f} ms | "
             f"丢弃 {timings.get('discarded_frames', 0.0):.0f} 帧 | "
             f"等帧 {timings.get('frame_wait_ms', 0.0):.0f} ms | "
             f"缩放 {timings.get('scale_ms', 0.0):.0f} ms | "

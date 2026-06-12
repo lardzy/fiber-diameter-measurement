@@ -4,6 +4,7 @@ from time import perf_counter
 
 from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
 from PySide6.QtGui import QImage, QKeyEvent, QWheelEvent
+from PySide6.QtWidgets import QWidget
 
 from fdm.geometry import Point
 from fdm.models import ImageDocument
@@ -44,6 +45,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_done = False
         image = self._render_current_viewport()
         super().set_document(document, image)
+        self._initial_fit_pending = False
+        self._initial_fit_done = False
+        self._initial_fit_attempts = 0
         self._clamp_viewport()
         self.schedule_initial_fit()
 
@@ -125,7 +129,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         modifiers = getattr(event, "modifiers", lambda: Qt.KeyboardModifier.NoModifier)()
         if modifiers & Qt.KeyboardModifier.ControlModifier:
-            super().wheelEvent(event)
+            self._zoom_current_viewport(event)
             return
         delta_y = event.angleDelta().y()
         delta_x = event.angleDelta().x()
@@ -134,6 +138,11 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         self.set_focus_index(self._focus_index + (1 if effective_delta > 0 else -1))
         event.accept()
+
+    def resizeEvent(self, event) -> None:
+        QWidget.resizeEvent(self, event)
+        if self._initial_fit_pending and self._image is not None:
+            QTimer.singleShot(0, self._apply_initial_fit)
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_M:
@@ -288,7 +297,35 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._initial_fit_attempts += 1
             QTimer.singleShot(50, self._apply_initial_fit)
             return
-        self.fit_to_view()
+        self._initial_fit_attempts += 1
+        super().fit_to_view()
+        if self._initial_fit_attempts < 6:
+            QTimer.singleShot(50, self._apply_initial_fit)
+            return
+        self._initial_fit_pending = False
+        self._initial_fit_done = True
+
+    def _zoom_current_viewport(self, event: QWheelEvent) -> None:
+        if self._image is None:
+            return
+        delta_y = event.angleDelta().y()
+        delta_x = event.angleDelta().x()
+        effective_delta = delta_y if delta_y != 0 else delta_x
+        if effective_delta == 0:
+            return
+        self._initial_fit_pending = False
+        self._initial_fit_done = True
+        cursor_position = event.position()
+        local_before = DocumentCanvas.widget_to_image(self, cursor_position)
+        zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
+        self._zoom = max(0.05, min(40.0, self._zoom * zoom_factor))
+        self._pan = Point(
+            cursor_position.x() - (local_before.x * self._zoom),
+            cursor_position.y() - (local_before.y * self._zoom),
+        )
+        self._persist_view_state()
+        self.update()
+        event.accept()
 
     def _clamp_viewport(self) -> None:
         if self._slide_manifest is None:

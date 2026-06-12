@@ -43,7 +43,7 @@ from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
-from fdm.services.motion_control import AXIS_Z, DIR_POS
+from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_POS
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -808,6 +808,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._digital_slide_blend_width_spin)
             self.assertIsNotNone(window._digital_slide_x_stage_step_spin)
             self.assertIsNotNone(window._digital_slide_y_stage_step_spin)
+            self.assertIsNotNone(window._digital_slide_z_settle_spin)
+            self.assertIsNotNone(window._digital_slide_z_post_settle_delay_spin)
+            self.assertIsNotNone(window._digital_slide_discard_frames_spin)
             window._digital_slide_cols_spin.setValue(2)
             window._digital_slide_rows_spin.setValue(2)
             window._digital_slide_pixel_stride_mode_combo.setCurrentIndex(
@@ -816,8 +819,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window._digital_slide_x_pixel_stride_spin.setValue(1234)
             window._digital_slide_y_pixel_stride_spin.setValue(567)
             window._digital_slide_blend_width_spin.setValue(32)
-            window._digital_slide_x_stage_step_spin.setValue(111)
-            window._digital_slide_y_stage_step_spin.setValue(222)
+            window._digital_slide_x_stage_step_spin.setValue(-111)
+            window._digital_slide_y_stage_step_spin.setValue(-222)
+            window._digital_slide_z_settle_spin.setValue(81)
+            window._digital_slide_z_post_settle_delay_spin.setValue(41)
+            window._digital_slide_discard_frames_spin.setValue(3)
 
             with TemporaryDirectory() as tmp_dir:
                 slide_path = Path(tmp_dir) / "manual.fdmslide"
@@ -835,9 +841,16 @@ class CanvasAndExportTests(unittest.TestCase):
                     self.assertEqual((manifest.width, manifest.height), (2834, 1367))
                     self.assertEqual(manifest.metadata["pixel_stride_mode"], "manual_pixels")
                     self.assertEqual(manifest.metadata["calibrated_pixel_stride"], [1234, 567])
-                    self.assertEqual(manifest.metadata["stage_step"], [111, 222])
+                    self.assertEqual(manifest.metadata["stage_step"], [-111, -222])
                     self.assertEqual(manifest.metadata["blend_width"], 32)
                     self.assertEqual(manifest.metadata["capture_scale"], 0.8)
+                    self.assertEqual(manifest.metadata["xy_settle_ms"], 200)
+                    self.assertEqual(manifest.metadata["xy_post_settle_ms"], 100)
+                    self.assertEqual(manifest.metadata["z_settle_ms"], 81)
+                    self.assertEqual(manifest.metadata["z_post_settle_ms"], 41)
+                    self.assertEqual(manifest.metadata["discard_frames"], 3)
+                    self.assertTrue(any(item["stage_x"] == -111 for item in window._slide_acquisition_plan))
+                    self.assertTrue(any(item["stage_y"] == -222 for item in window._slide_acquisition_plan))
                 finally:
                     store.close()
         finally:
@@ -846,6 +859,175 @@ class CanvasAndExportTests(unittest.TestCase):
             window._slide_acquisition_writer = None
             window._slide_acquisition_path = None
             window.close()
+
+    def test_digital_slide_start_rejects_zero_stage_step_for_multi_view_capture(self) -> None:
+        window = MainWindow()
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._slide_motion.enabled = True
+            window._latest_preview_frame = preview_frame.copy()
+            self.assertIsNotNone(window._digital_slide_cols_spin)
+            self.assertIsNotNone(window._digital_slide_rows_spin)
+            self.assertIsNotNone(window._digital_slide_x_stage_step_spin)
+            self.assertIsNotNone(window._digital_slide_y_stage_step_spin)
+            window._digital_slide_cols_spin.setValue(2)
+            window._digital_slide_rows_spin.setValue(1)
+            window._digital_slide_x_stage_step_spin.setValue(0)
+            with patch("fdm.ui.main_window.QMessageBox.warning") as warning_mock:
+                window._start_digital_slide_acquisition()
+            warning_mock.assert_called_once()
+            self.assertIsNone(window._slide_acquisition_store)
+
+            window._digital_slide_cols_spin.setValue(1)
+            window._digital_slide_rows_spin.setValue(2)
+            window._digital_slide_x_stage_step_spin.setValue(100)
+            window._digital_slide_y_stage_step_spin.setValue(0)
+            with patch("fdm.ui.main_window.QMessageBox.warning") as warning_mock:
+                window._start_digital_slide_acquisition()
+            warning_mock.assert_called_once()
+            self.assertIsNone(window._slide_acquisition_store)
+        finally:
+            window.close()
+
+    def test_digital_slide_move_waits_for_xy_and_z_before_frame_marker(self) -> None:
+        window = MainWindow()
+        calls: list[tuple[str, int]] = []
+
+        def fake_move_to(axis: str, target: int, *, label: str = "") -> bool:
+            calls.append((axis, target))
+            window._slide_motion.relative_pos[axis] = target
+            return True
+
+        window._slide_motion.move_to = fake_move_to  # type: ignore[method-assign]
+        window._slide_motion.relative_pos = {AXIS_X: 0, AXIS_Y: 0, AXIS_Z: 0}
+        window._preview_frame_serial = 10
+        window._slide_acquisition_frame_marker = 4
+        self.assertIsNotNone(window._digital_slide_settle_spin)
+        self.assertIsNotNone(window._digital_slide_post_settle_delay_spin)
+        self.assertIsNotNone(window._digital_slide_z_settle_spin)
+        self.assertIsNotNone(window._digital_slide_z_post_settle_delay_spin)
+        window._digital_slide_settle_spin.setValue(200)
+        window._digital_slide_post_settle_delay_spin.setValue(100)
+        window._digital_slide_z_settle_spin.setValue(80)
+        window._digital_slide_z_post_settle_delay_spin.setValue(40)
+
+        with TemporaryDirectory() as tmp_dir:
+            store = DigitalSlideStore.create(
+                Path(tmp_dir) / "sample.fdmslide",
+                DigitalSlideManifest(
+                    version=1,
+                    width=16,
+                    height=12,
+                    viewport_width=16,
+                    viewport_height=12,
+                    focus_levels=[-1400],
+                ),
+            )
+            try:
+                window._slide_acquisition_store = store
+                window._slide_acquisition_plan = [
+                    {
+                        "z_index": 0,
+                        "global_x": 0,
+                        "global_y": 0,
+                        "stage_x": 100,
+                        "stage_y": 0,
+                        "focus_z": -1400,
+                        "row": 0,
+                        "col": 0,
+                    }
+                ]
+                window._slide_acquisition_index = 0
+
+                window._schedule_next_digital_slide_move()
+
+                self.assertEqual(calls, [(AXIS_X, 100), (AXIS_Z, -1400)])
+                self.assertTrue(window._slide_acquisition_xy_moved)
+                self.assertTrue(window._slide_acquisition_z_moved)
+                self.assertEqual(window._slide_acquisition_settle_wait_ms, 200)
+                self.assertEqual(window._slide_acquisition_post_wait_ms, 100)
+                self.assertEqual(window._slide_acquisition_timer_phase, "settle")
+                self.assertEqual(window._slide_acquisition_frame_marker, 4)
+
+                window._slide_acquisition_timer.stop()
+                window._begin_digital_slide_post_settle_wait()
+                self.assertEqual(window._slide_acquisition_timer_phase, "post_settle")
+                self.assertEqual(window._slide_acquisition_frame_marker, 4)
+
+                window._slide_acquisition_timer.stop()
+                window._preview_frame_serial = 11
+                window._begin_digital_slide_frame_wait()
+                self.assertEqual(window._slide_acquisition_timer_phase, "capture")
+                self.assertEqual(window._slide_acquisition_frame_marker, 11)
+            finally:
+                window._slide_acquisition_timer.stop()
+                window._slide_acquisition_store = None
+                store.close()
+                window.close()
+
+    def test_digital_slide_move_uses_z_waits_for_same_view_focus_change(self) -> None:
+        window = MainWindow()
+        calls: list[tuple[str, int]] = []
+
+        def fake_move_to(axis: str, target: int, *, label: str = "") -> bool:
+            calls.append((axis, target))
+            window._slide_motion.relative_pos[axis] = target
+            return True
+
+        window._slide_motion.move_to = fake_move_to  # type: ignore[method-assign]
+        window._slide_motion.relative_pos = {AXIS_X: 100, AXIS_Y: 50, AXIS_Z: -1400}
+        self.assertIsNotNone(window._digital_slide_settle_spin)
+        self.assertIsNotNone(window._digital_slide_post_settle_delay_spin)
+        self.assertIsNotNone(window._digital_slide_z_settle_spin)
+        self.assertIsNotNone(window._digital_slide_z_post_settle_delay_spin)
+        window._digital_slide_settle_spin.setValue(250)
+        window._digital_slide_post_settle_delay_spin.setValue(120)
+        window._digital_slide_z_settle_spin.setValue(70)
+        window._digital_slide_z_post_settle_delay_spin.setValue(30)
+
+        with TemporaryDirectory() as tmp_dir:
+            store = DigitalSlideStore.create(
+                Path(tmp_dir) / "sample.fdmslide",
+                DigitalSlideManifest(
+                    version=1,
+                    width=16,
+                    height=12,
+                    viewport_width=16,
+                    viewport_height=12,
+                    focus_levels=[-1400, -1200],
+                ),
+            )
+            try:
+                window._slide_acquisition_store = store
+                window._slide_acquisition_plan = [
+                    {
+                        "z_index": 1,
+                        "global_x": 0,
+                        "global_y": 0,
+                        "stage_x": 100,
+                        "stage_y": 50,
+                        "focus_z": -1200,
+                        "row": 0,
+                        "col": 0,
+                    }
+                ]
+                window._slide_acquisition_index = 0
+
+                window._schedule_next_digital_slide_move()
+
+                self.assertEqual(calls, [(AXIS_Z, -1200)])
+                self.assertFalse(window._slide_acquisition_xy_moved)
+                self.assertTrue(window._slide_acquisition_z_moved)
+                self.assertEqual(window._slide_acquisition_settle_wait_ms, 70)
+                self.assertEqual(window._slide_acquisition_post_wait_ms, 30)
+            finally:
+                window._slide_acquisition_timer.stop()
+                window._slide_acquisition_store = None
+                store.close()
+                window.close()
 
     def test_digital_slide_canvas_wheel_focus_and_ctrl_zoom_are_separate(self) -> None:
         with TemporaryDirectory() as tmp_dir:
@@ -879,15 +1061,28 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertEqual(canvas.focus_index(), 1)
                 self.assertAlmostEqual(canvas._zoom, initial_zoom)
 
+                canvas.move_viewport_by(50, 20)
+                origin_before = canvas.viewport_origin()
+                cursor = QPointF(60, 40)
+                local_before = DocumentCanvas.widget_to_image(canvas, cursor)
+                global_before = canvas.widget_to_image(cursor)
+                zoom_before = canvas._zoom
                 canvas.wheelEvent(
                     FakeWheelEvent(
-                        QPointF(60, 40),
+                        cursor,
                         delta_y=120,
                         modifiers=Qt.KeyboardModifier.ControlModifier,
                     )
                 )
                 self.assertEqual(canvas.focus_index(), 1)
-                self.assertGreater(canvas._zoom, initial_zoom)
+                self.assertGreater(canvas._zoom, zoom_before)
+                self.assertEqual(canvas.viewport_origin(), origin_before)
+                local_after = DocumentCanvas.widget_to_image(canvas, cursor)
+                global_after = canvas.widget_to_image(cursor)
+                self.assertAlmostEqual(local_after.x, local_before.x)
+                self.assertAlmostEqual(local_after.y, local_before.y)
+                self.assertAlmostEqual(global_after.x, global_before.x)
+                self.assertAlmostEqual(global_after.y, global_before.y)
 
                 canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
                 self.assertEqual(canvas.navigation_mode(), "smooth")
@@ -899,6 +1094,44 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas.keyReleaseEvent(release)
                 self.assertTrue(release.accepted)
                 self.assertFalse(canvas._smooth_nav_timer.isActive())
+            finally:
+                store.close()
+
+    def test_digital_slide_initial_fit_retries_after_layout_resize(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            slide_path = Path(tmp_dir) / "sample.fdmslide"
+            store = DigitalSlideStore.create(
+                slide_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=100,
+                    height=80,
+                    viewport_width=100,
+                    viewport_height=80,
+                    focus_levels=[0],
+                ),
+            )
+            document = ImageDocument(
+                id=new_id("slide"),
+                path=str(slide_path),
+                image_size=(100, 80),
+                document_kind="digital_slide",
+            )
+            document.initialize_runtime_state()
+            canvas = DigitalSlideCanvas()
+            canvas.resize(80, 80)
+            try:
+                canvas.set_slide_document(document, store)
+                canvas._apply_initial_fit()
+                self.assertTrue(canvas._initial_fit_pending)
+
+                canvas.resize(500, 300)
+                for _ in range(6):
+                    canvas._apply_initial_fit()
+
+                self.assertFalse(canvas._initial_fit_pending)
+                self.assertTrue(canvas._initial_fit_done)
+                self.assertAlmostEqual(canvas._zoom, min((500 - 40) / 100, (300 - 40) / 80))
             finally:
                 store.close()
 
