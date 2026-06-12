@@ -43,6 +43,7 @@ from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+from fdm.services.motion_control import AXIS_Z, DIR_POS
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -139,12 +140,16 @@ class FakeWheelEvent:
     def __init__(self, position: QPointF, *, delta_x: int = 0, delta_y: int = 0) -> None:
         self._position = position
         self._delta = QPoint(delta_x, delta_y)
+        self.accepted = False
 
     def position(self) -> QPointF:
         return self._position
 
     def angleDelta(self) -> QPoint:
         return self._delta
+
+    def accept(self) -> None:
+        self.accepted = True
 
 
 class FakeMouseEvent:
@@ -604,25 +609,58 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertEqual(len(window.project.documents), 1)
         self.assertEqual(window.project.documents[0].source_type, "project_asset")
 
-    def test_digital_slide_tile_capture_uses_fresh_frame_path(self) -> None:
+    def test_digital_slide_tile_capture_uses_preview_cache_and_scales_before_write(self) -> None:
         window = MainWindow()
-        fresh_frame = QImage(16, 12, QImage.Format.Format_RGB32)
-        fresh_frame.fill(QColor("#CCE3DE"))
-        calls: list[int] = []
-        window._capture_manager.capture_fresh_frame = lambda *, timeout_ms=2000: calls.append(timeout_ms) or fresh_frame.copy()  # type: ignore[method-assign]
-        window._capture_manager.capture_still_frame = lambda: (_ for _ in ()).throw(AssertionError("stale capture path"))  # type: ignore[method-assign]
-        window._capture_manager.last_frame = lambda: (_ for _ in ()).throw(AssertionError("stale frame path"))  # type: ignore[method-assign]
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+
+        def fail_fresh_frame(*, timeout_ms: int = 2000) -> QImage:
+            raise AssertionError("blocking fresh frame path")
+
+        def fail_still_frame() -> QImage:
+            raise AssertionError("stale capture path")
+
+        def fail_last_frame() -> QImage:
+            raise AssertionError("stale frame path")
+
+        window._capture_manager.capture_fresh_frame = fail_fresh_frame  # type: ignore[method-assign]
+        window._capture_manager.capture_still_frame = fail_still_frame  # type: ignore[method-assign]
+        window._capture_manager.last_frame = fail_last_frame  # type: ignore[method-assign]
         window._schedule_next_digital_slide_move = lambda *args, **kwargs: None  # type: ignore[method-assign]
+        window._latest_preview_frame = preview_frame.copy()
+        window._preview_frame_serial = 2
+        window._slide_acquisition_frame_marker = 1
+        window._slide_acquisition_wait_started_at = time.perf_counter()
+        window._slide_acquisition_viewport_size = (8, 6)
+        self.assertIsNotNone(window._digital_slide_capture_width_combo)
+        window._digital_slide_capture_width_combo.setCurrentIndex(
+            window._digital_slide_capture_width_combo.findData(1600)
+        )
+        window._digital_slide_capture_width_combo.setItemData(0, 8)
+
+        class FakeWriter:
+            def __init__(self) -> None:
+                self.items: list[tuple[object, QImage]] = []
+
+            def enqueue(self, tile, image: QImage) -> bool:
+                self.items.append((tile, image.copy()))
+                return True
+
+            def is_running(self) -> bool:
+                return True
+
+        writer = FakeWriter()
+        window._slide_acquisition_writer = writer  # type: ignore[assignment]
 
         with TemporaryDirectory() as tmp_dir:
             store = DigitalSlideStore.create(
                 Path(tmp_dir) / "sample.fdmslide",
                 DigitalSlideManifest(
                     version=1,
-                    width=16,
-                    height=12,
-                    viewport_width=16,
-                    viewport_height=12,
+                    width=8,
+                    height=6,
+                    viewport_width=8,
+                    viewport_height=6,
                     focus_levels=[0],
                 ),
             )
@@ -644,13 +682,47 @@ class CanvasAndExportTests(unittest.TestCase):
 
                 window._capture_next_digital_slide_frame()
 
-                self.assertEqual(calls, [2000])
                 self.assertEqual(window._slide_acquisition_index, 1)
-                self.assertEqual(store.tile_count(), 1)
+                self.assertEqual(len(writer.items), 1)
+                tile, image = writer.items[0]
+                self.assertEqual((image.width(), image.height()), (8, 6))
+                self.assertEqual((tile.width, tile.height), (8, 6))
             finally:
                 window._slide_acquisition_store = None
+                window._slide_acquisition_writer = None
                 store.close()
                 window.close()
+
+    def test_digital_slide_focus_wheel_jogs_focus_without_zoom_path(self) -> None:
+        window = MainWindow()
+        try:
+            calls: list[tuple[str, str]] = []
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._perform_digital_slide_jog_step = (  # type: ignore[method-assign]
+                lambda axis, direction: calls.append((axis, direction))
+            )
+            event = FakeWheelEvent(QPointF(20, 20), delta_y=120)
+
+            handled = window._handle_digital_slide_focus_wheel(event)
+
+            self.assertTrue(handled)
+            self.assertTrue(event.accepted)
+            self.assertEqual(calls, [(AXIS_Z, DIR_POS)])
+            self.assertFalse(window._should_intercept_digital_slide_preview_wheel(object()))
+        finally:
+            window.close()
+
+    def test_realtime_preview_wheel_is_not_intercepted_outside_digital_slide_mode(self) -> None:
+        window = MainWindow()
+        try:
+            window._digital_slide_mode = False
+            window._preview_active = True
+            self.assertIsNotNone(window._preview_canvas)
+
+            self.assertFalse(window._should_intercept_digital_slide_preview_wheel(window._preview_canvas))
+        finally:
+            window.close()
 
     def test_live_preview_stop_clears_preview_canvas_and_late_frame_is_ignored(self) -> None:
         window = MainWindow()
@@ -4983,6 +5055,33 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertAlmostEqual(canvas._zoom, 1.0)
             self.assertAlmostEqual(canvas._pan.x, 20.0)
             self.assertAlmostEqual(canvas._pan.y, 20.0)
+        finally:
+            window.close()
+
+    def test_digital_slide_open_defaults_to_fit_even_when_images_open_actual_size(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.open_image_view_mode = OpenImageViewMode.ACTUAL
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "sample.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1,
+                        width=100,
+                        height=80,
+                        viewport_width=100,
+                        viewport_height=80,
+                        focus_levels=[0],
+                    ),
+                )
+                store.close()
+
+                window._add_digital_slide_document_from_path(slide_path, document=None)
+                canvas = window.current_canvas()
+
+                self.assertIsNotNone(canvas)
+                self.assertNotAlmostEqual(canvas._zoom, 1.0)
         finally:
             window.close()
 
