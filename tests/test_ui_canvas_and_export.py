@@ -1203,6 +1203,132 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_digital_slide_capture_layout_uses_collapsed_right_sections_and_live_range_map(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            self.assertIsNotNone(window._digital_slide_connection_toggle)
+            self.assertIsNotNone(window._digital_slide_connection_details)
+            self.assertFalse(window._digital_slide_connection_toggle.isChecked())
+            self.assertTrue(window._digital_slide_connection_details.isHidden())
+            self.assertIsNotNone(window._digital_slide_stage_toggle)
+            self.assertIsNotNone(window._digital_slide_stage_details)
+            self.assertFalse(window._digital_slide_stage_toggle.isChecked())
+            self.assertTrue(window._digital_slide_stage_details.isHidden())
+
+            self.assertIsNotNone(window._digital_slide_range_map)
+            self.assertEqual(window._digital_slide_range_map.width(), 132)
+            self.assertEqual(window._digital_slide_range_map.height(), 132)
+            window._app_settings.digital_slide_x_stage_step = -5000
+            window._app_settings.digital_slide_y_stage_step = 7000
+            window._slide_motion.relative_pos = {AXIS_X: 123, AXIS_Y: -456, AXIS_Z: 0}
+
+            window._sync_digital_slide_visuals()
+
+            self.assertEqual(window._digital_slide_range_map._current_xy, (123, -456))
+            self.assertEqual(window._digital_slide_range_map._stage_step, (-5000, 7000))
+        finally:
+            window.close()
+
+    def test_digital_slide_manual_jog_steps_persist_without_changing_capture_z_step(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            self.assertIsNotNone(window._digital_slide_z_step_spin)
+            self.assertIsNotNone(window._digital_slide_xy_jog_step_spin)
+            self.assertIsNotNone(window._digital_slide_focus_jog_step_spin)
+            window._digital_slide_z_step_spin.setValue(2222)
+
+            with patch.object(window, "_save_app_settings") as save_mock:
+                window._digital_slide_xy_jog_step_spin.setValue(7654)
+                window._digital_slide_focus_jog_step_spin.setValue(3456)
+
+            self.assertGreaterEqual(save_mock.call_count, 2)
+            self.assertEqual(window._app_settings.digital_slide_xy_jog_step, 7654)
+            self.assertEqual(window._app_settings.digital_slide_z_jog_step, 3456)
+            self.assertEqual(window._digital_slide_manual_step(AXIS_X), 7654)
+            self.assertEqual(window._digital_slide_manual_step(AXIS_Z), 3456)
+            self.assertEqual(window._digital_slide_z_step_spin.value(), 2222)
+
+            with patch.object(window, "_save_app_settings"):
+                window._activate_app_settings(AppSettings(digital_slide_xy_jog_step=4321, digital_slide_z_jog_step=987))
+            self.assertEqual(window._digital_slide_xy_jog_step_spin.value(), 4321)
+            self.assertEqual(window._digital_slide_focus_jog_step_spin.value(), 987)
+            self.assertEqual(window._digital_slide_z_step_spin.value(), 2222)
+        finally:
+            window.close()
+
+    def test_digital_slide_output_path_clear_resets_ui_and_setting(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            self.assertIsNotNone(window._digital_slide_output_path_edit)
+            window._digital_slide_output_path_edit.setText("/tmp/demo.fdmslide")
+            window._app_settings.digital_slide_last_output_path = "/tmp/demo.fdmslide"
+
+            with patch.object(window, "_save_app_settings") as save_mock:
+                window._clear_digital_slide_output_path()
+
+            save_mock.assert_called_once()
+            self.assertEqual(window._digital_slide_output_path_edit.text(), "")
+            self.assertEqual(window._app_settings.digital_slide_last_output_path, "")
+            self.assertIsNotNone(window._digital_slide_start_button)
+            self.assertIn("选择", window._digital_slide_start_button.toolTip())
+        finally:
+            window.close()
+
+    def test_digital_slide_completion_view_stops_preview_and_returns_to_main_canvas(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "sample.fdmslide"
+                window._digital_slide_mode = True
+                window._preview_active = True
+                if window._center_stack is not None and window._preview_page is not None:
+                    window._center_stack.setCurrentWidget(window._preview_page)
+
+                stop_calls: list[str] = []
+                focus_calls: list[Path] = []
+                view_buttons: list[object] = []
+                original_add_button = QMessageBox.addButton
+
+                def fake_stop_live_preview() -> None:
+                    stop_calls.append("stop")
+                    window._preview_active = False
+
+                def tracking_add_button(box: QMessageBox, text: str, role: QMessageBox.ButtonRole):
+                    button = original_add_button(box, text, role)
+                    if text == "查看切片":
+                        view_buttons.append(button)
+                    return button
+
+                def fake_clicked_button(box: QMessageBox):
+                    return view_buttons[0]
+
+                with (
+                    patch.object(window, "stop_live_preview", side_effect=fake_stop_live_preview),
+                    patch.object(window, "_focus_digital_slide_path", side_effect=lambda path: focus_calls.append(Path(path))),
+                    patch("fdm.ui.main_window.QMessageBox.addButton", new=tracking_add_button),
+                    patch("fdm.ui.main_window.QMessageBox.clickedButton", new=fake_clicked_button),
+                    patch("fdm.ui.main_window.QMessageBox.exec", return_value=0),
+                ):
+                    window._show_digital_slide_completion_dialog(
+                        status="ready",
+                        message="数字化切片采集完成",
+                        path=slide_path,
+                        tile_count=3,
+                        elapsed_ms=1200.0,
+                    )
+
+                self.assertEqual(stop_calls, ["stop"])
+                self.assertEqual(focus_calls, [slide_path])
+                self.assertFalse(window._digital_slide_mode)
+                self.assertIsNotNone(window._center_stack)
+                self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+        finally:
+            window.close()
+
     def test_digital_slide_focus_wheel_jogs_focus_without_zoom_path(self) -> None:
         window = MainWindow()
         try:

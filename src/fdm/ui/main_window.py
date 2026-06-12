@@ -464,13 +464,21 @@ class DigitalSlideZRangeRail(QFrame):
 class DigitalSlideRangeMap(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumSize(180, 140)
+        self.setFixedSize(132, 132)
         self._current_xy = (0, 0)
         self._bounds: dict[str, int] = {}
+        self._stage_step = (5000, 5000)
 
-    def set_state(self, *, current_xy: tuple[int, int], bounds: dict[str, int]) -> None:
+    def set_state(
+        self,
+        *,
+        current_xy: tuple[int, int],
+        bounds: dict[str, int],
+        stage_step: tuple[int, int] = (5000, 5000),
+    ) -> None:
         self._current_xy = (int(current_xy[0]), int(current_xy[1]))
         self._bounds = dict(bounds)
+        self._stage_step = (int(stage_step[0]), int(stage_step[1]))
         self.update()
 
     def paintEvent(self, event) -> None:  # noqa: N802
@@ -484,7 +492,19 @@ class DigitalSlideRangeMap(QFrame):
         painter.setPen(QPen(QColor("#64748B"), 1))
         painter.drawRect(rect)
 
-        points: list[tuple[int, int]] = [self._current_xy]
+        current_x, current_y = self._current_xy
+        step_x, step_y = self._stage_step
+        fallback_span = 1
+        current_corners = [
+            (current_x, current_y),
+            (current_x + (step_x if step_x != 0 else fallback_span), current_y),
+            (current_x, current_y + (step_y if step_y != 0 else fallback_span)),
+            (
+                current_x + (step_x if step_x != 0 else fallback_span),
+                current_y + (step_y if step_y != 0 else fallback_span),
+            ),
+        ]
+        points: list[tuple[int, int]] = [self._current_xy, *current_corners]
         if {"left", "right", "top", "bottom"}.issubset(self._bounds):
             left = self._bounds["left"]
             right = self._bounds["right"]
@@ -514,14 +534,18 @@ class DigitalSlideRangeMap(QFrame):
             painter.fillRect(selected, QColor(96, 165, 250, 55))
             painter.setPen(QPen(QColor("#60A5FA"), 2))
             painter.drawRect(selected)
-        current = map_point(*self._current_xy)
-        view_rect = QRectF(current.x() - 10, current.y() - 7, 20, 14)
-        painter.fillRect(view_rect, QColor(249, 115, 22, 95))
-        painter.setPen(QPen(QColor("#F97316"), 2))
+        p1 = map_point(current_corners[0][0], current_corners[0][1])
+        p2 = map_point(current_corners[-1][0], current_corners[-1][1])
+        view_rect = QRectF(p1, p2).normalized()
+        if view_rect.width() < 8 or view_rect.height() < 8:
+            center = map_point(*self._current_xy)
+            view_rect = QRectF(center.x() - 6, center.y() - 6, 12, 12)
+        painter.setPen(QPen(QColor("#22C55E"), 2))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(view_rect)
         painter.setPen(QPen(QColor("#94A3B8"), 1))
-        painter.drawText(rect.left() + 6, rect.top() + 18, "当前视场")
-        painter.drawText(rect.left() + 6, rect.bottom() - 8, "浅色区域为采集范围")
+        painter.drawText(rect.left() + 6, rect.top() + 18, "绿框: 当前视场")
+        painter.drawText(rect.left() + 6, rect.bottom() - 8, "浅色: 采集范围")
 
 
 class SmallObjectEnhancementPreviewWindow(QWidget):
@@ -743,6 +767,12 @@ class MainWindow(QMainWindow):
         self._digital_slide_diagnostics_toggle: QToolButton | None = None
         self._digital_slide_diagnostics_details: QWidget | None = None
         self._digital_slide_diagnostics_summary_label: QLabel | None = None
+        self._digital_slide_connection_toggle: QToolButton | None = None
+        self._digital_slide_connection_summary_label: QLabel | None = None
+        self._digital_slide_connection_details: QWidget | None = None
+        self._digital_slide_stage_toggle: QToolButton | None = None
+        self._digital_slide_stage_summary_label: QLabel | None = None
+        self._digital_slide_stage_details: QWidget | None = None
         self._digital_slide_motor_card_label: QLabel | None = None
         self._digital_slide_port_card_label: QLabel | None = None
         self._digital_slide_camera_card_label: QLabel | None = None
@@ -762,6 +792,8 @@ class MainWindow(QMainWindow):
         self._digital_slide_region_anchor_points: dict[str, tuple[int, int]] = {}
         self._digital_slide_rows_cols_manual = False
         self._digital_slide_z_step_spin: QSpinBox | None = None
+        self._digital_slide_xy_jog_step_spin: QSpinBox | None = None
+        self._digital_slide_focus_jog_step_spin: QSpinBox | None = None
         self._digital_slide_motion_settings_label: QLabel | None = None
         self._digital_slide_locked_controls: list[QWidget] = []
         self._digital_slide_motion_controls: list[QWidget] = []
@@ -2050,35 +2082,6 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        output_box = QGroupBox("输出路径", container)
-        output_layout = QVBoxLayout(output_box)
-        path_row = QHBoxLayout()
-        self._digital_slide_output_path_edit = QLineEdit(self._app_settings.digital_slide_last_output_path, output_box)
-        self._digital_slide_output_path_edit.setPlaceholderText("请选择 .fdmslide 输出文件")
-        self._digital_slide_output_path_edit.textChanged.connect(self._on_digital_slide_output_path_changed)
-        browse_button = QPushButton("设置路径", output_box)
-        browse_button.clicked.connect(self._choose_digital_slide_output_path)
-        self._digital_slide_locked_controls.extend([self._digital_slide_output_path_edit, browse_button])
-        path_row.addWidget(self._digital_slide_output_path_edit, 1)
-        path_row.addWidget(browse_button)
-        output_layout.addLayout(path_row)
-        button_row = QHBoxLayout()
-        self._digital_slide_start_button = QPushButton("开始", output_box)
-        self._digital_slide_start_button.setObjectName("digitalSlideStartButton")
-        self._digital_slide_start_button.setIcon(themed_icon("digital_slide_start", color="#ECFDF5"))
-        self._digital_slide_start_button.setMinimumHeight(46)
-        self._digital_slide_start_button.clicked.connect(self._start_digital_slide_acquisition)
-        self._digital_slide_stop_button = QPushButton("停止", output_box)
-        self._digital_slide_stop_button.setObjectName("digitalSlideStopButton")
-        self._digital_slide_stop_button.setIcon(themed_icon("digital_slide_stop", color="#FEF2F2"))
-        self._digital_slide_stop_button.setMinimumHeight(46)
-        self._digital_slide_stop_button.clicked.connect(self._stop_digital_slide_acquisition)
-        self._digital_slide_stop_button.setEnabled(False)
-        button_row.addWidget(self._digital_slide_start_button, 1)
-        button_row.addWidget(self._digital_slide_stop_button, 1)
-        output_layout.addLayout(button_row)
-        layout.addWidget(output_box)
-
         z_box = QGroupBox("Z 采集范围", container)
         z_layout = QHBoxLayout(z_box)
         z_form_panel = QWidget(z_box)
@@ -2142,8 +2145,6 @@ class MainWindow(QMainWindow):
         range_layout.addLayout(count_row)
         self._digital_slide_locked_controls.extend([self._digital_slide_cols_edit, self._digital_slide_rows_edit])
         self._digital_slide_range_map = DigitalSlideRangeMap(range_box)
-        self._digital_slide_range_map.setMinimumHeight(150)
-        range_layout.addWidget(self._digital_slide_range_map)
         direction_grid = QGridLayout()
         direction_grid.setHorizontalSpacing(6)
         direction_grid.setVerticalSpacing(6)
@@ -2171,15 +2172,47 @@ class MainWindow(QMainWindow):
             self._digital_slide_direction_buttons[key] = button
             self._digital_slide_locked_controls.append(button)
             direction_grid.addWidget(button, row, col)
-        direction_row = QHBoxLayout()
-        direction_row.addStretch(1)
-        direction_row.addLayout(direction_grid)
-        direction_row.addStretch(1)
-        range_layout.addLayout(direction_row)
+        map_direction_row = QHBoxLayout()
+        map_direction_row.setSpacing(10)
+        map_direction_row.addWidget(self._digital_slide_range_map)
+        map_direction_row.addStretch(1)
+        map_direction_row.addLayout(direction_grid)
+        range_layout.addLayout(map_direction_row)
         layout.addWidget(range_box)
 
         self._sync_digital_slide_task_state()
         return container
+
+    def _build_digital_slide_output_box(self, parent: QWidget) -> QGroupBox:
+        output_box = QGroupBox("输出路径", parent)
+        output_layout = QVBoxLayout(output_box)
+        path_row = QHBoxLayout()
+        self._digital_slide_output_path_edit = QLineEdit(self._app_settings.digital_slide_last_output_path, output_box)
+        self._digital_slide_output_path_edit.setPlaceholderText("请选择 .fdmslide 输出文件")
+        self._digital_slide_output_path_edit.textChanged.connect(self._on_digital_slide_output_path_changed)
+        browse_button = QPushButton("设置路径", output_box)
+        browse_button.clicked.connect(self._choose_digital_slide_output_path)
+        self._digital_slide_locked_controls.extend([self._digital_slide_output_path_edit, browse_button])
+        path_row.addWidget(self._digital_slide_output_path_edit, 1)
+        path_row.addWidget(browse_button)
+        output_layout.addLayout(path_row)
+
+        button_row = QHBoxLayout()
+        self._digital_slide_start_button = QPushButton("开始", output_box)
+        self._digital_slide_start_button.setObjectName("digitalSlideStartButton")
+        self._digital_slide_start_button.setIcon(themed_icon("digital_slide_start", color="#ECFDF5"))
+        self._digital_slide_start_button.setMinimumHeight(46)
+        self._digital_slide_start_button.clicked.connect(self._start_digital_slide_acquisition)
+        self._digital_slide_stop_button = QPushButton("停止", output_box)
+        self._digital_slide_stop_button.setObjectName("digitalSlideStopButton")
+        self._digital_slide_stop_button.setIcon(themed_icon("digital_slide_stop", color="#FEF2F2"))
+        self._digital_slide_stop_button.setMinimumHeight(46)
+        self._digital_slide_stop_button.clicked.connect(self._stop_digital_slide_acquisition)
+        self._digital_slide_stop_button.setEnabled(False)
+        button_row.addWidget(self._digital_slide_start_button, 1)
+        button_row.addWidget(self._digital_slide_stop_button, 1)
+        output_layout.addLayout(button_row)
+        return output_box
 
     def _build_center_panel(self) -> QWidget:
         container = QWidget()
@@ -2404,23 +2437,27 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        connection_box = QGroupBox("连接情况", panel)
-        connection_layout = QVBoxLayout(connection_box)
-        self._digital_slide_motor_enable = QCheckBox("启用电机输出", connection_box)
+        connection_section, self._digital_slide_connection_details, self._digital_slide_connection_toggle, self._digital_slide_connection_summary_label = (
+            self._make_digital_slide_collapsible_section(panel, "连接情况", "尚未检查", expanded=False)
+        )
+        connection_content = self._digital_slide_connection_details
+        connection_layout = QVBoxLayout(connection_content)
+        connection_layout.setContentsMargins(0, 0, 0, 0)
+        self._digital_slide_motor_enable = QCheckBox("启用电机输出", connection_content)
         self._digital_slide_motor_enable.toggled.connect(self._set_digital_slide_motor_enabled)
         connection_layout.addWidget(self._digital_slide_motor_enable)
-        self._digital_slide_port_combo = QComboBox(connection_box)
+        self._digital_slide_port_combo = QComboBox(connection_content)
         self._digital_slide_port_combo.setEditable(True)
         self._digital_slide_port_combo.currentIndexChanged.connect(self._on_digital_slide_port_changed)
         if self._digital_slide_port_combo.lineEdit() is not None:
             self._digital_slide_port_combo.lineEdit().editingFinished.connect(self._on_digital_slide_port_changed)
         connection_layout.addWidget(self._digital_slide_port_combo)
         connection_buttons = QHBoxLayout()
-        refresh_button = QPushButton("刷新", connection_box)
+        refresh_button = QPushButton("刷新", connection_content)
         refresh_button.clicked.connect(lambda checked=False: self._refresh_digital_slide_ports(prefer_auto=False))
-        auto_button = QPushButton("Auto FTDI", connection_box)
+        auto_button = QPushButton("Auto FTDI", connection_content)
         auto_button.clicked.connect(lambda checked=False: self._refresh_digital_slide_ports(prefer_auto=True))
-        check_button = QPushButton("检查", connection_box)
+        check_button = QPushButton("检查", connection_content)
         check_button.clicked.connect(self._check_digital_slide_motion_status)
         self._digital_slide_locked_controls.extend(
             [self._digital_slide_motor_enable, self._digital_slide_port_combo, refresh_button, auto_button, check_button]
@@ -2430,9 +2467,9 @@ class MainWindow(QMainWindow):
         connection_buttons.addWidget(check_button)
         connection_layout.addLayout(connection_buttons)
         card_grid = QGridLayout()
-        motor_card, self._digital_slide_motor_card_label = self._make_digital_slide_status_card(connection_box, "控制", "尚未检查")
-        port_card, self._digital_slide_port_card_label = self._make_digital_slide_status_card(connection_box, "端口", "未选择")
-        camera_card, self._digital_slide_camera_card_label = self._make_digital_slide_status_card(connection_box, "相机", "未检查")
+        motor_card, self._digital_slide_motor_card_label = self._make_digital_slide_status_card(connection_content, "控制", "尚未检查")
+        port_card, self._digital_slide_port_card_label = self._make_digital_slide_status_card(connection_content, "端口", "未选择")
+        camera_card, self._digital_slide_camera_card_label = self._make_digital_slide_status_card(connection_content, "相机", "未检查")
         self._digital_slide_status_label = self._digital_slide_motor_card_label
         self._digital_slide_camera_label = self._digital_slide_camera_card_label
         card_grid.addWidget(motor_card, 0, 0)
@@ -2440,7 +2477,7 @@ class MainWindow(QMainWindow):
         card_grid.addWidget(camera_card, 1, 0, 1, 2)
         connection_layout.addLayout(card_grid)
 
-        diagnostics_box = QFrame(connection_box)
+        diagnostics_box = QFrame(connection_content)
         diagnostics_box.setObjectName("digitalSlideDiagnosticsBox")
         diagnostics_box.setStyleSheet(
             "QFrame#digitalSlideDiagnosticsBox {"
@@ -2475,11 +2512,24 @@ class MainWindow(QMainWindow):
         self._digital_slide_diagnostics_details.hide()
         diagnostics_layout.addWidget(self._digital_slide_diagnostics_details)
         connection_layout.addWidget(diagnostics_box)
-        layout.addWidget(connection_box)
+        layout.addWidget(connection_section)
 
-        stage_box = QGroupBox("样品台 / 对焦", panel)
-        stage_layout = QVBoxLayout(stage_box)
-        self._digital_slide_motion_settings_label = QLabel(stage_box)
+        stage_section, self._digital_slide_stage_details, self._digital_slide_stage_toggle, self._digital_slide_stage_summary_label = (
+            self._make_digital_slide_collapsible_section(panel, "样品台 / 对焦", "X=0  Y=0  Z=0", expanded=False)
+        )
+        stage_content = self._digital_slide_stage_details
+        stage_layout = QVBoxLayout(stage_content)
+        stage_layout.setContentsMargins(0, 0, 0, 0)
+        step_form = QFormLayout()
+        self._digital_slide_xy_jog_step_spin = self._make_digital_slide_spinbox(1, 1_000_000, self._app_settings.digital_slide_xy_jog_step, suffix=" steps")
+        self._digital_slide_focus_jog_step_spin = self._make_digital_slide_spinbox(1, 1_000_000, self._app_settings.digital_slide_z_jog_step, suffix=" steps")
+        self._digital_slide_xy_jog_step_spin.valueChanged.connect(lambda _value: self._on_digital_slide_manual_step_changed())
+        self._digital_slide_focus_jog_step_spin.valueChanged.connect(lambda _value: self._on_digital_slide_manual_step_changed())
+        self._digital_slide_locked_controls.extend([self._digital_slide_xy_jog_step_spin, self._digital_slide_focus_jog_step_spin])
+        step_form.addRow("XY 步距", self._digital_slide_xy_jog_step_spin)
+        step_form.addRow("对焦步距", self._digital_slide_focus_jog_step_spin)
+        stage_layout.addLayout(step_form)
+        self._digital_slide_motion_settings_label = QLabel(stage_content)
         self._digital_slide_motion_settings_label.setWordWrap(True)
         self._digital_slide_motion_settings_label.setStyleSheet(f"color: {self._status_color('muted')};")
         stage_layout.addWidget(self._digital_slide_motion_settings_label)
@@ -2498,27 +2548,73 @@ class MainWindow(QMainWindow):
         stage_grid.addWidget(focus_up, 0, 3)
         stage_grid.addWidget(focus_down, 2, 3)
         stage_layout.addLayout(stage_grid)
-        self._digital_slide_position_label = QLabel("", stage_box)
+        self._digital_slide_position_label = QLabel("", stage_content)
         self._digital_slide_position_label.setWordWrap(True)
         stage_layout.addWidget(self._digital_slide_position_label)
         zero_buttons = QHBoxLayout()
-        xy_zero_button = QPushButton("设置 XY 样品台原点", stage_box)
+        xy_zero_button = QPushButton("设置 XY 样品台原点", stage_content)
         xy_zero_button.clicked.connect(lambda checked=False: self._reset_digital_slide_motion_zero(axes=(AXIS_X, AXIS_Y)))
-        z_zero_button = QPushButton("设置 Z 轴高度原点", stage_box)
+        z_zero_button = QPushButton("设置 Z 轴高度原点", stage_content)
         z_zero_button.clicked.connect(lambda checked=False: self._reset_digital_slide_motion_zero(axes=(AXIS_Z,)))
         self._digital_slide_locked_controls.extend([xy_zero_button, z_zero_button])
         zero_buttons.addWidget(xy_zero_button)
         zero_buttons.addWidget(z_zero_button)
         stage_layout.addLayout(zero_buttons)
-        layout.addWidget(stage_box)
+        layout.addWidget(stage_section)
 
         layout.addStretch(1)
+        layout.addWidget(self._build_digital_slide_output_box(panel))
         scroll.setWidget(panel)
         self._refresh_digital_slide_ports(prefer_auto=True)
         self._apply_digital_slide_motion_settings()
         self._sync_digital_slide_position_label()
         self._sync_digital_slide_camera_label()
+        self._sync_digital_slide_task_state()
         return scroll
+
+    def _make_digital_slide_collapsible_section(
+        self,
+        parent: QWidget,
+        title: str,
+        summary: str,
+        *,
+        expanded: bool,
+    ) -> tuple[QFrame, QWidget, QToolButton, QLabel]:
+        frame = QFrame(parent)
+        frame.setObjectName("digitalSlideCollapsibleSection")
+        frame.setStyleSheet(
+            "QFrame#digitalSlideCollapsibleSection {"
+            "border: 1px solid rgba(148, 163, 184, 0.32);"
+            "border-radius: 8px;"
+            "}"
+        )
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(10, 8, 10, 8)
+        layout.setSpacing(8)
+        header = QHBoxLayout()
+        toggle = QToolButton(frame)
+        toggle.setText(title)
+        toggle.setCheckable(True)
+        toggle.setChecked(bool(expanded))
+        toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        toggle.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
+        summary_label = QLabel(summary, frame)
+        summary_label.setStyleSheet(f"color: {self._status_color('muted')};")
+        summary_label.setWordWrap(True)
+        header.addWidget(toggle)
+        header.addStretch(1)
+        header.addWidget(summary_label)
+        layout.addLayout(header)
+        content = QWidget(frame)
+        content.setVisible(bool(expanded))
+        layout.addWidget(content)
+
+        def on_toggled(checked: bool) -> None:
+            toggle.setArrowType(Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow)
+            content.setVisible(checked)
+
+        toggle.toggled.connect(on_toggled)
+        return frame, content, toggle, summary_label
 
     def _make_digital_slide_status_card(self, parent: QWidget, title: str, value: str) -> tuple[QFrame, QLabel]:
         card = QFrame(parent)
@@ -3529,6 +3625,8 @@ class MainWindow(QMainWindow):
     def _set_digital_slide_status(self, message: str) -> None:
         if self._digital_slide_status_label is not None:
             self._digital_slide_status_label.setText(message)
+        if self._digital_slide_connection_summary_label is not None:
+            self._digital_slide_connection_summary_label.setText(str(message or "尚未检查").splitlines()[0])
         self._sync_digital_slide_port_card()
         self.statusBar().showMessage(message, 3000)
 
@@ -3685,6 +3783,15 @@ class MainWindow(QMainWindow):
             self._app_settings.recent_export_dir = str(path.parent)
         self._save_app_settings(context="数字化切片输出路径")
 
+    def _clear_digital_slide_output_path(self) -> None:
+        if self._digital_slide_output_path_edit is not None:
+            self._digital_slide_output_path_edit.blockSignals(True)
+            self._digital_slide_output_path_edit.clear()
+            self._digital_slide_output_path_edit.blockSignals(False)
+        self._app_settings.digital_slide_last_output_path = ""
+        self._save_app_settings(context="数字化切片输出路径")
+        self._sync_digital_slide_task_state()
+
     def _on_digital_slide_output_path_changed(self) -> None:
         self._sync_digital_slide_task_state()
 
@@ -3832,6 +3939,10 @@ class MainWindow(QMainWindow):
             self._digital_slide_range_map.set_state(
                 current_xy=(int(pos.get(AXIS_X, 0)), int(pos.get(AXIS_Y, 0))),
                 bounds=self._digital_slide_region_bounds,
+                stage_step=(
+                    int(self._app_settings.digital_slide_x_stage_step),
+                    int(self._app_settings.digital_slide_y_stage_step),
+                ),
             )
         self._sync_digital_slide_motion_settings_label()
 
@@ -3846,6 +3957,11 @@ class MainWindow(QMainWindow):
             f"软限位: XY +/-{self._app_settings.digital_slide_xy_soft_limit}，"
             f"Z +/-{self._app_settings.digital_slide_z_soft_limit}"
         )
+        if self._digital_slide_stage_summary_label is not None:
+            pos = self._slide_motion.relative_pos
+            self._digital_slide_stage_summary_label.setText(
+                f"X={pos.get(AXIS_X, 0)}  Y={pos.get(AXIS_Y, 0)}  Z={pos.get(AXIS_Z, 0)}"
+            )
 
     def _apply_digital_slide_motion_settings(self) -> None:
         self._slide_motion.set_soft_limit(AXIS_X, self._app_settings.digital_slide_xy_soft_limit)
@@ -3877,6 +3993,9 @@ class MainWindow(QMainWindow):
         selected = self._selected_capture_device()
         if selected is None:
             self._digital_slide_camera_label.setText("相机: 未选择")
+            if self._digital_slide_connection_summary_label is not None:
+                port = self._slide_motion.port or self._digital_slide_selected_port() or "未选择"
+                self._digital_slide_connection_summary_label.setText(f"端口 {port} / 相机未选择")
             return
         backend_name = {
             "opencv": "OpenCV / Do3think",
@@ -3897,6 +4016,9 @@ class MainWindow(QMainWindow):
         if selected.backend_key != "opencv":
             lines.append("目标设备建议选择 OpenCV Do3think 相机。")
         self._digital_slide_camera_label.setText("\n".join(lines))
+        if self._digital_slide_connection_summary_label is not None:
+            port = self._slide_motion.port or self._digital_slide_selected_port() or "未选择"
+            self._digital_slide_connection_summary_label.setText(f"端口 {port} / {selected.name}")
 
     def _sync_digital_slide_position_label(self) -> None:
         if self._digital_slide_position_label is None:
@@ -3925,6 +4047,16 @@ class MainWindow(QMainWindow):
         if axis == AXIS_Z:
             return int(self._app_settings.digital_slide_z_jog_step)
         return int(self._app_settings.digital_slide_xy_jog_step)
+
+    def _on_digital_slide_manual_step_changed(self) -> None:
+        if self._slide_acquisition_active():
+            return
+        if self._digital_slide_xy_jog_step_spin is not None:
+            self._app_settings.digital_slide_xy_jog_step = int(self._digital_slide_xy_jog_step_spin.value())
+        if self._digital_slide_focus_jog_step_spin is not None:
+            self._app_settings.digital_slide_z_jog_step = int(self._digital_slide_focus_jog_step_spin.value())
+        self._sync_digital_slide_motion_settings_label()
+        self._save_app_settings(context="数字化切片运动步距")
 
     def _begin_digital_slide_jog(self, axis: str, direction: str) -> None:
         if not self._digital_slide_mode or self._slide_acquisition_active():
@@ -4583,6 +4715,7 @@ class MainWindow(QMainWindow):
             self._delete_slide_path(path)
             self._set_digital_slide_progress("没有采集到有效图像。")
             self._reset_digital_slide_eta()
+            self._clear_digital_slide_output_path()
             return
         metadata.setdefault("digital_slide", {})
         if isinstance(metadata["digital_slide"], dict):
@@ -4600,6 +4733,8 @@ class MainWindow(QMainWindow):
         self._set_digital_slide_progress(f"{message}，已生成 {tile_count} 张采集图像。")
         self._set_digital_slide_progress_value(tile_count, max(tile_count, len(self._slide_acquisition_plan)))
         self._set_digital_slide_finished_eta(elapsed_ms)
+        if status in {"ready", "interrupted"}:
+            self._clear_digital_slide_output_path()
         if status in {"ready", "interrupted"}:
             self._show_digital_slide_completion_dialog(
                 status=status,
@@ -4632,6 +4767,7 @@ class MainWindow(QMainWindow):
         self._set_digital_slide_progress_value(0, max(1, len(self._slide_acquisition_plan)))
         self._set_digital_slide_timing("耗时: -")
         self._reset_digital_slide_eta()
+        self._clear_digital_slide_output_path()
 
     def _delete_slide_path(self, path: Path) -> None:
         for candidate in (path, Path(f"{path}-wal"), Path(f"{path}-shm")):
@@ -4778,6 +4914,11 @@ class MainWindow(QMainWindow):
         box.addButton("关闭", QMessageBox.ButtonRole.RejectRole)
         box.exec()
         if box.clickedButton() == view_button:
+            self.stop_live_preview()
+            self._digital_slide_mode = False
+            self._sync_digital_slide_mode_ui()
+            if self._center_stack is not None:
+                self._center_stack.setCurrentWidget(self.tab_widget)
             self._focus_digital_slide_path(path)
 
     def _focus_digital_slide_path(self, path: Path) -> None:
@@ -6131,8 +6272,14 @@ class MainWindow(QMainWindow):
         if settings.selected_capture_device_id:
             self._capture_manager.set_selected_device(settings.selected_capture_device_id)
         self._apply_digital_slide_motion_settings()
-        if self._digital_slide_z_step_spin is not None:
-            self._digital_slide_z_step_spin.setValue(settings.digital_slide_z_jog_step)
+        if self._digital_slide_xy_jog_step_spin is not None:
+            self._digital_slide_xy_jog_step_spin.blockSignals(True)
+            self._digital_slide_xy_jog_step_spin.setValue(settings.digital_slide_xy_jog_step)
+            self._digital_slide_xy_jog_step_spin.blockSignals(False)
+        if self._digital_slide_focus_jog_step_spin is not None:
+            self._digital_slide_focus_jog_step_spin.blockSignals(True)
+            self._digital_slide_focus_jog_step_spin.setValue(settings.digital_slide_z_jog_step)
+            self._digital_slide_focus_jog_step_spin.blockSignals(False)
         self._update_capture_device_ui()
         self._refresh_preset_combo()
         self._refresh_canvases_for_settings()
