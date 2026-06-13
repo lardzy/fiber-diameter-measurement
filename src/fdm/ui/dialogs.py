@@ -430,6 +430,11 @@ class ShortcutHelpDialog(QDialog):
                     "鼠标滚轮  切换焦层",
                     "Ctrl+鼠标滚轮  缩放当前视场",
                     "",
+                    "数字化切片采集地图",
+                    "地图坐标为 X 向右、Y 向下；绿色框表示当前视场，浅色框表示接下来采集的范围。",
+                    "方向按钮用于把当前视场的对应边缘指定为采集范围边界。",
+                    "如果设备实际左右或上下移动与界面相反，请在设置 > 数字化切片 > 运动控制中启用对应方向反转。",
+                    "",
                     "面积与魔棒",
                     "R  在正采样点 / 负采样点之间切换",
                     "Y  切换 ROI 限制区域",
@@ -562,10 +567,15 @@ class SettingsDialog(QDialog):
             digital_slide_z_soft_limit=self._digital_slide_z_soft_limit_spin.value(),
             digital_slide_xy_jog_step=self._digital_slide_xy_jog_step_spin.value(),
             digital_slide_z_jog_step=self._digital_slide_z_jog_step_spin.value(),
+            digital_slide_z_capture_lower=self._initial_settings.digital_slide_z_capture_lower,
+            digital_slide_z_capture_upper=self._initial_settings.digital_slide_z_capture_upper,
+            digital_slide_z_capture_step=self._initial_settings.digital_slide_z_capture_step,
             digital_slide_jog_rate=self._digital_slide_jog_rate_spin.value(),
             digital_slide_motor_output_enabled=self._digital_slide_motor_output_checkbox.isChecked(),
             digital_slide_x_stage_step=self._digital_slide_x_stage_step_spin.value(),
             digital_slide_y_stage_step=self._digital_slide_y_stage_step_spin.value(),
+            digital_slide_reverse_x_axis=self._digital_slide_reverse_x_axis_checkbox.isChecked(),
+            digital_slide_reverse_y_axis=self._digital_slide_reverse_y_axis_checkbox.isChecked(),
             digital_slide_overlap_percent=self._digital_slide_overlap_spin.value(),
             digital_slide_pixel_stride_mode=self._digital_slide_pixel_stride_mode_combo.currentData(),
             digital_slide_x_pixel_stride=self._digital_slide_x_pixel_stride_spin.value(),
@@ -978,11 +988,17 @@ class SettingsDialog(QDialog):
         self._digital_slide_jog_rate_spin.setValue(settings.digital_slide_jog_rate)
         self._digital_slide_motor_output_checkbox = QCheckBox("进入数字化切片界面后自动启用电机输出")
         self._digital_slide_motor_output_checkbox.setChecked(settings.digital_slide_motor_output_enabled)
+        self._digital_slide_reverse_x_axis_checkbox = QCheckBox("左右方向反转")
+        self._digital_slide_reverse_x_axis_checkbox.setChecked(settings.digital_slide_reverse_x_axis)
+        self._digital_slide_reverse_y_axis_checkbox = QCheckBox("上下方向反转")
+        self._digital_slide_reverse_y_axis_checkbox.setChecked(settings.digital_slide_reverse_y_axis)
         motion_form.addRow("XY 软限位", self._digital_slide_xy_soft_limit_spin)
         motion_form.addRow("Z 软限位", self._digital_slide_z_soft_limit_spin)
         motion_form.addRow("XY 步距", self._digital_slide_xy_jog_step_spin)
         motion_form.addRow("对焦步距", self._digital_slide_z_jog_step_spin)
         motion_form.addRow("长按速度", self._digital_slide_jog_rate_spin)
+        motion_form.addRow("坐标方向", self._digital_slide_reverse_x_axis_checkbox)
+        motion_form.addRow("", self._digital_slide_reverse_y_axis_checkbox)
         motion_form.addRow("", self._digital_slide_motor_output_checkbox)
 
         advanced_group = QGroupBox("高级采集")

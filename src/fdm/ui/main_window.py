@@ -468,22 +468,42 @@ class DigitalSlideZRangeRail(QFrame):
 class DigitalSlideRangeMap(QFrame):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setFixedSize(132, 132)
-        self._current_xy = (0, 0)
+        self.setMinimumSize(260, 180)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self._current_rect: dict[str, int] = {"left": 0, "right": 1, "top": 0, "bottom": 1}
         self._bounds: dict[str, int] = {}
-        self._stage_step = (5000, 5000)
+        self._axis_hint = "X→ / Y↓"
 
     def set_state(
         self,
         *,
-        current_xy: tuple[int, int],
+        current_rect: dict[str, int],
         bounds: dict[str, int],
-        stage_step: tuple[int, int] = (5000, 5000),
+        axis_hint: str = "X→ / Y↓",
     ) -> None:
-        self._current_xy = (int(current_xy[0]), int(current_xy[1]))
-        self._bounds = dict(bounds)
-        self._stage_step = (int(stage_step[0]), int(stage_step[1]))
+        self._current_rect = self._normalized_rect_dict(current_rect)
+        self._bounds = self._normalized_rect_dict(bounds) if self._has_full_bounds(bounds) else {}
+        self._axis_hint = str(axis_hint or "X→ / Y↓")
         self.update()
+
+    @staticmethod
+    def _has_full_bounds(bounds: dict[str, int]) -> bool:
+        return {"left", "right", "top", "bottom"}.issubset(bounds)
+
+    @classmethod
+    def _normalized_rect_dict(cls, bounds: dict[str, int]) -> dict[str, int]:
+        if not cls._has_full_bounds(bounds):
+            return {}
+        left = int(bounds["left"])
+        right = int(bounds["right"])
+        top = int(bounds["top"])
+        bottom = int(bounds["bottom"])
+        return {
+            "left": min(left, right),
+            "right": max(left, right),
+            "top": min(top, bottom),
+            "bottom": max(top, bottom),
+        }
 
     def paintEvent(self, event) -> None:  # noqa: N802
         super().paintEvent(event)
@@ -496,29 +516,27 @@ class DigitalSlideRangeMap(QFrame):
         painter.setPen(QPen(QColor("#64748B"), 1))
         painter.drawRect(rect)
 
-        current_x, current_y = self._current_xy
-        step_x, step_y = self._stage_step
-        fallback_span = 1
-        current_corners = [
-            (current_x, current_y),
-            (current_x + (step_x if step_x != 0 else fallback_span), current_y),
-            (current_x, current_y + (step_y if step_y != 0 else fallback_span)),
-            (
-                current_x + (step_x if step_x != 0 else fallback_span),
-                current_y + (step_y if step_y != 0 else fallback_span),
-            ),
-        ]
-        points: list[tuple[int, int]] = [self._current_xy, *current_corners]
-        if {"left", "right", "top", "bottom"}.issubset(self._bounds):
-            left = self._bounds["left"]
-            right = self._bounds["right"]
-            top = self._bounds["top"]
-            bottom = self._bounds["bottom"]
-            points.extend([(left, top), (right, bottom)])
+        def corners(bounds: dict[str, int]) -> list[tuple[int, int]]:
+            return [
+                (bounds["left"], bounds["top"]),
+                (bounds["right"], bounds["top"]),
+                (bounds["left"], bounds["bottom"]),
+                (bounds["right"], bounds["bottom"]),
+            ]
+
+        points: list[tuple[int, int]] = corners(self._current_rect)
+        if self._has_full_bounds(self._bounds):
+            points.extend(corners(self._bounds))
         xs = [p[0] for p in points]
         ys = [p[1] for p in points]
         min_x, max_x = min(xs), max(xs)
         min_y, max_y = min(ys), max(ys)
+        pad_x = max(1, int(round((max_x - min_x) * 0.08)))
+        pad_y = max(1, int(round((max_y - min_y) * 0.08)))
+        min_x -= pad_x
+        max_x += pad_x
+        min_y -= pad_y
+        max_y += pad_y
         if min_x == max_x:
             min_x -= 1
             max_x += 1
@@ -531,25 +549,25 @@ class DigitalSlideRangeMap(QFrame):
             py = rect.top() + ((y - min_y) / max(1, max_y - min_y)) * rect.height()
             return QPointF(px, py)
 
-        if {"left", "right", "top", "bottom"}.issubset(self._bounds):
+        if self._has_full_bounds(self._bounds):
             p1 = map_point(self._bounds["left"], self._bounds["top"])
             p2 = map_point(self._bounds["right"], self._bounds["bottom"])
             selected = QRectF(p1, p2).normalized()
             painter.fillRect(selected, QColor(96, 165, 250, 55))
             painter.setPen(QPen(QColor("#60A5FA"), 2))
             painter.drawRect(selected)
-        p1 = map_point(current_corners[0][0], current_corners[0][1])
-        p2 = map_point(current_corners[-1][0], current_corners[-1][1])
+        p1 = map_point(self._current_rect["left"], self._current_rect["top"])
+        p2 = map_point(self._current_rect["right"], self._current_rect["bottom"])
         view_rect = QRectF(p1, p2).normalized()
         if view_rect.width() < 8 or view_rect.height() < 8:
-            center = map_point(*self._current_xy)
+            center = map_point(self._current_rect["left"], self._current_rect["top"])
             view_rect = QRectF(center.x() - 6, center.y() - 6, 12, 12)
         painter.setPen(QPen(QColor("#22C55E"), 2))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(view_rect)
         painter.setPen(QPen(QColor("#94A3B8"), 1))
-        painter.drawText(rect.left() + 6, rect.top() + 18, "绿框: 当前视场")
-        painter.drawText(rect.left() + 6, rect.bottom() - 8, "浅色: 采集范围")
+        painter.drawText(rect.left() + 8, rect.top() + 18, "绿框: 当前视场")
+        painter.drawText(rect.left() + 8, rect.bottom() - 8, f"浅色: 采集范围    {self._axis_hint}")
 
 
 class SmallObjectEnhancementPreviewWindow(QWidget):
@@ -792,6 +810,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_cols_edit: QLineEdit | None = None
         self._digital_slide_rows_edit: QLineEdit | None = None
         self._digital_slide_range_map: DigitalSlideRangeMap | None = None
+        self._digital_slide_region_edge_marks: dict[str, int] = {}
         self._digital_slide_region_bounds: dict[str, int] = {}
         self._digital_slide_region_anchor_points: dict[str, tuple[int, int]] = {}
         self._digital_slide_rows_cols_manual = False
@@ -2042,37 +2061,6 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
-        summary_box = QGroupBox("数字化切片任务", panel)
-        summary_layout = QVBoxLayout(summary_box)
-        self._digital_slide_progress_label = QLabel("等待开始采集", summary_box)
-        self._digital_slide_progress_label.setWordWrap(True)
-        summary_layout.addWidget(self._digital_slide_progress_label)
-        self._digital_slide_progress_bar = QProgressBar(summary_box)
-        self._digital_slide_progress_bar.setRange(0, 1)
-        self._digital_slide_progress_bar.setValue(0)
-        self._digital_slide_progress_bar.setTextVisible(True)
-        self._digital_slide_progress_bar.setFormat("等待开始")
-        summary_layout.addWidget(self._digital_slide_progress_bar)
-        eta_grid = QGridLayout()
-        eta_grid.setHorizontalSpacing(10)
-        eta_grid.setVerticalSpacing(4)
-        self._digital_slide_elapsed_label = QLabel("已用时: -", summary_box)
-        self._digital_slide_remaining_label = QLabel("预计剩余: -", summary_box)
-        self._digital_slide_eta_label = QLabel("预计完成: -", summary_box)
-        for label in (self._digital_slide_elapsed_label, self._digital_slide_remaining_label, self._digital_slide_eta_label):
-            label.setStyleSheet(f"color: {self._status_color('muted')};")
-        eta_grid.addWidget(self._digital_slide_elapsed_label, 0, 0)
-        eta_grid.addWidget(self._digital_slide_remaining_label, 0, 1)
-        eta_grid.addWidget(self._digital_slide_eta_label, 1, 0, 1, 2)
-        summary_layout.addLayout(eta_grid)
-        hint = QLabel(
-            "采集时会边采集边写入 .fdmslide；完成或停止保留后可直接打开生成的切片文件。",
-            summary_box,
-        )
-        hint.setWordWrap(True)
-        hint.setStyleSheet(f"color: {self._status_color('muted')};")
-        summary_layout.addWidget(hint)
-        layout.addWidget(summary_box)
         layout.addWidget(self._build_digital_slide_capture_box(panel))
         layout.addStretch(1)
         scroll.setWidget(panel)
@@ -2182,12 +2170,12 @@ class MainWindow(QMainWindow):
             self._digital_slide_direction_buttons[key] = button
             self._digital_slide_locked_controls.append(button)
             direction_grid.addWidget(button, row, col)
-        map_direction_row = QHBoxLayout()
-        map_direction_row.setSpacing(10)
-        map_direction_row.addWidget(self._digital_slide_range_map)
-        map_direction_row.addStretch(1)
-        map_direction_row.addLayout(direction_grid)
-        range_layout.addLayout(map_direction_row)
+        range_layout.addWidget(self._digital_slide_range_map)
+        direction_row = QHBoxLayout()
+        direction_row.addStretch(1)
+        direction_row.addLayout(direction_grid)
+        direction_row.addStretch(1)
+        range_layout.addLayout(direction_row)
         layout.addWidget(range_box)
 
         self._sync_digital_slide_task_state()
@@ -2196,6 +2184,40 @@ class MainWindow(QMainWindow):
     def _build_digital_slide_output_box(self, parent: QWidget) -> QGroupBox:
         output_box = QGroupBox("输出路径", parent)
         output_layout = QVBoxLayout(output_box)
+        progress_frame = QFrame(output_box)
+        progress_frame.setObjectName("digitalSlideProgressFrame")
+        progress_frame.setStyleSheet(
+            "QFrame#digitalSlideProgressFrame {"
+            "background: rgba(15, 23, 42, 0.12);"
+            "border: 1px solid rgba(148, 163, 184, 0.25);"
+            "border-radius: 8px;"
+            "}"
+        )
+        progress_layout = QVBoxLayout(progress_frame)
+        progress_layout.setContentsMargins(10, 8, 10, 8)
+        self._digital_slide_progress_label = QLabel("等待开始采集", progress_frame)
+        self._digital_slide_progress_label.setWordWrap(True)
+        progress_layout.addWidget(self._digital_slide_progress_label)
+        self._digital_slide_progress_bar = QProgressBar(progress_frame)
+        self._digital_slide_progress_bar.setRange(0, 1)
+        self._digital_slide_progress_bar.setValue(0)
+        self._digital_slide_progress_bar.setTextVisible(True)
+        self._digital_slide_progress_bar.setFormat("等待开始")
+        progress_layout.addWidget(self._digital_slide_progress_bar)
+        eta_grid = QGridLayout()
+        eta_grid.setHorizontalSpacing(10)
+        eta_grid.setVerticalSpacing(4)
+        self._digital_slide_elapsed_label = QLabel("已用时: -", progress_frame)
+        self._digital_slide_remaining_label = QLabel("预计剩余: -", progress_frame)
+        self._digital_slide_eta_label = QLabel("预计完成: -", progress_frame)
+        for label in (self._digital_slide_elapsed_label, self._digital_slide_remaining_label, self._digital_slide_eta_label):
+            label.setStyleSheet(f"color: {self._status_color('muted')};")
+        eta_grid.addWidget(self._digital_slide_elapsed_label, 0, 0)
+        eta_grid.addWidget(self._digital_slide_remaining_label, 0, 1)
+        eta_grid.addWidget(self._digital_slide_eta_label, 1, 0, 1, 2)
+        progress_layout.addLayout(eta_grid)
+        output_layout.addWidget(progress_frame)
+
         path_row = QHBoxLayout()
         self._digital_slide_output_path_edit = QLineEdit(self._app_settings.digital_slide_last_output_path, output_box)
         self._digital_slide_output_path_edit.setPlaceholderText("请选择 .fdmslide 输出文件")
@@ -2525,7 +2547,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(connection_section)
 
         stage_section, self._digital_slide_stage_details, self._digital_slide_stage_toggle, self._digital_slide_stage_summary_label = (
-            self._make_digital_slide_collapsible_section(panel, "样品台 / 对焦", "X=0  Y=0  Z=0", expanded=False)
+            self._make_digital_slide_collapsible_section(panel, "样品台 / 对焦", "X=0  Y=0  Z=0", expanded=True)
         )
         stage_content = self._digital_slide_stage_details
         stage_layout = QVBoxLayout(stage_content)
@@ -2544,8 +2566,8 @@ class MainWindow(QMainWindow):
         self._digital_slide_motion_settings_label.setStyleSheet(f"color: {self._status_color('muted')};")
         stage_layout.addWidget(self._digital_slide_motion_settings_label)
         stage_grid = QGridLayout()
-        up = self._make_jog_button("↑", AXIS_Y, DIR_POS)
-        down = self._make_jog_button("↓", AXIS_Y, DIR_NEG)
+        up = self._make_jog_button("↑", AXIS_Y, DIR_NEG)
+        down = self._make_jog_button("↓", AXIS_Y, DIR_POS)
         left = self._make_jog_button("←", AXIS_X, DIR_NEG)
         right = self._make_jog_button("→", AXIS_X, DIR_POS)
         focus_up = self._make_jog_button("焦点 +", AXIS_Z, DIR_POS)
@@ -2610,7 +2632,10 @@ class MainWindow(QMainWindow):
         toggle.setArrowType(Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow)
         summary_label = QLabel(summary, frame)
         summary_label.setStyleSheet(f"color: {self._status_color('muted')};")
-        summary_label.setWordWrap(True)
+        summary_label.setWordWrap(False)
+        summary_label.setMinimumWidth(0)
+        summary_label.setFixedHeight(20)
+        summary_label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         header.addWidget(toggle)
         header.addStretch(1)
         header.addWidget(summary_label)
@@ -3635,9 +3660,8 @@ class MainWindow(QMainWindow):
     def _set_digital_slide_status(self, message: str) -> None:
         if self._digital_slide_status_label is not None:
             self._digital_slide_status_label.setText(message)
-        if self._digital_slide_connection_summary_label is not None:
-            self._digital_slide_connection_summary_label.setText(str(message or "尚未检查").splitlines()[0])
         self._sync_digital_slide_port_card()
+        self._sync_digital_slide_connection_summary()
         self.statusBar().showMessage(message, 3000)
 
     def _set_digital_slide_timing(self, message: str) -> None:
@@ -3668,6 +3692,15 @@ class MainWindow(QMainWindow):
             return
         port = self._slide_motion.port or self._digital_slide_selected_port()
         self._digital_slide_port_card_label.setText(port or "未选择")
+        self._sync_digital_slide_connection_summary()
+
+    def _sync_digital_slide_connection_summary(self) -> None:
+        if self._digital_slide_connection_summary_label is None:
+            return
+        motor = "开" if self._slide_motion.enabled else "关"
+        port = self._slide_motion.port or self._digital_slide_selected_port() or "-"
+        camera = "已选" if self._selected_capture_device() is not None else "未选"
+        self._digital_slide_connection_summary_label.setText(f"控制: {motor} / 端口: {port} / 相机: {camera}")
 
     def _digital_slide_effective_settings(self) -> AppSettings:
         return self._slide_acquisition_settings or self._app_settings
@@ -3831,23 +3864,95 @@ class MainWindow(QMainWindow):
         self._digital_slide_rows_cols_manual = True
         self._sync_digital_slide_task_state()
 
-    def _mark_digital_slide_region(self, marker: str) -> None:
+    def _digital_slide_axis_multiplier(self, axis: str, settings: AppSettings | None = None) -> int:
+        active_settings = settings or self._app_settings
+        if axis == AXIS_X:
+            return -1 if active_settings.digital_slide_reverse_x_axis else 1
+        if axis == AXIS_Y:
+            return -1 if active_settings.digital_slide_reverse_y_axis else 1
+        return 1
+
+    def _digital_slide_stage_to_map_axis(self, axis: str, value: int, settings: AppSettings | None = None) -> int:
+        return int(value) * self._digital_slide_axis_multiplier(axis, settings)
+
+    def _digital_slide_map_to_stage_axis(self, axis: str, value: int, settings: AppSettings | None = None) -> int:
+        return int(value) * self._digital_slide_axis_multiplier(axis, settings)
+
+    def _digital_slide_view_map_size(self, settings: AppSettings | None = None) -> tuple[int, int]:
+        active_settings = settings or self._app_settings
+        width = abs(int(active_settings.digital_slide_x_stage_step))
+        height = abs(int(active_settings.digital_slide_y_stage_step))
+        return max(1, width), max(1, height)
+
+    def _digital_slide_current_view_map_rect(self, settings: AppSettings | None = None) -> dict[str, int]:
         pos = self._slide_motion.relative_pos
-        x = int(pos.get(AXIS_X, 0))
-        y = int(pos.get(AXIS_Y, 0))
-        self._digital_slide_region_anchor_points[marker] = (x, y)
+        width, height = self._digital_slide_view_map_size(settings)
+        left = self._digital_slide_stage_to_map_axis(AXIS_X, int(pos.get(AXIS_X, 0)), settings)
+        top = self._digital_slide_stage_to_map_axis(AXIS_Y, int(pos.get(AXIS_Y, 0)), settings)
+        return {
+            "left": left,
+            "right": left + width,
+            "top": top,
+            "bottom": top + height,
+        }
+
+    @staticmethod
+    def _normalize_digital_slide_bounds(bounds: dict[str, int]) -> dict[str, int]:
+        left = int(bounds["left"])
+        right = int(bounds["right"])
+        top = int(bounds["top"])
+        bottom = int(bounds["bottom"])
+        return {
+            "left": min(left, right),
+            "right": max(left, right),
+            "top": min(top, bottom),
+            "bottom": max(top, bottom),
+        }
+
+    def _digital_slide_axis_hint(self, settings: AppSettings | None = None) -> str:
+        active_settings = settings or self._app_settings
+        x_hint = "X←" if active_settings.digital_slide_reverse_x_axis else "X→"
+        y_hint = "Y↑" if active_settings.digital_slide_reverse_y_axis else "Y↓"
+        return f"{x_hint} / {y_hint}"
+
+    def _digital_slide_stage_region_from_map_bounds(
+        self,
+        bounds: dict[str, int] | None,
+        settings: AppSettings | None = None,
+    ) -> dict[str, int] | None:
+        if not bounds or not {"left", "right", "top", "bottom"}.issubset(bounds):
+            return None
+        normalized = self._normalize_digital_slide_bounds(bounds)
+        return {
+            "left": self._digital_slide_map_to_stage_axis(AXIS_X, normalized["left"], settings),
+            "right": self._digital_slide_map_to_stage_axis(AXIS_X, normalized["right"], settings),
+            "top": self._digital_slide_map_to_stage_axis(AXIS_Y, normalized["top"], settings),
+            "bottom": self._digital_slide_map_to_stage_axis(AXIS_Y, normalized["bottom"], settings),
+        }
+
+    def _mark_digital_slide_region(self, marker: str) -> None:
+        current_rect = self._digital_slide_current_view_map_rect()
+        if not self._digital_slide_region_bounds:
+            self._digital_slide_region_bounds = dict(current_rect)
+        self._digital_slide_region_anchor_points[marker] = (current_rect["left"], current_rect["top"])
         if "left" in marker:
-            self._digital_slide_region_bounds["left"] = x
+            self._digital_slide_region_edge_marks["left"] = current_rect["left"]
+            self._digital_slide_region_bounds["left"] = current_rect["left"]
         if "right" in marker:
-            self._digital_slide_region_bounds["right"] = x
+            self._digital_slide_region_edge_marks["right"] = current_rect["right"]
+            self._digital_slide_region_bounds["right"] = current_rect["right"]
         if "top" in marker:
-            self._digital_slide_region_bounds["top"] = y
+            self._digital_slide_region_edge_marks["top"] = current_rect["top"]
+            self._digital_slide_region_bounds["top"] = current_rect["top"]
         if "bottom" in marker:
-            self._digital_slide_region_bounds["bottom"] = y
+            self._digital_slide_region_edge_marks["bottom"] = current_rect["bottom"]
+            self._digital_slide_region_bounds["bottom"] = current_rect["bottom"]
+        self._digital_slide_region_bounds = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds)
         self._update_digital_slide_region_counts_from_bounds()
         self._sync_digital_slide_task_state()
 
     def _clear_digital_slide_region(self) -> None:
+        self._digital_slide_region_edge_marks.clear()
         self._digital_slide_region_anchor_points.clear()
         self._digital_slide_region_bounds.clear()
         self._digital_slide_rows_cols_manual = False
@@ -3860,12 +3965,14 @@ class MainWindow(QMainWindow):
     def _update_digital_slide_region_counts_from_bounds(self) -> None:
         if not {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_bounds):
             return
-        x_step = abs(int(self._app_settings.digital_slide_x_stage_step))
-        y_step = abs(int(self._app_settings.digital_slide_y_stage_step))
-        if x_step <= 0 or y_step <= 0:
-            return
-        cols = max(1, int(math.ceil(abs(self._digital_slide_region_bounds["right"] - self._digital_slide_region_bounds["left"]) / x_step)) + 1)
-        rows = max(1, int(math.ceil(abs(self._digital_slide_region_bounds["bottom"] - self._digital_slide_region_bounds["top"]) / y_step)) + 1)
+        view_width, view_height = self._digital_slide_view_map_size()
+        stride_x = max(1, view_width)
+        stride_y = max(1, view_height)
+        bounds = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds)
+        width = max(0, int(bounds["right"]) - int(bounds["left"]))
+        height = max(0, int(bounds["bottom"]) - int(bounds["top"]))
+        cols = max(1, int(math.ceil(max(0, width - view_width) / stride_x)) + 1)
+        rows = max(1, int(math.ceil(max(0, height - view_height) / stride_y)) + 1)
         if not self._digital_slide_rows_cols_manual:
             if self._digital_slide_cols_edit is not None:
                 self._digital_slide_cols_edit.setText(str(cols))
@@ -3873,7 +3980,7 @@ class MainWindow(QMainWindow):
                 self._digital_slide_rows_edit.setText(str(rows))
 
     def _digital_slide_has_region(self) -> bool:
-        return {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_bounds)
+        return bool(self._digital_slide_region_edge_marks) and {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_bounds)
 
     def _sync_digital_slide_task_state(self) -> None:
         self._sync_digital_slide_visuals()
@@ -3959,14 +4066,10 @@ class MainWindow(QMainWindow):
                 upper_z=upper,
             )
         if self._digital_slide_range_map is not None:
-            pos = self._slide_motion.relative_pos
             self._digital_slide_range_map.set_state(
-                current_xy=(int(pos.get(AXIS_X, 0)), int(pos.get(AXIS_Y, 0))),
+                current_rect=self._digital_slide_current_view_map_rect(),
                 bounds=self._digital_slide_region_bounds,
-                stage_step=(
-                    int(self._app_settings.digital_slide_x_stage_step),
-                    int(self._app_settings.digital_slide_y_stage_step),
-                ),
+                axis_hint=self._digital_slide_axis_hint(),
             )
         self._sync_digital_slide_motion_settings_label()
 
@@ -3979,7 +4082,8 @@ class MainWindow(QMainWindow):
             f"对焦步距 {self._app_settings.digital_slide_z_jog_step} steps，"
             f"长按 {self._app_settings.digital_slide_jog_rate} 次/秒\n"
             f"软限位: XY +/-{self._app_settings.digital_slide_xy_soft_limit}，"
-            f"Z +/-{self._app_settings.digital_slide_z_soft_limit}"
+            f"Z +/-{self._app_settings.digital_slide_z_soft_limit}\n"
+            f"地图方向: {self._digital_slide_axis_hint()}"
         )
         if self._digital_slide_stage_summary_label is not None:
             pos = self._slide_motion.relative_pos
@@ -4017,9 +4121,7 @@ class MainWindow(QMainWindow):
         selected = self._selected_capture_device()
         if selected is None:
             self._digital_slide_camera_label.setText("相机: 未选择")
-            if self._digital_slide_connection_summary_label is not None:
-                port = self._slide_motion.port or self._digital_slide_selected_port() or "未选择"
-                self._digital_slide_connection_summary_label.setText(f"端口 {port} / 相机未选择")
+            self._sync_digital_slide_connection_summary()
             return
         backend_name = {
             "opencv": "OpenCV / Do3think",
@@ -4040,9 +4142,7 @@ class MainWindow(QMainWindow):
         if selected.backend_key != "opencv":
             lines.append("目标设备建议选择 OpenCV Do3think 相机。")
         self._digital_slide_camera_label.setText("\n".join(lines))
-        if self._digital_slide_connection_summary_label is not None:
-            port = self._slide_motion.port or self._digital_slide_selected_port() or "未选择"
-            self._digital_slide_connection_summary_label.setText(f"端口 {port} / {selected.name}")
+        self._sync_digital_slide_connection_summary()
 
     def _sync_digital_slide_position_label(self) -> None:
         if self._digital_slide_position_label is None:
@@ -4072,6 +4172,11 @@ class MainWindow(QMainWindow):
             return int(self._app_settings.digital_slide_z_jog_step)
         return int(self._app_settings.digital_slide_xy_jog_step)
 
+    def _digital_slide_physical_direction(self, axis: str, direction: str) -> str:
+        if axis in {AXIS_X, AXIS_Y} and self._digital_slide_axis_multiplier(axis) < 0:
+            return DIR_NEG if direction == DIR_POS else DIR_POS
+        return direction
+
     def _on_digital_slide_manual_step_changed(self) -> None:
         if self._slide_acquisition_active():
             return
@@ -4088,7 +4193,7 @@ class MainWindow(QMainWindow):
         self._end_digital_slide_jog()
         self._slide_jog_request = {
             "axis": axis,
-            "direction": direction,
+            "direction": self._digital_slide_physical_direction(axis, direction),
             "long_active": False,
         }
         self._slide_jog_single_shot_timer.start(300)
@@ -4227,7 +4332,8 @@ class MainWindow(QMainWindow):
         if rows > 1 and y_stage_step == 0:
             QMessageBox.warning(self, "数字化切片", "行数大于 1 时，Y 换行步距不能为 0。")
             return
-        stage_region = dict(self._digital_slide_region_bounds) if self._digital_slide_has_region() else None
+        map_region = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds) if self._digital_slide_has_region() else None
+        stage_region = self._digital_slide_stage_region_from_map_bounds(map_region, acquisition_settings)
         if stage_region is not None:
             xy_limit = int(acquisition_settings.digital_slide_xy_soft_limit)
             for label, value in (("X 左", stage_region["left"]), ("X 右", stage_region["right"])):
@@ -4257,6 +4363,8 @@ class MainWindow(QMainWindow):
             "z_soft_limit": acquisition_settings.digital_slide_z_soft_limit,
             "xy_jog_step": acquisition_settings.digital_slide_xy_jog_step,
             "z_jog_step": acquisition_settings.digital_slide_z_jog_step,
+            "reverse_x_axis": acquisition_settings.digital_slide_reverse_x_axis,
+            "reverse_y_axis": acquisition_settings.digital_slide_reverse_y_axis,
         }
         manifest = DigitalSlideManifest(
             version=1,
@@ -4271,6 +4379,12 @@ class MainWindow(QMainWindow):
                 "rows": rows,
                 "overlap": overlap,
                 "stage_step": [x_stage_step, y_stage_step],
+                "map_axis": {
+                    "x_positive": "left" if acquisition_settings.digital_slide_reverse_x_axis else "right",
+                    "y_positive": "up" if acquisition_settings.digital_slide_reverse_y_axis else "down",
+                    "reverse_x_axis": acquisition_settings.digital_slide_reverse_x_axis,
+                    "reverse_y_axis": acquisition_settings.digital_slide_reverse_y_axis,
+                },
                 "pixel_stride_mode": pixel_stride_mode,
                 "pixel_stride": [pixel_stride_x, pixel_stride_y],
                 "calibrated_pixel_stride": [pixel_stride_x, pixel_stride_y],
@@ -4289,8 +4403,9 @@ class MainWindow(QMainWindow):
                 "preview_max_width": settings_snapshot["preview_max_width"],
                 "settings_snapshot": settings_snapshot,
                 "region_bounds": dict(stage_region or {}),
+                "map_region_bounds": dict(map_region or {}),
                 "region_anchors": dict(self._digital_slide_region_anchor_points),
-                "row_column_source": "manual" if self._digital_slide_rows_cols_manual else ("region" if stage_region else "manual"),
+                "row_column_source": "manual" if self._digital_slide_rows_cols_manual else ("region" if map_region else "manual"),
             },
         )
         try:
@@ -4325,7 +4440,7 @@ class MainWindow(QMainWindow):
             focus_levels=focus_levels,
             pixel_stride_x=pixel_stride_x,
             pixel_stride_y=pixel_stride_y,
-            stage_region=stage_region,
+            map_region=map_region,
             settings=acquisition_settings,
         )
         self._slide_acquisition_index = 0
@@ -4376,25 +4491,35 @@ class MainWindow(QMainWindow):
         focus_levels: list[int],
         pixel_stride_x: int,
         pixel_stride_y: int,
-        stage_region: dict[str, int] | None = None,
+        map_region: dict[str, int] | None = None,
         settings: AppSettings | None = None,
     ) -> list[dict[str, int]]:
         active_settings = settings or self._digital_slide_effective_settings()
         x_stage_step = int(active_settings.digital_slide_x_stage_step)
         y_stage_step = int(active_settings.digital_slide_y_stage_step)
+        view_width, view_height = self._digital_slide_view_map_size(active_settings)
+        normalized_map_region = self._normalize_digital_slide_bounds(map_region) if map_region else None
 
         def target_x_for_col(col: int) -> int:
-            if stage_region is not None and {"left", "right"}.issubset(stage_region):
+            if normalized_map_region is not None:
+                first_origin = int(normalized_map_region["left"])
+                last_origin = int(normalized_map_region["right"]) - view_width
                 if cols <= 1:
-                    return int(stage_region["left"])
-                return int(round(stage_region["left"] + ((stage_region["right"] - stage_region["left"]) * (col / max(1, cols - 1)))))
+                    map_x = first_origin
+                else:
+                    map_x = int(round(first_origin + ((last_origin - first_origin) * (col / max(1, cols - 1)))))
+                return self._digital_slide_map_to_stage_axis(AXIS_X, map_x, active_settings)
             return int(col * x_stage_step)
 
         def target_y_for_row(row: int) -> int:
-            if stage_region is not None and {"top", "bottom"}.issubset(stage_region):
+            if normalized_map_region is not None:
+                first_origin = int(normalized_map_region["top"])
+                last_origin = int(normalized_map_region["bottom"]) - view_height
                 if rows <= 1:
-                    return int(stage_region["top"])
-                return int(round(stage_region["top"] + ((stage_region["bottom"] - stage_region["top"]) * (row / max(1, rows - 1)))))
+                    map_y = first_origin
+                else:
+                    map_y = int(round(first_origin + ((last_origin - first_origin) * (row / max(1, rows - 1)))))
+                return self._digital_slide_map_to_stage_axis(AXIS_Y, map_y, active_settings)
             return int(row * y_stage_step)
 
         plan: list[dict[str, int]] = []
@@ -9871,8 +9996,8 @@ class MainWindow(QMainWindow):
                 mapping = {
                     Qt.Key.Key_Left: (AXIS_X, DIR_NEG),
                     Qt.Key.Key_Right: (AXIS_X, DIR_POS),
-                    Qt.Key.Key_Up: (AXIS_Y, DIR_POS),
-                    Qt.Key.Key_Down: (AXIS_Y, DIR_NEG),
+                    Qt.Key.Key_Up: (AXIS_Y, DIR_NEG),
+                    Qt.Key.Key_Down: (AXIS_Y, DIR_POS),
                 }
                 axis, direction = mapping[event.key()]
                 self._begin_digital_slide_jog(axis, direction)

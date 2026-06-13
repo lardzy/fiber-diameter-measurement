@@ -462,6 +462,8 @@ class AppSettings:
     digital_slide_motor_output_enabled: bool = True
     digital_slide_x_stage_step: int = 5000
     digital_slide_y_stage_step: int = 5000
+    digital_slide_reverse_x_axis: bool = False
+    digital_slide_reverse_y_axis: bool = False
     digital_slide_overlap_percent: int = 0
     digital_slide_pixel_stride_mode: str = "auto_overlap"
     digital_slide_x_pixel_stride: int = 1280
@@ -518,6 +520,8 @@ class AppSettings:
         normalized.digital_slide_jog_rate = self._normalize_int_range(self.digital_slide_jog_rate, default=12, minimum=1, maximum=50)
         normalized.digital_slide_x_stage_step = self._normalize_signed_int_range(self.digital_slide_x_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
         normalized.digital_slide_y_stage_step = self._normalize_signed_int_range(self.digital_slide_y_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_reverse_x_axis = bool(self.digital_slide_reverse_x_axis)
+        normalized.digital_slide_reverse_y_axis = bool(self.digital_slide_reverse_y_axis)
         normalized.digital_slide_overlap_percent = self._normalize_int_range(self.digital_slide_overlap_percent, default=0, minimum=0, maximum=90)
         normalized.digital_slide_pixel_stride_mode = self._normalize_digital_slide_pixel_stride_mode(self.digital_slide_pixel_stride_mode)
         normalized.digital_slide_x_pixel_stride = self._normalize_int_range(self.digital_slide_x_pixel_stride, default=1280, minimum=1, maximum=100_000)
@@ -884,6 +888,8 @@ class AppSettings:
             "digital_slide_motor_output_enabled": normalized.digital_slide_motor_output_enabled,
             "digital_slide_x_stage_step": normalized.digital_slide_x_stage_step,
             "digital_slide_y_stage_step": normalized.digital_slide_y_stage_step,
+            "digital_slide_reverse_x_axis": normalized.digital_slide_reverse_x_axis,
+            "digital_slide_reverse_y_axis": normalized.digital_slide_reverse_y_axis,
             "digital_slide_overlap_percent": normalized.digital_slide_overlap_percent,
             "digital_slide_pixel_stride_mode": normalized.digital_slide_pixel_stride_mode,
             "digital_slide_x_pixel_stride": normalized.digital_slide_x_pixel_stride,
@@ -1135,6 +1141,12 @@ class AppSettings:
             default=5000,
             minimum=-10_000_000,
             maximum=10_000_000,
+        )
+        settings.digital_slide_reverse_x_axis = bool(
+            payload.get("digital_slide_reverse_x_axis", settings.digital_slide_reverse_x_axis)
+        )
+        settings.digital_slide_reverse_y_axis = bool(
+            payload.get("digital_slide_reverse_y_axis", settings.digital_slide_reverse_y_axis)
         )
         settings.digital_slide_overlap_percent = cls._normalize_int_range(
             payload.get("digital_slide_overlap_percent", settings.digital_slide_overlap_percent),

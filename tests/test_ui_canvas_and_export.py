@@ -43,7 +43,7 @@ from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
-from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_POS
+from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_NEG, DIR_POS
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -1209,24 +1209,124 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertIsNotNone(window._digital_slide_connection_toggle)
             self.assertIsNotNone(window._digital_slide_connection_details)
+            self.assertIsNotNone(window._digital_slide_connection_summary_label)
             self.assertFalse(window._digital_slide_connection_toggle.isChecked())
             self.assertTrue(window._digital_slide_connection_details.isHidden())
+            self.assertFalse(window._digital_slide_connection_summary_label.wordWrap())
+            self.assertLessEqual(window._digital_slide_connection_summary_label.maximumHeight(), 20)
             self.assertIsNotNone(window._digital_slide_stage_toggle)
             self.assertIsNotNone(window._digital_slide_stage_details)
-            self.assertFalse(window._digital_slide_stage_toggle.isChecked())
-            self.assertTrue(window._digital_slide_stage_details.isHidden())
+            self.assertTrue(window._digital_slide_stage_toggle.isChecked())
+            self.assertFalse(window._digital_slide_stage_details.isHidden())
 
             self.assertIsNotNone(window._digital_slide_range_map)
-            self.assertEqual(window._digital_slide_range_map.width(), 132)
-            self.assertEqual(window._digital_slide_range_map.height(), 132)
-            window._app_settings.digital_slide_x_stage_step = -5000
+            self.assertGreaterEqual(window._digital_slide_range_map.minimumHeight(), 180)
+            self.assertEqual(window._digital_slide_range_map.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Expanding)
+            window._app_settings.digital_slide_x_stage_step = 5000
             window._app_settings.digital_slide_y_stage_step = 7000
             window._slide_motion.relative_pos = {AXIS_X: 123, AXIS_Y: -456, AXIS_Z: 0}
 
             window._sync_digital_slide_visuals()
 
-            self.assertEqual(window._digital_slide_range_map._current_xy, (123, -456))
-            self.assertEqual(window._digital_slide_range_map._stage_step, (-5000, 7000))
+            self.assertEqual(
+                window._digital_slide_range_map._current_rect,
+                {"left": 123, "right": 5123, "top": -456, "bottom": 6544},
+            )
+            self.assertEqual(window._digital_slide_range_map._axis_hint, "X→ / Y↓")
+            self.assertIsNotNone(window._digital_slide_progress_bar)
+            output_box = window._digital_slide_output_path_edit.parent()
+            self.assertIs(window._digital_slide_progress_bar.parent().parent(), output_box)
+        finally:
+            window.close()
+
+    def test_digital_slide_range_buttons_use_current_view_edges_and_compute_coverage_counts(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        try:
+            window._app_settings.digital_slide_x_stage_step = 100
+            window._app_settings.digital_slide_y_stage_step = 50
+            self.assertIsNotNone(window._digital_slide_cols_edit)
+            self.assertIsNotNone(window._digital_slide_rows_edit)
+
+            window._slide_motion.relative_pos = {AXIS_X: 1000, AXIS_Y: 2000, AXIS_Z: 0}
+            window._mark_digital_slide_region("left")
+            self.assertEqual(
+                window._digital_slide_region_bounds,
+                {"left": 1000, "right": 1100, "top": 2000, "bottom": 2050},
+            )
+            self.assertEqual(window._digital_slide_cols_edit.text(), "1")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "1")
+
+            window._slide_motion.relative_pos = {AXIS_X: 1300, AXIS_Y: 2000, AXIS_Z: 0}
+            window._mark_digital_slide_region("right")
+            self.assertEqual(
+                window._digital_slide_region_bounds,
+                {"left": 1000, "right": 1400, "top": 2000, "bottom": 2050},
+            )
+            self.assertEqual(window._digital_slide_cols_edit.text(), "4")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "1")
+
+            window._slide_motion.relative_pos = {AXIS_X: 1300, AXIS_Y: 2100, AXIS_Z: 0}
+            window._mark_digital_slide_region("bottom")
+            self.assertEqual(
+                window._digital_slide_region_bounds,
+                {"left": 1000, "right": 1400, "top": 2000, "bottom": 2150},
+            )
+            self.assertEqual(window._digital_slide_cols_edit.text(), "4")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "3")
+
+            window._clear_digital_slide_region()
+            self.assertEqual(window._digital_slide_region_bounds, {})
+            self.assertEqual(window._digital_slide_cols_edit.text(), "")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "")
+        finally:
+            window.close()
+
+    def test_digital_slide_axis_reversal_affects_map_plan_and_manual_jog_semantics(self) -> None:
+        settings = AppSettings(
+            digital_slide_x_stage_step=100,
+            digital_slide_y_stage_step=50,
+            digital_slide_reverse_x_axis=True,
+            digital_slide_reverse_y_axis=True,
+        )
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings):
+            window = MainWindow()
+        try:
+            self.assertEqual(window._digital_slide_axis_hint(), "X← / Y↑")
+            window._slide_motion.relative_pos = {AXIS_X: -1000, AXIS_Y: -2000, AXIS_Z: 0}
+            window._mark_digital_slide_region("top_left")
+            window._slide_motion.relative_pos = {AXIS_X: -1300, AXIS_Y: -2100, AXIS_Z: 0}
+            window._mark_digital_slide_region("bottom_right")
+            self.assertEqual(
+                window._digital_slide_region_bounds,
+                {"left": 1000, "right": 1400, "top": 2000, "bottom": 2150},
+            )
+            self.assertEqual(window._digital_slide_cols_edit.text(), "4")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "3")
+
+            plan = window._build_digital_slide_capture_plan(
+                cols=4,
+                rows=3,
+                focus_levels=[0],
+                pixel_stride_x=10,
+                pixel_stride_y=20,
+                map_region=window._digital_slide_region_bounds,
+                settings=window._app_settings,
+            )
+            self.assertEqual((plan[0]["stage_x"], plan[0]["stage_y"]), (-1000, -2000))
+            self.assertEqual((plan[3]["stage_x"], plan[3]["stage_y"]), (-1300, -2000))
+            self.assertEqual((plan[4]["stage_x"], plan[4]["stage_y"]), (-1300, -2050))
+            self.assertEqual((plan[-1]["stage_x"], plan[-1]["stage_y"]), (-1300, -2100))
+
+            calls: list[tuple[str, int, str]] = []
+            window._digital_slide_mode = True
+            window._slide_motion.move = lambda axis, step, direction, label="": calls.append((axis, step, direction))  # type: ignore[method-assign]
+            window._begin_digital_slide_jog(AXIS_X, DIR_POS)
+            window._end_digital_slide_jog()
+            window._begin_digital_slide_jog(AXIS_Y, DIR_NEG)
+            window._end_digital_slide_jog()
+            self.assertEqual(calls[0], (AXIS_X, settings.digital_slide_xy_jog_step, DIR_NEG))
+            self.assertEqual(calls[1], (AXIS_Y, settings.digital_slide_xy_jog_step, DIR_POS))
         finally:
             window.close()
 
@@ -4592,6 +4692,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIn("S", dialogs[0]._content.toPlainText())
             self.assertIn("T", dialogs[0]._content.toPlainText())
             self.assertIn("Enter / F", dialogs[0]._content.toPlainText())
+            self.assertIn("地图坐标为 X 向右、Y 向下", dialogs[0]._content.toPlainText())
+            self.assertIn("方向反转", dialogs[0]._content.toPlainText())
         finally:
             for dialog in dialogs:
                 dialog.close()
@@ -6487,6 +6589,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._digital_slide_z_soft_limit_spin.value(), 200_000)
             self.assertEqual(dialog._digital_slide_xy_jog_step_spin.value(), 5000)
             self.assertEqual(dialog._digital_slide_z_jog_step_spin.value(), 1000)
+            self.assertFalse(dialog._digital_slide_reverse_x_axis_checkbox.isChecked())
+            self.assertFalse(dialog._digital_slide_reverse_y_axis_checkbox.isChecked())
             self.assertTrue(dialog._digital_slide_motor_output_checkbox.isChecked())
             self.assertEqual(dialog._digital_slide_overlap_spin.value(), 0)
             self.assertEqual(dialog._digital_slide_blend_width_spin.value(), 0)
@@ -6569,6 +6673,22 @@ class CanvasAndExportTests(unittest.TestCase):
             collected = dialog.app_settings()
 
             self.assertEqual(collected.theme_mode, AppThemeMode.LIGHT)
+        finally:
+            dialog.close()
+
+    def test_settings_dialog_roundtrips_digital_slide_axis_reversal(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            dialog._digital_slide_reverse_x_axis_checkbox.setChecked(True)
+            dialog._digital_slide_reverse_y_axis_checkbox.setChecked(True)
+
+            collected = dialog.app_settings()
+
+            self.assertTrue(collected.digital_slide_reverse_x_axis)
+            self.assertTrue(collected.digital_slide_reverse_y_axis)
+            restored = AppSettings.from_dict(collected.to_dict())
+            self.assertTrue(restored.digital_slide_reverse_x_axis)
+            self.assertTrue(restored.digital_slide_reverse_y_axis)
         finally:
             dialog.close()
 
