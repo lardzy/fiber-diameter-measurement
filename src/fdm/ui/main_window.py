@@ -2655,17 +2655,27 @@ class MainWindow(QMainWindow):
         self._digital_slide_motion_settings_label.setStyleSheet(f"color: {self._status_color('muted')};")
         stage_layout.addWidget(self._digital_slide_motion_settings_label)
         stage_grid = QGridLayout()
+        up_left = self._make_xy_jog_button("↖", DIR_NEG, DIR_NEG)
         up = self._make_jog_button("↑", AXIS_Y, DIR_NEG)
+        up_right = self._make_xy_jog_button("↗", DIR_POS, DIR_NEG)
         down = self._make_jog_button("↓", AXIS_Y, DIR_POS)
+        down_left = self._make_xy_jog_button("↙", DIR_NEG, DIR_POS)
+        down_right = self._make_xy_jog_button("↘", DIR_POS, DIR_POS)
         left = self._make_jog_button("←", AXIS_X, DIR_NEG)
         right = self._make_jog_button("→", AXIS_X, DIR_POS)
         focus_up = self._make_jog_button("焦点 +", AXIS_Z, DIR_POS)
         focus_down = self._make_jog_button("焦点 -", AXIS_Z, DIR_NEG)
-        self._digital_slide_motion_controls.extend([up, down, left, right, focus_up, focus_down])
+        self._digital_slide_motion_controls.extend(
+            [up_left, up, up_right, left, right, down_left, down, down_right, focus_up, focus_down]
+        )
+        stage_grid.addWidget(up_left, 0, 0)
         stage_grid.addWidget(up, 0, 1)
+        stage_grid.addWidget(up_right, 0, 2)
         stage_grid.addWidget(left, 1, 0)
         stage_grid.addWidget(right, 1, 2)
+        stage_grid.addWidget(down_left, 2, 0)
         stage_grid.addWidget(down, 2, 1)
+        stage_grid.addWidget(down_right, 2, 2)
         stage_grid.addWidget(focus_up, 0, 3)
         stage_grid.addWidget(focus_down, 2, 3)
         stage_layout.addLayout(stage_grid)
@@ -2783,6 +2793,18 @@ class MainWindow(QMainWindow):
         button = QPushButton(label)
         button.setMinimumHeight(38)
         button.pressed.connect(lambda axis_name=axis, dir_name=direction: self._begin_digital_slide_jog(axis_name, dir_name))
+        button.released.connect(self._end_digital_slide_jog)
+        return button
+
+    def _make_xy_jog_button(self, label: str, x_direction: str, y_direction: str) -> QPushButton:
+        button = QPushButton(label)
+        button.setMinimumHeight(38)
+        button.setToolTip("斜向移动样品台")
+        button.pressed.connect(
+            lambda x_dir=x_direction, y_dir=y_direction: self._begin_digital_slide_multi_jog(
+                [(AXIS_X, x_dir), (AXIS_Y, y_dir)]
+            )
+        )
         button.released.connect(self._end_digital_slide_jog)
         return button
 
@@ -4382,12 +4404,21 @@ class MainWindow(QMainWindow):
         self._save_app_settings(context="数字化切片运动步距")
 
     def _begin_digital_slide_jog(self, axis: str, direction: str) -> None:
+        self._begin_digital_slide_multi_jog([(axis, direction)])
+
+    def _begin_digital_slide_multi_jog(self, actions: list[tuple[str, str]]) -> None:
         if not self._digital_slide_mode or self._slide_acquisition_active():
             return
         self._end_digital_slide_jog()
+        normalized_actions = [
+            (axis, self._digital_slide_physical_direction(axis, direction))
+            for axis, direction in actions
+            if axis in {AXIS_X, AXIS_Y, AXIS_Z}
+        ]
+        if not normalized_actions:
+            return
         self._slide_jog_request = {
-            "axis": axis,
-            "direction": self._digital_slide_physical_direction(axis, direction),
+            "actions": normalized_actions,
             "long_active": False,
         }
         self._slide_jog_single_shot_timer.start(300)
@@ -4404,7 +4435,7 @@ class MainWindow(QMainWindow):
         request = self._slide_jog_request
         if request is None:
             return
-        self._perform_digital_slide_jog_step(str(request["axis"]), str(request["direction"]))
+        self._perform_digital_slide_jog_actions(request.get("actions", []))
 
     def _end_digital_slide_jog(self) -> None:
         request = self._slide_jog_request
@@ -4417,7 +4448,16 @@ class MainWindow(QMainWindow):
         self._slide_jog_timer.stop()
         self._slide_jog_request = None
         if not was_long:
-            self._perform_digital_slide_jog_step(str(request["axis"]), str(request["direction"]))
+            self._perform_digital_slide_jog_actions(request.get("actions", []))
+
+    def _perform_digital_slide_jog_actions(self, actions: object) -> None:
+        if not isinstance(actions, list):
+            return
+        for action in actions:
+            if not isinstance(action, tuple) or len(action) != 2:
+                continue
+            axis, direction = action
+            self._perform_digital_slide_jog_step(str(axis), str(direction))
 
     def _perform_digital_slide_jog_step(self, axis: str, direction: str) -> None:
         try:

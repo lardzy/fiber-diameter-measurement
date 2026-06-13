@@ -14,7 +14,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
-    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QScrollArea, QSizePolicy, QSplitter, QToolButton
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSplitter, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -1592,6 +1592,13 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual((plan[4]["stage_x"], plan[4]["stage_y"]), (-1300, -2050))
             self.assertEqual((plan[-1]["stage_x"], plan[-1]["stage_y"]), (-1300, -2100))
 
+            self.assertIsNotNone(window._digital_slide_stage_details)
+            stage_button_texts = {
+                button.text()
+                for button in window._digital_slide_stage_details.findChildren(QPushButton)
+            }
+            self.assertTrue({"↖", "↗", "↙", "↘"}.issubset(stage_button_texts))
+
             calls: list[tuple[str, int, str]] = []
             window._digital_slide_mode = True
             window._slide_motion.move = lambda axis, step, direction, label="": calls.append((axis, step, direction))  # type: ignore[method-assign]
@@ -1601,6 +1608,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window._end_digital_slide_jog()
             self.assertEqual(calls[0], (AXIS_X, settings.digital_slide_xy_jog_step, DIR_NEG))
             self.assertEqual(calls[1], (AXIS_Y, settings.digital_slide_xy_jog_step, DIR_POS))
+            calls.clear()
+            window._begin_digital_slide_multi_jog([(AXIS_X, DIR_POS), (AXIS_Y, DIR_POS)])
+            window._end_digital_slide_jog()
+            self.assertEqual(calls[0], (AXIS_X, settings.digital_slide_xy_jog_step, DIR_NEG))
+            self.assertEqual(calls[1], (AXIS_Y, settings.digital_slide_xy_jog_step, DIR_NEG))
         finally:
             window.close()
 
