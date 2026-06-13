@@ -8,9 +8,12 @@ from fdm.models import ImageDocument
 from fdm.ui.project_session_controller import ProjectSessionController
 from fdm.services.digital_slide_store import (
     DOCUMENT_KIND_DIGITAL_SLIDE,
+    DIGITAL_SLIDE_TILE_CODEC_JPEG,
+    DIGITAL_SLIDE_TILE_CODEC_PNG,
     DigitalSlideManifest,
     DigitalSlideStore,
     DigitalSlideTile,
+    compress_slide_file,
 )
 from fdm.services.motion_control import AXIS_Z, DIR_POS, build_motion_frame
 
@@ -61,6 +64,84 @@ def test_digital_slide_store_writes_manifest_and_renders_viewport(tmp_path: Path
         assert blend_color.green() > 80
     finally:
         store.close()
+
+
+def test_digital_slide_store_writes_and_reads_jpeg_tiles(tmp_path: Path) -> None:
+    slide_path = tmp_path / "jpeg.fdmslide"
+    store = DigitalSlideStore.create(
+        slide_path,
+        DigitalSlideManifest(
+            version=1,
+            width=40,
+            height=30,
+            viewport_width=40,
+            viewport_height=30,
+            focus_levels=[0],
+        ),
+    )
+    try:
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=0, y=0, width=40, height=30),
+            _solid_image(40, 30, "#3366CC"),
+            codec=DIGITAL_SLIDE_TILE_CODEC_JPEG,
+            quality=75,
+        )
+        tiles = list(store.iter_tiles())
+        assert len(tiles) == 1
+        tile, image, codec, quality = tiles[0]
+        assert tile.width == 40
+        assert image.width() == 40
+        assert codec == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        assert quality == 75
+        viewport = store.render_viewport(x=0, y=0, width=40, height=30, z_index=0)
+        color = QColor(viewport.pixel(10, 10))
+        assert color.blue() > 120
+    finally:
+        store.close()
+
+
+def test_compress_slide_file_writes_copy_without_changing_source(tmp_path: Path) -> None:
+    source = tmp_path / "source.fdmslide"
+    target = tmp_path / "source_compressed.fdmslide"
+    store = DigitalSlideStore.create(
+        source,
+        DigitalSlideManifest(
+            version=1,
+            width=40,
+            height=30,
+            viewport_width=40,
+            viewport_height=30,
+            focus_levels=[0],
+        ),
+    )
+    try:
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=0, y=0, width=40, height=30),
+            _solid_image(40, 30, "#00AA55"),
+        )
+        source_tiles = list(store.iter_tiles())
+        assert source_tiles[0][2] == DIGITAL_SLIDE_TILE_CODEC_PNG
+    finally:
+        store.close()
+
+    compress_slide_file(source, target, codec=DIGITAL_SLIDE_TILE_CODEC_JPEG, quality=80)
+
+    source_store = DigitalSlideStore(source)
+    target_store = DigitalSlideStore(target)
+    try:
+        source_store.open()
+        target_store.open()
+        assert source_store.tile_count() == 1
+        assert target_store.tile_count() == 1
+        target_manifest = target_store.read_manifest()
+        assert target_manifest.metadata["tile_codec"] == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        assert target_manifest.metadata["tile_quality"] == 80
+        target_tiles = list(target_store.iter_tiles())
+        assert target_tiles[0][2] == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        assert target_tiles[0][3] == 80
+    finally:
+        source_store.close()
+        target_store.close()
 
 
 def test_image_document_digital_slide_round_trips_without_sidecar() -> None:

@@ -776,9 +776,11 @@ class CanvasAndExportTests(unittest.TestCase):
                 pass
 
         class FakeWriter:
-            def __init__(self, path, *, max_queue_size: int = 3) -> None:
+            def __init__(self, path, *, max_queue_size: int = 3, codec: str = "png", quality: int | None = None) -> None:
                 self.path = path
                 self.max_queue_size = max_queue_size
+                self.codec = codec
+                self.quality = quality
                 self.tileWritten = FakeSignal()
                 self.failed = FakeSignal()
                 self.drained = FakeSignal()
@@ -848,6 +850,8 @@ class CanvasAndExportTests(unittest.TestCase):
                     self.assertEqual(manifest.metadata["pixel_stride_mode"], "manual_pixels")
                     self.assertEqual(manifest.metadata["calibrated_pixel_stride"], [1234, 567])
                     self.assertEqual(manifest.metadata["stage_step"], [-111, -222])
+                    self.assertEqual(manifest.metadata["tile_codec"], "png")
+                    self.assertIsNone(manifest.metadata["tile_quality"])
                     self.assertEqual(manifest.metadata["blend_width"], 32)
                     self.assertEqual(manifest.metadata["capture_scale"], 0.8)
                     self.assertEqual(manifest.metadata["xy_settle_ms"], 200)
@@ -6834,7 +6838,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 4),
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键", "切片压缩工具"],
             )
             self.assertEqual(dialog._digital_slide_preview_width_combo.currentData(), 1280)
             self.assertEqual(dialog._digital_slide_capture_width_combo.currentData(), 1600)
@@ -6876,7 +6880,7 @@ class CanvasAndExportTests(unittest.TestCase):
             groups = [group for group in content.findChildren(QGroupBox) if group.title()]
             self.assertEqual(
                 [group.title() for group in groups],
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键", "切片压缩工具"],
             )
             self.assertTrue(any(isinstance(label, QLabel) and "参数已锁定" in label.text() for label in content.findChildren(QLabel)))
             self.assertTrue(groups)

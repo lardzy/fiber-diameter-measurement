@@ -3,6 +3,8 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
+from collections.abc import Iterator
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
@@ -15,6 +17,12 @@ from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 DIGITAL_SLIDE_SUFFIX = ".fdmslide"
 DOCUMENT_KIND_IMAGE = "image"
 DOCUMENT_KIND_DIGITAL_SLIDE = "digital_slide"
+DIGITAL_SLIDE_TILE_CODEC_PNG = "png"
+DIGITAL_SLIDE_TILE_CODEC_JPEG = "jpeg"
+SUPPORTED_DIGITAL_SLIDE_TILE_CODECS = {
+    DIGITAL_SLIDE_TILE_CODEC_PNG,
+    DIGITAL_SLIDE_TILE_CODEC_JPEG,
+}
 
 
 @dataclass(slots=True)
@@ -78,28 +86,66 @@ def is_digital_slide_path(path: str | Path) -> bool:
     return Path(path).suffix.lower() == DIGITAL_SLIDE_SUFFIX
 
 
-def qimage_to_png_bytes(image: QImage) -> bytes:
+def normalize_tile_codec(codec: str | None) -> str:
+    token = str(codec or DIGITAL_SLIDE_TILE_CODEC_PNG).strip().lower()
+    if token in {"jpg", "jpeg"}:
+        return DIGITAL_SLIDE_TILE_CODEC_JPEG
+    if token in SUPPORTED_DIGITAL_SLIDE_TILE_CODECS:
+        return token
+    return DIGITAL_SLIDE_TILE_CODEC_PNG
+
+
+def normalize_jpeg_quality(quality: int | None) -> int:
+    try:
+        value = int(quality if quality is not None else 90)
+    except (TypeError, ValueError):
+        value = 90
+    return max(70, min(value, 95))
+
+
+def qimage_to_image_bytes(image: QImage, *, codec: str = DIGITAL_SLIDE_TILE_CODEC_PNG, quality: int | None = None) -> bytes:
     if image.isNull():
         raise ValueError("cannot encode null image")
+    normalized_codec = normalize_tile_codec(codec)
+    image_format = "JPG" if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else "PNG"
+    image_to_save = image
+    if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG and image.hasAlphaChannel():
+        image_to_save = image.convertToFormat(QImage.Format.Format_RGB888)
     data = QByteArray()
     buffer = QBuffer(data)
     buffer.open(QIODevice.OpenModeFlag.WriteOnly)
-    if not image.save(buffer, "PNG"):
+    save_quality = normalize_jpeg_quality(quality) if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else -1
+    if not image_to_save.save(buffer, image_format, save_quality):
         raise RuntimeError("无法编码切片图像。")
     buffer.close()
     return bytes(data)
 
 
-def png_bytes_to_qimage(payload: bytes) -> QImage:
+def qimage_to_png_bytes(image: QImage) -> bytes:
+    return qimage_to_image_bytes(image, codec=DIGITAL_SLIDE_TILE_CODEC_PNG)
+
+
+def image_bytes_to_qimage(payload: bytes, *, codec: str | None = None) -> QImage:
     image = QImage()
-    image.loadFromData(payload, "PNG")
+    normalized_codec = normalize_tile_codec(codec)
+    image_format = "JPG" if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else "PNG"
+    image.loadFromData(payload, image_format)
+    if image.isNull():
+        image.loadFromData(payload)
     return image
+
+
+def png_bytes_to_qimage(payload: bytes) -> QImage:
+    return image_bytes_to_qimage(payload, codec=DIGITAL_SLIDE_TILE_CODEC_PNG)
 
 
 class DigitalSlideStore:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self._conn: sqlite3.Connection | None = None
+        self._schema_initialized = False
+        self._image_cache: OrderedDict[tuple[int, str], QImage] = OrderedDict()
+        self._image_cache_limit = 256
 
     def __enter__(self) -> "DigitalSlideStore":
         self.open()
@@ -124,12 +170,14 @@ class DigitalSlideStore:
             return
         self._conn = sqlite3.connect(str(self.path))
         self._conn.row_factory = sqlite3.Row
+        self._schema_initialized = False
 
     def close(self) -> None:
         if self._conn is not None:
             self._conn.commit()
             self._conn.close()
             self._conn = None
+            self._schema_initialized = False
 
     def _connection(self) -> sqlite3.Connection:
         if self._conn is None:
@@ -138,6 +186,8 @@ class DigitalSlideStore:
         return self._conn
 
     def _initialize_schema(self) -> None:
+        if self._schema_initialized:
+            return
         conn = self._connection()
         conn.executescript(
             """
@@ -158,12 +208,24 @@ class DigitalSlideStore:
                 focus_z INTEGER NOT NULL DEFAULT 0,
                 sharpness REAL NOT NULL DEFAULT 0,
                 status TEXT NOT NULL DEFAULT 'ready',
-                image_png BLOB NOT NULL
+                image_png BLOB NOT NULL,
+                codec TEXT NOT NULL DEFAULT 'png',
+                quality INTEGER
             );
             CREATE INDEX IF NOT EXISTS idx_tiles_view ON tiles(z_index, x, y, width, height);
             """
         )
+        self._ensure_tile_codec_columns(conn)
         conn.commit()
+        self._schema_initialized = True
+
+    def _ensure_tile_codec_columns(self, conn: sqlite3.Connection) -> None:
+        rows = conn.execute("PRAGMA table_info(tiles)").fetchall()
+        columns = {str(row["name"]) if isinstance(row, sqlite3.Row) else str(row[1]) for row in rows}
+        if "codec" not in columns:
+            conn.execute("ALTER TABLE tiles ADD COLUMN codec TEXT NOT NULL DEFAULT 'png'")
+        if "quality" not in columns:
+            conn.execute("ALTER TABLE tiles ADD COLUMN quality INTEGER")
 
     def write_manifest(self, manifest: DigitalSlideManifest) -> None:
         conn = self._connection()
@@ -195,18 +257,28 @@ class DigitalSlideStore:
         row = conn.execute("SELECT COUNT(*) AS total FROM tiles").fetchone()
         return int(row["total"] if row is not None else 0)
 
-    def write_tile(self, tile: DigitalSlideTile, image: QImage) -> None:
+    def write_tile(
+        self,
+        tile: DigitalSlideTile,
+        image: QImage,
+        *,
+        codec: str = DIGITAL_SLIDE_TILE_CODEC_PNG,
+        quality: int | None = None,
+        update_manifest: bool = True,
+    ) -> None:
         if image.isNull():
             raise ValueError("cannot write null tile image")
         conn = self._connection()
         self._initialize_schema()
-        payload = qimage_to_png_bytes(image)
+        normalized_codec = normalize_tile_codec(codec)
+        normalized_quality = normalize_jpeg_quality(quality) if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        payload = qimage_to_image_bytes(image, codec=normalized_codec, quality=normalized_quality)
         conn.execute(
             """
             INSERT INTO tiles(
                 z_index, x, y, width, height, stage_x, stage_y, focus_z,
-                sharpness, status, image_png
-            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                sharpness, status, image_png, codec, quality
+            ) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 int(tile.z_index),
@@ -220,12 +292,31 @@ class DigitalSlideStore:
                 float(tile.sharpness),
                 str(tile.status),
                 payload,
+                normalized_codec,
+                normalized_quality,
             ),
         )
-        manifest = self.read_manifest()
-        manifest.tile_count = self.tile_count()
-        self.write_manifest(manifest)
+        if update_manifest:
+            manifest = self.read_manifest()
+            manifest.tile_count = self.tile_count()
+            self.write_manifest(manifest)
         conn.commit()
+
+    def _decode_tile_image(self, tile_id: int, payload: bytes, codec: str | None) -> QImage:
+        normalized_codec = normalize_tile_codec(codec)
+        key = (int(tile_id), normalized_codec)
+        cached = self._image_cache.get(key)
+        if cached is not None:
+            self._image_cache.move_to_end(key)
+            return cached
+        image = image_bytes_to_qimage(payload, codec=normalized_codec)
+        if image.isNull():
+            return image
+        self._image_cache[key] = image
+        self._image_cache.move_to_end(key)
+        while len(self._image_cache) > self._image_cache_limit:
+            self._image_cache.popitem(last=False)
+        return image
 
     def read_tiles_for_viewport(self, *, x: int, y: int, width: int, height: int, z_index: int) -> list[tuple[DigitalSlideTile, QImage]]:
         conn = self._connection()
@@ -234,7 +325,7 @@ class DigitalSlideStore:
         y2 = int(y) + int(height)
         rows = conn.execute(
             """
-            SELECT z_index, x, y, width, height, stage_x, stage_y, focus_z, sharpness, status, image_png
+            SELECT id, z_index, x, y, width, height, stage_x, stage_y, focus_z, sharpness, status, image_png, codec, quality
             FROM tiles
             WHERE z_index = ?
               AND x < ?
@@ -247,7 +338,7 @@ class DigitalSlideStore:
         ).fetchall()
         tiles: list[tuple[DigitalSlideTile, QImage]] = []
         for row in rows:
-            image = png_bytes_to_qimage(bytes(row["image_png"]))
+            image = self._decode_tile_image(int(row["id"]), bytes(row["image_png"]), str(row["codec"] or "png"))
             if image.isNull():
                 continue
             tiles.append(
@@ -268,6 +359,40 @@ class DigitalSlideStore:
                 )
             )
         return tiles
+
+    def iter_tiles(self) -> Iterator[tuple[DigitalSlideTile, QImage, str, int | None]]:
+        conn = self._connection()
+        self._initialize_schema()
+        rows = conn.execute(
+            """
+            SELECT id, z_index, x, y, width, height, stage_x, stage_y, focus_z, sharpness, status, image_png, codec, quality
+            FROM tiles
+            ORDER BY id ASC
+            """
+        )
+        for row in rows:
+            codec = normalize_tile_codec(str(row["codec"] or "png"))
+            image = self._decode_tile_image(int(row["id"]), bytes(row["image_png"]), codec)
+            if image.isNull():
+                continue
+            quality = row["quality"]
+            yield (
+                DigitalSlideTile(
+                    z_index=int(row["z_index"]),
+                    x=int(row["x"]),
+                    y=int(row["y"]),
+                    width=int(row["width"]),
+                    height=int(row["height"]),
+                    stage_x=int(row["stage_x"]),
+                    stage_y=int(row["stage_y"]),
+                    focus_z=int(row["focus_z"]),
+                    sharpness=float(row["sharpness"]),
+                    status=str(row["status"]),
+                ),
+                image,
+                codec,
+                int(quality) if quality is not None else None,
+            )
 
     def render_viewport(
         self,
@@ -385,3 +510,83 @@ def copy_slide_file(source: str | Path, target: str | Path) -> Path:
         return target_path
     shutil.copy2(source_path, target_path)
     return target_path
+
+
+def compress_slide_file(
+    source: str | Path,
+    target: str | Path,
+    *,
+    codec: str = DIGITAL_SLIDE_TILE_CODEC_JPEG,
+    quality: int | None = 90,
+    progress_callback: Any | None = None,
+) -> Path:
+    source_path = Path(source).expanduser()
+    target_path = Path(target).expanduser()
+    if source_path.resolve() == target_path.resolve():
+        raise ValueError("压缩目标不能与源文件相同，请选择另存副本。")
+    normalized_codec = normalize_tile_codec(codec)
+    normalized_quality = normalize_jpeg_quality(quality) if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+    target_store: DigitalSlideStore | None = None
+    source_store: DigitalSlideStore | None = None
+    try:
+        source_store = DigitalSlideStore(source_path)
+        source_store.open()
+        source_manifest = source_store.read_manifest()
+        total = source_store.tile_count()
+        metadata = dict(source_manifest.metadata)
+        metadata["tile_codec"] = normalized_codec
+        metadata["tile_quality"] = normalized_quality if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        metadata["compressed_from"] = str(source_path)
+        metadata["compressed_at"] = datetime.now().isoformat(timespec="seconds")
+        metadata["compression_note"] = (
+            "JPEG 压缩可能引入伪影；精确测量建议保留 PNG 无损切片。"
+            if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG
+            else "PNG 无损重编码；不能恢复源文件中已经由 JPEG 丢失的细节。"
+        )
+        target_manifest = DigitalSlideManifest(
+            version=source_manifest.version,
+            width=source_manifest.width,
+            height=source_manifest.height,
+            viewport_width=source_manifest.viewport_width,
+            viewport_height=source_manifest.viewport_height,
+            focus_levels=list(source_manifest.focus_levels),
+            tile_count=0,
+            status=source_manifest.status,
+            created_at=source_manifest.created_at,
+            metadata=metadata,
+        )
+        target_store = DigitalSlideStore.create(target_path, target_manifest)
+        completed = 0
+        for tile, image, _old_codec, _old_quality in source_store.iter_tiles():
+            target_store.write_tile(
+                tile,
+                image,
+                codec=normalized_codec,
+                quality=normalized_quality,
+                update_manifest=False,
+            )
+            completed += 1
+            if progress_callback is not None:
+                progress_callback(completed, total)
+        target_manifest.tile_count = target_store.tile_count()
+        target_manifest.status = source_manifest.status
+        target_store.write_manifest(target_manifest)
+        target_store.close()
+        target_store = None
+        return target_path
+    except Exception:
+        if target_store is not None:
+            try:
+                target_store.close()
+            except Exception:
+                pass
+        for candidate in (target_path, Path(f"{target_path}-wal"), Path(f"{target_path}-shm")):
+            try:
+                if candidate.exists():
+                    candidate.unlink()
+            except OSError:
+                pass
+        raise
+    finally:
+        if source_store is not None:
+            source_store.close()

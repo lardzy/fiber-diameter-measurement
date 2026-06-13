@@ -2,8 +2,9 @@ from __future__ import annotations
 
 from dataclasses import replace
 from pathlib import Path
+from threading import Thread
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import QObject, Qt, Signal
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QColorDialog,
@@ -21,6 +22,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QMessageBox,
+    QProgressBar,
     QPushButton,
     QPlainTextEdit,
     QRadioButton,
@@ -60,6 +62,14 @@ from fdm.settings import (
     to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.digital_slide_store import (
+    DIGITAL_SLIDE_SUFFIX,
+    DIGITAL_SLIDE_TILE_CODEC_JPEG,
+    DIGITAL_SLIDE_TILE_CODEC_PNG,
+    compress_slide_file,
+    normalize_jpeg_quality,
+    normalize_tile_codec,
+)
 from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
 
 
@@ -113,6 +123,43 @@ class NoWheelDoubleSpinBox(QDoubleSpinBox):
 class NoWheelSlider(QSlider):
     def wheelEvent(self, event) -> None:
         event.ignore()
+
+
+class DigitalSlideCompressionWorker(QObject):
+    progress = Signal(int, int)
+    finished = Signal(str)
+    failed = Signal(str)
+
+    def __init__(self, source: Path, target: Path, *, codec: str, quality: int | None) -> None:
+        super().__init__()
+        self._source = source
+        self._target = target
+        self._codec = normalize_tile_codec(codec)
+        self._quality = normalize_jpeg_quality(quality) if self._codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        self._thread: Thread | None = None
+
+    def start(self) -> None:
+        if self._thread is not None and self._thread.is_alive():
+            return
+        self._thread = Thread(target=self._run, name=f"fdm-slide-compress-{self._source.name}", daemon=True)
+        self._thread.start()
+
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    def _run(self) -> None:
+        try:
+            result = compress_slide_file(
+                self._source,
+                self._target,
+                codec=self._codec,
+                quality=self._quality,
+                progress_callback=lambda completed, total: self.progress.emit(int(completed), int(total)),
+            )
+        except Exception as exc:
+            self.failed.emit(str(exc))
+            return
+        self.finished.emit(str(result))
 
 
 class CalibrationInputDialog(QDialog):
@@ -478,6 +525,8 @@ class SettingsDialog(QDialog):
         self._request_scale_anchor_pick = False
         self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
         self._raw_record_current_template_index = -1
+        self._digital_slide_compression_worker: DigitalSlideCompressionWorker | None = None
+        self._digital_slide_compression_running = False
 
         self._tabs = QTabWidget()
         self._tabs.addTab(self._build_measurement_tab(settings), "测量标注")
@@ -504,6 +553,18 @@ class SettingsDialog(QDialog):
     @property
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
+
+    def accept(self) -> None:
+        if self._digital_slide_compression_running:
+            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭设置窗口。")
+            return
+        super().accept()
+
+    def reject(self) -> None:
+        if self._digital_slide_compression_running:
+            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭设置窗口。")
+            return
+        super().reject()
 
     def app_settings(self) -> AppSettings:
         return AppSettings(
@@ -563,6 +624,8 @@ class SettingsDialog(QDialog):
             digital_slide_last_output_path=self._initial_settings.digital_slide_last_output_path,
             digital_slide_preview_max_width=int(self._digital_slide_preview_width_combo.currentData() or 0),
             digital_slide_capture_max_width=int(self._digital_slide_capture_width_combo.currentData() or 0),
+            digital_slide_capture_tile_codec=normalize_tile_codec(self._digital_slide_capture_codec_combo.currentData()),
+            digital_slide_capture_jpeg_quality=self._digital_slide_capture_quality_slider.value(),
             digital_slide_xy_soft_limit=self._digital_slide_xy_soft_limit_spin.value(),
             digital_slide_z_soft_limit=self._digital_slide_z_soft_limit_spin.value(),
             digital_slide_xy_jog_step=self._digital_slide_xy_jog_step_spin.value(),
@@ -948,6 +1011,24 @@ class SettingsDialog(QDialog):
             current=settings.digital_slide_capture_max_width,
             options=(1600, 2400, 3200),
         )
+        self._digital_slide_capture_codec_combo = NoWheelComboBox()
+        self._digital_slide_capture_codec_combo.addItem("PNG 无损", DIGITAL_SLIDE_TILE_CODEC_PNG)
+        self._digital_slide_capture_codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
+        codec_index = self._digital_slide_capture_codec_combo.findData(normalize_tile_codec(settings.digital_slide_capture_tile_codec))
+        self._digital_slide_capture_codec_combo.setCurrentIndex(codec_index if codec_index >= 0 else 0)
+        quality_row = QWidget()
+        quality_layout = QHBoxLayout(quality_row)
+        quality_layout.setContentsMargins(0, 0, 0, 0)
+        self._digital_slide_capture_quality_slider = NoWheelSlider(Qt.Orientation.Horizontal)
+        self._digital_slide_capture_quality_slider.setRange(70, 95)
+        self._digital_slide_capture_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
+        self._digital_slide_capture_quality_label = QLabel()
+        self._digital_slide_capture_quality_label.setMinimumWidth(150)
+        self._digital_slide_capture_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._digital_slide_capture_quality_slider.valueChanged.connect(self._update_digital_slide_capture_quality_label)
+        self._digital_slide_capture_codec_combo.currentIndexChanged.connect(self._sync_digital_slide_capture_quality_visibility)
+        quality_layout.addWidget(self._digital_slide_capture_quality_slider, 1)
+        quality_layout.addWidget(self._digital_slide_capture_quality_label)
         self._digital_slide_overlap_spin = NoWheelSpinBox()
         self._digital_slide_overlap_spin.setRange(0, 90)
         self._digital_slide_overlap_spin.setSuffix(" %")
@@ -958,8 +1039,11 @@ class SettingsDialog(QDialog):
         self._digital_slide_blend_width_spin.setValue(settings.digital_slide_blend_width)
         capture_form.addRow("预览最大宽度", self._digital_slide_preview_width_combo)
         capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
+        capture_form.addRow("默认存储格式", self._digital_slide_capture_codec_combo)
+        capture_form.addRow("JPEG 质量", quality_row)
         capture_form.addRow("视场重叠", self._digital_slide_overlap_spin)
         capture_form.addRow("重叠融合宽度", self._digital_slide_blend_width_spin)
+        self._sync_digital_slide_capture_quality_visibility()
 
         motion_group = QGroupBox("运动控制")
         motion_form = QFormLayout(motion_group)
@@ -1089,10 +1173,82 @@ class SettingsDialog(QDialog):
         layout.addWidget(motion_group)
         layout.addWidget(advanced_group)
         layout.addWidget(browsing_group)
+        compression_group = self._build_digital_slide_compression_group(settings, locked=locked)
+        layout.addWidget(compression_group)
         layout.addStretch(1)
         for group in (capture_group, motion_group, advanced_group, browsing_group):
             group.setEnabled(not locked)
         return self._wrap_settings_page(page)
+
+    def _build_digital_slide_compression_group(self, settings: AppSettings, *, locked: bool) -> QGroupBox:
+        group = QGroupBox("切片压缩工具")
+        layout = QVBoxLayout(group)
+        hint = QLabel("选择已有 .fdmslide 并另存为压缩副本。JPEG 会减小体积，但可能引入压缩伪影；精确测量建议保留 PNG 无损原件。")
+        hint.setWordWrap(True)
+        layout.addWidget(hint)
+
+        source_row = QHBoxLayout()
+        self._digital_slide_compress_source_edit = QLineEdit(group)
+        self._digital_slide_compress_source_edit.setPlaceholderText("源 .fdmslide 文件")
+        source_button = QPushButton("选择源文件", group)
+        source_button.clicked.connect(self._choose_digital_slide_compress_source)
+        source_row.addWidget(self._digital_slide_compress_source_edit, 1)
+        source_row.addWidget(source_button)
+        layout.addLayout(source_row)
+
+        target_row = QHBoxLayout()
+        self._digital_slide_compress_target_edit = QLineEdit(group)
+        self._digital_slide_compress_target_edit.setPlaceholderText("目标 .fdmslide 文件")
+        target_button = QPushButton("另存为", group)
+        target_button.clicked.connect(self._choose_digital_slide_compress_target)
+        target_row.addWidget(self._digital_slide_compress_target_edit, 1)
+        target_row.addWidget(target_button)
+        layout.addLayout(target_row)
+
+        options_form = QFormLayout()
+        self._digital_slide_compress_codec_combo = NoWheelComboBox(group)
+        self._digital_slide_compress_codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
+        self._digital_slide_compress_codec_combo.addItem("PNG 无损", DIGITAL_SLIDE_TILE_CODEC_PNG)
+        if normalize_tile_codec(settings.digital_slide_capture_tile_codec) == DIGITAL_SLIDE_TILE_CODEC_PNG:
+            self._digital_slide_compress_codec_combo.setCurrentIndex(0)
+        compress_quality_row = QWidget(group)
+        compress_quality_layout = QHBoxLayout(compress_quality_row)
+        compress_quality_layout.setContentsMargins(0, 0, 0, 0)
+        self._digital_slide_compress_quality_slider = NoWheelSlider(Qt.Orientation.Horizontal)
+        self._digital_slide_compress_quality_slider.setRange(70, 95)
+        self._digital_slide_compress_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
+        self._digital_slide_compress_quality_label = QLabel(group)
+        self._digital_slide_compress_quality_label.setMinimumWidth(150)
+        self._digital_slide_compress_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        self._digital_slide_compress_quality_slider.valueChanged.connect(self._update_digital_slide_compress_quality_label)
+        self._digital_slide_compress_codec_combo.currentIndexChanged.connect(self._sync_digital_slide_compress_quality_visibility)
+        compress_quality_layout.addWidget(self._digital_slide_compress_quality_slider, 1)
+        compress_quality_layout.addWidget(self._digital_slide_compress_quality_label)
+        options_form.addRow("输出格式", self._digital_slide_compress_codec_combo)
+        options_form.addRow("JPEG 质量", compress_quality_row)
+        layout.addLayout(options_form)
+
+        self._digital_slide_compress_progress = QProgressBar(group)
+        self._digital_slide_compress_progress.setRange(0, 1)
+        self._digital_slide_compress_progress.setValue(0)
+        self._digital_slide_compress_progress.setFormat("等待开始")
+        layout.addWidget(self._digital_slide_compress_progress)
+        self._digital_slide_compress_start_button = QPushButton("开始压缩", group)
+        self._digital_slide_compress_start_button.clicked.connect(self._start_digital_slide_compression)
+        layout.addWidget(self._digital_slide_compress_start_button)
+
+        self._digital_slide_compression_controls = [
+            self._digital_slide_compress_source_edit,
+            source_button,
+            self._digital_slide_compress_target_edit,
+            target_button,
+            self._digital_slide_compress_codec_combo,
+            self._digital_slide_compress_quality_slider,
+            self._digital_slide_compress_start_button,
+        ]
+        self._sync_digital_slide_compress_quality_visibility()
+        group.setEnabled(not locked)
+        return group
 
     def _add_digital_slide_width_options(self, combo: QComboBox, *, current: int, options: tuple[int, ...]) -> None:
         for width in options:
@@ -1100,6 +1256,137 @@ class SettingsDialog(QDialog):
         combo.addItem("原始尺寸", 0)
         index = combo.findData(int(current))
         combo.setCurrentIndex(index if index >= 0 else 0)
+
+    def _digital_slide_quality_label_text(self, value: int) -> str:
+        quality = normalize_jpeg_quality(value)
+        if quality <= 80:
+            level = "中等留档"
+        elif quality <= 90:
+            level = "高质量"
+        else:
+            level = "更高质量/更大文件"
+        return f"{quality} ({level})"
+
+    def _update_digital_slide_capture_quality_label(self, value: int) -> None:
+        self._digital_slide_capture_quality_label.setText(self._digital_slide_quality_label_text(value))
+
+    def _sync_digital_slide_capture_quality_visibility(self) -> None:
+        is_jpeg = normalize_tile_codec(self._digital_slide_capture_codec_combo.currentData()) == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        self._digital_slide_capture_quality_slider.setEnabled(is_jpeg)
+        self._digital_slide_capture_quality_label.setEnabled(is_jpeg)
+        self._update_digital_slide_capture_quality_label(self._digital_slide_capture_quality_slider.value())
+
+    def _update_digital_slide_compress_quality_label(self, value: int) -> None:
+        self._digital_slide_compress_quality_label.setText(self._digital_slide_quality_label_text(value))
+
+    def _sync_digital_slide_compress_quality_visibility(self) -> None:
+        is_jpeg = normalize_tile_codec(self._digital_slide_compress_codec_combo.currentData()) == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        self._digital_slide_compress_quality_slider.setEnabled(is_jpeg)
+        self._digital_slide_compress_quality_label.setEnabled(is_jpeg)
+        self._update_digital_slide_compress_quality_label(self._digital_slide_compress_quality_slider.value())
+
+    def _default_compressed_slide_path(self, source: Path) -> Path:
+        return source.with_name(f"{source.stem}_compressed{DIGITAL_SLIDE_SUFFIX}")
+
+    def _choose_digital_slide_compress_source(self) -> None:
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "选择数字化切片文件",
+            "",
+            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
+        )
+        if not path:
+            return
+        source = Path(path).expanduser()
+        self._digital_slide_compress_source_edit.setText(str(source))
+        if not self._digital_slide_compress_target_edit.text().strip():
+            self._digital_slide_compress_target_edit.setText(str(self._default_compressed_slide_path(source)))
+
+    def _choose_digital_slide_compress_target(self) -> None:
+        source_token = self._digital_slide_compress_source_edit.text().strip()
+        default_path = ""
+        if source_token:
+            default_path = str(self._default_compressed_slide_path(Path(source_token).expanduser()))
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "保存压缩数字化切片",
+            default_path,
+            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
+        )
+        if not path:
+            return
+        target = Path(path).expanduser()
+        if target.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
+            target = target.with_suffix(DIGITAL_SLIDE_SUFFIX)
+        self._digital_slide_compress_target_edit.setText(str(target))
+
+    def _set_digital_slide_compression_controls_enabled(self, enabled: bool) -> None:
+        for control in getattr(self, "_digital_slide_compression_controls", []):
+            control.setEnabled(enabled)
+
+    def _start_digital_slide_compression(self) -> None:
+        source_token = self._digital_slide_compress_source_edit.text().strip()
+        target_token = self._digital_slide_compress_target_edit.text().strip()
+        if not source_token:
+            QMessageBox.information(self, "切片压缩", "请先选择源 .fdmslide 文件。")
+            return
+        source = Path(source_token).expanduser()
+        if not source.exists() or source.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
+            QMessageBox.warning(self, "切片压缩", "源文件不存在或不是 .fdmslide 文件。")
+            return
+        target = Path(target_token).expanduser() if target_token else self._default_compressed_slide_path(source)
+        if target.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
+            target = target.with_suffix(DIGITAL_SLIDE_SUFFIX)
+        if source.resolve() == target.resolve():
+            QMessageBox.warning(self, "切片压缩", "压缩目标不能与源文件相同，请选择另存副本。")
+            return
+        if target.exists():
+            response = QMessageBox.question(
+                self,
+                "覆盖压缩文件",
+                f"目标文件已存在，是否覆盖？\n{target}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+        self._digital_slide_compress_target_edit.setText(str(target))
+        codec = normalize_tile_codec(self._digital_slide_compress_codec_combo.currentData())
+        quality = self._digital_slide_compress_quality_slider.value() if codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        self._digital_slide_compression_running = True
+        self._set_digital_slide_compression_controls_enabled(False)
+        self._digital_slide_compress_progress.setRange(0, 1)
+        self._digital_slide_compress_progress.setValue(0)
+        self._digital_slide_compress_progress.setFormat("准备压缩...")
+        worker = DigitalSlideCompressionWorker(source, target, codec=codec, quality=quality)
+        self._digital_slide_compression_worker = worker
+        worker.progress.connect(self._on_digital_slide_compression_progress)
+        worker.finished.connect(self._on_digital_slide_compression_finished)
+        worker.failed.connect(self._on_digital_slide_compression_failed)
+        worker.start()
+
+    def _on_digital_slide_compression_progress(self, completed: int, total: int) -> None:
+        total = max(1, int(total))
+        completed = max(0, min(int(completed), total))
+        self._digital_slide_compress_progress.setRange(0, total)
+        self._digital_slide_compress_progress.setValue(completed)
+        self._digital_slide_compress_progress.setFormat(f"{completed}/{total} 张")
+
+    def _finish_digital_slide_compression_ui(self) -> None:
+        self._digital_slide_compression_running = False
+        self._digital_slide_compression_worker = None
+        self._set_digital_slide_compression_controls_enabled(True)
+        self._sync_digital_slide_compress_quality_visibility()
+
+    def _on_digital_slide_compression_finished(self, path: str) -> None:
+        self._digital_slide_compress_progress.setFormat("压缩完成")
+        self._finish_digital_slide_compression_ui()
+        QMessageBox.information(self, "切片压缩", f"压缩完成：\n{path}")
+
+    def _on_digital_slide_compression_failed(self, message: str) -> None:
+        self._digital_slide_compress_progress.setFormat("压缩失败")
+        self._finish_digital_slide_compression_ui()
+        QMessageBox.warning(self, "切片压缩", f"压缩失败：\n{message}")
 
     def _build_area_models_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()

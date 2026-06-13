@@ -451,6 +451,8 @@ class AppSettings:
     digital_slide_last_output_path: str = ""
     digital_slide_preview_max_width: int = 1280
     digital_slide_capture_max_width: int = 1600
+    digital_slide_capture_tile_codec: str = "png"
+    digital_slide_capture_jpeg_quality: int = 90
     digital_slide_xy_soft_limit: int = 1_000_000
     digital_slide_z_soft_limit: int = 200_000
     digital_slide_xy_jog_step: int = 5000
@@ -511,6 +513,13 @@ class AppSettings:
         normalized.digital_slide_last_output_path = self._normalize_digital_slide_output_path(self.digital_slide_last_output_path)
         normalized.digital_slide_preview_max_width = self._normalize_optional_width(self.digital_slide_preview_max_width, default=1280)
         normalized.digital_slide_capture_max_width = self._normalize_optional_width(self.digital_slide_capture_max_width, default=1600)
+        normalized.digital_slide_capture_tile_codec = self._normalize_digital_slide_tile_codec(self.digital_slide_capture_tile_codec)
+        normalized.digital_slide_capture_jpeg_quality = self._normalize_int_range(
+            self.digital_slide_capture_jpeg_quality,
+            default=90,
+            minimum=70,
+            maximum=95,
+        )
         normalized.digital_slide_xy_soft_limit = self._normalize_int_range(self.digital_slide_xy_soft_limit, default=1_000_000, minimum=0, maximum=10_000_000)
         normalized.digital_slide_z_soft_limit = self._normalize_int_range(self.digital_slide_z_soft_limit, default=200_000, minimum=0, maximum=10_000_000)
         normalized.digital_slide_xy_jog_step = self._normalize_int_range(self.digital_slide_xy_jog_step, default=5000, minimum=1, maximum=1_000_000)
@@ -824,6 +833,13 @@ class AppSettings:
             return token
         return "auto_overlap"
 
+    @staticmethod
+    def _normalize_digital_slide_tile_codec(value: str | None) -> str:
+        token = str(value or "").strip().lower()
+        if token in {"jpg", "jpeg"}:
+            return "jpeg"
+        return "png"
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -884,6 +900,8 @@ class AppSettings:
             "digital_slide_last_output_path": normalized.digital_slide_last_output_path,
             "digital_slide_preview_max_width": normalized.digital_slide_preview_max_width,
             "digital_slide_capture_max_width": normalized.digital_slide_capture_max_width,
+            "digital_slide_capture_tile_codec": normalized.digital_slide_capture_tile_codec,
+            "digital_slide_capture_jpeg_quality": normalized.digital_slide_capture_jpeg_quality,
             "digital_slide_xy_soft_limit": normalized.digital_slide_xy_soft_limit,
             "digital_slide_z_soft_limit": normalized.digital_slide_z_soft_limit,
             "digital_slide_xy_jog_step": normalized.digital_slide_xy_jog_step,
@@ -1088,6 +1106,15 @@ class AppSettings:
         settings.digital_slide_capture_max_width = cls._normalize_optional_width(
             payload.get("digital_slide_capture_max_width", settings.digital_slide_capture_max_width),
             default=1600,
+        )
+        settings.digital_slide_capture_tile_codec = cls._normalize_digital_slide_tile_codec(
+            payload.get("digital_slide_capture_tile_codec", settings.digital_slide_capture_tile_codec)
+        )
+        settings.digital_slide_capture_jpeg_quality = cls._normalize_int_range(
+            payload.get("digital_slide_capture_jpeg_quality", settings.digital_slide_capture_jpeg_quality),
+            default=90,
+            minimum=70,
+            maximum=95,
         )
         settings.digital_slide_xy_soft_limit = cls._normalize_int_range(
             payload.get("digital_slide_xy_soft_limit", settings.digital_slide_xy_soft_limit),

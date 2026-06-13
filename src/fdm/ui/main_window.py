@@ -38,6 +38,7 @@ from PySide6.QtWidgets import (
     QPushButton,
     QRadioButton,
     QScrollArea,
+    QSlider,
     QSizePolicy,
     QSplitter,
     QSpinBox,
@@ -78,10 +79,14 @@ from fdm.models import (
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
     DOCUMENT_KIND_DIGITAL_SLIDE,
+    DIGITAL_SLIDE_TILE_CODEC_JPEG,
+    DIGITAL_SLIDE_TILE_CODEC_PNG,
     DigitalSlideManifest,
     DigitalSlideStore,
     DigitalSlideTile,
     is_digital_slide_path,
+    normalize_jpeg_quality,
+    normalize_tile_codec,
 )
 from fdm.services.motion_control import (
     AXIS_X,
@@ -318,9 +323,18 @@ class DigitalSlideWriteWorker(QObject):
     failed = Signal(str)
     drained = Signal()
 
-    def __init__(self, path: str | Path, *, max_queue_size: int = 3) -> None:
+    def __init__(
+        self,
+        path: str | Path,
+        *,
+        max_queue_size: int = 3,
+        codec: str = DIGITAL_SLIDE_TILE_CODEC_PNG,
+        quality: int | None = None,
+    ) -> None:
         super().__init__()
         self._path = Path(path)
+        self._codec = normalize_tile_codec(codec)
+        self._quality = normalize_jpeg_quality(quality) if self._codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
         self._queue: Queue[tuple[DigitalSlideTile, QImage]] = Queue(maxsize=max(1, int(max_queue_size)))
         self._lock = Lock()
         self._thread: Thread | None = None
@@ -385,7 +399,7 @@ class DigitalSlideWriteWorker(QObject):
                         break
                     continue
                 started_at = perf_counter()
-                store.write_tile(tile, image)
+                store.write_tile(tile, image, codec=self._codec, quality=self._quality)
                 write_ms = (perf_counter() - started_at) * 1000.0
                 self._written_count += 1
                 self.tileWritten.emit(self._written_count, write_ms)
@@ -833,6 +847,9 @@ class MainWindow(QMainWindow):
         self._digital_slide_start_button: QPushButton | None = None
         self._digital_slide_stop_button: QPushButton | None = None
         self._digital_slide_output_path_edit: QLineEdit | None = None
+        self._digital_slide_storage_codec_combo: QComboBox | None = None
+        self._digital_slide_jpeg_quality_slider: QSlider | None = None
+        self._digital_slide_jpeg_quality_label: QLabel | None = None
         self._digital_slide_z_lower_edit: QLineEdit | None = None
         self._digital_slide_z_upper_edit: QLineEdit | None = None
         self._digital_slide_z_layers_label: QLabel | None = None
@@ -2268,6 +2285,38 @@ class MainWindow(QMainWindow):
         path_row.addWidget(self._digital_slide_output_path_edit, 1)
         path_row.addWidget(browse_button)
         output_layout.addLayout(path_row)
+
+        storage_form = QFormLayout()
+        self._digital_slide_storage_codec_combo = QComboBox(output_box)
+        self._digital_slide_storage_codec_combo.addItem("PNG 无损", DIGITAL_SLIDE_TILE_CODEC_PNG)
+        self._digital_slide_storage_codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
+        codec_index = self._digital_slide_storage_codec_combo.findData(
+            normalize_tile_codec(self._app_settings.digital_slide_capture_tile_codec)
+        )
+        self._digital_slide_storage_codec_combo.setCurrentIndex(codec_index if codec_index >= 0 else 0)
+        self._digital_slide_storage_codec_combo.currentIndexChanged.connect(self._on_digital_slide_storage_settings_changed)
+        quality_row = QWidget(output_box)
+        quality_layout = QHBoxLayout(quality_row)
+        quality_layout.setContentsMargins(0, 0, 0, 0)
+        self._digital_slide_jpeg_quality_slider = QSlider(Qt.Orientation.Horizontal, quality_row)
+        self._digital_slide_jpeg_quality_slider.setRange(70, 95)
+        self._digital_slide_jpeg_quality_slider.setValue(normalize_jpeg_quality(self._app_settings.digital_slide_capture_jpeg_quality))
+        self._digital_slide_jpeg_quality_slider.valueChanged.connect(self._on_digital_slide_storage_settings_changed)
+        self._digital_slide_jpeg_quality_label = QLabel(quality_row)
+        self._digital_slide_jpeg_quality_label.setMinimumWidth(132)
+        self._digital_slide_jpeg_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        quality_layout.addWidget(self._digital_slide_jpeg_quality_slider, 1)
+        quality_layout.addWidget(self._digital_slide_jpeg_quality_label)
+        storage_form.addRow("存储格式", self._digital_slide_storage_codec_combo)
+        storage_form.addRow("JPEG 质量", quality_row)
+        output_layout.addLayout(storage_form)
+        self._digital_slide_locked_controls.extend(
+            [
+                self._digital_slide_storage_codec_combo,
+                self._digital_slide_jpeg_quality_slider,
+            ]
+        )
+        self._sync_digital_slide_storage_quality_visibility()
 
         button_row = QHBoxLayout()
         self._digital_slide_start_button = QPushButton("开始", output_box)
@@ -3745,6 +3794,46 @@ class MainWindow(QMainWindow):
     def _digital_slide_effective_settings(self) -> AppSettings:
         return self._slide_acquisition_settings or self._app_settings
 
+    def _digital_slide_storage_codec(self, settings: AppSettings | None = None) -> str:
+        active_settings = settings or self._digital_slide_effective_settings()
+        return normalize_tile_codec(getattr(active_settings, "digital_slide_capture_tile_codec", DIGITAL_SLIDE_TILE_CODEC_PNG))
+
+    def _digital_slide_storage_quality(self, settings: AppSettings | None = None) -> int:
+        active_settings = settings or self._digital_slide_effective_settings()
+        return normalize_jpeg_quality(getattr(active_settings, "digital_slide_capture_jpeg_quality", 90))
+
+    def _digital_slide_quality_label_text(self, value: int) -> str:
+        quality = normalize_jpeg_quality(value)
+        if quality <= 80:
+            level = "中等留档"
+        elif quality <= 90:
+            level = "高质量"
+        else:
+            level = "更高质量"
+        return f"{quality} ({level})"
+
+    def _sync_digital_slide_storage_quality_visibility(self) -> None:
+        if self._digital_slide_storage_codec_combo is None or self._digital_slide_jpeg_quality_slider is None:
+            return
+        codec = normalize_tile_codec(self._digital_slide_storage_codec_combo.currentData())
+        is_jpeg = codec == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        self._digital_slide_jpeg_quality_slider.setEnabled(is_jpeg and not self._slide_acquisition_active())
+        if self._digital_slide_jpeg_quality_label is not None:
+            self._digital_slide_jpeg_quality_label.setEnabled(is_jpeg)
+            self._digital_slide_jpeg_quality_label.setText(
+                self._digital_slide_quality_label_text(self._digital_slide_jpeg_quality_slider.value())
+            )
+
+    def _on_digital_slide_storage_settings_changed(self, *_args) -> None:
+        if self._digital_slide_storage_codec_combo is None or self._digital_slide_jpeg_quality_slider is None:
+            return
+        codec = normalize_tile_codec(self._digital_slide_storage_codec_combo.currentData())
+        quality = normalize_jpeg_quality(self._digital_slide_jpeg_quality_slider.value())
+        self._app_settings.digital_slide_capture_tile_codec = codec
+        self._app_settings.digital_slide_capture_jpeg_quality = quality
+        self._sync_digital_slide_storage_quality_visibility()
+        self._save_app_settings(context="数字化切片存储格式")
+
     def _digital_slide_pixel_stride_mode(self, settings: AppSettings | None = None) -> str:
         active_settings = settings or self._digital_slide_effective_settings()
         return "manual_pixels" if active_settings.digital_slide_pixel_stride_mode == "manual_pixels" else "auto_overlap"
@@ -4093,6 +4182,7 @@ class MainWindow(QMainWindow):
             widget.setEnabled(not active)
         for widget in self._digital_slide_motion_controls:
             widget.setEnabled(not active)
+        self._sync_digital_slide_storage_quality_visibility()
         self._digital_slide_start_button.setEnabled(not active)
         self._digital_slide_start_button.setToolTip("" if has_path else "点击后选择 .fdmslide 输出路径")
         if self._digital_slide_stop_button is not None:
@@ -4461,6 +4551,8 @@ class MainWindow(QMainWindow):
         first_tile_extra_wait_ms = int(acquisition_settings.digital_slide_first_tile_extra_wait_ms)
         discard_frames = int(acquisition_settings.digital_slide_discard_frames)
         blend_width = int(acquisition_settings.digital_slide_blend_width)
+        tile_codec = self._digital_slide_storage_codec(acquisition_settings)
+        tile_quality = self._digital_slide_storage_quality(acquisition_settings) if tile_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
         image_width = view_width + ((cols - 1) * pixel_stride_x)
         image_height = view_height + ((rows - 1) * pixel_stride_y)
         output_path = output_path.expanduser()
@@ -4477,6 +4569,8 @@ class MainWindow(QMainWindow):
             "reverse_x_axis": acquisition_settings.digital_slide_reverse_x_axis,
             "reverse_y_axis": acquisition_settings.digital_slide_reverse_y_axis,
             "first_tile_extra_wait_ms": acquisition_settings.digital_slide_first_tile_extra_wait_ms,
+            "tile_codec": tile_codec,
+            "tile_quality": tile_quality,
         }
         manifest = DigitalSlideManifest(
             version=1,
@@ -4506,6 +4600,13 @@ class MainWindow(QMainWindow):
                 "stored_frame_size": [view_width, view_height],
                 "capture_max_width": capture_max_width if capture_max_width is not None else "original",
                 "capture_scale": capture_scale,
+                "tile_codec": tile_codec,
+                "tile_quality": tile_quality,
+                "compression_note": (
+                    "JPEG 压缩可能引入伪影；精确测量建议保留 PNG 无损切片。"
+                    if tile_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG
+                    else "PNG 无损切片。"
+                ),
                 "xy_settle_ms": xy_settle_ms,
                 "xy_post_settle_ms": xy_post_settle_ms,
                 "z_settle_ms": z_settle_ms,
@@ -4527,7 +4628,7 @@ class MainWindow(QMainWindow):
         except Exception as exc:
             QMessageBox.warning(self, "数字化切片", f"无法创建切片文件：\n{exc}")
             return
-        writer = DigitalSlideWriteWorker(output_path, max_queue_size=3)
+        writer = DigitalSlideWriteWorker(output_path, max_queue_size=3, codec=tile_codec, quality=tile_quality)
         writer.tileWritten.connect(self._on_digital_slide_tile_written, Qt.ConnectionType.QueuedConnection)
         writer.failed.connect(self._on_digital_slide_writer_failed, Qt.ConnectionType.QueuedConnection)
         writer.drained.connect(self._on_digital_slide_writer_drained, Qt.ConnectionType.QueuedConnection)
@@ -6681,6 +6782,16 @@ class MainWindow(QMainWindow):
             self._digital_slide_z_step_spin.blockSignals(True)
             self._digital_slide_z_step_spin.setValue(settings.digital_slide_z_capture_step)
             self._digital_slide_z_step_spin.blockSignals(False)
+        if self._digital_slide_storage_codec_combo is not None:
+            self._digital_slide_storage_codec_combo.blockSignals(True)
+            codec_index = self._digital_slide_storage_codec_combo.findData(normalize_tile_codec(settings.digital_slide_capture_tile_codec))
+            self._digital_slide_storage_codec_combo.setCurrentIndex(codec_index if codec_index >= 0 else 0)
+            self._digital_slide_storage_codec_combo.blockSignals(False)
+        if self._digital_slide_jpeg_quality_slider is not None:
+            self._digital_slide_jpeg_quality_slider.blockSignals(True)
+            self._digital_slide_jpeg_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
+            self._digital_slide_jpeg_quality_slider.blockSignals(False)
+        self._sync_digital_slide_storage_quality_visibility()
         self._sync_digital_slide_task_state()
         self._update_capture_device_ui()
         self._refresh_preset_combo()
