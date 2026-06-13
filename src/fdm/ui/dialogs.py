@@ -585,6 +585,7 @@ class SettingsDialog(QDialog):
             digital_slide_xy_post_settle_ms=self._digital_slide_xy_post_settle_spin.value(),
             digital_slide_z_settle_ms=self._digital_slide_z_settle_spin.value(),
             digital_slide_z_post_settle_ms=self._digital_slide_z_post_settle_spin.value(),
+            digital_slide_first_tile_extra_wait_ms=self._digital_slide_first_tile_extra_wait_spin.value(),
             digital_slide_discard_frames=self._digital_slide_discard_frames_spin.value(),
             digital_slide_focus_wheel_step=self._digital_slide_focus_wheel_slider.value(),
         )
@@ -1043,6 +1044,11 @@ class SettingsDialog(QDialog):
         self._digital_slide_z_post_settle_spin.setRange(0, 5000)
         self._digital_slide_z_post_settle_spin.setSuffix(" ms")
         self._digital_slide_z_post_settle_spin.setValue(settings.digital_slide_z_post_settle_ms)
+        self._digital_slide_first_tile_extra_wait_spin = NoWheelSpinBox()
+        self._digital_slide_first_tile_extra_wait_spin.setRange(0, 60_000)
+        self._digital_slide_first_tile_extra_wait_spin.setSingleStep(500)
+        self._digital_slide_first_tile_extra_wait_spin.setSuffix(" ms")
+        self._digital_slide_first_tile_extra_wait_spin.setValue(settings.digital_slide_first_tile_extra_wait_ms)
         self._digital_slide_discard_frames_spin = NoWheelSpinBox()
         self._digital_slide_discard_frames_spin.setRange(0, 20)
         self._digital_slide_discard_frames_spin.setSuffix(" 帧")
@@ -1056,6 +1062,7 @@ class SettingsDialog(QDialog):
         advanced_form.addRow("XY 停稳后等待", self._digital_slide_xy_post_settle_spin)
         advanced_form.addRow("Z 停稳等待", self._digital_slide_z_settle_spin)
         advanced_form.addRow("Z 停稳后等待", self._digital_slide_z_post_settle_spin)
+        advanced_form.addRow("首张额外等待", self._digital_slide_first_tile_extra_wait_spin)
         advanced_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
 
         browsing_group = QGroupBox("浏览与快捷键")

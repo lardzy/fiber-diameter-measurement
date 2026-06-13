@@ -473,6 +473,7 @@ class AppSettings:
     digital_slide_xy_post_settle_ms: int = 100
     digital_slide_z_settle_ms: int = 80
     digital_slide_z_post_settle_ms: int = 40
+    digital_slide_first_tile_extra_wait_ms: int = 3000
     digital_slide_discard_frames: int = 2
     digital_slide_focus_wheel_step: int = 1
 
@@ -531,6 +532,12 @@ class AppSettings:
         normalized.digital_slide_xy_post_settle_ms = self._normalize_int_range(self.digital_slide_xy_post_settle_ms, default=100, minimum=0, maximum=5000)
         normalized.digital_slide_z_settle_ms = self._normalize_int_range(self.digital_slide_z_settle_ms, default=80, minimum=0, maximum=10_000)
         normalized.digital_slide_z_post_settle_ms = self._normalize_int_range(self.digital_slide_z_post_settle_ms, default=40, minimum=0, maximum=5000)
+        normalized.digital_slide_first_tile_extra_wait_ms = self._normalize_int_range(
+            self.digital_slide_first_tile_extra_wait_ms,
+            default=3000,
+            minimum=0,
+            maximum=60_000,
+        )
         normalized.digital_slide_discard_frames = self._normalize_int_range(self.digital_slide_discard_frames, default=2, minimum=0, maximum=20)
         normalized.digital_slide_focus_wheel_step = self._normalize_int_range(self.digital_slide_focus_wheel_step, default=1, minimum=1, maximum=10)
         return normalized
@@ -899,6 +906,7 @@ class AppSettings:
             "digital_slide_xy_post_settle_ms": normalized.digital_slide_xy_post_settle_ms,
             "digital_slide_z_settle_ms": normalized.digital_slide_z_settle_ms,
             "digital_slide_z_post_settle_ms": normalized.digital_slide_z_post_settle_ms,
+            "digital_slide_first_tile_extra_wait_ms": normalized.digital_slide_first_tile_extra_wait_ms,
             "digital_slide_discard_frames": normalized.digital_slide_discard_frames,
             "digital_slide_focus_wheel_step": normalized.digital_slide_focus_wheel_step,
         }
@@ -1198,6 +1206,12 @@ class AppSettings:
             default=40,
             minimum=0,
             maximum=5000,
+        )
+        settings.digital_slide_first_tile_extra_wait_ms = cls._normalize_int_range(
+            payload.get("digital_slide_first_tile_extra_wait_ms", settings.digital_slide_first_tile_extra_wait_ms),
+            default=3000,
+            minimum=0,
+            maximum=60_000,
         )
         settings.digital_slide_discard_frames = cls._normalize_int_range(
             payload.get("digital_slide_discard_frames", settings.digital_slide_discard_frames),
