@@ -1517,6 +1517,45 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_digital_slide_region_plan_keeps_configured_stage_stride_and_may_overshoot_bounds(self) -> None:
+        settings = AppSettings(
+            digital_slide_x_stage_step=100,
+            digital_slide_y_stage_step=50,
+        )
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings):
+            window = MainWindow()
+        try:
+            self.assertIsNotNone(window._digital_slide_cols_edit)
+            self.assertIsNotNone(window._digital_slide_rows_edit)
+            window._slide_motion.relative_pos = {AXIS_X: 1000, AXIS_Y: 2000, AXIS_Z: 0}
+            window._mark_digital_slide_region("top_left")
+            window._slide_motion.relative_pos = {AXIS_X: 1250, AXIS_Y: 2075, AXIS_Z: 0}
+            window._mark_digital_slide_region("bottom_right")
+            self.assertEqual(
+                window._digital_slide_region_bounds,
+                {"left": 1000, "right": 1350, "top": 2000, "bottom": 2125},
+            )
+            self.assertEqual(window._digital_slide_cols_edit.text(), "4")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "3")
+
+            plan = window._build_digital_slide_capture_plan(
+                cols=4,
+                rows=3,
+                focus_levels=[0],
+                pixel_stride_x=10,
+                pixel_stride_y=20,
+                map_region=window._digital_slide_region_bounds,
+                settings=window._app_settings,
+            )
+            self.assertEqual(sorted({item["stage_x"] for item in plan}), [1000, 1100, 1200, 1300])
+            self.assertEqual(sorted({item["stage_y"] for item in plan}), [2000, 2050, 2100])
+            self.assertEqual(
+                window._digital_slide_plan_item_map_rect(plan[-1], window._app_settings),
+                {"left": 1300, "right": 1400, "top": 2100, "bottom": 2150},
+            )
+        finally:
+            window.close()
+
     def test_digital_slide_axis_reversal_affects_map_plan_and_manual_jog_semantics(self) -> None:
         settings = AppSettings(
             digital_slide_x_stage_step=100,

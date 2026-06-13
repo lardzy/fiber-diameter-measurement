@@ -4723,23 +4723,13 @@ class MainWindow(QMainWindow):
 
         def target_x_for_col(col: int) -> int:
             if normalized_map_region is not None:
-                first_origin = int(normalized_map_region["left"])
-                last_origin = int(normalized_map_region["right"]) - view_width
-                if cols <= 1:
-                    map_x = first_origin
-                else:
-                    map_x = int(round(first_origin + ((last_origin - first_origin) * (col / max(1, cols - 1)))))
+                map_x = int(normalized_map_region["left"]) + (int(col) * view_width)
                 return self._digital_slide_map_to_stage_axis(AXIS_X, map_x, active_settings)
             return int(col * x_stage_step)
 
         def target_y_for_row(row: int) -> int:
             if normalized_map_region is not None:
-                first_origin = int(normalized_map_region["top"])
-                last_origin = int(normalized_map_region["bottom"]) - view_height
-                if rows <= 1:
-                    map_y = first_origin
-                else:
-                    map_y = int(round(first_origin + ((last_origin - first_origin) * (row / max(1, rows - 1)))))
+                map_y = int(normalized_map_region["top"]) + (int(row) * view_height)
                 return self._digital_slide_map_to_stage_axis(AXIS_Y, map_y, active_settings)
             return int(row * y_stage_step)
 
