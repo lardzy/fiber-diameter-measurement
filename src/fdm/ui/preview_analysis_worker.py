@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from threading import Event
 from time import perf_counter
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
@@ -37,20 +38,24 @@ class FocusStackSessionWorker(QObject):
             device_name=device_name,
             render_config=render_config,
         )
-        self._cancelled = False
+        self._cancel_requested = Event()
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def add_frame(self, image: QImage) -> None:
-        if self._cancelled or not isinstance(image, QImage) or image.isNull():
+        if self._is_cancelled() or not isinstance(image, QImage) or image.isNull():
             return
         started_at = perf_counter()
         try:
             report = self._analyzer.add_frame(image)
         except Exception as exc:  # noqa: BLE001
+            if self._is_cancelled():
+                return
             self.failed.emit(str(exc))
+            return
+        if self._is_cancelled():
             return
         log_preview_analysis_perf(
             "Focus stack preprocess",
@@ -65,18 +70,25 @@ class FocusStackSessionWorker(QObject):
 
     @Slot()
     def finalize(self) -> None:
-        if self._cancelled:
+        if self._is_cancelled():
             return
         try:
             result = self._analyzer.finalize()
         except Exception as exc:  # noqa: BLE001
+            if self._is_cancelled():
+                return
             self.failed.emit(str(exc))
+            return
+        if self._is_cancelled():
             return
         self.finished.emit(result)
 
     @Slot()
     def cancel(self) -> None:
-        self._cancelled = True
+        self._cancel_requested.set()
+
+    def _is_cancelled(self) -> bool:
+        return self._cancel_requested.is_set()
 
 
 class MapBuildSessionWorker(QObject):
@@ -90,20 +102,24 @@ class MapBuildSessionWorker(QObject):
     def __init__(self, *, device_id: str, device_name: str) -> None:
         super().__init__()
         self._analyzer = MapBuildAnalyzer(device_id=device_id, device_name=device_name)
-        self._cancelled = False
+        self._cancel_requested = Event()
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def add_frame(self, image: QImage) -> None:
-        if self._cancelled or not isinstance(image, QImage) or image.isNull():
+        if self._is_cancelled() or not isinstance(image, QImage) or image.isNull():
             return
         started_at = perf_counter()
         try:
             report = self._analyzer.add_frame(image)
         except Exception as exc:  # noqa: BLE001
+            if self._is_cancelled():
+                return
             self.failed.emit(str(exc))
+            return
+        if self._is_cancelled():
             return
         perf = self._analyzer.last_performance_metrics()
         log_preview_analysis_perf(
@@ -129,15 +145,22 @@ class MapBuildSessionWorker(QObject):
 
     @Slot()
     def finalize(self) -> None:
-        if self._cancelled:
+        if self._is_cancelled():
             return
         try:
             result = self._analyzer.finalize()
         except Exception as exc:  # noqa: BLE001
+            if self._is_cancelled():
+                return
             self.failed.emit(str(exc))
+            return
+        if self._is_cancelled():
             return
         self.finished.emit(result)
 
     @Slot()
     def cancel(self) -> None:
-        self._cancelled = True
+        self._cancel_requested.set()
+
+    def _is_cancelled(self) -> bool:
+        return self._cancel_requested.is_set()

@@ -448,6 +448,36 @@ class AppSettings:
     selected_capture_device_id: str = ""
     raw_record_templates: list[RawRecordTemplate] = field(default_factory=list)
     last_raw_record_template_path: str = ""
+    digital_slide_last_output_path: str = ""
+    digital_slide_preview_max_width: int = 1280
+    digital_slide_capture_max_width: int = 1600
+    digital_slide_capture_tile_codec: str = "png"
+    digital_slide_capture_jpeg_quality: int = 90
+    digital_slide_xy_soft_limit: int = 1_000_000
+    digital_slide_z_soft_limit: int = 200_000
+    digital_slide_xy_jog_step: int = 5000
+    digital_slide_z_jog_step: int = 1000
+    digital_slide_z_capture_lower: int | None = None
+    digital_slide_z_capture_upper: int | None = None
+    digital_slide_z_capture_step: int = 1000
+    digital_slide_jog_rate: int = 12
+    digital_slide_motor_output_enabled: bool = True
+    digital_slide_x_stage_step: int = 5000
+    digital_slide_y_stage_step: int = 5000
+    digital_slide_reverse_x_axis: bool = False
+    digital_slide_reverse_y_axis: bool = False
+    digital_slide_overlap_percent: int = 0
+    digital_slide_pixel_stride_mode: str = "auto_overlap"
+    digital_slide_x_pixel_stride: int = 1280
+    digital_slide_y_pixel_stride: int = 960
+    digital_slide_blend_width: int = 0
+    digital_slide_xy_settle_ms: int = 200
+    digital_slide_xy_post_settle_ms: int = 100
+    digital_slide_z_settle_ms: int = 80
+    digital_slide_z_post_settle_ms: int = 40
+    digital_slide_first_tile_extra_wait_ms: int = 3000
+    digital_slide_discard_frames: int = 2
+    digital_slide_focus_wheel_step: int = 1
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
@@ -480,6 +510,45 @@ class AppSettings:
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
         normalized.raw_record_templates = self._normalize_raw_record_templates(self.raw_record_templates)
         normalized.last_raw_record_template_path = normalize_raw_record_template_path(self.last_raw_record_template_path)
+        normalized.digital_slide_last_output_path = self._normalize_digital_slide_output_path(self.digital_slide_last_output_path)
+        normalized.digital_slide_preview_max_width = self._normalize_optional_width(self.digital_slide_preview_max_width, default=1280)
+        normalized.digital_slide_capture_max_width = self._normalize_optional_width(self.digital_slide_capture_max_width, default=1600)
+        normalized.digital_slide_capture_tile_codec = self._normalize_digital_slide_tile_codec(self.digital_slide_capture_tile_codec)
+        normalized.digital_slide_capture_jpeg_quality = self._normalize_int_range(
+            self.digital_slide_capture_jpeg_quality,
+            default=90,
+            minimum=70,
+            maximum=95,
+        )
+        normalized.digital_slide_xy_soft_limit = self._normalize_int_range(self.digital_slide_xy_soft_limit, default=1_000_000, minimum=0, maximum=10_000_000)
+        normalized.digital_slide_z_soft_limit = self._normalize_int_range(self.digital_slide_z_soft_limit, default=200_000, minimum=0, maximum=10_000_000)
+        normalized.digital_slide_xy_jog_step = self._normalize_int_range(self.digital_slide_xy_jog_step, default=5000, minimum=1, maximum=1_000_000)
+        normalized.digital_slide_z_jog_step = self._normalize_int_range(self.digital_slide_z_jog_step, default=1000, minimum=1, maximum=1_000_000)
+        normalized.digital_slide_z_capture_lower = self._normalize_optional_signed_int(self.digital_slide_z_capture_lower, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_z_capture_upper = self._normalize_optional_signed_int(self.digital_slide_z_capture_upper, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_z_capture_step = self._normalize_int_range(self.digital_slide_z_capture_step, default=1000, minimum=1, maximum=1_000_000)
+        normalized.digital_slide_jog_rate = self._normalize_int_range(self.digital_slide_jog_rate, default=12, minimum=1, maximum=50)
+        normalized.digital_slide_x_stage_step = self._normalize_signed_int_range(self.digital_slide_x_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_y_stage_step = self._normalize_signed_int_range(self.digital_slide_y_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
+        normalized.digital_slide_reverse_x_axis = bool(self.digital_slide_reverse_x_axis)
+        normalized.digital_slide_reverse_y_axis = bool(self.digital_slide_reverse_y_axis)
+        normalized.digital_slide_overlap_percent = self._normalize_int_range(self.digital_slide_overlap_percent, default=0, minimum=0, maximum=90)
+        normalized.digital_slide_pixel_stride_mode = self._normalize_digital_slide_pixel_stride_mode(self.digital_slide_pixel_stride_mode)
+        normalized.digital_slide_x_pixel_stride = self._normalize_int_range(self.digital_slide_x_pixel_stride, default=1280, minimum=1, maximum=100_000)
+        normalized.digital_slide_y_pixel_stride = self._normalize_int_range(self.digital_slide_y_pixel_stride, default=960, minimum=1, maximum=100_000)
+        normalized.digital_slide_blend_width = self._normalize_int_range(self.digital_slide_blend_width, default=0, minimum=0, maximum=10_000)
+        normalized.digital_slide_xy_settle_ms = self._normalize_int_range(self.digital_slide_xy_settle_ms, default=200, minimum=0, maximum=10_000)
+        normalized.digital_slide_xy_post_settle_ms = self._normalize_int_range(self.digital_slide_xy_post_settle_ms, default=100, minimum=0, maximum=5000)
+        normalized.digital_slide_z_settle_ms = self._normalize_int_range(self.digital_slide_z_settle_ms, default=80, minimum=0, maximum=10_000)
+        normalized.digital_slide_z_post_settle_ms = self._normalize_int_range(self.digital_slide_z_post_settle_ms, default=40, minimum=0, maximum=5000)
+        normalized.digital_slide_first_tile_extra_wait_ms = self._normalize_int_range(
+            self.digital_slide_first_tile_extra_wait_ms,
+            default=3000,
+            minimum=0,
+            maximum=60_000,
+        )
+        normalized.digital_slide_discard_frames = self._normalize_int_range(self.digital_slide_discard_frames, default=2, minimum=0, maximum=20)
+        normalized.digital_slide_focus_wheel_step = self._normalize_int_range(self.digital_slide_focus_wheel_step, default=1, minimum=1, maximum=10)
         return normalized
 
     def resolved_area_weights_dir(self) -> Path:
@@ -708,6 +777,69 @@ class AppSettings:
             normalized_templates.append(normalized)
         return normalized_templates
 
+    @staticmethod
+    def _normalize_int_range(value: int | float | str | None, *, default: int, minimum: int, maximum: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = int(default)
+        return max(int(minimum), min(int(maximum), numeric))
+
+    @staticmethod
+    def _normalize_signed_int_range(value: int | float | str | None, *, default: int, minimum: int, maximum: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = int(default)
+        return max(int(minimum), min(int(maximum), numeric))
+
+    @staticmethod
+    def _normalize_optional_signed_int(value: int | float | str | None, *, minimum: int, maximum: int) -> int | None:
+        if value is None:
+            return None
+        token = str(value).strip()
+        if not token:
+            return None
+        try:
+            numeric = int(round(float(token)))
+        except (TypeError, ValueError):
+            return None
+        return max(int(minimum), min(int(maximum), numeric))
+
+    @staticmethod
+    def _normalize_optional_width(value: int | float | str | None, *, default: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError):
+            numeric = int(default)
+        if numeric <= 0:
+            return 0
+        return max(320, min(20_000, numeric))
+
+    @staticmethod
+    def _normalize_digital_slide_output_path(value: str | Path | None) -> str:
+        token = str(value or "").strip()
+        if not token:
+            return ""
+        try:
+            return str(Path(token).expanduser())
+        except (OSError, RuntimeError):
+            return token
+
+    @staticmethod
+    def _normalize_digital_slide_pixel_stride_mode(value: str | None) -> str:
+        token = str(value or "").strip()
+        if token in {"auto_overlap", "manual_pixels"}:
+            return token
+        return "auto_overlap"
+
+    @staticmethod
+    def _normalize_digital_slide_tile_codec(value: str | None) -> str:
+        token = str(value or "").strip().lower()
+        if token in {"jpg", "jpeg"}:
+            return "jpeg"
+        return "png"
+
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
@@ -765,6 +897,36 @@ class AppSettings:
             "selected_capture_device_id": normalized.selected_capture_device_id,
             "raw_record_templates": [template.to_dict() for template in normalized.raw_record_templates],
             "last_raw_record_template_path": normalized.last_raw_record_template_path,
+            "digital_slide_last_output_path": normalized.digital_slide_last_output_path,
+            "digital_slide_preview_max_width": normalized.digital_slide_preview_max_width,
+            "digital_slide_capture_max_width": normalized.digital_slide_capture_max_width,
+            "digital_slide_capture_tile_codec": normalized.digital_slide_capture_tile_codec,
+            "digital_slide_capture_jpeg_quality": normalized.digital_slide_capture_jpeg_quality,
+            "digital_slide_xy_soft_limit": normalized.digital_slide_xy_soft_limit,
+            "digital_slide_z_soft_limit": normalized.digital_slide_z_soft_limit,
+            "digital_slide_xy_jog_step": normalized.digital_slide_xy_jog_step,
+            "digital_slide_z_jog_step": normalized.digital_slide_z_jog_step,
+            "digital_slide_z_capture_lower": normalized.digital_slide_z_capture_lower,
+            "digital_slide_z_capture_upper": normalized.digital_slide_z_capture_upper,
+            "digital_slide_z_capture_step": normalized.digital_slide_z_capture_step,
+            "digital_slide_jog_rate": normalized.digital_slide_jog_rate,
+            "digital_slide_motor_output_enabled": normalized.digital_slide_motor_output_enabled,
+            "digital_slide_x_stage_step": normalized.digital_slide_x_stage_step,
+            "digital_slide_y_stage_step": normalized.digital_slide_y_stage_step,
+            "digital_slide_reverse_x_axis": normalized.digital_slide_reverse_x_axis,
+            "digital_slide_reverse_y_axis": normalized.digital_slide_reverse_y_axis,
+            "digital_slide_overlap_percent": normalized.digital_slide_overlap_percent,
+            "digital_slide_pixel_stride_mode": normalized.digital_slide_pixel_stride_mode,
+            "digital_slide_x_pixel_stride": normalized.digital_slide_x_pixel_stride,
+            "digital_slide_y_pixel_stride": normalized.digital_slide_y_pixel_stride,
+            "digital_slide_blend_width": normalized.digital_slide_blend_width,
+            "digital_slide_xy_settle_ms": normalized.digital_slide_xy_settle_ms,
+            "digital_slide_xy_post_settle_ms": normalized.digital_slide_xy_post_settle_ms,
+            "digital_slide_z_settle_ms": normalized.digital_slide_z_settle_ms,
+            "digital_slide_z_post_settle_ms": normalized.digital_slide_z_post_settle_ms,
+            "digital_slide_first_tile_extra_wait_ms": normalized.digital_slide_first_tile_extra_wait_ms,
+            "digital_slide_discard_frames": normalized.digital_slide_discard_frames,
+            "digital_slide_focus_wheel_step": normalized.digital_slide_focus_wheel_step,
         }
 
     @classmethod
@@ -933,6 +1095,162 @@ class AppSettings:
             )
         settings.last_raw_record_template_path = normalize_raw_record_template_path(
             payload.get("last_raw_record_template_path", settings.last_raw_record_template_path)
+        )
+        settings.digital_slide_last_output_path = cls._normalize_digital_slide_output_path(
+            payload.get("digital_slide_last_output_path", settings.digital_slide_last_output_path)
+        )
+        settings.digital_slide_preview_max_width = cls._normalize_optional_width(
+            payload.get("digital_slide_preview_max_width", settings.digital_slide_preview_max_width),
+            default=1280,
+        )
+        settings.digital_slide_capture_max_width = cls._normalize_optional_width(
+            payload.get("digital_slide_capture_max_width", settings.digital_slide_capture_max_width),
+            default=1600,
+        )
+        settings.digital_slide_capture_tile_codec = cls._normalize_digital_slide_tile_codec(
+            payload.get("digital_slide_capture_tile_codec", settings.digital_slide_capture_tile_codec)
+        )
+        settings.digital_slide_capture_jpeg_quality = cls._normalize_int_range(
+            payload.get("digital_slide_capture_jpeg_quality", settings.digital_slide_capture_jpeg_quality),
+            default=90,
+            minimum=70,
+            maximum=95,
+        )
+        settings.digital_slide_xy_soft_limit = cls._normalize_int_range(
+            payload.get("digital_slide_xy_soft_limit", settings.digital_slide_xy_soft_limit),
+            default=1_000_000,
+            minimum=0,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_z_soft_limit = cls._normalize_int_range(
+            payload.get("digital_slide_z_soft_limit", settings.digital_slide_z_soft_limit),
+            default=200_000,
+            minimum=0,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_xy_jog_step = cls._normalize_int_range(
+            payload.get("digital_slide_xy_jog_step", settings.digital_slide_xy_jog_step),
+            default=5000,
+            minimum=1,
+            maximum=1_000_000,
+        )
+        settings.digital_slide_z_jog_step = cls._normalize_int_range(
+            payload.get("digital_slide_z_jog_step", settings.digital_slide_z_jog_step),
+            default=1000,
+            minimum=1,
+            maximum=1_000_000,
+        )
+        settings.digital_slide_z_capture_lower = cls._normalize_optional_signed_int(
+            payload.get("digital_slide_z_capture_lower", settings.digital_slide_z_capture_lower),
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_z_capture_upper = cls._normalize_optional_signed_int(
+            payload.get("digital_slide_z_capture_upper", settings.digital_slide_z_capture_upper),
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_z_capture_step = cls._normalize_int_range(
+            payload.get("digital_slide_z_capture_step", settings.digital_slide_z_capture_step),
+            default=1000,
+            minimum=1,
+            maximum=1_000_000,
+        )
+        settings.digital_slide_jog_rate = cls._normalize_int_range(
+            payload.get("digital_slide_jog_rate", settings.digital_slide_jog_rate),
+            default=12,
+            minimum=1,
+            maximum=50,
+        )
+        settings.digital_slide_motor_output_enabled = bool(
+            payload.get("digital_slide_motor_output_enabled", settings.digital_slide_motor_output_enabled)
+        )
+        settings.digital_slide_x_stage_step = cls._normalize_signed_int_range(
+            payload.get("digital_slide_x_stage_step", settings.digital_slide_x_stage_step),
+            default=5000,
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_y_stage_step = cls._normalize_signed_int_range(
+            payload.get("digital_slide_y_stage_step", settings.digital_slide_y_stage_step),
+            default=5000,
+            minimum=-10_000_000,
+            maximum=10_000_000,
+        )
+        settings.digital_slide_reverse_x_axis = bool(
+            payload.get("digital_slide_reverse_x_axis", settings.digital_slide_reverse_x_axis)
+        )
+        settings.digital_slide_reverse_y_axis = bool(
+            payload.get("digital_slide_reverse_y_axis", settings.digital_slide_reverse_y_axis)
+        )
+        settings.digital_slide_overlap_percent = cls._normalize_int_range(
+            payload.get("digital_slide_overlap_percent", settings.digital_slide_overlap_percent),
+            default=0,
+            minimum=0,
+            maximum=90,
+        )
+        settings.digital_slide_pixel_stride_mode = cls._normalize_digital_slide_pixel_stride_mode(
+            payload.get("digital_slide_pixel_stride_mode", settings.digital_slide_pixel_stride_mode)
+        )
+        settings.digital_slide_x_pixel_stride = cls._normalize_int_range(
+            payload.get("digital_slide_x_pixel_stride", settings.digital_slide_x_pixel_stride),
+            default=1280,
+            minimum=1,
+            maximum=100_000,
+        )
+        settings.digital_slide_y_pixel_stride = cls._normalize_int_range(
+            payload.get("digital_slide_y_pixel_stride", settings.digital_slide_y_pixel_stride),
+            default=960,
+            minimum=1,
+            maximum=100_000,
+        )
+        settings.digital_slide_blend_width = cls._normalize_int_range(
+            payload.get("digital_slide_blend_width", settings.digital_slide_blend_width),
+            default=0,
+            minimum=0,
+            maximum=10_000,
+        )
+        settings.digital_slide_xy_settle_ms = cls._normalize_int_range(
+            payload.get("digital_slide_xy_settle_ms", settings.digital_slide_xy_settle_ms),
+            default=200,
+            minimum=0,
+            maximum=10_000,
+        )
+        settings.digital_slide_xy_post_settle_ms = cls._normalize_int_range(
+            payload.get("digital_slide_xy_post_settle_ms", settings.digital_slide_xy_post_settle_ms),
+            default=100,
+            minimum=0,
+            maximum=5000,
+        )
+        settings.digital_slide_z_settle_ms = cls._normalize_int_range(
+            payload.get("digital_slide_z_settle_ms", settings.digital_slide_z_settle_ms),
+            default=80,
+            minimum=0,
+            maximum=10_000,
+        )
+        settings.digital_slide_z_post_settle_ms = cls._normalize_int_range(
+            payload.get("digital_slide_z_post_settle_ms", settings.digital_slide_z_post_settle_ms),
+            default=40,
+            minimum=0,
+            maximum=5000,
+        )
+        settings.digital_slide_first_tile_extra_wait_ms = cls._normalize_int_range(
+            payload.get("digital_slide_first_tile_extra_wait_ms", settings.digital_slide_first_tile_extra_wait_ms),
+            default=3000,
+            minimum=0,
+            maximum=60_000,
+        )
+        settings.digital_slide_discard_frames = cls._normalize_int_range(
+            payload.get("digital_slide_discard_frames", settings.digital_slide_discard_frames),
+            default=2,
+            minimum=0,
+            maximum=20,
+        )
+        settings.digital_slide_focus_wheel_step = cls._normalize_int_range(
+            payload.get("digital_slide_focus_wheel_step", settings.digital_slide_focus_wheel_step),
+            default=1,
+            minimum=1,
+            maximum=10,
         )
         return settings
 

@@ -17,7 +17,6 @@ from fdm.geometry import (
     Point,
     clamp,
     distance,
-    line_length,
     nearest_endpoint,
     point_in_area_rings,
     point_in_polygon,
@@ -26,7 +25,6 @@ from fdm.geometry import (
     point_to_polyline_distance,
     point_to_polygon_edge_distance,
     polygon_translate,
-    snap_to_pixel_center,
 )
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind
 from fdm.services.prompt_segmentation import (
@@ -44,6 +42,12 @@ from fdm.settings import (
     is_magic_segment_tool_mode,
     is_magic_toolbar_tool_mode,
     is_reference_propagation_tool_mode,
+)
+from fdm.ui.canvas_tool_strategies import (
+    ContinuousManualToolStrategy,
+    CountToolStrategy,
+    LineToolStrategy,
+    clamp_point_to_image,
 )
 from fdm.ui.rendering import (
     area_rings_path,
@@ -415,6 +419,9 @@ class DocumentCanvas(QWidget):
         self._drawing_anchor_raw: Point | None = None
         self._drawing_line: Line | None = None
         self._line_commit_on_second_click = False
+        self._line_tool_strategy = LineToolStrategy()
+        self._continuous_manual_tool_strategy = ContinuousManualToolStrategy()
+        self._count_tool_strategy = CountToolStrategy()
 
         self._drawing_polygon_points: list[Point] = []
         self._area_hover_point: Point | None = None
@@ -725,9 +732,9 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "polygon_area":
             return len(self._drawing_polygon_points) >= 3
         if self._tool_mode == "continuous_manual":
-            return len(self._drawing_polygon_points) >= 2
+            return self._continuous_manual_tool_strategy.can_commit(self._drawing_polygon_points)
         if self._tool_mode in {"manual", "snap"} and self._drawing_line is not None:
-            return line_length(self._drawing_line) >= 1.0
+            return self._line_tool_strategy.can_commit(self._drawing_line)
         return False
 
     def commit_pending_path(self) -> bool:
@@ -746,9 +753,9 @@ class DocumentCanvas(QWidget):
             and self._document is not None
             and self._drawing_line is not None
         ):
-            line = self._drawing_line
+            line = self._line_tool_strategy.commit_payload(self._drawing_line)
             self._cancel_line_drawing()
-            if line_length(line) < 1.0:
+            if line is None:
                 return False
             self.lineCommitted.emit(self._document.id, self._tool_mode, line)
             self.update()
@@ -1806,7 +1813,10 @@ class DocumentCanvas(QWidget):
             self.overlaySelected.emit(self._document.id, "")
             self.textSelected.emit(self._document.id, "")
             point = self._clamp_to_image(image_point, pixel_center=False)
-            if self._drawing_polygon_points and distance(self._drawing_polygon_points[-1], point) < 1.0:
+            if not self._continuous_manual_tool_strategy.should_append_point(
+                self._drawing_polygon_points,
+                point,
+            ):
                 return
             self._drawing_polygon_points.append(point)
             self._area_hover_point = point
@@ -1842,10 +1852,7 @@ class DocumentCanvas(QWidget):
             self.lineCommitted.emit(
                 self._document.id,
                 "count",
-                {
-                    "measurement_kind": "count",
-                    "point_px": point,
-                },
+                self._count_tool_strategy.commit_payload(point),
             )
             self.update()
             return
@@ -2153,9 +2160,9 @@ class DocumentCanvas(QWidget):
             if self._line_commit_on_second_click:
                 self.update()
                 return
-            line = self._drawing_line
+            line = self._line_tool_strategy.commit_payload(self._drawing_line)
             self._cancel_line_drawing()
-            if line_length(line) >= 1.0:
+            if line is not None:
                 self.lineCommitted.emit(self._document.id, self._tool_mode, line)
             if self._space_pressed:
                 self._temporary_grab_active = True
@@ -2275,8 +2282,19 @@ class DocumentCanvas(QWidget):
             and len(self._drawing_polygon_points) >= 1
         ):
             point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
-            if distance(point, self._drawing_polygon_points[-1]) > 1.0:
+            previous_point_count = len(self._drawing_polygon_points)
+            if (
+                self._tool_mode == "continuous_manual"
+                and not self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON)
+            ):
+                self._drawing_polygon_points = self._continuous_manual_tool_strategy.points_with_candidate(
+                    self._drawing_polygon_points,
+                    point,
+                    include_threshold=False,
+                )
+            elif distance(point, self._drawing_polygon_points[-1]) > 1.0:
                 self._drawing_polygon_points.append(point)
+            if len(self._drawing_polygon_points) != previous_point_count:
                 self.pathSessionChanged.emit(self._document.id)
                 if self._magic_manual_subtract_mode_active(MagicSegmentSubtractInputMode.POLYGON):
                     self._emit_magic_segment_session_changed()
@@ -2297,7 +2315,9 @@ class DocumentCanvas(QWidget):
                 self._complete_area_measurement("polygon_area", list(self._drawing_polygon_points))
                 event.accept()
                 return
-            if self._tool_mode == "continuous_manual" and len(self._drawing_polygon_points) >= 2:
+            if self._tool_mode == "continuous_manual" and self._continuous_manual_tool_strategy.can_commit(
+                self._drawing_polygon_points,
+            ):
                 self._complete_continuous_measurement(list(self._drawing_polygon_points))
                 event.accept()
                 return
@@ -2845,6 +2865,11 @@ class DocumentCanvas(QWidget):
         self._drag_overlay_origin = None
         self._drag_overlay_preview = None
 
+    def _image_size(self) -> tuple[int, int] | None:
+        if self._image is None:
+            return None
+        return self._image.width(), self._image.height()
+
     def _apply_line_constraints(
         self,
         anchor: Point,
@@ -2855,41 +2880,39 @@ class DocumentCanvas(QWidget):
     ) -> tuple[Point, Point]:
         use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
         use_shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
-        fixed = snap_to_pixel_center(anchor) if use_ctrl and snap_anchor else anchor
-        moving = candidate
-        if use_shift:
-            dx = moving.x - fixed.x
-            dy = moving.y - fixed.y
-            if abs(dx) >= abs(dy):
-                moving = Point(moving.x, fixed.y)
-            else:
-                moving = Point(fixed.x, moving.y)
-        if use_ctrl:
-            moving = snap_to_pixel_center(moving)
-        fixed = self._clamp_to_image(fixed, pixel_center=use_ctrl and snap_anchor)
-        moving = self._clamp_to_image(moving, pixel_center=use_ctrl)
-        return fixed, moving
+        line = self._line_tool_strategy.preview_line(
+            anchor,
+            candidate,
+            image_size=self._image_size(),
+            constrain_axis=use_shift,
+            snap_to_pixel=use_ctrl,
+            snap_anchor=snap_anchor,
+        )
+        return line.start, line.end
 
     def _anchor_point_for_event(self, image_point: Point, modifiers: Qt.KeyboardModifiers) -> Point:
         use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
-        return self._clamp_to_image(
-            snap_to_pixel_center(image_point) if use_ctrl else image_point,
-            pixel_center=use_ctrl,
+        return self._line_tool_strategy.anchor_for_event(
+            image_point,
+            image_size=self._image_size(),
+            snap_to_pixel=use_ctrl,
         )
 
     def _begin_line_drawing(self, anchor: Point, *, commit_on_second_click: bool = False) -> None:
-        self._drawing_anchor_raw = anchor
-        self._drawing_line = Line(start=anchor, end=anchor)
-        self._line_commit_on_second_click = commit_on_second_click
+        state = self._line_tool_strategy.begin(anchor, commit_on_second_click=commit_on_second_click)
+        self._drawing_anchor_raw = state.anchor_raw
+        self._drawing_line = state.preview_line
+        self._line_commit_on_second_click = state.commit_on_second_click
         if self.document_id is not None:
             self.pathSessionChanged.emit(self.document_id)
 
     def _cancel_line_drawing(self) -> None:
         had_line = self._drawing_line is not None
         document_id = self.document_id
-        self._drawing_anchor_raw = None
-        self._drawing_line = None
-        self._line_commit_on_second_click = False
+        state = self._line_tool_strategy.cancel()
+        self._drawing_anchor_raw = state.anchor_raw
+        self._drawing_line = state.preview_line
+        self._line_commit_on_second_click = state.commit_on_second_click
         if had_line and document_id is not None:
             self.pathSessionChanged.emit(document_id)
         if had_line:
@@ -2906,23 +2929,16 @@ class DocumentCanvas(QWidget):
         )
         line = Line(start=start, end=end)
         self._cancel_line_drawing()
-        if line_length(line) >= 1.0:
-            self.lineCommitted.emit(self._document.id, self._tool_mode, line)
+        payload = self._line_tool_strategy.commit_payload(line)
+        if payload is not None:
+            self.lineCommitted.emit(self._document.id, self._tool_mode, payload)
         if self._space_pressed:
             self._temporary_grab_active = True
             self._update_cursor()
         self.update()
 
     def _clamp_to_image(self, point: Point, *, pixel_center: bool) -> Point:
-        if self._image is None:
-            return point
-        minimum = 0.5 if pixel_center else 0.0
-        maximum_x = (self._image.width() - 0.5) if pixel_center else (self._image.width() - 1.0)
-        maximum_y = (self._image.height() - 0.5) if pixel_center else (self._image.height() - 1.0)
-        return Point(
-            x=clamp(point.x, minimum, max(minimum, maximum_x)),
-            y=clamp(point.y, minimum, max(minimum, maximum_y)),
-        )
+        return clamp_point_to_image(point, self._image_size(), pixel_center=pixel_center)
 
     def _persist_view_state(self) -> None:
         if self._document is None:
@@ -3283,16 +3299,14 @@ class DocumentCanvas(QWidget):
 
     def _complete_continuous_measurement(self, polyline_points: list[Point]) -> None:
         document_id = self._document.id if self._document is not None else None
+        payload = self._continuous_manual_tool_strategy.commit_payload(polyline_points)
         self._cancel_area_drawing()
-        if document_id is None or len(polyline_points) < 2:
+        if document_id is None or payload is None:
             return
         self.lineCommitted.emit(
             document_id,
             "continuous_manual",
-            {
-                "measurement_kind": "polyline",
-                "polyline_px": polyline_points,
-            },
+            payload,
         )
 
     def _begin_area_drag(self, handle: tuple[str, str, int | None, int | None], image_point: Point) -> None:
