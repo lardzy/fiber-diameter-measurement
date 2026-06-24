@@ -1351,6 +1351,13 @@ class CanvasAndExportTests(unittest.TestCase):
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
             window = MainWindow()
         try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._sync_digital_slide_mode_ui()
+            window.resize(1000, 700)
+            window.show()
+            self.app.processEvents()
+
             self.assertIsNotNone(window._digital_slide_connection_toggle)
             self.assertIsNotNone(window._digital_slide_connection_details)
             self.assertIsNotNone(window._digital_slide_connection_summary_label)
@@ -1362,10 +1369,24 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._digital_slide_stage_details)
             self.assertTrue(window._digital_slide_stage_toggle.isChecked())
             self.assertFalse(window._digital_slide_stage_details.isHidden())
+            self.assertIsNotNone(window._digital_slide_diagnostics_toggle)
+            self.assertIsNotNone(window._digital_slide_diagnostics_details)
+            self.assertFalse(window._digital_slide_diagnostics_toggle.isChecked())
+            self.assertTrue(window._digital_slide_diagnostics_details.isHidden())
 
+            self.assertIsNotNone(window._digital_slide_left_panel)
+            left_scrolls = window._digital_slide_left_panel.findChildren(QScrollArea)
+            self.assertEqual(len(left_scrolls), 1)
+            left_scroll = left_scrolls[0]
+            self.assertEqual(left_scroll.horizontalScrollBar().maximum(), 0)
+            viewport_width = left_scroll.viewport().width()
+            for box in left_scroll.widget().findChildren(QGroupBox):
+                self.assertLessEqual(box.width(), viewport_width + 2)
             self.assertIsNotNone(window._digital_slide_range_map)
-            self.assertGreaterEqual(window._digital_slide_range_map.minimumHeight(), 180)
+            self.assertGreaterEqual(window._digital_slide_range_map.minimumHeight(), 140)
             self.assertEqual(window._digital_slide_range_map.sizePolicy().horizontalPolicy(), QSizePolicy.Policy.Expanding)
+            self.assertIsNotNone(window._digital_slide_z_rail)
+            self.assertGreaterEqual(window._digital_slide_z_rail.minimumHeight(), 160)
             window._app_settings.digital_slide_x_stage_step = 5000
             window._app_settings.digital_slide_y_stage_step = 7000
             window._slide_motion.relative_pos = {AXIS_X: 123, AXIS_Y: -456, AXIS_Z: 0}
@@ -1380,6 +1401,50 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._digital_slide_progress_bar)
             output_box = window._digital_slide_output_path_edit.parent()
             self.assertIs(window._digital_slide_progress_bar.parent().parent(), output_box)
+            self.assertTrue(window._digital_slide_left_panel.isAncestorOf(output_box))
+            self.assertIsNotNone(window._digital_slide_start_button)
+            self.assertTrue(window._digital_slide_start_button.isVisible())
+            self.assertLessEqual(window._digital_slide_right_panel.minimumWidth(), 300)
+        finally:
+            window.close()
+
+    def test_digital_slide_readiness_keeps_start_button_text_when_only_path_is_missing(self) -> None:
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
+        try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._slide_motion.enabled = True
+            window._latest_preview_frame = preview_frame.copy()
+            self.assertIsNotNone(window._digital_slide_cols_edit)
+            self.assertIsNotNone(window._digital_slide_rows_edit)
+            self.assertIsNotNone(window._digital_slide_z_lower_edit)
+            self.assertIsNotNone(window._digital_slide_z_upper_edit)
+            self.assertIsNotNone(window._digital_slide_output_path_edit)
+            window._digital_slide_cols_edit.setText("1")
+            window._digital_slide_rows_edit.setText("2")
+            window._digital_slide_z_lower_edit.setText("-10")
+            window._digital_slide_z_upper_edit.setText("10")
+            window._digital_slide_output_path_edit.clear()
+            window._sync_digital_slide_task_state()
+
+            self.assertIsNotNone(window._digital_slide_start_button)
+            self.assertTrue(window._digital_slide_start_button.isEnabled())
+            self.assertEqual(window._digital_slide_start_button.text(), "开始")
+            self.assertIsNotNone(window._digital_slide_readiness_label)
+            self.assertIn("输出路径", window._digital_slide_readiness_label.text())
+            self.assertIsNotNone(window._digital_slide_plan_summary_label)
+            self.assertIn("1列 x 2行", window._digital_slide_plan_summary_label.text())
+
+            with TemporaryDirectory() as tmp_dir:
+                window._digital_slide_output_path_edit.setText(str(Path(tmp_dir) / "ready.fdmslide"))
+                window._sync_digital_slide_task_state()
+
+            self.assertTrue(window._digital_slide_start_button.isEnabled())
+            self.assertEqual(window._digital_slide_start_button.text(), "开始")
+            self.assertIn("准备就绪", window._digital_slide_readiness_label.text())
         finally:
             window.close()
 
@@ -1739,7 +1804,21 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_digital_slide_output_path_clear_resets_ui_and_setting(self) -> None:
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
             window = MainWindow()
+        preview_frame = QImage(16, 12, QImage.Format.Format_RGB32)
+        preview_frame.fill(QColor("#CCE3DE"))
         try:
+            window._digital_slide_mode = True
+            window._preview_active = True
+            window._slide_motion.enabled = True
+            window._latest_preview_frame = preview_frame.copy()
+            self.assertIsNotNone(window._digital_slide_cols_edit)
+            self.assertIsNotNone(window._digital_slide_rows_edit)
+            self.assertIsNotNone(window._digital_slide_z_lower_edit)
+            self.assertIsNotNone(window._digital_slide_z_upper_edit)
+            window._digital_slide_cols_edit.setText("1")
+            window._digital_slide_rows_edit.setText("1")
+            window._digital_slide_z_lower_edit.setText("-10")
+            window._digital_slide_z_upper_edit.setText("10")
             self.assertIsNotNone(window._digital_slide_output_path_edit)
             window._digital_slide_output_path_edit.setText("/tmp/demo.fdmslide")
             window._app_settings.digital_slide_last_output_path = "/tmp/demo.fdmslide"
@@ -1752,6 +1831,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._app_settings.digital_slide_last_output_path, "")
             self.assertIsNotNone(window._digital_slide_start_button)
             self.assertIn("选择", window._digital_slide_start_button.toolTip())
+            self.assertEqual(window._digital_slide_start_button.text(), "开始")
         finally:
             window.close()
 
