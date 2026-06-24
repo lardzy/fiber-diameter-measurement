@@ -11,7 +11,17 @@ from xml.etree import ElementTree
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
-from fdm.models import Calibration, ImageDocument, Measurement, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL, format_measurement_label_value, new_id
+from fdm.models import (
+    Calibration,
+    ImageDocument,
+    Measurement,
+    ProjectGroupTemplate,
+    ProjectState,
+    UNCATEGORIZED_COLOR,
+    UNCATEGORIZED_LABEL,
+    format_measurement_label_value,
+    new_id,
+)
 from fdm.services.export_service import (
     CSV_IMAGE_SUMMARY_FILENAME,
     SHEET_MEASUREMENT_DETAILS,
@@ -21,6 +31,7 @@ from fdm.services.export_service import (
     ExportSelection,
     ExportService,
 )
+from fdm.services.group_manager import GroupManager
 from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
 from fdm.settings import (
     AppSettings,
@@ -632,6 +643,230 @@ class ExportServiceTests(unittest.TestCase):
 
         self.assertEqual([sheet_values["BA11"], sheet_values["BB11"]], ["棉", "莱赛尔"])
         self.assertEqual([sheet_values["BA12"], sheet_values["BB12"]], ["1", "2"])
+
+    def test_raw_record_template_unique_field_range_prefers_current_document_category_order_for_all_open(self) -> None:
+        first_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_first_order.png",
+            image_size=(200, 100),
+        )
+        first_document.initialize_runtime_state()
+        first_hemp = first_document.create_group(color="#E07A5F", label="麻")
+        first_cotton = first_document.create_group(color="#1F7A8C", label="棉")
+        current_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_current_order.png",
+            image_size=(200, 100),
+        )
+        current_document.initialize_runtime_state()
+        current_cotton = current_document.create_group(color="#1F7A8C", label="棉")
+        current_hemp = current_document.create_group(color="#E07A5F", label="麻")
+        for document, groups in (
+            (first_document, [first_hemp, first_cotton]),
+            (current_document, [current_cotton, current_hemp]),
+        ):
+            for index, group in enumerate(groups, start=1):
+                document.add_measurement(
+                    Measurement(
+                        id=new_id("meas"),
+                        image_id=document.id,
+                        fiber_group_id=group.id,
+                        mode="manual",
+                        line_px=Line(Point(0, 0), Point(10 + index, 0)),
+                    )
+                )
+        project = ProjectState(version="0.1.0", documents=[first_document, current_document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="BA11",
+                        end_cell="BB11",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维类别序号",
+                        sheet_name="Raw",
+                        start_cell="BA12",
+                        end_cell="BB12",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                ),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+                category_order_document=current_document,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([sheet_values["BA11"], sheet_values["BB11"]], ["棉", "麻"])
+        self.assertEqual([sheet_values["BA12"], sheet_values["BB12"]], ["1", "2"])
+
+    def test_raw_record_template_unique_field_range_prefers_global_synced_current_document_order(self) -> None:
+        project = ProjectState(version="0.1.0", documents=[])
+        project.project_group_templates = [
+            ProjectGroupTemplate(label="棉", color="#1F7A8C"),
+            ProjectGroupTemplate(label="麻", color="#E07A5F"),
+        ]
+        first_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_global_first.png",
+            image_size=(200, 100),
+        )
+        first_document.initialize_runtime_state()
+        first_document.create_group(color="#E07A5F", label="麻")
+        current_document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_global_current.png",
+            image_size=(200, 100),
+        )
+        current_document.initialize_runtime_state()
+        project.documents = [first_document, current_document]
+        group_manager = GroupManager(project, color_palette=["#1F7A8C", "#E07A5F"])
+        for document in project.documents:
+            group_manager.apply_project_group_templates_to_document(document)
+            for group in document.sorted_groups():
+                document.add_measurement(
+                    Measurement(
+                        id=new_id("meas"),
+                        image_id=document.id,
+                        fiber_group_id=group.id,
+                        mode="manual",
+                        line_px=Line(Point(0, 0), Point(10, 0)),
+                    )
+                )
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="BA11",
+                        end_cell="BB11",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维类别序号",
+                        sheet_name="Raw",
+                        start_cell="BA12",
+                        end_cell="BB12",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                ),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+                category_order_document=current_document,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([group.label for group in first_document.sorted_groups()], ["麻", "棉"])
+        self.assertEqual([group.label for group in current_document.sorted_groups()], ["棉", "麻"])
+        self.assertEqual([sheet_values["BA11"], sheet_values["BB11"]], ["棉", "麻"])
+        self.assertEqual([sheet_values["BA12"], sheet_values["BB12"]], ["1", "2"])
+
+    def test_raw_record_template_unique_field_range_skips_empty_current_document_categories(self) -> None:
+        document = ImageDocument(
+            id=new_id("image"),
+            path="/tmp/raw_record_unique_range_empty_current_category.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        cotton = document.create_group(color="#1F7A8C", label="棉")
+        document.create_group(color="#22C55E", label="空类别")
+        hemp = document.create_group(color="#E07A5F", label="麻")
+        for group in (cotton, hemp):
+            document.add_measurement(
+                Measurement(
+                    id=new_id("meas"),
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(0, 0), Point(10, 0)),
+                )
+            )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            self._write_minimal_macro_template(template_path)
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="BA11",
+                        end_cell="BC11",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    ),
+                ],
+            )
+
+            outputs = ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                ),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+                category_order_document=document,
+            )
+
+            self.assertEqual(outputs["xlsx"], output_path)
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([sheet_values["BA11"], sheet_values["BB11"]], ["棉", "麻"])
+        self.assertNotIn("BC11", sheet_values)
 
     def test_raw_record_template_normal_rule_groups_vertically_by_fiber_category(self) -> None:
         first_document = ImageDocument(

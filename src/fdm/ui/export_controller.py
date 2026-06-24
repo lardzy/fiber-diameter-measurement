@@ -125,6 +125,7 @@ class ExportController:
                 overlay_renderer=host._render_overlay_image,
                 single_output_path=single_output_path,
                 raw_record_template=raw_record_template,
+                category_order_document=host.current_document(),
                 progress_callback=on_export_progress,
             )
         except Exception as exc:

@@ -811,7 +811,6 @@ class MainWindow(QMainWindow):
         self._overlay_tool_menu: QMenu | None = None
         self._overlay_subtool_actions: dict[str, QAction] = {}
         self._left_panel: QWidget | None = None
-        self._main_splitter: QSplitter | None = None
         self._left_panel_splitter: QSplitter | None = None
         self._right_panel: QWidget | None = None
         self._left_standard_splitter: QSplitter | None = None
@@ -1214,14 +1213,13 @@ class MainWindow(QMainWindow):
         if self._measurement_tool_strip is not None:
             layout.addWidget(self._measurement_tool_strip)
         splitter = QSplitter(Qt.Orientation.Horizontal)
-        self._main_splitter = splitter
         splitter.addWidget(self._build_left_panel())
         splitter.addWidget(self._build_center_panel())
         splitter.addWidget(self._build_right_panel())
         splitter.setStretchFactor(0, 0)
         splitter.setStretchFactor(1, 1)
         splitter.setStretchFactor(2, 0)
-        splitter.setSizes([380, 770, 360])
+        splitter.setSizes([280, 870, 360])
         layout.addWidget(splitter, 1)
         self.setCentralWidget(container)
 
@@ -2006,7 +2004,7 @@ class MainWindow(QMainWindow):
     def _build_left_panel(self) -> QWidget:
         container = QWidget()
         self._left_panel = container
-        container.setMinimumWidth(380)
+        container.setMinimumWidth(280)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
         layout.setSpacing(8)
@@ -2108,10 +2106,8 @@ class MainWindow(QMainWindow):
         scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
-        scroll.setMinimumWidth(360)
 
         panel = QWidget(scroll)
-        panel.setMinimumWidth(340)
         layout = QVBoxLayout(panel)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
@@ -3668,28 +3664,10 @@ class MainWindow(QMainWindow):
             self._right_standard_panel.setVisible(not active)
         if self._digital_slide_right_panel is not None:
             self._digital_slide_right_panel.setVisible(active)
-        if active:
-            self._ensure_digital_slide_left_width()
         if active and self._preview_status_label is not None:
             self._preview_status_label.setText("数字化切片模式：设置范围后点击开始采集")
         if active and self._preview_canvas is not None and self._preview_document is not None:
             self._preview_canvas.fit_to_view()
-
-    def _ensure_digital_slide_left_width(self) -> None:
-        splitter = self._main_splitter
-        if splitter is None:
-            return
-        sizes = splitter.sizes()
-        if len(sizes) < 3:
-            return
-        target_left = 380
-        if sizes[0] >= target_left:
-            return
-        available_from_center = max(0, sizes[1] - 360)
-        delta = min(target_left - sizes[0], available_from_center)
-        if delta <= 0:
-            return
-        splitter.setSizes([sizes[0] + delta, sizes[1] - delta, sizes[2]])
 
     def _digital_slide_selected_port(self) -> str:
         if self._digital_slide_port_combo is None:

@@ -2486,6 +2486,67 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_export_results_passes_current_document_as_raw_record_category_order_source(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                image = QImage(200, 120, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                first_document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(Path(tmp_dir) / "export_first.png"),
+                    image_size=(image.width(), image.height()),
+                )
+                current_document = ImageDocument(
+                    id=new_id("image"),
+                    path=str(Path(tmp_dir) / "export_current.png"),
+                    image_size=(image.width(), image.height()),
+                )
+                first_document.initialize_runtime_state()
+                current_document.initialize_runtime_state()
+                self._load_document_into_window(window, first_document, image)
+                self._load_document_into_window(window, current_document, image)
+                window._set_current_document(current_document.id)
+                template_path = Path(tmp_dir) / "原始记录模板.xlsm"
+                template_path.write_bytes(b"placeholder")
+                window._app_settings.raw_record_templates = [
+                    RawRecordTemplate(name="原始记录", path=str(template_path))
+                ]
+                chosen_output = Path(tmp_dir) / "filled_record.xlsm"
+
+                dialog_mock = unittest.mock.Mock()
+                dialog_mock.DialogCode = QDialog.DialogCode
+                dialog_mock.exec.return_value = QDialog.DialogCode.Accepted
+                dialog_mock.selection.return_value = ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                )
+
+                with (
+                    patch("fdm.ui.main_window.ExportOptionsDialog", return_value=dialog_mock),
+                    patch(
+                        "fdm.ui.main_window.QFileDialog.getSaveFileName",
+                        return_value=(str(chosen_output), "启用宏的 Excel 工作簿 (*.xlsm)"),
+                    ),
+                    patch.object(
+                        window.export_service,
+                        "export_project",
+                        return_value={"xlsx": chosen_output},
+                    ) as export_project,
+                    patch.object(window, "_save_app_settings", return_value=True),
+                    patch("fdm.ui.main_window.QMessageBox.information"),
+                ):
+                    window.export_results()
+
+                self.assertEqual(
+                    [document.id for document in export_project.call_args.kwargs["documents"]],
+                    [first_document.id, current_document.id],
+                )
+                self.assertIs(export_project.call_args.kwargs["category_order_document"], current_document)
+        finally:
+            window.close()
+
     def test_export_results_shows_busy_file_warning_when_export_overwrite_fails(self) -> None:
         window = MainWindow()
         try:
@@ -5022,7 +5083,7 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertTrue(window.tab_widget.usesScrollButtons())
             self.assertIsNotNone(window._left_panel_splitter)
-            self.assertGreaterEqual(window._left_panel.minimumWidth(), 280)
+            self.assertEqual(window._left_panel.minimumWidth(), 280)
             self.assertEqual(window._left_panel_splitter.orientation(), Qt.Orientation.Vertical)
             window.resize(1280, 860)
             window.show()

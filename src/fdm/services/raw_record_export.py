@@ -129,6 +129,7 @@ def write_raw_record_template(
     *,
     documents: list[ImageDocument],
     measurement_rows: list[dict[str, object]],
+    category_order_document: ImageDocument | None = None,
 ) -> Path:
     template_path = resolve_resource_relative_path(template.path)
     if not template_path.exists():
@@ -150,7 +151,12 @@ def write_raw_record_template(
     try:
         entry_data = {info.filename: data for info, data in entries}
         sheet_paths = _workbook_sheet_paths(entry_data)
-        rule_plans = _build_rule_plans(template.rules, documents=documents, measurement_rows=measurement_rows)
+        rule_plans = _build_rule_plans(
+            template.rules,
+            documents=documents,
+            measurement_rows=measurement_rows,
+            category_order_document=category_order_document,
+        )
         sheet_write_plans = _group_rule_plans_by_sheet(rule_plans, sheet_paths)
 
         modified_entries = dict(entry_data)
@@ -213,9 +219,11 @@ def _build_rule_plans(
     *,
     documents: list[ImageDocument],
     measurement_rows: list[dict[str, object]],
+    category_order_document: ImageDocument | None = None,
 ) -> list[_RuleWritePlan]:
     plans: list[_RuleWritePlan] = []
-    category_labels = _fiber_category_labels(documents)
+    category_order_document = _matching_category_order_document(documents, category_order_document)
+    category_labels = _fiber_category_labels(documents, preferred_document=category_order_document)
     for raw_rule in rules:
         rule = raw_rule.normalized_copy()
         plans.append(
@@ -224,6 +232,7 @@ def _build_rule_plans(
                 documents=documents,
                 measurement_rows=measurement_rows,
                 category_labels=category_labels,
+                category_order_document=category_order_document,
             )
         )
     return plans
@@ -235,12 +244,14 @@ def _build_rule_write_plan(
     documents: list[ImageDocument],
     measurement_rows: list[dict[str, object]],
     category_labels: list[str],
+    category_order_document: ImageDocument | None,
 ) -> _RuleWritePlan:
     values = _values_for_rule(
         rule,
         documents=documents,
         measurement_rows=measurement_rows,
         category_labels=category_labels,
+        category_order_document=category_order_document,
     )
     if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
         coordinates = _target_coordinates_for_rule(rule, len(values))
@@ -276,6 +287,7 @@ def _values_for_rule(
     documents: list[ImageDocument],
     measurement_rows: list[dict[str, object]],
     category_labels: list[str],
+    category_order_document: ImageDocument | None,
 ) -> list[object]:
     if rule.data_source == RawRecordDataSource.DIAMETER_RESULT:
         return [
@@ -292,7 +304,12 @@ def _values_for_rule(
             if measurement.measurement_kind == "area"
         ]
     if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
-        return _unique_field_values(rule, measurement_rows, category_labels)
+        return _unique_field_values(
+            rule,
+            measurement_rows,
+            category_labels,
+            category_order_document=category_order_document,
+        )
 
     field_name = rule.field_name or "结果"
     return [
@@ -306,18 +323,31 @@ def _unique_field_values(
     rule: RawRecordExportRule,
     measurement_rows: list[dict[str, object]],
     category_labels: list[str],
+    *,
+    category_order_document: ImageDocument | None = None,
 ) -> list[object]:
     field_name = rule.field_name or "纤维种类名称"
     first_rows_by_label: dict[str, dict[str, object]] = {}
+    preferred_rows_by_label: dict[str, dict[str, object]] = {}
     labels_by_measurement_order: list[str] = []
+    preferred_document_id = (
+        category_order_document.id if category_order_document is not None else ""
+    )
     for row in measurement_rows:
         if not _row_matches_measurement_filter(row, rule.measurement_filter):
             continue
         label = _row_category_label(row)
-        if not label or label in first_rows_by_label:
+        if not label:
             continue
-        first_rows_by_label[label] = row
-        labels_by_measurement_order.append(label)
+        if label not in first_rows_by_label:
+            first_rows_by_label[label] = row
+            labels_by_measurement_order.append(label)
+        if (
+            preferred_document_id
+            and row.get("图片编号") == preferred_document_id
+            and label not in preferred_rows_by_label
+        ):
+            preferred_rows_by_label[label] = row
 
     ordered_labels: list[str] = []
     seen_labels: set[str] = set()
@@ -329,23 +359,51 @@ def _unique_field_values(
         if label not in seen_labels:
             ordered_labels.append(label)
             seen_labels.add(label)
-    return [first_rows_by_label[label].get(field_name) for label in ordered_labels]
+    return [
+        preferred_rows_by_label.get(label, first_rows_by_label[label]).get(field_name)
+        for label in ordered_labels
+    ]
 
 
 def _uses_category_grouped_range(rule: RawRecordExportRule) -> bool:
     return rule.data_source != RawRecordDataSource.UNIQUE_FIELD_RANGE and bool(str(rule.end_cell or "").strip())
 
 
-def _fiber_category_labels(documents: list[ImageDocument]) -> list[str]:
+def _matching_category_order_document(
+    documents: list[ImageDocument],
+    preferred_document: ImageDocument | None,
+) -> ImageDocument | None:
+    if preferred_document is None:
+        return None
+    return next(
+        (
+            document
+            for document in documents
+            if document is preferred_document or document.id == preferred_document.id
+        ),
+        None,
+    )
+
+
+def _fiber_category_labels(documents: list[ImageDocument], *, preferred_document: ImageDocument | None = None) -> list[str]:
     labels: list[str] = []
     seen: set[str] = set()
     has_uncategorized = False
-    for document in documents:
+    preferred = _matching_category_order_document(documents, preferred_document)
+
+    def append_document_groups(document: ImageDocument) -> None:
         for group in document.sorted_groups():
             label = str(group.label or group.display_name()).strip()
             if label and label not in seen:
                 seen.add(label)
                 labels.append(label)
+
+    if preferred is not None:
+        append_document_groups(preferred)
+
+    for document in documents:
+        if document is not preferred:
+            append_document_groups(document)
         if any(measurement.fiber_group_id is None for measurement in document.measurements):
             has_uncategorized = True
     if has_uncategorized and UNCATEGORIZED_LABEL not in seen:

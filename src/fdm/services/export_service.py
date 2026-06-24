@@ -152,6 +152,7 @@ class ExportService:
         overlay_renderer=None,
         single_output_path: str | Path | None = None,
         raw_record_template: RawRecordTemplate | None = None,
+        category_order_document: ImageDocument | None = None,
         progress_callback: Callable[[int, int, str, Path | None], None] | None = None,
     ) -> dict[str, object]:
         selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
@@ -246,6 +247,7 @@ class ExportService:
                         xlsx_path,
                         documents=target_documents,
                         measurement_rows=measurement_rows,
+                        category_order_document=category_order_document,
                     )
                 except (FileNotFoundError, RawRecordTemplateExportError) as exc:
                     fallback_path = self._raw_record_template_fallback_path(
