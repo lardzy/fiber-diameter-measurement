@@ -3,6 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QPainterPath
+
 
 @dataclass(slots=True)
 class Point:
@@ -109,7 +112,8 @@ def nearest_endpoint(line: Line, point: Point) -> tuple[str, float]:
 
 
 def polygon_area(points: list[Point]) -> float:
-    return abs(ring_signed_area(points))
+    area, _moment_x, _moment_y = _odd_even_moments([points])
+    return area
 
 
 def ring_signed_area(points: list[Point]) -> float:
@@ -125,18 +129,10 @@ def ring_signed_area(points: list[Point]) -> float:
 def polygon_centroid(points: list[Point]) -> Point:
     if not points:
         return Point(0.0, 0.0)
-    area_factor = 0.0
-    cx = 0.0
-    cy = 0.0
-    for index, point in enumerate(points):
-        next_point = points[(index + 1) % len(points)]
-        cross = (point.x * next_point.y) - (next_point.x * point.y)
-        area_factor += cross
-        cx += (point.x + next_point.x) * cross
-        cy += (point.y + next_point.y) * cross
-    if abs(area_factor) < 1e-9:
+    area, moment_x, moment_y = _odd_even_moments([points])
+    if area <= 1e-9:
         return polygon_bounds_center(points)
-    return Point(cx / (3.0 * area_factor), cy / (3.0 * area_factor))
+    return Point(moment_x / area, moment_y / area)
 
 
 def polygon_bounds(points: list[Point]) -> tuple[float, float, float, float]:
@@ -150,9 +146,8 @@ def polygon_bounds(points: list[Point]) -> tuple[float, float, float, float]:
 def area_rings_area(rings: list[list[Point]]) -> float:
     if not rings or len(rings[0]) < 3:
         return 0.0
-    outer_area = polygon_area(rings[0])
-    hole_area = area_rings_hole_area(rings)
-    return max(0.0, outer_area - hole_area)
+    area, _moment_x, _moment_y = _odd_even_moments(rings)
+    return area
 
 
 def area_rings_hole_area(rings: list[list[Point]]) -> float:
@@ -165,23 +160,142 @@ def area_rings_centroid(rings: list[list[Point]]) -> Point:
     flattened = [point for ring in rings for point in ring]
     if not flattened:
         return Point(0.0, 0.0)
-    total_weight = 0.0
-    cx = 0.0
-    cy = 0.0
-    for index, ring in enumerate(rings):
-        if len(ring) < 3:
-            continue
-        area = polygon_area(ring)
-        if area <= 1e-9:
-            continue
-        centroid = polygon_centroid(ring)
-        weight = area if index == 0 else -area
-        total_weight += weight
-        cx += centroid.x * weight
-        cy += centroid.y * weight
-    if abs(total_weight) < 1e-9:
+    area, moment_x, moment_y = _odd_even_moments(rings)
+    if area <= 1e-9:
         return polygon_bounds_center(flattened)
-    return Point(cx / total_weight, cy / total_weight)
+    return Point(moment_x / area, moment_y / area)
+
+
+def _odd_even_moments(rings: list[list[Point]]) -> tuple[float, float, float]:
+    """Return filled area and first moments from Qt's OddEvenFill geometry."""
+    simplified = _simplified_odd_even_path(rings)
+    polygon_records: list[tuple[float, Point, QPointF, QPainterPath]] = []
+    for polygon in simplified.toSubpathPolygons():
+        points = [Point(float(point.x()), float(point.y())) for point in polygon]
+        signed_area, centroid = _signed_area_and_centroid(points)
+        if abs(signed_area) <= 1e-9:
+            continue
+        polygon_path = _polygon_path(points)
+        sample = _interior_sample(points, polygon_path, signed_area)
+        polygon_records.append((abs(signed_area), centroid, sample, polygon_path))
+
+    area = 0.0
+    moment_x = 0.0
+    moment_y = 0.0
+    for index, (magnitude, centroid, sample, _polygon_path_value) in enumerate(polygon_records):
+        nesting_depth = sum(
+            1
+            for other_index, (_other_area, _other_centroid, _other_sample, other_path) in enumerate(polygon_records)
+            if other_index != index and other_path.contains(sample)
+        )
+        signed_weight = magnitude if nesting_depth % 2 == 0 else -magnitude
+        area += signed_weight
+        moment_x += centroid.x * signed_weight
+        moment_y += centroid.y * signed_weight
+    if area <= 1e-9:
+        return 0.0, 0.0, 0.0
+    return area, moment_x, moment_y
+
+
+def _simplified_odd_even_path(rings: list[list[Point]]) -> QPainterPath:
+    path = QPainterPath()
+    path.setFillRule(Qt.FillRule.OddEvenFill)
+    for ring in rings:
+        if len(ring) < 3 or any(
+            not math.isfinite(value)
+            for point in ring
+            for value in (point.x, point.y)
+        ):
+            continue
+        path.moveTo(float(ring[0].x), float(ring[0].y))
+        for point in ring[1:]:
+            path.lineTo(float(point.x), float(point.y))
+        path.closeSubpath()
+    simplified = path.simplified()
+    simplified.setFillRule(Qt.FillRule.OddEvenFill)
+    return simplified
+
+
+def _signed_area_and_centroid(points: list[Point]) -> tuple[float, Point]:
+    if len(points) < 3:
+        return 0.0, polygon_bounds_center(points)
+    cross_sum = 0.0
+    centroid_x_sum = 0.0
+    centroid_y_sum = 0.0
+    for index, point in enumerate(points):
+        next_point = points[(index + 1) % len(points)]
+        cross = (point.x * next_point.y) - (next_point.x * point.y)
+        cross_sum += cross
+        centroid_x_sum += (point.x + next_point.x) * cross
+        centroid_y_sum += (point.y + next_point.y) * cross
+    signed_area = cross_sum / 2.0
+    if abs(signed_area) <= 1e-9:
+        return 0.0, polygon_bounds_center(points)
+    return signed_area, Point(
+        centroid_x_sum / (6.0 * signed_area),
+        centroid_y_sum / (6.0 * signed_area),
+    )
+
+
+def _polygon_path(points: list[Point]) -> QPainterPath:
+    path = QPainterPath()
+    path.setFillRule(Qt.FillRule.OddEvenFill)
+    if not points:
+        return path
+    path.moveTo(points[0].x, points[0].y)
+    for point in points[1:]:
+        path.lineTo(point.x, point.y)
+    path.closeSubpath()
+    return path
+
+
+def _interior_sample(
+    points: list[Point],
+    polygon_path: QPainterPath,
+    signed_area: float,
+) -> QPointF:
+    bounds = polygon_path.boundingRect()
+    extent = max(float(bounds.width()), float(bounds.height()), 1.0)
+    edges = sorted(
+        (
+            (distance(start, end), start, end)
+            for start, end in zip(points, points[1:] + points[:1])
+        ),
+        key=lambda item: item[0],
+        reverse=True,
+    )
+    orientation = 1.0 if signed_area > 0.0 else -1.0
+    for epsilon_scale in (1e-7, 1e-6, 1e-5, 1e-4, 1e-3):
+        epsilon = extent * epsilon_scale
+        for edge_length, start, end in edges:
+            if edge_length <= 1e-12:
+                continue
+            midpoint_x = (start.x + end.x) / 2.0
+            midpoint_y = (start.y + end.y) / 2.0
+            normal_x = orientation * (-(end.y - start.y) / edge_length)
+            normal_y = orientation * ((end.x - start.x) / edge_length)
+            candidate = QPointF(
+                midpoint_x + (normal_x * epsilon),
+                midpoint_y + (normal_y * epsilon),
+            )
+            if polygon_path.contains(candidate):
+                return candidate
+
+    _area, centroid = _signed_area_and_centroid(points)
+    centroid_point = QPointF(centroid.x, centroid.y)
+    if polygon_path.contains(centroid_point):
+        return centroid_point
+    center = bounds.center()
+    if polygon_path.contains(center):
+        return center
+    for row in range(1, 16):
+        y = bounds.top() + (bounds.height() * row / 16.0)
+        for column in range(1, 16):
+            x = bounds.left() + (bounds.width() * column / 16.0)
+            candidate = QPointF(x, y)
+            if polygon_path.contains(candidate):
+                return candidate
+    return center
 
 
 def area_rings_bounds(rings: list[list[Point]]) -> tuple[float, float, float, float]:

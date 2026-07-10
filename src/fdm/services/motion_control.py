@@ -50,6 +50,14 @@ class MotionPortInfo:
         return f"{self.device} - {self.description}" if self.description else self.device
 
 
+@dataclass(frozen=True, slots=True)
+class MotionShutdownResult:
+    reason: str
+    closed: bool
+    was_enabled: bool
+    error: str | None = None
+
+
 def build_motion_frame(axis: str, steps: int, direction: str) -> bytes:
     axis = str(axis)
     direction = str(direction)
@@ -135,11 +143,27 @@ class MotionController(QObject):
 
     def close(self) -> None:
         if self._serial is not None:
-            try:
-                self._serial.close()
-            finally:
-                self._serial = None
-                self.statusChanged.emit("串口已关闭")
+            serial_handle = self._serial
+            serial_handle.close()
+            self._serial = None
+            self.statusChanged.emit("串口已关闭")
+
+    def shutdown(self, reason: str = "shutdown") -> MotionShutdownResult:
+        was_enabled = bool(self.enabled)
+        self.enabled = False
+        error: str | None = None
+        try:
+            self.close()
+        except Exception as exc:  # noqa: BLE001 - retain the handle so shutdown can be retried
+            error = str(exc)
+            self.statusChanged.emit(f"电机串口关闭失败: {error}")
+        self.statusChanged.emit(f"电机输出已关闭 ({reason})")
+        return MotionShutdownResult(
+            reason=str(reason),
+            closed=self._serial is None,
+            was_enabled=was_enabled,
+            error=error,
+        )
 
     def set_enabled(self, enabled: bool) -> None:
         if enabled:

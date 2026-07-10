@@ -5,7 +5,14 @@ from typing import Protocol
 
 from fdm.models import ImageDocument, ProjectState
 from fdm.settings import AppSettings, RawRecordTemplate, resolve_resource_relative_path
-from fdm.services.export_service import ExportScope, ExportSelection, ExportService
+from fdm.services.export_service import (
+    ExportPlan,
+    ExportRenderContext,
+    ExportScope,
+    ExportSelection,
+    ExportService,
+    RenderedExport,
+)
 
 
 class ExportHost(Protocol):
@@ -37,10 +44,13 @@ class ExportHost(Protocol):
     def _render_overlay_image(
         self,
         document: ImageDocument,
-        kind: str,
         output_path: Path,
+        *,
+        include_measurements: bool,
+        include_scale: bool,
         render_mode: str,
-    ) -> None: ...
+        render_context: ExportRenderContext | None = None,
+    ) -> RenderedExport: ...
     def _format_export_failure_message(self, exc: Exception, *, export_path: Path | None) -> str: ...
     def _remember_recent_directory(self, *, setting_name: str, directory: Path, context: str) -> None: ...
     def _save_app_settings(self, *, context: str = "") -> None: ...
@@ -52,8 +62,25 @@ class ExportController:
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
         host = self._host
+        project_session = getattr(host, "project_session_controller", None)
+        unresolved_documents = getattr(project_session, "unresolved_documents", None)
+        unresolved_count = 0
+        if callable(unresolved_documents):
+            unresolved_count = len(unresolved_documents())
+            if unresolved_count:
+                host._show_export_warning(
+                    "缺失文档不参与导出",
+                    f"项目中有 {unresolved_count} 个未挂载文档；其记录会继续保存在项目中，"
+                    "但本次导出默认不包含它们。",
+                )
         if not host.project.documents:
-            host._show_export_information("导出结果", "当前没有可导出的图片。")
+            if unresolved_count:
+                host._show_export_information(
+                    "导出结果",
+                    f"当前没有已挂载的可导出图片；{unresolved_count} 个缺失文档记录仍保留在项目中。",
+                )
+            else:
+                host._show_export_information("导出结果", "当前没有可导出的图片。")
             return
         preset = preset or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
         dialog = host._create_export_options_dialog(preset)
@@ -70,7 +97,29 @@ class ExportController:
             else ([host.current_document()] if host.current_document() else [])
         )
         target_documents = [document for document in target_documents if document is not None]
-        planned_outputs = host.export_service.planned_outputs(target_documents, selection)
+        try:
+            context_provider = getattr(host, "_export_render_contexts", None)
+            render_contexts = (
+                context_provider(target_documents, selection.render_mode)
+                if callable(context_provider)
+                else None
+            )
+            protected_provider = getattr(host, "_export_protected_source_paths", None)
+            protected_source_paths = (
+                protected_provider(target_documents)
+                if callable(protected_provider)
+                else None
+            )
+            export_plan: ExportPlan = host.export_service.build_plan(
+                target_documents,
+                selection,
+                render_contexts=render_contexts,
+                protected_source_paths=protected_source_paths,
+            )
+        except (OSError, RuntimeError, ValueError) as exc:
+            host._show_export_warning("导出设置不可用", str(exc))
+            return
+        planned_outputs = list(export_plan.files)
         if not planned_outputs:
             host._show_export_information("导出结果", "按当前导出内容设置，没有可生成的文件。")
             return
@@ -85,7 +134,7 @@ class ExportController:
                 return
             single_output_path = host._normalize_dialog_save_path(selected_path, planned_outputs[0].filename)
             expected_suffix = Path(planned_outputs[0].filename).suffix.lower()
-            if expected_suffix in {".xlsx", ".xlsm"} and single_output_path.suffix.lower() != expected_suffix:
+            if expected_suffix and single_output_path.suffix.lower() != expected_suffix:
                 single_output_path = single_output_path.with_suffix(expected_suffix)
             output_dir = str(single_output_path.parent)
         else:
@@ -123,6 +172,7 @@ class ExportController:
                 selection=selection,
                 documents=target_documents,
                 overlay_renderer=host._render_overlay_image,
+                export_plan=export_plan,
                 single_output_path=single_output_path,
                 raw_record_template=raw_record_template,
                 category_order_document=host.current_document(),
@@ -139,13 +189,6 @@ class ExportController:
         if not outputs:
             host._show_export_information("导出结果", "没有生成任何文件。")
             return
-        template_fallback_message = str(outputs.pop("_template_fallback_message", "") or "")
-        if template_fallback_message:
-            host._show_export_warning(
-                "原始记录模板",
-                "原始记录模板导出失败，已自动回退到默认 Excel 文档。\n\n"
-                f"{template_fallback_message}",
-            )
         export_root = single_output_path.parent if single_output_path is not None else Path(output_dir)
         host._remember_recent_directory(setting_name="recent_export_dir", directory=export_root, context="导出结果")
         summary_lines = self._format_output_summary(outputs)

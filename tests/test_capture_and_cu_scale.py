@@ -24,6 +24,7 @@ try:
         CaptureBackend,
         CaptureDevice,
         CaptureSessionManager,
+        CaptureStopResult,
         MicroviewCaptureBackend,
         OpenCVCaptureBackend,
         _microview_buffer_to_qimage,
@@ -33,6 +34,7 @@ except ModuleNotFoundError:
     CaptureBackend = None
     CaptureDevice = None
     CaptureSessionManager = None
+    CaptureStopResult = None
     MicroviewCaptureBackend = None
     OpenCVCaptureBackend = None
     _microview_buffer_to_qimage = None
@@ -102,6 +104,58 @@ class CaptureAndCuScaleTests(unittest.TestCase):
                 parse_cu_scale_file(path)
 
     @unittest.skipIf(CaptureSessionManager is None, "PySide6 not installed")
+    def test_capture_stop_failure_retains_active_backend_until_retry_succeeds(self) -> None:
+        class FailingStopBackend(CaptureBackend):
+            backend_key = "failing-stop"
+
+            def __init__(self) -> None:
+                self.fail_stop = True
+                self.stop_calls = 0
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [CaptureDevice("failing-stop:0", "Failing Stop", self.backend_key, 0)]
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                del device, preview_target, frame_callback, error_callback
+
+            def stop_preview(self) -> None:
+                self.stop_calls += 1
+                if self.fail_stop:
+                    raise RuntimeError("backend thread still running")
+
+        backend = FailingStopBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+        self.assertTrue(manager.start_preview())
+        active_capture = manager._active_capture  # noqa: SLF001
+
+        failed = manager.stop_preview()
+
+        self.assertIsInstance(failed, CaptureStopResult)
+        self.assertFalse(failed.success)
+        self.assertTrue(manager.is_preview_active())
+        self.assertIs(manager._active_capture, active_capture)  # noqa: SLF001
+        self.assertIs(manager._active_backend, backend)  # noqa: SLF001
+
+        backend.fail_stop = False
+        retried = manager.stop_preview()
+
+        self.assertTrue(retried.success)
+        self.assertFalse(manager.is_preview_active())
+        self.assertEqual(backend.stop_calls, 2)
+
+    def test_parse_cu_scale_file_rejects_non_finite_scale_values(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            for index, invalid in enumerate((float("nan"), float("inf"), float("-inf"))):
+                with self.subTest(invalid=invalid):
+                    payload = bytearray(CU_SCALE_MIN_FILE_SIZE)
+                    struct.pack_into("<f", payload, CU_SCALE_OFFSET, invalid)
+                    path = Path(tmp_dir) / f"invalid-{index}.scl"
+                    path.write_bytes(bytes(payload))
+                    with self.assertRaisesRegex(ValueError, "标尺数据无效"):
+                        parse_cu_scale_file(path)
+
+    @unittest.skipIf(CaptureSessionManager is None, "PySide6 not installed")
     def test_capture_session_manager_ignores_backend_enumeration_failure(self) -> None:
         class BrokenBackend(CaptureBackend):
             backend_key = "microview"
@@ -144,6 +198,68 @@ class CaptureAndCuScaleTests(unittest.TestCase):
         self.assertEqual([device.id for device in devices], ["qt_multimedia:usb-1"])
         self.assertEqual(manager.selected_device_id(), "qt_multimedia:usb-1")
         self.assertEqual(manager.device_refresh_warnings(), ["Microview SDK: sdk load failed"])
+
+    @unittest.skipIf(CaptureSessionManager is None, "PySide6 not installed")
+    def test_refresh_stops_the_original_backend_when_active_device_disappears(self) -> None:
+        class HotplugBackend(CaptureBackend):
+            backend_key = "qt_multimedia"
+
+            def __init__(self) -> None:
+                self.present = True
+                self.stop_calls = 0
+
+            def list_devices(self) -> list[CaptureDevice]:
+                if not self.present:
+                    return []
+                return [
+                    CaptureDevice(
+                        id="qt_multimedia:usb-1",
+                        name="USB Camera",
+                        backend_key=self.backend_key,
+                        native_id="usb-1",
+                    )
+                ]
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                del device, preview_target, frame_callback, error_callback
+
+            def stop_preview(self) -> None:
+                self.stop_calls += 1
+
+        backend = HotplugBackend()
+        manager = CaptureSessionManager(backends=[backend], refresh_on_init=False)
+        manager.refresh_devices()
+        self.assertTrue(manager.start_preview())
+
+        backend.present = False
+        manager.refresh_devices()
+
+        self.assertEqual(backend.stop_calls, 1)
+        self.assertFalse(manager.is_preview_active())
+
+    @unittest.skipIf(CaptureSessionManager is None, "PySide6 not installed")
+    def test_selected_device_cannot_change_while_preview_is_active(self) -> None:
+        class MultiBackend(CaptureBackend):
+            backend_key = "qt_multimedia"
+
+            def list_devices(self) -> list[CaptureDevice]:
+                return [
+                    CaptureDevice(id=f"qt_multimedia:{index}", name=f"USB {index}", backend_key=self.backend_key, native_id=index)
+                    for index in (1, 2)
+                ]
+
+            def start_preview(self, device, *, preview_target=None, frame_callback, error_callback) -> None:
+                del device, preview_target, frame_callback, error_callback
+
+            def stop_preview(self) -> None:
+                return None
+
+        manager = CaptureSessionManager(backends=[MultiBackend()], refresh_on_init=False)
+        manager.refresh_devices()
+        self.assertTrue(manager.start_preview())
+
+        self.assertFalse(manager.set_selected_device("qt_multimedia:2"))
+        self.assertEqual(manager.selected_device_id(), "qt_multimedia:1")
 
     @unittest.skipIf(capture_module is None, "PySide6 not installed")
     def test_default_capture_backends_prefer_opencv_for_do3think_target(self) -> None:

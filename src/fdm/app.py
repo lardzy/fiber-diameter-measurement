@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+import json
 from pathlib import Path
 import sys
 import traceback
@@ -10,31 +10,19 @@ APP_NAME = "Fiber Diameter Measurement"
 
 
 def _log_directory() -> Path:
-    local_app_data = Path.home()
-    if sys.platform.startswith("win"):
-        app_data = Path(
-            (
-                __import__("os").environ.get("LOCALAPPDATA")
-                or __import__("os").environ.get("APPDATA")
-                or str(Path.home())
-            )
-        )
-        local_app_data = app_data
-    return local_app_data / "FiberDiameterMeasurement" / "logs"
+    from fdm.runtime_logging import runtime_log_path
+
+    return runtime_log_path().parent
 
 
 def _write_startup_log(title: str, details: str) -> Path | None:
     try:
-        log_dir = _log_directory()
-        log_dir.mkdir(parents=True, exist_ok=True)
-        log_path = log_dir / "startup.log"
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with log_path.open("a", encoding="utf-8") as handle:
-            handle.write(f"[{timestamp}] {title}\n")
-            handle.write(details.rstrip())
-            handle.write("\n\n")
+        from fdm.runtime_logging import append_runtime_log, runtime_log_path
+
+        log_path = runtime_log_path()
+        append_runtime_log(title, details)
         return log_path
-    except OSError:
+    except (ImportError, OSError):
         return None
 
 
@@ -70,14 +58,75 @@ def _install_global_exception_hook() -> None:
 
     def handle_exception(exc_type, exc_value, exc_traceback) -> None:
         details = "".join(traceback.format_exception(exc_type, exc_value, exc_traceback))
+        try:
+            from fdm.runtime_logging import flush_runtime_metrics
+
+            flush_runtime_metrics()
+        except Exception:
+            pass
         _write_startup_log("Unhandled exception", details)
         default_hook(exc_type, exc_value, exc_traceback)
 
     sys.excepthook = handle_exception
 
 
+def _run_release_self_check(*, json_output: bool) -> int:
+    from fdm.release_manifest import format_self_check_report, run_release_self_check
+
+    try:
+        report = run_release_self_check()
+    except Exception as exc:  # noqa: BLE001
+        report = {
+            "ok": False,
+            "errors": [f"self-check failed unexpectedly: {exc}"],
+            "warnings": [],
+        }
+    output = (
+        json.dumps(report, ensure_ascii=False, sort_keys=True, allow_nan=False)
+        if json_output
+        else format_self_check_report(report)
+    )
+    _write_cli_output(output + "\n")
+    return 0 if report.get("ok") else 1
+
+
+def _write_cli_output(payload: str) -> None:
+    if sys.stdout is not None:
+        sys.stdout.write(payload)
+        sys.stdout.flush()
+        return
+    if not sys.platform.startswith("win"):
+        return
+    # PyInstaller's windowed bootloader may set sys.stdout to None. Reuse an
+    # inherited/parent console handle so `--self-check --json` remains usable.
+    try:
+        import ctypes
+        import msvcrt
+        import os
+
+        kernel32 = ctypes.windll.kernel32
+        get_std_handle = kernel32.GetStdHandle
+        get_std_handle.argtypes = [ctypes.c_ulong]
+        get_std_handle.restype = ctypes.c_void_p
+        invalid_handle = ctypes.c_void_p(-1).value
+        stdout_handle = get_std_handle(ctypes.c_ulong(-11).value)  # STD_OUTPUT_HANDLE
+        if stdout_handle in (None, 0, invalid_handle):
+            kernel32.AttachConsole(ctypes.c_ulong(-1).value)  # ATTACH_PARENT_PROCESS
+            stdout_handle = get_std_handle(ctypes.c_ulong(-11).value)
+        if stdout_handle in (None, 0, invalid_handle):
+            return
+        descriptor = msvcrt.open_osfhandle(int(stdout_handle), os.O_WRONLY)
+        with os.fdopen(descriptor, "w", encoding="utf-8", closefd=False) as stream:
+            stream.write(payload)
+            stream.flush()
+    except Exception:
+        return
+
+
 def main(argv: list[str] | None = None) -> int:
-    args = argv or sys.argv
+    args = list(argv) if argv is not None else sys.argv
+    if "--self-check" in args[1:]:
+        return _run_release_self_check(json_output="--json" in args[1:])
     if len(args) > 1 and args[1] == "--microview-helper":
         try:
             from fdm.microview_helper import main as microview_helper_main
@@ -116,7 +165,11 @@ def main(argv: list[str] | None = None) -> int:
         app.setWindowIcon(application_icon())
         window = MainWindow()
         window.show()
-        return app.exec()
+        exit_code = app.exec()
+        from fdm.runtime_logging import flush_runtime_metrics
+
+        flush_runtime_metrics()
+        return exit_code
     except Exception as exc:  # noqa: BLE001
         return _report_startup_exception("应用启动失败", exc)
 

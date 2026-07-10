@@ -103,6 +103,26 @@ class CaptureBackend:
         return ""
 
 
+@dataclass(slots=True)
+class ActiveCapture:
+    device: CaptureDevice
+    backend: CaptureBackend
+    generation: int
+    preview_kind: str
+    preview_target: object | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class CaptureStopResult:
+    success: bool
+    was_active: bool
+    generation: int
+    message: str = ""
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 def available_capture_backends() -> list[CaptureBackend]:
     return [
         OpenCVCaptureBackend(),
@@ -118,6 +138,7 @@ class CaptureSessionManager(QObject):
     analysisFrameReady = Signal(int, object)
     analysisFrameFailed = Signal(int, str)
     errorOccurred = Signal(str)
+    activeDeviceLost = Signal(str)
     _deliverFrame = Signal(int, object)
     _deliverError = Signal(int, str)
     _deliverAnalysisFrame = Signal(int, int, object)
@@ -138,6 +159,7 @@ class CaptureSessionManager(QObject):
         self._active_preview_kind = "frame_stream"
         self._active_preview_target: object | None = None
         self._active_backend: CaptureBackend | None = None
+        self._active_capture: ActiveCapture | None = None
         self._last_frame: QImage | None = None
         self._preview_generation = 0
         self._device_refresh_warnings: list[str] = []
@@ -161,7 +183,7 @@ class CaptureSessionManager(QObject):
         return self._devices[0] if self._devices else None
 
     def is_preview_active(self) -> bool:
-        return bool(self._active_device_id)
+        return self._active_capture is not None
 
     def last_frame(self) -> QImage | None:
         return self._last_frame.copy() if self._last_frame is not None else None
@@ -176,36 +198,37 @@ class CaptureSessionManager(QObject):
         return backend.preview_kind(device)
 
     def preview_resolution(self) -> tuple[int, int] | None:
-        device = self.selected_device()
-        backend = self._active_backend if self.is_preview_active() and self._active_backend is not None else self._backend_for_device(device)
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if device is None or backend is None:
             return None
         return backend.preview_resolution(device)
 
     def can_capture_still(self) -> bool:
-        device = self.selected_device()
-        backend = self._backend_for_device(device)
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if device is None or backend is None:
             return False
         return backend.can_capture_still(device)
 
     def can_request_analysis_frame(self) -> bool:
-        if not self.is_preview_active() or self._active_backend is None:
+        active = self._active_capture
+        if active is None:
             return False
-        device = self.selected_device()
-        if device is None:
-            return False
-        return self._active_backend.can_request_analysis_frame(device)
+        return active.backend.can_request_analysis_frame(active.device)
 
     def request_analysis_frame(self, request_id: int) -> bool:
-        if not self.is_preview_active() or self._active_backend is None:
+        active = self._active_capture
+        if active is None:
             return False
-        device = self.selected_device()
-        if device is None or not self._active_backend.can_request_analysis_frame(device):
+        device = active.device
+        if not active.backend.can_request_analysis_frame(device):
             return False
         generation = self._preview_generation
         try:
-            self._active_backend.request_analysis_frame(
+            active.backend.request_analysis_frame(
                 device,
                 request_id=request_id,
                 frame_callback=lambda req_id, image, _generation=generation: self._deliver_analysis_frame_threadsafe(
@@ -221,8 +244,9 @@ class CaptureSessionManager(QObject):
         return True
 
     def capture_still_frame(self) -> QImage | None:
-        device = self.selected_device()
-        backend = self._backend_for_device(device)
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if device is None or backend is None or not backend.can_capture_still(device):
             return None
         image = backend.capture_still_frame(device)
@@ -233,10 +257,11 @@ class CaptureSessionManager(QObject):
         return image.copy()
 
     def capture_fresh_frame(self, *, timeout_ms: int = 2000) -> QImage | None:
-        device = self.selected_device()
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
         if device is None:
             return None
-        backend = self._active_backend if self.is_preview_active() and self._active_device_id == device.id else self._backend_for_device(device)
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if backend is None or not backend.can_capture_still(device):
             return None
         image = backend.capture_fresh_frame(device, timeout_ms=timeout_ms)
@@ -247,15 +272,17 @@ class CaptureSessionManager(QObject):
         return image.copy()
 
     def can_optimize_signal(self) -> bool:
-        device = self.selected_device()
-        backend = self._backend_for_device(device)
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if device is None or backend is None:
             return False
         return backend.can_optimize_signal(device)
 
     def optimize_signal(self) -> str:
-        device = self.selected_device()
-        backend = self._backend_for_device(device)
+        active = self._active_capture
+        device = active.device if active is not None else self.selected_device()
+        backend = active.backend if active is not None else self._backend_for_device(device)
         if device is None or backend is None:
             raise RuntimeError("当前没有可优化的采集设备。")
         return backend.optimize_signal(device)
@@ -285,21 +312,27 @@ class CaptureSessionManager(QObject):
                 warnings.append(_format_backend_error(backend, exc))
         self._devices = devices
         self._device_refresh_warnings = warnings
-        if not any(device.id == self._selected_device_id for device in devices):
+        active_device_lost = bool(
+            self._active_capture is not None
+            and not any(device.id == self._active_capture.device.id for device in devices)
+        )
+        lost_device_id = self._active_capture.device.id if active_device_lost and self._active_capture is not None else ""
+        if not active_device_lost and not any(device.id == self._selected_device_id for device in devices):
             self._selected_device_id = devices[0].id if devices else ""
         self.devicesChanged.emit(list(self._devices))
+        if active_device_lost:
+            stop_result = self.stop_preview()
+            self.activeDeviceLost.emit(lost_device_id)
+            if not stop_result:
+                self.errorOccurred.emit(stop_result.message or "热拔插后相机 backend 未能确认退出。")
         return self.devices()
 
     def set_selected_device(self, device_id: str) -> bool:
         if not any(device.id == device_id for device in self._devices):
             return False
-        restart_preview = self.is_preview_active()
-        preview_target = self._active_preview_target
-        if restart_preview:
-            self.stop_preview()
+        if self.is_preview_active() and device_id != self._active_device_id:
+            return False
         self._selected_device_id = device_id
-        if restart_preview:
-            self.start_preview(preview_target=preview_target)
         return True
 
     def start_preview(self, *, preview_target: object | None = None) -> bool:
@@ -310,7 +343,10 @@ class CaptureSessionManager(QObject):
             self.errorOccurred.emit("当前没有可用的采集设备。")
             return False
         if self.is_preview_active():
-            self.stop_preview()
+            stop_result = self.stop_preview()
+            if not stop_result:
+                self.errorOccurred.emit(stop_result.message or "旧相机会话未能安全停止。")
+                return False
         backend = self._backend_for_device(device)
         if backend is None:
             self.errorOccurred.emit("未找到对应的采集后端。")
@@ -322,6 +358,13 @@ class CaptureSessionManager(QObject):
         self._active_device_id = device.id
         self._active_preview_kind = backend.preview_kind(device)
         self._active_preview_target = preview_target
+        self._active_capture = ActiveCapture(
+            device=device,
+            backend=backend,
+            generation=generation,
+            preview_kind=self._active_preview_kind,
+            preview_target=preview_target,
+        )
         try:
             backend.start_preview(
                 device,
@@ -334,35 +377,43 @@ class CaptureSessionManager(QObject):
             self._active_device_id = ""
             self._active_preview_kind = "frame_stream"
             self._active_preview_target = None
+            self._active_capture = None
             self.errorOccurred.emit(str(exc))
             return False
         self.previewStateChanged.emit(True)
         return True
 
-    def stop_preview(self) -> None:
+    def stop_preview(self) -> CaptureStopResult:
+        was_active = self.is_preview_active()
         if not self.is_preview_active():
             self._last_frame = None
-            return
+            return CaptureStopResult(True, False, self._preview_generation)
         self._preview_generation += 1
-        device = next((item for item in self._devices if item.id == self._active_device_id), None)
-        backend = self._backend_for_device(device) if device is not None else None
+        active = self._active_capture
+        backend = active.backend if active is not None else self._active_backend
         if backend is not None:
             try:
                 backend.stop_preview()
-            except Exception:
-                pass
+            except Exception as exc:
+                message = f"采集 backend 未能确认退出：{exc}"
+                self.errorOccurred.emit(message)
+                return CaptureStopResult(False, was_active, self._preview_generation, message)
             self._recreate_backend_if_needed(backend)
         self._active_device_id = ""
         self._active_preview_kind = "frame_stream"
         self._active_preview_target = None
         self._active_backend = None
+        self._active_capture = None
         self._last_frame = None
         self.previewStateChanged.emit(False)
+        return CaptureStopResult(True, was_active, self._preview_generation)
 
     def update_preview_target(self, preview_target: object | None) -> None:
         if not self.is_preview_active() or self._active_backend is None:
             return
         self._active_preview_target = preview_target
+        if self._active_capture is not None:
+            self._active_capture.preview_target = preview_target
         try:
             self._active_backend.update_preview_target(preview_target)
         except Exception as exc:
@@ -543,6 +594,8 @@ class OpenCVCaptureBackend(CaptureBackend):
         thread = self._preview_thread
         if thread is not None and thread.is_alive():
             thread.join(timeout=1.5)
+        if thread is not None and thread.is_alive():
+            raise RuntimeError("OpenCV 预览线程在 1.5 秒内未退出")
         with self._capture_lock:
             if self._capture is not None:
                 self._release_capture(self._capture)
@@ -1620,7 +1673,11 @@ class MicroviewIsolatedBackend(CaptureBackend):
         if process is not None:
             if process.state() == QProcess.ProcessState.Running:
                 try:
-                    payload = json.dumps({"command": "stop"}, ensure_ascii=False).encode("utf-8") + b"\n"
+                    payload = json.dumps(
+                        {"command": "stop"},
+                        ensure_ascii=False,
+                        allow_nan=False,
+                    ).encode("utf-8") + b"\n"
                     process.write(payload)
                     process.waitForBytesWritten(500)
                     process.closeWriteChannel()
@@ -1633,6 +1690,8 @@ class MicroviewIsolatedBackend(CaptureBackend):
             if process.state() == QProcess.ProcessState.Running:
                 process.kill()
                 process.waitForFinished(1000)
+            if process.state() == QProcess.ProcessState.Running:
+                raise RuntimeError("Microview helper 在 terminate/kill 后仍未退出")
             process.deleteLater()
         self._preview_process = None
         self._preview_stdout_buffer = ""
@@ -1861,7 +1920,7 @@ class MicroviewIsolatedBackend(CaptureBackend):
         if process is None or process.state() != QProcess.ProcessState.Running:
             return
         try:
-            message = json.dumps(payload, ensure_ascii=False).encode("utf-8") + b"\n"
+            message = json.dumps(payload, ensure_ascii=False, allow_nan=False).encode("utf-8") + b"\n"
             process.write(message)
             process.waitForBytesWritten(500)
         except Exception:

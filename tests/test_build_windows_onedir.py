@@ -1,0 +1,180 @@
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from tempfile import TemporaryDirectory
+import subprocess
+import sys
+from types import ModuleType
+import unittest
+from unittest.mock import patch
+
+
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
+
+from build_support import RuntimeProfileCheck
+from build_windows_onedir import build, run_packaged_self_check
+
+
+def _prepare_build_root(root: Path) -> None:
+    (root / "packaging" / "pyinstaller").mkdir(parents=True, exist_ok=True)
+    (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+    (root / "packaging" / "pyinstaller" / "fdm_onedir.spec").write_text("# stub\n", encoding="utf-8")
+    (root / "src" / "fdm" / "version.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+
+
+class BuildWindowsOnedirTests(unittest.TestCase):
+    def test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads(self) -> None:
+        cases = (
+            ({"ok": True, "errors": ["worker failed"]}, ["worker failed"]),
+            ({"ok": True, "errors": "worker failed"}, ["packaged self-check errors field must be a list of strings"]),
+            ({"ok": True, "errors": [1]}, ["packaged self-check errors field must be a list of strings"]),
+            ([{"ok": True}], ["packaged self-check JSON root must be an object"]),
+        )
+        for payload, expected_errors in cases:
+            with self.subTest(payload=payload), TemporaryDirectory() as tmpdir:
+                completed = subprocess.CompletedProcess(
+                    [],
+                    0,
+                    stdout=json.dumps(payload),
+                    stderr="",
+                )
+                with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                    errors = run_packaged_self_check(Path(tmpdir))
+
+                self.assertEqual(errors, expected_errors)
+
+    def test_build_passes_profile_to_pyinstaller_and_generates_release_manifest(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+
+            def run_pyinstaller(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                app_dir.mkdir(parents=True, exist_ok=True)
+                (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
+                (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
+                return subprocess.CompletedProcess([], 0)
+
+            manifest_path = app_dir / "release-manifest.json"
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("core", (), ())),
+                patch("build_windows_onedir.subprocess.run", side_effect=run_pyinstaller) as run_mock,
+                patch("build_windows_onedir.write_release_manifest", return_value=manifest_path) as manifest_mock,
+                patch("build_windows_onedir.run_packaged_self_check", return_value=[]),
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="core", root=root)
+
+            self.assertEqual(result, 0)
+            environment = run_mock.call_args.kwargs["env"]
+            self.assertEqual(environment["FDM_BUILD_PROFILE"], "core")
+            manifest_mock.assert_called_once_with(app_dir, root, profile="core", clean_build=True)
+
+    def test_build_blocks_when_packaged_self_check_fails(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+
+            def run_pyinstaller(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                app_dir.mkdir(parents=True, exist_ok=True)
+                (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
+                (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
+                return subprocess.CompletedProcess([], 0)
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("full", (), ())),
+                patch("build_windows_onedir.subprocess.run", side_effect=run_pyinstaller),
+                patch("build_windows_onedir.write_release_manifest", return_value=app_dir / "release-manifest.json"),
+                patch("build_windows_onedir.run_packaged_self_check", return_value=["worker failed"]),
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 1)
+
+    def test_build_blocks_incomplete_full_profile_before_pyinstaller(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            check = RuntimeProfileCheck("full", ("runtime/area-models/missing.pth",), ())
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=check),
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 1)
+            run_mock.assert_not_called()
+
+    def test_build_blocks_incomplete_asset_metadata_before_pyinstaller(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            check = RuntimeProfileCheck(
+                "full",
+                (),
+                (),
+                (),
+                ("required_file 'runtime/area-infer/app/engine.py' is missing complete asset metadata",),
+            )
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=check),
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 1)
+            run_mock.assert_not_called()
+
+    def test_build_returns_failure_when_pyinstaller_process_fails(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("full", (), ())),
+                patch(
+                    "build_windows_onedir.subprocess.run",
+                    side_effect=subprocess.CalledProcessError(1, ["PyInstaller"]),
+                ),
+                patch("build_windows_onedir.write_release_manifest") as manifest_mock,
+                patch("build_windows_onedir.run_packaged_self_check") as self_check_mock,
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 1)
+            manifest_mock.assert_not_called()
+            self_check_mock.assert_not_called()
+
+    def test_clean_build_blocks_when_stale_dist_cannot_be_removed(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            stale_dist = root / "dist" / "windows"
+            stale_dist.mkdir(parents=True)
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=RuntimeProfileCheck("full", (), ())),
+                patch("build_windows_onedir.shutil.rmtree", side_effect=OSError("locked stale dist")),
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 1)
+            run_mock.assert_not_called()
+
+
+if __name__ == "__main__":
+    unittest.main()

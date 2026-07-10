@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import hashlib
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
@@ -9,8 +10,15 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.models import ImageDocument, ProjectState, new_id
+from fdm.project_io import ProjectIO
 from fdm.settings import AppSettings, RawRecordTemplate
-from fdm.services.export_service import ExportScope, ExportSelection, ExportService, PlannedExportFile
+from fdm.services.export_service import (
+    ExportScope,
+    ExportSelection,
+    ExportService,
+    PlannedExportFile,
+    RenderedExport,
+)
 from fdm.ui.export_controller import ExportController
 from fdm.ui.project_session_controller import ProjectSessionController
 
@@ -171,11 +179,13 @@ class _RecordingExportService(ExportService):
         selection: ExportSelection | None = None,
         documents: list[ImageDocument] | None = None,
         overlay_renderer=None,
+        export_plan=None,
         single_output_path: str | Path | None = None,
         raw_record_template: RawRecordTemplate | None = None,
+        category_order_document: ImageDocument | None = None,
         progress_callback=None,
     ) -> dict[str, object]:
-        del project, overlay_renderer, raw_record_template
+        del project, overlay_renderer, export_plan, raw_record_template, category_order_document
         self.output_dir = Path(output_dir)
         self.single_output_path = Path(single_output_path) if single_output_path is not None else None
         self.documents = list(documents or [])
@@ -275,9 +285,17 @@ class _ExportHost:
     def _close_progress_dialog(self, progress) -> None:
         progress.closed = True
 
-    def _render_overlay_image(self, document: ImageDocument, kind: str, output_path: Path, render_mode: str) -> None:
-        del document, kind, output_path, render_mode
-        return
+    def _render_overlay_image(
+        self,
+        document: ImageDocument,
+        output_path: Path,
+        *,
+        include_measurements: bool,
+        include_scale: bool,
+        render_mode: str,
+    ) -> RenderedExport:
+        del document, output_path, include_measurements, include_scale, render_mode
+        raise AssertionError("fake export service must not invoke the renderer")
 
     def _format_export_failure_message(self, exc: Exception, *, export_path: Path | None) -> str:
         del export_path
@@ -306,6 +324,116 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertTrue(host.updated)
             self.assertIn("项目已保存", host.status_message)
 
+    def test_multi_asset_failure_keeps_previous_project_and_rolls_back_new_revisions(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "atomic.fdmproj"
+            previous = b'{"previous":true}'
+            project_path.write_bytes(previous)
+            first = ImageDocument(
+                id="asset_first",
+                path="captures/first.png",
+                image_size=(10, 10),
+                source_type="project_asset",
+            )
+            second = ImageDocument(
+                id="asset_second",
+                path="captures/second.png",
+                image_size=(10, 10),
+                source_type="project_asset",
+            )
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+
+            class FakeImage:
+                def isNull(self) -> bool:
+                    return False
+
+                def save(self, path: str, _format: str) -> bool:
+                    Path(path).write_bytes(b"valid-png")
+                    return True
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(version=PROJECT_VERSION, documents=[first, second])
+                    self.warnings: list[str] = []
+
+                def _show_project_warning(self, title: str, message: str) -> None:
+                    self.warnings.append(f"{title}: {message}")
+
+                def _document_display_name(self, document: ImageDocument) -> str:
+                    return document.path
+
+                def _project_asset_image_for_save(self, document: ImageDocument):
+                    return FakeImage() if document.id == first.id else None
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(str(project_path))
+
+            self.assertFalse(result)
+            self.assertEqual(project_path.read_bytes(), previous)
+            self.assertTrue(host.warnings)
+            self.assertEqual(list(project_path.with_suffix(".assets").rglob("*.rev-*.png")), [])
+
+    def test_corrupted_existing_revision_asset_is_not_reused(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "corrupt-revision.fdmproj"
+            previous_project = b'{"previous":true}'
+            project_path.write_bytes(previous_project)
+            image_payload = b"valid-png"
+            digest = hashlib.sha256(image_payload).hexdigest()
+            corrupt_revision = (
+                project_path.with_suffix(".assets")
+                / "captures"
+                / f"capture.rev-{digest[:12]}.png"
+            )
+            corrupt_revision.parent.mkdir(parents=True)
+            corrupt_revision.write_bytes(b"corrupted-existing-asset")
+            document = ImageDocument(
+                id="asset_corrupt_revision",
+                path="captures/capture.png",
+                image_size=(10, 10),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+
+            class FakeImage:
+                def isNull(self) -> bool:
+                    return False
+
+                def save(self, path: str, _format: str) -> bool:
+                    Path(path).write_bytes(image_payload)
+                    return True
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(version=PROJECT_VERSION, documents=[document])
+                    self.warnings: list[str] = []
+
+                def _show_project_warning(self, title: str, message: str) -> None:
+                    self.warnings.append(f"{title}: {message}")
+
+                def _document_display_name(self, source: ImageDocument) -> str:
+                    return source.path
+
+                def _project_asset_image_for_save(self, source: ImageDocument):
+                    del source
+                    return FakeImage()
+
+            host = Host()
+            with patch("fdm.ui.project_session_controller.ProjectIO.save") as save_mock:
+                result = ProjectSessionController(host).save_project(str(project_path))
+
+            self.assertFalse(result)
+            save_mock.assert_not_called()
+            self.assertEqual(project_path.read_bytes(), previous_project)
+            self.assertEqual(corrupt_revision.read_bytes(), b"corrupted-existing-asset")
+            self.assertEqual(document.path, "captures/capture.png")
+            self.assertTrue(any("哈希冲突或既有文件已损坏" in warning for warning in host.warnings))
+
     def test_load_project_repairs_missing_absolute_path_from_project_directory(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
@@ -332,10 +460,76 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertTrue(host.refreshed_presets)
             self.assertEqual(host.open_requests, [(str(repaired_image.resolve()), document)])
             self.assertEqual(host.missing_paths, [])
-            self.assertEqual(document.path, str(repaired_image.resolve()))
-            self.assertEqual(document.absolute_path, str(repaired_image.resolve()))
+            # Path tokens are published only after the image decoder succeeds;
+            # this host only records the pending request.
+            self.assertEqual(document.path, "first.png")
+            self.assertEqual(document.absolute_path, str(missing_absolute))
             self.assertEqual(host.repaired_paths, [f"{missing_absolute} -> {repaired_image.resolve()}"])
             self.assertIn("已自动修复 1 张图片路径", host.status_message)
+
+    def test_load_project_does_not_replace_current_project_when_workspace_reset_fails(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "next.fdmproj"
+            loaded_project = ProjectState(
+                version=PROJECT_VERSION,
+                documents=[ImageDocument(id="next", path="next.png", image_size=(20, 20))],
+            )
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.information_messages: list[tuple[str, str]] = []
+                    self.merged_presets = False
+
+                def _reset_workspace(self) -> None:
+                    raise RuntimeError("sqlite close failed")
+
+                def _show_project_information(self, title: str, message: str) -> None:
+                    self.information_messages.append((title, message))
+
+                def _merge_legacy_calibration_presets(self, presets: list[object]) -> int:
+                    del presets
+                    self.merged_presets = True
+                    return 0
+
+            host = Host()
+            original_document_ids = [document.id for document in host.project.documents]
+
+            with patch("fdm.ui.project_session_controller.ProjectIO.load", return_value=loaded_project):
+                ProjectSessionController(host).load_project_from_path(project_path)
+
+            self.assertEqual([document.id for document in host.project.documents], original_document_ids)
+            self.assertFalse(host.merged_presets)
+            self.assertFalse(host.refreshed_presets)
+            self.assertEqual(host.open_requests, [])
+            self.assertEqual(len(host.information_messages), 1)
+            self.assertIn("sqlite close failed", host.information_messages[0][1])
+
+    def test_missing_project_document_is_preserved_when_project_is_saved_again(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "missing-source.fdmproj"
+            missing_document = ImageDocument(
+                id=new_id("image"),
+                path="missing.png",
+                image_size=(100, 80),
+            )
+            missing_document.initialize_runtime_state()
+            loaded_project = ProjectState(version=PROJECT_VERSION, documents=[missing_document])
+            host = _ProjectHost(root)
+            controller = ProjectSessionController(host)
+
+            with patch("fdm.ui.project_session_controller.ProjectIO.load", return_value=loaded_project):
+                controller.load_project_from_path(project_path)
+
+            self.assertEqual(host.project.documents, [])
+            self.assertEqual(len(controller.unresolved_documents()), 1)
+            self.assertTrue(controller.save_project(str(project_path)))
+
+            reloaded = ProjectIO.load(project_path)
+            self.assertEqual([document.id for document in reloaded.documents], [missing_document.id])
+            self.assertEqual(reloaded.documents[0].path, "missing.png")
 
     def test_export_controller_single_output_uses_save_dialog_path(self) -> None:
         with TemporaryDirectory() as tmp:

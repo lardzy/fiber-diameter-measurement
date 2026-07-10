@@ -5,7 +5,7 @@ from pathlib import Path
 import re
 import struct
 
-from fdm.models import CalibrationPreset
+from fdm.models import CalibrationPreset, require_positive_finite
 
 CU_SCALE_OFFSET = 0x180
 CU_SCALE_DATA_SIZE = 16
@@ -31,17 +31,23 @@ def parse_cu_scale_file(path: str | Path) -> CuScaleImportRecord:
     if len(payload) < CU_SCALE_MIN_FILE_SIZE:
         raise ValueError(f"文件大小异常: 至少需要 {CU_SCALE_MIN_FILE_SIZE} 字节，实际 {len(payload)} 字节")
     (um_per_pixel,) = struct.unpack_from("<f", payload, CU_SCALE_OFFSET)
-    if um_per_pixel <= 0:
-        raise ValueError("标尺数据无效: um_per_pixel 必须大于 0")
+    try:
+        um_per_pixel = require_positive_finite(
+            um_per_pixel,
+            field_name="um_per_pixel",
+        )
+        pixels_per_unit = require_positive_finite(1.0 / um_per_pixel)
+    except ValueError as exc:
+        raise ValueError(f"标尺数据无效: {exc}") from exc
     return CuScaleImportRecord(
         source_path=source_path,
         preset=CalibrationPreset(
             name=cu_scale_display_name(source_path),
-            pixels_per_unit=1.0 / um_per_pixel,
+            pixels_per_unit=pixels_per_unit,
             unit="um",
             pixel_distance=None,
             actual_distance=None,
-            computed_pixels_per_unit=1.0 / um_per_pixel,
+            computed_pixels_per_unit=pixels_per_unit,
         ),
     )
 

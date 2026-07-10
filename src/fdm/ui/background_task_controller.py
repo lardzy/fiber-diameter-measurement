@@ -24,6 +24,7 @@ from fdm.ui.thread_task_manager import (
     TASK_PROMPT_SEGMENTATION,
     TASK_REFERENCE_INSTANCE,
     ThreadTaskManager,
+    TaskStopResult,
 )
 
 
@@ -39,6 +40,8 @@ class BatchLoadState:
     failures: list[str] | None = None
     missing_paths: list[str] | None = None
     repaired_paths: list[str] | None = None
+    pending_requests: dict[str, ImageLoadRequest] = field(default_factory=dict)
+    generation: int = 0
 
 
 @dataclass(slots=True)
@@ -51,6 +54,8 @@ class AreaInferenceBatchState:
     cancelled: bool = False
     failures: list[str] | None = None
     global_group_labels: list[str] = field(default_factory=list)
+    pending_requests: dict[str, AreaInferenceRequest] = field(default_factory=dict)
+    generation: int = 0
 
 
 class BackgroundTaskHost(Protocol):
@@ -73,6 +78,7 @@ class BackgroundTaskHost(Protocol):
     ) -> None: ...
     def _show_area_inference_warning(self, message: str) -> None: ...
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None: ...
+    def _register_unresolved_project_document(self, request: ImageLoadRequest, reason: str) -> None: ...
     def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None: ...
     def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None: ...
     def _on_fiber_quick_geometry_succeeded(self, document_id: str, request_id: int, result: object) -> None: ...
@@ -99,6 +105,23 @@ class BackgroundTaskController(QObject):
         self._area_infer_progress_dialog = None
         self._area_infer_state: AreaInferenceBatchState | None = None
         self._worker_overrides: dict[str, object] = {}
+        self._generation = 0
+
+    def _next_generation(self) -> int:
+        self._generation += 1
+        return self._generation
+
+    def _effective_generation(self, explicit: int | None) -> int | None:
+        if explicit is not None:
+            return explicit
+        sender = self.sender()
+        if sender is None:
+            return None
+        value = sender.property("fdm_generation")
+        try:
+            return int(value) if value is not None else None
+        except (TypeError, ValueError):
+            return None
 
     @property
     def load_state(self) -> BatchLoadState | None:
@@ -120,6 +143,9 @@ class BackgroundTaskController(QObject):
         missing_paths: list[str] | None = None,
         repaired_paths: list[str] | None = None,
     ) -> None:
+        generation = self._next_generation()
+        for request in requests:
+            request.generation = generation
         self._load_state = BatchLoadState(
             context_label=context_label,
             total=len(requests),
@@ -127,6 +153,8 @@ class BackgroundTaskController(QObject):
             failures=[],
             missing_paths=list(missing_paths or []),
             repaired_paths=list(repaired_paths or []),
+            pending_requests={request.request_id: request for request in requests},
+            generation=generation,
         )
         progress = self._host._create_progress_dialog(
             title=context_label,
@@ -137,9 +165,10 @@ class BackgroundTaskController(QObject):
 
         def connect(worker: object) -> None:
             loader = cast(ImageBatchLoaderWorker, worker)
+            loader.setProperty("fdm_generation", generation)
             loader.progress.connect(self._on_batch_load_progress)
             loader.loaded.connect(self._on_batch_load_loaded)
-            loader.failed.connect(self._on_batch_load_failed)
+            loader.failedRequest.connect(self._on_batch_load_failed_request)
             loader.finished.connect(self._on_batch_load_finished)
 
         handle = self._tasks.start_one_shot(
@@ -150,7 +179,10 @@ class BackgroundTaskController(QObject):
         _connect_progress_cancel(progress, handle.worker)
         progress.show()
 
-    def _on_batch_load_progress(self, index: int, total: int, path: str) -> None:
+    def _on_batch_load_progress(self, index: int, total: int, path: str, generation: int | None = None) -> None:
+        generation = self._effective_generation(generation)
+        if generation is not None and (self._load_state is None or self._load_state.generation != generation):
+            return
         if self._load_progress_dialog is None:
             return
         completed = self._load_state.completed_count if self._load_state is not None else 0
@@ -158,9 +190,18 @@ class BackgroundTaskController(QObject):
         self._load_progress_dialog.setValue(completed)
         self._load_progress_dialog.setLabelText(f"正在加载 ({index}/{total})\n{Path(path).name}")
 
-    def _on_batch_load_loaded(self, request: ImageLoadRequest, image: QImage) -> None:
+    def _on_batch_load_loaded(
+        self,
+        request: ImageLoadRequest,
+        image: QImage,
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
         state = self._load_state
+        if generation is not None and (state is None or state.generation != generation):
+            return
         if state is not None:
+            state.pending_requests.pop(request.request_id, None)
             state.completed_count += 1
             state.loaded_count += 1
         self._host._add_loaded_document(request, image)
@@ -177,11 +218,43 @@ class BackgroundTaskController(QObject):
         if self._load_progress_dialog is not None and state is not None:
             self._load_progress_dialog.setValue(state.completed_count)
 
-    def _on_batch_load_finished(self, cancelled: bool, loaded_count: int, skipped_count: int, failed_count: int) -> None:
+    def _on_batch_load_failed_request(
+        self,
+        request: ImageLoadRequest,
+        reason: str,
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
         state = self._load_state
-        if state is None:
+        if generation is not None and (state is None or state.generation != generation):
+            return
+        if state is not None:
+            state.pending_requests.pop(request.request_id, None)
+        self._on_batch_load_failed(request.path, reason)
+        register = getattr(self._host, "_register_unresolved_project_document", None)
+        if request.document is not None and callable(register):
+            register(request, reason)
+
+    def _on_batch_load_finished(
+        self,
+        cancelled: bool,
+        loaded_count: int,
+        skipped_count: int,
+        failed_count: int,
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
+        state = self._load_state
+        if state is None or (generation is not None and state.generation != generation):
             return
         state.cancelled = cancelled
+        if cancelled:
+            register = getattr(self._host, "_register_unresolved_project_document", None)
+            if callable(register):
+                for request in list(state.pending_requests.values()):
+                    if request.document is not None:
+                        register(request, "加载已取消")
+        state.pending_requests.clear()
         state.loaded_count = loaded_count
         state.skipped_count = skipped_count
         state.failed_count = failed_count
@@ -199,11 +272,19 @@ class BackgroundTaskController(QObject):
         *,
         model_name: str,
     ) -> None:
+        generation = self._next_generation()
+        for request in requests:
+            request.generation = generation
+        pending_requests = {request.request_id: request for request in requests}
+        if len(pending_requests) != len(requests):
+            raise ValueError("面积识别请求的 request_id 必须唯一。")
         self._area_infer_state = AreaInferenceBatchState(
             total=len(requests),
             model_name=model_name,
             update_project_group_templates=len(requests) > 1,
             failures=[],
+            pending_requests=pending_requests,
+            generation=generation,
         )
         progress = self._host._create_progress_dialog(
             title="面积自动识别",
@@ -214,6 +295,7 @@ class BackgroundTaskController(QObject):
 
         def connect(worker: object) -> None:
             area_worker = cast(AreaBatchInferenceWorker, worker)
+            area_worker.setProperty("fdm_generation", generation)
             area_worker.progress.connect(self._on_area_inference_progress)
             area_worker.succeeded.connect(self._on_area_inference_succeeded)
             area_worker.failed.connect(self._on_area_inference_failed)
@@ -227,48 +309,110 @@ class BackgroundTaskController(QObject):
         _connect_progress_cancel(progress, handle.worker)
         progress.show()
 
-    def _on_area_inference_progress(self, index: int, total: int, path: str) -> None:
+    def _on_area_inference_progress(
+        self,
+        index: int,
+        total: int,
+        path: str,
+        request_id: str = "",
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
+        state = self._area_infer_state
+        request = state.pending_requests.get(request_id) if state is not None else None
+        if (
+            state is None
+            or generation is None
+            or state.generation != generation
+            or request is None
+            or request.generation != generation
+            or request.image_path != path
+        ):
+            return
         if self._area_infer_progress_dialog is None:
             return
-        completed = self._area_infer_state.completed_count if self._area_infer_state is not None else 0
+        completed = state.completed_count
         self._area_infer_progress_dialog.setMaximum(total)
         self._area_infer_progress_dialog.setValue(completed)
         self._area_infer_progress_dialog.setLabelText(f"正在识别 ({index}/{total})\n{Path(path).name}")
 
-    def _on_area_inference_succeeded(self, document_id: str, instances: object) -> None:
+    def _on_area_inference_succeeded(
+        self,
+        document_id: str,
+        instances: object,
+        request_id: str = "",
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
         state = self._area_infer_state
-        if state is not None:
-            state.completed_count += 1
+        request = state.pending_requests.get(request_id) if state is not None else None
+        if (
+            state is None
+            or generation is None
+            or state.generation != generation
+            or request is None
+            or request.generation != generation
+            or request.document_id != document_id
+        ):
+            return
+        state.pending_requests.pop(request_id, None)
+        state.completed_count += 1
         document = self._host.project.get_document(document_id)
         if document is not None and isinstance(instances, list):
             self._host._apply_area_inference_result(
                 document,
                 instances,
-                global_group_labels=state.global_group_labels if state is not None else None,
-                model_name=state.model_name if state is not None else "",
-                update_project_group_templates=bool(state.update_project_group_templates) if state is not None else True,
+                global_group_labels=state.global_group_labels,
+                model_name=state.model_name,
+                update_project_group_templates=bool(state.update_project_group_templates),
             )
-        if self._area_infer_progress_dialog is not None and state is not None:
+        if self._area_infer_progress_dialog is not None:
             self._area_infer_progress_dialog.setValue(state.completed_count)
 
-    def _on_area_inference_failed(self, document_id: str, path: str, reason: str) -> None:
-        del document_id
+    def _on_area_inference_failed(
+        self,
+        document_id: str,
+        path: str,
+        reason: str,
+        request_id: str = "",
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
         state = self._area_infer_state
-        if state is not None:
-            state.completed_count += 1
-            state.failed_count += 1
-            if state.failures is not None:
-                state.failures.append(f"{Path(path).name}: {reason}")
-        if self._area_infer_progress_dialog is not None and state is not None:
+        request = state.pending_requests.get(request_id) if state is not None else None
+        if (
+            state is None
+            or generation is None
+            or state.generation != generation
+            or request is None
+            or request.generation != generation
+            or request.document_id != document_id
+            or request.image_path != path
+        ):
+            return
+        state.pending_requests.pop(request_id, None)
+        state.completed_count += 1
+        state.failed_count += 1
+        if state.failures is not None:
+            state.failures.append(f"{Path(path).name}: {reason}")
+        if self._area_infer_progress_dialog is not None:
             self._area_infer_progress_dialog.setValue(state.completed_count)
 
-    def _on_area_inference_finished(self, cancelled: bool, completed_count: int, failed_count: int) -> None:
+    def _on_area_inference_finished(
+        self,
+        cancelled: bool,
+        completed_count: int,
+        failed_count: int,
+        generation: int | None = None,
+    ) -> None:
+        generation = self._effective_generation(generation)
         state = self._area_infer_state
-        if state is None:
+        if state is None or generation is None or state.generation != generation:
             return
         state.cancelled = cancelled
         state.completed_count = completed_count
         state.failed_count = failed_count
+        state.pending_requests.clear()
         self._close_area_progress()
 
         if state.failures:
@@ -372,29 +516,38 @@ class BackgroundTaskController(QObject):
         *,
         document_ids: list[str],
         commit_document_ids: list[str],
-    ) -> None:
-        self._tasks.stop(TASK_IMAGE_LOAD, cancel=True)
-        self._close_load_progress()
-        self._load_state = None
+    ) -> list[TaskStopResult]:
+        results: list[TaskStopResult] = []
+        image_result = self._tasks.stop(TASK_IMAGE_LOAD, cancel=True)
+        results.append(image_result)
+        if image_result.stopped:
+            self._close_load_progress()
+            self._load_state = None
 
-        self._tasks.stop(TASK_AREA_INFERENCE, cancel=True)
-        self._close_area_progress()
-        self._area_infer_state = None
+        area_result = self._tasks.stop(TASK_AREA_INFERENCE, cancel=True)
+        results.append(area_result)
+        if area_result.stopped:
+            self._close_area_progress()
+            self._area_infer_state = None
 
         geometry_worker = self.worker(TASK_FIBER_QUICK_GEOMETRY)
         _cancel_documents(geometry_worker, document_ids)
-        self._tasks.stop(TASK_FIBER_QUICK_GEOMETRY, cancel=False)
+        results.append(self._tasks.stop(TASK_FIBER_QUICK_GEOMETRY, cancel=False))
 
         commit_worker = self.worker(TASK_FIBER_QUICK_COMMIT_GEOMETRY)
         _cancel_documents(commit_worker, commit_document_ids)
-        self._tasks.stop(TASK_FIBER_QUICK_COMMIT_GEOMETRY, cancel=False)
+        results.append(self._tasks.stop(TASK_FIBER_QUICK_COMMIT_GEOMETRY, cancel=False))
 
         prompt_worker = self.worker(TASK_PROMPT_SEGMENTATION)
         _cancel_documents(prompt_worker, document_ids)
-        self._tasks.stop(TASK_PROMPT_SEGMENTATION, cancel=False)
+        results.append(self._tasks.stop(TASK_PROMPT_SEGMENTATION, cancel=False))
 
-        self._tasks.stop(TASK_REFERENCE_INSTANCE, cancel=False)
-        self._worker_overrides.clear()
+        reference_worker = self.worker(TASK_REFERENCE_INSTANCE)
+        _cancel_documents(reference_worker, document_ids)
+        results.append(self._tasks.stop(TASK_REFERENCE_INSTANCE, cancel=False))
+        if all(result.stopped for result in results):
+            self._worker_overrides.clear()
+        return results
 
     def _close_load_progress(self) -> None:
         if self._load_progress_dialog is None:
@@ -431,12 +584,14 @@ def _wait_ms_for_task(task_name: str) -> int:
 
 
 def _connect_progress_cancel(progress: object, worker: object) -> None:
-    cancel = getattr(worker, "cancel", None)
+    cancel = getattr(worker, "request_cancel", None)
+    if not callable(cancel):
+        cancel = getattr(worker, "cancel", None)
     canceled = getattr(progress, "canceled", None)
     connect = getattr(canceled, "connect", None)
     if not callable(cancel) or not callable(connect):
         return
     try:
-        connect(cancel, Qt.ConnectionType.QueuedConnection)
+        connect(cancel, Qt.ConnectionType.DirectConnection)
     except TypeError:
         connect(cancel)

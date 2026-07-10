@@ -23,7 +23,7 @@ class _PreviewTarget:
 
 
 def _emit(payload: dict[str, object]) -> None:
-    print(json.dumps(payload, ensure_ascii=False), flush=True)
+    print(json.dumps(payload, ensure_ascii=False, allow_nan=False), flush=True)
 
 
 def _device(index: int) -> CaptureDevice:

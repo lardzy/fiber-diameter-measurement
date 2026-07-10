@@ -4,6 +4,7 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+import math
 import statistics
 import uuid
 
@@ -61,12 +62,23 @@ def normalize_group_label(label: str) -> str:
     return str(label or "").strip()
 
 
+def require_positive_finite(value: float, *, field_name: str = "pixels_per_unit") -> float:
+    """Return a normalized scale value or reject values unsafe for math/JSON."""
+    normalized = float(value)
+    if not math.isfinite(normalized) or normalized <= 0.0:
+        raise ValueError(f"{field_name} 必须是大于 0 的有限数值")
+    return normalized
+
+
 @dataclass(slots=True)
 class Calibration:
     mode: str
     pixels_per_unit: float
     unit: str
     source_label: str
+
+    def __post_init__(self) -> None:
+        self.pixels_per_unit = require_positive_finite(self.pixels_per_unit)
 
     def clone(self, *, mode: str | None = None, source_label: str | None = None) -> "Calibration":
         return Calibration(
@@ -97,16 +109,12 @@ class Calibration:
         )
 
     def px_to_unit(self, value_px: float) -> float:
-        if self.pixels_per_unit <= 0:
-            return value_px
         return value_px / self.pixels_per_unit
 
     def unit_to_px(self, value: float) -> float:
         return value * self.pixels_per_unit
 
     def px_area_to_unit(self, value_px: float) -> float:
-        if self.pixels_per_unit <= 0:
-            return value_px
         return value_px / (self.pixels_per_unit ** 2)
 
 
@@ -119,8 +127,28 @@ class CalibrationPreset:
     actual_distance: float | None = None
     computed_pixels_per_unit: float | None = None
 
+    def __post_init__(self) -> None:
+        self.pixels_per_unit = require_positive_finite(self.pixels_per_unit)
+        if self.computed_pixels_per_unit is not None:
+            self.computed_pixels_per_unit = require_positive_finite(
+                self.computed_pixels_per_unit,
+                field_name="computed_pixels_per_unit",
+            )
+        if self.pixel_distance is not None:
+            self.pixel_distance = require_positive_finite(
+                self.pixel_distance,
+                field_name="pixel_distance",
+            )
+        if self.actual_distance is not None:
+            self.actual_distance = require_positive_finite(
+                self.actual_distance,
+                field_name="actual_distance",
+            )
+
     def resolved_pixels_per_unit(self) -> float:
-        return self.computed_pixels_per_unit or self.pixels_per_unit
+        if self.computed_pixels_per_unit is not None:
+            return self.computed_pixels_per_unit
+        return self.pixels_per_unit
 
     def to_calibration(self) -> Calibration:
         return Calibration(
@@ -143,7 +171,11 @@ class CalibrationPreset:
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "CalibrationPreset":
         computed_pixels_per_unit = payload.get("computed_pixels_per_unit")
-        pixels_per_unit = float(computed_pixels_per_unit or payload["pixels_per_unit"])
+        pixels_per_unit = float(
+            computed_pixels_per_unit
+            if computed_pixels_per_unit is not None
+            else payload["pixels_per_unit"]
+        )
         return cls(
             name=str(payload["name"]),
             pixels_per_unit=pixels_per_unit,
@@ -600,6 +632,8 @@ class ImageDocument:
     scale_overlay_anchor: Point | None = None
     suppressed_project_group_labels: list[str] = field(default_factory=list)
     sidecar_path: str | None = None
+    calibration_load_error: str | None = field(default=None, repr=False, compare=False)
+    calibration_load_payload: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
     _session_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
@@ -663,6 +697,13 @@ class ImageDocument:
 
     def polyline_measurements(self) -> list[Measurement]:
         return [measurement for measurement in self.measurements if measurement.measurement_kind == "polyline"]
+
+    def length_measurements(self) -> list[Measurement]:
+        return [
+            measurement
+            for measurement in self.measurements
+            if measurement.measurement_kind in {"line", "polyline"}
+        ]
 
     def area_measurements(self) -> list[Measurement]:
         return [measurement for measurement in self.measurements if measurement.measurement_kind == "area"]
@@ -1136,7 +1177,7 @@ class ImageDocument:
     def measurement_values(self) -> list[float]:
         return [
             measurement.diameter_unit
-            for measurement in self.line_measurements()
+            for measurement in self.length_measurements()
             if measurement.diameter_unit is not None
         ]
 
@@ -1329,6 +1370,7 @@ class ProjectState:
     project_default_calibration: Calibration | None = None
     project_group_templates: list[ProjectGroupTemplate] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
+    load_issues: list[dict[str, Any]] = field(default_factory=list, repr=False, compare=False)
 
     def get_document(self, document_id: str) -> ImageDocument | None:
         for document in self.documents:

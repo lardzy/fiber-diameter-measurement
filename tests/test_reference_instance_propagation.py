@@ -100,8 +100,17 @@ class ReferenceInstancePropagationTests(unittest.TestCase):
             def clear_cache(self) -> None:
                 return
 
-            def predict_polygon(self, *, image, cache_key, positive_points, negative_points, tool_mode=None):
-                del image, cache_key, positive_points, negative_points, tool_mode
+            def predict_polygon(
+                self,
+                *,
+                image,
+                cache_key,
+                positive_points,
+                negative_points,
+                tool_mode=None,
+                cancel_check=None,
+            ):
+                del image, cache_key, positive_points, negative_points, tool_mode, cancel_check
                 return PromptSegmentationResult(
                     mask=self._mask.copy(),
                     polygon_px=[Point(74, 20), Point(106, 20), Point(106, 48), Point(74, 48)],

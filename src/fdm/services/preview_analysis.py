@@ -8,13 +8,45 @@ from typing import Any
 
 from PySide6.QtGui import QImage
 
-from fdm.runtime_logging import append_runtime_log
+from fdm.runtime_logging import aggregate_runtime_metric
 from fdm.settings import FocusStackProfile
 
 MAP_BUILD_ANALYSIS_INTERVAL_MS = 90
 MAP_BUILD_STABLE_REQUIRED_FRAMES = 2
 MAP_BUILD_MAX_TILE_FRAMES = 3
 MAP_BUILD_PREVIEW_REFRESH_INTERVAL_MS = 250
+MOSAIC_RENDER_STRIP_HEIGHT = 256
+
+
+MIB = 1024 * 1024
+GIB = 1024 * MIB
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisResourceLimits:
+    focus_max_frames: int = 12
+    focus_max_retained_bytes: int = 256 * MIB
+    focus_max_render_working_bytes: int = GIB
+    map_max_tiles: int = 32
+    map_max_retained_bytes: int = 256 * MIB
+    map_max_pixels: int = 32_000_000
+    map_max_dimension: int = 10_000
+    map_max_render_working_bytes: int = GIB
+
+    def normalized(self) -> "AnalysisResourceLimits":
+        return AnalysisResourceLimits(
+            focus_max_frames=max(1, int(self.focus_max_frames)),
+            focus_max_retained_bytes=max(MIB, int(self.focus_max_retained_bytes)),
+            focus_max_render_working_bytes=max(MIB, int(self.focus_max_render_working_bytes)),
+            map_max_tiles=max(2, int(self.map_max_tiles)),
+            map_max_retained_bytes=max(MIB, int(self.map_max_retained_bytes)),
+            map_max_pixels=max(1, int(self.map_max_pixels)),
+            map_max_dimension=max(1, int(self.map_max_dimension)),
+            map_max_render_working_bytes=max(MIB, int(self.map_max_render_working_bytes)),
+        )
+
+
+DEFAULT_ANALYSIS_RESOURCE_LIMITS = AnalysisResourceLimits()
 
 
 def _ensure_cv_numpy():
@@ -58,6 +90,9 @@ class FocusStackReport:
     accepted_frames: int
     message: str
     low_confidence: bool = False
+    limit_reached: bool = False
+    limit_reason: str = ""
+    retained_bytes: int = 0
 
 
 @dataclass(slots=True)
@@ -81,6 +116,10 @@ class MapBuildReport:
     translation_px: float = 0.0
     correlation_response: float = 0.0
     quality_score: float = 0.0
+    limit_reached: bool = False
+    limit_reason: str = ""
+    retained_bytes: int = 0
+    estimated_output_pixels: int = 0
 
 
 @dataclass(slots=True)
@@ -204,13 +243,22 @@ class _RegistrationResult:
 
 
 class FocusAccumulator:
-    def __init__(self) -> None:
-        self._records: list[_PreparedFrame] = []
+    def __init__(self, *, limits: AnalysisResourceLimits | None = None) -> None:
+        self._best_bgr = None
+        self._best_focus_map = None
+        self._profile_weighted_numerators: dict[str, Any] = {}
+        self._profile_weighted_denominators: dict[str, Any] = {}
+        self._last_small_gray = None
+        self._last_sharpness = 0.0
+        self._limits = (limits or DEFAULT_ANALYSIS_RESOURCE_LIMITS).normalized()
         self.sampled_frames = 0
         self.accepted_frames = 0
+        self.limit_reached = False
+        self.limit_reason = ""
+        self.retained_bytes = 0
 
     def has_frames(self) -> bool:
-        return bool(self._records)
+        return self._best_bgr is not None
 
     def add_qimage(self, image: QImage) -> bool:
         frame = _prepare_frame(image)
@@ -218,23 +266,100 @@ class FocusAccumulator:
 
     def add_prepared_frame(self, frame: _PreparedFrame) -> bool:
         self.sampled_frames += 1
-        if self._records and _is_duplicate_frame(frame, self._records[-1]):
+        if self.limit_reached:
             return False
-        self._records.append(frame)
+        if self._last_small_gray is not None and _is_duplicate_frame(
+            frame,
+            self._last_small_gray,
+            self._last_sharpness,
+        ):
+            return False
+        if self.accepted_frames >= self._limits.focus_max_frames:
+            self._set_limit(f"景深有效帧已达到 {self._limits.focus_max_frames} 张上限")
+            return False
+        if self._best_bgr is not None and (
+            frame.bgr.shape != self._best_bgr.shape
+            or frame.focus_map.shape != self._best_focus_map.shape
+        ):
+            raise ValueError("景深合成帧尺寸不一致。")
+        candidate_retained_bytes = self.estimated_retained_bytes_for(frame)
+        if candidate_retained_bytes > self._limits.focus_max_retained_bytes:
+            self._set_limit(
+                f"景深保留数据已达到 {self._limits.focus_max_retained_bytes / MIB:.0f} MiB 上限"
+            )
+            return False
+        estimated_render_bytes = candidate_retained_bytes + (_array_nbytes(frame.bgr) * 8)
+        if estimated_render_bytes > self._limits.focus_max_render_working_bytes:
+            self._set_limit("景深预计渲染工作集已达到 1 GiB 上限")
+            return False
+        cv2, np = _ensure_cv_numpy()
+        if self._best_bgr is None:
+            self._best_bgr = frame.bgr.copy()
+            self._best_focus_map = frame.focus_map.copy()
+            for profile in (
+                FocusStackProfile.SHARP,
+                FocusStackProfile.BALANCED,
+                FocusStackProfile.SOFT,
+            ):
+                self._profile_weighted_numerators[profile] = np.zeros_like(
+                    frame.bgr,
+                    dtype=np.float32,
+                )
+                self._profile_weighted_denominators[profile] = np.zeros_like(
+                    frame.focus_map,
+                    dtype=np.float32,
+                )
+        else:
+            better_focus = frame.focus_map > self._best_focus_map
+            np.copyto(self._best_bgr, frame.bgr, where=better_focus[..., None])
+            np.copyto(self._best_focus_map, frame.focus_map, where=better_focus)
+        image_float = frame.bgr.astype(np.float32, copy=False)
+        for profile in (
+            FocusStackProfile.SHARP,
+            FocusStackProfile.BALANCED,
+            FocusStackProfile.SOFT,
+        ):
+            raw_weight = _incremental_profile_raw_weight(frame.focus_map, profile=profile)
+            self._profile_weighted_numerators[profile] += image_float * raw_weight[..., None]
+            self._profile_weighted_denominators[profile] += raw_weight
+        self._last_small_gray = frame.small_gray.copy()
+        self._last_sharpness = float(frame.sharpness)
+        self.retained_bytes = (
+            _array_nbytes(self._best_bgr)
+            + _array_nbytes(self._best_focus_map)
+            + sum(_array_nbytes(value) for value in self._profile_weighted_numerators.values())
+            + sum(_array_nbytes(value) for value in self._profile_weighted_denominators.values())
+            + _array_nbytes(self._last_small_gray)
+        )
         self.accepted_frames += 1
         return True
 
+    def estimated_retained_bytes_for(self, frame: _PreparedFrame) -> int:
+        bgr_bytes = _array_nbytes(frame.bgr)
+        focus_bytes = _array_nbytes(frame.focus_map)
+        return (
+            bgr_bytes
+            + focus_bytes
+            + (3 * ((bgr_bytes * 4) + focus_bytes))
+            + _array_nbytes(frame.small_gray)
+        )
+
+    def _set_limit(self, reason: str) -> None:
+        self.limit_reached = True
+        self.limit_reason = reason
+
     def render_image(self, render_config: FocusStackRenderConfig | None = None) -> QImage:
-        if not self._records:
+        if self._best_bgr is None:
             return QImage()
         config = (render_config or FocusStackRenderConfig()).normalized_copy()
-        if len(self._records) == 1:
-            blended = self._records[0].bgr.copy()
+        if self.accepted_frames == 1:
+            blended = self._best_bgr.copy()
         else:
-            blended = _focus_stack_render(
-                [record.bgr for record in self._records],
-                [record.focus_map for record in self._records],
-                config,
+            blended = _focus_stack_incremental_render(
+                self._best_bgr,
+                self._profile_weighted_numerators[config.profile],
+                self._profile_weighted_denominators[config.profile],
+                profile=config.profile,
             )
         blended = _apply_sharpen_strength(blended, config.sharpen_strength)
         return bgr_array_to_qimage(blended)
@@ -246,9 +371,9 @@ class FocusAccumulator:
         return self.render_image(render_config)
 
     def latest_sharpness(self) -> float:
-        if not self._records:
+        if self._last_small_gray is None:
             return 0.0
-        return float(self._records[-1].sharpness)
+        return self._last_sharpness
 
 
 class FocusStackAnalyzer:
@@ -258,10 +383,11 @@ class FocusStackAnalyzer:
         device_id: str,
         device_name: str,
         render_config: FocusStackRenderConfig | None = None,
+        resource_limits: AnalysisResourceLimits | None = None,
     ) -> None:
         self._device_id = device_id
         self._device_name = device_name
-        self._accumulator = FocusAccumulator()
+        self._accumulator = FocusAccumulator(limits=resource_limits)
         self._render_config = (render_config or FocusStackRenderConfig()).normalized_copy()
 
     def add_frame(self, image: QImage) -> FocusStackReport:
@@ -271,13 +397,16 @@ class FocusStackAnalyzer:
         accepted_count = self._accumulator.accepted_frames
         message = f"采样 {sampled} 帧 | 接受 {accepted_count} 帧"
         if not accepted:
-            message += " | 重复帧已跳过"
+            message += f" | {self._accumulator.limit_reason or '重复帧已跳过'}"
         return FocusStackReport(
             preview_image=preview,
             sampled_frames=sampled,
             accepted_frames=accepted_count,
             message=message,
             low_confidence=accepted_count < 2,
+            limit_reached=self._accumulator.limit_reached,
+            limit_reason=self._accumulator.limit_reason,
+            retained_bytes=self._accumulator.retained_bytes,
         )
 
     def refresh_preview(self) -> FocusStackReport:
@@ -295,6 +424,9 @@ class FocusStackAnalyzer:
             accepted_frames=accepted_count,
             message=message,
             low_confidence=accepted_count < 2,
+            limit_reached=self._accumulator.limit_reached,
+            limit_reason=self._accumulator.limit_reason,
+            retained_bytes=self._accumulator.retained_bytes,
         )
 
     def set_render_config(self, render_config: FocusStackRenderConfig) -> None:
@@ -330,7 +462,13 @@ class FocusStackAnalyzer:
 
 
 class MapBuildAnalyzer:
-    def __init__(self, *, device_id: str, device_name: str) -> None:
+    def __init__(
+        self,
+        *,
+        device_id: str,
+        device_name: str,
+        resource_limits: AnalysisResourceLimits | None = None,
+    ) -> None:
         self._device_id = device_id
         self._device_name = device_name
         self._render_config = FocusStackRenderConfig(
@@ -338,6 +476,9 @@ class MapBuildAnalyzer:
             sharpen_strength=0,
         )
         self._registration_config = _MapRegistrationConfig()
+        self._resource_limits = (resource_limits or DEFAULT_ANALYSIS_RESOURCE_LIMITS).normalized()
+        self._resource_limit_reached = False
+        self._resource_limit_reason = ""
         self._sampled_frames = 0
         self._accepted_frames = 0
         self._rejected_moving_frames = 0
@@ -349,7 +490,7 @@ class MapBuildAnalyzer:
         self._skipped_tile_frames = 0
         self._tiles: list[_TileRecord] = []
         self._edges: list[_TileEdge] = []
-        self._current_accumulator = FocusAccumulator()
+        self._current_accumulator = FocusAccumulator(limits=self._resource_limits)
         self._current_origin_small = None
         self._current_predicted_position = (0.0, 0.0)
         self._pending_current_edge: _TileEdge | None = None
@@ -379,10 +520,20 @@ class MapBuildAnalyzer:
 
     def add_frame(self, image: QImage) -> MapBuildReport:
         self._reset_perf_metrics()
+        if self._resource_limit_reached:
+            return self._build_report()
         light_started = perf_counter()
         frame = _prepare_map_motion_frame(image)
         self._last_perf_metrics["light_motion_prep_ms"] = (perf_counter() - light_started) * 1000.0
         self._sampled_frames += 1
+        if (
+            self._retained_bytes() + _map_motion_frame_bytes(frame)
+            > self._resource_limits.map_max_retained_bytes
+        ):
+            self._set_resource_limit(
+                f"地图保留数据已达到 {self._resource_limits.map_max_retained_bytes / MIB:.0f} MiB 上限"
+            )
+            return self._build_report()
         self._initialize_thresholds(frame)
         self._last_quality_score = frame.sharpness
         if self._previous_frame is None:
@@ -442,9 +593,10 @@ class MapBuildAnalyzer:
             if self._is_stable and stable_anchor is not None:
                 self._current_origin_small = stable_anchor.small_gray
                 self._current_predicted_position = (0.0, 0.0)
-                self._accept_motion_frame(stable_anchor)
-                self._last_message = self._sampling_message("开始采样首个 tile")
-                self._last_motion_state = "sampling"
+                accept_status = self._accept_motion_frame(stable_anchor)
+                if accept_status != "limit":
+                    self._last_message = self._sampling_message("开始采样首个 tile")
+                    self._last_motion_state = "sampling"
             else:
                 self._rejected_moving_frames += 1
                 self._last_message = self._motion_wait_message()
@@ -483,9 +635,10 @@ class MapBuildAnalyzer:
             self._last_message = self._sampling_message(
                 f"当前 tile 已采够 {MAP_BUILD_MAX_TILE_FRAMES} 帧，继续监测移动"
             )
-        else:
+        elif accept_status == "duplicate":
             self._last_message = f"{self._sampling_message()} | 当前帧与上一帧接近，已跳过"
-        self._last_motion_state = "sampling"
+        if accept_status != "limit":
+            self._last_motion_state = "sampling"
         return self._build_report()
 
     def finalize(self) -> MapBuildFinalResult:
@@ -496,6 +649,7 @@ class MapBuildAnalyzer:
             raise RuntimeError("地图构建至少需要两个可靠 tile。")
         if not self._edges:
             raise RuntimeError("重叠纹理不足，未生成可靠地图。")
+        self._validate_mosaic_limits(self._tiles)
         image = _render_mosaic(self._tiles)
         metadata = {
             "analysis_mode": "map_build",
@@ -574,6 +728,10 @@ class MapBuildAnalyzer:
             translation_px=self._last_translation_px,
             correlation_response=self._last_response,
             quality_score=self._last_quality_score,
+            limit_reached=self._resource_limit_reached,
+            limit_reason=self._resource_limit_reason,
+            retained_bytes=self._retained_bytes(),
+            estimated_output_pixels=self._estimated_output_pixels(),
         )
 
     def _render_preview_image(self) -> QImage:
@@ -609,16 +767,77 @@ class MapBuildAnalyzer:
             x=self._current_predicted_position[0],
             y=self._current_predicted_position[1],
         )
+        candidate_tiles = [*self._tiles, tile]
+        candidate_bytes = self._retained_bytes(include_current=False) + _tile_record_bytes(tile)
+        if len(candidate_tiles) > self._resource_limits.map_max_tiles:
+            self._set_resource_limit(f"地图 tile 已达到 {self._resource_limits.map_max_tiles} 张上限")
+            self._discard_current_accumulator()
+            return None
+        if candidate_bytes > self._resource_limits.map_max_retained_bytes:
+            self._set_resource_limit(
+                f"地图保留数据已达到 {self._resource_limits.map_max_retained_bytes / MIB:.0f} MiB 上限"
+            )
+            self._discard_current_accumulator()
+            return None
+        try:
+            self._validate_mosaic_limits(candidate_tiles)
+        except RuntimeError as exc:
+            self._set_resource_limit(str(exc))
+            self._discard_current_accumulator()
+            return None
         self._tile_counter += 1
         self._tiles.append(tile)
         if self._pending_current_edge is not None and self._pending_current_edge.target_id == tile.tile_id:
             self._edges.append(self._pending_current_edge)
             self._pending_current_edge = None
         self._optimize_tile_positions()
-        self._current_accumulator = FocusAccumulator()
+        self._current_accumulator = FocusAccumulator(limits=self._resource_limits)
         self._current_origin_small = None
         self._mark_preview_dirty()
         return tile
+
+    def _discard_current_accumulator(self) -> None:
+        self._current_accumulator = FocusAccumulator(limits=self._resource_limits)
+        self._current_origin_small = None
+        self._pending_current_edge = None
+        self._mark_preview_dirty()
+
+    def _set_resource_limit(self, reason: str) -> None:
+        self._resource_limit_reached = True
+        self._resource_limit_reason = reason
+        self._last_message = reason
+        self._last_motion_state = "limit_reached"
+
+    def _retained_bytes(self, *, include_current: bool = True) -> int:
+        retained = sum(_tile_record_bytes(tile) for tile in self._tiles)
+        if include_current:
+            retained += self._current_accumulator.retained_bytes
+        seen_frames: set[int] = set()
+        for frame in [self._previous_frame, *self._stable_window]:
+            if frame is None or id(frame) in seen_frames:
+                continue
+            seen_frames.add(id(frame))
+            retained += _map_motion_frame_bytes(frame)
+        if not self._preview_image_cache.isNull():
+            retained += max(0, int(self._preview_image_cache.sizeInBytes()))
+        return retained
+
+    def _estimated_output_pixels(self) -> int:
+        tiles = list(self._tiles)
+        if not tiles:
+            return 0
+        width, height = _mosaic_dimensions(tiles)
+        return width * height
+
+    def _validate_mosaic_limits(self, tiles: list[_TileRecord]) -> None:
+        width, height = _mosaic_dimensions(tiles)
+        if max(width, height) > self._resource_limits.map_max_dimension:
+            raise RuntimeError(f"地图最长边超过 {self._resource_limits.map_max_dimension} px 上限")
+        pixels = width * height
+        if pixels > self._resource_limits.map_max_pixels:
+            raise RuntimeError("地图输出超过 32 MP 上限")
+        if _estimate_mosaic_render_working_bytes(width, height) > self._resource_limits.map_max_render_working_bytes:
+            raise RuntimeError("地图预计渲染工作集超过 1 GiB 上限")
 
     def _optimize_tile_positions(self) -> None:
         if len(self._tiles) <= 1 or not self._edges:
@@ -696,7 +915,12 @@ class MapBuildAnalyzer:
     def _try_commit_candidate_tile(self, candidate_frames: list[_MapMotionFrame], *, coarse_dx: float, coarse_dy: float) -> None:
         registration_started = perf_counter()
         reference_tile = self._current_tile_preview_record()
-        prepared_candidates = [self._promote_motion_frame(candidate) for candidate in candidate_frames]
+        prepared_candidates: list[_PreparedFrame] = []
+        for candidate in candidate_frames:
+            prepared = self._promote_motion_frame(candidate)
+            if prepared is None:
+                return
+            prepared_candidates.append(prepared)
         candidate_bgr = _fuse_prepared_frames(prepared_candidates, self._render_config)
         if reference_tile is None or candidate_bgr is None:
             self._last_perf_metrics["registration_ms"] = (perf_counter() - registration_started) * 1000.0
@@ -740,7 +964,7 @@ class MapBuildAnalyzer:
             dy=registration.dy,
             weight=registration.weight,
         )
-        self._current_accumulator = FocusAccumulator()
+        self._current_accumulator = FocusAccumulator(limits=self._resource_limits)
         accepted_any = False
         for candidate in prepared_candidates:
             accepted_any = self._accept_prepared_frame(candidate) == "accepted" or accepted_any
@@ -835,24 +1059,68 @@ class MapBuildAnalyzer:
         if self._current_accumulator.accepted_frames >= MAP_BUILD_MAX_TILE_FRAMES:
             self._skipped_tile_frames += 1
             return "full"
-        return self._accept_prepared_frame(self._promote_motion_frame(frame))
+        prepared = self._promote_motion_frame(frame)
+        if prepared is None:
+            return "limit"
+        return self._accept_prepared_frame(prepared)
 
     def _accept_prepared_frame(self, frame: _PreparedFrame) -> str:
         if self._current_accumulator.accepted_frames >= MAP_BUILD_MAX_TILE_FRAMES:
             self._skipped_tile_frames += 1
             return "full"
+        prospective_accumulator_bytes = (
+            self._current_accumulator.retained_bytes
+            if self._current_accumulator.has_frames()
+            else self._current_accumulator.estimated_retained_bytes_for(frame)
+        )
+        retained_without_accumulator = max(
+            0,
+            self._retained_bytes() - self._current_accumulator.retained_bytes,
+        )
+        if (
+            retained_without_accumulator + prospective_accumulator_bytes
+            > self._resource_limits.map_max_retained_bytes
+        ):
+            self._set_resource_limit(
+                f"地图保留数据已达到 {self._resource_limits.map_max_retained_bytes / MIB:.0f} MiB 上限"
+            )
+            return "limit"
         accepted = self._current_accumulator.add_prepared_frame(frame)
         if accepted:
             self._accepted_frames += 1
             self._stable_accept_count += 1
             self._mark_preview_dirty()
             return "accepted"
+        if self._current_accumulator.limit_reached:
+            self._set_resource_limit(
+                self._current_accumulator.limit_reason.replace("景深", "地图 tile", 1)
+            )
+            return "limit"
         return "duplicate"
 
-    def _promote_motion_frame(self, frame: _MapMotionFrame) -> _PreparedFrame:
+    def _promote_motion_frame(self, frame: _MapMotionFrame) -> _PreparedFrame | None:
         if frame.prepared is None:
+            height, width = frame.full_shape
+            estimated_prepared_bytes = max(0, int(height) * int(width) * 8)
+            if (
+                self._retained_bytes() + estimated_prepared_bytes
+                > self._resource_limits.map_max_retained_bytes
+            ):
+                self._set_resource_limit(
+                    f"地图保留数据已达到 {self._resource_limits.map_max_retained_bytes / MIB:.0f} MiB 上限"
+                )
+                return None
             started = perf_counter()
-            frame.prepared = _prepare_frame(frame.image)
+            prepared = _prepare_frame(frame.image)
+            if (
+                self._retained_bytes() + _prepared_frame_bytes(prepared)
+                > self._resource_limits.map_max_retained_bytes
+            ):
+                self._set_resource_limit(
+                    f"地图保留数据已达到 {self._resource_limits.map_max_retained_bytes / MIB:.0f} MiB 上限"
+                )
+                return None
+            frame.prepared = prepared
             self._last_perf_metrics["full_frame_promote_ms"] = (
                 float(self._last_perf_metrics.get("full_frame_promote_ms", 0.0))
                 + (perf_counter() - started) * 1000.0
@@ -1105,12 +1373,16 @@ def _focus_measure(gray):
     return score
 
 
-def _is_duplicate_frame(frame: _PreparedFrame, previous: _PreparedFrame) -> bool:
+def _is_duplicate_frame(
+    frame: _PreparedFrame,
+    previous_small_gray,
+    previous_sharpness: float,
+) -> bool:
     _, np = _ensure_cv_numpy()
     current = frame.small_gray.astype(np.float32, copy=False)
-    last = previous.small_gray.astype(np.float32, copy=False)
+    last = previous_small_gray.astype(np.float32, copy=False)
     diff = float(np.mean(np.abs(current - last)))
-    sharpness_delta = abs(frame.sharpness - previous.sharpness) / max(previous.sharpness, 1.0)
+    sharpness_delta = abs(frame.sharpness - previous_sharpness) / max(previous_sharpness, 1.0)
     return diff < 1.2 and sharpness_delta < 0.03
 
 
@@ -1129,6 +1401,26 @@ def _focus_stack_profile_params(profile: str) -> tuple[tuple[float, ...], float,
     if profile == FocusStackProfile.SOFT:
         return (1.8, 4.0, 7.0), 0.9, 0.15
     return (1.0, 2.5, 5.0), 1.2, 0.42
+
+
+def _incremental_profile_raw_weight(focus_map, *, profile: str):
+    """Approximate legacy multi-scale normalization with a constant-size sum.
+
+    The per-frame raw response is averaged across the same Gaussian scales as
+    the legacy renderer, then accumulated as numerator/denominator pairs. This
+    preserves focus confidence and transition softness without retaining a
+    historical frame stack.
+    """
+
+    cv2, np = _ensure_cv_numpy()
+    sigmas, focus_power, _hard_mix = _focus_stack_profile_params(profile)
+    combined = np.zeros_like(focus_map, dtype=np.float32)
+    for sigma in sigmas:
+        smoothed = cv2.GaussianBlur(focus_map, (0, 0), sigmaX=sigma, sigmaY=sigma)
+        combined += np.power(np.clip(smoothed, 1e-6, None), focus_power)
+    combined /= max(1.0, float(len(sigmas)))
+    combined += 1e-6
+    return combined
 
 
 def _focus_stack_multiscale(images: list, focus_maps: list, *, profile: str = FocusStackProfile.BALANCED):
@@ -1155,6 +1447,24 @@ def _focus_stack_render(images: list, focus_maps: list, render_config: FocusStac
     hard = _focus_stack_fast(images, focus_maps).astype(np.float32, copy=False)
     soft = _focus_stack_multiscale(images, focus_maps, profile=config.profile).astype(np.float32, copy=False)
     blended = (soft * (1.0 - hard_mix)) + (hard * hard_mix)
+    return np.clip(blended, 0, 255).astype(np.uint8)
+
+
+def _focus_stack_incremental_render(
+    best_bgr,
+    weighted_numerator,
+    weighted_denominator,
+    *,
+    profile: str = FocusStackProfile.BALANCED,
+):
+    """Render a focus-confidence weighted incremental approximation."""
+    _, np = _ensure_cv_numpy()
+    denominator = np.clip(weighted_denominator, 1e-6, None)
+    soft = weighted_numerator / denominator[..., None]
+    hard_mix = _focus_stack_profile_params(profile)[2]
+    blended = (soft * (1.0 - hard_mix)) + (
+        best_bgr.astype(np.float32, copy=False) * hard_mix
+    )
     return np.clip(blended, 0, 255).astype(np.uint8)
 
 
@@ -1235,24 +1545,74 @@ def _normalized_cross_correlation(gray_a, gray_b) -> float:
     return float(np.sum(a_centered * b_centered) / denom)
 
 
-def _render_mosaic(tiles: list[_TileRecord], *, max_dimension: int | None = None):
+def _array_nbytes(value: Any) -> int:
+    return max(0, int(getattr(value, "nbytes", 0) or 0))
+
+
+def _prepared_frame_bytes(frame: _PreparedFrame) -> int:
+    return sum(
+        _array_nbytes(value)
+        for value in (frame.bgr, frame.gray, frame.focus_map, frame.small_gray)
+    )
+
+
+def _map_motion_frame_bytes(frame: _MapMotionFrame) -> int:
+    image_bytes = 0 if frame.image.isNull() else max(0, int(frame.image.sizeInBytes()))
+    retained = image_bytes + _array_nbytes(frame.small_gray)
+    if frame.prepared is not None:
+        retained += _prepared_frame_bytes(frame.prepared)
+    return retained
+
+
+def _tile_record_bytes(tile: _TileRecord) -> int:
+    return _array_nbytes(tile.bgr) + _array_nbytes(tile.gray)
+
+
+def _mosaic_dimensions(tiles: list[_TileRecord]) -> tuple[int, int]:
+    if not tiles:
+        return 0, 0
+    min_x = math.floor(min(tile.x for tile in tiles))
+    min_y = math.floor(min(tile.y for tile in tiles))
+    max_x = math.ceil(max(tile.x + tile.width for tile in tiles))
+    max_y = math.ceil(max(tile.y + tile.height for tile in tiles))
+    return max(1, max_x - min_x), max(1, max_y - min_y)
+
+
+def _estimate_mosaic_render_working_bytes(
+    width: int,
+    height: int,
+    *,
+    strip_height: int = MOSAIC_RENDER_STRIP_HEIGHT,
+) -> int:
+    width = max(0, int(width))
+    height = max(0, int(height))
+    if width == 0 or height == 0:
+        return 0
+    active_rows = min(height, max(1, int(strip_height)))
+    output_bytes = width * height * 3
+    # RGB accumulator + scalar weights + feather mask + weighted tile crop.
+    strip_working_bytes = width * active_rows * ((3 * 4) + 4 + 4 + (3 * 4))
+    return output_bytes + strip_working_bytes
+
+
+def _render_mosaic(
+    tiles: list[_TileRecord],
+    *,
+    max_dimension: int | None = None,
+    strip_height: int = MOSAIC_RENDER_STRIP_HEIGHT,
+):
     if not tiles:
         return None
     cv2, np = _ensure_cv_numpy()
     min_x = math.floor(min(tile.x for tile in tiles))
     min_y = math.floor(min(tile.y for tile in tiles))
-    max_x = math.ceil(max(tile.x + tile.width for tile in tiles))
-    max_y = math.ceil(max(tile.y + tile.height for tile in tiles))
-    width = max(1, max_x - min_x)
-    height = max(1, max_y - min_y)
+    width, height = _mosaic_dimensions(tiles)
     scale = 1.0
     if max_dimension is not None and max(width, height) > max_dimension:
         scale = max_dimension / max(width, height)
         width = max(1, int(round(width * scale)))
         height = max(1, int(round(height * scale)))
-    canvas = np.zeros((height, width, 3), dtype=np.float32)
-    weights = np.zeros((height, width, 1), dtype=np.float32)
-    feather_cache: dict[tuple[int, int], Any] = {}
+    placements: list[tuple[Any, int, int]] = []
     for tile in tiles:
         tile_image = tile.bgr
         if scale != 1.0:
@@ -1266,34 +1626,68 @@ def _render_mosaic(tiles: list[_TileRecord], *, max_dimension: int | None = None
         th, tw = tile_image.shape[:2]
         x = int(round((tile.x - min_x) * scale))
         y = int(round((tile.y - min_y) * scale))
-        x2 = min(width, x + tw)
-        y2 = min(height, y + th)
-        if x2 <= x or y2 <= y:
+        if min(width, x + tw) <= max(0, x) or min(height, y + th) <= max(0, y):
             continue
-        tile_crop = tile_image[: y2 - y, : x2 - x].astype(np.float32, copy=False)
-        key = (tile_crop.shape[1], tile_crop.shape[0])
-        if key not in feather_cache:
-            feather_cache[key] = _feather_mask(tile_crop.shape[1], tile_crop.shape[0])
-        mask = feather_cache[key][: y2 - y, : x2 - x, :]
-        canvas[y:y2, x:x2] += tile_crop * mask
-        weights[y:y2, x:x2] += mask
-    weights = np.clip(weights, 1e-6, None)
-    return np.clip(canvas / weights, 0, 255).astype(np.uint8)
+        placements.append((tile_image, x, y))
+
+    output = np.zeros((height, width, 3), dtype=np.uint8)
+    feather_axes_cache: dict[tuple[int, int], tuple[Any, Any]] = {}
+    rows_per_strip = min(height, max(1, int(strip_height)))
+    for strip_y in range(0, height, rows_per_strip):
+        strip_y2 = min(height, strip_y + rows_per_strip)
+        active_height = strip_y2 - strip_y
+        canvas = np.zeros((active_height, width, 3), dtype=np.float32)
+        weights = np.zeros((active_height, width, 1), dtype=np.float32)
+        for tile_image, x, y in placements:
+            th, tw = tile_image.shape[:2]
+            overlap_x = max(0, x)
+            overlap_x2 = min(width, x + tw)
+            overlap_y = max(strip_y, y)
+            overlap_y2 = min(strip_y2, y + th)
+            if overlap_x2 <= overlap_x or overlap_y2 <= overlap_y:
+                continue
+            tile_x = overlap_x - x
+            tile_x2 = overlap_x2 - x
+            tile_y = overlap_y - y
+            tile_y2 = overlap_y2 - y
+            canvas_y = overlap_y - strip_y
+            canvas_y2 = overlap_y2 - strip_y
+            key = (tw, th)
+            if key not in feather_axes_cache:
+                feather_axes_cache[key] = _feather_axes(tw, th)
+            edge_x, edge_y = feather_axes_cache[key]
+            mask = np.minimum(
+                edge_y[tile_y:tile_y2, None],
+                edge_x[None, tile_x:tile_x2],
+            )
+            np.multiply(mask, 8.0, out=mask)
+            np.clip(mask, 0.12, 1.0, out=mask)
+            mask = mask[..., None]
+            weighted_tile = tile_image[tile_y:tile_y2, tile_x:tile_x2].astype(np.float32)
+            np.multiply(weighted_tile, mask, out=weighted_tile)
+            canvas[canvas_y:canvas_y2, overlap_x:overlap_x2] += weighted_tile
+            weights[canvas_y:canvas_y2, overlap_x:overlap_x2] += mask
+        np.maximum(weights, 1e-6, out=weights)
+        np.divide(canvas, weights, out=canvas)
+        np.clip(canvas, 0, 255, out=canvas)
+        output[strip_y:strip_y2] = canvas
+    return output
+
+
+def _feather_axes(width: int, height: int):
+    _, np = _ensure_cv_numpy()
+    x = np.linspace(0.0, 1.0, width, dtype=np.float32)
+    y = np.linspace(0.0, 1.0, height, dtype=np.float32)
+    return np.minimum(x, 1.0 - x), np.minimum(y, 1.0 - y)
 
 
 def _feather_mask(width: int, height: int):
     _, np = _ensure_cv_numpy()
-    x = np.linspace(0.0, 1.0, width, dtype=np.float32)
-    y = np.linspace(0.0, 1.0, height, dtype=np.float32)
-    edge_x = np.minimum(x, 1.0 - x)
-    edge_y = np.minimum(y, 1.0 - y)
+    edge_x, edge_y = _feather_axes(width, height)
     mask = np.minimum.outer(edge_y, edge_x)
     mask = np.clip(mask * 8.0, 0.12, 1.0)
     return mask[..., None]
 
 
 def log_preview_analysis_perf(title: str, elapsed_ms: float, *, detail: str = "") -> None:
-    message = f"elapsed_ms={elapsed_ms:.2f}"
-    if detail:
-        message = f"{message}, {detail}"
-    append_runtime_log(title, message)
+    aggregate_runtime_metric(title, elapsed_ms, detail=detail, interval_s=5.0)

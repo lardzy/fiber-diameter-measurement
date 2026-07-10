@@ -13,6 +13,8 @@ try:
     from PySide6.QtGui import QImage
 
     from fdm.services.preview_analysis import (
+        AnalysisResourceLimits,
+        FocusAccumulator,
         FocusStackAnalyzer,
         MapBuildAnalyzer,
         FocusStackRenderConfig,
@@ -32,6 +34,8 @@ except ModuleNotFoundError:
     np = None
     QImage = None
     FocusStackAnalyzer = None
+    FocusAccumulator = None
+    AnalysisResourceLimits = None
     MapBuildAnalyzer = None
     FocusStackRenderConfig = None
     FocusStackProfile = None
@@ -151,6 +155,36 @@ class PreviewAnalysisTests(unittest.TestCase):
         right_score = float(_focus_measure(cv2.cvtColor(qimage_to_bgr_array(right_frame), cv2.COLOR_BGR2GRAY)).mean())
         self.assertGreaterEqual(fused_score, max(left_score, right_score) * 0.9)
 
+    def test_focus_accumulator_stops_at_configured_frame_limit(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        accumulator = FocusAccumulator(
+            limits=AnalysisResourceLimits(
+                focus_max_frames=1,
+                focus_max_retained_bytes=256 * 1024 * 1024,
+            )
+        )
+
+        self.assertTrue(accumulator.add_qimage(left_frame))
+        self.assertFalse(accumulator.add_qimage(right_frame))
+        self.assertTrue(accumulator.limit_reached)
+        self.assertEqual(accumulator.accepted_frames, 1)
+        self.assertIn("1 张上限", accumulator.limit_reason)
+
+    def test_focus_stack_report_exposes_resource_limit(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        analyzer = FocusStackAnalyzer(
+            device_id="test",
+            device_name="test",
+            resource_limits=AnalysisResourceLimits(focus_max_frames=1),
+        )
+
+        analyzer.add_frame(left_frame)
+        report = analyzer.add_frame(right_frame)
+
+        self.assertTrue(report.limit_reached)
+        self.assertGreater(report.retained_bytes, 0)
+        self.assertIn("上限", report.message)
+
     def test_focus_stack_preview_matches_final_when_using_same_render_config(self) -> None:
         left_frame, right_frame = self._make_focus_frames()
         analyzer = FocusStackAnalyzer(
@@ -247,6 +281,120 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertFalse(refreshed.preview_image.isNull())
         self.assertIn("预览参数已更新", refreshed.message)
 
+    def test_incremental_focus_stack_stays_within_legacy_render_tolerance(self) -> None:
+        left_frame, right_frame = self._make_focus_frames()
+        prepared = [
+            preview_analysis._prepare_frame(left_frame),  # noqa: SLF001
+            preview_analysis._prepare_frame(right_frame),  # noqa: SLF001
+        ]
+        accumulator = FocusAccumulator()
+        for frame in prepared:
+            self.assertTrue(accumulator.add_prepared_frame(frame))
+
+        for profile in (
+            FocusStackProfile.SHARP,
+            FocusStackProfile.BALANCED,
+            FocusStackProfile.SOFT,
+        ):
+            with self.subTest(profile=profile):
+                config = FocusStackRenderConfig(profile=profile, sharpen_strength=0)
+                legacy = preview_analysis._focus_stack_render(  # noqa: SLF001
+                    [frame.bgr for frame in prepared],
+                    [frame.focus_map for frame in prepared],
+                    config,
+                )
+                incremental = qimage_to_bgr_array(accumulator.final_image(config))
+                difference = np.abs(legacy.astype(np.int16) - incremental.astype(np.int16))
+
+                self.assertLess(float(difference.mean()), 4.0)
+                self.assertLessEqual(float(np.percentile(difference, 95)), 20.0)
+
+    def test_incremental_focus_stack_retained_memory_does_not_grow_with_frame_count(self) -> None:
+        rng = np.random.default_rng(20260710)
+        base = rng.integers(0, 256, size=(180, 260, 3), dtype=np.uint8)
+        blurred = cv2.GaussianBlur(base, (0, 0), sigmaX=4.0, sigmaY=4.0)
+        frames: list[QImage] = []
+        segment_width = base.shape[1] // 6
+        for index in range(6):
+            frame = blurred.copy()
+            start = index * segment_width
+            end = base.shape[1] if index == 5 else (index + 1) * segment_width
+            frame[:, start:end] = base[:, start:end]
+            frames.append(bgr_array_to_qimage(frame))
+
+        accumulator = FocusAccumulator()
+        retained_sizes: list[int] = []
+        for frame in frames:
+            self.assertTrue(accumulator.add_qimage(frame))
+            retained_sizes.append(accumulator.retained_bytes)
+
+        self.assertEqual(accumulator.accepted_frames, 6)
+        self.assertEqual(len(set(retained_sizes)), 1)
+        prepared = [preview_analysis._prepare_frame(frame) for frame in frames]  # noqa: SLF001
+        soft_config = FocusStackRenderConfig(profile=FocusStackProfile.SOFT, sharpen_strength=0)
+        legacy_soft = preview_analysis._focus_stack_render(  # noqa: SLF001
+            [frame.bgr for frame in prepared],
+            [frame.focus_map for frame in prepared],
+            soft_config,
+        )
+        incremental_soft = qimage_to_bgr_array(accumulator.final_image(soft_config))
+        soft_difference = np.abs(legacy_soft.astype(np.int16) - incremental_soft.astype(np.int16))
+        self.assertLess(float(soft_difference.mean()), 5.0)
+        self.assertLessEqual(float(np.percentile(soft_difference, 95)), 20.0)
+        with patch.object(np, "stack", side_effect=AssertionError("增量渲染不应堆叠历史帧")):
+            rendered = accumulator.final_image(
+                FocusStackRenderConfig(profile=FocusStackProfile.BALANCED, sharpen_strength=0)
+            )
+        self.assertFalse(rendered.isNull())
+
+    def test_incremental_focus_stack_matches_legacy_on_high_contrast_complementary_planes(self) -> None:
+        rng = np.random.default_rng(20260711)
+        base = rng.integers(0, 256, size=(220, 320, 3), dtype=np.uint8)
+        base[:, ::8] = 255 - base[:, ::8]
+        blurred = cv2.GaussianBlur(base, (0, 0), sigmaX=8.0, sigmaY=8.0)
+        left = blurred.copy()
+        left[:, :160] = base[:, :160]
+        right = blurred.copy()
+        right[:, 160:] = base[:, 160:]
+        prepared = [
+            preview_analysis._prepare_frame(bgr_array_to_qimage(left)),  # noqa: SLF001
+            preview_analysis._prepare_frame(bgr_array_to_qimage(right)),  # noqa: SLF001
+        ]
+        accumulator = FocusAccumulator()
+        for frame in prepared:
+            self.assertTrue(accumulator.add_prepared_frame(frame))
+
+        for profile in (FocusStackProfile.SHARP, FocusStackProfile.BALANCED, FocusStackProfile.SOFT):
+            with self.subTest(profile=profile):
+                config = FocusStackRenderConfig(profile=profile, sharpen_strength=0)
+                legacy = preview_analysis._focus_stack_render(  # noqa: SLF001
+                    [frame.bgr for frame in prepared],
+                    [frame.focus_map for frame in prepared],
+                    config,
+                )
+                incremental = qimage_to_bgr_array(accumulator.final_image(config))
+                difference = np.abs(legacy.astype(np.int16) - incremental.astype(np.int16))
+                self.assertLess(float(difference.mean()), 4.0)
+                self.assertLessEqual(float(np.percentile(difference, 95)), 20.0)
+
+    def test_map_promotes_focus_accumulator_limit_to_map_report(self) -> None:
+        left, right = self._make_focus_frames()
+        analyzer = MapBuildAnalyzer(
+            device_id="limit",
+            device_name="limit",
+            resource_limits=AnalysisResourceLimits(focus_max_frames=1),
+        )
+        first = preview_analysis._prepare_frame(left)  # noqa: SLF001
+        second = preview_analysis._prepare_frame(right)  # noqa: SLF001
+
+        self.assertEqual(analyzer._accept_prepared_frame(first), "accepted")  # noqa: SLF001
+        self.assertEqual(analyzer._accept_prepared_frame(second), "limit")  # noqa: SLF001
+        report = analyzer._build_report()  # noqa: SLF001
+
+        self.assertTrue(report.limit_reached)
+        self.assertEqual(report.motion_state, "limit_reached")
+        self.assertIn("1 张上限", report.limit_reason)
+
     def test_map_build_analyzer_creates_reliable_mosaics_from_real_crops(self) -> None:
         scene = self._make_map_scene()
         for shift in (160, 208, 256):
@@ -274,6 +422,75 @@ class PreviewAnalysisTests(unittest.TestCase):
                 self.assertIn("skipped_tile_frames", result.metadata)
                 self.assertLess(abs(analyzer._tiles[1].x - shift), 8.0)  # noqa: SLF001
                 self.assertLess(abs(analyzer._tiles[1].y), 6.0)  # noqa: SLF001
+
+    def test_mosaic_strips_match_full_frame_reference_and_bound_float_allocations(self) -> None:
+        first = self._make_map_base()
+        second = np.roll(first, shift=35, axis=1)
+        tiles = [
+            preview_analysis._TileRecord(  # noqa: SLF001
+                tile_id=0,
+                bgr=first,
+                gray=cv2.cvtColor(first, cv2.COLOR_BGR2GRAY),
+                x=0.0,
+                y=0.0,
+            ),
+            preview_analysis._TileRecord(  # noqa: SLF001
+                tile_id=1,
+                bgr=second,
+                gray=cv2.cvtColor(second, cv2.COLOR_BGR2GRAY),
+                x=140.0,
+                y=45.0,
+            ),
+        ]
+        width, height = preview_analysis._mosaic_dimensions(tiles)  # noqa: SLF001
+        min_x = min(tile.x for tile in tiles)
+        min_y = min(tile.y for tile in tiles)
+        legacy_canvas = np.zeros((height, width, 3), dtype=np.float32)
+        legacy_weights = np.zeros((height, width, 1), dtype=np.float32)
+        for tile in tiles:
+            x = int(round(tile.x - min_x))
+            y = int(round(tile.y - min_y))
+            y2 = min(height, y + tile.height)
+            x2 = min(width, x + tile.width)
+            crop = tile.bgr[: y2 - y, : x2 - x].astype(np.float32, copy=False)
+            mask = preview_analysis._feather_mask(crop.shape[1], crop.shape[0])  # noqa: SLF001
+            legacy_canvas[y:y2, x:x2] += crop * mask
+            legacy_weights[y:y2, x:x2] += mask
+        legacy = np.clip(legacy_canvas / np.clip(legacy_weights, 1e-6, None), 0, 255).astype(np.uint8)
+
+        allocations: list[tuple[tuple[int, ...], np.dtype]] = []
+        original_zeros = np.zeros
+
+        def tracked_zeros(shape, *args, **kwargs):
+            array = original_zeros(shape, *args, **kwargs)
+            allocations.append((tuple(int(value) for value in shape), array.dtype))
+            return array
+
+        with patch.object(np, "zeros", side_effect=tracked_zeros):
+            striped = preview_analysis._render_mosaic(tiles, strip_height=64)  # noqa: SLF001
+
+        self.assertTrue(np.array_equal(striped, legacy))
+        float_allocations = [shape for shape, dtype in allocations if dtype == np.dtype(np.float32)]
+        self.assertTrue(float_allocations)
+        self.assertLessEqual(max(shape[0] for shape in float_allocations), 64)
+        self.assertNotIn((height, width, 3), float_allocations)
+        self.assertNotIn((height, width, 1), float_allocations)
+
+    def test_mosaic_working_set_estimate_scales_with_strip_height_not_full_height(self) -> None:
+        width = 4096
+        height = 4096
+        estimate = preview_analysis._estimate_mosaic_render_working_bytes(  # noqa: SLF001
+            width,
+            height,
+            strip_height=64,
+        )
+        old_full_frame_working_set = width * height * 19
+
+        self.assertLess(estimate, old_full_frame_working_set // 3)
+        self.assertEqual(
+            estimate,
+            (width * height * 3) + (width * 64 * 32),
+        )
 
     def test_map_build_accepts_high_overlap_small_stage_moves(self) -> None:
         scene = self._make_map_scene()

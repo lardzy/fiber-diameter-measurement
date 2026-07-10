@@ -40,6 +40,7 @@ from PySide6.QtWidgets import (
 from fdm.models import ImageDocument
 from fdm.settings import (
     AppThemeMode,
+    AreaInferDevice,
     AreaModelMapping,
     AppSettings,
     FocusStackProfile,
@@ -615,6 +616,7 @@ class SettingsDialog(QDialog):
             area_weights_dir=self._area_weights_dir_edit.text().strip(),
             area_vendor_root=self._area_vendor_root_edit.text().strip(),
             area_worker_python=self._area_worker_python_edit.text().strip(),
+            area_infer_device=str(self._area_infer_device_combo.currentData() or AreaInferDevice.CPU),
             calibration_presets=list(self._initial_settings.calibration_presets),
             selected_capture_device_id=self._initial_settings.selected_capture_device_id,
             raw_record_templates=self.raw_record_templates(),
@@ -1422,10 +1424,17 @@ class SettingsDialog(QDialog):
         self._area_vendor_root_edit = QLineEdit(settings.area_vendor_root)
         self._area_worker_python_edit = QLineEdit(settings.area_worker_python)
         self._area_worker_python_edit.setPlaceholderText("留空表示自动：打包后优先使用 FiberAreaWorker.exe")
+        self._area_infer_device_combo = NoWheelComboBox()
+        self._area_infer_device_combo.addItem("CPU（默认，兼容性最佳）", AreaInferDevice.CPU)
+        self._area_infer_device_combo.addItem("自动选择 CPU / CUDA", AreaInferDevice.AUTO)
+        self._area_infer_device_combo.addItem("CUDA 0", AreaInferDevice.CUDA_0)
+        device_index = self._area_infer_device_combo.findData(settings.area_infer_device)
+        self._area_infer_device_combo.setCurrentIndex(max(0, device_index))
         area_form = QFormLayout()
         area_form.addRow("权重目录", self._with_browse_button(self._area_weights_dir_edit, directory=True, resource_relative=True))
         area_form.addRow("YOLACT vendor 目录", self._with_browse_button(self._area_vendor_root_edit, directory=True, resource_relative=True))
         area_form.addRow("Worker 可执行文件 / Python", self._with_browse_button(self._area_worker_python_edit, directory=False, resource_relative=False))
+        area_form.addRow("推理设备", self._area_infer_device_combo)
         area_layout.addLayout(area_form)
         path_hint = QLabel("权重和 vendor 支持相对运行时资源目录填写；Worker 支持相对程序目录填写。保持 Worker 为空时，会自动选择打包后的 FiberAreaWorker 或当前 Python。")
         path_hint.setWordWrap(True)

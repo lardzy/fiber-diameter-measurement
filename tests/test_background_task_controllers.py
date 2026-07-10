@@ -16,8 +16,12 @@ try:
 
     from fdm.models import ImageDocument, ProjectState, new_id
     from fdm.settings import AppSettings
-    from fdm.ui.area_inference_worker import AreaInferenceRequest
-    from fdm.ui.background_task_controller import BackgroundTaskController, BatchLoadState
+    from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
+    from fdm.ui.background_task_controller import (
+        AreaInferenceBatchState,
+        BackgroundTaskController,
+        BatchLoadState,
+    )
     from fdm.ui.image_loader import ImageLoadRequest
     from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
     from fdm.ui.preview_analysis_worker import MapBuildSessionWorker
@@ -33,7 +37,9 @@ except ModuleNotFoundError:
     ProjectState = None
     AppSettings = None
     AreaInferenceRequest = None
+    AreaBatchInferenceWorker = None
     BackgroundTaskController = None
+    AreaInferenceBatchState = None
     BatchLoadState = None
     ImageLoadRequest = None
     PreviewAnalysisTaskController = None
@@ -104,6 +110,7 @@ class _BackgroundHost:
         self.status_messages: list[str] = []
         self.loaded_callback_threads: list[QThread] = []
         self.area_callback_threads: list[QThread] = []
+        self.unresolved_requests: list[tuple[str, str]] = []
 
     def _create_progress_dialog(self, *, title: str, label_text: str, maximum: int):
         del title, label_text, maximum
@@ -141,6 +148,10 @@ class _BackgroundHost:
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None:
         del timeout_ms
         self.status_messages.append(message)
+
+    def _register_unresolved_project_document(self, request: ImageLoadRequest, reason: str) -> None:
+        document_id = str(getattr(request.document, "id", ""))
+        self.unresolved_requests.append((document_id, reason))
 
     def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
         del document_id, request_id, result
@@ -265,6 +276,117 @@ class _PreviewHost:
 
 @unittest.skipUnless(QT_CONTROLLER_AVAILABLE, "requires PySide6")
 class BackgroundTaskControllerTests(unittest.TestCase):
+    def test_area_result_requires_matching_request_id_and_generation(self) -> None:
+        document = ImageDocument(id="area-current", path="/tmp/current.png", image_size=(20, 10))
+        document.initialize_runtime_state()
+        host = _BackgroundHost(ProjectState(version="test", documents=[document]))
+        controller = BackgroundTaskController(host, ThreadTaskManager(parent=_app()))
+        request = AreaInferenceRequest(
+            document_id=document.id,
+            image_path=document.path,
+            model_name="棉",
+            model_file="model.pth",
+            request_id="current-request",
+            generation=9,
+        )
+        controller._area_infer_state = AreaInferenceBatchState(
+            total=1,
+            model_name="棉",
+            failures=[],
+            pending_requests={request.request_id: request},
+            generation=9,
+        )
+
+        controller._on_area_inference_succeeded(
+            document.id,
+            ["stale-request"],
+            "old-request",
+            9,
+        )
+        controller._on_area_inference_succeeded(
+            document.id,
+            ["stale-generation"],
+            request.request_id,
+            8,
+        )
+        self.assertEqual(host.applied_area, [])
+
+        controller._on_area_inference_succeeded(
+            document.id,
+            ["current"],
+            request.request_id,
+            9,
+        )
+        controller._on_area_inference_succeeded(
+            document.id,
+            ["duplicate-late"],
+            request.request_id,
+            9,
+        )
+
+        self.assertEqual(host.applied_area, [(document.id, ["current"])])
+        self.assertEqual(controller.area_infer_state.completed_count, 1)
+
+    def test_area_worker_cancelled_during_infer_emits_no_success(self) -> None:
+        request = AreaInferenceRequest(
+            document_id="cancel-area",
+            image_path="/tmp/cancel.png",
+            model_name="棉",
+            model_file="model.pth",
+        )
+        worker = AreaBatchInferenceWorker([request], settings=AppSettings())
+        succeeded: list[object] = []
+        finished: list[tuple[bool, int, int, int]] = []
+        worker.succeeded.connect(lambda *args: succeeded.append(args))
+        worker.finished.connect(lambda *args: finished.append(args))
+
+        class Session:
+            def close(self) -> None:
+                return
+
+        class Result:
+            instances = ["late"]
+
+        def infer(**_kwargs):
+            worker.cancel()
+            return Result()
+
+        with patch("fdm.ui.area_inference_worker.AreaInferenceService.create_batch_session", return_value=Session()), patch(
+            "fdm.ui.area_inference_worker.AreaInferenceService.infer_image",
+            side_effect=infer,
+        ):
+            worker.run()
+
+        self.assertEqual(succeeded, [])
+        self.assertEqual(finished, [(True, 0, 0, 0)])
+
+    def test_cancel_preserves_each_same_path_project_document_by_request_id(self) -> None:
+        host = _BackgroundHost()
+        controller = BackgroundTaskController(host, ThreadTaskManager(parent=_app()))
+        first = ImageDocument(id="same-source-a", path="/tmp/shared.png", image_size=(20, 10))
+        second = ImageDocument(id="same-source-b", path="/tmp/shared.png", image_size=(20, 10))
+        first.initialize_runtime_state()
+        second.initialize_runtime_state()
+        first_request = ImageLoadRequest(path=first.path, document=first, generation=7)
+        second_request = ImageLoadRequest(path=second.path, document=second, generation=7)
+        controller._load_state = BatchLoadState(  # noqa: SLF001
+            context_label="打开项目",
+            total=2,
+            pending_requests={
+                first_request.request_id: first_request,
+                second_request.request_id: second_request,
+            },
+            generation=7,
+        )
+        image = QImage(20, 10, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+
+        controller._on_batch_load_loaded(first_request, image, generation=7)  # noqa: SLF001
+        controller._on_batch_load_finished(True, 1, 0, 0, generation=7)  # noqa: SLF001
+
+        self.assertEqual(host.loaded, [first.path])
+        self.assertEqual(host.unresolved_requests, [(second.id, "加载已取消")])
+
     def test_batch_load_controller_closes_progress_and_preserves_summary(self) -> None:
         with TemporaryDirectory() as tmp:
             image_path = Path(tmp) / "image.png"
@@ -380,6 +502,7 @@ class BackgroundTaskControllerTests(unittest.TestCase):
 
         controller.shutdown_all(document_ids=["doc-1"], commit_document_ids=["doc-1"])
 
+        _spin_until(lambda: controller.worker("prompt_segmentation") is None)
         self.assertIsNone(controller.worker("prompt_segmentation"))
         self.assertIsNone(controller.worker("fiber_quick_geometry"))
         self.assertIsNone(controller.worker("reference_instance"))
@@ -432,6 +555,56 @@ class PreviewAnalysisTaskControllerTests(unittest.TestCase):
         self.assertEqual(finalize_signal.emitted, ["emit"])
         self.assertTrue(controller.finalizing)
         self.assertEqual(host.dialog.busy, [(True, "正在完成景深合成，请稍候…", True)])
+
+    def test_preview_analysis_waits_for_worker_ack_before_requesting_next_frame(self) -> None:
+        host = _PreviewHost()
+        manager = ThreadTaskManager(parent=_app())
+        controller = PreviewAnalysisTaskController(host, manager, parent=_app())
+        submitted = _FakeSignal()
+        worker = type(
+            "Worker",
+            (),
+            {"frameSubmittedWithId": submitted},
+        )()
+        controller.mode = "focus_stack"
+        controller.dialog = host.dialog
+        controller.worker = worker
+        controller.request_id = 4
+        controller.request_pending = True
+
+        image = QImage(16, 12, QImage.Format.Format_RGB32)
+        image.fill(QColor("#FFFFFF"))
+        controller.on_frame_ready(4, image)
+        controller.request_frame()
+
+        self.assertTrue(controller.analysis_pending)
+        self.assertEqual(len(submitted.emitted), 1)
+        self.assertEqual(host.frame_requests, [])
+
+        controller.on_frame_processed(4)
+        controller.request_frame()
+
+        self.assertFalse(controller.analysis_pending)
+        self.assertEqual(host.frame_requests, [5])
+
+    def test_preview_analysis_watchdog_releases_stuck_capture_request(self) -> None:
+        host = _PreviewHost()
+        manager = ThreadTaskManager(parent=_app())
+        controller = PreviewAnalysisTaskController(
+            host,
+            manager,
+            parent=_app(),
+            frame_watchdog_ms=10,
+        )
+        controller.mode = "focus_stack"
+        controller.dialog = host.dialog
+        controller.worker = object()
+
+        controller.request_frame()
+        _spin_until(lambda: not controller.request_pending)
+
+        self.assertFalse(controller.request_pending)
+        self.assertIn("超时", host.status_messages[-1])
 
     def test_preview_analysis_cancel_while_finalizing_calls_worker_cancel(self) -> None:
         host = _PreviewHost()

@@ -1,5 +1,7 @@
 /.tmp/
 /.pytest_cache/
+/build/
+/dist/
 *.egg-info/
 .DS_Store
 __pycache__/

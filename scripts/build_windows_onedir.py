@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import os
 import shutil
 import subprocess
@@ -11,6 +12,8 @@ from build_support import (
     PACKAGED_AREA_MODEL_FILENAMES,
     PACKAGED_SEGMENT_ANYTHING_DIRS,
     PACKAGED_SEGMENT_ANYTHING_FILENAMES,
+    check_runtime_profile,
+    write_release_manifest,
     write_installer_version_include,
 )
 
@@ -54,8 +57,50 @@ def check_area_model_runtime_assets(root: Path) -> list[str]:
     return missing
 
 
-def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
-    root = Path(__file__).resolve().parents[1]
+def run_packaged_self_check(app_dir: Path) -> list[str]:
+    executable = app_dir / "FiberDiameterMeasurement.exe"
+    try:
+        completed = subprocess.run(
+            [str(executable), "--self-check", "--json"],
+            cwd=app_dir,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            capture_output=True,
+            timeout=600,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return [f"unable to execute packaged self-check: {exc}"]
+    try:
+        payload = json.loads(completed.stdout.strip())
+    except (json.JSONDecodeError, TypeError, ValueError) as exc:
+        return [
+            f"packaged self-check did not return JSON (rc={completed.returncode}): {exc}; "
+            f"stderr={completed.stderr[-1000:]}"
+        ]
+    if not isinstance(payload, dict):
+        return ["packaged self-check JSON root must be an object"]
+    errors_payload = payload.get("errors", [])
+    if not isinstance(errors_payload, list) or any(not isinstance(item, str) for item in errors_payload):
+        return ["packaged self-check errors field must be a list of strings"]
+    errors = [item for item in errors_payload if item]
+    if errors:
+        return errors
+    if completed.returncode != 0 or payload.get("ok") is not True:
+        return errors or [f"packaged self-check failed with exit code {completed.returncode}"]
+    return []
+
+
+def build(
+    clean: bool,
+    *,
+    console: bool,
+    bootloader_debug: bool,
+    profile: str = "full",
+    root: Path | None = None,
+) -> int:
+    root = root or Path(__file__).resolve().parents[1]
     spec_path = root / "packaging" / "pyinstaller" / "fdm_onedir.spec"
     dist_path = root / "dist" / "windows"
     work_path = root / "build" / "pyinstaller"
@@ -74,36 +119,51 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
         )
         return 1
 
-    missing_area_dependencies = check_area_runtime_dependencies()
-    if missing_area_dependencies:
+    try:
+        profile_check = check_runtime_profile(root, profile)
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"Invalid runtime asset profile {profile!r}: {exc}", file=sys.stderr)
+        return 1
+    if profile_check.missing_files:
         print(
-            "Warning: the area auto-recognition worker may be incomplete because these packages are missing: "
-            + ", ".join(missing_area_dependencies),
+            f"Runtime profile {profile!r} is incomplete. Missing files:\n  "
+            + "\n  ".join(profile_check.missing_files),
             file=sys.stderr,
         )
+        return 1
+    if profile_check.missing_python_modules:
         print(
-            "If you need area auto-recognition in the packaged app, install them before building.",
+            f"Runtime profile {profile!r} is missing build dependencies: "
+            + ", ".join(profile_check.missing_python_modules),
             file=sys.stderr,
         )
-
-    missing_magic_assets = check_magic_segment_runtime_assets(root)
-    if missing_magic_assets:
+        return 1
+    if profile_check.hash_mismatches:
         print(
-            "Warning: the magic segmentation tool may be unavailable because these runtime assets are missing: "
-            + ", ".join(missing_magic_assets),
+            f"Runtime profile {profile!r} contains files with unexpected hashes:\n  "
+            + "\n  ".join(profile_check.hash_mismatches),
             file=sys.stderr,
         )
-    missing_area_assets = check_area_model_runtime_assets(root)
-    if missing_area_assets:
+        return 1
+    if profile_check.metadata_errors:
         print(
-            "Warning: area auto-recognition default weights are incomplete and these files will be missing from the package: "
-            + ", ".join(missing_area_assets),
+            f"Runtime profile {profile!r} has incomplete or invalid asset metadata:\n  "
+            + "\n  ".join(profile_check.metadata_errors),
             file=sys.stderr,
         )
+        return 1
 
     if clean:
-        shutil.rmtree(dist_path, ignore_errors=True)
-        shutil.rmtree(work_path, ignore_errors=True)
+        for stale_path in (dist_path, work_path):
+            try:
+                if stale_path.exists():
+                    shutil.rmtree(stale_path)
+            except OSError as exc:
+                print(f"Unable to remove stale build output {stale_path}: {exc}", file=sys.stderr)
+                return 1
+            if stale_path.exists():
+                print(f"Stale build output still exists after cleanup: {stale_path}", file=sys.stderr)
+                return 1
 
     dist_path.mkdir(parents=True, exist_ok=True)
     work_path.mkdir(parents=True, exist_ok=True)
@@ -127,16 +187,48 @@ def build(clean: bool, *, console: bool, bootloader_debug: bool) -> int:
     env = os.environ.copy()
     env["FDM_PYINSTALLER_CONSOLE"] = "1" if console else "0"
     env["FDM_PYINSTALLER_BOOTLOADER_DEBUG"] = "1" if bootloader_debug else "0"
-    subprocess.run(command, cwd=root, check=True, env=env)
+    env["FDM_BUILD_PROFILE"] = profile
+    try:
+        subprocess.run(command, cwd=root, check=True, env=env)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        print(f"PyInstaller build failed: {exc}", file=sys.stderr)
+        return 1
 
     app_dir = dist_path / "FiberDiameterMeasurement"
+    missing_outputs = [
+        path.name
+        for path in (
+            app_dir / "FiberDiameterMeasurement.exe",
+            app_dir / "FiberAreaWorker.exe",
+            app_dir / "runtime_assets.toml",
+        )
+        if not path.is_file()
+    ]
+    if missing_outputs:
+        print("PyInstaller completed without required outputs: " + ", ".join(missing_outputs), file=sys.stderr)
+        return 1
+    manifest_path = write_release_manifest(
+        app_dir,
+        root,
+        profile=profile,
+        clean_build=clean,
+    )
+    self_check_errors = run_packaged_self_check(app_dir)
+    if self_check_errors:
+        print(
+            "Packaged runtime self-check failed:\n  " + "\n  ".join(self_check_errors),
+            file=sys.stderr,
+        )
+        return 1
     print("\nBuild completed.")
     print(f"Output directory: {app_dir}")
     print(f"Console mode: {'on' if console else 'off'}")
     print(f"Bootloader debug: {'on' if bootloader_debug else 'off'}")
+    print(f"Runtime profile: {profile}")
     print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
     print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
     print(f"Runtime assets: {app_dir / 'runtime'}")
+    print(f"Release manifest: {manifest_path}")
     print(f"Installer version include: {installer_version_file}")
     print("Use this directory as the source folder for your Inno Setup installer.")
     return 0
@@ -148,6 +240,12 @@ def main() -> int:
         "--no-clean",
         action="store_true",
         help="Keep the existing dist/windows and build/pyinstaller contents before building.",
+    )
+    parser.add_argument(
+        "--profile",
+        choices=("core", "full"),
+        default="full",
+        help="Runtime asset profile. Formal installers require a clean full-profile build.",
     )
     parser.add_argument(
         "--console",
@@ -164,6 +262,7 @@ def main() -> int:
         clean=not args.no_clean,
         console=args.console,
         bootloader_debug=args.bootloader_debug,
+        profile=args.profile,
     )
 
 

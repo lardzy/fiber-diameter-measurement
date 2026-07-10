@@ -19,6 +19,9 @@ from fdm.services.preview_analysis import (
 
 class FocusStackSessionWorker(QObject):
     frameSubmitted = Signal(object)
+    frameSubmittedWithId = Signal(int, object)
+    frameProcessed = Signal(int)
+    resourceLimitReached = Signal(str)
     finalizeRequested = Signal()
     cancelRequested = Signal()
     previewUpdated = Signal(object)
@@ -40,11 +43,26 @@ class FocusStackSessionWorker(QObject):
         )
         self._cancel_requested = Event()
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
+        self.frameSubmittedWithId.connect(self.add_frame_with_id, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def add_frame(self, image: QImage) -> None:
+        self._process_frame(image, request_id=None)
+
+    @Slot(int, object)
+    def add_frame_with_id(self, request_id: int, image: QImage) -> None:
+        self._process_frame(image, request_id=request_id)
+
+    def _process_frame(self, image: QImage, *, request_id: int | None) -> None:
+        try:
+            self._process_frame_inner(image)
+        finally:
+            if request_id is not None:
+                self.frameProcessed.emit(request_id)
+
+    def _process_frame_inner(self, image: QImage) -> None:
         if self._is_cancelled() or not isinstance(image, QImage) or image.isNull():
             return
         started_at = perf_counter()
@@ -67,6 +85,8 @@ class FocusStackSessionWorker(QObject):
             ),
         )
         self.previewUpdated.emit(report)
+        if report.limit_reached:
+            self.resourceLimitReached.emit(report.limit_reason)
 
     @Slot()
     def finalize(self) -> None:
@@ -93,6 +113,9 @@ class FocusStackSessionWorker(QObject):
 
 class MapBuildSessionWorker(QObject):
     frameSubmitted = Signal(object)
+    frameSubmittedWithId = Signal(int, object)
+    frameProcessed = Signal(int)
+    resourceLimitReached = Signal(str)
     finalizeRequested = Signal()
     cancelRequested = Signal()
     previewUpdated = Signal(object)
@@ -104,11 +127,26 @@ class MapBuildSessionWorker(QObject):
         self._analyzer = MapBuildAnalyzer(device_id=device_id, device_name=device_name)
         self._cancel_requested = Event()
         self.frameSubmitted.connect(self.add_frame, Qt.ConnectionType.QueuedConnection)
+        self.frameSubmittedWithId.connect(self.add_frame_with_id, Qt.ConnectionType.QueuedConnection)
         self.finalizeRequested.connect(self.finalize, Qt.ConnectionType.QueuedConnection)
         self.cancelRequested.connect(self.cancel, Qt.ConnectionType.QueuedConnection)
 
     @Slot(object)
     def add_frame(self, image: QImage) -> None:
+        self._process_frame(image, request_id=None)
+
+    @Slot(int, object)
+    def add_frame_with_id(self, request_id: int, image: QImage) -> None:
+        self._process_frame(image, request_id=request_id)
+
+    def _process_frame(self, image: QImage, *, request_id: int | None) -> None:
+        try:
+            self._process_frame_inner(image)
+        finally:
+            if request_id is not None:
+                self.frameProcessed.emit(request_id)
+
+    def _process_frame_inner(self, image: QImage) -> None:
         if self._is_cancelled() or not isinstance(image, QImage) or image.isNull():
             return
         started_at = perf_counter()
@@ -142,6 +180,8 @@ class MapBuildSessionWorker(QObject):
             ),
         )
         self.previewUpdated.emit(report)
+        if report.limit_reached:
+            self.resourceLimitReached.emit(report.limit_reason)
 
     @Slot()
     def finalize(self) -> None:

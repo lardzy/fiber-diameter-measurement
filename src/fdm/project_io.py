@@ -2,9 +2,49 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path, PureWindowsPath
+import copy
 import json
+import math
 
-from fdm.models import ImageDocument, ProjectState
+from fdm.atomic_io import atomic_write_json
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, ProjectState
+
+
+_NONFINITE_RAW_VALUE_KEY = "__fdm_nonfinite_float_v1__"
+
+
+def _encode_raw_payload_value(value: object) -> object:
+    """Encode legacy non-finite numbers without emitting invalid JSON tokens."""
+
+    if isinstance(value, float) and not math.isfinite(value):
+        if math.isnan(value):
+            label = "nan"
+        elif value > 0:
+            label = "+inf"
+        else:
+            label = "-inf"
+        return {_NONFINITE_RAW_VALUE_KEY: label}
+    if isinstance(value, dict):
+        return {str(key): _encode_raw_payload_value(item) for key, item in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [_encode_raw_payload_value(item) for item in value]
+    return value
+
+
+def _decode_raw_payload_value(value: object) -> object:
+    if isinstance(value, dict):
+        if set(value) == {_NONFINITE_RAW_VALUE_KEY}:
+            label = value.get(_NONFINITE_RAW_VALUE_KEY)
+            if label == "nan":
+                return float("nan")
+            if label == "+inf":
+                return float("inf")
+            if label == "-inf":
+                return float("-inf")
+        return {str(key): _decode_raw_payload_value(item) for key, item in value.items()}
+    if isinstance(value, list):
+        return [_decode_raw_payload_value(item) for item in value]
+    return value
 
 
 @dataclass(frozen=True, slots=True)
@@ -131,22 +171,161 @@ class ProjectIO:
     """Read and write lightweight project files."""
 
     @staticmethod
-    def save(project: ProjectState, path: str | Path) -> Path:
+    def save(
+        project: ProjectState,
+        path: str | Path,
+        *,
+        preserve_path_document_ids: set[str] | None = None,
+    ) -> Path:
         output_path = Path(path)
         output_path.parent.mkdir(parents=True, exist_ok=True)
         payload = project.to_dict()
         project_dir = output_path.expanduser().resolve().parent
+        preserved_ids = set(preserve_path_document_ids or set())
         for document_payload, document in zip(payload.get("documents", []), project.documents):
             if isinstance(document_payload, dict):
+                if document.id in preserved_ids:
+                    continue
                 _apply_document_save_path(document_payload, document, project_dir)
-        output_path.write_text(
-            json.dumps(payload, ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        serialized_issues = _serialize_load_issues(project)
+        if serialized_issues:
+            payload["load_issues"] = serialized_issues
+        atomic_write_json(output_path, payload, ensure_ascii=False, indent=2)
         return output_path
 
     @staticmethod
     def load(path: str | Path) -> ProjectState:
         input_path = Path(path)
         payload = json.loads(input_path.read_text(encoding="utf-8"))
-        return ProjectState.from_dict(payload)
+        sanitized_payload, issues = _sanitize_invalid_calibration_payloads(payload)
+        project = ProjectState.from_dict(sanitized_payload)
+        project.load_issues = issues
+        issues_by_document = {
+            str(issue.get("document_id")): str(issue.get("message", "标尺无效"))
+            for issue in issues
+            if issue.get("kind") == "document_calibration"
+        }
+        for document in project.documents:
+            document.calibration_load_error = issues_by_document.get(document.id)
+            matching_issue = next(
+                (
+                    issue
+                    for issue in issues
+                    if issue.get("kind") == "document_calibration"
+                    and str(issue.get("document_id", "")) == document.id
+                ),
+                None,
+            )
+            document.calibration_load_payload = (
+                copy.deepcopy(matching_issue.get("raw_payload"))
+                if isinstance(matching_issue, dict) and isinstance(matching_issue.get("raw_payload"), dict)
+                else None
+            )
+        return project
+
+
+def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[dict]]:
+    if not isinstance(payload, dict):
+        raise ValueError("项目文件根节点必须是 JSON 对象")
+    sanitized = copy.deepcopy(payload)
+    issues = _deserialize_load_issues(sanitized.pop("load_issues", []))
+
+    project_default = sanitized.get("project_default_calibration")
+    if isinstance(project_default, dict):
+        try:
+            Calibration.from_dict(project_default)
+        except (KeyError, TypeError, ValueError) as exc:
+            issues.append(
+                {
+                    "kind": "project_default_calibration",
+                    "message": str(exc),
+                    "raw_payload": copy.deepcopy(project_default),
+                }
+            )
+            sanitized["project_default_calibration"] = None
+
+    documents = sanitized.get("documents", [])
+    if isinstance(documents, list):
+        for document in documents:
+            if not isinstance(document, dict) or not isinstance(document.get("calibration"), dict):
+                continue
+            raw_calibration = document["calibration"]
+            try:
+                Calibration.from_dict(raw_calibration)
+            except (KeyError, TypeError, ValueError) as exc:
+                issues.append(
+                    {
+                        "kind": "document_calibration",
+                        "document_id": str(document.get("id", "")),
+                        "message": str(exc),
+                        "raw_payload": copy.deepcopy(raw_calibration),
+                    }
+                )
+                document["calibration"] = None
+
+    presets = sanitized.get("calibration_presets", [])
+    if isinstance(presets, list):
+        valid_presets: list[object] = []
+        for index, preset in enumerate(presets):
+            if not isinstance(preset, dict):
+                valid_presets.append(preset)
+                continue
+            try:
+                CalibrationPreset.from_dict(preset)
+            except (KeyError, TypeError, ValueError) as exc:
+                issues.append(
+                    {
+                        "kind": "calibration_preset",
+                        "index": index,
+                        "message": str(exc),
+                        "raw_payload": copy.deepcopy(preset),
+                    }
+                )
+            else:
+                valid_presets.append(preset)
+        sanitized["calibration_presets"] = valid_presets
+    return sanitized, issues
+
+
+def _serialize_load_issues(project: ProjectState) -> list[dict]:
+    serialized: list[dict] = []
+    for issue in project.load_issues:
+        kind = str(issue.get("kind", ""))
+        if kind in {"document_calibration", "sidecar_calibration"}:
+            document = project.get_document(str(issue.get("document_id", "")))
+            if document is not None and document.calibration is not None:
+                continue
+        if kind == "project_default_calibration" and project.project_default_calibration is not None:
+            continue
+        item = {
+            str(key): copy.deepcopy(value)
+            for key, value in issue.items()
+            if key != "raw_payload"
+        }
+        if "raw_payload" in issue:
+            item["raw_payload_json"] = json.dumps(
+                _encode_raw_payload_value(issue["raw_payload"]),
+                ensure_ascii=False,
+                allow_nan=False,
+                separators=(",", ":"),
+            )
+        serialized.append(item)
+    return serialized
+
+
+def _deserialize_load_issues(payload: object) -> list[dict]:
+    if not isinstance(payload, list):
+        return []
+    issues: list[dict] = []
+    for item in payload:
+        if not isinstance(item, dict):
+            continue
+        issue = copy.deepcopy(item)
+        raw_json = issue.pop("raw_payload_json", None)
+        if isinstance(raw_json, str):
+            try:
+                issue["raw_payload"] = _decode_raw_payload_value(json.loads(raw_json))
+            except (TypeError, ValueError):
+                issue["raw_payload_text"] = raw_json
+        issues.append(issue)
+    return issues

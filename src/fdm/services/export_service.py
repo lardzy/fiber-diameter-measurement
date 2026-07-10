@@ -1,12 +1,16 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from dataclasses import dataclass
+from collections.abc import Iterator, MutableMapping
+from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
 import csv
 import json
 import math
+import os
+import tempfile
+import unicodedata
 from typing import Callable
 import zipfile
 from xml.sax.saxutils import escape
@@ -15,7 +19,6 @@ from fdm.geometry import area_rings_hole_area
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
 from fdm.services.raw_record_export import (
-    RawRecordTemplateExportError,
     raw_record_output_suffix,
     write_raw_record_template,
 )
@@ -81,23 +84,141 @@ class ExportSelection:
         )
 
 
-@dataclass(slots=True)
+@dataclass(frozen=True, slots=True)
+class ExportOptionsSnapshot:
+    include_measurement_overlay: bool = False
+    include_scale_overlay: bool = False
+    include_combined_overlay: bool = False
+    include_scale_json: bool = False
+    include_excel: bool = False
+    include_csv: bool = False
+    scope: str = ExportScope.CURRENT
+    render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
+    raw_record_template_path: str = ""
+
+    @classmethod
+    def from_selection(cls, selection: ExportSelection) -> "ExportOptionsSnapshot":
+        return cls(
+            include_measurement_overlay=bool(selection.include_measurement_overlay),
+            include_scale_overlay=bool(selection.include_scale_overlay),
+            include_combined_overlay=bool(selection.include_combined_overlay),
+            include_scale_json=bool(selection.include_scale_json),
+            include_excel=bool(selection.include_excel),
+            include_csv=bool(selection.include_csv),
+            scope=str(selection.scope),
+            render_mode=str(selection.render_mode),
+            raw_record_template_path=str(selection.raw_record_template_path or ""),
+        )
+
+    def to_selection(self) -> ExportSelection:
+        return ExportSelection(
+            include_measurement_overlay=self.include_measurement_overlay,
+            include_scale_overlay=self.include_scale_overlay,
+            include_combined_overlay=self.include_combined_overlay,
+            include_scale_json=self.include_scale_json,
+            include_excel=self.include_excel,
+            include_csv=self.include_csv,
+            scope=self.scope,
+            render_mode=self.render_mode,
+            raw_record_template_path=self.raw_record_template_path,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ExportRenderContext:
+    document_id: str
+    render_mode: str
+    focus_index: int = 0
+    origin_x: int = 0
+    origin_y: int = 0
+    viewport_width: int = 0
+    viewport_height: int = 0
+
+
+@dataclass(frozen=True, slots=True)
 class PlannedExportFile:
     kind: str
     filename: str
     document_id: str | None = None
 
 
+@dataclass(frozen=True, slots=True)
+class ExportPlan:
+    files: tuple[PlannedExportFile, ...]
+    options: ExportOptionsSnapshot = field(default_factory=ExportOptionsSnapshot)
+    render_contexts: tuple[ExportRenderContext, ...] = ()
+    protected_source_paths: tuple[str, ...] = ()
+
+    def __iter__(self):
+        return iter(self.files)
+
+    def __len__(self) -> int:
+        return len(self.files)
+
+    def __getitem__(self, index):
+        return self.files[index]
+
+
+@dataclass(frozen=True, slots=True)
+class RenderedExport:
+    path: Path
+    width: int
+    height: int
+
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "path", Path(self.path))
+        width = int(self.width)
+        height = int(self.height)
+        if width <= 0 or height <= 0:
+            raise ValueError("RenderedExport width/height 必须为正整数。")
+        object.__setattr__(self, "width", width)
+        object.__setattr__(self, "height", height)
+
+
+@dataclass(slots=True)
+class ExportResult(MutableMapping[str, object]):
+    success: bool
+    plan: ExportPlan
+    outputs: dict[str, object]
+    message: str = ""
+
+    def __getitem__(self, key: str) -> object:
+        return self.outputs[key]
+
+    def __setitem__(self, key: str, value: object) -> None:
+        self.outputs[key] = value
+
+    def __delitem__(self, key: str) -> None:
+        del self.outputs[key]
+
+    def __iter__(self) -> Iterator[str]:
+        return iter(self.outputs)
+
+    def __len__(self) -> int:
+        return len(self.outputs)
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 class ExportService:
-    def planned_outputs(
+    def build_plan(
         self,
         documents: list[ImageDocument],
         selection: ExportSelection | None = None,
-    ) -> list[PlannedExportFile]:
+        *,
+        render_contexts: dict[str, ExportRenderContext] | None = None,
+        protected_source_paths: list[str | Path] | tuple[str | Path, ...] | None = None,
+    ) -> ExportPlan:
         selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
+        options = ExportOptionsSnapshot.from_selection(selection)
+        selection = options.to_selection()
         target_documents = list(documents)
         if not selection.any_selected() or not target_documents:
-            return []
+            return ExportPlan(files=(), options=options)
+
+        supplied_contexts = dict(render_contexts or {})
+        frozen_contexts: list[ExportRenderContext] = []
 
         planned: list[PlannedExportFile] = []
         if selection.include_csv:
@@ -114,6 +235,59 @@ class ExportService:
         render_suffix = self._render_mode_suffix(selection.render_mode)
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
+            if document.is_digital_slide() and any(
+                (
+                    selection.include_measurement_overlay,
+                    selection.include_scale_overlay,
+                    selection.include_combined_overlay,
+                )
+            ):
+                if selection.render_mode != ExportImageRenderMode.CURRENT_VIEWPORT:
+                    raise ValueError(
+                        "数字切片仅支持导出当前焦层的原始 viewport 像素；"
+                        "整张切片和屏显整图模式已明确禁用。"
+                    )
+                slide_meta = (
+                    document.metadata.get("digital_slide", {})
+                    if isinstance(document.metadata.get("digital_slide"), dict)
+                    else {}
+                )
+                context = supplied_contexts.get(document.id)
+                if context is None:
+                    origin = slide_meta.get("viewport_origin", [0, 0])
+                    try:
+                        origin_x = int(round(float(origin[0])))
+                        origin_y = int(round(float(origin[1])))
+                    except (IndexError, TypeError, ValueError):
+                        origin_x = origin_y = 0
+                    try:
+                        focus_index = int(slide_meta.get("focus_index", 0) or 0)
+                    except (TypeError, ValueError):
+                        focus_index = 0
+                    viewport_size = slide_meta.get("viewport_size", [0, 0])
+                    try:
+                        viewport_width = max(0, int(viewport_size[0]))
+                        viewport_height = max(0, int(viewport_size[1]))
+                    except (IndexError, TypeError, ValueError):
+                        viewport_width = viewport_height = 0
+                    context = ExportRenderContext(
+                        document_id=document.id,
+                        render_mode=selection.render_mode,
+                        focus_index=focus_index,
+                        origin_x=origin_x,
+                        origin_y=origin_y,
+                        viewport_width=viewport_width,
+                        viewport_height=viewport_height,
+                    )
+                if context.document_id != document.id or context.render_mode != selection.render_mode:
+                    raise ValueError("数字切片导出上下文与文档或渲染模式不一致。")
+                focus_index = int(context.focus_index)
+                origin_x = int(context.origin_x)
+                origin_y = int(context.origin_y)
+                frozen_contexts.append(context)
+                render_suffix = f"viewport_f{focus_index}_x{origin_x}_y{origin_y}"
+            else:
+                render_suffix = self._render_mode_suffix(selection.render_mode)
             if selection.include_measurement_overlay:
                 planned.append(
                     PlannedExportFile(
@@ -140,7 +314,26 @@ class ExportService:
                 )
             if selection.include_scale_json and document.calibration is not None:
                 planned.append(PlannedExportFile("scale_json", f"{base_name}_scale.json", document.id))
-        return planned
+        protected_tokens = tuple(
+            dict.fromkeys(
+                str(Path(token).expanduser().resolve())
+                for token in (protected_source_paths or ())
+                if str(token or "").strip()
+            )
+        )
+        return ExportPlan(
+            files=tuple(self._deduplicate_planned_files(planned)),
+            options=options,
+            render_contexts=tuple(frozen_contexts),
+            protected_source_paths=protected_tokens,
+        )
+
+    def planned_outputs(
+        self,
+        documents: list[ImageDocument],
+        selection: ExportSelection | None = None,
+    ) -> list[PlannedExportFile]:
+        return list(self.build_plan(documents, selection).files)
 
     def export_project(
         self,
@@ -150,21 +343,46 @@ class ExportService:
         selection: ExportSelection | None = None,
         documents: list[ImageDocument] | None = None,
         overlay_renderer=None,
+        export_plan: ExportPlan | None = None,
         single_output_path: str | Path | None = None,
         raw_record_template: RawRecordTemplate | None = None,
         category_order_document: ImageDocument | None = None,
         progress_callback: Callable[[int, int, str, Path | None], None] | None = None,
-    ) -> dict[str, object]:
+    ) -> ExportResult:
         selection = selection or ExportSelection.all_enabled(scope=ExportScope.ALL_OPEN)
-        target_documents = list(documents or project.documents)
-        if not selection.any_selected() or not target_documents:
-            return {}
+        target_documents = list(project.documents if documents is None else documents)
+        active_plan = export_plan or self.build_plan(target_documents, selection)
+        execution_selection = active_plan.options.to_selection()
+        if not execution_selection.any_selected() or not target_documents:
+            return ExportResult(
+                success=False,
+                plan=active_plan,
+                outputs={},
+                message="没有可执行的导出目标。",
+            )
         output_path = Path(output_dir)
-        planned_outputs = [
-            item
-            for item in self.planned_outputs(target_documents, selection)
-            if overlay_renderer is not None or item.kind not in {"measurement_overlay", "scale_overlay", "combined_overlay"}
-        ]
+        self._validate_export_plan(active_plan, target_documents)
+        planned_outputs = list(active_plan.files)
+        overlay_kinds = {"measurement_overlay", "scale_overlay", "combined_overlay"}
+        if overlay_renderer is None and any(item.kind in overlay_kinds for item in planned_outputs):
+            raise ValueError("导出计划包含叠加图，但未提供叠加图 renderer。")
+        expected_template_path = active_plan.options.raw_record_template_path.strip()
+        actual_template_path = str(raw_record_template.path or "").strip() if raw_record_template is not None else ""
+        if expected_template_path:
+            if raw_record_template is None:
+                raise ValueError("导出计划要求原始记录模板，但执行时未提供该模板。")
+            if not self._same_path_token(expected_template_path, actual_template_path):
+                raise ValueError("执行时的原始记录模板与不可变导出计划不一致。")
+        elif raw_record_template is not None:
+            raise ValueError("执行时提供了导出计划之外的原始记录模板。")
+        planned_lookup = {(item.kind, item.document_id): item for item in planned_outputs}
+
+        def planned_filename(kind: str, document_id: str | None = None) -> str:
+            item = planned_lookup.get((kind, document_id))
+            if item is None:
+                raise ValueError(f"导出计划缺少目标: {kind}/{document_id or '-'}")
+            return item.filename
+
         single_output_target = Path(single_output_path) if single_output_path is not None else None
         if single_output_target is not None and len(planned_outputs) != 1:
             raise ValueError("single_output_path can only be used when exactly one export file is planned.")
@@ -174,6 +392,14 @@ class ExportService:
         else:
             output_path.mkdir(parents=True, exist_ok=True)
         single_plan = planned_outputs[0] if single_output_target is not None else None
+        self._assert_output_paths_safe(
+            output_path,
+            planned_outputs,
+            target_documents,
+            single_output_target=single_output_target,
+            raw_record_template=raw_record_template,
+            protected_source_paths=active_plan.protected_source_paths,
+        )
 
         outputs: dict[str, object] = {}
         image_rows = self.build_image_summary_rows(target_documents)
@@ -190,25 +416,25 @@ class ExportService:
             nonlocal completed_steps
             completed_steps += 1
 
-        if selection.include_csv:
+        if execution_selection.include_csv:
             csv_outputs = {
                 "image_summary_csv": self._resolved_output_path(
                     output_path,
-                    CSV_IMAGE_SUMMARY_FILENAME,
+                    planned_filename("image_summary_csv"),
                     kind="image_summary_csv",
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 ),
                 "fiber_details_csv": self._resolved_output_path(
                     output_path,
-                    CSV_FIBER_DETAILS_FILENAME,
+                    planned_filename("fiber_details_csv"),
                     kind="fiber_details_csv",
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 ),
                 "measurement_details_csv": self._resolved_output_path(
                     output_path,
-                    CSV_MEASUREMENT_DETAILS_FILENAME,
+                    planned_filename("measurement_details_csv"),
                     kind="measurement_details_csv",
                     single_output_target=single_output_target,
                     single_plan=single_plan,
@@ -225,10 +451,10 @@ class ExportService:
             finish_step()
             outputs.update(csv_outputs)
 
-        if selection.include_excel:
+        if execution_selection.include_excel:
             xlsx_path = self._resolved_output_path(
                 output_path,
-                self._excel_export_filename(selection),
+                planned_filename("xlsx"),
                 kind="xlsx",
                 single_output_target=single_output_target,
                 single_plan=single_plan,
@@ -241,22 +467,13 @@ class ExportService:
                 SHEET_EXPORT_META: meta_rows,
             }
             if raw_record_template is not None:
-                try:
-                    xlsx_path = write_raw_record_template(
-                        raw_record_template,
-                        xlsx_path,
-                        documents=target_documents,
-                        measurement_rows=measurement_rows,
-                        category_order_document=category_order_document,
-                    )
-                except (FileNotFoundError, RawRecordTemplateExportError) as exc:
-                    fallback_path = self._raw_record_template_fallback_path(
-                        xlsx_path,
-                        single_output_target=single_output_target,
-                    )
-                    self._write_xlsx(fallback_path, workbook_sheets)
-                    xlsx_path = fallback_path
-                    outputs["_template_fallback_message"] = str(exc)
+                xlsx_path = write_raw_record_template(
+                    raw_record_template,
+                    xlsx_path,
+                    documents=target_documents,
+                    measurement_rows=measurement_rows,
+                    category_order_document=category_order_document,
+                )
             else:
                 self._write_xlsx(xlsx_path, workbook_sheets)
             finish_step()
@@ -266,69 +483,78 @@ class ExportService:
         scale_overlays: list[Path] = []
         combined_overlays: list[Path] = []
         scale_jsons: list[Path] = []
+        render_context_by_document = {
+            context.document_id: context
+            for context in active_plan.render_contexts
+        }
         for document in target_documents:
-            base_name = Path(document.path).stem or document.id
-            if selection.include_measurement_overlay and overlay_renderer is not None:
+            if execution_selection.include_measurement_overlay:
                 output_file = self._resolved_output_path(
                     output_path,
-                    f"{base_name}_measurements_{self._render_mode_suffix(selection.render_mode)}.png",
+                    planned_filename("measurement_overlay", document.id),
                     kind="measurement_overlay",
                     document_id=document.id,
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
                 begin_step(output_file)
-                overlay_renderer(
+                rendered = self._render_overlay_export(
+                    overlay_renderer,
                     document,
                     output_file,
                     include_measurements=True,
                     include_scale=False,
-                    render_mode=selection.render_mode,
+                    render_mode=active_plan.options.render_mode,
+                    render_context=render_context_by_document.get(document.id),
                 )
                 finish_step()
-                measurement_overlays.append(output_file)
-            if selection.include_scale_overlay and overlay_renderer is not None:
+                measurement_overlays.append(rendered.path)
+            if execution_selection.include_scale_overlay:
                 output_file = self._resolved_output_path(
                     output_path,
-                    f"{base_name}_scale_{self._render_mode_suffix(selection.render_mode)}.png",
+                    planned_filename("scale_overlay", document.id),
                     kind="scale_overlay",
                     document_id=document.id,
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
                 begin_step(output_file)
-                overlay_renderer(
+                rendered = self._render_overlay_export(
+                    overlay_renderer,
                     document,
                     output_file,
                     include_measurements=False,
                     include_scale=True,
-                    render_mode=selection.render_mode,
+                    render_mode=active_plan.options.render_mode,
+                    render_context=render_context_by_document.get(document.id),
                 )
                 finish_step()
-                scale_overlays.append(output_file)
-            if selection.include_combined_overlay and overlay_renderer is not None:
+                scale_overlays.append(rendered.path)
+            if execution_selection.include_combined_overlay:
                 output_file = self._resolved_output_path(
                     output_path,
-                    f"{base_name}_measurements_scale_{self._render_mode_suffix(selection.render_mode)}.png",
+                    planned_filename("combined_overlay", document.id),
                     kind="combined_overlay",
                     document_id=document.id,
                     single_output_target=single_output_target,
                     single_plan=single_plan,
                 )
                 begin_step(output_file)
-                overlay_renderer(
+                rendered = self._render_overlay_export(
+                    overlay_renderer,
                     document,
                     output_file,
                     include_measurements=True,
                     include_scale=True,
-                    render_mode=selection.render_mode,
+                    render_mode=active_plan.options.render_mode,
+                    render_context=render_context_by_document.get(document.id),
                 )
                 finish_step()
-                combined_overlays.append(output_file)
-            if selection.include_scale_json and document.calibration is not None:
+                combined_overlays.append(rendered.path)
+            if execution_selection.include_scale_json and document.calibration is not None:
                 output_file = self._resolved_output_path(
                     output_path,
-                    f"{base_name}_scale.json",
+                    planned_filename("scale_json", document.id),
                     kind="scale_json",
                     document_id=document.id,
                     single_output_target=single_output_target,
@@ -336,8 +562,10 @@ class ExportService:
                 )
                 begin_step(output_file)
                 exported = CalibrationSidecarIO.export_document(document, output_file)
-                if exported is not None:
-                    scale_jsons.append(exported)
+                if not exported:
+                    raise OSError(exported.message or f"无法导出比例尺 JSON：{output_file}")
+                if exported.path is not None:
+                    scale_jsons.append(exported.path)
                 finish_step()
 
         if measurement_overlays:
@@ -349,7 +577,171 @@ class ExportService:
         if scale_jsons:
             outputs["scale_jsons"] = scale_jsons
         self._report_progress(progress_callback, total_steps, total_steps, "导出完成", None)
-        return outputs
+        return ExportResult(
+            success=bool(outputs),
+            plan=active_plan,
+            outputs=outputs,
+            message="导出完成" if outputs else "未生成任何文件",
+        )
+
+    def _deduplicate_planned_files(
+        self,
+        planned: list[PlannedExportFile],
+    ) -> list[PlannedExportFile]:
+        groups: dict[str, list[int]] = {}
+        for index, item in enumerate(planned):
+            groups.setdefault(self._normalized_filename_key(item.filename), []).append(index)
+
+        resolved: list[PlannedExportFile | None] = [None] * len(planned)
+        used_keys = {
+            key
+            for key, indexes in groups.items()
+            if len(indexes) == 1
+        }
+        for key, indexes in groups.items():
+            if len(indexes) == 1:
+                item = planned[indexes[0]]
+                resolved[indexes[0]] = PlannedExportFile(item.kind, item.filename, item.document_id)
+                continue
+            for index in indexes:
+                item = planned[index]
+                token = str(item.document_id or "").strip()[:8]
+                if not token:
+                    raise ValueError(
+                        f"导出文件名冲突且目标缺少稳定 document_id：{item.filename}"
+                    )
+                path = Path(item.filename)
+                candidate = f"{path.stem}__{token}{path.suffix}"
+                if self._normalized_filename_key(candidate) in used_keys:
+                    raise ValueError(
+                        "追加 document_id 前 8 位后仍存在 NFC/casefold 文件名冲突，已拒绝导出。"
+                    )
+                used_keys.add(self._normalized_filename_key(candidate))
+                resolved[index] = PlannedExportFile(item.kind, candidate, item.document_id)
+        return [item for item in resolved if item is not None]
+
+    def _validate_export_plan(
+        self,
+        plan: ExportPlan,
+        documents: list[ImageDocument],
+    ) -> None:
+        context_by_document = {context.document_id: context for context in plan.render_contexts}
+        if len(context_by_document) != len(plan.render_contexts):
+            raise ValueError("导出计划包含重复的渲染上下文。")
+        expected_plan = self.build_plan(
+            documents,
+            plan.options.to_selection(),
+            render_contexts=context_by_document,
+            protected_source_paths=list(plan.protected_source_paths),
+        )
+        if expected_plan.files != plan.files or expected_plan.render_contexts != plan.render_contexts:
+            raise ValueError("导出计划与当前文档、文件名或冻结渲染参数不一致。")
+        actual_keys = [(item.kind, item.document_id) for item in plan.files]
+        if len(actual_keys) != len(set(actual_keys)):
+            raise ValueError("导出计划包含重复目标。")
+
+        filename_keys: set[str] = set()
+        for item in plan.files:
+            filename = str(item.filename or "").strip()
+            if not filename or filename in {".", ".."}:
+                raise ValueError("导出计划包含空文件名。")
+            if Path(filename).name != filename or "/" in filename or "\\" in filename:
+                raise ValueError(f"导出计划文件名必须是单一文件名: {filename}")
+            normalized_key = self._normalized_filename_key(filename)
+            if normalized_key in filename_keys:
+                raise ValueError("导出计划包含在 NFC/casefold 规则下冲突的文件名。")
+            filename_keys.add(normalized_key)
+
+    @staticmethod
+    def _same_path_token(left: str | Path, right: str | Path) -> bool:
+        try:
+            return Path(left).expanduser().resolve() == Path(right).expanduser().resolve()
+        except OSError:
+            return os.path.abspath(os.fspath(left)) == os.path.abspath(os.fspath(right))
+
+    def _assert_output_paths_safe(
+        self,
+        output_dir: Path,
+        planned_outputs: list[PlannedExportFile],
+        documents: list[ImageDocument],
+        *,
+        single_output_target: Path | None,
+        raw_record_template: RawRecordTemplate | None,
+        protected_source_paths: tuple[str, ...] = (),
+    ) -> None:
+        protected: list[Path] = [Path(path) for path in protected_source_paths]
+        for document in documents:
+            for token in (document.path, document.absolute_path):
+                if str(token or "").strip():
+                    protected.append(Path(str(token)).expanduser())
+            slide_meta = (
+                document.metadata.get("digital_slide", {})
+                if isinstance(document.metadata.get("digital_slide"), dict)
+                else {}
+            )
+            working_path = str(slide_meta.get("working_path", "") or "").strip()
+            if working_path:
+                protected.append(Path(working_path).expanduser())
+        if raw_record_template is not None and str(raw_record_template.path or "").strip():
+            protected.append(Path(raw_record_template.path).expanduser())
+
+        output_paths = (
+            [single_output_target]
+            if single_output_target is not None
+            else [output_dir / item.filename for item in planned_outputs]
+        )
+        for output_path in output_paths:
+            for protected_path in protected:
+                if self._same_path_token(output_path, protected_path):
+                    raise ValueError(
+                        f"导出目标与源图片、数字切片或模板路径相同，已拒绝覆盖：{output_path}"
+                    )
+
+    @staticmethod
+    def _normalized_filename_key(filename: str) -> str:
+        return unicodedata.normalize("NFC", str(filename)).casefold()
+
+    def _render_overlay_export(
+        self,
+        overlay_renderer,
+        document: ImageDocument,
+        output_path: Path,
+        *,
+        include_measurements: bool,
+        include_scale: bool,
+        render_mode: str,
+        render_context: ExportRenderContext | None,
+    ) -> RenderedExport:
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        file_descriptor, temporary_name = tempfile.mkstemp(
+            prefix=".fdm-render-",
+            suffix=output_path.suffix or ".png",
+            dir=output_path.parent,
+        )
+        os.close(file_descriptor)
+        temporary_path = Path(temporary_name)
+        try:
+            kwargs = {
+                "include_measurements": include_measurements,
+                "include_scale": include_scale,
+                "render_mode": render_mode,
+            }
+            if render_context is not None:
+                kwargs["render_context"] = render_context
+            result = overlay_renderer(document, temporary_path, **kwargs)
+            if not isinstance(result, RenderedExport):
+                raise TypeError("叠加图渲染器必须返回 RenderedExport(path, width, height)。")
+            rendered_path = result.path
+            if rendered_path.resolve() != temporary_path.resolve():
+                raise ValueError("叠加图渲染器必须写入服务提供的临时目标路径。")
+            if not rendered_path.is_file() or rendered_path.stat().st_size <= 0:
+                raise OSError(f"叠加图渲染未生成有效文件：{output_path}")
+            with rendered_path.open("rb") as stream:
+                os.fsync(stream.fileno())
+            os.replace(rendered_path, output_path)
+            return RenderedExport(path=output_path, width=result.width, height=result.height)
+        finally:
+            temporary_path.unlink(missing_ok=True)
 
     def _report_progress(
         self,
@@ -398,6 +790,8 @@ class ExportService:
                         ("单位", document.calibration.unit if document.calibration else "px"),
                         ("测量数量", len(document.measurements)),
                         ("线段数量", len(document.line_measurements())),
+                        ("折线数量", len(document.polyline_measurements())),
+                        ("长度测量数量", len(document.length_measurements())),
                         ("面积数量", len(document.area_measurements())),
                         ("纤维种类数量", len(document.fiber_groups)),
                         ("当前激活种类编号", active_group.number if active_group else None),
@@ -421,7 +815,7 @@ class ExportService:
                     for measurement_id in group.measurement_ids
                     if (
                         measurement_id in measurement_lookup
-                        and measurement_lookup[measurement_id].measurement_kind == "line"
+                        and measurement_lookup[measurement_id].measurement_kind in {"line", "polyline"}
                         and measurement_lookup[measurement_id].diameter_unit is not None
                     )
                 ]
@@ -509,7 +903,7 @@ class ExportService:
                             ("多边形点数", None),
                             ("多边形顶点JSON", ""),
                             ("折线点数", len(measurement.polyline_px)),
-                            ("折线顶点JSON", json.dumps(polyline_json, ensure_ascii=False)),
+                            ("折线顶点JSON", json.dumps(polyline_json, ensure_ascii=False, allow_nan=False)),
                             ("计数点X(px)", None),
                             ("计数点Y(px)", None),
                             ("面积(px²)", None),
@@ -547,7 +941,7 @@ class ExportService:
                             ("终点Y(px)", None),
                             ("像素直径(px)", None),
                             ("多边形点数", len(measurement.polygon_px)),
-                            ("多边形顶点JSON", json.dumps(polygon_json, ensure_ascii=False)),
+                            ("多边形顶点JSON", json.dumps(polygon_json, ensure_ascii=False, allow_nan=False)),
                             ("折线点数", None),
                             ("折线顶点JSON", ""),
                             ("计数点X(px)", None),
@@ -613,16 +1007,6 @@ class ExportService:
             template_stem = template_path.stem.strip() or Path(XLSX_EXPORT_FILENAME).stem
             return f"{template_stem}{output_suffix}"
         return XLSX_EXPORT_FILENAME
-
-    def _raw_record_template_fallback_path(
-        self,
-        path: Path,
-        *,
-        single_output_target: Path | None,
-    ) -> Path:
-        if single_output_target is not None:
-            return path.with_suffix(".xlsx")
-        return path.parent / XLSX_EXPORT_FILENAME
 
     def _render_mode_suffix(self, render_mode: str) -> str:
         return {

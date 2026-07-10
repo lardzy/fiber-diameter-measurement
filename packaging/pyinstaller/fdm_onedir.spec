@@ -24,6 +24,7 @@ worker_entry_script = project_root / "src" / "fdm" / "workers" / "area_worker.py
 app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
 console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
+build_profile = os.environ.get("FDM_BUILD_PROFILE", "full").strip().lower() or "full"
 
 
 def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str, str]]:
@@ -40,9 +41,12 @@ def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str,
 
 datas = [
     (str(project_root / "README.md"), "."),
+    (str(project_root / "LICENSE"), "."),
+    (str(project_root / "THIRD_PARTY_NOTICES.md"), "."),
+    (str(project_root / "runtime_assets.toml"), "."),
 ]
 datas += _collect_directory_files(project_root / "packaging" / "assets" / "icons", target_root="packaging/assets/icons")
-datas += collect_runtime_datas(project_root)
+datas += collect_runtime_datas(project_root, profile=build_profile)
 binaries = collect_dynamic_libs("onnxruntime")
 hiddenimports = [
     "onnxruntime",
@@ -52,27 +56,35 @@ hiddenimports = [
     "fdm.microview_helper",
 ]
 
-for optional_pkg in ("cv2", "PIL", "torch", "torchvision"):
+optional_packages = ["cv2", "PIL"]
+if build_profile == "full":
+    optional_packages += ["torch", "torchvision"]
+
+for optional_pkg in optional_packages:
     try:
         binaries += collect_dynamic_libs(optional_pkg)
-    except Exception:
-        pass
+    except Exception as exc:
+        if build_profile == "full":
+            raise RuntimeError(f"full profile failed to collect dynamic libraries for {optional_pkg}: {exc}") from exc
     try:
         hiddenimports += collect_submodules(optional_pkg)
-    except Exception:
-        pass
+    except Exception as exc:
+        if build_profile == "full":
+            raise RuntimeError(f"full profile failed to collect submodules for {optional_pkg}: {exc}") from exc
 
 try:
     datas += collect_data_files("qtawesome", include_py_files=False)
     hiddenimports.append("qtawesome")
 except Exception:
-    pass
+    if build_profile == "full":
+        raise
 
 try:
     hiddenimports.append("PySide6.QtMultimedia")
     hiddenimports += collect_submodules("PySide6.QtMultimedia")
 except Exception:
-    pass
+    if build_profile == "full":
+        raise
 
 try:
     import PySide6
@@ -81,7 +93,8 @@ try:
     datas += _collect_directory_files(pyside_root / "plugins" / "multimedia", target_root="PySide6/plugins/multimedia")
     datas += _collect_directory_files(pyside_root / "plugins" / "mediaservice", target_root="PySide6/plugins/mediaservice")
 except Exception:
-    pass
+    if build_profile == "full":
+        raise
 
 main_analysis = Analysis(
     [str(entry_script)],

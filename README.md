@@ -123,7 +123,8 @@ fdm
 ## 运行时资源
 
 - 魔棒分割模型位于 `runtime/segment-anything/edge_sam/` 和 `runtime/segment-anything/edge_sam_3x/`。
-- 面积自动识别使用 `runtime/area-infer/` 中的 worker 与参考引擎，模型权重通常放在 `runtime/area-models/` 并在设置中绑定名称。
+- 面积自动识别使用 `runtime/area-infer/` 中的 worker 与参考引擎；正式包只加载 `runtime/area-models/` 中经权威 SHA256 清单校验的模型，并始终使用 PyTorch `weights_only` 安全加载。
+- 源码开发环境中的自定义面积 checkpoint 默认拒绝。仅在确认文件来源可信且内容为兼容的纯 tensor `state_dict` 后，才可显式设置 `FDM_ALLOW_UNTRUSTED_AREA_MODELS=1` 并重启；该开关在 frozen/full 正式包中无效。
 - Microview 相关 DLL、驱动和控件位于 `runtime/camera/microview/`，主要面向 Windows 环境。
 - 项目打包脚本会从这些目录收集运行时资源，源码运行时也会按相同约定查找。
 

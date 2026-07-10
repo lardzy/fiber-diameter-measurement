@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from dataclasses import replace
 import csv
+import json
 import sys
+import unicodedata
 import unittest
 import zipfile
 from xml.etree import ElementTree
@@ -30,9 +33,10 @@ from fdm.services.export_service import (
     ExportScope,
     ExportSelection,
     ExportService,
+    RenderedExport,
 )
 from fdm.services.group_manager import GroupManager
-from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
+from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES, RawRecordTemplateExportError
 from fdm.settings import (
     AppSettings,
     RawRecordDataSource,
@@ -52,6 +56,7 @@ class ExportServiceTests(unittest.TestCase):
         markup_compat: bool = False,
         missing_sheet_compat_namespace: bool = False,
         calc_chain: bool = False,
+        bounded_stale_values: bool = False,
     ) -> None:
         sheet_namespace_attrs = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"'
         if markup_compat:
@@ -60,11 +65,22 @@ class ExportServiceTests(unittest.TestCase):
             sheet_namespace_attrs += ' mc:Ignorable="x14ac"'
             if not missing_sheet_compat_namespace:
                 sheet_namespace_attrs += ' xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac"'
+        row_two_xml = (
+            '''<row r="2">
+      <c r="B2" s="7" t="inlineStr"><is><t>OLD-B</t></is></c>
+      <c r="C2" s="8" t="inlineStr"><is><t>OLD-C</t></is></c>
+      <c r="D2" s="9"><f>1+1</f><v>2</v></c>
+      <c r="E2" s="10" t="inlineStr"><is><t>OLD-E</t></is></c>
+      <c r="F2" s="11" t="inlineStr"><is><t>OLD-F</t></is></c>
+    </row>'''
+            if bounded_stale_values
+            else '<row r="2"><c r="B2" s="7"/></row>'
+        )
         sheet_xml = f'''<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet {sheet_namespace_attrs}>
   <dimension ref="A1:I5"/>
   <sheetData>
-    <row r="2"><c r="B2" s="7"/></row>
+    {row_two_xml}
     <row r="5"><c r="D5"><f>SUM(A1:A2)</f><v>0</v></c></row>
   </sheetData>
 </worksheet>'''
@@ -203,7 +219,12 @@ class ExportServiceTests(unittest.TestCase):
             outputs = ExportService().export_project(
                 project,
                 tmp_dir,
-                selection=ExportSelection.all_enabled(),
+                selection=ExportSelection(
+                    include_scale_json=True,
+                    include_excel=True,
+                    include_csv=True,
+                    scope=ExportScope.CURRENT,
+                ),
             )
             image_summary_csv = outputs["image_summary_csv"]
             xlsx_path = outputs["xlsx"]
@@ -231,6 +252,84 @@ class ExportServiceTests(unittest.TestCase):
             namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
             sheet_names = [element.attrib["name"] for element in workbook.findall("./xlsx:sheets/xlsx:sheet", namespace)]
             self.assertEqual(sheet_names[0], SHEET_MEASUREMENT_DETAILS)
+
+    def test_line_and_polyline_are_combined_in_summary_fiber_and_raw_diameter_exports(self) -> None:
+        document = ImageDocument(
+            id="image_length_exports",
+            path="/tmp/length_exports.png",
+            image_size=(200, 100),
+        )
+        group = document.ensure_default_group()
+        document.initialize_runtime_state()
+        group.label = "棉"
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=2.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id="line_length",
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        document.add_measurement(
+            Measurement(
+                id="polyline_length",
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=[Point(0, 0), Point(3, 0), Point(3, 4)],
+            )
+        )
+        service = ExportService()
+
+        image_row = service.build_image_summary_rows([document])[0]
+        fiber_row = service.build_fiber_rows([document])[0]
+
+        self.assertEqual(image_row["线段数量"], 1)
+        self.assertEqual(image_row["折线数量"], 1)
+        self.assertEqual(image_row["长度测量数量"], 2)
+        self.assertAlmostEqual(float(image_row["平均直径"]), 4.25)
+        self.assertAlmostEqual(float(fiber_row["平均直径"]), 4.25)
+
+        project = ProjectState(version="0.1.0", documents=[document])
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            self._write_minimal_macro_template(template_path)
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.DIAMETER_RESULT,
+                        sheet_name="Raw",
+                        start_cell="B2",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    )
+                ],
+            )
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                ),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+            with zipfile.ZipFile(output_path) as output_archive:
+                values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
+
+        self.assertEqual([values["B2"], values["C2"]], ["5", "3.5"])
 
     def test_raw_record_template_export_preserves_macro_and_writes_rules(self) -> None:
         first_document = ImageDocument(
@@ -494,16 +593,15 @@ class ExportServiceTests(unittest.TestCase):
                 rules=[RawRecordExportRule(sheet_name="Raw", start_cell="B2")],
             )
 
-            outputs = ExportService().export_project(
-                project,
-                tmp_dir,
-                selection=selection,
-                single_output_path=output_path,
-                raw_record_template=raw_record_template,
-            )
+            with self.assertRaisesRegex(RawRecordTemplateExportError, "兼容性命名空间"):
+                ExportService().export_project(
+                    project,
+                    tmp_dir,
+                    selection=selection,
+                    single_output_path=output_path,
+                    raw_record_template=raw_record_template,
+                )
 
-            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
-            self.assertIn("_template_fallback_message", outputs)
             self.assertFalse(output_path.exists())
 
     def test_raw_record_template_unique_field_range_deduplicates_and_truncates(self) -> None:
@@ -580,6 +678,72 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual([sheet_values["BA12"], sheet_values["BB12"], sheet_values["BC12"]], ["1", "2", "4"])
         self.assertNotIn("BD11", sheet_values)
         self.assertNotIn("BD12", sheet_values)
+
+    def test_raw_record_bounded_range_clears_stale_constants_and_formulas_before_writing(self) -> None:
+        document = ImageDocument(
+            id="image_bounded_clear",
+            path="/tmp/raw_bounded_clear.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        cotton = document.create_group(color="#1F7A8C", label="棉")
+        document.add_measurement(
+            Measurement(
+                id="measurement_bounded_clear",
+                image_id=document.id,
+                fiber_group_id=cotton.id,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        project = ProjectState(version="0.1.0", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            template_path = Path(tmp_dir) / "raw_template.xlsm"
+            output_path = Path(tmp_dir) / "raw_output.xlsm"
+            self._write_minimal_macro_template(template_path, bounded_stale_values=True)
+            raw_record_template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[
+                    RawRecordExportRule(
+                        data_source=RawRecordDataSource.UNIQUE_FIELD_RANGE,
+                        field_name="纤维种类名称",
+                        sheet_name="Raw",
+                        start_cell="B2",
+                        end_cell="F2",
+                        direction=RawRecordExportDirection.HORIZONTAL,
+                    )
+                ],
+            )
+            ExportService().export_project(
+                project,
+                tmp_dir,
+                selection=ExportSelection(
+                    include_excel=True,
+                    scope=ExportScope.ALL_OPEN,
+                    raw_record_template_path=str(template_path),
+                ),
+                single_output_path=output_path,
+                raw_record_template=raw_record_template,
+            )
+            with zipfile.ZipFile(output_path) as output_archive:
+                sheet_xml = output_archive.read("xl/worksheets/sheet1.xml")
+                self.assertEqual(output_archive.read("xl/vbaProject.bin"), b"macro-bytes-do-not-touch")
+
+        namespace = {"xlsx": "http://schemas.openxmlformats.org/spreadsheetml/2006/main"}
+        root = ElementTree.fromstring(sheet_xml)
+        cells = {
+            cell.attrib["r"]: cell
+            for cell in root.findall(".//xlsx:c", namespace)
+        }
+        self.assertEqual(self._cell_texts(sheet_xml)["B2"], "棉")
+        for coordinate, expected_style in zip(("C2", "D2", "E2", "F2"), ("8", "9", "10", "11")):
+            cell = cells[coordinate]
+            self.assertEqual(cell.attrib.get("s"), expected_style)
+            self.assertIsNone(cell.find("xlsx:f", namespace))
+            self.assertIsNone(cell.find("xlsx:v", namespace))
+            self.assertIsNone(cell.find("xlsx:is", namespace))
 
     def test_raw_record_template_unique_field_range_uses_fiber_category_order(self) -> None:
         document = ImageDocument(
@@ -1013,16 +1177,15 @@ class ExportServiceTests(unittest.TestCase):
                 ],
             )
 
-            outputs = ExportService().export_project(
-                project,
-                tmp_dir,
-                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
-                single_output_path=output_path,
-                raw_record_template=raw_record_template,
-            )
+            with self.assertRaisesRegex(RawRecordTemplateExportError, "范围无效"):
+                ExportService().export_project(
+                    project,
+                    tmp_dir,
+                    selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                    single_output_path=output_path,
+                    raw_record_template=raw_record_template,
+                )
 
-            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
-            self.assertIn("_template_fallback_message", outputs)
             self.assertFalse(output_path.exists())
 
     def test_raw_record_template_grouped_normal_rule_falls_back_when_range_is_too_small(self) -> None:
@@ -1058,16 +1221,15 @@ class ExportServiceTests(unittest.TestCase):
                 ],
             )
 
-            outputs = ExportService().export_project(
-                project,
-                tmp_dir,
-                selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
-                single_output_path=output_path,
-                raw_record_template=raw_record_template,
-            )
+            with self.assertRaisesRegex(RawRecordTemplateExportError, "容量不足"):
+                ExportService().export_project(
+                    project,
+                    tmp_dir,
+                    selection=ExportSelection(include_excel=True, scope=ExportScope.ALL_OPEN, raw_record_template_path=str(template_path)),
+                    single_output_path=output_path,
+                    raw_record_template=raw_record_template,
+                )
 
-            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
-            self.assertIn("_template_fallback_message", outputs)
             self.assertFalse(output_path.exists())
 
     def test_raw_record_template_export_falls_back_to_default_xlsx_on_rule_error(self) -> None:
@@ -1103,18 +1265,16 @@ class ExportServiceTests(unittest.TestCase):
                 rules=[RawRecordExportRule(sheet_name="Missing", start_cell="B2")],
             )
 
-            outputs = ExportService().export_project(
-                project,
-                tmp_dir,
-                selection=selection,
-                documents=[document],
-                single_output_path=output_path,
-                raw_record_template=raw_record_template,
-            )
+            with self.assertRaisesRegex(RawRecordTemplateExportError, "找不到工作表"):
+                ExportService().export_project(
+                    project,
+                    tmp_dir,
+                    selection=selection,
+                    documents=[document],
+                    single_output_path=output_path,
+                    raw_record_template=raw_record_template,
+                )
 
-            self.assertEqual(outputs["xlsx"], output_path.with_suffix(".xlsx"))
-            self.assertTrue(outputs["xlsx"].exists())
-            self.assertIn("_template_fallback_message", outputs)
             self.assertFalse(output_path.exists())
 
     def test_measurement_rows_include_uncategorized_metadata(self) -> None:
@@ -1412,6 +1572,244 @@ class ExportServiceTests(unittest.TestCase):
         self.assertEqual(len(planned), 1)
         self.assertEqual(planned[0].kind, "xlsx")
         self.assertEqual(planned[0].filename, "面积法原始记录模板.xlsm")
+
+    def test_export_plan_stably_deconflicts_same_stem_casefold_and_nfc_names(self) -> None:
+        documents = [
+            ImageDocument(id="image_upper", path="/a/Fiber.png", image_size=(10, 10)),
+            ImageDocument(id="image_lower", path="/b/fiber.jpg", image_size=(10, 10)),
+            ImageDocument(id="image_composed", path="/c/Caf\u00e9.tif", image_size=(10, 10)),
+            ImageDocument(id="image_decomposed", path="/d/Cafe\u0301.bmp", image_size=(10, 10)),
+        ]
+        for index, document in enumerate(documents, start=1):
+            document.initialize_runtime_state()
+            document.calibration = Calibration(
+                mode="preset",
+                pixels_per_unit=float(index),
+                unit="um",
+                source_label=f"scale-{index}",
+            )
+        selection = ExportSelection(include_scale_json=True, scope=ExportScope.ALL_OPEN)
+        service = ExportService()
+
+        plan = service.build_plan(documents, selection)
+        repeated_plan = service.build_plan(documents, selection)
+        filenames = [item.filename for item in plan.files]
+        normalized = [unicodedata.normalize("NFC", name).casefold() for name in filenames]
+
+        self.assertEqual(filenames, [item.filename for item in repeated_plan.files])
+        self.assertEqual(len(filenames), 4)
+        self.assertEqual(len(set(normalized)), 4)
+
+        with TemporaryDirectory() as tmp_dir:
+            outputs = service.export_project(
+                ProjectState(version="0.1.0", documents=documents),
+                tmp_dir,
+                selection=selection,
+                export_plan=plan,
+            )
+            exported_paths = outputs["scale_jsons"]
+            self.assertEqual({path.name for path in exported_paths}, set(filenames))
+            exported_image_paths = {
+                json.loads(path.read_text(encoding="utf-8"))["image_path"]
+                for path in exported_paths
+            }
+
+        self.assertEqual(exported_image_paths, {document.path for document in documents})
+
+    def test_digital_slide_export_plan_freezes_viewport_identity_and_rejects_full_image(self) -> None:
+        document = ImageDocument(
+            id="slide_document",
+            path="slides/sample.fdmslide",
+            image_size=(20_000, 12_000),
+            document_kind="digital_slide",
+            metadata={
+                "digital_slide": {
+                    "focus_index": 2,
+                    "viewport_origin": [123, 456],
+                }
+            },
+        )
+        document.initialize_runtime_state()
+        service = ExportService()
+
+        plan = service.build_plan(
+            [document],
+            ExportSelection(
+                include_combined_overlay=True,
+                scope=ExportScope.CURRENT,
+                render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
+            ),
+        )
+
+        self.assertEqual(
+            plan.files[0].filename,
+            "sample_measurements_scale_viewport_f2_x123_y456.png",
+        )
+        with self.assertRaisesRegex(ValueError, "仅支持导出当前焦层"):
+            service.build_plan(
+                [document],
+                ExportSelection(
+                    include_measurement_overlay=True,
+                    scope=ExportScope.CURRENT,
+                    render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                ),
+            )
+
+    def test_export_execution_uses_frozen_plan_after_selection_mutates(self) -> None:
+        document = ImageDocument(id="frozen-plan", path="/tmp/frozen.png", image_size=(10, 10))
+        document.initialize_runtime_state()
+        selection = ExportSelection(
+            include_measurement_overlay=True,
+            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+        )
+        service = ExportService()
+        plan = service.build_plan([document], selection)
+        selection.render_mode = ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE
+        observed_modes: list[str] = []
+
+        def renderer(_document, output_path, **kwargs):
+            observed_modes.append(kwargs["render_mode"])
+            output_path.write_bytes(b"png")
+            return RenderedExport(output_path, 10, 10)
+
+        with TemporaryDirectory() as tmp_dir:
+            result = service.export_project(
+                ProjectState(version="test", documents=[document]),
+                tmp_dir,
+                selection=selection,
+                export_plan=plan,
+                overlay_renderer=renderer,
+            )
+
+        self.assertEqual(observed_modes, [ExportImageRenderMode.FULL_RESOLUTION])
+        self.assertTrue(result["measurement_overlays"][0].name.endswith("_fullres.png"))
+
+    def test_overlay_plan_requires_renderer_and_rejects_filename_tampering(self) -> None:
+        document = ImageDocument(id="strict-plan", path="/tmp/strict.png", image_size=(10, 10))
+        document.initialize_runtime_state()
+        service = ExportService()
+        selection = ExportSelection(include_measurement_overlay=True)
+        plan = service.build_plan([document], selection)
+        with TemporaryDirectory() as tmp_dir:
+            with self.assertRaisesRegex(ValueError, "renderer"):
+                service.export_project(
+                    ProjectState(version="test", documents=[document]),
+                    tmp_dir,
+                    selection=selection,
+                    export_plan=plan,
+                )
+            tampered = replace(
+                plan,
+                files=(replace(plan.files[0], filename="tampered.png"),),
+            )
+            with self.assertRaisesRegex(ValueError, "文件名"):
+                service.export_project(
+                    ProjectState(version="test", documents=[document]),
+                    tmp_dir,
+                    selection=selection,
+                    export_plan=tampered,
+                    overlay_renderer=lambda *_args, **_kwargs: None,
+                )
+
+    def test_single_overlay_output_cannot_overwrite_filesystem_or_project_asset_source(self) -> None:
+        service = ExportService()
+        selection = ExportSelection(include_measurement_overlay=True)
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            for source_type, token in (
+                ("filesystem", None),
+                ("project_asset", "captures/source.png"),
+            ):
+                source = root / f"{source_type}.png"
+                source.write_bytes(b"ORIGINAL")
+                document = ImageDocument(
+                    id=f"source-{source_type}",
+                    path=str(source) if token is None else token,
+                    image_size=(10, 10),
+                    source_type=source_type,
+                )
+                document.initialize_runtime_state()
+                plan = service.build_plan(
+                    [document],
+                    selection,
+                    protected_source_paths=[source],
+                )
+                with self.subTest(source_type=source_type):
+                    with self.assertRaisesRegex(ValueError, "拒绝覆盖"):
+                        service.export_project(
+                            ProjectState(version="test", documents=[document]),
+                            root,
+                            selection=selection,
+                            export_plan=plan,
+                            single_output_path=source,
+                            overlay_renderer=lambda *_args, **_kwargs: None,
+                        )
+                    self.assertEqual(source.read_bytes(), b"ORIGINAL")
+
+    def test_rendered_export_contract_atomically_publishes_overlay(self) -> None:
+        document = ImageDocument(id="image_rendered", path="/tmp/rendered.png", image_size=(10, 10))
+        document.initialize_runtime_state()
+        selection = ExportSelection(include_measurement_overlay=True, scope=ExportScope.CURRENT)
+
+        def renderer(
+            rendered_document,
+            output_path,
+            *,
+            include_measurements,
+            include_scale,
+            render_mode,
+        ):
+            self.assertIs(rendered_document, document)
+            self.assertTrue(include_measurements)
+            self.assertFalse(include_scale)
+            self.assertEqual(render_mode, ExportImageRenderMode.FULL_RESOLUTION)
+            output_path.write_bytes(b"rendered-png")
+            return RenderedExport(output_path, 10, 10)
+
+        with TemporaryDirectory() as tmp_dir:
+            outputs = ExportService().export_project(
+                ProjectState(version="0.1.0", documents=[document]),
+                tmp_dir,
+                selection=selection,
+                overlay_renderer=renderer,
+            )
+            output_path = outputs["measurement_overlays"][0]
+            self.assertEqual(output_path.read_bytes(), b"rendered-png")
+            self.assertEqual(list(Path(tmp_dir).glob(".fdm-render-*")), [])
+
+    def test_overlay_renderer_must_return_structured_result_and_failure_preserves_existing_file(self) -> None:
+        document = ImageDocument(id="image_legacy_render", path="/tmp/legacy.png", image_size=(10, 10))
+        document.initialize_runtime_state()
+        selection = ExportSelection(include_measurement_overlay=True, scope=ExportScope.CURRENT)
+        service = ExportService()
+
+        with TemporaryDirectory() as tmp_dir:
+            def legacy_renderer(_document, output_path, **_kwargs):
+                output_path.write_bytes(b"legacy-render")
+                return None
+
+            target = Path(tmp_dir) / "legacy_measurements_fullres.png"
+            with self.assertRaisesRegex(TypeError, "RenderedExport"):
+                service.export_project(
+                    ProjectState(version="0.1.0", documents=[document]),
+                    tmp_dir,
+                    selection=selection,
+                    overlay_renderer=legacy_renderer,
+                )
+            target.write_bytes(b"keep-existing")
+
+            def silent_renderer(_document, _output_path, **_kwargs):
+                return None
+
+            with self.assertRaisesRegex(TypeError, "RenderedExport"):
+                service.export_project(
+                    ProjectState(version="0.1.0", documents=[document]),
+                    tmp_dir,
+                    selection=selection,
+                    overlay_renderer=silent_renderer,
+                )
+            self.assertEqual(target.read_bytes(), b"keep-existing")
+            self.assertEqual(list(Path(tmp_dir).glob(".fdm-render-*")), [])
 
     def test_export_progress_callback_reports_each_output_step(self) -> None:
         document = ImageDocument(

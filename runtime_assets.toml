@@ -1,0 +1,669 @@
+schema_version = 1
+
+[release]
+ignored_untracked_prefixes = [
+  "build/",
+  "dist/",
+  "runtime/content-templates/",
+]
+
+[profiles.core]
+groups = ["microview"]
+required_python_modules = []
+required_files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+features = ["measurement", "capture", "digital-slide"]
+
+[profiles.full]
+extends = "core"
+groups = ["area-infer", "area-models", "segment-anything"]
+required_python_modules = ["PIL", "torch", "torchvision"]
+features = ["area-inference", "magic-segmentation"]
+
+[groups.microview]
+root = "runtime/camera/microview"
+filter = "all"
+required_files = [
+  "runtime/camera/microview/driver/MVBT.inf",
+  "runtime/camera/microview/driver/MVBT.sys",
+  "runtime/camera/microview/driver/saa7130.sys",
+  "runtime/camera/microview/x64/Function.dll",
+  "runtime/camera/microview/x64/MVAPI.dll",
+  "runtime/camera/microview/x64/MVBT.dll",
+  "runtime/camera/microview/x64/MVDEVICE.ocx",
+  "runtime/camera/microview/x64/MV_Twain.ds",
+  "runtime/camera/microview/x64/mvavi.dll",
+  "runtime/camera/microview/x64/saa7130.dll",
+  "runtime/camera/microview/x86/Function.dll",
+  "runtime/camera/microview/x86/MVAPI.dll",
+  "runtime/camera/microview/x86/MVBT.dll",
+  "runtime/camera/microview/x86/MVDEVICE.ocx",
+  "runtime/camera/microview/x86/MV_Twain.ds",
+  "runtime/camera/microview/x86/mvavi.dll",
+  "runtime/camera/microview/x86/saa7130.dll",
+]
+
+[groups.area-infer]
+root = "runtime/area-infer"
+filter = "area-infer"
+required_files = [
+  "runtime/area-infer/app/__init__.py",
+  "runtime/area-infer/app/engine.py",
+  "runtime/area-infer/app/main.py",
+  "runtime/area-infer/app/model_metadata.py",
+  "runtime/area-infer/app/request_limits.py",
+  "runtime/area-infer/app/security.py",
+  "runtime/area-infer/vendor/yolact/LICENSE",
+  "runtime/area-infer/vendor/yolact/backbone.py",
+  "runtime/area-infer/vendor/yolact/yolact.py",
+  "runtime/area-infer/vendor/yolact/data/__init__.py",
+  "runtime/area-infer/vendor/yolact/data/coco.py",
+  "runtime/area-infer/vendor/yolact/data/config.py",
+  "runtime/area-infer/vendor/yolact/data/grid.npy",
+  "runtime/area-infer/vendor/yolact/layers/__init__.py",
+  "runtime/area-infer/vendor/yolact/layers/box_utils.py",
+  "runtime/area-infer/vendor/yolact/layers/interpolate.py",
+  "runtime/area-infer/vendor/yolact/layers/output_utils.py",
+  "runtime/area-infer/vendor/yolact/layers/functions/__init__.py",
+  "runtime/area-infer/vendor/yolact/layers/functions/detection.py",
+  "runtime/area-infer/vendor/yolact/layers/modules/__init__.py",
+  "runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py",
+  "runtime/area-infer/vendor/yolact/utils/__init__.py",
+  "runtime/area-infer/vendor/yolact/utils/augmentations.py",
+  "runtime/area-infer/vendor/yolact/utils/cython_nms.pyx",
+  "runtime/area-infer/vendor/yolact/utils/functions.py",
+  "runtime/area-infer/vendor/yolact/utils/logger.py",
+  "runtime/area-infer/vendor/yolact/utils/nvinfo.py",
+  "runtime/area-infer/vendor/yolact/utils/timer.py",
+]
+
+[groups.area-models]
+root = "runtime/area-models"
+filter = "area-models"
+required_files = [
+  "runtime/area-models/b_v1_1.3.pth",
+  "runtime/area-models/b_cv_1.3.pth",
+  "runtime/area-models/b_c1_1.3.pth",
+  "runtime/area-models/b_cm_1.3.pth",
+  "runtime/area-models/b_cc_1.3.pth",
+  "runtime/area-models/b_cvlm_1.3.pth",
+]
+
+[groups.segment-anything]
+root = "runtime/segment-anything"
+filter = "segment-anything"
+required_files = [
+  "runtime/segment-anything/edge_sam/edge_sam_encoder.onnx",
+  "runtime/segment-anything/edge_sam/edge_sam_decoder.onnx",
+  "runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx",
+    "runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx",
+]
+
+[[assets]]
+source = "LICENSE"
+target = "LICENSE"
+profile = "core"
+feature = "release-compliance"
+required = true
+size = 35149
+sha256 = "3972dc9744f6499f0f9b2dbf76696f2ae7ad8af9b23dde66d6af86c9dfb36986"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "THIRD_PARTY_NOTICES.md"
+target = "THIRD_PARTY_NOTICES.md"
+profile = "core"
+feature = "release-compliance"
+required = true
+size = 1418
+sha256 = "aefaada9c1cd05e0a4ac711d37f670b72675c5d71800df9639614c0b36152878"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/camera/microview/driver/MVBT.inf"
+target = "runtime/camera/microview/driver/MVBT.inf"
+group = "microview"
+feature = "capture"
+required = true
+size = 9089
+sha256 = "a31cb5518293f571485111671a917ff7a7169444a0e6a538d23ab1e0873373c2"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/driver/MVBT.sys"
+target = "runtime/camera/microview/driver/MVBT.sys"
+group = "microview"
+feature = "capture"
+required = true
+size = 32024
+sha256 = "fcd81e0a21faed10a585d179f3743b50a779d26abd4789cfb77e8d76d399ce89"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/driver/saa7130.sys"
+target = "runtime/camera/microview/driver/saa7130.sys"
+group = "microview"
+feature = "capture"
+required = true
+size = 31128
+sha256 = "91dc48be711bc286cfd109caa2eae48589f5ba5a9c4b9ecd794424d2d1de1b66"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/Function.dll"
+target = "runtime/camera/microview/x64/Function.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 122368
+sha256 = "bfbe41610dcbdb1cd7ec893b75ee8f2dcc37d607fa27229b67561b178e97df24"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/MVAPI.dll"
+target = "runtime/camera/microview/x64/MVAPI.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 145408
+sha256 = "1d22ce270ea4aa37fb1073943a707c82f44f255164e480e1877d606b531933ea"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/MVBT.dll"
+target = "runtime/camera/microview/x64/MVBT.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 163840
+sha256 = "594e8a4932c1a0950170c65c919dee8e82283d7f20a034b8beb474f81b95c1f0"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/MVDEVICE.ocx"
+target = "runtime/camera/microview/x64/MVDEVICE.ocx"
+group = "microview"
+feature = "capture"
+required = true
+size = 48640
+sha256 = "eaff936f71fcd989a73ce7ed9bc83fefc55465f83fdb2fff06116a5b82abd8d2"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/MV_Twain.ds"
+target = "runtime/camera/microview/x64/MV_Twain.ds"
+group = "microview"
+feature = "capture"
+required = true
+size = 65536
+sha256 = "6971e53ac93dc2101df4c03b752bce01570d9bafc707df4911bbb764ebb345c9"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/mvavi.dll"
+target = "runtime/camera/microview/x64/mvavi.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 55296
+sha256 = "2bed4d48b518e44eabf70c0b85189c69cf480add057dc3a5b17caa9b3cfecb8f"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x64/saa7130.dll"
+target = "runtime/camera/microview/x64/saa7130.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 131072
+sha256 = "cbb60864f7c2526ce32515132bc04b89eb2c5e177ec5af62804e8b68e7cb6315"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/Function.dll"
+target = "runtime/camera/microview/x86/Function.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 49152
+sha256 = "28c5082a7ee4557ca7d8df9c51b96bf7dcb1bf494472cd5062e6c7423a301a0d"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/MVAPI.dll"
+target = "runtime/camera/microview/x86/MVAPI.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 126976
+sha256 = "1a67cf5ed0b709aefb6dc5732d2194c951a61ad930dcc61e61480323d171c853"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/MVBT.dll"
+target = "runtime/camera/microview/x86/MVBT.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 143360
+sha256 = "904311cd5fd9ab0309ff433c82dbefbdf2c330ddfbcc3607b9111fdfbb66ac65"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/MVDEVICE.ocx"
+target = "runtime/camera/microview/x86/MVDEVICE.ocx"
+group = "microview"
+feature = "capture"
+required = true
+size = 49152
+sha256 = "87721e6daa3ea8fd3bb1b95cfd00006ce67f7ccea02ffb1604a9a75294539577"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/MV_Twain.ds"
+target = "runtime/camera/microview/x86/MV_Twain.ds"
+group = "microview"
+feature = "capture"
+required = true
+size = 65536
+sha256 = "6971e53ac93dc2101df4c03b752bce01570d9bafc707df4911bbb764ebb345c9"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/mvavi.dll"
+target = "runtime/camera/microview/x86/mvavi.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 61440
+sha256 = "eb9f6c14c97a3fa75033970d0b94fe1f1af69ae363f00e6e7d51c458e0dbb6a3"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/camera/microview/x86/saa7130.dll"
+target = "runtime/camera/microview/x86/saa7130.dll"
+group = "microview"
+feature = "capture"
+required = true
+size = 114688
+sha256 = "c6ad243dae5ce74d2494840b59215acb9ebeed073f24f46f7c8e82a203235cd0"
+license = "LicenseRef-Microview-Vendor"
+
+[[assets]]
+source = "runtime/area-infer/app/__init__.py"
+target = "runtime/area-infer/app/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 0
+sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/app/engine.py"
+target = "runtime/area-infer/app/engine.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 36740
+sha256 = "6ad716c2a930ea434f184464197a3bcf19cacccb51b4c4079a7cc6fffc4b523f"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/app/main.py"
+target = "runtime/area-infer/app/main.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 4583
+sha256 = "5bc50a574c521cf7aec2edde408397a7346002308dc77e5cccce5a08715aad62"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/app/model_metadata.py"
+target = "runtime/area-infer/app/model_metadata.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 3245
+sha256 = "3717f589592853bbd919bdd9e94d402d9f6ed400d58809d30ed2629d5074997d"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/app/request_limits.py"
+target = "runtime/area-infer/app/request_limits.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 3259
+sha256 = "8cba336ac0546a2d5e7edbe4d175e2ae17889fc397afb911adbbc5f54c663c20"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/app/security.py"
+target = "runtime/area-infer/app/security.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 1535
+sha256 = "063660e70c08334b9414fb2d147a9aba84416e8fb2760a98d2a525fbf74f8216"
+license = "GPL-3.0-only"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/LICENSE"
+target = "runtime/area-infer/vendor/yolact/LICENSE"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 1069
+sha256 = "2c78d4b5c5e95a30267630bd1f77b7607e18216776c0e5b64f8085fbe101b450"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/backbone.py"
+target = "runtime/area-infer/vendor/yolact/backbone.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 17343
+sha256 = "0d9242165f7f4d7d7240681450524ee4f112decc08f4d6f1668ba43931441605"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/yolact.py"
+target = "runtime/area-infer/vendor/yolact/yolact.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 31589
+sha256 = "376e3c347946f4479c82c3a82c4782c7322ba42eb3cf9915a66f2c49d7fd897b"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/data/__init__.py"
+target = "runtime/area-infer/vendor/yolact/data/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 66
+sha256 = "f16fff91eb3318f3b1cff844386e6a956319a361192c2dc9d498238383b03ed2"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/data/coco.py"
+target = "runtime/area-infer/vendor/yolact/data/coco.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 10858
+sha256 = "593f72b88d7cebfb20e10ab25b0c09c32f9a3365c4871798b4229986d8b72955"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/data/config.py"
+target = "runtime/area-infer/vendor/yolact/data/config.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 31172
+sha256 = "f1386cb5787eb260638f127a8bb6d04843506c527aa85c655574967819238139"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/data/grid.npy"
+target = "runtime/area-infer/vendor/yolact/data/grid.npy"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 313728
+sha256 = "d335558a29c367cfa90ca521069c9679531ee4cbe3d4d7127dc05b1f4a1fc019"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/__init__.py"
+target = "runtime/area-infer/vendor/yolact/layers/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 48
+sha256 = "e4a6bf6c44d23bce70391a4ace320c3ca1082ea54bf0947fcb47a4dcde5a936e"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/box_utils.py"
+target = "runtime/area-infer/vendor/yolact/layers/box_utils.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 14960
+sha256 = "04e04083276923f3bd22eba40a00c8b0824b5ce3b859a2e0e93f0faeed9c047a"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/interpolate.py"
+target = "runtime/area-infer/vendor/yolact/layers/interpolate.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 412
+sha256 = "e502fdd29086933d3a5aa10cfaa19b3063d97609e0aed217771001d9b87251a3"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/output_utils.py"
+target = "runtime/area-infer/vendor/yolact/layers/output_utils.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 6932
+sha256 = "dd6aefba0a814d90c4fab526ef24d61f6575f6eab29ced1ff38460717d6db310"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/functions/__init__.py"
+target = "runtime/area-infer/vendor/yolact/layers/functions/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 53
+sha256 = "9735d1ce1895e808b5314d6d0b38775457a8804cd878473acdb994d376846f59"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/functions/detection.py"
+target = "runtime/area-infer/vendor/yolact/layers/functions/detection.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 8882
+sha256 = "20c51f9965d694e8cb5f1cff3bffdf9071a2fa8dcd366a83dd184a2a7ae8f9d8"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/modules/__init__.py"
+target = "runtime/area-infer/vendor/yolact/layers/modules/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 68
+sha256 = "caf17e0318ed2c2112a20f1182876e254df430b83ec3ffbad20ec5b9ede9a46a"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py"
+target = "runtime/area-infer/vendor/yolact/layers/modules/multibox_loss.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 31337
+sha256 = "886b3dcf046f09d44d782f1e5bbb07d13928c508d61ad4a43b876c13492cd195"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/__init__.py"
+target = "runtime/area-infer/vendor/yolact/utils/__init__.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 42
+sha256 = "a98850fb0b31fcd354075e3ffeeb0f1684f6b595141bb751a178c802892081dd"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/augmentations.py"
+target = "runtime/area-infer/vendor/yolact/utils/augmentations.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 23925
+sha256 = "5c303203ad90060262dbdcf5a9d5e67a6e88aa23e7d80562d94aeaa08dda09bd"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/cython_nms.pyx"
+target = "runtime/area-infer/vendor/yolact/utils/cython_nms.pyx"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 2457
+sha256 = "c93ed690a0aae988e08c18b463b28bf388f340cb2ad28152821b42e2654bd21a"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/functions.py"
+target = "runtime/area-infer/vendor/yolact/utils/functions.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 6503
+sha256 = "e3adc9e8121c0a20c95539bee00045f541427d883fdbbb8ca05a0d160203c902"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/logger.py"
+target = "runtime/area-infer/vendor/yolact/utils/logger.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 15327
+sha256 = "0c8d6e490a05b3045592fc16038c133dda125b1d13f381c97d86e6d889810465"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/nvinfo.py"
+target = "runtime/area-infer/vendor/yolact/utils/nvinfo.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 2402
+sha256 = "6621b1da7d3f20039a1ce124f1ba42454a41d08b9d60bb75a41623fd61862b44"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-infer/vendor/yolact/utils/timer.py"
+target = "runtime/area-infer/vendor/yolact/utils/timer.py"
+group = "area-infer"
+feature = "area-inference"
+required = true
+size = 3508
+sha256 = "082ecd0fdd58a9e66fa7e8e9618e22ed3886ca1ceef286aa9e265d98bf35cfd2"
+license = "MIT"
+
+[[assets]]
+source = "runtime/area-models/b_v1_1.3.pth"
+target = "runtime/area-models/b_v1_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198942049
+sha256 = "8d02316e1fdeacebee09143c20232bacc0c775dc529d6c612375a7d8f5cd65f0"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/area-models/b_cv_1.3.pth"
+target = "runtime/area-models/b_cv_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198942049
+sha256 = "c0a12a2526d58cb0192133e7847381aabefcc31df75faec6812b80b1880edde1"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/area-models/b_c1_1.3.pth"
+target = "runtime/area-models/b_c1_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198942049
+sha256 = "81d49d18b9fe34c690bf2cdf1508f126d80391cdbfbb1ebeb9d5105efee70a94"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/area-models/b_cm_1.3.pth"
+target = "runtime/area-models/b_cm_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198942049
+sha256 = "7d3b550f6b1bedab56bc4d1ef06d74ac01d7886507f59309936110b8b0a87c4a"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/area-models/b_cc_1.3.pth"
+target = "runtime/area-models/b_cc_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198942049
+sha256 = "a1dbfac0c399def813652ec81f2794a84885b4679a76240ee3e3b9c25888506f"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/area-models/b_cvlm_1.3.pth"
+target = "runtime/area-models/b_cvlm_1.3.pth"
+group = "area-models"
+feature = "area-inference"
+required = true
+size = 198999425
+sha256 = "a9e2b45926174f3e9662b524f13a866a7adf049719e24b9455395657ddf3074c"
+license = "LicenseRef-Project-Area-Model"
+
+[[assets]]
+source = "runtime/segment-anything/edge_sam/edge_sam_encoder.onnx"
+target = "runtime/segment-anything/edge_sam/edge_sam_encoder.onnx"
+group = "segment-anything"
+feature = "magic-segmentation"
+required = true
+size = 22036245
+sha256 = "8d35ad4c6618f8a0ee9bade08920e266759e3f33fe15cb2d2b3655359e3fad26"
+license = "LicenseRef-EdgeSAM-Upstream"
+
+[[assets]]
+source = "runtime/segment-anything/edge_sam/edge_sam_decoder.onnx"
+target = "runtime/segment-anything/edge_sam/edge_sam_decoder.onnx"
+group = "segment-anything"
+feature = "magic-segmentation"
+required = true
+size = 18641271
+sha256 = "bb4eb4f915ad63ef48a5903a1f0db3019bc7055c17076feffe857f5e17bc59b6"
+license = "LicenseRef-EdgeSAM-Upstream"
+
+[[assets]]
+source = "runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx"
+target = "runtime/segment-anything/edge_sam_3x/edge_sam_3x_encoder.onnx"
+group = "segment-anything"
+feature = "magic-segmentation"
+required = true
+size = 22098300
+sha256 = "719a498cf5b3fe9be9f01ee513e13d3915f9028aa4f23dfd30eaaa0a17143159"
+license = "LicenseRef-EdgeSAM-Upstream"
+
+[[assets]]
+source = "runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx"
+target = "runtime/segment-anything/edge_sam_3x/edge_sam_3x_decoder.onnx"
+group = "segment-anything"
+feature = "magic-segmentation"
+required = true
+size = 15937006
+sha256 = "83a2174d54571596913dcb7455d021e713623c3dca30a31c8c41ab98c9fb0863"
+license = "LicenseRef-EdgeSAM-Upstream"

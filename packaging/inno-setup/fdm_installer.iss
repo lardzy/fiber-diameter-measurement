@@ -13,6 +13,14 @@
   #error "PyInstaller output not found. Build dist/windows/FiberDiameterMeasurement first."
 #endif
 
+#ifnexist MyAppSourceDir + "\release-manifest.json"
+  #error "release-manifest.json not found. Build the onedir package through scripts/build_windows_onedir.py."
+#endif
+
+#ifnexist MyAppSourceDir + "\build-id.txt"
+  #error "build-id.txt not found. Build the onedir package through scripts/build_windows_onedir.py."
+#endif
+
 #ifnexist MyAppIconFile
   #error "Application icon not found. Expected packaging/assets/icons/app-icon.ico."
 #endif

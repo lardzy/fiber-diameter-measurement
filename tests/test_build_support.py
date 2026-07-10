@@ -2,8 +2,13 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import hashlib
+import json
+import subprocess
 import sys
+import tomllib
 import unittest
+from unittest.mock import patch
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
@@ -11,7 +16,51 @@ sys.path.insert(0, str(PROJECT_ROOT / "src"))
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from fdm import __version__
-from build_support import collect_runtime_datas, read_app_version, should_include_runtime_file, write_installer_version_include
+from build_support import (
+    check_runtime_profile,
+    collect_runtime_datas,
+    get_dirty_worktree_entries,
+    read_app_version,
+    resolve_runtime_profile,
+    runtime_profile_asset_metadata,
+    runtime_profile_required_files,
+    should_include_runtime_file,
+    validate_installer_release,
+    write_installer_version_include,
+    write_release_manifest,
+)
+from fdm.release_manifest import packaged_runtime_features, verify_release_manifest
+
+
+def _create_release_fixture(root: Path) -> tuple[Path, tuple[str, ...]]:
+    (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "fdm" / "version.py").write_text('__version__ = "9.8.7"\n', encoding="utf-8")
+    config_payload = (PROJECT_ROOT / "runtime_assets.toml").read_bytes()
+    (root / "runtime_assets.toml").write_bytes(config_payload)
+    required = runtime_profile_required_files(root, "core")
+    app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+    for token in required:
+        source = root / token
+        packaged = app_dir / token
+        source.parent.mkdir(parents=True, exist_ok=True)
+        packaged.parent.mkdir(parents=True, exist_ok=True)
+        payload = (PROJECT_ROOT / token).read_bytes()
+        source.write_bytes(payload)
+        packaged.write_bytes(payload)
+    app_dir.mkdir(parents=True, exist_ok=True)
+    (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
+    (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+    (app_dir / "runtime_assets.toml").write_bytes(config_payload)
+    write_release_manifest(
+        app_dir,
+        root,
+        profile="core",
+        clean_build=True,
+        build_id="build-123",
+        source_commit="abc123",
+        source_dirty_entries=[],
+    )
+    return app_dir, required
 
 
 class BuildSupportTests(unittest.TestCase):
@@ -55,6 +104,7 @@ class BuildSupportTests(unittest.TestCase):
             runtime_root / "segment-anything" / "light_hq_sam" / "sam_hq_vit_tiny.pth",
             runtime_root / "segment-anything" / "efficient_sam_s" / "efficient_sam_vits.pt",
             runtime_root / "reference-instance" / "matcher" / "models" / "sam_vit_h_4b8939.pth",
+            runtime_root / "content-templates" / "sheet.xlt",
         ]
         included = [
             runtime_root / "area-infer" / "app" / "engine.py",
@@ -86,6 +136,265 @@ class BuildSupportTests(unittest.TestCase):
         self.assertNotIn((PROJECT_ROOT / "runtime" / "segment-anything" / "efficient_sam_s" / "efficient_sam_vits.pt").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "reference-instance" / "matcher" / "models" / "sam_vit_h_4b8939.pth").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-models" / "b_c1_1.3(++).pth").resolve(), collected)
+
+    def test_runtime_profiles_keep_core_small_and_full_complete(self) -> None:
+        core = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "core")}
+        full = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "full")}
+
+        self.assertIn("runtime/camera/microview/x64/MVAPI.dll", core)
+        self.assertNotIn("runtime/area-models/b_v1_1.3.pth", core)
+        self.assertIn("runtime/area-models/b_v1_1.3.pth", full)
+        self.assertIn("runtime/area-infer/app/model_metadata.py", full)
+        self.assertFalse(any(path.startswith("runtime/content-templates/") for path in core | full))
+        profile_check = check_runtime_profile(PROJECT_ROOT, "full")
+        self.assertIn("measurement", resolve_runtime_profile(PROJECT_ROOT, "core").features)
+        self.assertIn("area-inference", resolve_runtime_profile(PROJECT_ROOT, "full").features)
+        self.assertEqual(profile_check.missing_files, ())
+        self.assertEqual(profile_check.hash_mismatches, ())
+        self.assertEqual(profile_check.metadata_errors, ())
+
+    def test_full_profile_required_assets_have_complete_authoritative_metadata(self) -> None:
+        records = runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+        config = tomllib.loads((PROJECT_ROOT / "runtime_assets.toml").read_text(encoding="utf-8"))
+
+        self.assertEqual(len(records), 57)
+        self.assertEqual(len(records), len(config["assets"]))
+        self.assertEqual({record.target for record in records}, set(runtime_profile_required_files(PROJECT_ROOT, "full")))
+        self.assertTrue({"microview", "area-infer", "area-models", "segment-anything"}.issubset(
+            {record.group for record in records}
+        ))
+        for record in records:
+            with self.subTest(source=record.source):
+                source_path = PROJECT_ROOT / record.source
+                self.assertTrue(record.required)
+                self.assertTrue(record.feature)
+                self.assertTrue(record.license)
+                self.assertNotIn("runtime/content-templates/", record.source)
+                self.assertNotIn("runtime/content-templates/", record.target)
+                self.assertEqual(source_path.stat().st_size, record.size)
+                self.assertEqual(hashlib.sha256(source_path.read_bytes()).hexdigest(), record.sha256)
+
+    def test_runtime_profile_reports_missing_or_incomplete_required_file_metadata(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "runtime_assets.toml").write_text(
+                """\
+schema_version = 1
+assets = []
+[release]
+ignored_untracked_prefixes = []
+[profiles.core]
+groups = ["model"]
+required_python_modules = []
+[groups.model]
+root = "runtime/models"
+filter = "all"
+required_files = ["runtime/models/model.bin"]
+""",
+                encoding="utf-8",
+            )
+
+            check = check_runtime_profile(root, "core")
+
+            self.assertFalse(check.ok)
+            self.assertTrue(any("missing complete asset metadata" in error for error in check.metadata_errors))
+
+    def test_runtime_profile_rejects_content_template_and_incomplete_license_metadata(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            asset = root / "runtime" / "content-templates" / "sheet.xlt"
+            asset.parent.mkdir(parents=True)
+            asset.write_bytes(b"template")
+            digest = hashlib.sha256(asset.read_bytes()).hexdigest()
+            (root / "runtime_assets.toml").write_text(
+                f"""\
+schema_version = 1
+[release]
+ignored_untracked_prefixes = ["runtime/content-templates/"]
+[profiles.core]
+groups = ["templates"]
+required_python_modules = []
+[groups.templates]
+root = "runtime/content-templates"
+filter = "all"
+required_files = ["runtime/content-templates/sheet.xlt"]
+[[assets]]
+source = "runtime/content-templates/sheet.xlt"
+target = "runtime/content-templates/sheet.xlt"
+group = "templates"
+feature = "measurement"
+required = true
+size = 8
+sha256 = "{digest}"
+license = ""
+""",
+                encoding="utf-8",
+            )
+
+            check = check_runtime_profile(root, "core")
+
+            self.assertFalse(check.ok)
+            self.assertTrue(any("missing license metadata" in error for error in check.metadata_errors))
+            self.assertTrue(any("must not be a release asset" in error for error in check.metadata_errors))
+
+    def test_runtime_profile_blocks_asset_with_unexpected_pinned_hash(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            asset = root / "runtime" / "models" / "model.bin"
+            asset.parent.mkdir(parents=True)
+            asset.write_bytes(b"unexpected")
+            (root / "runtime_assets.toml").write_text(
+                """\
+schema_version = 1
+[release]
+ignored_untracked_prefixes = []
+[profiles.core]
+groups = ["model"]
+required_python_modules = []
+[groups.model]
+root = "runtime/models"
+filter = "all"
+required_files = ["runtime/models/model.bin"]
+[[assets]]
+source = "runtime/models/model.bin"
+target = "runtime/models/model.bin"
+group = "model"
+feature = "measurement"
+required = true
+size = 10
+sha256 = "0000000000000000000000000000000000000000000000000000000000000000"
+license = "LicenseRef-Test"
+""",
+                encoding="utf-8",
+            )
+
+            check = check_runtime_profile(root, "core")
+
+            self.assertFalse(check.ok)
+            self.assertEqual(len(check.hash_mismatches), 1)
+            self.assertIn("runtime/models/model.bin", check.hash_mismatches[0])
+            with self.assertRaisesRegex(RuntimeError, "failed asset preflight"):
+                collect_runtime_datas(root, "core")
+
+    def test_runtime_asset_target_controls_packaged_destination(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            asset = root / "runtime" / "source" / "model.bin"
+            asset.parent.mkdir(parents=True)
+            asset.write_bytes(b"model")
+            digest = hashlib.sha256(asset.read_bytes()).hexdigest()
+            (root / "runtime_assets.toml").write_text(
+                f"""\
+schema_version = 1
+[release]
+ignored_untracked_prefixes = []
+[profiles.core]
+groups = ["model"]
+required_python_modules = []
+[groups.model]
+root = "runtime/source"
+filter = "all"
+required_files = ["runtime/source/model.bin"]
+[[assets]]
+source = "runtime/source/model.bin"
+target = "runtime/packaged/model.bin"
+group = "model"
+feature = "measurement"
+required = true
+size = 5
+sha256 = "{digest}"
+license = "LicenseRef-Test"
+""",
+                encoding="utf-8",
+            )
+
+            self.assertEqual(runtime_profile_required_files(root, "core"), ("runtime/packaged/model.bin",))
+            self.assertEqual(
+                collect_runtime_datas(root, "core"),
+                [(str(asset), "runtime/packaged")],
+            )
+            self.assertTrue(check_runtime_profile(root, "core").ok)
+
+    def test_dirty_gate_ignores_generated_outputs_and_untracked_content_templates_only(self) -> None:
+        output = (
+            "?? runtime/content-templates/sheet.xlt\0"
+            "?? dist/windows/app.exe\0"
+            "?? build/pyinstaller/cache.bin\0"
+            "?? docs/release-note.txt\0"
+            " M src/fdm/app.py\0"
+        )
+        completed = subprocess.CompletedProcess([], 0, stdout=output, stderr="")
+
+        with patch("build_support.subprocess.run", return_value=completed):
+            entries = get_dirty_worktree_entries(PROJECT_ROOT)
+
+        self.assertEqual(entries, ["?? docs/release-note.txt", " M src/fdm/app.py"])
+
+    def test_release_manifest_detects_hash_build_id_and_stale_commit_mismatches(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, required = _create_release_fixture(root)
+
+            valid = verify_release_manifest(
+                app_dir,
+                expected_profile="core",
+                expected_version="9.8.7",
+                expected_commit="abc123",
+                require_clean_source=True,
+                require_clean_build=True,
+                reject_extra_files=True,
+            )
+            self.assertTrue(valid["ok"], valid["errors"])
+            self.assertEqual(set(valid["features"]), {"measurement", "capture", "digital-slide"})
+            self.assertEqual(packaged_runtime_features(app_dir), frozenset(valid["features"]))
+            self.assertIn("python", valid["dependency_versions"])
+
+            first_asset = app_dir / required[0]
+            first_asset.write_bytes(b"tampered")
+            tampered = verify_release_manifest(app_dir)
+            self.assertFalse(tampered["ok"])
+            self.assertTrue(any("sha256 mismatch" in error or "size mismatch" in error for error in tampered["errors"]))
+            first_asset.write_bytes((root / required[0]).read_bytes())
+
+            (app_dir / "build-id.txt").write_text("different\n", encoding="utf-8")
+            wrong_build = verify_release_manifest(app_dir)
+            self.assertTrue(any("build-id mismatch" in error for error in wrong_build["errors"]))
+
+            stale = verify_release_manifest(app_dir, expected_commit="new-commit")
+            self.assertTrue(any("stale dist" in error for error in stale["errors"]))
+
+    def test_release_manifest_json_is_strict_and_inventory_is_complete(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, _required = _create_release_fixture(root)
+            manifest = json.loads((app_dir / "release-manifest.json").read_text(encoding="utf-8"))
+            paths = {entry["path"] for entry in manifest["files"]}
+
+            self.assertIn("FiberDiameterMeasurement.exe", paths)
+            self.assertIn("FiberAreaWorker.exe", paths)
+            self.assertIn("build-id.txt", paths)
+            self.assertIn("runtime_assets.toml", paths)
+            self.assertNotIn("release-manifest.json", paths)
+
+    def test_installer_gate_blocks_dirty_tree_and_runtime_asset_changed_after_build(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, required = _create_release_fixture(root)
+            with (
+                patch("build_support.get_git_commit", return_value="abc123"),
+                patch("build_support.get_dirty_worktree_entries", return_value=[]),
+            ):
+                self.assertEqual(validate_installer_release(root, app_dir, profile="core"), [])
+
+            (root / required[0]).write_bytes(b"source changed after build")
+            with (
+                patch("build_support.get_git_commit", return_value="abc123"),
+                patch("build_support.get_dirty_worktree_entries", return_value=[" M src/fdm/app.py"]),
+            ):
+                errors = validate_installer_release(root, app_dir, profile="core")
+
+            self.assertTrue(any("dirty worktree" in error for error in errors))
+            self.assertTrue(any("stale dist runtime asset" in error for error in errors))
 
 
 if __name__ == "__main__":

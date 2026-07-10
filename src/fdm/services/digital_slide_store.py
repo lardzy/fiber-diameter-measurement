@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-import shutil
 import sqlite3
 from collections.abc import Iterator
 from collections import OrderedDict
@@ -13,6 +12,8 @@ from typing import Any
 from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF
 from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 
+from fdm.atomic_io import atomic_replace_file, staged_path_for
+
 
 DIGITAL_SLIDE_SUFFIX = ".fdmslide"
 DOCUMENT_KIND_IMAGE = "image"
@@ -23,6 +24,76 @@ SUPPORTED_DIGITAL_SLIDE_TILE_CODECS = {
     DIGITAL_SLIDE_TILE_CODEC_PNG,
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
 }
+
+
+def _sqlite_sidecar_paths(path: Path) -> tuple[Path, Path]:
+    return Path(f"{path}-wal"), Path(f"{path}-shm")
+
+
+def _remove_sqlite_sidecars(path: Path) -> None:
+    for sidecar in _sqlite_sidecar_paths(path):
+        sidecar.unlink(missing_ok=True)
+
+
+def _quick_check_connection(connection: sqlite3.Connection) -> None:
+    rows = connection.execute("PRAGMA quick_check").fetchall()
+    messages = [str(row[0]) for row in rows]
+    if messages != ["ok"]:
+        detail = "; ".join(messages) or "no result"
+        raise sqlite3.DatabaseError(f"SQLite quick_check failed: {detail}")
+
+
+def _make_staged_database_standalone(path: Path) -> None:
+    connection = sqlite3.connect(str(path))
+    try:
+        mode_row = connection.execute("PRAGMA journal_mode").fetchone()
+        mode = str(mode_row[0]).lower() if mode_row is not None else ""
+        if mode == "wal":
+            checkpoint = connection.execute("PRAGMA wal_checkpoint(TRUNCATE)").fetchone()
+            if checkpoint is not None and int(checkpoint[0]) != 0:
+                raise sqlite3.OperationalError("staged SQLite database is busy during checkpoint")
+        changed_mode = connection.execute("PRAGMA journal_mode=DELETE").fetchone()
+        if changed_mode is None or str(changed_mode[0]).lower() != "delete":
+            raise sqlite3.OperationalError("could not switch staged SQLite database to DELETE journal mode")
+        connection.commit()
+        _quick_check_connection(connection)
+    finally:
+        connection.close()
+    _remove_sqlite_sidecars(path)
+
+
+def _assert_existing_sqlite_target_is_standalone(path: Path) -> None:
+    """Reject ambiguous live/stale WAL targets without touching old bytes.
+
+    Replacing only the main database while an existing ``-wal``/``-shm`` pair
+    is present is not an atomic SQLite update.  More importantly, checkpointing
+    or changing journal mode before ``os.replace`` would mutate the old project
+    even when the later replacement fails.  Callers must close/recover that
+    database first; a normal closed target has no WAL sidecars.
+    """
+
+    sidecars = [sidecar for sidecar in _sqlite_sidecar_paths(path) if sidecar.exists()]
+    if sidecars:
+        names = ", ".join(sidecar.name for sidecar in sidecars)
+        raise sqlite3.OperationalError(
+            f"target SQLite database has active or stale WAL sidecars ({names}); "
+            "close or recover it before replacement"
+        )
+
+
+def _atomic_backup_connection(connection: sqlite3.Connection, target: Path) -> Path:
+    target.parent.mkdir(parents=True, exist_ok=True)
+    with staged_path_for(target, suffix=".sqlite.tmp") as staged_path:
+        destination = sqlite3.connect(str(staged_path))
+        try:
+            connection.backup(destination)
+            destination.commit()
+        finally:
+            destination.close()
+        _make_staged_database_standalone(staged_path)
+        _assert_existing_sqlite_target_is_standalone(target)
+        atomic_replace_file(staged_path, target)
+    return target
 
 
 @dataclass(slots=True)
@@ -145,7 +216,9 @@ class DigitalSlideStore:
         self._conn: sqlite3.Connection | None = None
         self._schema_initialized = False
         self._image_cache: OrderedDict[tuple[int, str], QImage] = OrderedDict()
-        self._image_cache_limit = 256
+        self._image_cache_limit = 64
+        self._image_cache_byte_limit = 256 * 1024 * 1024
+        self._image_cache_bytes = 0
 
     def __enter__(self) -> "DigitalSlideStore":
         self.open()
@@ -160,6 +233,7 @@ class DigitalSlideStore:
         store.path.parent.mkdir(parents=True, exist_ok=True)
         if store.path.exists():
             store.path.unlink()
+        _remove_sqlite_sidecars(store.path)
         store.open()
         store._initialize_schema()
         store.write_manifest(manifest)
@@ -172,12 +246,42 @@ class DigitalSlideStore:
         self._conn.row_factory = sqlite3.Row
         self._schema_initialized = False
 
+    def is_open(self) -> bool:
+        return self._conn is not None
+
     def close(self) -> None:
-        if self._conn is not None:
-            self._conn.commit()
-            self._conn.close()
+        connection = self._conn
+        first_error: Exception | None = None
+        closed = connection is None
+        if connection is not None:
+            try:
+                connection.commit()
+            except Exception as exc:  # noqa: BLE001 - still attempt physical close
+                first_error = exc
+            try:
+                connection.close()
+                closed = True
+            except Exception as exc:  # noqa: BLE001
+                if first_error is None:
+                    first_error = exc
+        if closed:
             self._conn = None
             self._schema_initialized = False
+        self._image_cache.clear()
+        self._image_cache_bytes = 0
+        if first_error is not None:
+            raise first_error
+
+    def backup_to(self, target: str | Path) -> Path:
+        target_path = Path(target)
+        try:
+            if self.path.resolve() == target_path.resolve():
+                return target_path
+        except OSError:
+            pass
+        connection = self._connection()
+        connection.commit()
+        return _atomic_backup_connection(connection, target_path)
 
     def _connection(self) -> sqlite3.Connection:
         if self._conn is None:
@@ -231,7 +335,7 @@ class DigitalSlideStore:
         conn = self._connection()
         conn.execute(
             "INSERT OR REPLACE INTO metadata(key, value) VALUES('manifest', ?)",
-            (json.dumps(manifest.to_dict(), ensure_ascii=False),),
+            (json.dumps(manifest.to_dict(), ensure_ascii=False, allow_nan=False),),
         )
         conn.commit()
 
@@ -313,9 +417,17 @@ class DigitalSlideStore:
         if image.isNull():
             return image
         self._image_cache[key] = image
+        self._image_cache_bytes += max(0, int(image.sizeInBytes()))
         self._image_cache.move_to_end(key)
-        while len(self._image_cache) > self._image_cache_limit:
-            self._image_cache.popitem(last=False)
+        while (
+            len(self._image_cache) > self._image_cache_limit
+            or self._image_cache_bytes > self._image_cache_byte_limit
+        ):
+            _, removed = self._image_cache.popitem(last=False)
+            self._image_cache_bytes = max(
+                0,
+                self._image_cache_bytes - max(0, int(removed.sizeInBytes())),
+            )
         return image
 
     def read_tiles_for_viewport(self, *, x: int, y: int, width: int, height: int, z_index: int) -> list[tuple[DigitalSlideTile, QImage]]:
@@ -503,13 +615,18 @@ class DigitalSlideStore:
 
 
 def copy_slide_file(source: str | Path, target: str | Path) -> Path:
-    source_path = Path(source)
-    target_path = Path(target)
-    target_path.parent.mkdir(parents=True, exist_ok=True)
+    source_path = Path(source).expanduser()
+    target_path = Path(target).expanduser()
     if source_path.resolve() == target_path.resolve():
         return target_path
-    shutil.copy2(source_path, target_path)
-    return target_path
+    if not source_path.is_file():
+        raise FileNotFoundError(source_path)
+    store = DigitalSlideStore(source_path)
+    try:
+        store.open()
+        return store.backup_to(target_path)
+    finally:
+        store.close()
 
 
 def compress_slide_file(
@@ -526,10 +643,8 @@ def compress_slide_file(
         raise ValueError("压缩目标不能与源文件相同，请选择另存副本。")
     normalized_codec = normalize_tile_codec(codec)
     normalized_quality = normalize_jpeg_quality(quality) if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
-    target_store: DigitalSlideStore | None = None
-    source_store: DigitalSlideStore | None = None
+    source_store = DigitalSlideStore(source_path)
     try:
-        source_store = DigitalSlideStore(source_path)
         source_store.open()
         source_manifest = source_store.read_manifest()
         total = source_store.tile_count()
@@ -555,38 +670,37 @@ def compress_slide_file(
             created_at=source_manifest.created_at,
             metadata=metadata,
         )
-        target_store = DigitalSlideStore.create(target_path, target_manifest)
-        completed = 0
-        for tile, image, _old_codec, _old_quality in source_store.iter_tiles():
-            target_store.write_tile(
-                tile,
-                image,
-                codec=normalized_codec,
-                quality=normalized_quality,
-                update_manifest=False,
-            )
-            completed += 1
-            if progress_callback is not None:
-                progress_callback(completed, total)
-        target_manifest.tile_count = target_store.tile_count()
-        target_manifest.status = source_manifest.status
-        target_store.write_manifest(target_manifest)
-        target_store.close()
-        target_store = None
-        return target_path
-    except Exception:
-        if target_store is not None:
+        with staged_path_for(target_path, suffix=".fdmslide.tmp") as staged_path:
+            target_store: DigitalSlideStore | None = None
             try:
+                target_store = DigitalSlideStore.create(staged_path, target_manifest)
+                completed = 0
+                for tile, image, _old_codec, _old_quality in source_store.iter_tiles():
+                    target_store.write_tile(
+                        tile,
+                        image,
+                        codec=normalized_codec,
+                        quality=normalized_quality,
+                        update_manifest=False,
+                    )
+                    completed += 1
+                    if progress_callback is not None:
+                        progress_callback(completed, total)
+                target_manifest.tile_count = target_store.tile_count()
+                target_manifest.status = source_manifest.status
+                target_store.write_manifest(target_manifest)
                 target_store.close()
-            except Exception:
-                pass
-        for candidate in (target_path, Path(f"{target_path}-wal"), Path(f"{target_path}-shm")):
-            try:
-                if candidate.exists():
-                    candidate.unlink()
-            except OSError:
-                pass
-        raise
+                target_store = None
+                _make_staged_database_standalone(staged_path)
+                _assert_existing_sqlite_target_is_standalone(target_path)
+                atomic_replace_file(staged_path, target_path)
+            finally:
+                if target_store is not None:
+                    try:
+                        target_store.close()
+                    except Exception:
+                        pass
+                _remove_sqlite_sidecars(staged_path)
+        return target_path
     finally:
-        if source_store is not None:
-            source_store.close()
+        source_store.close()

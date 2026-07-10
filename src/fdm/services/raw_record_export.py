@@ -110,6 +110,7 @@ class _RuleWritePlan:
     rule: RawRecordExportRule
     writes: list[_CellWrite]
     occupied_coordinates: list[str]
+    clear_coordinates: list[str]
 
 
 def raw_record_output_suffix(template_path: str | Path) -> str:
@@ -255,13 +256,20 @@ def _build_rule_write_plan(
     )
     if rule.data_source == RawRecordDataSource.UNIQUE_FIELD_RANGE:
         coordinates = _target_coordinates_for_rule(rule, len(values))
+        bounded_coordinates = _range_target_coordinates(
+            rule.start_cell,
+            rule.end_cell,
+            rule.direction,
+            None,
+        )
         return _RuleWritePlan(
             rule=rule,
             writes=[
                 _CellWrite(coordinate=coordinate, value=value)
                 for coordinate, value in zip(coordinates, values)
             ],
-            occupied_coordinates=_occupied_coordinates_for_rule(rule, len(values)),
+            occupied_coordinates=bounded_coordinates,
+            clear_coordinates=bounded_coordinates,
         )
     if _uses_category_grouped_range(rule):
         writes = _category_grouped_writes(rule, measurement_rows=measurement_rows, category_labels=category_labels)
@@ -269,6 +277,7 @@ def _build_rule_write_plan(
             rule=rule,
             writes=writes,
             occupied_coordinates=[write.coordinate for write in writes],
+            clear_coordinates=[],
         )
     coordinates = _target_coordinates_for_rule(rule, len(values))
     return _RuleWritePlan(
@@ -278,6 +287,7 @@ def _build_rule_write_plan(
             for coordinate, value in zip(coordinates, values)
         ],
         occupied_coordinates=_occupied_coordinates_for_rule(rule, len(values)),
+        clear_coordinates=[],
     )
 
 
@@ -294,7 +304,7 @@ def _values_for_rule(
             measurement.display_value()
             for document in documents
             for measurement in document.measurements
-            if measurement.measurement_kind == "line"
+            if measurement.measurement_kind in {"line", "polyline"}
         ]
     if rule.data_source == RawRecordDataSource.AREA_RESULT:
         return [
@@ -469,7 +479,10 @@ def _category_grouped_anchors(start_cell: str, end_cell: str, direction: str, ca
 
 def _row_matches_rule_data_source(row: dict[str, object], rule: RawRecordExportRule) -> bool:
     if rule.data_source == RawRecordDataSource.DIAMETER_RESULT:
-        return str(row.get("类型", "")) == MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.LINE]
+        return str(row.get("类型", "")) in {
+            MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.LINE],
+            MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.POLYLINE],
+        }
     if rule.data_source == RawRecordDataSource.AREA_RESULT:
         return str(row.get("类型", "")) == MEASUREMENT_KIND_ROW_LABELS[RawRecordMeasurementFilter.AREA]
     return _row_matches_measurement_filter(row, rule.measurement_filter)
@@ -655,6 +668,15 @@ def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sh
     merged_ranges = _merged_ranges(root)
     for plan in rule_plans:
         start_style = _existing_cell_style(row_map, plan.rule.start_cell)
+        for coordinate in plan.clear_coordinates:
+            _validate_merge_target(coordinate, merged_ranges, sheet_name=sheet_name)
+            row_number, _column = _parse_cell_coordinate(coordinate)
+            row = row_map.get(row_number)
+            if row is None:
+                continue
+            cell = _find_cell(row, coordinate)
+            if cell is not None:
+                _clear_cell_value(cell)
         for write in plan.writes:
             _validate_merge_target(write.coordinate, merged_ranges, sheet_name=sheet_name)
             cell = _get_or_create_cell(sheet_data, row_map, write.coordinate, inherited_style=start_style)

@@ -10,7 +10,14 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.area_display import ensure_measurement_display_geometry
-from fdm.geometry import Line, Point
+from fdm.geometry import (
+    Line,
+    Point,
+    area_rings_area,
+    area_rings_centroid,
+    polygon_area,
+    polygon_centroid,
+)
 from fdm.models import (
     Calibration,
     CalibrationPreset,
@@ -59,6 +66,162 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertAlmostEqual(calibration.px_to_unit(100.0), 5.0)
         self.assertAlmostEqual(calibration.unit_to_px(2.5), 50.0)
         self.assertAlmostEqual(calibration.px_area_to_unit(400.0), 1.0)
+
+    def test_calibration_rejects_non_positive_or_non_finite_scales(self) -> None:
+        for invalid in (0.0, -1.0, float("nan"), float("inf"), float("-inf")):
+            with self.subTest(invalid=invalid):
+                with self.assertRaises(ValueError):
+                    Calibration(
+                        mode="preset",
+                        pixels_per_unit=invalid,
+                        unit="um",
+                        source_label="invalid",
+                    )
+                with self.assertRaises(ValueError):
+                    CalibrationPreset(name="invalid", pixels_per_unit=invalid, unit="um")
+
+    def test_calibration_payload_is_strict_json_serializable(self) -> None:
+        calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=12.5,
+            unit="um",
+            source_label="40x",
+        )
+        preset = CalibrationPreset(
+            name="40x",
+            pixels_per_unit=12.5,
+            unit="um",
+            pixel_distance=250.0,
+            actual_distance=20.0,
+            computed_pixels_per_unit=12.5,
+        )
+
+        json.dumps(calibration.to_dict(), allow_nan=False)
+        json.dumps(preset.to_dict(), allow_nan=False)
+
+    def test_project_load_quarantines_invalid_scale_and_preserves_issue_registry(self) -> None:
+        for index, invalid in enumerate((0.0, -1.0, float("nan"), float("inf"), float("-inf"))):
+            with self.subTest(invalid=invalid), TemporaryDirectory() as tmp_dir:
+                document = ImageDocument(
+                    id=f"invalid_scale_{index}",
+                    path="missing.png",
+                    image_size=(100, 80),
+                )
+                document.initialize_runtime_state()
+                document.add_measurement(
+                    Measurement(
+                        id=f"line_{index}",
+                        image_id=document.id,
+                        fiber_group_id=None,
+                        mode="manual",
+                        line_px=Line(Point(1, 2), Point(11, 2)),
+                    )
+                )
+                payload = ProjectState(version="test", documents=[document]).to_dict()
+                payload["documents"][0]["calibration"] = {
+                    "mode": "preset",
+                    "pixels_per_unit": invalid,
+                    "unit": "um",
+                    "source_label": "legacy-invalid",
+                }
+                source = Path(tmp_dir) / "legacy.fdmproj"
+                source.write_text(json.dumps(payload, allow_nan=True), encoding="utf-8")
+
+                loaded = ProjectIO.load(source)
+
+                self.assertIsNone(loaded.documents[0].calibration)
+                self.assertIsNotNone(loaded.documents[0].calibration_load_error)
+                self.assertEqual(len(loaded.documents[0].measurements), 1)
+                self.assertEqual(loaded.documents[0].measurements[0].line_px, document.measurements[0].line_px)
+                self.assertEqual(len(loaded.load_issues), 1)
+                preserved_scale = loaded.load_issues[0]["raw_payload"]["pixels_per_unit"]
+                if invalid != invalid:
+                    self.assertNotEqual(preserved_scale, preserved_scale)
+                else:
+                    self.assertEqual(preserved_scale, invalid)
+
+                saved = Path(tmp_dir) / "resaved.fdmproj"
+                ProjectIO.save(loaded, saved, preserve_path_document_ids={document.id})
+                strict_payload = json.loads(
+                    saved.read_text(encoding="utf-8"),
+                    parse_constant=lambda value: self.fail(f"non-finite JSON token: {value}"),
+                )
+                self.assertIsNone(strict_payload["documents"][0]["calibration"])
+                reopened = ProjectIO.load(saved)
+                self.assertEqual(len(reopened.load_issues), 1)
+                self.assertIn("raw_payload", reopened.load_issues[0])
+                reopened_scale = reopened.load_issues[0]["raw_payload"]["pixels_per_unit"]
+                if invalid != invalid:
+                    self.assertNotEqual(reopened_scale, reopened_scale)
+                else:
+                    self.assertEqual(reopened_scale, invalid)
+
+    def test_line_and_polyline_share_length_statistics(self) -> None:
+        document = ImageDocument(id="image_stats", path="/tmp/stats.png", image_size=(100, 80))
+        document.initialize_runtime_state()
+        document.calibration = Calibration(
+            mode="preset",
+            pixels_per_unit=2.0,
+            unit="um",
+            source_label="demo",
+        )
+        document.add_measurement(
+            Measurement(
+                id="line_1",
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(0, 0), Point(10, 0)),
+            )
+        )
+        document.add_measurement(
+            Measurement(
+                id="polyline_1",
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="continuous_manual",
+                measurement_kind="polyline",
+                polyline_px=[Point(0, 0), Point(3, 0), Point(3, 4)],
+            )
+        )
+
+        self.assertEqual(len(document.line_measurements()), 1)
+        self.assertEqual(len(document.polyline_measurements()), 1)
+        self.assertEqual(len(document.length_measurements()), 2)
+        self.assertEqual(document.measurement_values(), [5.0, 3.5])
+        self.assertAlmostEqual(document.stats()["mean"] or 0.0, 4.25)
+
+    def test_odd_even_fill_area_and_centroid_support_self_intersections_and_holes(self) -> None:
+        bow_tie = [Point(0, 0), Point(10, 10), Point(0, 10), Point(10, 0)]
+        self.assertAlmostEqual(polygon_area(bow_tie), 50.0)
+        bow_tie_center = polygon_centroid(bow_tie)
+        self.assertAlmostEqual(bow_tie_center.x, 5.0)
+        self.assertAlmostEqual(bow_tie_center.y, 5.0)
+
+        rings = [
+            [Point(0, 0), Point(20, 0), Point(20, 20), Point(0, 20)],
+            [Point(5, 5), Point(15, 5), Point(15, 15), Point(5, 15)],
+        ]
+        self.assertAlmostEqual(area_rings_area(rings), 300.0)
+        rings_center = area_rings_centroid(rings)
+        self.assertAlmostEqual(rings_center.x, 10.0)
+        self.assertAlmostEqual(rings_center.y, 10.0)
+
+    def test_exact_area_remains_authoritative_over_odd_even_geometry(self) -> None:
+        measurement = Measurement(
+            id="area_exact",
+            image_id="image_1",
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=[Point(0, 0), Point(10, 10), Point(0, 10), Point(10, 0)],
+            exact_area_px=123.0,
+        )
+
+        measurement.recalculate(None)
+
+        self.assertEqual(measurement.area_px, 123.0)
+        self.assertEqual(measurement.area_unit, 123.0)
 
     def test_project_roundtrip(self) -> None:
         document = ImageDocument(
@@ -112,6 +275,20 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
+
+    def test_project_save_preserves_previous_file_when_atomic_replace_fails(self) -> None:
+        project = ProjectState(version="0.1.0", documents=[])
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "demo.fdmproj"
+            previous = b'{"version": "previous"}'
+            path.write_bytes(previous)
+
+            with patch("fdm.atomic_io.os.replace", side_effect=OSError("injected replace failure")):
+                with self.assertRaisesRegex(OSError, "injected replace failure"):
+                    ProjectIO.save(project, path)
+
+            self.assertEqual(path.read_bytes(), previous)
+            self.assertEqual(list(path.parent.iterdir()), [path])
 
     def test_project_roundtrip_preserves_overlay_annotations(self) -> None:
         document = ImageDocument(
@@ -635,6 +812,34 @@ class ModelsProjectIOTests(unittest.TestCase):
 
             self.assertFalse(target.exists())
 
+    def test_app_settings_save_rejects_nan_without_replacing_previous_file(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            previous = b'{"theme_mode": "light"}'
+            path.write_bytes(previous)
+            settings = AppSettings()
+
+            with patch.object(AppSettings, "to_dict", return_value={"invalid": float("nan")}):
+                with self.assertRaises(ValueError):
+                    AppSettingsIO.save(settings, path)
+
+            self.assertEqual(path.read_bytes(), previous)
+
+    def test_app_settings_import_preserves_target_when_atomic_replace_fails(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            source = root / "import.json"
+            target = root / "settings.json"
+            source.write_text(json.dumps(AppSettings(theme_mode=AppThemeMode.LIGHT).to_dict()), encoding="utf-8")
+            previous = b'{"theme_mode": "dark"}'
+            target.write_bytes(previous)
+
+            with patch("fdm.atomic_io.os.replace", side_effect=OSError("injected replace failure")):
+                with self.assertRaisesRegex(OSError, "injected replace failure"):
+                    AppSettingsIO.replace_with_file(source, target)
+
+            self.assertEqual(target.read_bytes(), previous)
+
     def test_app_settings_from_dict_defaults_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict({})
 
@@ -772,6 +977,28 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.calibration_presets[0].name, "40x")
         self.assertAlmostEqual(loaded.calibration_presets[0].pixel_distance or 0.0, 250.0)
         self.assertAlmostEqual(loaded.calibration_presets[0].actual_distance or 0.0, 20.0)
+
+    def test_app_settings_load_isolates_invalid_calibration_presets(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "settings.json"
+            path.write_text(
+                json.dumps(
+                    {
+                        "calibration_presets": [
+                            {"name": "invalid", "pixels_per_unit": float("inf"), "unit": "um"},
+                            {"name": "valid", "pixels_per_unit": 4.0, "unit": "um"},
+                        ]
+                    },
+                    allow_nan=True,
+                ),
+                encoding="utf-8",
+            )
+
+            loaded = AppSettingsIO.load(path)
+
+        self.assertEqual([item.name for item in loaded.calibration_presets], ["valid"])
+        self.assertEqual(len(loaded.load_issues), 1)
+        self.assertEqual(loaded.load_issues[0]["raw_payload"]["name"], "invalid")
 
     def test_app_settings_roundtrip_preserves_selected_capture_device(self) -> None:
         settings = AppSettings(selected_capture_device_id="microview:1")

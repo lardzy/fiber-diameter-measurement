@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from math import exp, log
 
@@ -154,10 +155,16 @@ class ReferenceInstancePropagationService:
         reference_box: tuple[Point, Point] | None = None,
         reference_polygon_px: list[Point] | None = None,
         reference_area_rings_px: list[list[Point]] | None = None,
+        cancel_check: Callable[[], bool] | None = None,
     ) -> ReferenceInstancePropagationResult:
         import numpy as np
 
+        is_cancelled = cancel_check or (lambda: False)
+        if is_cancelled():
+            raise RuntimeError("reference propagation cancelled")
         rgb = qimage_to_rgb_array(image)
+        if is_cancelled():
+            raise RuntimeError("reference propagation cancelled")
         gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY)
         image_size = (int(rgb.shape[1]), int(rgb.shape[0]))
         reference_mask = None
@@ -168,6 +175,7 @@ class ReferenceInstancePropagationService:
                 image=image,
                 cache_key=cache_key,
                 reference_box=reference_box,
+                cancel_check=is_cancelled,
             )
             reference_polygon = _clone_points(prompt_result.polygon_px)
             reference_rings = _clone_rings(prompt_result.area_rings_px)
@@ -194,6 +202,8 @@ class ReferenceInstancePropagationService:
                 metadata={"reason": "empty_reference_mask"},
             )
         reference_descriptor = describe_mask(gray, reference_mask, reference_bbox)
+        if is_cancelled():
+            raise RuntimeError("reference propagation cancelled")
         proposals = self._candidate_finder.find_candidates(
             gray_image=gray,
             reference_mask=reference_mask,
@@ -201,6 +211,8 @@ class ReferenceInstancePropagationService:
         )
         refined: list[tuple[ReferenceInstanceCandidate, object]] = []
         for proposal in proposals:
+            if is_cancelled():
+                raise RuntimeError("reference propagation cancelled")
             candidate = self._refine_candidate(
                 image=image,
                 cache_key=cache_key,
@@ -208,6 +220,7 @@ class ReferenceInstancePropagationService:
                 image_size=image_size,
                 gray_image=gray,
                 reference_descriptor=reference_descriptor,
+                cancel_check=is_cancelled,
             )
             if candidate is None:
                 continue
@@ -246,6 +259,7 @@ class ReferenceInstancePropagationService:
         image,
         cache_key: str,
         reference_box: tuple[Point, Point],
+        cancel_check: Callable[[], bool],
     ):
         image_size = (int(image.width()), int(image.height()))
         bbox = normalize_box(reference_box[0], reference_box[1], image_size=image_size)
@@ -256,6 +270,7 @@ class ReferenceInstancePropagationService:
             positive_points=positive_points,
             negative_points=negative_points,
             tool_mode=MagicSegmentToolMode.REFERENCE,
+            cancel_check=cancel_check,
         )
 
     def _refine_candidate(
@@ -267,6 +282,7 @@ class ReferenceInstancePropagationService:
         image_size: tuple[int, int],
         gray_image,
         reference_descriptor: dict[str, object],
+        cancel_check: Callable[[], bool],
     ) -> tuple[ReferenceInstanceCandidate, object] | None:
         import numpy as np
 
@@ -277,6 +293,7 @@ class ReferenceInstancePropagationService:
             positive_points=positive_points,
             negative_points=negative_points,
             tool_mode=MagicSegmentToolMode.REFERENCE,
+            cancel_check=cancel_check,
         )
         if result.mask is None or len(result.polygon_px) < 3:
             return None

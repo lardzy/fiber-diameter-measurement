@@ -14,7 +14,28 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from build_windows_installer import build_installer
 
 
+def _prepare_installer_root(root: Path, *, version: str = "3.1.4") -> Path:
+    (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+    (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+    (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
+    (root / "src" / "fdm" / "version.py").write_text(
+        f'__version__ = "{version}"\n',
+        encoding="utf-8",
+    )
+    (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text(
+        "; stub\n",
+        encoding="utf-8",
+    )
+    return root / "dist" / "installer" / f"fiber-diameter-measurement-setup-{version}.exe"
+
+
 class BuildWindowsInstallerTests(unittest.TestCase):
+    def test_inno_script_requires_release_manifest_and_build_id(self) -> None:
+        payload = (PROJECT_ROOT / "packaging" / "inno-setup" / "fdm_installer.iss").read_text(encoding="utf-8")
+
+        self.assertIn('MyAppSourceDir + "\\release-manifest.json"', payload)
+        self.assertIn('MyAppSourceDir + "\\build-id.txt"', payload)
+
     def test_sync_only_refreshes_version_auto_include_from_version_py(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -41,8 +62,17 @@ class BuildWindowsInstallerTests(unittest.TestCase):
             (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
             iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
             iss_path.write_text("; stub\n", encoding="utf-8")
+            expected_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
 
-            with patch("build_windows_installer.subprocess.run") as mock_run:
+            def compile_installer(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                expected_output.parent.mkdir(parents=True, exist_ok=True)
+                expected_output.write_bytes(b"installer")
+                return subprocess.CompletedProcess([], 0)
+
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.subprocess.run", side_effect=compile_installer) as mock_run,
+            ):
                 result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
 
             self.assertEqual(result, 0)
@@ -51,6 +81,192 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
+
+    def test_build_installer_blocks_when_release_gate_fails(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=["dirty worktree"]),
+                patch("build_windows_installer.subprocess.run") as mock_run,
+            ):
+                result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
+
+            self.assertEqual(result, 1)
+            mock_run.assert_not_called()
+
+    def test_build_installer_blocks_when_iscc_produces_no_output(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+            stale_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
+            stale_output.parent.mkdir(parents=True)
+            stale_output.write_bytes(b"stale installer")
+
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.subprocess.run", return_value=subprocess.CompletedProcess([], 0)),
+            ):
+                result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
+
+            self.assertEqual(result, 1)
+            self.assertFalse(stale_output.exists())
+
+    def test_build_installer_blocks_when_iscc_is_unavailable(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            (root / "packaging" / "inno-setup" / "fdm_installer.iss").write_text("; stub\n", encoding="utf-8")
+
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.find_inno_setup_compiler", return_value=None),
+            ):
+                result = build_installer(root=root)
+
+            self.assertEqual(result, 2)
+
+    def test_build_installer_runs_optional_sign_and_verify_hooks(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
+            (root / "packaging" / "inno-setup").mkdir(parents=True, exist_ok=True)
+            (root / "dist" / "windows" / "FiberDiameterMeasurement").mkdir(parents=True, exist_ok=True)
+            (root / "src" / "fdm" / "version.py").write_text('__version__ = "3.1.4"\n', encoding="utf-8")
+            iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
+            iss_path.write_text("; stub\n", encoding="utf-8")
+            expected_output = root / "dist" / "installer" / "fiber-diameter-measurement-setup-3.1.4.exe"
+            commands: list[list[str]] = []
+
+            def run_command(command, **_kwargs) -> subprocess.CompletedProcess[str]:
+                commands.append(command)
+                if len(commands) == 1:
+                    expected_output.parent.mkdir(parents=True, exist_ok=True)
+                    expected_output.write_bytes(b"installer")
+                return subprocess.CompletedProcess(command, 0)
+
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.subprocess.run", side_effect=run_command),
+            ):
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    sign_command='signtool sign /fd sha256 "{file}"',
+                    verify_signature_command='signtool verify /pa "{file}"',
+                )
+
+            self.assertEqual(result, 0)
+            self.assertEqual(commands[0], ["C:/Tools/ISCC.exe", str(iss_path)])
+            self.assertEqual(commands[1], ["signtool", "sign", "/fd", "sha256", str(expected_output)])
+            self.assertEqual(commands[2], ["signtool", "verify", "/pa", str(expected_output)])
+
+    def test_sign_and_verify_commands_require_a_real_file_placeholder(self) -> None:
+        cases = (
+            ("sign-missing", {"sign_command": "signtool sign /fd sha256"}),
+            ("sign-escaped", {"sign_command": 'signtool sign "{{file}}"'}),
+            ("sign-invalid-format", {"sign_command": 'signtool sign "{file:{width}}"'}),
+            ("verify-missing", {"verify_signature_command": "signtool verify /pa"}),
+            ("verify-escaped", {"verify_signature_command": 'signtool verify "{{file}}"'}),
+        )
+        for label, hook_options in cases:
+            with self.subTest(label=label), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                expected_output = _prepare_installer_root(root)
+                commands: list[list[str]] = []
+
+                def run_command(command, **_kwargs) -> subprocess.CompletedProcess[str]:
+                    commands.append(command)
+                    expected_output.parent.mkdir(parents=True, exist_ok=True)
+                    expected_output.write_bytes(b"installer")
+                    return subprocess.CompletedProcess(command, 0)
+
+                with (
+                    patch("build_windows_installer.validate_installer_release", return_value=[]),
+                    patch("build_windows_installer.subprocess.run", side_effect=run_command),
+                ):
+                    result = build_installer(
+                        root=root,
+                        compiler_path="C:/Tools/ISCC.exe",
+                        **hook_options,
+                    )
+
+                self.assertEqual(result, 1)
+                self.assertEqual(len(commands), 1, "invalid hooks must not be executed")
+                self.assertFalse(expected_output.exists())
+
+    def test_sign_and_verify_process_failures_remove_installer(self) -> None:
+        for failing_phase, failing_call in (("sign", 2), ("verify", 3)):
+            with self.subTest(phase=failing_phase), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                expected_output = _prepare_installer_root(root)
+                commands: list[list[str]] = []
+
+                def run_command(command, **_kwargs) -> subprocess.CompletedProcess[str]:
+                    commands.append(command)
+                    if len(commands) == 1:
+                        expected_output.parent.mkdir(parents=True, exist_ok=True)
+                        expected_output.write_bytes(b"installer")
+                    if len(commands) == failing_call:
+                        raise subprocess.CalledProcessError(1, command)
+                    return subprocess.CompletedProcess(command, 0)
+
+                with (
+                    patch("build_windows_installer.validate_installer_release", return_value=[]),
+                    patch("build_windows_installer.subprocess.run", side_effect=run_command),
+                ):
+                    result = build_installer(
+                        root=root,
+                        compiler_path="C:/Tools/ISCC.exe",
+                        sign_command='signtool sign "{file}"',
+                        verify_signature_command='signtool verify "{file}"',
+                    )
+
+                self.assertEqual(result, 1)
+                self.assertEqual(len(commands), failing_call)
+                self.assertFalse(expected_output.exists())
+
+    def test_successful_hook_cannot_remove_or_empty_installer(self) -> None:
+        for destructive_phase, destructive_call in (("sign", 2), ("verify", 3)):
+            with self.subTest(phase=destructive_phase), TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                expected_output = _prepare_installer_root(root)
+                commands: list[list[str]] = []
+
+                def run_command(command, **_kwargs) -> subprocess.CompletedProcess[str]:
+                    commands.append(command)
+                    if len(commands) == 1:
+                        expected_output.parent.mkdir(parents=True, exist_ok=True)
+                        expected_output.write_bytes(b"installer")
+                    elif len(commands) == destructive_call:
+                        expected_output.write_bytes(b"")
+                    return subprocess.CompletedProcess(command, 0)
+
+                with (
+                    patch("build_windows_installer.validate_installer_release", return_value=[]),
+                    patch("build_windows_installer.subprocess.run", side_effect=run_command),
+                ):
+                    result = build_installer(
+                        root=root,
+                        compiler_path="C:/Tools/ISCC.exe",
+                        sign_command='signtool sign "{file}"',
+                        verify_signature_command='signtool verify "{file}"',
+                    )
+
+                self.assertEqual(result, 1)
+                self.assertEqual(len(commands), destructive_call)
+                self.assertFalse(expected_output.exists())
 
     def test_build_installer_requires_existing_onedir_output(self) -> None:
         with TemporaryDirectory() as tmpdir:

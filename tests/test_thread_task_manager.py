@@ -11,7 +11,7 @@ try:
     from PySide6.QtCore import QObject, Signal, Slot
     from PySide6.QtWidgets import QApplication
 
-    from fdm.ui.thread_task_manager import ThreadTaskManager
+    from fdm.ui.thread_task_manager import TaskPhase, ThreadTaskManager
 
     QT_TASK_MANAGER_AVAILABLE = True
 except ModuleNotFoundError:
@@ -20,6 +20,7 @@ except ModuleNotFoundError:
     Signal = None  # type: ignore[assignment]
     Slot = lambda *args, **kwargs: (lambda fn: fn)  # type: ignore[assignment]
     ThreadTaskManager = None  # type: ignore[assignment]
+    TaskPhase = None  # type: ignore[assignment]
     QT_TASK_MANAGER_AVAILABLE = False
 
 
@@ -73,11 +74,47 @@ class ThreadTaskManagerTests(unittest.TestCase):
         manager.ensure_persistent("prompt", worker_factory=Worker)
         _spin_until(lambda: manager.is_running("prompt"))
 
-        manager.stop("prompt", cancel=True)
+        result = manager.stop("prompt", cancel=True)
 
         self.assertEqual(events, ["cancel"])
+        self.assertTrue(result.stopped)
+        self.assertFalse(result.timed_out)
+        self.assertEqual(result.phase_after, TaskPhase.STOPPING)
         self.assertFalse(manager.is_running("prompt"))
+        _spin_until(lambda: manager.worker("prompt") is None)
         self.assertIsNone(manager.worker("prompt"))
+
+    def test_stop_timeout_retains_handle_and_blocks_same_name_restart(self) -> None:
+        events: list[str] = []
+
+        class Worker(QObject):
+            finished = Signal()
+
+            @Slot()
+            def run(self) -> None:
+                events.append("run")
+                time.sleep(0.2)
+                self.finished.emit()
+
+            def cancel(self) -> None:
+                events.append("cancel")
+
+        manager = ThreadTaskManager(parent=_app())
+        handle = manager.start_one_shot("slow", worker_factory=Worker, wait_ms=10)
+        _spin_until(lambda: "run" in events)
+
+        result = manager.stop("slow", cancel=True)
+
+        self.assertFalse(result.stopped)
+        self.assertTrue(result.timed_out)
+        self.assertEqual(result.phase_after, TaskPhase.TIMED_OUT)
+        self.assertEqual(manager.phase("slow"), TaskPhase.TIMED_OUT)
+        self.assertIs(manager.worker("slow"), handle.worker)
+        with self.assertRaisesRegex(RuntimeError, "不能同名重启"):
+            manager.start_one_shot("slow", worker_factory=Worker, wait_ms=10)
+
+        _spin_until(lambda: manager.worker("slow") is None)
+        self.assertFalse(manager.is_running("slow"))
 
     def test_persistent_worker_is_reused_until_stopped(self) -> None:
         class Worker(QObject):
@@ -91,6 +128,7 @@ class ThreadTaskManagerTests(unittest.TestCase):
         self.assertIs(first.worker, second.worker)
 
         manager.stop("geometry", cancel=False)
+        _spin_until(lambda: manager.worker("geometry") is None)
         rebuilt = manager.ensure_persistent("geometry", worker_factory=Worker)
         _spin_until(lambda: manager.is_running("geometry"))
 

@@ -4,9 +4,10 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 import os
-import shutil
+import runpy
 import sys
 
+from fdm.atomic_io import atomic_write_json
 from fdm.models import CalibrationPreset
 
 
@@ -115,6 +116,12 @@ class AreaModelMapping:
             model_name=str(payload.get("model_name", "")).strip(),
             model_file=str(payload.get("model_file", "")).strip(),
         )
+
+
+class AreaInferDevice:
+    CPU = "cpu"
+    AUTO = "auto"
+    CUDA_0 = "cuda:0"
 
 
 class RawRecordDataSource:
@@ -383,6 +390,26 @@ def default_area_worker_python() -> str:
 
 
 def default_area_model_mappings() -> list[AreaModelMapping]:
+    metadata_path = default_area_reference_root() / "app" / "model_metadata.py"
+    if metadata_path.is_file():
+        try:
+            namespace = runpy.run_path(str(metadata_path))
+            specs = namespace.get("MODEL_SPECS")
+            if isinstance(specs, (list, tuple)):
+                mappings = [
+                    AreaModelMapping(
+                        model_name=str(item.get("model_name") or "").strip(),
+                        model_file=str(item.get("model_file") or "").strip(),
+                    )
+                    for item in specs
+                    if isinstance(item, dict)
+                    and str(item.get("model_name") or "").strip()
+                    and str(item.get("model_file") or "").strip()
+                ]
+                if mappings:
+                    return mappings
+        except (OSError, RuntimeError, TypeError, ValueError):
+            pass
     return [
         AreaModelMapping(model_name="粘纤-莱赛尔", model_file="b_v1_1.3.pth"),
         AreaModelMapping(model_name="棉-粘纤", model_file="b_cv_1.3.pth"),
@@ -444,7 +471,9 @@ class AppSettings:
     area_weights_dir: str = field(default_factory=default_area_weights_directory)
     area_vendor_root: str = field(default_factory=default_area_vendor_root)
     area_worker_python: str = field(default_factory=default_area_worker_python)
+    area_infer_device: str = AreaInferDevice.CPU
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
+    load_issues: list[dict[str, object]] = field(default_factory=list, repr=False, compare=False)
     selected_capture_device_id: str = ""
     raw_record_templates: list[RawRecordTemplate] = field(default_factory=list)
     last_raw_record_template_path: str = ""
@@ -508,6 +537,7 @@ class AppSettings:
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
         normalized.area_vendor_root = self._normalize_vendor_root(self.area_vendor_root)
         normalized.area_worker_python = self._normalize_worker_program(self.area_worker_python)
+        normalized.area_infer_device = self._normalize_area_infer_device(self.area_infer_device)
         normalized.raw_record_templates = self._normalize_raw_record_templates(self.raw_record_templates)
         normalized.last_raw_record_template_path = normalize_raw_record_template_path(self.last_raw_record_template_path)
         normalized.digital_slide_last_output_path = self._normalize_digital_slide_output_path(self.digital_slide_last_output_path)
@@ -615,6 +645,15 @@ class AppSettings:
         if default_token and not resolve_app_relative_path(relative_token).exists():
             return default_token
         return relative_token
+
+    @staticmethod
+    def _normalize_area_infer_device(value: str | None) -> str:
+        token = str(value or "").strip().lower()
+        if token == "cuda":
+            return AreaInferDevice.CUDA_0
+        if token in {AreaInferDevice.CPU, AreaInferDevice.AUTO, AreaInferDevice.CUDA_0}:
+            return token
+        return AreaInferDevice.CPU
 
     @staticmethod
     def _normalize_scale_overlay_style(value: str | None) -> str:
@@ -893,6 +932,7 @@ class AppSettings:
             "area_weights_dir": normalized.area_weights_dir,
             "area_vendor_root": normalized.area_vendor_root,
             "area_worker_python": normalized.area_worker_python,
+            "area_infer_device": normalized.area_infer_device,
             "calibration_presets": [preset.to_dict() for preset in normalized.calibration_presets],
             "selected_capture_device_id": normalized.selected_capture_device_id,
             "raw_record_templates": [template.to_dict() for template in normalized.raw_record_templates],
@@ -1076,13 +1116,27 @@ class AppSettings:
         settings.area_weights_dir = cls._normalize_weights_dir(payload.get("area_weights_dir", settings.area_weights_dir))
         settings.area_vendor_root = cls._normalize_vendor_root(payload.get("area_vendor_root", settings.area_vendor_root))
         settings.area_worker_python = cls._normalize_worker_program(payload.get("area_worker_python", settings.area_worker_python))
+        settings.area_infer_device = cls._normalize_area_infer_device(
+            payload.get("area_infer_device", settings.area_infer_device)
+        )
         presets = payload.get("calibration_presets", None)
         if isinstance(presets, list):
-            settings.calibration_presets = [
-                CalibrationPreset.from_dict(item)
-                for item in presets
-                if isinstance(item, dict) and str(item.get("name", "")).strip()
-            ]
+            valid_presets: list[CalibrationPreset] = []
+            for index, item in enumerate(presets):
+                if not isinstance(item, dict) or not str(item.get("name", "")).strip():
+                    continue
+                try:
+                    valid_presets.append(CalibrationPreset.from_dict(item))
+                except (KeyError, TypeError, ValueError) as exc:
+                    settings.load_issues.append(
+                        {
+                            "kind": "calibration_preset",
+                            "index": index,
+                            "message": str(exc),
+                            "raw_payload": dict(item),
+                        }
+                    )
+            settings.calibration_presets = valid_presets
         settings.selected_capture_device_id = str(payload.get("selected_capture_device_id", settings.selected_capture_device_id)).strip()
         templates = payload.get("raw_record_templates", None)
         if isinstance(templates, list):
@@ -1286,6 +1340,9 @@ class AppSettingsIO:
         if not target_path.exists():
             return AppSettings()
         try:
+            # Legacy settings may contain non-standard numeric constants. Load
+            # them only so individual invalid presets can be quarantined by
+            # AppSettings.from_dict; every subsequent write is strict JSON.
             payload = json.loads(target_path.read_text(encoding="utf-8"))
         except (OSError, json.JSONDecodeError, TypeError, ValueError):
             return AppSettings()
@@ -1297,10 +1354,7 @@ class AppSettingsIO:
     def save(settings: AppSettings, path: str | Path | None = None) -> Path:
         target_path = Path(path) if path is not None else settings_file_path()
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        target_path.write_text(
-            json.dumps(settings.to_dict(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+        atomic_write_json(target_path, settings.to_dict(), ensure_ascii=False, indent=2)
         return target_path
 
     @staticmethod
@@ -1308,17 +1362,22 @@ class AppSettingsIO:
         source = Path(source_path).expanduser()
         target_path = Path(path) if path is not None else settings_file_path()
         try:
-            payload = json.loads(source.read_text(encoding="utf-8"))
-        except json.JSONDecodeError as exc:
+            payload = json.loads(
+                source.read_text(encoding="utf-8"),
+                parse_constant=_reject_non_finite_json_constant,
+            )
+        except (json.JSONDecodeError, ValueError) as exc:
             raise ValueError("设置文件不是有效的 JSON。") from exc
         if not isinstance(payload, dict):
             raise ValueError("设置文件内容不是有效的对象。")
         settings = AppSettings.from_dict(payload)
         target_path.parent.mkdir(parents=True, exist_ok=True)
-        try:
-            same_file = source.resolve() == target_path.resolve()
-        except OSError:
-            same_file = False
-        if not same_file:
-            shutil.copyfile(source, target_path)
+        # Persist the validated, normalized model rather than copying the raw
+        # source. Python's JSON parser otherwise permits NaN/Infinity tokens
+        # that our canonical settings format explicitly forbids.
+        atomic_write_json(target_path, settings.to_dict(), ensure_ascii=False, indent=2)
         return settings, target_path
+
+
+def _reject_non_finite_json_constant(value: str) -> object:
+    raise ValueError(f"non-finite JSON constant is not allowed: {value}")

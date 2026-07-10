@@ -65,6 +65,14 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._request_viewport_buffer()
         self.schedule_initial_fit()
 
+    def shutdown(self) -> None:
+        """Detach long-lived slide resources before the Qt widget is deleted."""
+        self._smooth_nav_keys.clear()
+        self._smooth_nav_timer.stop()
+        self._invalidate_viewport_buffer()
+        self._slide_store = None
+        self._slide_manifest = None
+
     def set_image(self, image: QImage) -> None:
         self._image = image
         self.update()

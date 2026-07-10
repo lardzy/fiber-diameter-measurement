@@ -1,10 +1,24 @@
 from __future__ import annotations
 
 from pathlib import Path
+import copy
 import json
+from dataclasses import dataclass
 
+from fdm.atomic_io import atomic_write_json
 from fdm.geometry import Line
 from fdm.models import CalibrationSidecar, ImageDocument
+
+
+@dataclass(frozen=True, slots=True)
+class SidecarSaveResult:
+    success: bool
+    path: Path | None = None
+    action: str = "skipped"
+    message: str = ""
+
+    def __bool__(self) -> bool:
+        return self.success
 
 
 class CalibrationSidecarIO:
@@ -25,25 +39,30 @@ class CalibrationSidecarIO:
         )
 
     @classmethod
-    def save_document(cls, document: ImageDocument) -> Path | None:
+    def save_document(cls, document: ImageDocument) -> SidecarSaveResult:
         if not document.uses_sidecar():
             document.mark_calibration_saved()
-            return None
+            return SidecarSaveResult(True, action="not_applicable")
         sidecar = cls.build_sidecar(document)
         output_path = Path(document.sidecar_path or cls.sidecar_path_for_image(document.path))
         if sidecar is None:
-            if output_path.exists():
-                output_path.unlink()
+            try:
+                if output_path.exists():
+                    output_path.unlink()
+            except OSError as exc:
+                document.refresh_dirty_flags()
+                return SidecarSaveResult(False, output_path, "delete_failed", str(exc))
             document.sidecar_path = output_path.as_posix()
             document.mark_calibration_saved()
-            return None
-        output_path.write_text(
-            json.dumps(sidecar.to_dict(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
+            return SidecarSaveResult(True, output_path, "deleted")
+        try:
+            atomic_write_json(output_path, sidecar.to_dict(), ensure_ascii=False, indent=2)
+        except (OSError, TypeError, ValueError) as exc:
+            document.refresh_dirty_flags()
+            return SidecarSaveResult(False, output_path, "write_failed", str(exc))
         document.sidecar_path = output_path.as_posix()
         document.mark_calibration_saved()
-        return output_path
+        return SidecarSaveResult(True, output_path, "written")
 
     @classmethod
     def load_document(cls, document: ImageDocument) -> bool:
@@ -55,7 +74,15 @@ class CalibrationSidecarIO:
         if not input_path.exists():
             return False
         payload = json.loads(input_path.read_text(encoding="utf-8"))
-        sidecar = CalibrationSidecar.from_dict(payload)
+        try:
+            sidecar = CalibrationSidecar.from_dict(payload)
+        except (KeyError, TypeError, ValueError) as exc:
+            document.calibration = None
+            document.calibration_load_error = str(exc)
+            document.calibration_load_payload = copy.deepcopy(payload) if isinstance(payload, dict) else {"payload": payload}
+            return False
+        document.calibration_load_error = None
+        document.calibration_load_payload = None
         document.calibration = sidecar.calibration
         if sidecar.calibration_line is not None:
             document.metadata["calibration_line"] = sidecar.calibration_line.to_dict()
@@ -65,13 +92,13 @@ class CalibrationSidecarIO:
         return True
 
     @classmethod
-    def export_document(cls, document: ImageDocument, output_path: str | Path) -> Path | None:
+    def export_document(cls, document: ImageDocument, output_path: str | Path) -> SidecarSaveResult:
         sidecar = cls.build_sidecar(document)
         if sidecar is None:
-            return None
+            return SidecarSaveResult(True, action="not_available")
         export_path = Path(output_path)
-        export_path.write_text(
-            json.dumps(sidecar.to_dict(), ensure_ascii=False, indent=2),
-            encoding="utf-8",
-        )
-        return export_path
+        try:
+            atomic_write_json(export_path, sidecar.to_dict(), ensure_ascii=False, indent=2)
+        except (OSError, TypeError, ValueError) as exc:
+            return SidecarSaveResult(False, export_path, "write_failed", str(exc))
+        return SidecarSaveResult(True, export_path, "written")

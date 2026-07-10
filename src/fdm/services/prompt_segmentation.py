@@ -1941,7 +1941,11 @@ class LightHQSamPromptSegmentationService:
                 f"未找到 {interactive_segmentation_model_label(self._model_variant)} 模型文件，请确认 {self._checkpoint_path.as_posix()} 存在。"
             )
         model = sam_model_registry["vit_tiny"](checkpoint=None)
-        state_dict = torch.load(str(self._checkpoint_path), map_location=torch.device("cpu"), weights_only=False)
+        state_dict = torch.load(
+            str(self._checkpoint_path),
+            map_location=torch.device("cpu"),
+            weights_only=True,
+        )
         model.load_state_dict(state_dict)
         model.to(device=torch.device("cpu"))
         model.eval()

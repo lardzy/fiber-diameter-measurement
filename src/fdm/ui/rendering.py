@@ -955,6 +955,7 @@ def draw_scale_overlay(
     scale_fg_width: float,
     font_px: float,
     render_mode: str,
+    image_origin: Point | None = None,
 ) -> None:
     scale_value = resolve_scale_overlay_value(
         document,
@@ -976,6 +977,7 @@ def draw_scale_overlay(
         bar_px=bar_px,
         font_px=resolved_font_px,
         image_to_output_scale=image_to_output_scale,
+        image_origin=image_origin,
     )
     end_point = QPointF(start_point.x() + bar_px, start_point.y())
     fg_width = scale_fg_width
@@ -1036,13 +1038,15 @@ def _scale_overlay_start(
     bar_px: float,
     font_px: float,
     image_to_output_scale: float,
+    image_origin: Point | None = None,
 ) -> tuple[QPointF, bool]:
     margin = max(24.0, min(image_width, image_height) * 0.04)
     placement = settings.scale_overlay_placement_mode
     if placement == ScaleOverlayPlacementMode.MANUAL and document.scale_overlay_anchor is not None:
+        origin = image_origin or Point(0.0, 0.0)
         point = QPointF(
-            document.scale_overlay_anchor.x * image_to_output_scale,
-            document.scale_overlay_anchor.y * image_to_output_scale,
+            (document.scale_overlay_anchor.x - origin.x) * image_to_output_scale,
+            (document.scale_overlay_anchor.y - origin.y) * image_to_output_scale,
         )
         clamped = QPointF(
             min(max(margin, point.x()), max(margin, image_width - margin - bar_px)),

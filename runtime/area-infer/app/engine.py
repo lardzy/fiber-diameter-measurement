@@ -1,7 +1,13 @@
 from __future__ import annotations
 
 import base64
+from collections import OrderedDict
+from collections.abc import Mapping
+import gc
+import hashlib
+import io
 import os
+import secrets
 import sys
 import threading
 import time
@@ -12,6 +18,14 @@ from typing import Any
 import cv2
 import numpy as np
 from PIL import Image
+
+from app.model_metadata import (
+    MODEL_METADATA_VERSION,
+    MODEL_SPECS,
+    find_model_spec,
+    parse_model_classes,
+    resolve_model_classes,
+)
 
 
 PALETTE: list[tuple[int, int, int]] = [
@@ -25,34 +39,11 @@ PALETTE: list[tuple[int, int, int]] = [
     (216, 27, 96),
 ]
 
-LABEL_ALIAS: dict[str, str] = {
-    "粘": "粘纤",
-    "莱": "莱赛尔",
-    "莫": "莫代尔",
-}
-
-
 class InferServiceError(RuntimeError):
     def __init__(self, code: str, message: str = "") -> None:
         super().__init__(message or code)
         self.code = code
         self.message = message or code
-
-
-def parse_model_classes(model_name: str) -> list[str]:
-    classes: list[str] = []
-    for item in str(model_name or "").split("-"):
-        token = item.strip()
-        if not token:
-            continue
-        classes.append(LABEL_ALIAS.get(token, token))
-
-    deduped: list[str] = []
-    for item in classes:
-        if item not in deduped:
-            deduped.append(item)
-    return deduped or ["未分类"]
-
 
 @dataclass
 class _ModelRuntime:
@@ -64,6 +55,7 @@ class _ModelRuntime:
     cfg_obj: Any
     net: Any
     loaded_at: float
+    trusted_metadata: bool
 
 
 class AreaNativeEngine:
@@ -75,15 +67,34 @@ class AreaNativeEngine:
         default_cfg_name: str = "yolact_base_config",
         infer_device: str = "auto",
         gpu_policy: str = "warn_continue",
+        max_cached_models: int = 2,
+        require_trusted_weights: bool = True,
+        verify_trusted_weights: bool = True,
+        required_model_files: tuple[str, ...] = (),
+        max_image_bytes: int = 48 * 1024 * 1024,
+        max_image_pixels: int = 50_000_000,
+        max_mask_working_bytes: int = 1536 * 1024 * 1024,
     ) -> None:
         self.weights_dir = Path(weights_dir).resolve()
         self.vendor_root = Path(vendor_root).resolve()
         self.default_cfg_name = default_cfg_name
         self._requested_device = self._normalize_infer_device(infer_device)
         self._gpu_policy = self._normalize_gpu_policy(gpu_policy)
+        self._max_cached_models = max(1, min(int(max_cached_models), 2))
+        self._require_trusted_weights = bool(require_trusted_weights)
+        # "Trusted" must mean both allowlisted and byte-for-byte verified.  Do
+        # not permit a caller to accidentally weaken that promise by combining
+        # require_trusted_weights=True with verify_trusted_weights=False.
+        self._verify_trusted_weights = bool(verify_trusted_weights) or self._require_trusted_weights
+        self._required_model_files = tuple(Path(item).name for item in required_model_files if Path(item).name)
+        self._max_image_bytes = max(1, int(max_image_bytes))
+        self._max_image_pixels = max(1, int(max_image_pixels))
+        self._max_mask_working_bytes = max(16 * 1024 * 1024, int(max_mask_working_bytes))
         self._lock = threading.RLock()
         self._runtime_loaded = False
-        self._cache: dict[tuple[str, tuple[str, ...], str], _ModelRuntime] = {}
+        self._cache: OrderedDict[tuple[str, tuple[str, ...], str], _ModelRuntime] = OrderedDict()
+        self._verified_weights: dict[Path, tuple[int, int, int, str]] = {}
+        self._cache_evictions = 0
 
         self._torch = None
         self._cfg = None
@@ -99,9 +110,11 @@ class AreaNativeEngine:
 
     def _normalize_infer_device(self, value: str | None) -> str:
         token = str(value or "").strip().lower()
-        if token in {"cpu", "cuda", "auto"}:
+        if token == "cuda":
+            return "cuda:0"
+        if token in {"cpu", "cuda:0", "auto"}:
             return token
-        return "auto"
+        return "cpu"
 
     def _normalize_gpu_policy(self, value: str | None) -> str:
         token = str(value or "").strip().lower()
@@ -127,9 +140,9 @@ class AreaNativeEngine:
     def _fallback_to_cpu(self, reason: str) -> None:
         if self._effective_device_key != "cuda":
             return
+        self._clear_model_cache()
         self._effective_device = self._torch.device("cpu")
         self._effective_device_key = "cpu"
-        self._cache.clear()
         self._set_device_warning(reason)
 
     def _resolve_runtime_device(self) -> None:
@@ -162,10 +175,10 @@ class AreaNativeEngine:
             self._effective_device_key = "cuda"
             return
 
-        if self._requested_device == "cuda" and self._gpu_policy == "fail":
+        if self._requested_device == "cuda:0" and self._gpu_policy == "fail":
             raise InferServiceError("infer_service_unavailable", "cuda_requested_but_unavailable")
 
-        if self._requested_device == "cuda":
+        if self._requested_device == "cuda:0":
             self._set_device_warning("cuda_requested_but_unavailable_fallback_to_cpu")
         else:
             self._set_device_warning("cuda_unavailable_fallback_to_cpu")
@@ -230,6 +243,9 @@ class AreaNativeEngine:
 
     def _normalize_options(self, inference_options: dict[str, Any] | None) -> dict[str, Any]:
         options = dict(inference_options or {})
+        include_overlay = options.get("include_overlay", True)
+        if not isinstance(include_overlay, bool):
+            raise InferServiceError("infer_bad_response", "include_overlay_must_be_boolean")
         normalized = {
             "score_threshold": float(options.get("score_threshold", 0.15) or 0.15),
             "top_k": int(options.get("top_k", 200) or 200),
@@ -237,26 +253,62 @@ class AreaNativeEngine:
             "nms_conf_thresh": float(options.get("nms_conf_thresh", 0.05) or 0.05),
             "nms_thresh": float(options.get("nms_thresh", 0.5) or 0.5),
             "overlay_alpha": float(options.get("overlay_alpha", 0.45) or 0.45),
+            "include_overlay": include_overlay,
         }
         normalized["score_threshold"] = max(0.0, min(1.0, normalized["score_threshold"]))
         normalized["nms_conf_thresh"] = max(0.0, min(1.0, normalized["nms_conf_thresh"]))
         normalized["nms_thresh"] = max(0.0, min(1.0, normalized["nms_thresh"]))
-        normalized["top_k"] = max(1, min(1000, normalized["top_k"]))
-        normalized["nms_top_k"] = max(1, min(1000, normalized["nms_top_k"]))
+        normalized["top_k"] = max(1, min(200, normalized["top_k"]))
+        normalized["nms_top_k"] = max(1, min(400, normalized["nms_top_k"]))
         normalized["overlay_alpha"] = max(0.05, min(0.95, normalized["overlay_alpha"]))
         return normalized
 
     def _decode_image(self, image_bytes_b64: str) -> np.ndarray:
         try:
-            raw = base64.b64decode(image_bytes_b64)
+            raw = base64.b64decode(image_bytes_b64, validate=True)
+            if len(raw) > self._max_image_bytes:
+                raise InferServiceError(
+                    "infer_request_too_large",
+                    f"decoded_image_bytes_exceeded:{len(raw)}>{self._max_image_bytes}",
+                )
+            try:
+                with Image.open(io.BytesIO(raw)) as header_image:
+                    width, height = header_image.size
+            except Exception as exc:
+                raise InferServiceError("infer_bad_response", f"invalid_image_header:{exc}") from exc
+            pixels = int(width) * int(height)
+            if width <= 0 or height <= 0 or pixels > self._max_image_pixels:
+                raise InferServiceError(
+                    "infer_request_too_large",
+                    f"encoded_image_pixels_exceeded:{pixels}>{self._max_image_pixels}",
+                )
             arr = np.frombuffer(raw, dtype=np.uint8)
             image_bgr = cv2.imdecode(arr, cv2.IMREAD_COLOR)
+        except InferServiceError:
+            raise
         except Exception as exc:
             raise InferServiceError("infer_bad_response", f"invalid_image_bytes:{exc}") from exc
 
         if image_bgr is None:
             raise InferServiceError("infer_bad_response", "invalid_image_decode")
+        height, width = image_bgr.shape[:2]
+        pixels = int(height) * int(width)
+        if pixels > self._max_image_pixels:
+            raise InferServiceError(
+                "infer_request_too_large",
+                f"decoded_image_pixels_exceeded:{pixels}>{self._max_image_pixels}",
+            )
         return image_bgr
+
+    def _validate_mask_working_budget(self, *, pixels: int, top_k: int) -> None:
+        estimated_bytes = max(1, int(pixels)) * max(1, int(top_k)) * 4
+        if estimated_bytes > self._max_mask_working_bytes:
+            raise InferServiceError(
+                "infer_request_too_large",
+                "mask_working_set_exceeded:"
+                f"{estimated_bytes}>{self._max_mask_working_bytes} "
+                f"(pixels={pixels},top_k={top_k})",
+            )
 
     def _mask_to_polygon(self, mask_bool: np.ndarray | None) -> list[list[int]]:
         if not isinstance(mask_bool, np.ndarray):
@@ -297,24 +349,152 @@ class AreaNativeEngine:
             raise InferServiceError("infer_model_load_failed", f"weight_not_found:{path}")
         return path
 
+    def _verify_weight_path(self, *, model_name: str, model_file: str, path: Path) -> bool:
+        spec = find_model_spec(model_file=model_file)
+        if spec is None:
+            if self._require_trusted_weights:
+                raise InferServiceError(
+                    "infer_model_load_failed",
+                    (
+                        f"untrusted_model_file:{path.name}:custom area checkpoints are disabled by default; "
+                        "source development may opt in with FDM_ALLOW_UNTRUSTED_AREA_MODELS=1, "
+                        "but frozen/full releases only accept model_metadata.py allowlisted hashes"
+                    ),
+                )
+            return False
+        expected_sha256 = str(spec.get("sha256") or "").strip().lower()
+        if len(expected_sha256) != 64:
+            raise InferServiceError("infer_model_load_failed", f"missing_trusted_sha256:{path.name}")
+        if not self._verify_trusted_weights:
+            return True
+
+        stat = path.stat()
+        cached = self._verified_weights.get(path)
+        fingerprint = (
+            int(stat.st_size),
+            int(stat.st_mtime_ns),
+            int(stat.st_ctime_ns),
+            expected_sha256,
+        )
+        if cached == fingerprint:
+            return True
+        digest = hashlib.sha256()
+        try:
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
+                    digest.update(chunk)
+        except OSError as exc:
+            raise InferServiceError("infer_model_load_failed", f"weight_hash_failed:{path.name}:{exc}") from exc
+        actual_sha256 = digest.hexdigest()
+        if not secrets.compare_digest(actual_sha256, expected_sha256):
+            raise InferServiceError(
+                "infer_model_load_failed",
+                f"weight_sha256_mismatch:{path.name}:{actual_sha256}",
+            )
+        self._verified_weights[path] = fingerprint
+        return True
+
+    def _load_state_dict_safely(self, path: Path) -> OrderedDict[str, Any]:
+        """Load a tensor-only checkpoint without invoking arbitrary pickle code."""
+
+        try:
+            payload = self._torch.load(
+                str(path),
+                map_location=self._torch.device("cpu"),
+                weights_only=True,
+            )
+        except TypeError as exc:
+            raise InferServiceError(
+                "infer_model_load_failed",
+                f"safe_weights_only_unsupported:{path.name}:PyTorch 2.4 or newer is required",
+            ) from exc
+        except Exception as exc:
+            raise InferServiceError(
+                "infer_model_load_failed",
+                (
+                    f"safe_weights_only_load_failed:{path.name}:{exc}; "
+                    "the checkpoint must be a compatible tensor state_dict"
+                ),
+            ) from exc
+
+        # Some training pipelines wrap the actual state dict in a single
+        # "state_dict" entry.  This remains safe because weights_only already
+        # restricted deserialization to tensors and simple containers.
+        if isinstance(payload, Mapping) and isinstance(payload.get("state_dict"), Mapping):
+            payload = payload["state_dict"]
+        if not isinstance(payload, Mapping) or not payload:
+            raise InferServiceError(
+                "infer_model_load_failed",
+                f"safe_weights_only_invalid_state_dict:{path.name}:expected a non-empty mapping",
+            )
+        if any(not isinstance(key, str) for key in payload):
+            raise InferServiceError(
+                "infer_model_load_failed",
+                f"safe_weights_only_invalid_state_dict:{path.name}:all parameter keys must be strings",
+            )
+        return OrderedDict(payload.items())
+
+    def _evict_runtime(self, runtime: _ModelRuntime) -> None:
+        try:
+            del runtime.net
+        except Exception:
+            pass
+        gc.collect()
+        if self._effective_device_key == "cuda" and self._torch is not None:
+            try:
+                self._torch.cuda.empty_cache()
+            except Exception:
+                pass
+
+    def _clear_model_cache(self) -> None:
+        runtimes = list(self._cache.values())
+        self._cache.clear()
+        for runtime in runtimes:
+            self._evict_runtime(runtime)
+
+    def _enforce_cache_limit(self) -> None:
+        while len(self._cache) > self._max_cached_models:
+            _, runtime = self._cache.popitem(last=False)
+            self._cache_evictions += 1
+            self._evict_runtime(runtime)
+
     def _model_cache_key(self, model_file: str, class_names: tuple[str, ...]) -> tuple[str, tuple[str, ...], str]:
         return (Path(model_file).name, class_names, self._effective_device_key)
 
     def _load_model(self, *, model_name: str, model_file: str) -> _ModelRuntime:
+        weight_path = self._resolve_weight_path(model_file)
+        trusted_metadata = self._verify_weight_path(
+            model_name=model_name,
+            model_file=model_file,
+            path=weight_path,
+        )
         self._ensure_runtime()
 
-        classes = tuple(parse_model_classes(model_name))
+        classes, metadata_mapping = resolve_model_classes(model_name=model_name, model_file=model_file)
+        trusted_metadata = trusted_metadata and metadata_mapping
         cache_key = self._model_cache_key(model_file=model_file, class_names=classes)
         if cache_key in self._cache:
-            return self._cache[cache_key]
+            runtime = self._cache.pop(cache_key)
+            self._cache[cache_key] = runtime
+            return runtime
 
-        weight_path = self._resolve_weight_path(model_file)
         cfg_obj = self._build_cfg(list(classes))
         self._apply_cfg(cfg_obj)
 
         try:
             net = self._yolact_cls()
-            net.load_weights(str(weight_path))
+            state_dict = self._load_state_dict_safely(weight_path)
+
+            # Preserve the compatibility cleanup from YOLACT.load_weights,
+            # while keeping deserialization inside the safe loader above.
+            for key in list(state_dict.keys()):
+                if key.startswith("backbone.layer") and not key.startswith("backbone.layers"):
+                    del state_dict[key]
+                elif key.startswith("fpn.downsample_layers."):
+                    layer_index = int(key.split(".")[2])
+                    if self._cfg.fpn is not None and layer_index >= self._cfg.fpn.num_downsample:
+                        del state_dict[key]
+            net.load_state_dict(state_dict)
             try:
                 net = net.to(self._effective_device)
             except Exception as exc:
@@ -339,8 +519,10 @@ class AreaNativeEngine:
             cfg_obj=cfg_obj,
             net=net,
             loaded_at=time.time(),
+            trusted_metadata=trusted_metadata,
         )
         self._cache[cache_key] = runtime
+        self._enforce_cache_limit()
         return runtime
 
     def health(self) -> dict[str, Any]:
@@ -358,13 +540,71 @@ class AreaNativeEngine:
                         "cfg_name": item.cfg_name,
                         "device": item.device,
                         "loaded_at": item.loaded_at,
+                        "trusted_metadata": item.trusted_metadata,
                     }
                     for item in self._cache.values()
                 ],
+                "model_cache": {
+                    "size": len(self._cache),
+                    "max_size": self._max_cached_models,
+                    "evictions": self._cache_evictions,
+                },
+                "weight_policy": {
+                    "require_trusted": self._require_trusted_weights,
+                    "verify_sha256": self._verify_trusted_weights,
+                    "metadata_version": MODEL_METADATA_VERSION,
+                },
                 "runtime": {
                     "torch_version": getattr(self._torch, "__version__", "unknown"),
                     **runtime_info,
                 },
+            }
+
+    def readiness(self) -> dict[str, Any]:
+        with self._lock:
+            if not self.vendor_root.is_dir():
+                raise InferServiceError("infer_service_unavailable", f"vendor_root_not_found:{self.vendor_root}")
+            if not self.weights_dir.is_dir():
+                raise InferServiceError("infer_service_unavailable", f"weights_dir_not_found:{self.weights_dir}")
+            required_files = self._required_model_files
+            explicit_requirements = bool(required_files)
+            if not required_files:
+                required_files = tuple(
+                    str(spec["model_file"])
+                    for spec in MODEL_SPECS
+                    if (self.weights_dir / str(spec["model_file"])).is_file()
+                )
+            if not required_files:
+                raise InferServiceError("infer_service_unavailable", "no_loadable_model_candidates")
+            verified_models: list[str] = []
+            loadable_model = ""
+            failures: list[str] = []
+            for model_file in required_files:
+                try:
+                    path = self._resolve_weight_path(model_file)
+                    spec = find_model_spec(model_file=model_file)
+                    model_name = str(spec.get("model_name") or "") if spec is not None else ""
+                    if self._verify_weight_path(model_name=model_name, model_file=model_file, path=path):
+                        verified_models.append(path.name)
+                    if not loadable_model:
+                        runtime = self._load_model(model_name=model_name, model_file=model_file)
+                        loadable_model = runtime.model_file
+                except InferServiceError as exc:
+                    failures.append(f"{model_file}:{exc.message}")
+                    if explicit_requirements:
+                        raise
+            if not loadable_model:
+                raise InferServiceError(
+                    "infer_service_unavailable",
+                    "no_loadable_model:" + ";".join(failures),
+                )
+            return {
+                "status": "ready",
+                "required_models": list(required_files),
+                "verified_models": verified_models,
+                "loadable_model": loadable_model,
+                "device": self._runtime_device_payload(),
+                "metadata_version": MODEL_METADATA_VERSION,
             }
 
     def warmup(self, *, model_name: str, model_file: str) -> dict[str, Any]:
@@ -376,6 +616,7 @@ class AreaNativeEngine:
                 "class_names": list(runtime.class_names),
                 "cfg_name": runtime.cfg_name,
                 "device": runtime.device,
+                "class_mapping": "trusted_metadata_v1" if runtime.trusted_metadata else "model_name_fallback",
                 **self._runtime_device_payload(),
             }
 
@@ -467,6 +708,10 @@ class AreaNativeEngine:
             net.detect.use_cross_class_nms = False
 
             image_bgr = self._decode_image(image_bytes_b64)
+            self._validate_mask_working_budget(
+                pixels=int(image_bgr.shape[0]) * int(image_bgr.shape[1]),
+                top_k=min(int(options["top_k"]), 64),
+            )
 
             try:
                 classes_t, scores_t, boxes_t, masks_t = self._run_model_infer(
@@ -502,14 +747,16 @@ class AreaNativeEngine:
             per_class_area_px: dict[str, int] = {name: 0 for name in runtime.class_names}
 
             if hasattr(scores_t, "numel") and int(scores_t.numel()) > 0:
+                self._validate_mask_working_budget(
+                    pixels=int(image_bgr.shape[0]) * int(image_bgr.shape[1]),
+                    top_k=int(scores_t.numel()),
+                )
                 scores_np = scores_t.detach().cpu().numpy()
                 order = np.argsort(-scores_np)
                 order = order[: max(1, int(options["top_k"]))]
 
                 classes_np = classes_t.detach().cpu().numpy()
                 boxes_np = boxes_t.detach().cpu().numpy()
-                masks_np = masks_t.detach().cpu().numpy()
-
                 for i in order.tolist():
                     cls_idx = int(classes_np[i])
                     score = float(scores_np[i])
@@ -523,7 +770,7 @@ class AreaNativeEngine:
                     else:
                         cls_name = "未分类"
 
-                    raw_mask = masks_np[i]
+                    raw_mask = masks_t[i].detach().cpu().numpy()
                     mask_bool = (raw_mask > 0.5) if isinstance(raw_mask, np.ndarray) else None
                     area_px = int(mask_bool.sum()) if isinstance(mask_bool, np.ndarray) else max(0, (x2 - x1 + 1) * (y2 - y1 + 1))
                     polygon = self._mask_to_polygon(mask_bool)
@@ -540,28 +787,35 @@ class AreaNativeEngine:
                         }
                     )
 
-            overlay_png_b64 = self._render_overlay(
-                image_bgr=image_bgr,
-                instances=instances,
-                class_names=runtime.class_names,
-                alpha=float(options["overlay_alpha"]),
-            )
+            overlay_png_b64 = None
+            if options["include_overlay"]:
+                overlay_png_b64 = self._render_overlay(
+                    image_bgr=image_bgr,
+                    instances=instances,
+                    class_names=runtime.class_names,
+                    alpha=float(options["overlay_alpha"]),
+                )
             for item in instances:
                 item.pop("mask", None)
 
-            return {
+            response = {
                 "instances": instances,
                 "per_class_area_px": per_class_area_px,
-                "overlay_png_b64": overlay_png_b64,
                 "engine_meta": {
                     "engine": "linux_native_yolact",
                     "cfg_name": runtime.cfg_name,
                     "model_file": runtime.model_file,
+                    "class_names": list(runtime.class_names),
+                    "class_mapping": "trusted_metadata_v1" if runtime.trusted_metadata else "model_name_fallback",
+                    "model_metadata_version": MODEL_METADATA_VERSION,
                     **self._runtime_device_payload(),
                     "elapsed_ms": round((time.time() - t0) * 1000.0, 2),
                     "instance_count": len(instances),
                 },
             }
+            if overlay_png_b64 is not None:
+                response["overlay_png_b64"] = overlay_png_b64
+            return response
 
 
 DEFAULT_VENDOR_ROOT = Path(__file__).resolve().parents[1] / "vendor" / "yolact"
@@ -569,9 +823,54 @@ DEFAULT_WEIGHTS_DIR = os.environ.get("AREA_WEIGHTS_DIR", "/opt/area_weights")
 DEFAULT_INFER_DEVICE = os.environ.get("AREA_INFER_DEVICE", "auto")
 DEFAULT_GPU_POLICY = os.environ.get("AREA_INFER_GPU_POLICY", "warn_continue")
 
+
+def _env_bool(name: str, default: bool) -> bool:
+    token = str(os.environ.get(name, "")).strip().lower()
+    if not token:
+        return default
+    return token in {"1", "true", "yes", "on"}
+
+
+def _env_int(name: str, default: int, *, minimum: int, maximum: int) -> int:
+    try:
+        value = int(os.environ.get(name, default))
+    except (TypeError, ValueError):
+        value = default
+    return max(minimum, min(value, maximum))
+
+
+def _required_models_from_env() -> tuple[str, ...]:
+    return tuple(
+        Path(item.strip()).name
+        for item in str(os.environ.get("AREA_REQUIRED_MODELS", "")).split(",")
+        if Path(item.strip()).name
+    )
+
 engine = AreaNativeEngine(
     weights_dir=DEFAULT_WEIGHTS_DIR,
     vendor_root=os.environ.get("AREA_YOLACT_VENDOR_ROOT", str(DEFAULT_VENDOR_ROOT)),
     infer_device=DEFAULT_INFER_DEVICE,
     gpu_policy=DEFAULT_GPU_POLICY,
+    max_cached_models=_env_int("AREA_MAX_CACHED_MODELS", 2, minimum=1, maximum=2),
+    require_trusted_weights=_env_bool("AREA_REQUIRE_TRUSTED_WEIGHTS", True),
+    verify_trusted_weights=_env_bool("AREA_VERIFY_TRUSTED_WEIGHTS", True),
+    required_model_files=_required_models_from_env(),
+    max_image_bytes=_env_int(
+        "AREA_MAX_IMAGE_BYTES",
+        48 * 1024 * 1024,
+        minimum=1024,
+        maximum=256 * 1024 * 1024,
+    ),
+    max_image_pixels=_env_int(
+        "AREA_MAX_IMAGE_PIXELS",
+        50_000_000,
+        minimum=1_000_000,
+        maximum=200_000_000,
+    ),
+    max_mask_working_bytes=_env_int(
+        "AREA_MAX_MASK_WORKING_BYTES",
+        1536 * 1024 * 1024,
+        minimum=16 * 1024 * 1024,
+        maximum=4 * 1024 * 1024 * 1024,
+    ),
 )

@@ -23,6 +23,7 @@ except ModuleNotFoundError:
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
+from fdm.lifecycle import AcquisitionDisposition, DigitalSlideAcquisitionSession, TransitionIntent, TransitionResult
 from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
 from fdm.settings import (
     AppThemeMode,
@@ -40,10 +41,11 @@ from fdm.settings import (
     ScaleOverlayStyle,
 )
 from fdm.services.area_inference import AreaInstanceResult
+from fdm.services.capture import CaptureStopResult
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore, DigitalSlideTile
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
-from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_NEG, DIR_POS
+from fdm.services.motion_control import AXIS_X, AXIS_Y, AXIS_Z, DIR_NEG, DIR_POS, MotionShutdownResult
 from fdm.services.preview_analysis import MAP_BUILD_ANALYSIS_INTERVAL_MS, MapBuildFinalResult
 from fdm.services.prompt_segmentation import PromptSegmentationResult
 from fdm.services.sidecar_io import CalibrationSidecarIO
@@ -63,7 +65,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.icons import application_icon
     from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest, qimage_to_raster
     from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
-    from fdm.ui.main_window import MainWindow
+    from fdm.ui.main_window import DigitalSlideWriteWorker, MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
     from fdm.ui.rendering import draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
@@ -84,6 +86,7 @@ else:
     ImageLoadRequest = object  # type: ignore[assignment]
     qimage_to_raster = object  # type: ignore[assignment]
     DigitalSlideCanvas = object  # type: ignore[assignment]
+    DigitalSlideWriteWorker = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
@@ -229,6 +232,339 @@ class CanvasAndExportTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
+
+    def test_digital_slide_writer_enforces_queue_item_and_byte_limits(self) -> None:
+        image = QImage(2, 2, QImage.Format.Format_RGB32)
+        image.fill(QColor("#112233"))
+        tile = DigitalSlideTile(
+            z_index=0,
+            x=0,
+            y=0,
+            width=2,
+            height=2,
+            stage_x=0,
+            stage_y=0,
+            focus_z=0,
+        )
+        worker = DigitalSlideWriteWorker(
+            "/tmp/not-started.fdmslide",
+            max_queue_size=3,
+            max_queue_bytes=max(1, int(image.sizeInBytes())) + 1,
+        )
+
+        self.assertTrue(worker.enqueue(tile, image))
+        self.assertFalse(worker.enqueue(tile, image))
+        self.assertEqual(worker._queue.qsize(), 1)  # noqa: SLF001
+        self.assertLessEqual(worker._queued_bytes, worker._max_queue_bytes)  # noqa: SLF001
+        worker.cancel()
+
+    def test_digital_slide_writer_cancel_during_write_emits_no_success(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "cancel-write.fdmslide"
+            store = DigitalSlideStore.create(
+                path,
+                DigitalSlideManifest(1, 4, 4, 4, 4, [0]),
+            )
+            store.close()
+            image = QImage(4, 4, QImage.Format.Format_RGB32)
+            image.fill(QColor("#224466"))
+            tile = DigitalSlideTile(z_index=0, x=0, y=0, width=4, height=4)
+            worker = DigitalSlideWriteWorker(path)
+            written: list[tuple[int, float]] = []
+            worker.tileWritten.connect(lambda count, elapsed: written.append((count, elapsed)))
+            self.assertTrue(worker.enqueue(tile, image))
+
+            def cancel_during_write(*_args, **_kwargs) -> None:
+                worker.cancel()
+
+            with patch.object(DigitalSlideStore, "write_tile", side_effect=cancel_during_write):
+                worker.start()
+                worker.wait(timeout_ms=2000)
+
+            self.assertFalse(worker.is_running())
+            self.assertEqual(written, [])
+
+    def test_digital_slide_budget_rejects_hard_image_limit_before_disk_work(self) -> None:
+        window = MainWindow()
+        try:
+            with patch("fdm.ui.main_window.QMessageBox.warning") as warning, patch(
+                "fdm.ui.main_window.shutil.disk_usage"
+            ) as disk_usage:
+                accepted = window._confirm_digital_slide_capture_budget(
+                    output_path=Path("/tmp/oversized.fdmslide"),
+                    image_count=20_001,
+                    estimated_bytes=1,
+                    estimated_total_ms=1.0,
+                )
+            self.assertFalse(accepted)
+            warning.assert_called_once()
+            disk_usage.assert_not_called()
+        finally:
+            window.close()
+
+    def test_transition_coordinator_covers_keep_discard_cancel_and_timeout(self) -> None:
+        for disposition in (
+            AcquisitionDisposition.KEEP_PARTIAL,
+            AcquisitionDisposition.DISCARD,
+        ):
+            with self.subTest(disposition=disposition):
+                window = MainWindow()
+                window._slide_acquisition_store = object()  # type: ignore[assignment]
+
+                def finish_or_discard(*args, **kwargs) -> None:
+                    del args, kwargs
+                    window._slide_acquisition_store = None
+
+                target = (
+                    "_request_digital_slide_acquisition_finish"
+                    if disposition == AcquisitionDisposition.KEEP_PARTIAL
+                    else "_request_digital_slide_acquisition_discard"
+                )
+                try:
+                    with patch.object(window, target, side_effect=finish_or_discard) as request, patch.object(
+                        window,
+                        "_shutdown_background_threads",
+                        return_value=[],
+                    ):
+                        result = window._prepare_transition(
+                            TransitionIntent.OPEN_PROJECT,
+                            disposition=disposition,
+                        )
+                    self.assertTrue(result.completed)
+                    request.assert_called_once()
+                finally:
+                    window._slide_acquisition_store = None
+                    window.close()
+
+        window = MainWindow()
+        try:
+            window._slide_acquisition_store = object()  # type: ignore[assignment]
+            cancelled = window._prepare_transition(
+                TransitionIntent.CLOSE_WINDOW,
+                disposition=AcquisitionDisposition.CANCEL,
+            )
+            self.assertTrue(cancelled.cancelled)
+            self.assertFalse(cancelled.completed)
+
+            with patch.object(window, "_request_digital_slide_acquisition_finish"), patch.object(
+                window,
+                "_wait_for_slide_acquisition_exit",
+                return_value=False,
+            ):
+                timed_out = window._prepare_transition(
+                    TransitionIntent.SWITCH_DEVICE,
+                    disposition=AcquisitionDisposition.KEEP_PARTIAL,
+                )
+            self.assertTrue(timed_out.timed_out)
+            self.assertFalse(timed_out.completed)
+        finally:
+            window._slide_acquisition_store = None
+            window.close()
+
+    def test_transition_blocks_on_capture_or_motion_release_failure(self) -> None:
+        window = MainWindow()
+        try:
+            with patch.object(window._capture_manager, "is_preview_active", return_value=True), patch.object(
+                window._capture_manager,
+                "stop_preview",
+                return_value=CaptureStopResult(False, True, 7, "backend still running"),
+            ), patch.object(window._slide_motion, "shutdown") as motion_shutdown, patch.object(
+                window,
+                "_shutdown_background_threads",
+            ) as shutdown_threads:
+                capture_failed = window._prepare_transition(TransitionIntent.RESET_WORKSPACE)
+
+            self.assertFalse(capture_failed.completed)
+            self.assertIn("backend still running", capture_failed.reason)
+            motion_shutdown.assert_not_called()
+            shutdown_threads.assert_not_called()
+
+            with patch.object(window._capture_manager, "is_preview_active", return_value=False), patch.object(
+                window._slide_motion,
+                "shutdown",
+                return_value=MotionShutdownResult(
+                    reason="test",
+                    closed=False,
+                    was_enabled=True,
+                    error="port busy",
+                ),
+            ), patch.object(window, "_shutdown_background_threads") as shutdown_threads:
+                motion_failed = window._prepare_transition(TransitionIntent.RESET_WORKSPACE)
+
+            self.assertFalse(motion_failed.completed)
+            self.assertIn("port busy", motion_failed.reason)
+            shutdown_threads.assert_not_called()
+        finally:
+            window.close()
+
+    def test_transition_reports_digital_slide_writer_timeout(self) -> None:
+        class BlockingWriter:
+            def __init__(self) -> None:
+                self.cancelled = False
+
+            def is_running(self) -> bool:
+                return True
+
+            def cancel(self) -> None:
+                self.cancelled = True
+
+            def wait(self, *, timeout_ms: int) -> None:
+                self.timeout_ms = timeout_ms
+
+        window = MainWindow()
+        writer = BlockingWriter()
+        window._slide_acquisition_writer = writer  # type: ignore[assignment]
+        try:
+            # Exercise the orphan-writer shutdown gate directly; an ordinary
+            # active acquisition is handled by the three-way disposition path.
+            with patch.object(window, "_slide_acquisition_active", return_value=False):
+                result = window._prepare_transition(TransitionIntent.RESET_WORKSPACE)
+
+            self.assertFalse(result.completed)
+            self.assertTrue(result.timed_out)
+            self.assertTrue(writer.cancelled)
+            self.assertIs(window._slide_acquisition_writer, writer)
+            self.assertTrue(any(item.name == "digital_slide_writer" and item.timed_out for item in result.task_results))
+        finally:
+            window._slide_acquisition_writer = None
+            window.close()
+
+    def test_close_all_blocks_when_transition_or_slide_store_release_fails(self) -> None:
+        class FailingStore:
+            def close(self) -> None:
+                raise RuntimeError("sqlite close failed")
+
+        window = MainWindow()
+        document = ImageDocument(id="doc-release", path="slide.fdmslide", image_size=(10, 10))
+        window.project.documents = [document]
+        try:
+            with patch.object(
+                window,
+                "_prepare_transition",
+                return_value=TransitionResult(
+                    intent=TransitionIntent.RESET_WORKSPACE,
+                    completed=False,
+                    reason="camera still running",
+                ),
+            ), patch.object(window, "_reset_workspace") as reset_workspace, patch.object(
+                QMessageBox,
+                "information",
+            ):
+                window.close_all_documents()
+            reset_workspace.assert_not_called()
+            self.assertEqual(window.project.documents, [document])
+
+            window._slide_stores[document.id] = FailingStore()  # type: ignore[assignment]
+            with patch.object(
+                window,
+                "_prepare_transition",
+                return_value=TransitionResult(
+                    intent=TransitionIntent.RESET_WORKSPACE,
+                    completed=True,
+                ),
+            ), patch.object(window, "_confirm_close_documents", return_value=True), patch.object(
+                QMessageBox,
+                "information",
+            ) as information:
+                window.close_all_documents()
+
+            information.assert_called_once()
+            self.assertIn("sqlite close failed", information.call_args.args[2])
+            self.assertEqual(window.project.documents, [document])
+            self.assertIn(document.id, window._slide_stores)
+        finally:
+            window._slide_stores.clear()
+            window.project.documents = []
+            window.close()
+
+    def test_core_runtime_feature_manifest_hides_unavailable_inference_entries(self) -> None:
+        window = MainWindow()
+        try:
+            window._runtime_features = frozenset({"measurement", "capture", "digital-slide"})
+            window._update_action_states()
+
+            self.assertIsNotNone(window._area_auto_button)
+            self.assertTrue(window._area_auto_button.isHidden())
+            self.assertIsNotNone(window._magic_tool_button)
+            self.assertTrue(window._magic_tool_button.isHidden())
+            self.assertFalse(window._mode_actions[MagicSegmentToolMode.STANDARD].isVisible())
+        finally:
+            window.close()
+
+    def test_digital_slide_viewport_export_uses_native_pixels_and_global_to_local_mapping(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "viewport.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1,
+                        width=500,
+                        height=400,
+                        viewport_width=20,
+                        viewport_height=16,
+                        focus_levels=[0, 1],
+                    ),
+                )
+                tile_image = QImage(20, 16, QImage.Format.Format_RGB32)
+                tile_image.fill(QColor("#AABBCC"))
+                store.write_tile(
+                    DigitalSlideTile(
+                        z_index=1,
+                        x=100,
+                        y=200,
+                        width=20,
+                        height=16,
+                        stage_x=0,
+                        stage_y=0,
+                        focus_z=1,
+                    ),
+                    tile_image,
+                )
+                store.close()
+                document = ImageDocument(
+                    id="slide_export",
+                    path=str(slide_path),
+                    image_size=(500, 400),
+                    document_kind="digital_slide",
+                    metadata={
+                        "digital_slide": {
+                            "viewport_origin": [100, 200],
+                            "focus_index": 1,
+                        }
+                    },
+                )
+                document.initialize_runtime_state()
+                window._add_digital_slide_document_from_path(slide_path, document=document)
+                output = Path(tmp_dir) / "viewport.png"
+
+                with patch("fdm.ui.main_window.draw_measurements") as draw:
+                    result = window._render_overlay_image(
+                        document,
+                        output,
+                        include_measurements=True,
+                        include_scale=False,
+                        render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
+                    )
+
+                mapper = draw.call_args.args[2]
+                self.assertEqual((mapper(Point(100, 200)).x(), mapper(Point(100, 200)).y()), (0.0, 0.0))
+                self.assertEqual((mapper(Point(110, 207)).x(), mapper(Point(110, 207)).y()), (10.0, 7.0))
+                self.assertEqual((result.width, result.height), (20, 16))
+                exported = QImage(str(output))
+                self.assertEqual((exported.width(), exported.height()), (20, 16))
+                with self.assertRaisesRegex(ValueError, "不能导出整张切片"):
+                    window._render_overlay_image(
+                        document,
+                        Path(tmp_dir) / "forbidden.png",
+                        include_measurements=True,
+                        include_scale=False,
+                        render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                    )
+        finally:
+            window._reset_workspace()
+            window.close()
 
     def _create_canvas_document(self) -> tuple[ImageDocument, QImage, DocumentCanvas]:
         image = QImage(200, 120, QImage.Format.Format_RGB32)
@@ -675,6 +1011,7 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             try:
                 window._slide_acquisition_store = store
+                window._active_slide_acquisition = DigitalSlideAcquisitionSession(1, "test", store.path)
                 window._slide_acquisition_plan = [
                     {
                         "z_index": 0,
@@ -744,6 +1081,7 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             try:
                 window._slide_acquisition_store = store
+                window._active_slide_acquisition = DigitalSlideAcquisitionSession(1, "test", store.path)
                 window._slide_acquisition_plan = [
                     {
                         "z_index": 0,
@@ -1470,6 +1808,11 @@ class CanvasAndExportTests(unittest.TestCase):
             window._app_settings.digital_slide_x_stage_step = 100
             window._app_settings.digital_slide_y_stage_step = 50
             window._slide_acquisition_writer = FakeWriter()  # type: ignore[assignment]
+            window._active_slide_acquisition = DigitalSlideAcquisitionSession(
+                generation=1,
+                request_id="range-map",
+                output_path=Path("/tmp/range-map.fdmslide"),
+            )
             window._schedule_next_digital_slide_move = lambda *args, **kwargs: None  # type: ignore[method-assign]
             window._slide_acquisition_plan = [
                 {
@@ -1537,6 +1880,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._digital_slide_range_map._completed_rects, [{"left": 1000, "right": 1100, "top": 2000, "bottom": 2050}])
         finally:
             window._slide_acquisition_writer = None
+            window._active_slide_acquisition = None
             window.close()
 
     def test_digital_slide_range_buttons_use_current_view_edges_and_compute_coverage_counts(self) -> None:
@@ -2329,6 +2673,113 @@ class CanvasAndExportTests(unittest.TestCase):
             payload = json.loads(project_path.read_text(encoding="utf-8"))
             self.assertEqual(payload["documents"][0]["source_type"], "project_asset")
             self.assertEqual(payload["documents"][0]["path"], captured_document.path)
+
+    def test_missing_project_document_has_placeholder_and_can_be_relocated_without_losing_measurements(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                missing = root / "missing.png"
+                document = ImageDocument(
+                    id="missing_placeholder",
+                    path=str(missing),
+                    image_size=(20, 10),
+                )
+                document.initialize_runtime_state()
+                document.add_measurement(
+                    Measurement(
+                        id="preserved_line",
+                        image_id=document.id,
+                        fiber_group_id=None,
+                        mode="manual",
+                        line_px=Line(Point(1, 1), Point(9, 1)),
+                    )
+                )
+                project_path = root / "missing.fdmproj"
+                ProjectIO.save(ProjectState(version="test", documents=[document]), project_path)
+
+                with patch.object(window, "_confirm_close_documents", return_value=True), patch(
+                    "fdm.ui.main_window.QMessageBox.warning"
+                ):
+                    window._load_project_from_path(project_path)
+
+                self.assertEqual(window._document_order, [document.id])
+                self.assertEqual(window.image_list.count(), 1)
+                self.assertIn("⚠", window.image_list.item(0).text())
+                self.assertEqual(len(window.project_session_controller.unresolved_documents()), 1)
+
+                relocated = root / "relocated.png"
+                image = QImage(20, 10, QImage.Format.Format_RGB32)
+                image.fill(QColor("#FFFFFF"))
+                self.assertTrue(image.save(str(relocated)))
+                with patch(
+                    "fdm.ui.main_window.QFileDialog.getOpenFileName",
+                    return_value=(str(relocated), window.IMAGE_FILTER),
+                ):
+                    window._relocate_unresolved_project_document(document.id)
+
+                mounted = window.project.get_document(document.id)
+                self.assertIsNotNone(mounted)
+                self.assertEqual([item.id for item in mounted.measurements], ["preserved_line"])
+                self.assertEqual(len(window.project_session_controller.unresolved_documents()), 0)
+                self.assertNotIn("⚠", window.image_list.item(0).text())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_digital_slide_relocation_keeps_placeholder_if_second_open_fails(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                document = ImageDocument(
+                    id="missing-slide-placeholder",
+                    path=str(root / "missing.fdmslide"),
+                    image_size=(20, 10),
+                    document_kind="digital_slide",
+                )
+                document.initialize_runtime_state()
+                window.project_session_controller.register_unresolved_document(
+                    document,
+                    attempted_path=document.path,
+                    reason="源文件不存在",
+                )
+                window._ensure_unresolved_project_placeholder(document, document.path, "源文件不存在")
+                relocated = root / "relocated.fdmslide"
+                store = DigitalSlideStore.create(
+                    relocated,
+                    DigitalSlideManifest(1, 20, 10, 20, 10, [0]),
+                )
+                store.close()
+                original_read_manifest = DigitalSlideStore.read_manifest
+                calls = 0
+
+                def fail_second_open(slide_store):
+                    nonlocal calls
+                    calls += 1
+                    if calls == 1:
+                        return original_read_manifest(slide_store)
+                    raise RuntimeError("injected second open failure")
+
+                with patch(
+                    "fdm.ui.main_window.QFileDialog.getOpenFileName",
+                    return_value=(str(relocated), window.IMAGE_FILTER),
+                ), patch.object(
+                    DigitalSlideStore,
+                    "read_manifest",
+                    side_effect=fail_second_open,
+                    autospec=True,
+                ), patch("fdm.ui.main_window.QMessageBox.warning"):
+                    window._relocate_unresolved_project_document(document.id)
+
+                self.assertEqual(calls, 2)
+                self.assertEqual(window._document_order, [document.id])
+                self.assertIn("⚠", window.image_list.item(0).text())
+                self.assertEqual(len(window.project_session_controller.unresolved_documents()), 1)
+                self.assertIsNone(window.project.get_document(document.id))
+        finally:
+            window._reset_workspace()
+            window.close()
 
     def test_load_project_updates_relative_document_path_to_resolved_absolute_path(self) -> None:
         window = MainWindow()
@@ -3922,6 +4373,10 @@ class CanvasAndExportTests(unittest.TestCase):
             class FakeWorker:
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
+                    self.registered: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.registered.append((document_id, request_id))
 
                 def register_request(self, document_id: str, request_id: int) -> None:
                     self.last_registered = (document_id, request_id)
@@ -4064,6 +4519,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertIsNotNone(fake_worker.requested.payload)
             warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.last_registered, (document.id, 9))
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 9)
             self.assertEqual(fake_worker.requested.payload.model_variant, window._app_settings.magic_segment_model_variant)
@@ -4098,6 +4554,10 @@ class CanvasAndExportTests(unittest.TestCase):
             class FakeWorker:
                 def __init__(self) -> None:
                     self.requested = FakeRequested()
+                    self.registered: list[tuple[str, int]] = []
+
+                def register_request(self, document_id: str, request_id: int) -> None:
+                    self.registered.append((document_id, request_id))
 
             fake_worker = FakeWorker()
             window._reference_instance_worker = fake_worker
@@ -4122,6 +4582,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertIsNotNone(fake_worker.requested.payload)
             warning_mock.assert_not_called()
+            self.assertEqual(fake_worker.registered, [(document.id, 8)])
             self.assertEqual(fake_worker.requested.payload.document_id, document.id)
             self.assertEqual(fake_worker.requested.payload.request_id, 8)
             self.assertEqual(fake_worker.requested.payload.reference_box, (Point(24, 28), Point(96, 104)))
@@ -7025,6 +7486,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
+            self.assertEqual(dialog._area_infer_device_combo.currentData(), "cpu")
             self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "计数点编号", "测量线与端点"])
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
@@ -8025,6 +8487,23 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(len(requests), 1)
             self.assertEqual(skipped_count, 2)
             self.assertEqual(focus_document_id, existing_document.id)
+        finally:
+            window.close()
+
+    def test_prepare_image_load_requests_keeps_same_path_project_document_ids(self) -> None:
+        window = MainWindow()
+        try:
+            first = ImageDocument(id="same-path-a", path="/tmp/shared-project.png", image_size=(10, 10))
+            second = ImageDocument(id="same-path-b", path="/tmp/shared-project.png", image_size=(10, 10))
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+
+            requests, skipped_count, _focus = window._prepare_image_load_requests(
+                [(first.path, first), (second.path, second)]
+            )
+
+            self.assertEqual([request.document.id for request in requests], [first.id, second.id])
+            self.assertEqual(skipped_count, 0)
         finally:
             window.close()
 

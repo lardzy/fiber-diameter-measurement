@@ -1,7 +1,33 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
+from datetime import datetime, timezone
+import importlib.metadata
+import importlib.util
+import json
+import os
+import platform
 from pathlib import Path
 import re
+import subprocess
+import sys
+import tempfile
+import tomllib
+from typing import Any
+import uuid
+
+
+_PROJECT_ROOT = Path(__file__).resolve().parents[1]
+_SRC_ROOT = _PROJECT_ROOT / "src"
+if str(_SRC_ROOT) not in sys.path:
+    sys.path.insert(0, str(_SRC_ROOT))
+
+from fdm.release_manifest import (  # noqa: E402
+    BUILD_ID_FILENAME,
+    RELEASE_MANIFEST_FILENAME,
+    sha256_file,
+    verify_release_manifest,
+)
 
 
 _VERSION_PATTERN = re.compile(r'^__version__\s*=\s*["\']([^"\']+)["\']', re.MULTILINE)
@@ -16,11 +42,7 @@ _COMMON_SKIP_NAMES = {
 }
 _COMMON_SKIP_SUFFIXES = {".pyc", ".pyo"}
 _COMMON_SKIP_PARTS = {"__pycache__", "tests"}
-_AREA_INFER_SKIP_NAMES = {
-    "eval.py",
-    "run_coco_eval.py",
-    "train.py",
-}
+_AREA_INFER_SKIP_NAMES = {"eval.py", "run_coco_eval.py", "train.py"}
 PACKAGED_AREA_MODEL_FILENAMES = frozenset(
     {
         "b_v1_1.3.pth",
@@ -40,6 +62,46 @@ PACKAGED_SEGMENT_ANYTHING_FILENAMES = frozenset(
         "edge_sam_3x_decoder.onnx",
     }
 )
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeProfile:
+    name: str
+    groups: tuple[str, ...]
+    required_python_modules: tuple[str, ...]
+    features: tuple[str, ...] = ()
+    required_files: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeAssetMetadata:
+    source: str
+    target: str
+    feature: str
+    required: bool
+    size: int
+    sha256: str
+    license: str
+    profile: str | None = None
+    group: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class RuntimeProfileCheck:
+    profile: str
+    missing_files: tuple[str, ...]
+    missing_python_modules: tuple[str, ...]
+    hash_mismatches: tuple[str, ...] = ()
+    metadata_errors: tuple[str, ...] = ()
+
+    @property
+    def ok(self) -> bool:
+        return not (
+            self.missing_files
+            or self.missing_python_modules
+            or self.hash_mismatches
+            or self.metadata_errors
+        )
 
 
 def read_app_version(project_root: Path) -> str:
@@ -62,6 +124,339 @@ def write_installer_version_include(project_root: Path) -> Path:
         encoding="utf-8",
     )
     return output
+
+
+def load_runtime_assets_config(project_root: Path) -> dict[str, Any]:
+    config_path = project_root / "runtime_assets.toml"
+    with config_path.open("rb") as stream:
+        payload = tomllib.load(stream)
+    if payload.get("schema_version") != 1:
+        raise RuntimeError(f"Unsupported runtime_assets.toml schema in {config_path}")
+    if not isinstance(payload.get("profiles"), dict) or not isinstance(payload.get("groups"), dict):
+        raise RuntimeError(f"Invalid runtime asset profiles/groups in {config_path}")
+    if not isinstance(payload.get("assets"), list):
+        raise RuntimeError(f"Invalid or missing runtime asset metadata in {config_path}")
+    return payload
+
+
+def _normalize_asset_path(value: object, *, field: str, index: int) -> str:
+    token = str(value).replace("\\", "/").strip()
+    path = Path(token)
+    if not token or path.is_absolute() or any(part in {"", ".", ".."} for part in path.parts):
+        raise ValueError(f"asset[{index}] has invalid {field}: {value!r}")
+    return path.as_posix()
+
+
+def _profile_lineage_from_config(config: dict[str, Any], profile: str) -> tuple[str, ...]:
+    profiles = config.get("profiles", {})
+    lineage: list[str] = []
+    visiting: set[str] = set()
+
+    def visit(name: str) -> None:
+        if name in visiting:
+            raise RuntimeError(f"Cyclic runtime profile inheritance: {name}")
+        payload = profiles.get(name)
+        if not isinstance(payload, dict):
+            raise ValueError(f"Unknown runtime asset profile: {name}")
+        visiting.add(name)
+        parent = str(payload.get("extends", "")).strip()
+        if parent:
+            visit(parent)
+        visiting.remove(name)
+        if name not in lineage:
+            lineage.append(name)
+
+    visit(profile)
+    return tuple(lineage)
+
+
+def _parse_runtime_asset_metadata(
+    config: dict[str, Any],
+) -> tuple[tuple[RuntimeAssetMetadata, ...], tuple[str, ...]]:
+    records: list[RuntimeAssetMetadata] = []
+    errors: list[str] = []
+    seen_sources: set[str] = set()
+    seen_targets: set[str] = set()
+    profiles = config.get("profiles", {})
+    groups = config.get("groups", {})
+    for index, payload in enumerate(config.get("assets", [])):
+        if not isinstance(payload, dict):
+            errors.append(f"asset[{index}] metadata must be a table")
+            continue
+        try:
+            source = _normalize_asset_path(payload.get("source", ""), field="source", index=index)
+            target = _normalize_asset_path(payload.get("target", ""), field="target", index=index)
+        except ValueError as exc:
+            errors.append(str(exc))
+            continue
+        profile_token = str(payload.get("profile", "")).strip() or None
+        group_token = str(payload.get("group", "")).strip() or None
+        if (profile_token is None) == (group_token is None):
+            errors.append(f"asset {source!r} must declare exactly one of profile or group")
+            continue
+        if profile_token is not None and profile_token not in profiles:
+            errors.append(f"asset {source!r} references unknown profile {profile_token!r}")
+            continue
+        if group_token is not None and group_token not in groups:
+            errors.append(f"asset {source!r} references unknown group {group_token!r}")
+            continue
+        feature = str(payload.get("feature", "")).strip()
+        license_name = str(payload.get("license", "")).strip()
+        required = payload.get("required")
+        size = payload.get("size")
+        digest = str(payload.get("sha256", "")).strip().lower()
+        if not feature:
+            errors.append(f"asset {source!r} is missing feature metadata")
+        if not license_name:
+            errors.append(f"asset {source!r} is missing license metadata")
+        if not isinstance(required, bool):
+            errors.append(f"asset {source!r} required must be a boolean")
+        if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+            errors.append(f"asset {source!r} size must be a non-negative integer")
+        if len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest):
+            errors.append(f"asset {source!r} has invalid sha256")
+        if source in seen_sources:
+            errors.append(f"duplicate runtime asset source: {source}")
+        if target in seen_targets:
+            errors.append(f"duplicate runtime asset target: {target}")
+        if Path(source).name != Path(target).name:
+            errors.append(
+                f"asset {source!r} cannot rename its packaged filename to {Path(target).name!r}"
+            )
+        if source.startswith("runtime/content-templates/") or target.startswith("runtime/content-templates/"):
+            errors.append(f"untracked content template must not be a release asset: {source}")
+        if any(
+            (
+                not feature,
+                not license_name,
+                not isinstance(required, bool),
+                isinstance(size, bool) or not isinstance(size, int) or size < 0,
+                len(digest) != 64 or any(char not in "0123456789abcdef" for char in digest),
+                source in seen_sources,
+                target in seen_targets,
+                Path(source).name != Path(target).name,
+                source.startswith("runtime/content-templates/"),
+                target.startswith("runtime/content-templates/"),
+            )
+        ):
+            seen_sources.add(source)
+            seen_targets.add(target)
+            continue
+        seen_sources.add(source)
+        seen_targets.add(target)
+        records.append(
+            RuntimeAssetMetadata(
+                source=source,
+                target=target,
+                feature=feature,
+                required=required,
+                size=size,
+                sha256=digest,
+                license=license_name,
+                profile=profile_token,
+                group=group_token,
+            )
+        )
+    return tuple(records), tuple(errors)
+
+
+def _resolve_runtime_profile_from_config(config: dict[str, Any], profile: str) -> RuntimeProfile:
+    profiles = config.get("profiles", {})
+    if profile not in profiles or not isinstance(profiles[profile], dict):
+        raise ValueError(f"Unknown runtime asset profile: {profile}")
+    groups: list[str] = []
+    modules: list[str] = []
+    features: list[str] = []
+    required_files: list[str] = []
+    visiting: set[str] = set()
+
+    def visit(name: str) -> None:
+        if name in visiting:
+            raise RuntimeError(f"Cyclic runtime profile inheritance: {name}")
+        payload = profiles.get(name)
+        if not isinstance(payload, dict):
+            raise ValueError(f"Unknown runtime asset profile: {name}")
+        visiting.add(name)
+        parent = str(payload.get("extends", "")).strip()
+        if parent:
+            visit(parent)
+        for group_name in payload.get("groups", []):
+            token = str(group_name)
+            if token not in groups:
+                groups.append(token)
+        for module_name in payload.get("required_python_modules", []):
+            token = str(module_name)
+            if token not in modules:
+                modules.append(token)
+        for feature_name in payload.get("features", []):
+            token = str(feature_name)
+            if token not in features:
+                features.append(token)
+        for file_name in payload.get("required_files", []):
+            token = str(file_name).replace("\\", "/").strip()
+            if token and token not in required_files:
+                required_files.append(token)
+        visiting.remove(name)
+
+    visit(profile)
+    return RuntimeProfile(
+        profile,
+        tuple(groups),
+        tuple(modules),
+        tuple(features),
+        tuple(required_files),
+    )
+
+
+def resolve_runtime_profile(project_root: Path, profile: str = "full") -> RuntimeProfile:
+    return _resolve_runtime_profile_from_config(load_runtime_assets_config(project_root), profile)
+
+
+def _runtime_profile_asset_metadata_from_config(
+    config: dict[str, Any],
+    profile: str,
+) -> tuple[tuple[RuntimeAssetMetadata, ...], tuple[str, ...]]:
+    resolved = _resolve_runtime_profile_from_config(config, profile)
+    lineage = _profile_lineage_from_config(config, profile)
+    group_payloads = config["groups"]
+    expected_owners: dict[str, tuple[str, str]] = {}
+    errors: list[str] = []
+
+    for profile_name in lineage:
+        profile_payload = config["profiles"][profile_name]
+        for item in profile_payload.get("required_files", []):
+            token = str(item).replace("\\", "/").strip()
+            if not token:
+                errors.append(f"profile {profile_name!r} contains an empty required_file")
+                continue
+            previous = expected_owners.setdefault(token, ("profile", profile_name))
+            if previous != ("profile", profile_name):
+                errors.append(f"required_file {token!r} is declared by multiple owners")
+    for group_name in resolved.groups:
+        group = group_payloads.get(group_name)
+        if not isinstance(group, dict):
+            raise RuntimeError(f"Unknown runtime asset group {group_name!r} in profile {profile!r}")
+        for item in group.get("required_files", []):
+            token = str(item).replace("\\", "/").strip()
+            if not token:
+                errors.append(f"group {group_name!r} contains an empty required_file")
+                continue
+            previous = expected_owners.setdefault(token, ("group", group_name))
+            if previous != ("group", group_name):
+                errors.append(f"required_file {token!r} is declared by multiple owners")
+
+    records, parse_errors = _parse_runtime_asset_metadata(config)
+    errors.extend(parse_errors)
+    records_by_source = {record.source: record for record in records}
+    selected: list[RuntimeAssetMetadata] = []
+    selected_targets: set[str] = set()
+    for source, (owner_kind, owner_name) in expected_owners.items():
+        record = records_by_source.get(source)
+        if record is None:
+            errors.append(f"required_file {source!r} is missing complete asset metadata")
+            continue
+        actual_owner = ("profile", record.profile) if record.profile else ("group", record.group)
+        if actual_owner != (owner_kind, owner_name):
+            errors.append(
+                f"required_file {source!r} metadata owner is {actual_owner[0]} {actual_owner[1]!r}, "
+                f"expected {owner_kind} {owner_name!r}"
+            )
+            continue
+        if not record.required:
+            errors.append(f"required_file {source!r} metadata must set required=true")
+            continue
+        if record.target in selected_targets:
+            errors.append(f"profile {profile!r} has duplicate asset target {record.target!r}")
+            continue
+        selected_targets.add(record.target)
+        selected.append(record)
+
+    active_profiles = set(lineage)
+    active_groups = set(resolved.groups)
+    for record in records:
+        owner_active = (
+            (record.profile is not None and record.profile in active_profiles)
+            or (record.group is not None and record.group in active_groups)
+        )
+        if owner_active and record.required and record.source not in expected_owners:
+            errors.append(
+                f"required asset metadata {record.source!r} is not declared in its owner's required_files"
+            )
+    return tuple(selected), tuple(dict.fromkeys(errors))
+
+
+def runtime_profile_asset_metadata(
+    project_root: Path,
+    profile: str = "full",
+) -> tuple[RuntimeAssetMetadata, ...]:
+    config = load_runtime_assets_config(project_root)
+    records, errors = _runtime_profile_asset_metadata_from_config(config, profile)
+    if errors:
+        raise RuntimeError("Invalid runtime asset metadata:\n  " + "\n  ".join(errors))
+    return records
+
+
+def runtime_profile_required_sources(project_root: Path, profile: str = "full") -> tuple[str, ...]:
+    return tuple(record.source for record in runtime_profile_asset_metadata(project_root, profile))
+
+
+def runtime_profile_required_files(project_root: Path, profile: str = "full") -> tuple[str, ...]:
+    """Return required packaged targets for the selected profile."""
+
+    return tuple(record.target for record in runtime_profile_asset_metadata(project_root, profile))
+
+
+def runtime_profile_expected_hashes(project_root: Path, profile: str = "full") -> dict[str, str]:
+    return {
+        record.source: record.sha256
+        for record in runtime_profile_asset_metadata(project_root, profile)
+    }
+
+
+def check_runtime_profile(project_root: Path, profile: str = "full") -> RuntimeProfileCheck:
+    resolved = resolve_runtime_profile(project_root, profile)
+    missing_modules = tuple(
+        module_name
+        for module_name in resolved.required_python_modules
+        if importlib.util.find_spec(module_name) is None
+    )
+    config = load_runtime_assets_config(project_root)
+    records, metadata_errors = _runtime_profile_asset_metadata_from_config(config, profile)
+    missing_files = tuple(
+        record.source
+        for record in records
+        if not (project_root / record.source).is_file()
+    )
+    hash_mismatches: list[str] = []
+    for record in records:
+        asset_path = project_root / record.source
+        if asset_path.is_file():
+            actual_size = asset_path.stat().st_size
+            actual_hash = sha256_file(asset_path)
+            if actual_size != record.size or actual_hash != record.sha256:
+                hash_mismatches.append(
+                    f"{record.source} "
+                    f"(expected size {record.size}, sha256 {record.sha256}; "
+                    f"found size {actual_size}, sha256 {actual_hash})"
+                )
+    return RuntimeProfileCheck(
+        profile,
+        missing_files,
+        missing_modules,
+        tuple(hash_mismatches),
+        metadata_errors,
+    )
+
+
+def release_ignored_untracked_prefixes(project_root: Path) -> tuple[str, ...]:
+    config = load_runtime_assets_config(project_root)
+    release = config.get("release", {})
+    if not isinstance(release, dict):
+        return ()
+    return tuple(
+        str(item).replace("\\", "/").lstrip("./")
+        for item in release.get("ignored_untracked_prefixes", [])
+    )
 
 
 def _should_skip_common(file_path: Path) -> bool:
@@ -119,33 +514,256 @@ def _should_include_area_model(relative_path: Path) -> bool:
     return relative_path.name in PACKAGED_AREA_MODEL_FILENAMES
 
 
-def should_include_runtime_file(file_path: Path, runtime_root: Path) -> bool:
+def _matches_group_filter(file_path: Path, runtime_root: Path, filter_name: str) -> bool:
+    relative_path = file_path.relative_to(runtime_root)
+    if filter_name == "all":
+        return True
+    if filter_name == "area-infer":
+        return _should_include_area_infer(relative_path)
+    if filter_name == "area-models":
+        return _should_include_area_model(relative_path)
+    if filter_name == "segment-anything":
+        return _should_include_segment_anything(relative_path)
+    raise RuntimeError(f"Unknown runtime asset filter: {filter_name}")
+
+
+def should_include_runtime_file(
+    file_path: Path,
+    runtime_root: Path,
+    profile: str = "full",
+) -> bool:
     if _should_skip_common(file_path):
         return False
-    relative_path = file_path.relative_to(runtime_root)
-    if not relative_path.parts:
+    project_root = runtime_root.parent
+    try:
+        source = file_path.relative_to(project_root).as_posix()
+    except ValueError:
         return False
-    if relative_path.parts[0] == "area-infer":
-        return _should_include_area_infer(relative_path)
-    if relative_path.parts[0] == "segment-anything":
-        return _should_include_segment_anything(relative_path)
-    if relative_path.parts[0] == "area-models":
-        return _should_include_area_model(relative_path)
-    if relative_path.parts[0] == "reference-instance":
-        return False
-    return True
+    return source in {
+        record.source
+        for record in runtime_profile_asset_metadata(project_root, profile)
+        if record.source.startswith("runtime/")
+    }
 
 
-def collect_runtime_datas(project_root: Path) -> list[tuple[str, str]]:
-    runtime_root = project_root / "runtime"
+def collect_runtime_datas(project_root: Path, profile: str = "full") -> list[tuple[str, str]]:
+    profile_check = check_runtime_profile(project_root, profile)
+    preflight_errors = (
+        list(profile_check.metadata_errors)
+        + [f"missing source asset: {item}" for item in profile_check.missing_files]
+        + list(profile_check.hash_mismatches)
+        + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
+    )
+    if preflight_errors:
+        raise RuntimeError(
+            f"Runtime profile {profile!r} failed asset preflight:\n  "
+            + "\n  ".join(preflight_errors)
+        )
     collected: list[tuple[str, str]] = []
-    if not runtime_root.exists():
-        return collected
-    for file_path in runtime_root.rglob("*"):
-        if not file_path.is_file():
+    for record in runtime_profile_asset_metadata(project_root, profile):
+        if not record.source.startswith("runtime/"):
             continue
-        if not should_include_runtime_file(file_path, runtime_root):
-            continue
-        target_dir = file_path.parent.relative_to(project_root)
-        collected.append((str(file_path), str(target_dir)))
+        file_path = project_root / record.source
+        target_dir = Path(record.target).parent
+        collected.append((str(file_path), str(target_dir) if str(target_dir) != "." else "."))
     return collected
+
+
+def get_git_commit(project_root: Path) -> str:
+    completed = subprocess.run(
+        ["git", "rev-parse", "HEAD"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    commit = completed.stdout.strip()
+    if not commit:
+        raise RuntimeError("git rev-parse returned an empty commit")
+    return commit
+
+
+def get_dirty_worktree_entries(project_root: Path) -> list[str]:
+    completed = subprocess.run(
+        ["git", "-c", "core.quotepath=false", "status", "--porcelain=v1", "-z", "--untracked-files=all"],
+        cwd=project_root,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    ignored_prefixes = release_ignored_untracked_prefixes(project_root)
+    records = completed.stdout.split("\0")
+    dirty: list[str] = []
+    index = 0
+    while index < len(records):
+        record = records[index]
+        index += 1
+        if not record:
+            continue
+        status = record[:2]
+        path = record[3:].replace("\\", "/") if len(record) > 3 else ""
+        if status[0] in {"R", "C"} or status[1] in {"R", "C"}:
+            index += 1
+        if status == "??" and any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in ignored_prefixes):
+            continue
+        dirty.append(f"{status} {path}")
+    return dirty
+
+
+def _atomic_write_bytes(path: Path, payload: bytes) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary_name = tempfile.mkstemp(dir=path.parent, prefix=f".{path.name}.", suffix=".tmp")
+    temporary_path = Path(temporary_name)
+    try:
+        with os.fdopen(descriptor, "wb") as stream:
+            stream.write(payload)
+            stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(temporary_path, path)
+        directory_descriptor: int | None = None
+        try:
+            flags = os.O_RDONLY | getattr(os, "O_DIRECTORY", 0)
+            directory_descriptor = os.open(path.parent, flags)
+            os.fsync(directory_descriptor)
+        except OSError:
+            pass
+        finally:
+            if directory_descriptor is not None:
+                os.close(directory_descriptor)
+    finally:
+        temporary_path.unlink(missing_ok=True)
+
+
+def _release_file_inventory(app_dir: Path) -> list[dict[str, object]]:
+    entries: list[dict[str, object]] = []
+    for file_path in sorted(path for path in app_dir.rglob("*") if path.is_file()):
+        relative = file_path.relative_to(app_dir).as_posix()
+        if relative == RELEASE_MANIFEST_FILENAME:
+            continue
+        entries.append(
+            {
+                "path": relative,
+                "size": file_path.stat().st_size,
+                "sha256": sha256_file(file_path),
+            }
+        )
+    return entries
+
+
+def _release_dependency_versions() -> dict[str, str]:
+    versions = {"python": platform.python_version()}
+    for distribution in (
+        "PySide6",
+        "numpy",
+        "opencv-python",
+        "Pillow",
+        "torch",
+        "torchvision",
+        "onnxruntime",
+    ):
+        try:
+            versions[distribution] = importlib.metadata.version(distribution)
+        except importlib.metadata.PackageNotFoundError:
+            versions[distribution] = "not-installed"
+    return versions
+
+
+def write_release_manifest(
+    app_dir: Path,
+    project_root: Path,
+    *,
+    profile: str,
+    clean_build: bool,
+    build_id: str | None = None,
+    source_commit: str | None = None,
+    source_dirty_entries: list[str] | None = None,
+) -> Path:
+    app_dir.mkdir(parents=True, exist_ok=True)
+    version = read_app_version(project_root)
+    resolved_build_id = build_id or uuid.uuid4().hex
+    if source_commit is None:
+        try:
+            source_commit = get_git_commit(project_root)
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            source_commit = "unknown"
+    if source_dirty_entries is None:
+        try:
+            source_dirty_entries = get_dirty_worktree_entries(project_root)
+        except (OSError, RuntimeError, subprocess.SubprocessError):
+            source_dirty_entries = ["git status unavailable"]
+    _atomic_write_bytes(app_dir / BUILD_ID_FILENAME, f"{resolved_build_id}\n".encode("utf-8"))
+    payload = {
+        "schema_version": 1,
+        "version": version,
+        "profile": profile,
+        "features": list(resolve_runtime_profile(project_root, profile).features),
+        "build_id": resolved_build_id,
+        "built_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+        "source_commit": source_commit,
+        "source_dirty": bool(source_dirty_entries),
+        "source_dirty_entries": list(source_dirty_entries),
+        "clean_build": bool(clean_build),
+        "hash_algorithm": "sha256",
+        "dependency_versions": _release_dependency_versions(),
+        "required_runtime_files": list(runtime_profile_required_files(project_root, profile)),
+        "files": _release_file_inventory(app_dir),
+    }
+    manifest_path = app_dir / RELEASE_MANIFEST_FILENAME
+    serialized = json.dumps(payload, ensure_ascii=False, indent=2, allow_nan=False).encode("utf-8")
+    _atomic_write_bytes(manifest_path, serialized)
+    return manifest_path
+
+
+def validate_installer_release(project_root: Path, app_dir: Path, *, profile: str = "full") -> list[str]:
+    errors: list[str] = []
+    try:
+        dirty_entries = get_dirty_worktree_entries(project_root)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        return [f"unable to inspect git worktree: {exc}"]
+    if dirty_entries:
+        errors.append("dirty worktree: " + ", ".join(dirty_entries))
+    try:
+        commit = get_git_commit(project_root)
+    except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
+        errors.append(f"unable to determine source commit: {exc}")
+        commit = None
+    profile_check = check_runtime_profile(project_root, profile)
+    if profile_check.missing_files:
+        errors.append("missing source runtime assets: " + ", ".join(profile_check.missing_files))
+    if profile_check.missing_python_modules:
+        errors.append("missing build dependencies: " + ", ".join(profile_check.missing_python_modules))
+    if profile_check.hash_mismatches:
+        errors.append("source runtime asset hash mismatch: " + ", ".join(profile_check.hash_mismatches))
+    if profile_check.metadata_errors:
+        errors.append("invalid runtime asset metadata: " + ", ".join(profile_check.metadata_errors))
+    report = verify_release_manifest(
+        app_dir,
+        expected_profile=profile,
+        expected_version=read_app_version(project_root),
+        expected_commit=commit,
+        require_clean_source=True,
+        require_clean_build=True,
+        reject_extra_files=True,
+    )
+    errors.extend(str(item) for item in report["errors"])
+
+    manifest_path = app_dir / RELEASE_MANIFEST_FILENAME
+    try:
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        manifest = {}
+    inventory = {
+        str(entry.get("path", "")): str(entry.get("sha256", ""))
+        for entry in manifest.get("files", [])
+        if isinstance(entry, dict)
+    } if isinstance(manifest, dict) else {}
+    try:
+        required_assets = runtime_profile_asset_metadata(project_root, profile)
+    except RuntimeError:
+        required_assets = ()
+    for asset in required_assets:
+        source_path = project_root / asset.source
+        packaged_hash = inventory.get(asset.target)
+        if source_path.is_file() and packaged_hash and sha256_file(source_path) != packaged_hash:
+            errors.append(f"stale dist runtime asset differs from source: {asset.source}")
+    return errors

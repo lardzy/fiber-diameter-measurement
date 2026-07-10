@@ -6,7 +6,7 @@ import sys, os
 # be arsed to do path concatenation so I'd rather type out this comment
 
 print('Loading state dict...')
-state = torch.load(sys.argv[1])
+state = torch.load(sys.argv[1], weights_only=True)
 
 if not os.path.exists(sys.argv[2]):
 	os.mkdir(sys.argv[2])
