@@ -51,6 +51,30 @@ class SettingsDialogNavigationTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_navigation_rows_follow_font_metrics_without_overlap(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            dialog.resize(900, 640)
+            dialog.show()
+            self.app.processEvents()
+
+            navigation = dialog._settings_navigation  # noqa: SLF001
+            minimum_height = navigation.fontMetrics().height() + 16
+            rects = [
+                navigation.visualItemRect(navigation.item(index))
+                for index in range(navigation.count())
+            ]
+            self.assertTrue(rects)
+            self.assertTrue(all(rect.height() >= minimum_height for rect in rects))
+            self.assertTrue(
+                all(
+                    current.bottom() < following.top()
+                    for current, following in zip(rects, rects[1:])
+                )
+            )
+        finally:
+            dialog.close()
+
     def test_search_filters_and_locates_matching_category(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:

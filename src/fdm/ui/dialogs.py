@@ -4,7 +4,7 @@ from dataclasses import replace
 from pathlib import Path
 from threading import Thread
 
-from PySide6.QtCore import QLineF, QObject, QRectF, Qt, Signal
+from PySide6.QtCore import QEvent, QLineF, QObject, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
     QApplication,
@@ -971,6 +971,8 @@ class SettingsDialog(QDialog):
         self._settings_navigation = QListWidget(self)
         self._settings_navigation.setObjectName("settingsNavigation")
         self._settings_navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._settings_navigation.setTextElideMode(Qt.TextElideMode.ElideRight)
+        self._settings_navigation.setUniformItemSizes(True)
         self._settings_navigation.setSpacing(2)
         self._settings_navigation_items: list[QListWidgetItem] = []
         self._settings_search_texts: list[str] = []
@@ -1077,8 +1079,7 @@ class SettingsDialog(QDialog):
                 outline: none;
             }
             QListWidget#settingsNavigation::item {
-                min-height: 36px;
-                padding: 3px 9px;
+                padding: 6px 9px;
                 border-radius: 6px;
             }
             QListWidget#settingsNavigation::item:hover {
@@ -1090,11 +1091,35 @@ class SettingsDialog(QDialog):
             }
             """
         )
+        self._update_settings_navigation_item_sizes()
         self._settings_navigation.setCurrentRow(0)
 
     @property
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
+
+    def _update_settings_navigation_item_sizes(self) -> None:
+        """Keep navigation rows readable for the active system UI font."""
+
+        navigation = getattr(self, "_settings_navigation", None)
+        items = getattr(self, "_settings_navigation_items", ())
+        if navigation is None:
+            return
+        metrics = QFontMetrics(navigation.font())
+        row_height = max(40, metrics.height() + 16)
+        row_size = QSize(0, row_height)
+        for item in items:
+            item.setSizeHint(row_size)
+        navigation.scheduleDelayedItemsLayout()
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() in {
+            QEvent.Type.ApplicationFontChange,
+            QEvent.Type.FontChange,
+            QEvent.Type.StyleChange,
+        }:
+            self._update_settings_navigation_item_sizes()
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
