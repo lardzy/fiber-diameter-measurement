@@ -133,7 +133,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
             window.redo_action,
             window.measure_workspace_action,
             window.live_preview_action,
-            window.digital_slide_action,
+            window.capture_frame_action,
             window.settings_action,
         )
         for width, height in ((1093, 576), (1280, 720), (1600, 900)):
@@ -155,16 +155,34 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                 self.assertTrue(settings_button.isVisible())
 
         toolbar_actions = set(window._file_toolbar.actions())
-        self.assertNotIn(window.capture_frame_action, toolbar_actions)
+        self.assertNotIn(window.digital_slide_action, toolbar_actions)
         self.assertNotIn(window.optimize_capture_signal_action, toolbar_actions)
         self.assertNotIn(window.close_current_action, toolbar_actions)
         self.assertNotIn(window.close_all_action, toolbar_actions)
         more_button = window.findChild(QToolButton, "moreCommandButton")
         more_actions = set(more_button.menu().actions())
-        self.assertIn(window.capture_frame_action, more_actions)
+        self.assertIn(window.digital_slide_action, more_actions)
         self.assertIn(window.optimize_capture_signal_action, more_actions)
         self.assertIn(window.close_current_action, more_actions)
         self.assertIn(window.close_all_action, more_actions)
+
+    def test_measurement_inspector_orders_calibration_before_current_image_properties(self) -> None:
+        window = self._window()
+        inspector_content = window._right_standard_panel.widget()
+        self.assertIsNotNone(inspector_content)
+        layout = inspector_content.layout()
+        self.assertIsNotNone(layout)
+        object_names = [
+            layout.itemAt(index).widget().objectName()
+            for index in range(layout.count())
+            if layout.itemAt(index).widget() is not None
+        ]
+
+        self.assertLess(object_names.index("calibrationBox"), object_names.index("areaRecognitionBox"))
+        self.assertLess(
+            object_names.index("areaRecognitionBox"),
+            object_names.index("currentImagePropertiesBox"),
+        )
 
     def test_workspace_mode_replaces_measurement_tools_with_acquisition_context(self) -> None:
         window = self._window()

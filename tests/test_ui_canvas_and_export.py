@@ -3645,6 +3645,60 @@ class CanvasAndExportTests(unittest.TestCase):
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
 
+    def test_canvas_browse_selection_refreshes_current_result_and_object_properties(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/canvas_selection_inspector.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#2A9D8F", label="棉")
+            measurement = Measurement(
+                id="canvas_selected_measurement",
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="manual",
+                line_px=Line(Point(40, 80), Point(120, 80)),
+                status="manual",
+            )
+            measurement.recalculate(None)
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+            window.resize(1200, 760)
+            window.show()
+            self.app.processEvents()
+
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            window.set_tool_mode("select")
+            document.select_measurement(None)
+            canvas.set_selected_measurement(None)
+            window._statistics_refresh_timer.stop()
+            window._refresh_statistics_ui()
+            self.assertNotIn("当前结果", window._statistics_panel.current_value_label.text())
+
+            canvas.mousePressEvent(
+                FakeMouseEvent(
+                    canvas.image_to_widget(Point(80, 80)),
+                    button=Qt.MouseButton.LeftButton,
+                )
+            )
+
+            self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
+            self.assertTrue(window._statistics_refresh_timer.isActive())
+            window._statistics_refresh_timer.stop()
+            window._refresh_statistics_ui()
+            self.assertIn("当前结果  80 px", window._statistics_panel.current_value_label.text())
+            self.assertIn("像素值：80 px", window._statistics_panel._object_details_label.text())
+            self.assertIn("类别：1 棉", window._statistics_panel._object_details_label.text())
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
     def test_measurement_record_delete_buttons_share_one_row_with_short_labels(self) -> None:
         window = MainWindow()
         try:
@@ -3757,7 +3811,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(
                 [action for action in more_button.menu().actions() if not action.isSeparator()],
                 [
-                    window.capture_frame_action,
+                    window.digital_slide_action,
                     window.optimize_capture_signal_action,
                     window.close_current_action,
                     window.close_all_action,
@@ -3777,7 +3831,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 window.redo_action,
                 window.measure_workspace_action,
                 window.live_preview_action,
-                window.digital_slide_action,
+                window.capture_frame_action,
                 window.settings_action,
             ):
                 self.assertIn(action, toolbar_actions)

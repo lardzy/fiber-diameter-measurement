@@ -1676,7 +1676,7 @@ class MainWindow(QMainWindow):
 
         file_toolbar.addAction(self.measure_workspace_action)
         file_toolbar.addAction(self.live_preview_action)
-        file_toolbar.addAction(self.digital_slide_action)
+        file_toolbar.addAction(self.capture_frame_action)
 
         more_button = QToolButton(self)
         more_button.setObjectName("moreCommandButton")
@@ -1684,7 +1684,7 @@ class MainWindow(QMainWindow):
         more_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         more_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         more_menu = QMenu(more_button)
-        more_menu.addAction(self.capture_frame_action)
+        more_menu.addAction(self.digital_slide_action)
         more_menu.addAction(self.optimize_capture_signal_action)
         more_menu.addSeparator()
         more_menu.addAction(self.close_current_action)
@@ -2686,6 +2686,7 @@ class MainWindow(QMainWindow):
         top_layout.addWidget(self._statistics_panel)
 
         properties_box = QGroupBox("当前图片属性", top_container)
+        properties_box.setObjectName("currentImagePropertiesBox")
         properties_layout = QVBoxLayout(properties_box)
         self._current_category_property_label = QLabel("类别：—", properties_box)
         self._current_category_property_label.setWordWrap(True)
@@ -2700,17 +2701,15 @@ class MainWindow(QMainWindow):
         self._pick_scale_anchor_button = QPushButton("在画布选择比例尺位置", properties_box)
         self._pick_scale_anchor_button.clicked.connect(lambda _checked=False: self._begin_scale_anchor_pick(self.current_document()))
         properties_layout.addWidget(self._pick_scale_anchor_button)
-        top_layout.addWidget(properties_box)
-
         model_box = QGroupBox("面积识别")
+        model_box.setObjectName("areaRecognitionBox")
         model_layout = QVBoxLayout(model_box)
         self._area_auto_button = QPushButton("面积自动识别...")
         self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
         self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
         model_layout.addWidget(self._area_auto_button)
-        top_layout.addWidget(model_box)
-
         calibration_box = QGroupBox("标定")
+        calibration_box.setObjectName("calibrationBox")
         calibration_layout = QVBoxLayout(calibration_box)
         self._calibration_status_card = QFrame(calibration_box)
         self._calibration_status_card.setObjectName("calibrationStatusCard")
@@ -2795,7 +2794,12 @@ class MainWindow(QMainWindow):
         self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
         preset_action_layout.addWidget(self._import_cu_preset_button, 1)
         calibration_layout.addWidget(self._calibration_preset_action_row)
+        # Keep calibration close to the live measurement summary; current
+        # image properties are lower-frequency and live at the former
+        # calibration position below area recognition.
         top_layout.addWidget(calibration_box)
+        top_layout.addWidget(model_box)
+        top_layout.addWidget(properties_box)
 
         top_layout.addStretch(1)
         standard_scroll = QScrollArea(container)
@@ -9973,6 +9977,7 @@ class MainWindow(QMainWindow):
         document.select_measurement(measurement_id or None)
         self._sync_measurement_table_selection(document)
         self._update_action_states()
+        self._schedule_statistics_refresh()
         self._focus_current_canvas()
 
     def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, payload: object) -> None:
