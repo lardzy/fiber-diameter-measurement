@@ -14,7 +14,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 try:
     from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
     from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
-    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSplitter, QToolButton
+    from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSplitter, QStyleOptionViewItem, QTableView, QToolBar, QToolButton
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -3538,13 +3538,112 @@ class CanvasAndExportTests(unittest.TestCase):
             )
 
             window._populate_measurement_table(document)
-            headers = [window.measurement_table.horizontalHeaderItem(index).text() for index in range(window.measurement_table.columnCount())]
+            table_model = window.measurement_table.model()
+            headers = [
+                table_model.headerData(index, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
+                for index in range(table_model.columnCount())
+            ]
 
             self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
-            self.assertIsNotNone(window.measurement_table.item(0, window.TABLE_COL_ID))
+            self.assertIsInstance(window.measurement_table, QTableView)
+            self.assertTrue(table_model.index(0, window.TABLE_COL_ID).data(Qt.ItemDataRole.UserRole))
             self.assertEqual(window.measurement_table.columnWidth(window.TABLE_COL_GROUP), 150)
         finally:
             window.close()
+
+    def test_measurement_table_category_edit_uses_model_and_document_history(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/measurement_table_edit.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            cotton = document.create_group(color="#1F7A8C", label="棉")
+            flax = document.create_group(color="#D97706", label="麻")
+            document.set_active_group(cotton.id)
+            document.add_measurement(
+                Measurement(
+                    id="meas_edit_group",
+                    image_id=document.id,
+                    fiber_group_id=cotton.id,
+                    mode="manual",
+                    line_px=Line(Point(10, 10), Point(80, 10)),
+                )
+            )
+            self._load_document_into_window(window, document, image)
+            table_model = window.measurement_table.model()
+            group_index = table_model.index(0, window.TABLE_COL_GROUP)
+
+            changed = table_model.setData(group_index, flax.id, Qt.ItemDataRole.EditRole)
+
+            self.assertTrue(changed)
+            self.assertEqual(document.measurements[0].fiber_group_id, flax.id)
+            self.assertEqual(table_model.index(0, window.TABLE_COL_GROUP).data(), flax.display_name())
+            self.assertTrue(document.history.can_undo())
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
+    def test_measurement_table_proxy_selection_and_double_click_use_stable_ids(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(320, 220, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/measurement_table_mapping.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            document.add_measurement(
+                Measurement(
+                    id="meas_large",
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(20, 40), Point(220, 40)),
+                )
+            )
+            document.add_measurement(
+                Measurement(
+                    id="meas_small",
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="manual",
+                    line_px=Line(Point(30, 120), Point(60, 120)),
+                )
+            )
+            self._load_document_into_window(window, document, image)
+            proxy = window.measurement_table.model()
+            proxy.sort(window.TABLE_COL_RESULT, Qt.SortOrder.AscendingOrder)
+            first_index = proxy.index(0, window.TABLE_COL_KIND)
+            selection_model = window.measurement_table.selectionModel()
+            selection_model.select(
+                first_index,
+                QItemSelectionModel.SelectionFlag.ClearAndSelect
+                | QItemSelectionModel.SelectionFlag.Rows,
+            )
+            self.assertEqual(document.view_state.selected_measurement_id, "meas_small")
+
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            with patch.object(canvas, "center_on_image_point") as center_mock:
+                window._on_measurement_table_double_clicked(first_index)
+            center_mock.assert_called_once_with(document.measurements[1].geometry_center())
+
+            window._results_search_edit.setText("meas_large")
+            self.assertEqual(proxy.rowCount(), 1)
+            window._on_canvas_measurement_selected(document.id, "meas_large")
+            selected_rows = selection_model.selectedRows()
+            self.assertEqual(len(selected_rows), 1)
+            self.assertEqual(selected_rows[0].data(Qt.ItemDataRole.UserRole), "meas_large")
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
 
     def test_measurement_record_delete_buttons_share_one_row_with_short_labels(self) -> None:
         window = MainWindow()
@@ -3558,20 +3657,47 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIs(action_row, window._delete_group_measurements_button.parentWidget())
             self.assertIs(action_row, window._delete_all_measurements_button.parentWidget())
             self.assertIsNotNone(action_row.layout())
-            self.assertEqual(action_row.layout().count(), 3)
+            self.assertEqual(action_row.layout().count(), 4)
+            self.assertIs(action_row.layout().itemAt(0).widget(), window.delete_measurement_button)
+            self.assertIs(action_row.layout().itemAt(1).widget(), window._delete_group_measurements_button)
+            self.assertIs(action_row.layout().itemAt(2).widget(), window._delete_all_measurements_button)
+            self.assertIsNotNone(action_row.layout().itemAt(3).spacerItem())
         finally:
             window.close()
 
-    def test_measure_toolbar_is_separate_and_exposes_primary_modes(self) -> None:
+    def test_command_bars_are_real_toolbars_and_group_measurement_tools(self) -> None:
         window = MainWindow()
         try:
-            self.assertIsNotNone(window._file_toolbar)
-            self.assertIsNone(window._measure_toolbar)
+            self.assertIsInstance(window._file_toolbar, QToolBar)
+            self.assertIsInstance(window._measure_toolbar, QToolBar)
+            self.assertEqual(window._file_toolbar.objectName(), "mainCommandBar")
+            self.assertEqual(window._measure_toolbar.objectName(), "measurementCommandBar")
+            self.assertFalse(window._file_toolbar.isMovable())
+            self.assertFalse(window._measure_toolbar.isMovable())
+            self.assertEqual(window.toolBarArea(window._file_toolbar), Qt.ToolBarArea.TopToolBarArea)
+            self.assertEqual(window.toolBarArea(window._measure_toolbar), Qt.ToolBarArea.TopToolBarArea)
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
+            self.assertIs(window._measure_toolbar.findChild(MeasurementToolStrip), window._measurement_tool_strip)
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动线段", "计数", "边缘吸附", "多边形面积", "标准魔棒", "标定", "文字"],
+                ["浏览", "手动线段", "多边形面积", "计数", "标准魔棒", "标定", "文字"],
+            )
+            self.assertEqual(
+                [action.text() for action in window._manual_tool_menu.actions() if not action.isSeparator()],
+                ["手动线段", "连续折线", "边缘吸附"],
+            )
+            self.assertEqual(
+                [action.text() for action in window._area_tool_menu.actions() if not action.isSeparator()],
+                ["多边形面积", "自由形状面积", "面积自动识别..."],
+            )
+            self.assertEqual(
+                [action.text() for action in window._magic_tool_menu.actions() if not action.isSeparator()],
+                ["标准魔棒", "同类扩选", "快速测径"],
+            )
+            self.assertEqual(
+                [action.text() for action in window._overlay_tool_menu.actions() if not action.isSeparator()],
+                ["文字", "矩形", "圆形", "直线", "箭头"],
             )
             visible_actions = [
                 window._mode_actions[key]
@@ -3614,6 +3740,47 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertGreaterEqual(window._overlay_tool_button.menuAreaWidth(), 28)
             self.assertEqual(window._overlay_tool_button.currentToolKind(), OverlayAnnotationKind.TEXT)
             self.assertIs(window._overlay_tool_menu.parent(), window)
+        finally:
+            window.close()
+
+    def test_compact_main_command_bar_keeps_commands_explicitly_reachable(self) -> None:
+        window = MainWindow()
+        try:
+            window.resize(1093, 576)
+            window.show()
+            self.app.processEvents()
+
+            self.assertEqual(window._file_toolbar.toolButtonStyle(), Qt.ToolButtonStyle.ToolButtonIconOnly)
+            more_button = window._file_toolbar.findChild(QToolButton, "moreCommandButton")
+            self.assertIsNotNone(more_button)
+            self.assertTrue(more_button.isVisible())
+            self.assertEqual(
+                [action for action in more_button.menu().actions() if not action.isSeparator()],
+                [
+                    window.capture_frame_action,
+                    window.optimize_capture_signal_action,
+                    window.close_current_action,
+                    window.close_all_action,
+                ],
+            )
+
+            open_button = window._file_toolbar.findChild(QToolButton, "openCommandButton")
+            self.assertIsNotNone(open_button)
+            self.assertEqual(
+                [action for action in open_button.menu().actions() if not action.isSeparator()],
+                [window.open_images_action, window.open_folder_action, window.open_project_action],
+            )
+            toolbar_actions = window._file_toolbar.actions()
+            for action in (
+                window.save_project_action,
+                window.undo_action,
+                window.redo_action,
+                window.measure_workspace_action,
+                window.live_preview_action,
+                window.digital_slide_action,
+                window.settings_action,
+            ):
+                self.assertIn(action, toolbar_actions)
         finally:
             window.close()
 
@@ -3663,7 +3830,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsInstance(window._overlay_tool_button, OverlayToolSplitButton)
 
             window.set_tool_mode("continuous_manual")
-            self.assertEqual(window._manual_tool_button.text(), "连续测量")
+            self.assertEqual(window._manual_tool_button.text(), "连续折线")
             self.assertEqual(window._manual_tool_button.currentToolKind(), "continuous_manual")
 
             window.set_tool_mode("freehand_area")
@@ -3798,7 +3965,7 @@ class CanvasAndExportTests(unittest.TestCase):
             view_menu = menus["视图"]
 
             file_actions = [action for action in file_menu.actions() if not action.isSeparator()]
-            self.assertIn(window.settings_action, file_actions)
+            self.assertNotIn(window.settings_action, file_actions)
             edit_actions = [action for action in edit_menu.actions() if not action.isSeparator()]
             self.assertNotIn(window.settings_action, edit_actions)
             self.assertNotIn("设置", [action.text() for action in edit_actions])
@@ -3806,12 +3973,22 @@ class CanvasAndExportTests(unittest.TestCase):
             view_actions = [action for action in view_menu.actions() if not action.isSeparator()]
             self.assertEqual(
                 view_actions,
-                [window.fit_action, window.actual_size_action, window.digital_slide_smooth_navigation_action],
+                [
+                    window.fit_action,
+                    window.actual_size_action,
+                    window.digital_slide_smooth_navigation_action,
+                    window.toggle_project_panel_action,
+                    window.toggle_inspector_panel_action,
+                    window.toggle_results_panel_action,
+                    window.reset_workspace_layout_action,
+                ],
             )
             for action in window._mode_actions.values():
                 self.assertIn(action, tool_menu.actions())
                 self.assertNotIn(action, view_menu.actions())
-            self.assertNotIn(window.settings_action, tool_menu.actions())
+            self.assertIn(window.settings_action, tool_menu.actions())
+            self.assertIn(window.settings_action, window._file_toolbar.actions())
+            self.assertEqual(window.settings_action.shortcut().toString(), "Ctrl+,")
         finally:
             window.close()
 
@@ -5631,14 +5808,20 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsInstance(window._measurement_tool_strip, MeasurementToolStrip)
             self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
 
-            window._measurement_tool_strip.resize(1600, window._measurement_tool_strip.sizeHint().height())
+            window.resize(1600, 900)
+            window.show()
+            self.app.processEvents()
             window._preview_active = True
+            window._sync_workspace_mode()
             window._update_preview_analysis_controls()
+            self.app.processEvents()
 
             self.assertTrue(window._measurement_tool_strip.isPreviewContextVisible())
+            self.assertFalse(window._measurement_tool_strip.primaryToolsVisible())
             self.assertTrue(window._measurement_tool_strip.isContextInline())
 
             window._preview_active = False
+            window._sync_workspace_mode()
             window._update_preview_analysis_controls()
 
             self.assertFalse(window._measurement_tool_strip.isPreviewContextVisible())
@@ -5671,22 +5854,26 @@ class CanvasAndExportTests(unittest.TestCase):
 
             window.set_tool_mode("select")
             window._preview_active = True
+            window._sync_workspace_mode()
             window._update_magic_segment_controls()
             window._update_preview_analysis_controls()
             self.app.processEvents()
             self.assertTrue(strip.isPreviewContextVisible())
+            self.assertFalse(strip.primaryToolsVisible())
             self.assertTrue(strip.isContextInline())
             self.assertFalse(strip.isCompactMode())
 
             window.resize(1000, 900)
             self.app.processEvents()
-            self.assertTrue(strip.isContextStacked())
+            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextStacked())
             self.assertFalse(strip.isCompactMode())
 
             window.resize(692, 900)
             self.app.processEvents()
             self.assertTrue(strip.isPreviewContextVisible())
-            self.assertTrue(strip.isContextInline() or strip.isContextStacked())
+            self.assertTrue(strip.isContextInline())
+            self.assertFalse(strip.isContextStacked())
         finally:
             window.close()
 
@@ -5782,7 +5969,7 @@ class CanvasAndExportTests(unittest.TestCase):
         try:
             self.assertTrue(window.tab_widget.usesScrollButtons())
             self.assertIsNotNone(window._left_panel_splitter)
-            self.assertEqual(window._left_panel.minimumWidth(), 280)
+            self.assertEqual(window._left_panel.minimumWidth(), 220)
             self.assertEqual(window._left_panel_splitter.orientation(), Qt.Orientation.Vertical)
             window.resize(1280, 860)
             window.show()
@@ -7201,9 +7388,9 @@ class CanvasAndExportTests(unittest.TestCase):
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             self.assertEqual(dialog._theme_mode_combo.currentData(), AppThemeMode.DARK)
-            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#00FF00")
+            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#F4F1DE")
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
-            self.assertFalse(dialog._measurement_label_background.isChecked())
+            self.assertTrue(dialog._measurement_label_background.isChecked())
             self.assertEqual(dialog._endpoint_style_combo.currentData(), MeasurementEndpointStyle.BAR)
             self.assertFalse(dialog._show_count_numbers.isChecked())
             self.assertEqual(dialog._count_number_size.value(), 12)
@@ -7212,8 +7399,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._scale_overlay_mode_combo.currentData(), ScaleOverlayPlacementMode.BOTTOM_RIGHT)
             self.assertEqual(dialog._scale_overlay_style_combo.currentData(), ScaleOverlayStyle.TICKS)
             self.assertAlmostEqual(dialog._scale_overlay_length_spin.value(), 50.0)
-            self.assertEqual(dialog._scale_overlay_color.property("color_value"), "#FF0000")
-            self.assertEqual(dialog._scale_overlay_text_color.property("color_value"), "#FF0000")
+            self.assertEqual(dialog._scale_overlay_color.property("color_value"), "#F4F1DE")
+            self.assertEqual(dialog._scale_overlay_text_color.property("color_value"), "#F4F1DE")
         finally:
             dialog.close()
 
@@ -7548,7 +7735,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     )
 
             self.assertEqual(len(document.measurements), 500)
-            self.assertEqual(window.measurement_table.rowCount(), 500)
+            self.assertEqual(window.measurement_table.model().rowCount(), 500)
             self.assertEqual(len(group.measurement_ids), 500)
             self.assertEqual(document.view_state.selected_measurement_id, document.measurements[-1].id)
             item = window.group_list.item(0)
@@ -7638,19 +7825,39 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._tabs.tabText(5), "面积识别")
             self.assertEqual(dialog._tabs.tabText(6), "原始记录模板")
             self.assertEqual(dialog._tabs.tabText(7), "当前图片")
-            self.assertLessEqual(dialog.width(), 720)
+            navigation_labels = [
+                dialog._settings_navigation.item(index).text()
+                for index in range(dialog._settings_navigation.count())
+            ]
+            self.assertEqual(
+                navigation_labels,
+                [
+                    "常规",
+                    "测量与显示",
+                    "标注与比例尺",
+                    "图像与智能分析",
+                    "面积识别",
+                    "采集与数字切片",
+                    "导出与模板",
+                ],
+            )
+            self.assertEqual(dialog._settings_pages.count(), 7)
+            self.assertLessEqual(dialog.width(), 900)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
             self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)
             self.assertEqual(dialog._area_weights_dir_edit.text(), "runtime/area-models")
             self.assertEqual(dialog._area_vendor_root_edit.text(), "runtime/area-infer/vendor/yolact")
             self.assertEqual(dialog._area_worker_python_edit.text(), "")
             self.assertEqual(dialog._area_infer_device_combo.currentData(), "cpu")
-            self.assertEqual(self._group_titles_in_tab(dialog, 0), ["结果文字", "计数点编号", "测量线与端点"])
+            self.assertEqual(
+                self._group_titles_in_tab(dialog, 0),
+                ["样式预览", "结果文字", "计数点编号", "测量线与端点"],
+            )
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 4),
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键", "切片压缩工具"],
+                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertEqual(dialog._digital_slide_preview_width_combo.currentData(), 1280)
             self.assertEqual(dialog._digital_slide_capture_width_combo.currentData(), 1600)
@@ -7692,7 +7899,7 @@ class CanvasAndExportTests(unittest.TestCase):
             groups = [group for group in content.findChildren(QGroupBox) if group.title()]
             self.assertEqual(
                 [group.title() for group in groups],
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键", "切片压缩工具"],
+                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertTrue(any(isinstance(label, QLabel) and "参数已锁定" in label.text() for label in content.findChildren(QLabel)))
             self.assertTrue(groups)
@@ -7828,8 +8035,9 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(measurement.fiber_group_id)
 
             window._populate_measurement_table(document)
-            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_MODE).text(), "同类扩选")
-            self.assertEqual(window.measurement_table.item(0, window.TABLE_COL_STATUS).text(), "同类扩选")
+            table_model = window.measurement_table.model()
+            self.assertEqual(table_model.index(0, window.TABLE_COL_MODE).data(), "同类扩选")
+            self.assertEqual(table_model.index(0, window.TABLE_COL_STATUS).data(), "同类扩选")
         finally:
             window._reset_workspace()
             window.close()
@@ -8490,13 +8698,17 @@ class CanvasAndExportTests(unittest.TestCase):
             )
 
             self._load_document_into_window(window, document, image)
-            combo = window.measurement_table.cellWidget(0, window.TABLE_COL_GROUP)
+            table_model = window.measurement_table.model()
+            group_index = table_model.index(0, window.TABLE_COL_GROUP)
+            delegate = window.measurement_table.itemDelegateForColumn(window.TABLE_COL_GROUP)
+            combo = delegate.createEditor(window.measurement_table, QStyleOptionViewItem(), group_index)
+            delegate.setEditorData(combo, group_index)
             event = FakeIgnoredWheelEvent()
             current_index = combo.currentIndex()
 
             combo.wheelEvent(event)
 
-            self.assertEqual(combo.focusPolicy(), Qt.FocusPolicy.NoFocus)
+            self.assertEqual(combo.focusPolicy(), Qt.FocusPolicy.StrongFocus)
             self.assertEqual(combo.currentIndex(), current_index)
             self.assertTrue(event.ignored)
         finally:

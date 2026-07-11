@@ -23,6 +23,11 @@ from fdm.services.raw_record_export import (
     write_raw_record_template,
 )
 from fdm.services.sidecar_io import CalibrationSidecarIO
+from fdm.services.measurement_statistics import (
+    MeasurementMetric,
+    MeasurementStatisticsService,
+    StatisticsScope,
+)
 
 CSV_IMAGE_SUMMARY_FILENAME = "图片汇总.csv"
 CSV_FIBER_DETAILS_FILENAME = "纤维种类汇总.csv"
@@ -775,8 +780,13 @@ class ExportService:
 
     def build_image_summary_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
+        statistics_service = MeasurementStatisticsService()
         for document in documents:
-            stats = document.stats()
+            stats = statistics_service.summarize_documents(
+                [document],
+                metric=MeasurementMetric.LENGTH,
+                scope=StatisticsScope.CURRENT_DOCUMENT,
+            )[0]
             active_group = document.get_group(document.active_group_id)
             rows.append(
                 OrderedDict(
@@ -796,10 +806,10 @@ class ExportService:
                         ("纤维种类数量", len(document.fiber_groups)),
                         ("当前激活种类编号", active_group.number if active_group else None),
                         ("当前激活种类名称", active_group.label if active_group else ""),
-                        ("平均直径", stats["mean"]),
-                        ("最小直径", stats["min"]),
-                        ("最大直径", stats["max"]),
-                        ("标准差", stats["stddev"]),
+                        ("平均直径", stats.mean),
+                        ("最小直径", stats.minimum),
+                        ("最大直径", stats.maximum),
+                        ("标准差", stats.stddev),
                     ]
                 )
             )
@@ -807,18 +817,15 @@ class ExportService:
 
     def build_fiber_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
         rows: list[dict[str, object]] = []
+        statistics_service = MeasurementStatisticsService()
         for document in documents:
-            measurement_lookup = {measurement.id: measurement for measurement in document.measurements}
             for group in document.sorted_groups():
-                values = [
-                    measurement_lookup[measurement_id].diameter_unit
-                    for measurement_id in group.measurement_ids
-                    if (
-                        measurement_id in measurement_lookup
-                        and measurement_lookup[measurement_id].measurement_kind in {"line", "polyline"}
-                        and measurement_lookup[measurement_id].diameter_unit is not None
-                    )
-                ]
+                stats = statistics_service.summarize_documents(
+                    [document],
+                    metric=MeasurementMetric.LENGTH,
+                    scope=StatisticsScope.CURRENT_CATEGORY,
+                    fiber_group_id=group.id,
+                )[0]
                 rows.append(
                     OrderedDict(
                         图片编号=document.id,
@@ -830,10 +837,10 @@ class ExportService:
                         纤维种类=group.display_name(),
                         颜色=group.color,
                         测量数量=len(group.measurement_ids),
-                        平均直径=self._mean(values),
-                        最小直径=min(values) if values else None,
-                        最大直径=max(values) if values else None,
-                        标准差=self._stddev(values),
+                        平均直径=stats.mean,
+                        最小直径=stats.minimum,
+                        最大直径=stats.maximum,
+                        标准差=stats.stddev,
                         单位=document.calibration.unit if document.calibration else "px",
                     )
                 )

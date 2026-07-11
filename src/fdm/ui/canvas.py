@@ -1494,6 +1494,19 @@ class DocumentCanvas(QWidget):
     def focus_canvas(self) -> None:
         self.setFocus(Qt.FocusReason.OtherFocusReason)
 
+    def center_on_image_point(self, point: Point) -> None:
+        """Keep the current zoom while bringing an image point to view center."""
+
+        if self._image is None:
+            return
+        current = self.image_to_widget(point)
+        self._pan = Point(
+            self._pan.x + (self.width() / 2.0 - current.x()),
+            self._pan.y + (self.height() / 2.0 - current.y()),
+        )
+        self._persist_view_state()
+        self.update()
+
     def fit_to_view(self) -> None:
         if self._image is None:
             return

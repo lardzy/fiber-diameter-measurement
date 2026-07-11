@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from dataclasses import replace
 import csv
 import json
+import math
 import sys
 import unicodedata
 import unittest
@@ -330,6 +331,45 @@ class ExportServiceTests(unittest.TestCase):
                 values = self._cell_texts(output_archive.read("xl/worksheets/sheet1.xml"))
 
         self.assertEqual([values["B2"], values["C2"]], ["5", "3.5"])
+
+    def test_export_summary_reuses_quality_aware_statistics_contract(self) -> None:
+        document = ImageDocument(
+            id="quality_export",
+            path="/tmp/quality_export.png",
+            image_size=(200, 100),
+        )
+        document.initialize_runtime_state()
+        group = document.create_group(color="#2A9D8F", label="棉")
+        for measurement_id, length, status in (
+            ("valid", 10.0, "manual"),
+            ("review", 20.0, "manual_review"),
+            ("failed", 100.0, "line_too_short"),
+            ("invalid", 30.0, "manual"),
+        ):
+            document.add_measurement(
+                Measurement(
+                    id=measurement_id,
+                    image_id=document.id,
+                    fiber_group_id=group.id,
+                    mode="manual",
+                    line_px=Line(Point(0, 0), Point(length, 0)),
+                    status=status,
+                )
+            )
+        invalid = document.get_measurement("invalid")
+        assert invalid is not None
+        invalid.diameter_px = math.nan
+        invalid.diameter_unit = math.nan
+
+        service = ExportService()
+        image_row = service.build_image_summary_rows([document])[0]
+        fiber_row = service.build_fiber_rows([document])[0]
+
+        for row in (image_row, fiber_row):
+            self.assertEqual(row["平均直径"], 15.0)
+            self.assertEqual(row["最小直径"], 10.0)
+            self.assertEqual(row["最大直径"], 20.0)
+            self.assertEqual(row["标准差"], 5.0)
 
     def test_raw_record_template_export_preserves_macro_and_writes_rules(self) -> None:
         first_document = ImageDocument(

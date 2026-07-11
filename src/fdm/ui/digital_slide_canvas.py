@@ -112,6 +112,18 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         self._reload_viewport(throttled=throttled)
 
+    def center_on_image_point(self, point: Point) -> None:
+        if self._slide_manifest is None:
+            super().center_on_image_point(point)
+            return
+        self._viewport_origin = Point(
+            point.x - (self._slide_manifest.viewport_width / 2.0),
+            point.y - (self._slide_manifest.viewport_height / 2.0),
+        )
+        self._clamp_viewport()
+        self._reload_viewport()
+        super().center_on_image_point(point)
+
     def set_focus_index(self, focus_index: int) -> None:
         focus_index = self._normalized_focus_index(focus_index)
         if focus_index == self._focus_index:

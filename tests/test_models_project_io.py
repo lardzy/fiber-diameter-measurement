@@ -738,6 +738,8 @@ class ModelsProjectIOTests(unittest.TestCase):
             fiber_quick_edge_trim_enabled=False,
             fiber_quick_line_extension_px=3.5,
             main_window_geometry="Zm9v",
+            main_window_state="YmFy",
+            measurement_results_header_state="YmF6",
             main_window_is_maximized=True,
         )
 
@@ -782,6 +784,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertFalse(loaded.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(loaded.fiber_quick_line_extension_px, 3.5)
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
+        self.assertEqual(loaded.main_window_state, "YmFy")
+        self.assertEqual(loaded.measurement_results_header_state, "YmF6")
         self.assertTrue(loaded.main_window_is_maximized)
 
     def test_app_settings_replace_with_file_copies_source_after_validation(self) -> None:
@@ -844,9 +848,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings.from_dict({})
 
         self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
-        self.assertEqual(settings.measurement_label_color, "#00FF00")
+        self.assertEqual(settings.measurement_label_color, "#F4F1DE")
         self.assertEqual(settings.measurement_label_decimals, 2)
-        self.assertFalse(settings.measurement_label_background_enabled)
+        self.assertTrue(settings.measurement_label_background_enabled)
         self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
         self.assertFalse(settings.show_count_numbers)
         self.assertEqual(settings.count_number_font_size, 12)
@@ -855,8 +859,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.scale_overlay_placement_mode, ScaleOverlayPlacementMode.BOTTOM_RIGHT)
         self.assertEqual(settings.scale_overlay_style, ScaleOverlayStyle.TICKS)
         self.assertAlmostEqual(settings.scale_overlay_length_value, 50.0)
-        self.assertEqual(settings.scale_overlay_color, "#FF0000")
-        self.assertEqual(settings.scale_overlay_text_color, "#FF0000")
+        self.assertEqual(settings.scale_overlay_color, "#F4F1DE")
+        self.assertEqual(settings.scale_overlay_text_color, "#F4F1DE")
         self.assertEqual(settings.scale_overlay_font_size, 18)
         self.assertEqual(settings.overlay_line_color, "#F7F4EA")
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)

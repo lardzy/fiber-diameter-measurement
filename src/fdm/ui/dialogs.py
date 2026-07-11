@@ -4,9 +4,10 @@ from dataclasses import replace
 from pathlib import Path
 from threading import Thread
 
-from PySide6.QtCore import QObject, Qt, Signal
-from PySide6.QtGui import QColor, QFont
+from PySide6.QtCore import QLineF, QObject, QRectF, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
+    QApplication,
     QColorDialog,
     QCheckBox,
     QComboBox,
@@ -30,9 +31,12 @@ from PySide6.QtWidgets import (
     QSlider,
     QSpinBox,
     QHeaderView,
+    QFrame,
+    QListWidget,
+    QListWidgetItem,
+    QStackedWidget,
     QTableWidget,
     QTableWidgetItem,
-    QTabWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -93,6 +97,84 @@ RAW_RECORD_DIRECTION_ITEMS = [
     ("纵向", RawRecordExportDirection.VERTICAL),
     ("横向", RawRecordExportDirection.HORIZONTAL),
 ]
+
+
+class _MeasurementStylePreview(QWidget):
+    """Small live preview for clean-profile measurement appearance settings."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._show_label = True
+        self._font = QFont()
+        self._label_color = QColor("#F4F1DE")
+        self._line_color = QColor("#2A9D8F")
+        self._background_enabled = True
+        self._decimals = 2
+        self._endpoint_style = MeasurementEndpointStyle.BAR
+        self.setMinimumHeight(86)
+
+    def set_preview_style(
+        self,
+        *,
+        show_label: bool,
+        font: QFont,
+        label_color: str,
+        line_color: str,
+        background_enabled: bool,
+        decimals: int,
+        endpoint_style: str,
+    ) -> None:
+        self._show_label = bool(show_label)
+        self._font = QFont(font)
+        self._label_color = QColor(label_color)
+        self._line_color = QColor(line_color)
+        self._background_enabled = bool(background_enabled)
+        self._decimals = max(0, min(8, int(decimals)))
+        self._endpoint_style = str(endpoint_style)
+        self.update()
+
+    def paintEvent(self, event) -> None:
+        del event
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        rect = QRectF(self.rect()).adjusted(1, 1, -1, -1)
+        painter.fillRect(rect, self.palette().color(QPalette.ColorRole.AlternateBase))
+        painter.setPen(QPen(self.palette().color(QPalette.ColorRole.Mid), 1))
+        painter.drawRoundedRect(rect, 6, 6)
+
+        left = rect.left() + 28
+        right = rect.right() - 28
+        y = rect.center().y() + 10
+        painter.setPen(QPen(self._line_color, 2.5))
+        painter.drawLine(QLineF(left, y, right, y))
+        if self._endpoint_style == MeasurementEndpointStyle.CIRCLE:
+            painter.setBrush(self._line_color)
+            painter.drawEllipse(QRectF(left - 3, y - 3, 6, 6))
+            painter.drawEllipse(QRectF(right - 3, y - 3, 6, 6))
+        elif self._endpoint_style == MeasurementEndpointStyle.BAR:
+            painter.drawLine(QLineF(left, y - 7, left, y + 7))
+            painter.drawLine(QLineF(right, y - 7, right, y + 7))
+        elif self._endpoint_style in {
+            MeasurementEndpointStyle.ARROW_INSIDE,
+            MeasurementEndpointStyle.ARROW_OUTSIDE,
+        }:
+            direction = 1 if self._endpoint_style == MeasurementEndpointStyle.ARROW_INSIDE else -1
+            painter.drawLine(QLineF(left, y, left + 8 * direction, y - 5))
+            painter.drawLine(QLineF(left, y, left + 8 * direction, y + 5))
+            painter.drawLine(QLineF(right, y, right - 8 * direction, y - 5))
+            painter.drawLine(QLineF(right, y, right - 8 * direction, y + 5))
+
+        if not self._show_label:
+            return
+        painter.setFont(self._font)
+        text = f"{12.3456:.{self._decimals}f} μm"
+        metrics = QFontMetrics(self._font)
+        text_rect = QRectF(metrics.boundingRect(text)).adjusted(-6, -3, 6, 3)
+        text_rect.moveCenter(QRectF(rect.left(), rect.top(), rect.width(), rect.height() * 0.55).center())
+        if self._background_enabled:
+            painter.fillRect(text_rect, QColor(15, 23, 42, 190))
+        painter.setPen(self._label_color)
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
 
 
 class NoWheelComboBox(QComboBox):
@@ -161,6 +243,284 @@ class DigitalSlideCompressionWorker(QObject):
             self.failed.emit(str(exc))
             return
         self.finished.emit(str(result))
+
+
+def _digital_slide_quality_label_text(value: int) -> str:
+    quality = normalize_jpeg_quality(value)
+    if quality <= 80:
+        level = "中等留档"
+    elif quality <= 90:
+        level = "高质量"
+    else:
+        level = "更高质量/更大文件"
+    return f"{quality} ({level})"
+
+
+class DigitalSlideCompressionDialog(QDialog):
+    """Standalone maintenance task for creating a compressed slide copy."""
+
+    compression_finished = Signal(str)
+
+    def __init__(
+        self,
+        settings: AppSettings,
+        *,
+        source_path: str | Path | None = None,
+        parent=None,
+    ) -> None:
+        super().__init__(parent)
+        self.setWindowTitle("压缩数字化切片副本")
+        self.resize(680, 360)
+        self.setMinimumSize(560, 320)
+        self._worker: DigitalSlideCompressionWorker | None = None
+        self._running = False
+        self._completed_path: Path | None = None
+
+        heading = QLabel("压缩数字化切片副本", self)
+        heading.setObjectName("digitalSlideCompressionTitle")
+        hint = QLabel(
+            "源文件保持不变，压缩结果始终另存为新的 .fdmslide 文件。"
+            "JPEG 可以减小体积，但可能引入压缩伪影；精确测量建议保留 PNG 无损原件。",
+            self,
+        )
+        hint.setWordWrap(True)
+
+        paths_group = QGroupBox("文件", self)
+        paths_layout = QVBoxLayout(paths_group)
+        source_row = QHBoxLayout()
+        self._source_edit = QLineEdit(paths_group)
+        self._source_edit.setPlaceholderText("源 .fdmslide 文件")
+        self._source_button = QPushButton("选择源文件", paths_group)
+        self._source_button.clicked.connect(self._choose_source)
+        source_row.addWidget(self._source_edit, 1)
+        source_row.addWidget(self._source_button)
+        paths_layout.addLayout(source_row)
+
+        target_row = QHBoxLayout()
+        self._target_edit = QLineEdit(paths_group)
+        self._target_edit.setPlaceholderText("压缩副本保存位置")
+        self._target_button = QPushButton("另存为", paths_group)
+        self._target_button.clicked.connect(self._choose_target)
+        target_row.addWidget(self._target_edit, 1)
+        target_row.addWidget(self._target_button)
+        paths_layout.addLayout(target_row)
+
+        options_group = QGroupBox("压缩选项", self)
+        options_form = QFormLayout(options_group)
+        self._codec_combo = NoWheelComboBox(options_group)
+        self._codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
+        self._codec_combo.addItem("PNG 无损副本", DIGITAL_SLIDE_TILE_CODEC_PNG)
+        self._quality_slider = NoWheelSlider(Qt.Orientation.Horizontal)
+        self._quality_slider.setRange(70, 95)
+        self._quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
+        self._quality_label = QLabel(options_group)
+        self._quality_label.setMinimumWidth(150)
+        self._quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
+        quality_row = QWidget(options_group)
+        quality_layout = QHBoxLayout(quality_row)
+        quality_layout.setContentsMargins(0, 0, 0, 0)
+        quality_layout.addWidget(self._quality_slider, 1)
+        quality_layout.addWidget(self._quality_label)
+        options_form.addRow("输出格式", self._codec_combo)
+        options_form.addRow("JPEG 质量", quality_row)
+        self._quality_slider.valueChanged.connect(self._update_quality_label)
+        self._codec_combo.currentIndexChanged.connect(self._sync_quality_visibility)
+
+        self._progress = QProgressBar(self)
+        self._progress.setRange(0, 1)
+        self._progress.setValue(0)
+        self._progress.setFormat("等待开始")
+
+        self._button_box = QDialogButtonBox(QDialogButtonBox.StandardButton.Close, self)
+        close_button = self._button_box.button(QDialogButtonBox.StandardButton.Close)
+        if close_button is not None:
+            close_button.setText("关闭")
+        self._start_button = self._button_box.addButton("开始压缩", QDialogButtonBox.ButtonRole.ActionRole)
+        self._start_button.clicked.connect(self.start_compression)
+        self._button_box.rejected.connect(self.reject)
+
+        self._task_controls = [
+            self._source_edit,
+            self._source_button,
+            self._target_edit,
+            self._target_button,
+            self._codec_combo,
+            self._quality_slider,
+            self._start_button,
+        ]
+        self._sync_quality_visibility()
+        if source_path is not None and str(source_path).strip():
+            self.set_source_path(source_path)
+
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(16, 16, 16, 12)
+        layout.setSpacing(10)
+        layout.addWidget(heading)
+        layout.addWidget(hint)
+        layout.addWidget(paths_group)
+        layout.addWidget(options_group)
+        layout.addWidget(self._progress)
+        layout.addStretch(1)
+        layout.addWidget(self._button_box)
+        self.setStyleSheet(
+            "QLabel#digitalSlideCompressionTitle { font-size: 18px; font-weight: 700; }"
+        )
+
+    def set_source_path(self, path: str | Path) -> None:
+        source = Path(path).expanduser()
+        self._source_edit.setText(str(source))
+        self._target_edit.setText(str(self._default_target_path(source)))
+
+    def source_path(self) -> Path | None:
+        token = self._source_edit.text().strip()
+        return Path(token).expanduser() if token else None
+
+    def target_path(self) -> Path | None:
+        token = self._target_edit.text().strip()
+        if not token:
+            return None
+        target = Path(token).expanduser()
+        return target if target.suffix.lower() == DIGITAL_SLIDE_SUFFIX else target.with_suffix(DIGITAL_SLIDE_SUFFIX)
+
+    def completed_path(self) -> Path | None:
+        return self._completed_path
+
+    def is_running(self) -> bool:
+        return self._running
+
+    @staticmethod
+    def _default_target_path(source: Path) -> Path:
+        return source.with_name(f"{source.stem}_compressed{DIGITAL_SLIDE_SUFFIX}")
+
+    def _choose_source(self) -> None:
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "选择数字化切片文件",
+            "",
+            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
+        )
+        if path:
+            self.set_source_path(path)
+
+    def _choose_target(self) -> None:
+        source = self.source_path()
+        default_path = str(self._default_target_path(source)) if source is not None else ""
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "保存压缩数字化切片",
+            default_path,
+            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
+        )
+        if not path:
+            return
+        target = Path(path).expanduser()
+        if target.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
+            target = target.with_suffix(DIGITAL_SLIDE_SUFFIX)
+        self._target_edit.setText(str(target))
+
+    def _update_quality_label(self, value: int) -> None:
+        self._quality_label.setText(_digital_slide_quality_label_text(value))
+
+    def _sync_quality_visibility(self) -> None:
+        is_jpeg = normalize_tile_codec(self._codec_combo.currentData()) == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        self._quality_slider.setEnabled(is_jpeg and not self._running)
+        self._quality_label.setEnabled(is_jpeg)
+        self._update_quality_label(self._quality_slider.value())
+
+    def _set_task_controls_enabled(self, enabled: bool) -> None:
+        for control in self._task_controls:
+            control.setEnabled(enabled)
+        self._sync_quality_visibility()
+
+    def start_compression(self) -> bool:
+        if self._running:
+            return False
+        source = self.source_path()
+        if source is None:
+            QMessageBox.information(self, "切片压缩", "请先选择源 .fdmslide 文件。")
+            return False
+        if not source.exists() or source.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
+            QMessageBox.warning(self, "切片压缩", "源文件不存在或不是 .fdmslide 文件。")
+            return False
+        target = self.target_path() or self._default_target_path(source)
+        if source.resolve() == target.resolve():
+            QMessageBox.warning(self, "切片压缩", "压缩目标不能与源文件相同，请选择另存副本。")
+            return False
+        if target.exists():
+            response = QMessageBox.question(
+                self,
+                "覆盖压缩文件",
+                f"目标文件已存在，是否覆盖？\n{target}",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return False
+        self._target_edit.setText(str(target))
+        codec = normalize_tile_codec(self._codec_combo.currentData())
+        quality = self._quality_slider.value() if codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        self._running = True
+        self._completed_path = None
+        self._set_task_controls_enabled(False)
+        self._progress.setRange(0, 1)
+        self._progress.setValue(0)
+        self._progress.setFormat("准备压缩...")
+        worker = DigitalSlideCompressionWorker(source, target, codec=codec, quality=quality)
+        self._worker = worker
+        worker.progress.connect(self._on_progress)
+        worker.finished.connect(self._on_finished)
+        worker.failed.connect(self._on_failed)
+        try:
+            worker.start()
+        except Exception as exc:
+            self._progress.setFormat("压缩失败")
+            self._finish_task_ui()
+            QMessageBox.warning(self, "切片压缩", f"无法启动压缩任务：\n{exc}")
+            return False
+        return True
+
+    def _on_progress(self, completed: int, total: int) -> None:
+        total = max(1, int(total))
+        completed = max(0, min(int(completed), total))
+        self._progress.setRange(0, total)
+        self._progress.setValue(completed)
+        self._progress.setFormat(f"{completed}/{total} 张")
+
+    def _finish_task_ui(self) -> None:
+        self._running = False
+        self._worker = None
+        self._set_task_controls_enabled(True)
+
+    def _on_finished(self, path: str) -> None:
+        self._completed_path = Path(path)
+        self._progress.setFormat("压缩完成")
+        self._finish_task_ui()
+        self.compression_finished.emit(path)
+        QMessageBox.information(self, "切片压缩", f"压缩完成：\n{path}")
+
+    def _on_failed(self, message: str) -> None:
+        self._progress.setFormat("压缩失败")
+        self._finish_task_ui()
+        QMessageBox.warning(self, "切片压缩", f"压缩失败：\n{message}")
+
+    def accept(self) -> None:
+        if self._running:
+            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭窗口。")
+            return
+        super().accept()
+
+    def reject(self) -> None:
+        if self._running:
+            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭窗口。")
+            return
+        super().reject()
+
+    def closeEvent(self, event) -> None:
+        if self._running:
+            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭窗口。")
+            event.ignore()
+            return
+        super().closeEvent(event)
 
 
 class CalibrationInputDialog(QDialog):
@@ -508,7 +868,39 @@ class ShortcutHelpDialog(QDialog):
         layout.addWidget(buttons)
 
 
+class _SettingsTabsCompatibility:
+    """Read-only adapter for legacy tests and integrations using ``_tabs``.
+
+    Settings pages are no longer presented as horizontal tabs.  Keeping this
+    deliberately small adapter avoids coupling callers to the new navigation
+    widgets while the current-image controls move to the main inspector.
+    """
+
+    def __init__(self, labels: list[str], pages: list[QWidget]) -> None:
+        self._labels = list(labels)
+        self._pages = list(pages)
+
+    def count(self) -> int:
+        return len(self._pages)
+
+    def tabText(self, index: int) -> str:
+        return self._labels[index]
+
+    def widget(self, index: int) -> QWidget:
+        return self._pages[index]
+
+
 class SettingsDialog(QDialog):
+    _NAVIGATION_DEFINITIONS = (
+        ("常规", "主题与默认视图", "主题 深色 浅色 系统 打开 图片 默认 视图"),
+        ("测量与显示", "测量结果、计数和线条外观", "测量 结果 文字 标签 计数 编号 端点 颜色"),
+        ("标注与比例尺", "比例尺和图形标注默认样式", "比例尺 叠加 文字 图形 矩形 圆形 箭头 线条"),
+        ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
+        ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
+        ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
+        ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
+    )
+
     def __init__(
         self,
         settings: AppSettings,
@@ -518,26 +910,126 @@ class SettingsDialog(QDialog):
         parent=None,
     ) -> None:
         super().__init__(parent)
-        self.setWindowTitle("设置")
+        self.setWindowTitle("首选项")
+        # Keep the pre-show size compatible with callers that inspect a newly
+        # constructed dialog.  The preferred clamped size is applied when the
+        # real window is shown, once its target screen is known.
         self.resize(700, 560)
+        self._preferred_size_applied = False
         self._initial_settings = replace(settings)
         self._document = document
         self._group_color_buttons: dict[str | None, QPushButton] = {}
         self._request_scale_anchor_pick = False
         self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
         self._raw_record_current_template_index = -1
-        self._digital_slide_compression_worker: DigitalSlideCompressionWorker | None = None
-        self._digital_slide_compression_running = False
 
-        self._tabs = QTabWidget()
-        self._tabs.addTab(self._build_measurement_tab(settings), "测量标注")
-        self._tabs.addTab(self._build_scale_overlay_tab(settings), "比例尺叠加")
-        self._tabs.addTab(self._build_image_processing_tab(settings), "图像处理")
-        self._tabs.addTab(self._build_overlay_tab(settings), "叠加标注")
-        self._tabs.addTab(self._build_digital_slide_tab(settings, locked=digital_slide_locked), "数字化切片")
-        self._tabs.addTab(self._build_area_models_tab(settings), "面积识别")
-        self._tabs.addTab(self._build_raw_record_templates_tab(settings), "原始记录模板")
-        self._tabs.addTab(self._build_current_image_tab(document), "当前图片")
+        general_page = self._build_general_tab(settings)
+        measurement_page = self._build_measurement_tab(settings)
+        annotation_scale_page = self._build_scale_overlay_tab(settings)
+        image_processing_page = self._build_image_processing_tab(settings)
+        area_models_page = self._build_area_models_tab(settings)
+        digital_slide_page = self._build_digital_slide_tab(settings, locked=digital_slide_locked)
+        raw_record_page = self._build_raw_record_templates_tab(settings)
+        current_image_page = self._build_current_image_tab(document)
+
+        self._settings_pages = QStackedWidget(self)
+        self._settings_pages.setObjectName("settingsPages")
+        navigation_pages = [
+            general_page,
+            measurement_page,
+            annotation_scale_page,
+            image_processing_page,
+            area_models_page,
+            digital_slide_page,
+            raw_record_page,
+        ]
+        for page in navigation_pages:
+            self._settings_pages.addWidget(page)
+
+        # ``_tabs`` is private legacy surface retained only as a read-only
+        # compatibility layer.  The two proxy pages preserve the previous
+        # group-title structure without re-parenting live controls.
+        legacy_scale_page = self._build_legacy_group_page(("默认视图", "位置与长度", "样式"))
+        legacy_overlay_page = self._build_legacy_group_page(("文字默认样式", "图形默认样式"))
+        legacy_scale_page.hide()
+        legacy_overlay_page.hide()
+        current_image_page.hide()
+        self._tabs = _SettingsTabsCompatibility(
+            ["测量标注", "比例尺叠加", "图像处理", "叠加标注", "数字化切片", "面积识别", "原始记录模板", "当前图片"],
+            [
+                measurement_page,
+                legacy_scale_page,
+                image_processing_page,
+                legacy_overlay_page,
+                digital_slide_page,
+                area_models_page,
+                raw_record_page,
+                current_image_page,
+            ],
+        )
+
+        self._settings_navigation = QListWidget(self)
+        self._settings_navigation.setObjectName("settingsNavigation")
+        self._settings_navigation.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._settings_navigation.setSpacing(2)
+        self._settings_navigation_items: list[QListWidgetItem] = []
+        self._settings_search_texts: list[str] = []
+        for index, ((label, description, keywords), page) in enumerate(
+            zip(self._NAVIGATION_DEFINITIONS, navigation_pages, strict=True)
+        ):
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, index)
+            item.setToolTip(description)
+            self._settings_navigation.addItem(item)
+            self._settings_navigation_items.append(item)
+            self._settings_search_texts.append(
+                self._settings_page_search_text(label, description, keywords, page)
+            )
+
+        self._settings_search = QLineEdit(self)
+        self._settings_search.setObjectName("settingsSearch")
+        self._settings_search.setPlaceholderText("搜索设置")
+        self._settings_search.setClearButtonEnabled(True)
+        self._settings_search.textChanged.connect(self._filter_settings_navigation)
+        self._settings_navigation.currentItemChanged.connect(self._activate_settings_navigation_item)
+
+        sidebar = QFrame(self)
+        sidebar.setObjectName("settingsSidebar")
+        sidebar.setMinimumWidth(190)
+        sidebar.setMaximumWidth(240)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(12, 12, 12, 12)
+        sidebar_layout.setSpacing(8)
+        sidebar_title = QLabel("首选项", sidebar)
+        sidebar_title.setObjectName("settingsSidebarTitle")
+        sidebar_layout.addWidget(sidebar_title)
+        sidebar_layout.addWidget(self._settings_search)
+        sidebar_layout.addWidget(self._settings_navigation, 1)
+        self._settings_search_empty = QLabel("没有匹配的设置", sidebar)
+        self._settings_search_empty.setObjectName("settingsSearchEmpty")
+        self._settings_search_empty.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._settings_search_empty.setWordWrap(True)
+        self._settings_search_empty.hide()
+        sidebar_layout.addWidget(self._settings_search_empty)
+
+        self._settings_page_title = QLabel(self)
+        self._settings_page_title.setObjectName("settingsPageTitle")
+        self._settings_page_description = QLabel(self)
+        self._settings_page_description.setObjectName("settingsPageDescription")
+        self._settings_page_description.setWordWrap(True)
+        page_layout = QVBoxLayout()
+        page_layout.setContentsMargins(16, 12, 12, 8)
+        page_layout.setSpacing(4)
+        page_layout.addWidget(self._settings_page_title)
+        page_layout.addWidget(self._settings_page_description)
+        page_layout.addSpacing(6)
+        page_layout.addWidget(self._settings_pages, 1)
+
+        content_layout = QHBoxLayout()
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.setSpacing(0)
+        content_layout.addWidget(sidebar)
+        content_layout.addLayout(page_layout, 1)
 
         self._button_box = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -546,39 +1038,234 @@ class SettingsDialog(QDialog):
         )
         self._button_box.accepted.connect(self.accept)
         self._button_box.rejected.connect(self.reject)
+        self._restore_page_defaults_button = self._button_box.addButton(
+            "恢复本页默认值",
+            QDialogButtonBox.ButtonRole.ResetRole,
+        )
+        self._restore_page_defaults_button.setToolTip("恢复当前分类的专业默认样式与参数；点击应用或确定后才会保存")
+        self._restore_page_defaults_button.clicked.connect(self._restore_current_page_defaults)
+        for standard_button, text in (
+            (QDialogButtonBox.StandardButton.Ok, "确定"),
+            (QDialogButtonBox.StandardButton.Cancel, "取消"),
+            (QDialogButtonBox.StandardButton.Apply, "应用"),
+        ):
+            button = self._button_box.button(standard_button)
+            if button is not None:
+                button.setText(text)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(self._tabs)
+        layout.setContentsMargins(0, 0, 12, 12)
+        layout.setSpacing(8)
+        layout.addLayout(content_layout, 1)
         layout.addWidget(self._button_box)
+        self.setStyleSheet(
+            """
+            QFrame#settingsSidebar {
+                border: none;
+                border-right: 1px solid palette(mid);
+            }
+            QLabel#settingsSidebarTitle, QLabel#settingsPageTitle {
+                font-size: 18px;
+                font-weight: 700;
+            }
+            QLabel#settingsPageDescription, QLabel#settingsSearchEmpty {
+                color: palette(placeholder-text);
+            }
+            QListWidget#settingsNavigation {
+                border: none;
+                background: transparent;
+                outline: none;
+            }
+            QListWidget#settingsNavigation::item {
+                min-height: 36px;
+                padding: 3px 9px;
+                border-radius: 6px;
+            }
+            QListWidget#settingsNavigation::item:hover {
+                background: rgba(42, 157, 143, 45);
+            }
+            QListWidget#settingsNavigation::item:selected {
+                background: #2A9D8F;
+                color: white;
+            }
+            """
+        )
+        self._settings_navigation.setCurrentRow(0)
 
     @property
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
 
-    def accept(self) -> None:
-        if self._digital_slide_compression_running:
-            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭设置窗口。")
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._preferred_size_applied:
             return
-        super().accept()
+        self._preferred_size_applied = True
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is None:
+            self.resize(900, 640)
+            return
+        available = screen.availableGeometry()
+        margin = 32
+        target_width = max(1, min(900, available.width() - margin))
+        target_height = max(1, min(640, available.height() - margin))
+        self.resize(target_width, target_height)
 
-    def reject(self) -> None:
-        if self._digital_slide_compression_running:
-            QMessageBox.information(self, "切片压缩", "切片压缩正在进行，请等待完成后再关闭设置窗口。")
+    def _settings_page_search_text(
+        self,
+        label: str,
+        description: str,
+        keywords: str,
+        page: QWidget,
+    ) -> str:
+        parts = [label, description, keywords]
+        parts.extend(group.title() for group in page.findChildren(QGroupBox))
+        parts.extend(child.text() for child in page.findChildren(QLabel))
+        parts.extend(child.text() for child in page.findChildren(QCheckBox))
+        parts.extend(child.text() for child in page.findChildren(QPushButton))
+        parts.extend(child.placeholderText() for child in page.findChildren(QLineEdit))
+        for combo in page.findChildren(QComboBox):
+            parts.extend(combo.itemText(index) for index in range(combo.count()))
+        return " ".join(part for part in parts if part).casefold()
+
+    def _filter_settings_navigation(self, query: str) -> None:
+        tokens = [token.casefold() for token in query.split() if token.strip()]
+        first_visible: QListWidgetItem | None = None
+        current_visible = False
+        current_item = self._settings_navigation.currentItem()
+        for item, searchable_text in zip(
+            self._settings_navigation_items,
+            self._settings_search_texts,
+            strict=True,
+        ):
+            visible = all(token in searchable_text for token in tokens)
+            item.setHidden(not visible)
+            if visible and first_visible is None:
+                first_visible = item
+            if item is current_item and visible:
+                current_visible = True
+        has_results = first_visible is not None
+        self._settings_search_empty.setVisible(not has_results)
+        if has_results and not current_visible:
+            self._settings_navigation.setCurrentItem(first_visible)
+        elif not has_results:
+            self._settings_navigation.clearSelection()
+
+    def _activate_settings_navigation_item(
+        self,
+        current: QListWidgetItem | None,
+        _previous: QListWidgetItem | None,
+    ) -> None:
+        if current is None or current.isHidden():
             return
-        super().reject()
+        index = int(current.data(Qt.ItemDataRole.UserRole))
+        if not (0 <= index < self._settings_pages.count()):
+            return
+        self._settings_pages.setCurrentIndex(index)
+        label, description, _keywords = self._NAVIGATION_DEFINITIONS[index]
+        self._settings_page_title.setText(label)
+        self._settings_page_description.setText(description)
+
+    def _build_legacy_group_page(self, titles: tuple[str, ...]) -> QScrollArea:
+        content = QWidget(self)
+        layout = QVBoxLayout(content)
+        for title in titles:
+            layout.addWidget(QGroupBox(title, content))
+        layout.addStretch(1)
+        return self._wrap_settings_page(content)
+
+    def _restore_current_page_defaults(self) -> None:
+        """Restore only the visible preference category to clean-profile defaults."""
+
+        page_index = self._settings_pages.currentIndex()
+        page = self._settings_pages.currentWidget()
+        if page is None:
+            return
+        defaults_dialog = SettingsDialog(
+            AppSettings(),
+            document=self._document,
+            digital_slide_locked=False,
+            parent=self,
+        )
+        try:
+            default_page = defaults_dialog._settings_pages.widget(page_index)
+            for name, target in vars(self).items():
+                source = vars(defaults_dialog).get(name)
+                if not isinstance(target, QWidget) or not isinstance(source, QWidget):
+                    continue
+                if not page.isAncestorOf(target) or not default_page.isAncestorOf(source):
+                    continue
+                self._copy_default_control_value(target, source)
+
+            if page_index == 4:
+                self._copy_table_contents(
+                    self._area_mapping_table,
+                    defaults_dialog._area_mapping_table,
+                )
+            elif page_index == 6:
+                self._raw_record_templates_data = []
+                self._raw_record_current_template_index = -1
+                self._raw_record_template_table.setRowCount(0)
+                self._raw_record_rule_table.setRowCount(0)
+            self._settings_page_description.setText(
+                self._NAVIGATION_DEFINITIONS[page_index][1]
+                + "（已恢复本页默认值，尚未应用）"
+            )
+        finally:
+            defaults_dialog.deleteLater()
+
+    def _copy_default_control_value(self, target: QWidget, source: QWidget) -> None:
+        if isinstance(target, QFontComboBox) and isinstance(source, QFontComboBox):
+            target.setCurrentFont(source.currentFont())
+            target.setProperty("requested_font_family", source.property("requested_font_family"))
+            target.setProperty("font_user_changed", source.property("font_user_changed"))
+            return
+        if isinstance(target, QComboBox) and isinstance(source, QComboBox):
+            index = target.findData(source.currentData())
+            if index < 0:
+                index = target.findText(source.currentText())
+            if index >= 0:
+                target.setCurrentIndex(index)
+            return
+        if isinstance(target, (QCheckBox, QRadioButton)) and isinstance(source, (QCheckBox, QRadioButton)):
+            target.setChecked(source.isChecked())
+            return
+        if isinstance(target, (QSpinBox, QDoubleSpinBox)) and isinstance(source, (QSpinBox, QDoubleSpinBox)):
+            target.setValue(source.value())
+            return
+        if isinstance(target, QSlider) and isinstance(source, QSlider):
+            target.setValue(source.value())
+            return
+        if isinstance(target, QLineEdit) and isinstance(source, QLineEdit):
+            target.setText(source.text())
+            return
+        if isinstance(target, QPushButton) and isinstance(source, QPushButton):
+            color_value = source.property("color_value")
+            if color_value:
+                self._apply_button_color(target, str(color_value))
+
+    @staticmethod
+    def _copy_table_contents(target: QTableWidget, source: QTableWidget) -> None:
+        target.setRowCount(source.rowCount())
+        target.setColumnCount(source.columnCount())
+        for row in range(source.rowCount()):
+            for column in range(source.columnCount()):
+                item = source.item(row, column)
+                if item is not None:
+                    target.setItem(row, column, item.clone())
 
     def app_settings(self) -> AppSettings:
         return AppSettings(
             theme_mode=self._theme_mode_combo.currentData(),
             show_measurement_labels=self._show_measurement_labels.isChecked(),
-            measurement_label_font_family=self._measurement_label_font.currentFont().family(),
+            measurement_label_font_family=self._font_combo_family_value(self._measurement_label_font),
             measurement_label_font_size=self._measurement_label_size.value(),
             measurement_label_color=self._measurement_label_color.property("color_value") or self._initial_settings.measurement_label_color,
             measurement_label_decimals=self._measurement_label_decimals.value(),
             measurement_label_parallel_to_line=self._measurement_label_parallel.isChecked(),
             measurement_label_background_enabled=self._measurement_label_background.isChecked(),
             show_count_numbers=self._show_count_numbers.isChecked(),
-            count_number_font_family=self._count_number_font.currentFont().family(),
+            count_number_font_family=self._font_combo_family_value(self._count_number_font),
             count_number_font_size=self._count_number_size.value(),
             count_number_color=self._count_number_color.property("color_value") or self._initial_settings.count_number_color,
             measurement_endpoint_style=self._endpoint_style_combo.currentData(),
@@ -589,9 +1276,9 @@ class SettingsDialog(QDialog):
             scale_overlay_length_value=self._scale_overlay_length_spin.value(),
             scale_overlay_color=self._scale_overlay_color.property("color_value") or self._initial_settings.scale_overlay_color,
             scale_overlay_text_color=self._scale_overlay_text_color.property("color_value") or self._initial_settings.scale_overlay_text_color,
-            scale_overlay_font_family=self._scale_overlay_font.currentFont().family(),
+            scale_overlay_font_family=self._font_combo_family_value(self._scale_overlay_font),
             scale_overlay_font_size=self._scale_overlay_font_size.value(),
-            text_font_family=self._text_font.currentFont().family(),
+            text_font_family=self._font_combo_family_value(self._text_font),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
             overlay_line_color=self._overlay_line_color.property("color_value") or self._initial_settings.overlay_line_color,
@@ -622,6 +1309,8 @@ class SettingsDialog(QDialog):
             raw_record_templates=self.raw_record_templates(),
             last_raw_record_template_path=self._initial_settings.last_raw_record_template_path,
             main_window_geometry=self._initial_settings.main_window_geometry,
+            main_window_state=self._initial_settings.main_window_state,
+            measurement_results_header_state=self._initial_settings.measurement_results_header_state,
             main_window_is_maximized=self._initial_settings.main_window_is_maximized,
             digital_slide_last_output_path=self._initial_settings.digital_slide_last_output_path,
             digital_slide_preview_max_width=int(self._digital_slide_preview_width_combo.currentData() or 0),
@@ -712,10 +1401,41 @@ class SettingsDialog(QDialog):
 
     def _wrap_settings_page(self, content: QWidget) -> QScrollArea:
         scroll = QScrollArea(self)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
         scroll.setWidgetResizable(True)
         scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         scroll.setWidget(content)
         return scroll
+
+    def _build_general_tab(self, settings: AppSettings) -> QWidget:
+        page = QWidget()
+        layout = QVBoxLayout(page)
+
+        display_group = QGroupBox("界面与默认视图")
+        display_form = QFormLayout(display_group)
+        self._theme_mode_combo = NoWheelComboBox()
+        self._theme_mode_combo.addItem("跟随系统", AppThemeMode.SYSTEM)
+        self._theme_mode_combo.addItem("深色", AppThemeMode.DARK)
+        self._theme_mode_combo.addItem("浅色", AppThemeMode.LIGHT)
+        self._theme_mode_combo.setCurrentIndex(
+            max(0, self._theme_mode_combo.findData(settings.theme_mode))
+        )
+        self._open_view_mode_combo = NoWheelComboBox()
+        self._open_view_mode_combo.addItem("缺省", OpenImageViewMode.DEFAULT)
+        self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
+        self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
+        self._open_view_mode_combo.setCurrentIndex(
+            max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode))
+        )
+        display_form.addRow("界面主题", self._theme_mode_combo)
+        display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
+
+        hint = QLabel("这些选项是长期偏好；当前图片的标定、类别颜色和比例尺锚点由测量工作台的属性检查器管理。")
+        hint.setWordWrap(True)
+        layout.addWidget(display_group)
+        layout.addWidget(hint)
+        layout.addStretch(1)
+        return self._wrap_settings_page(page)
 
     def _update_focus_stack_sharpen_label(self, value: int) -> None:
         self._focus_stack_sharpen_value_label.setText(f"{value}%")
@@ -727,6 +1447,65 @@ class SettingsDialog(QDialog):
         calibration = self._document.calibration if self._document is not None else None
         return calibration.unit if calibration is not None else "px"
 
+    @staticmethod
+    def _configure_font_combo(combo: QFontComboBox, requested_family: str) -> None:
+        requested = str(requested_family or "").strip()
+        available = {
+            family.casefold(): family
+            for family in QFontDatabase.families()
+        }
+        resolved_system = QFontInfo(
+            QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont)
+        ).family()
+        fallback_candidates = (
+            resolved_system,
+            "Segoe UI",
+            "PingFang SC",
+            "Noto Sans CJK SC",
+            "Noto Sans",
+            "DejaVu Sans",
+            "Arial",
+            "Helvetica Neue",
+        )
+        fallback = next(
+            (
+                available[candidate.casefold()]
+                for candidate in fallback_candidates
+                if candidate.casefold() in available and not candidate.startswith(".")
+            ),
+            next(iter(available.values()), "Sans Serif"),
+        )
+        resolved = available.get(requested.casefold(), fallback) if requested else fallback
+        combo.setCurrentFont(QFont(resolved))
+        combo.setProperty("requested_font_family", requested or resolved)
+        combo.setProperty("font_user_changed", False)
+        combo.currentFontChanged.connect(
+            lambda _font, widget=combo: widget.setProperty("font_user_changed", True)
+        )
+
+    @staticmethod
+    def _font_combo_family_value(combo: QFontComboBox) -> str:
+        requested = str(combo.property("requested_font_family") or "").strip()
+        if requested and not bool(combo.property("font_user_changed")):
+            return requested
+        return combo.currentFont().family()
+
+    def _update_measurement_style_preview(self, *_args) -> None:
+        preview = getattr(self, "_measurement_style_preview", None)
+        if preview is None:
+            return
+        font = QFont(self._measurement_label_font.currentFont())
+        font.setPointSize(self._measurement_label_size.value())
+        preview.set_preview_style(
+            show_label=self._show_measurement_labels.isChecked(),
+            font=font,
+            label_color=str(self._measurement_label_color.property("color_value") or "#F4F1DE"),
+            line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
+            background_enabled=self._measurement_label_background.isChecked(),
+            decimals=self._measurement_label_decimals.value(),
+            endpoint_style=str(self._endpoint_style_combo.currentData() or MeasurementEndpointStyle.BAR),
+        )
+
     def _build_measurement_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
@@ -736,7 +1515,7 @@ class SettingsDialog(QDialog):
         self._show_measurement_labels = QCheckBox("在测量线旁显示结果文字")
         self._show_measurement_labels.setChecked(settings.show_measurement_labels)
         self._measurement_label_font = NoWheelFontComboBox()
-        self._measurement_label_font.setCurrentFont(QFont(settings.measurement_label_font_family))
+        self._configure_font_combo(self._measurement_label_font, settings.measurement_label_font_family)
         self._measurement_label_size = NoWheelSpinBox()
         self._measurement_label_size.setRange(8, 96)
         self._measurement_label_size.setValue(settings.measurement_label_font_size)
@@ -751,7 +1530,7 @@ class SettingsDialog(QDialog):
         self._show_count_numbers = QCheckBox("显示计数点编号")
         self._show_count_numbers.setChecked(settings.show_count_numbers)
         self._count_number_font = NoWheelFontComboBox()
-        self._count_number_font.setCurrentFont(QFont(settings.count_number_font_family))
+        self._configure_font_combo(self._count_number_font, settings.count_number_font_family)
         self._count_number_size = NoWheelSpinBox()
         self._count_number_size.setRange(8, 96)
         self._count_number_size.setValue(settings.count_number_font_size)
@@ -784,6 +1563,21 @@ class SettingsDialog(QDialog):
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
+        preview_group = QGroupBox("样式预览")
+        preview_layout = QVBoxLayout(preview_group)
+        self._measurement_style_preview = _MeasurementStylePreview(preview_group)
+        preview_layout.addWidget(self._measurement_style_preview)
+        self._show_measurement_labels.toggled.connect(self._update_measurement_style_preview)
+        self._measurement_label_font.currentFontChanged.connect(self._update_measurement_style_preview)
+        self._measurement_label_size.valueChanged.connect(self._update_measurement_style_preview)
+        self._measurement_label_color.clicked.connect(self._update_measurement_style_preview)
+        self._measurement_label_decimals.valueChanged.connect(self._update_measurement_style_preview)
+        self._measurement_label_background.toggled.connect(self._update_measurement_style_preview)
+        self._endpoint_style_combo.currentIndexChanged.connect(self._update_measurement_style_preview)
+        self._default_measurement_color.clicked.connect(self._update_measurement_style_preview)
+        self._update_measurement_style_preview()
+
+        layout.addWidget(preview_group)
         layout.addWidget(label_group)
         layout.addWidget(count_group)
         layout.addWidget(measurement_group)
@@ -894,22 +1688,7 @@ class SettingsDialog(QDialog):
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        display_group = QGroupBox("默认视图")
-        display_form = QFormLayout(display_group)
-        self._open_view_mode_combo = NoWheelComboBox()
-        self._open_view_mode_combo.addItem("缺省", OpenImageViewMode.DEFAULT)
-        self._open_view_mode_combo.addItem("适合窗口", OpenImageViewMode.FIT)
-        self._open_view_mode_combo.addItem("原始像素", OpenImageViewMode.ACTUAL)
-        self._open_view_mode_combo.setCurrentIndex(max(0, self._open_view_mode_combo.findData(settings.open_image_view_mode)))
-        self._theme_mode_combo = NoWheelComboBox()
-        self._theme_mode_combo.addItem("跟随系统", AppThemeMode.SYSTEM)
-        self._theme_mode_combo.addItem("深色", AppThemeMode.DARK)
-        self._theme_mode_combo.addItem("浅色", AppThemeMode.LIGHT)
-        self._theme_mode_combo.setCurrentIndex(max(0, self._theme_mode_combo.findData(settings.theme_mode)))
-        display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
-        display_form.addRow("界面主题", self._theme_mode_combo)
-
-        placement_group = QGroupBox("位置与长度")
+        placement_group = QGroupBox("比例尺位置与长度")
         placement_form = QFormLayout(placement_group)
         self._scale_overlay_mode_combo = NoWheelComboBox()
         self._scale_overlay_mode_combo.addItem("左上", ScaleOverlayPlacementMode.TOP_LEFT)
@@ -926,7 +1705,7 @@ class SettingsDialog(QDialog):
         placement_form.addRow("比例尺叠加位置", self._scale_overlay_mode_combo)
         placement_form.addRow("目标长度", self._scale_overlay_length_spin)
 
-        style_group = QGroupBox("样式")
+        style_group = QGroupBox("比例尺样式")
         style_form = QFormLayout(style_group)
         self._scale_overlay_style_combo = NoWheelComboBox()
         self._scale_overlay_style_combo.addItem("纯线", ScaleOverlayStyle.LINE)
@@ -935,7 +1714,7 @@ class SettingsDialog(QDialog):
         self._scale_overlay_style_combo.setCurrentIndex(max(0, self._scale_overlay_style_combo.findData(settings.scale_overlay_style)))
         self._scale_overlay_color = self._create_color_button(settings.scale_overlay_color)
         self._scale_overlay_font = NoWheelFontComboBox()
-        self._scale_overlay_font.setCurrentFont(QFont(settings.scale_overlay_font_family))
+        self._configure_font_combo(self._scale_overlay_font, settings.scale_overlay_font_family)
         self._scale_overlay_font_size = NoWheelSpinBox()
         self._scale_overlay_font_size.setRange(8, 96)
         self._scale_overlay_font_size.setValue(settings.scale_overlay_font_size)
@@ -947,22 +1726,11 @@ class SettingsDialog(QDialog):
         style_form.addRow("文字颜色", self._scale_overlay_text_color)
         display_hint = QLabel("目标长度按当前图片标定单位输入；未标定时按 px 输入。文字会自动补对比描边。")
         display_hint.setWordWrap(True)
-        layout.addWidget(display_group)
-        layout.addWidget(placement_group)
-        layout.addWidget(style_group)
-        layout.addWidget(display_hint)
 
-        layout.addStretch(1)
-        return self._wrap_settings_page(page)
-
-    def _build_overlay_tab(self, settings: AppSettings) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-
-        text_group = QGroupBox("文字默认样式")
+        text_group = QGroupBox("文字标注默认样式")
         text_form = QFormLayout(text_group)
         self._text_font = NoWheelFontComboBox()
-        self._text_font.setCurrentFont(QFont(settings.text_font_family))
+        self._configure_font_combo(self._text_font, settings.text_font_family)
         self._text_size = NoWheelSpinBox()
         self._text_size.setRange(8, 144)
         self._text_size.setValue(settings.text_font_size)
@@ -971,7 +1739,7 @@ class SettingsDialog(QDialog):
         text_form.addRow("文字字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
 
-        shape_group = QGroupBox("图形默认样式")
+        shape_group = QGroupBox("图形标注默认样式")
         shape_form = QFormLayout(shape_group)
         self._overlay_line_color = self._create_color_button(settings.overlay_line_color)
         self._overlay_line_width = NoWheelDoubleSpinBox()
@@ -985,8 +1753,12 @@ class SettingsDialog(QDialog):
         shape_hint.setWordWrap(True)
         shape_form.addRow("", shape_hint)
 
+        layout.addWidget(placement_group)
+        layout.addWidget(style_group)
+        layout.addWidget(display_hint)
         layout.addWidget(text_group)
         layout.addWidget(shape_group)
+
         layout.addStretch(1)
         return self._wrap_settings_page(page)
 
@@ -1175,82 +1947,10 @@ class SettingsDialog(QDialog):
         layout.addWidget(motion_group)
         layout.addWidget(advanced_group)
         layout.addWidget(browsing_group)
-        compression_group = self._build_digital_slide_compression_group(settings, locked=locked)
-        layout.addWidget(compression_group)
         layout.addStretch(1)
         for group in (capture_group, motion_group, advanced_group, browsing_group):
             group.setEnabled(not locked)
         return self._wrap_settings_page(page)
-
-    def _build_digital_slide_compression_group(self, settings: AppSettings, *, locked: bool) -> QGroupBox:
-        group = QGroupBox("切片压缩工具")
-        layout = QVBoxLayout(group)
-        hint = QLabel("选择已有 .fdmslide 并另存为压缩副本。JPEG 会减小体积，但可能引入压缩伪影；精确测量建议保留 PNG 无损原件。")
-        hint.setWordWrap(True)
-        layout.addWidget(hint)
-
-        source_row = QHBoxLayout()
-        self._digital_slide_compress_source_edit = QLineEdit(group)
-        self._digital_slide_compress_source_edit.setPlaceholderText("源 .fdmslide 文件")
-        source_button = QPushButton("选择源文件", group)
-        source_button.clicked.connect(self._choose_digital_slide_compress_source)
-        source_row.addWidget(self._digital_slide_compress_source_edit, 1)
-        source_row.addWidget(source_button)
-        layout.addLayout(source_row)
-
-        target_row = QHBoxLayout()
-        self._digital_slide_compress_target_edit = QLineEdit(group)
-        self._digital_slide_compress_target_edit.setPlaceholderText("目标 .fdmslide 文件")
-        target_button = QPushButton("另存为", group)
-        target_button.clicked.connect(self._choose_digital_slide_compress_target)
-        target_row.addWidget(self._digital_slide_compress_target_edit, 1)
-        target_row.addWidget(target_button)
-        layout.addLayout(target_row)
-
-        options_form = QFormLayout()
-        self._digital_slide_compress_codec_combo = NoWheelComboBox(group)
-        self._digital_slide_compress_codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
-        self._digital_slide_compress_codec_combo.addItem("PNG 无损", DIGITAL_SLIDE_TILE_CODEC_PNG)
-        if normalize_tile_codec(settings.digital_slide_capture_tile_codec) == DIGITAL_SLIDE_TILE_CODEC_PNG:
-            self._digital_slide_compress_codec_combo.setCurrentIndex(0)
-        compress_quality_row = QWidget(group)
-        compress_quality_layout = QHBoxLayout(compress_quality_row)
-        compress_quality_layout.setContentsMargins(0, 0, 0, 0)
-        self._digital_slide_compress_quality_slider = NoWheelSlider(Qt.Orientation.Horizontal)
-        self._digital_slide_compress_quality_slider.setRange(70, 95)
-        self._digital_slide_compress_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
-        self._digital_slide_compress_quality_label = QLabel(group)
-        self._digital_slide_compress_quality_label.setMinimumWidth(150)
-        self._digital_slide_compress_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
-        self._digital_slide_compress_quality_slider.valueChanged.connect(self._update_digital_slide_compress_quality_label)
-        self._digital_slide_compress_codec_combo.currentIndexChanged.connect(self._sync_digital_slide_compress_quality_visibility)
-        compress_quality_layout.addWidget(self._digital_slide_compress_quality_slider, 1)
-        compress_quality_layout.addWidget(self._digital_slide_compress_quality_label)
-        options_form.addRow("输出格式", self._digital_slide_compress_codec_combo)
-        options_form.addRow("JPEG 质量", compress_quality_row)
-        layout.addLayout(options_form)
-
-        self._digital_slide_compress_progress = QProgressBar(group)
-        self._digital_slide_compress_progress.setRange(0, 1)
-        self._digital_slide_compress_progress.setValue(0)
-        self._digital_slide_compress_progress.setFormat("等待开始")
-        layout.addWidget(self._digital_slide_compress_progress)
-        self._digital_slide_compress_start_button = QPushButton("开始压缩", group)
-        self._digital_slide_compress_start_button.clicked.connect(self._start_digital_slide_compression)
-        layout.addWidget(self._digital_slide_compress_start_button)
-
-        self._digital_slide_compression_controls = [
-            self._digital_slide_compress_source_edit,
-            source_button,
-            self._digital_slide_compress_target_edit,
-            target_button,
-            self._digital_slide_compress_codec_combo,
-            self._digital_slide_compress_quality_slider,
-            self._digital_slide_compress_start_button,
-        ]
-        self._sync_digital_slide_compress_quality_visibility()
-        group.setEnabled(not locked)
-        return group
 
     def _add_digital_slide_width_options(self, combo: QComboBox, *, current: int, options: tuple[int, ...]) -> None:
         for width in options:
@@ -1260,14 +1960,7 @@ class SettingsDialog(QDialog):
         combo.setCurrentIndex(index if index >= 0 else 0)
 
     def _digital_slide_quality_label_text(self, value: int) -> str:
-        quality = normalize_jpeg_quality(value)
-        if quality <= 80:
-            level = "中等留档"
-        elif quality <= 90:
-            level = "高质量"
-        else:
-            level = "更高质量/更大文件"
-        return f"{quality} ({level})"
+        return _digital_slide_quality_label_text(value)
 
     def _update_digital_slide_capture_quality_label(self, value: int) -> None:
         self._digital_slide_capture_quality_label.setText(self._digital_slide_quality_label_text(value))
@@ -1277,118 +1970,6 @@ class SettingsDialog(QDialog):
         self._digital_slide_capture_quality_slider.setEnabled(is_jpeg)
         self._digital_slide_capture_quality_label.setEnabled(is_jpeg)
         self._update_digital_slide_capture_quality_label(self._digital_slide_capture_quality_slider.value())
-
-    def _update_digital_slide_compress_quality_label(self, value: int) -> None:
-        self._digital_slide_compress_quality_label.setText(self._digital_slide_quality_label_text(value))
-
-    def _sync_digital_slide_compress_quality_visibility(self) -> None:
-        is_jpeg = normalize_tile_codec(self._digital_slide_compress_codec_combo.currentData()) == DIGITAL_SLIDE_TILE_CODEC_JPEG
-        self._digital_slide_compress_quality_slider.setEnabled(is_jpeg)
-        self._digital_slide_compress_quality_label.setEnabled(is_jpeg)
-        self._update_digital_slide_compress_quality_label(self._digital_slide_compress_quality_slider.value())
-
-    def _default_compressed_slide_path(self, source: Path) -> Path:
-        return source.with_name(f"{source.stem}_compressed{DIGITAL_SLIDE_SUFFIX}")
-
-    def _choose_digital_slide_compress_source(self) -> None:
-        path, _selected_filter = QFileDialog.getOpenFileName(
-            self,
-            "选择数字化切片文件",
-            "",
-            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
-        )
-        if not path:
-            return
-        source = Path(path).expanduser()
-        self._digital_slide_compress_source_edit.setText(str(source))
-        if not self._digital_slide_compress_target_edit.text().strip():
-            self._digital_slide_compress_target_edit.setText(str(self._default_compressed_slide_path(source)))
-
-    def _choose_digital_slide_compress_target(self) -> None:
-        source_token = self._digital_slide_compress_source_edit.text().strip()
-        default_path = ""
-        if source_token:
-            default_path = str(self._default_compressed_slide_path(Path(source_token).expanduser()))
-        path, _selected_filter = QFileDialog.getSaveFileName(
-            self,
-            "保存压缩数字化切片",
-            default_path,
-            f"数字化切片 (*{DIGITAL_SLIDE_SUFFIX});;所有文件 (*)",
-        )
-        if not path:
-            return
-        target = Path(path).expanduser()
-        if target.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
-            target = target.with_suffix(DIGITAL_SLIDE_SUFFIX)
-        self._digital_slide_compress_target_edit.setText(str(target))
-
-    def _set_digital_slide_compression_controls_enabled(self, enabled: bool) -> None:
-        for control in getattr(self, "_digital_slide_compression_controls", []):
-            control.setEnabled(enabled)
-
-    def _start_digital_slide_compression(self) -> None:
-        source_token = self._digital_slide_compress_source_edit.text().strip()
-        target_token = self._digital_slide_compress_target_edit.text().strip()
-        if not source_token:
-            QMessageBox.information(self, "切片压缩", "请先选择源 .fdmslide 文件。")
-            return
-        source = Path(source_token).expanduser()
-        if not source.exists() or source.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
-            QMessageBox.warning(self, "切片压缩", "源文件不存在或不是 .fdmslide 文件。")
-            return
-        target = Path(target_token).expanduser() if target_token else self._default_compressed_slide_path(source)
-        if target.suffix.lower() != DIGITAL_SLIDE_SUFFIX:
-            target = target.with_suffix(DIGITAL_SLIDE_SUFFIX)
-        if source.resolve() == target.resolve():
-            QMessageBox.warning(self, "切片压缩", "压缩目标不能与源文件相同，请选择另存副本。")
-            return
-        if target.exists():
-            response = QMessageBox.question(
-                self,
-                "覆盖压缩文件",
-                f"目标文件已存在，是否覆盖？\n{target}",
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                QMessageBox.StandardButton.No,
-            )
-            if response != QMessageBox.StandardButton.Yes:
-                return
-        self._digital_slide_compress_target_edit.setText(str(target))
-        codec = normalize_tile_codec(self._digital_slide_compress_codec_combo.currentData())
-        quality = self._digital_slide_compress_quality_slider.value() if codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
-        self._digital_slide_compression_running = True
-        self._set_digital_slide_compression_controls_enabled(False)
-        self._digital_slide_compress_progress.setRange(0, 1)
-        self._digital_slide_compress_progress.setValue(0)
-        self._digital_slide_compress_progress.setFormat("准备压缩...")
-        worker = DigitalSlideCompressionWorker(source, target, codec=codec, quality=quality)
-        self._digital_slide_compression_worker = worker
-        worker.progress.connect(self._on_digital_slide_compression_progress)
-        worker.finished.connect(self._on_digital_slide_compression_finished)
-        worker.failed.connect(self._on_digital_slide_compression_failed)
-        worker.start()
-
-    def _on_digital_slide_compression_progress(self, completed: int, total: int) -> None:
-        total = max(1, int(total))
-        completed = max(0, min(int(completed), total))
-        self._digital_slide_compress_progress.setRange(0, total)
-        self._digital_slide_compress_progress.setValue(completed)
-        self._digital_slide_compress_progress.setFormat(f"{completed}/{total} 张")
-
-    def _finish_digital_slide_compression_ui(self) -> None:
-        self._digital_slide_compression_running = False
-        self._digital_slide_compression_worker = None
-        self._set_digital_slide_compression_controls_enabled(True)
-        self._sync_digital_slide_compress_quality_visibility()
-
-    def _on_digital_slide_compression_finished(self, path: str) -> None:
-        self._digital_slide_compress_progress.setFormat("压缩完成")
-        self._finish_digital_slide_compression_ui()
-        QMessageBox.information(self, "切片压缩", f"压缩完成：\n{path}")
-
-    def _on_digital_slide_compression_failed(self, message: str) -> None:
-        self._digital_slide_compress_progress.setFormat("压缩失败")
-        self._finish_digital_slide_compression_ui()
-        QMessageBox.warning(self, "切片压缩", f"压缩失败：\n{message}")
 
     def _build_area_models_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()

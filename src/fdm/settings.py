@@ -426,22 +426,22 @@ class AppSettings:
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
-    measurement_label_color: str = "#00FF00"
+    measurement_label_color: str = "#F4F1DE"
     measurement_label_decimals: int = 2
     measurement_label_parallel_to_line: bool = False
-    measurement_label_background_enabled: bool = False
+    measurement_label_background_enabled: bool = True
     show_count_numbers: bool = False
     count_number_font_family: str = "Microsoft YaHei UI"
     count_number_font_size: int = 12
     count_number_color: str = "#FFFFFF"
     measurement_endpoint_style: str = MeasurementEndpointStyle.BAR
-    default_measurement_color: str = "#E0FBFC"
+    default_measurement_color: str = "#2A9D8F"
     open_image_view_mode: str = OpenImageViewMode.FIT
     scale_overlay_placement_mode: str = ScaleOverlayPlacementMode.BOTTOM_RIGHT
     scale_overlay_style: str = ScaleOverlayStyle.TICKS
     scale_overlay_length_value: float = 50.0
-    scale_overlay_color: str = "#FF0000"
-    scale_overlay_text_color: str = "#FF0000"
+    scale_overlay_color: str = "#F4F1DE"
+    scale_overlay_text_color: str = "#F4F1DE"
     scale_overlay_font_family: str = "Microsoft YaHei UI"
     scale_overlay_font_size: int = 18
     text_font_family: str = "Microsoft YaHei UI"
@@ -464,6 +464,8 @@ class AppSettings:
     fiber_quick_edge_trim_enabled: bool = True
     fiber_quick_line_extension_px: float = 0.0
     main_window_geometry: str = ""
+    main_window_state: str = ""
+    measurement_results_header_state: str = ""
     main_window_is_maximized: bool = False
     recent_export_dir: str = ""
     recent_project_dir: str = ""
@@ -925,6 +927,8 @@ class AppSettings:
             "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
             "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
             "main_window_geometry": normalized.main_window_geometry,
+            "main_window_state": normalized.main_window_state,
+            "measurement_results_header_state": normalized.measurement_results_header_state,
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "recent_export_dir": normalized.recent_export_dir,
             "recent_project_dir": normalized.recent_project_dir,
@@ -1100,6 +1104,10 @@ class AppSettings:
             )
         )
         settings.main_window_geometry = str(payload.get("main_window_geometry", settings.main_window_geometry)).strip()
+        settings.main_window_state = str(payload.get("main_window_state", settings.main_window_state)).strip()
+        settings.measurement_results_header_state = str(
+            payload.get("measurement_results_header_state", settings.measurement_results_header_state)
+        ).strip()
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
         settings.recent_export_dir = cls._normalize_recent_directory(payload.get("recent_export_dir", settings.recent_export_dir))
         settings.recent_project_dir = cls._normalize_recent_directory(payload.get("recent_project_dir", settings.recent_project_dir))

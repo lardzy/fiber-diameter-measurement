@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtGui import QColor, QPalette
+from PySide6.QtGui import QColor, QFontDatabase, QFontInfo, QPalette
 from PySide6.QtWidgets import QApplication, QStyleFactory, QWidget
 
 from fdm.settings import AppThemeMode, normalize_theme_mode
@@ -98,14 +98,98 @@ def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
     if normalized == AppThemeMode.SYSTEM:
         _set_style_by_name(app, system_style_name)
         app.setPalette(QPalette(system_palette))
-        return normalized
-
-    _set_style_by_name(app, "Fusion")
-    if normalized == AppThemeMode.LIGHT:
-        app.setPalette(build_light_palette())
     else:
-        app.setPalette(build_dark_palette())
+        _set_style_by_name(app, "Fusion")
+        if normalized == AppThemeMode.LIGHT:
+            app.setPalette(build_light_palette())
+        else:
+            app.setPalette(build_dark_palette())
+    system_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont)
+    resolved_family = QFontInfo(system_font).family()
+    if resolved_family:
+        system_font.setFamily(resolved_family)
+    app.setFont(system_font)
+    app.setStyleSheet(build_application_stylesheet())
     return normalized
+
+
+def build_application_stylesheet() -> str:
+    """Stable, low-chrome control geometry shared by every color theme."""
+
+    return """
+        QMainWindow, QDialog { background: palette(window); }
+        QToolBar {
+            spacing: 4px;
+            padding: 4px 6px;
+            border: 0;
+            border-bottom: 1px solid palette(mid);
+            background: palette(window);
+        }
+        QToolButton {
+            min-height: 30px;
+            padding: 2px 8px;
+            border: 1px solid transparent;
+            border-radius: 6px;
+        }
+        QToolButton:hover { background: palette(midlight); }
+        QToolButton:pressed { background: palette(mid); }
+        QToolButton:checked {
+            border-color: #2A9D8F;
+            background: palette(highlight);
+            color: palette(highlighted-text);
+        }
+        QPushButton {
+            min-height: 30px;
+            padding: 2px 10px;
+            border: 1px solid palette(mid);
+            border-radius: 6px;
+            background: palette(button);
+        }
+        QPushButton:hover { border-color: #2A9D8F; background: palette(midlight); }
+        QPushButton:pressed { background: palette(mid); }
+        QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {
+            min-height: 28px;
+            padding: 1px 7px;
+            border: 1px solid palette(mid);
+            border-radius: 5px;
+            background: palette(base);
+            selection-background-color: palette(highlight);
+        }
+        QLineEdit:focus, QComboBox:focus, QSpinBox:focus, QDoubleSpinBox:focus {
+            border-color: #2A9D8F;
+        }
+        QMenu {
+            padding: 5px;
+            border: 1px solid palette(mid);
+            border-radius: 6px;
+            background: palette(base);
+        }
+        QMenu::item { min-height: 28px; padding: 3px 24px 3px 10px; border-radius: 4px; }
+        QMenu::item:selected { background: palette(highlight); color: palette(highlighted-text); }
+        QGroupBox {
+            margin-top: 14px;
+            padding-top: 7px;
+            font-weight: 600;
+        }
+        QGroupBox::title { subcontrol-origin: margin; left: 7px; padding: 0 3px; }
+        QDockWidget::title {
+            min-height: 26px;
+            padding-left: 8px;
+            border-bottom: 1px solid palette(mid);
+            background: palette(alternate-base);
+            font-weight: 600;
+        }
+        QTabBar::tab { min-height: 27px; padding: 3px 10px; }
+        QTabBar::tab:selected { border-bottom: 2px solid #2A9D8F; }
+        QHeaderView::section {
+            padding: 5px 7px;
+            border: 0;
+            border-right: 1px solid palette(mid);
+            border-bottom: 1px solid palette(mid);
+            background: palette(alternate-base);
+            font-weight: 600;
+        }
+    """
 
 
 def refresh_widget_theme(widget: QWidget | None) -> None:
