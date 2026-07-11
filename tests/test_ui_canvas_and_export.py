@@ -477,6 +477,164 @@ class CanvasAndExportTests(unittest.TestCase):
             window.project.documents = []
             window.close()
 
+    def test_closing_last_document_ends_project_session_and_next_save_uses_new_path(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                old_project_path = root / "old-project.fdmproj"
+                old_project_bytes = b"existing project must remain unchanged"
+                old_project_path.write_bytes(old_project_bytes)
+                image = QImage(24, 16, QImage.Format.Format_RGB32)
+                image.fill(QColor("#E5E7EB"))
+
+                for index in range(2):
+                    image_path = root / f"old-{index}.png"
+                    self.assertTrue(image.save(str(image_path)))
+                    document = ImageDocument(
+                        id=f"old-document-{index}",
+                        path=str(image_path),
+                        image_size=(image.width(), image.height()),
+                    )
+                    document.initialize_runtime_state()
+                    self._load_document_into_window(window, document, image)
+
+                window._project_path = old_project_path
+                window.project.metadata = {"project_marker": "old"}
+                window._mark_project_saved()
+
+                with patch.object(window, "_confirm_close_documents", return_value=True):
+                    window.close_current_document()
+                    self.assertEqual(window._project_path, old_project_path)
+                    window.close_current_document()
+
+                self.assertIsNone(window._project_path)
+                self.assertEqual(window.project.documents, [])
+                self.assertEqual(window.project.metadata, {})
+
+                new_image_path = root / "new-image.png"
+                self.assertTrue(image.save(str(new_image_path)))
+                new_document = ImageDocument(
+                    id="new-document",
+                    path=str(new_image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                new_document.initialize_runtime_state()
+                self._load_document_into_window(window, new_document, image)
+                new_project_path = root / "new-project.fdmproj"
+
+                with patch(
+                    "fdm.ui.main_window.QFileDialog.getSaveFileName",
+                    return_value=(str(new_project_path), window.PROJECT_FILTER),
+                ) as save_dialog:
+                    result = window.save_project()
+
+                self.assertTrue(result)
+                save_dialog.assert_called_once()
+                self.assertEqual(window._project_path, new_project_path)
+                self.assertTrue(new_project_path.is_file())
+                self.assertEqual(old_project_path.read_bytes(), old_project_bytes)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_closing_last_loaded_document_keeps_project_when_unresolved_document_remains(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(20, 12, QImage.Format.Format_RGB32)
+            image.fill(QColor("#F3F4F6"))
+            loaded = ImageDocument(
+                id="mounted-document",
+                path="/tmp/mounted-document.png",
+                image_size=(image.width(), image.height()),
+            )
+            loaded.initialize_runtime_state()
+            unresolved = ImageDocument(
+                id="unresolved-document",
+                path="/tmp/missing-document.png",
+                image_size=(20, 12),
+            )
+            unresolved.initialize_runtime_state()
+            self._load_document_into_window(window, loaded, image)
+            window.project_session_controller.register_unresolved_document(
+                unresolved,
+                attempted_path=unresolved.path,
+                reason="文件缺失",
+            )
+            project_path = Path("/tmp/project-with-placeholder.fdmproj")
+            window._project_path = project_path
+
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close_current_document()
+
+            self.assertEqual(window._project_path, project_path)
+            self.assertEqual(
+                [item.document.id for item in window.project_session_controller.unresolved_documents()],
+                [unresolved.id],
+            )
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_capture_after_closing_last_document_saves_as_new_project(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                old_project_path = root / "old-capture-project.fdmproj"
+                old_project_bytes = b"old capture project"
+                old_project_path.write_bytes(old_project_bytes)
+                image = QImage(32, 20, QImage.Format.Format_RGB32)
+                image.fill(QColor("#CBD5E1"))
+                old_image_path = root / "old-image.png"
+                self.assertTrue(image.save(str(old_image_path)))
+                old_document = ImageDocument(
+                    id="old-capture-document",
+                    path=str(old_image_path),
+                    image_size=(image.width(), image.height()),
+                )
+                old_document.initialize_runtime_state()
+                self._load_document_into_window(window, old_document, image)
+                window._project_path = old_project_path
+
+                with patch.object(window, "_confirm_close_documents", return_value=True):
+                    window.close_current_document()
+
+                self.assertIsNone(window._project_path)
+                with patch.object(
+                    window._capture_manager,
+                    "is_preview_active",
+                    return_value=False,
+                ), patch.object(
+                    window._capture_manager,
+                    "can_capture_still",
+                    return_value=True,
+                ), patch.object(
+                    window._capture_manager,
+                    "capture_still_frame",
+                    return_value=image.copy(),
+                ):
+                    window.capture_current_frame()
+
+                self.assertIsNone(window._project_path)
+                self.assertEqual(len(window.project.documents), 1)
+                self.assertTrue(window.project.documents[0].is_project_asset())
+                new_project_path = root / "new-capture-project.fdmproj"
+                with patch(
+                    "fdm.ui.main_window.QFileDialog.getSaveFileName",
+                    return_value=(str(new_project_path), window.PROJECT_FILTER),
+                ) as save_dialog:
+                    result = window.save_project()
+
+                self.assertTrue(result)
+                save_dialog.assert_called_once()
+                self.assertEqual(window._project_path, new_project_path)
+                self.assertTrue(new_project_path.is_file())
+                self.assertEqual(old_project_path.read_bytes(), old_project_bytes)
+        finally:
+            window._reset_workspace()
+            window.close()
+
     def test_core_runtime_feature_manifest_hides_unavailable_inference_entries(self) -> None:
         window = MainWindow()
         try:

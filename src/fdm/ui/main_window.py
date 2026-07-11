@@ -8891,7 +8891,27 @@ class MainWindow(QMainWindow):
         item = self.image_list.takeItem(index)
         del item
         self._clear_prompt_segmentation_cache()
+        self._end_project_session_if_empty()
         self._update_ui_for_current_document()
+
+    def _end_project_session_if_empty(self) -> bool:
+        """Detach an empty workspace from its previous project file.
+
+        Closing documents one at a time must have the same project-boundary
+        semantics as "close all" once the final mounted or unresolved document
+        is gone.  Otherwise newly opened/captured images would silently retain
+        the old ``_project_path`` and a later Save would overwrite that project.
+        """
+
+        if self.project.documents or self.project_session_controller.unresolved_documents():
+            return False
+        self.project = ProjectState.empty()
+        self._project_path = None
+        self._pending_project_load_snapshot = False
+        self.project_session_controller.clear_unresolved_documents()
+        self._document_order.clear()
+        self._mark_project_saved()
+        return True
 
     def _apply_document_change(
         self,
