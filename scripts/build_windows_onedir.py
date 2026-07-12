@@ -9,10 +9,14 @@ import sys
 from pathlib import Path
 
 from build_support import (
+    BUILD_COMPONENT_AREA_MODELS,
+    BUILD_COMPONENT_CONTENT_TEMPLATES,
     PACKAGED_AREA_MODEL_FILENAMES,
     PACKAGED_SEGMENT_ANYTHING_DIRS,
     PACKAGED_SEGMENT_ANYTHING_FILENAMES,
     check_runtime_profile,
+    normalize_build_exclusions,
+    private_content_template_files,
     summarize_runtime_hash_mismatches,
     write_release_manifest,
     write_installer_version_include,
@@ -100,12 +104,22 @@ def build(
     bootloader_debug: bool,
     profile: str = "full",
     strict_asset_hashes: bool = False,
+    exclude_area_models: bool = False,
+    exclude_content_templates: bool = False,
     root: Path | None = None,
 ) -> int:
     root = root or Path(__file__).resolve().parents[1]
     spec_path = root / "packaging" / "pyinstaller" / "fdm_onedir.spec"
     dist_path = root / "dist" / "windows"
     work_path = root / "build" / "pyinstaller"
+    excluded_components = normalize_build_exclusions(
+        component
+        for component, excluded in (
+            (BUILD_COMPONENT_AREA_MODELS, exclude_area_models),
+            (BUILD_COMPONENT_CONTENT_TEMPLATES, exclude_content_templates),
+        )
+        if excluded
+    )
 
     if not spec_path.exists():
         print(f"Spec file not found: {spec_path}", file=sys.stderr)
@@ -122,7 +136,11 @@ def build(
         return 1
 
     try:
-        profile_check = check_runtime_profile(root, profile)
+        profile_check = check_runtime_profile(
+            root,
+            profile,
+            excluded_groups=excluded_components,
+        )
     except (OSError, RuntimeError, ValueError) as exc:
         print(f"Invalid runtime asset profile {profile!r}: {exc}", file=sys.stderr)
         return 1
@@ -159,6 +177,14 @@ def build(
         print(
             f"Runtime profile {profile!r} has incomplete or invalid asset metadata:\n  "
             + "\n  ".join(profile_check.metadata_errors),
+            file=sys.stderr,
+        )
+        return 1
+    content_template_files = private_content_template_files(root)
+    if not exclude_content_templates and not content_template_files:
+        print(
+            "Private content templates were requested, but runtime/content-templates contains no "
+            "packageable files. Add the internal templates or use --exclude-content-templates.",
             file=sys.stderr,
         )
         return 1
@@ -199,6 +225,7 @@ def build(
     env["FDM_PYINSTALLER_BOOTLOADER_DEBUG"] = "1" if bootloader_debug else "0"
     env["FDM_BUILD_PROFILE"] = profile
     env["FDM_STRICT_ASSET_HASHES"] = "1" if strict_asset_hashes else "0"
+    env["FDM_EXCLUDED_COMPONENTS"] = ",".join(excluded_components)
     try:
         subprocess.run(command, cwd=root, check=True, env=env)
     except (OSError, subprocess.CalledProcessError) as exc:
@@ -223,6 +250,12 @@ def build(
         root,
         profile=profile,
         clean_build=clean,
+        excluded_components=excluded_components,
+        included_components=(
+            ()
+            if exclude_content_templates
+            else (BUILD_COMPONENT_CONTENT_TEMPLATES,)
+        ),
     )
     self_check_errors = run_packaged_self_check(app_dir)
     if self_check_errors:
@@ -237,6 +270,9 @@ def build(
     print(f"Bootloader debug: {'on' if bootloader_debug else 'off'}")
     print(f"Runtime profile: {profile}")
     print(f"Source asset hash policy: {'strict' if strict_asset_hashes else 'warn only'}")
+    print(f"Excluded components: {', '.join(excluded_components) if excluded_components else 'none'}")
+    if not exclude_content_templates:
+        print(f"Private content templates: {len(content_template_files)} files")
     print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
     print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
     print(f"Runtime assets: {app_dir / 'runtime'}")
@@ -274,6 +310,16 @@ def main() -> int:
         action="store_true",
         help="Fail when source runtime files differ from the hashes pinned in runtime_assets.toml.",
     )
+    parser.add_argument(
+        "--exclude-area-models",
+        action="store_true",
+        help="Build without runtime/area-models and disable packaged area inference.",
+    )
+    parser.add_argument(
+        "--exclude-content-templates",
+        action="store_true",
+        help="Build without runtime/content-templates.",
+    )
     args = parser.parse_args()
     return build(
         clean=not args.no_clean,
@@ -281,6 +327,8 @@ def main() -> int:
         bootloader_debug=args.bootloader_debug,
         profile=args.profile,
         strict_asset_hashes=args.strict_asset_hashes,
+        exclude_area_models=args.exclude_area_models,
+        exclude_content_templates=args.exclude_content_templates,
     )
 
 

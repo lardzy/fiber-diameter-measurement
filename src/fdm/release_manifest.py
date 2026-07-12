@@ -55,6 +55,8 @@ def verify_release_manifest(
     expected_profile: str | None = None,
     expected_version: str | None = None,
     expected_commit: str | None = None,
+    expected_excluded_components: tuple[str, ...] | list[str] | None = None,
+    expected_included_components: tuple[str, ...] | list[str] | None = None,
     require_clean_source: bool = False,
     require_clean_build: bool = False,
     reject_extra_files: bool = False,
@@ -72,6 +74,8 @@ def verify_release_manifest(
         "build_id": "",
         "source_commit": "",
         "features": [],
+        "excluded_components": [],
+        "included_components": [],
         "dependency_versions": {},
         "checked_files": 0,
         "errors": errors,
@@ -101,6 +105,20 @@ def verify_release_manifest(
         errors.append("release manifest features must be a list of strings")
         features_payload = []
     features = [str(item).strip() for item in features_payload if str(item).strip()]
+    excluded_payload = payload.get("excluded_components", [])
+    included_payload = payload.get("included_components", [])
+    if not isinstance(excluded_payload, list) or any(
+        not isinstance(item, str) for item in excluded_payload
+    ):
+        errors.append("release manifest excluded_components must be a list of strings")
+        excluded_payload = []
+    if not isinstance(included_payload, list) or any(
+        not isinstance(item, str) for item in included_payload
+    ):
+        errors.append("release manifest included_components must be a list of strings")
+        included_payload = []
+    excluded_components = [str(item).strip() for item in excluded_payload if str(item).strip()]
+    included_components = [str(item).strip() for item in included_payload if str(item).strip()]
     dependency_versions = payload.get("dependency_versions", {})
     if not isinstance(dependency_versions, dict) or any(
         not isinstance(key, str) or not isinstance(value, str)
@@ -114,16 +132,36 @@ def verify_release_manifest(
         build_id=build_id,
         source_commit=source_commit,
         features=features,
+        excluded_components=excluded_components,
+        included_components=included_components,
         dependency_versions=dependency_versions,
     )
-    if profile == "full" and not {"area-inference", "magic-segmentation"}.issubset(features):
-        errors.append("full profile feature manifest is incomplete")
+    if profile == "full":
+        required_full_features = {"magic-segmentation"}
+        if "area-models" not in excluded_components:
+            required_full_features.add("area-inference")
+        if not required_full_features.issubset(features):
+            errors.append("full profile feature manifest is incomplete")
     if expected_profile is not None and profile != expected_profile:
         errors.append(f"profile mismatch: expected {expected_profile}, found {profile or '<empty>'}")
     if expected_version is not None and version != expected_version:
         errors.append(f"version mismatch: expected {expected_version}, found {version or '<empty>'}")
     if expected_commit is not None and source_commit != expected_commit:
         errors.append(f"stale dist: expected commit {expected_commit}, found {source_commit or '<empty>'}")
+    if expected_excluded_components is not None:
+        expected_exclusions = sorted(str(item).strip() for item in expected_excluded_components)
+        if sorted(excluded_components) != expected_exclusions:
+            errors.append(
+                "excluded component mismatch: expected "
+                f"{expected_exclusions}, found {sorted(excluded_components)}"
+            )
+    if expected_included_components is not None:
+        expected_inclusions = sorted(str(item).strip() for item in expected_included_components)
+        if sorted(included_components) != expected_inclusions:
+            errors.append(
+                "included component mismatch: expected "
+                f"{expected_inclusions}, found {sorted(included_components)}"
+            )
     if require_clean_source and bool(payload.get("source_dirty", True)):
         errors.append("release manifest records a dirty source tree")
     if require_clean_build and not bool(payload.get("clean_build", False)):
@@ -168,6 +206,22 @@ def verify_release_manifest(
             errors.append(f"sha256 mismatch: {token}")
             continue
         result["checked_files"] = int(result["checked_files"]) + 1
+
+    component_prefixes = {
+        "area-models": "runtime/area-models/",
+        "content-templates": "runtime/content-templates/",
+    }
+    overlap = sorted(set(excluded_components) & set(included_components))
+    if overlap:
+        errors.append("components cannot be both included and excluded: " + ", ".join(overlap))
+    for component in excluded_components:
+        prefix = component_prefixes.get(component)
+        if prefix and any(path.startswith(prefix) for path in listed_paths):
+            errors.append(f"excluded component is present in package inventory: {component}")
+    for component in included_components:
+        prefix = component_prefixes.get(component)
+        if prefix and not any(path.startswith(prefix) for path in listed_paths):
+            errors.append(f"included component is absent from package inventory: {component}")
 
     required_files = payload.get("required_runtime_files", [])
     if not isinstance(required_files, list):
@@ -253,11 +307,12 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
             if not ok:
                 errors.append(f"full profile dependency is unavailable: {distribution}")
 
+    features = set(str(item) for item in report.get("features", []))
     execute_runtime_probe = bool(
         (sys.platform.startswith("win") and getattr(sys, "frozen", False))
         or os.environ.get("FDM_SELF_CHECK_EXECUTE", "").strip() == "1"
     )
-    if report.get("profile") == "full" and execute_runtime_probe and not errors:
+    if "area-inference" in features and execute_runtime_probe and not errors:
         try:
             probe_result = _probe_area_worker(root)
         except Exception as exc:  # noqa: BLE001
@@ -266,9 +321,11 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
         else:
             functional_checks["area_worker"] = True
             functional_checks["area_worker_result"] = probe_result
-    elif report.get("profile") == "full":
+    elif "area-inference" in features:
         warnings.append("Windows frozen area-worker execution probe skipped on this host")
         functional_checks["area_worker"] = "skipped_non_windows"
+    elif "area-models" in report.get("excluded_components", []):
+        functional_checks["area_worker"] = "skipped_area_models_excluded"
 
     report["ok"] = not errors
     return report

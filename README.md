@@ -151,6 +151,26 @@ python scripts/build_windows_onedir.py
 python scripts/build_windows_installer.py --reuse-onedir
 ```
 
+默认内部包会同时包含公司内部的 `runtime/area-models/` 和
+`runtime/content-templates/`。模板目录作为未跟踪的私有构建覆盖层动态收集，
+不会把文件名、内容或哈希写入公开仓库的 `runtime_assets.toml`。生成不含私有资源的精简包：
+
+```bash
+# 只排除内部面积模型
+python scripts/build_windows_installer.py --exclude-area-models
+
+# 只排除内部原始记录模板
+python scripts/build_windows_installer.py --exclude-content-templates
+
+# 两者都排除，适合公开 release
+python scripts/build_windows_installer.py --exclude-area-models --exclude-content-templates
+```
+
+两个排除参数同样适用于 `build_windows_onedir.py`。复用已有 onedir 时必须传入与其
+构建时相同的排除参数，否则 manifest 校验会拒绝资源选择不一致的安装包。
+单项排除的安装器会带 `-no-area-models` 或 `-no-content-templates` 后缀；两项都排除
+时使用 `-public` 后缀，避免覆盖同版本的内部完整安装器。
+
 应用也支持直接传入关联文件路径：
 
 ```bash

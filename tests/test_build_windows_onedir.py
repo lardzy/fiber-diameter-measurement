@@ -23,6 +23,9 @@ def _prepare_build_root(root: Path) -> None:
     (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
     (root / "packaging" / "pyinstaller" / "fdm_onedir.spec").write_text("# stub\n", encoding="utf-8")
     (root / "src" / "fdm" / "version.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
+    templates_root = root / "runtime" / "content-templates"
+    templates_root.mkdir(parents=True)
+    (templates_root / "internal-template.xlsm").write_bytes(b"template")
 
 
 class BuildWindowsOnedirTests(unittest.TestCase):
@@ -32,6 +35,8 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         ).read_text(encoding="utf-8")
 
         self.assertEqual(spec_payload.count('contents_directory="."'), 2)
+        self.assertIn("FDM_EXCLUDED_COMPONENTS", spec_payload)
+        self.assertIn("collect_private_content_template_datas", spec_payload)
 
     def test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads(self) -> None:
         cases = (
@@ -80,7 +85,15 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             environment = run_mock.call_args.kwargs["env"]
             self.assertEqual(environment["FDM_BUILD_PROFILE"], "core")
             self.assertEqual(environment["FDM_STRICT_ASSET_HASHES"], "0")
-            manifest_mock.assert_called_once_with(app_dir, root, profile="core", clean_build=True)
+            self.assertEqual(environment["FDM_EXCLUDED_COMPONENTS"], "")
+            manifest_mock.assert_called_once_with(
+                app_dir,
+                root,
+                profile="core",
+                clean_build=True,
+                excluded_components=(),
+                included_components=("content-templates",),
+            )
 
     def test_build_warns_and_continues_on_hash_mismatch_by_default(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -110,6 +123,79 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
             self.assertEqual(result, 0)
             self.assertEqual(run_mock.call_args.kwargs["env"]["FDM_STRICT_ASSET_HASHES"], "0")
+
+    def test_build_can_exclude_both_private_components(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+
+            def run_pyinstaller(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                app_dir.mkdir(parents=True, exist_ok=True)
+                (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
+                (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
+                return subprocess.CompletedProcess([], 0)
+
+            manifest_path = app_dir / "release-manifest.json"
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch(
+                    "build_windows_onedir.check_runtime_profile",
+                    return_value=RuntimeProfileCheck("full", (), ()),
+                ) as profile_mock,
+                patch("build_windows_onedir.subprocess.run", side_effect=run_pyinstaller) as run_mock,
+                patch("build_windows_onedir.write_release_manifest", return_value=manifest_path) as manifest_mock,
+                patch("build_windows_onedir.run_packaged_self_check", return_value=[]),
+            ):
+                result = build(
+                    clean=True,
+                    console=False,
+                    bootloader_debug=False,
+                    profile="full",
+                    exclude_area_models=True,
+                    exclude_content_templates=True,
+                    root=root,
+                )
+
+            self.assertEqual(result, 0)
+            exclusions = ("area-models", "content-templates")
+            self.assertEqual(run_mock.call_args.kwargs["env"]["FDM_EXCLUDED_COMPONENTS"], ",".join(exclusions))
+            self.assertEqual(profile_mock.call_args.kwargs["excluded_groups"], exclusions)
+            manifest_mock.assert_called_once_with(
+                app_dir,
+                root,
+                profile="full",
+                clean_build=True,
+                excluded_components=exclusions,
+                included_components=(),
+            )
+
+    def test_default_build_requires_private_content_templates(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            template = root / "runtime" / "content-templates" / "internal-template.xlsm"
+            template.unlink()
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch(
+                    "build_windows_onedir.check_runtime_profile",
+                    return_value=RuntimeProfileCheck("full", (), ()),
+                ),
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(
+                    clean=True,
+                    console=False,
+                    bootloader_debug=False,
+                    profile="full",
+                    root=root,
+                )
+
+            self.assertEqual(result, 1)
+            run_mock.assert_not_called()
 
     def test_build_strict_hash_mode_blocks_before_pyinstaller(self) -> None:
         with TemporaryDirectory() as tmpdir:

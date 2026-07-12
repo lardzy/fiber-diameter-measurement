@@ -9,7 +9,14 @@ import subprocess
 import sys
 from pathlib import Path
 
-from build_support import read_app_version, validate_installer_release, write_installer_version_include
+from build_support import (
+    BUILD_COMPONENT_AREA_MODELS,
+    BUILD_COMPONENT_CONTENT_TEMPLATES,
+    normalize_build_exclusions,
+    read_app_version,
+    validate_installer_release,
+    write_installer_version_include,
+)
 from build_windows_onedir import build as build_onedir
 
 
@@ -58,6 +65,17 @@ def _installer_is_nonempty(path: Path) -> bool:
         return False
 
 
+def _installer_variant_suffix(excluded_components: tuple[str, ...]) -> str:
+    excluded = set(excluded_components)
+    if excluded == {BUILD_COMPONENT_AREA_MODELS, BUILD_COMPONENT_CONTENT_TEMPLATES}:
+        return "-public"
+    if BUILD_COMPONENT_AREA_MODELS in excluded:
+        return "-no-area-models"
+    if BUILD_COMPONENT_CONTENT_TEMPLATES in excluded:
+        return "-no-content-templates"
+    return ""
+
+
 def find_inno_setup_compiler() -> str | None:
     env_override = os.environ.get("ISCC_EXE", "").strip()
     if env_override:
@@ -92,9 +110,19 @@ def build_installer(
     strict_asset_hashes: bool = False,
     strict_release: bool = False,
     rebuild_onedir: bool = False,
+    exclude_area_models: bool = False,
+    exclude_content_templates: bool = False,
 ) -> int:
     iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
     app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+    excluded_components = normalize_build_exclusions(
+        component
+        for component, excluded in (
+            (BUILD_COMPONENT_AREA_MODELS, exclude_area_models),
+            (BUILD_COMPONENT_CONTENT_TEMPLATES, exclude_content_templates),
+        )
+        if excluded
+    )
 
     if not iss_path.exists():
         print(f"Inno Setup script not found: {iss_path}", file=sys.stderr)
@@ -116,6 +144,8 @@ def build_installer(
             bootloader_debug=False,
             profile="full",
             strict_asset_hashes=strict_asset_hashes,
+            exclude_area_models=exclude_area_models,
+            exclude_content_templates=exclude_content_templates,
             root=root,
         )
         if onedir_result != 0:
@@ -137,6 +167,8 @@ def build_installer(
         profile="full",
         strict_asset_hashes=strict_asset_hashes,
         strict_release=strict_release,
+        excluded_components=excluded_components,
+        include_content_templates=not exclude_content_templates,
         warnings=release_warnings,
     )
     if release_warnings:
@@ -160,12 +192,17 @@ def build_installer(
 
     command = [resolved_compiler, str(iss_path)]
     output_dir = root / "dist" / "installer"
-    expected_output = output_dir / f"fiber-diameter-measurement-setup-{version}.exe"
-    try:
-        expected_output.unlink(missing_ok=True)
-    except OSError as exc:
-        print(f"Unable to remove stale installer output {expected_output}: {exc}", file=sys.stderr)
-        return 1
+    compiled_output = output_dir / f"fiber-diameter-measurement-setup-{version}.exe"
+    expected_output = output_dir / (
+        f"fiber-diameter-measurement-setup-{version}"
+        f"{_installer_variant_suffix(excluded_components)}.exe"
+    )
+    for stale_output in {compiled_output, expected_output}:
+        try:
+            stale_output.unlink(missing_ok=True)
+        except OSError as exc:
+            print(f"Unable to remove stale installer output {stale_output}: {exc}", file=sys.stderr)
+            return 1
     print("Running Inno Setup:")
     print(" ".join(command))
     try:
@@ -174,12 +211,19 @@ def build_installer(
         print(f"Inno Setup compilation failed: {exc}", file=sys.stderr)
         return 1
 
-    if not _installer_is_nonempty(expected_output):
+    if not _installer_is_nonempty(compiled_output):
         print(
-            f"ISCC returned successfully but did not produce a non-empty installer: {expected_output}",
+            f"ISCC returned successfully but did not produce a non-empty installer: {compiled_output}",
             file=sys.stderr,
         )
         return 1
+    if compiled_output != expected_output:
+        try:
+            compiled_output.replace(expected_output)
+        except OSError as exc:
+            print(f"Unable to name installer variant {expected_output}: {exc}", file=sys.stderr)
+            _discard_failed_installer(compiled_output)
+            return 1
 
     signing_template = str(sign_command or os.environ.get("FDM_SIGN_COMMAND", "")).strip()
     verification_template = str(
@@ -248,6 +292,16 @@ def main() -> int:
         action="store_true",
         help="Reuse dist/windows/FiberDiameterMeasurement instead of rebuilding the onedir prerequisite.",
     )
+    parser.add_argument(
+        "--exclude-area-models",
+        action="store_true",
+        help="Exclude private runtime/area-models from both onedir and installer output.",
+    )
+    parser.add_argument(
+        "--exclude-content-templates",
+        action="store_true",
+        help="Exclude private runtime/content-templates from both onedir and installer output.",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -261,6 +315,8 @@ def main() -> int:
         strict_asset_hashes=args.strict_asset_hashes,
         strict_release=args.strict_release,
         rebuild_onedir=not args.reuse_onedir,
+        exclude_area_models=args.exclude_area_models,
+        exclude_content_templates=args.exclude_content_templates,
     )
 
 

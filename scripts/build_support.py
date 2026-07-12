@@ -62,6 +62,14 @@ PACKAGED_SEGMENT_ANYTHING_FILENAMES = frozenset(
         "edge_sam_3x_decoder.onnx",
     }
 )
+BUILD_COMPONENT_AREA_MODELS = "area-models"
+BUILD_COMPONENT_CONTENT_TEMPLATES = "content-templates"
+SUPPORTED_BUILD_EXCLUSIONS = frozenset(
+    {BUILD_COMPONENT_AREA_MODELS, BUILD_COMPONENT_CONTENT_TEMPLATES}
+)
+_EXCLUDED_GROUP_FEATURES = {
+    BUILD_COMPONENT_AREA_MODELS: frozenset({"area-inference"}),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -114,6 +122,28 @@ def summarize_runtime_hash_mismatches(
     remaining = len(names) - min(len(names), max(1, int(limit)))
     suffix = f"，另有 {remaining} 个" if remaining > 0 else ""
     return f"{len(names)} 个文件：{preview}{suffix}"
+
+
+def normalize_build_exclusions(values: object = ()) -> tuple[str, ...]:
+    if values is None:
+        return ()
+    if isinstance(values, str):
+        raw_values = values.split(",")
+    else:
+        try:
+            raw_values = list(values)
+        except TypeError as exc:
+            raise ValueError("build exclusions must be a string or iterable") from exc
+    normalized: list[str] = []
+    for value in raw_values:
+        token = str(value).strip().lower()
+        if not token:
+            continue
+        if token not in SUPPORTED_BUILD_EXCLUSIONS:
+            raise ValueError(f"Unsupported build exclusion: {token}")
+        if token not in normalized:
+            normalized.append(token)
+    return tuple(normalized)
 
 
 def read_app_version(project_root: Path) -> str:
@@ -272,7 +302,12 @@ def _parse_runtime_asset_metadata(
     return tuple(records), tuple(errors)
 
 
-def _resolve_runtime_profile_from_config(config: dict[str, Any], profile: str) -> RuntimeProfile:
+def _resolve_runtime_profile_from_config(
+    config: dict[str, Any],
+    profile: str,
+    *,
+    excluded_groups: object = (),
+) -> RuntimeProfile:
     profiles = config.get("profiles", {})
     if profile not in profiles or not isinstance(profiles[profile], dict):
         raise ValueError(f"Unknown runtime asset profile: {profile}")
@@ -311,24 +346,45 @@ def _resolve_runtime_profile_from_config(config: dict[str, Any], profile: str) -
         visiting.remove(name)
 
     visit(profile)
+    excluded = set(normalize_build_exclusions(excluded_groups))
+    excluded_features = {
+        feature
+        for group_name in excluded
+        for feature in _EXCLUDED_GROUP_FEATURES.get(group_name, ())
+    }
     return RuntimeProfile(
         profile,
-        tuple(groups),
+        tuple(group for group in groups if group not in excluded),
         tuple(modules),
-        tuple(features),
+        tuple(feature for feature in features if feature not in excluded_features),
         tuple(required_files),
     )
 
 
-def resolve_runtime_profile(project_root: Path, profile: str = "full") -> RuntimeProfile:
-    return _resolve_runtime_profile_from_config(load_runtime_assets_config(project_root), profile)
+def resolve_runtime_profile(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    excluded_groups: object = (),
+) -> RuntimeProfile:
+    return _resolve_runtime_profile_from_config(
+        load_runtime_assets_config(project_root),
+        profile,
+        excluded_groups=excluded_groups,
+    )
 
 
 def _runtime_profile_asset_metadata_from_config(
     config: dict[str, Any],
     profile: str,
+    *,
+    excluded_groups: object = (),
 ) -> tuple[tuple[RuntimeAssetMetadata, ...], tuple[str, ...]]:
-    resolved = _resolve_runtime_profile_from_config(config, profile)
+    resolved = _resolve_runtime_profile_from_config(
+        config,
+        profile,
+        excluded_groups=excluded_groups,
+    )
     lineage = _profile_lineage_from_config(config, profile)
     group_payloads = config["groups"]
     expected_owners: dict[str, tuple[str, str]] = {}
@@ -400,40 +456,92 @@ def _runtime_profile_asset_metadata_from_config(
 def runtime_profile_asset_metadata(
     project_root: Path,
     profile: str = "full",
+    *,
+    excluded_groups: object = (),
 ) -> tuple[RuntimeAssetMetadata, ...]:
     config = load_runtime_assets_config(project_root)
-    records, errors = _runtime_profile_asset_metadata_from_config(config, profile)
+    records, errors = _runtime_profile_asset_metadata_from_config(
+        config,
+        profile,
+        excluded_groups=excluded_groups,
+    )
     if errors:
         raise RuntimeError("Invalid runtime asset metadata:\n  " + "\n  ".join(errors))
     return records
 
 
-def runtime_profile_required_sources(project_root: Path, profile: str = "full") -> tuple[str, ...]:
-    return tuple(record.source for record in runtime_profile_asset_metadata(project_root, profile))
+def runtime_profile_required_sources(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    excluded_groups: object = (),
+) -> tuple[str, ...]:
+    return tuple(
+        record.source
+        for record in runtime_profile_asset_metadata(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+    )
 
 
-def runtime_profile_required_files(project_root: Path, profile: str = "full") -> tuple[str, ...]:
+def runtime_profile_required_files(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    excluded_groups: object = (),
+) -> tuple[str, ...]:
     """Return required packaged targets for the selected profile."""
 
-    return tuple(record.target for record in runtime_profile_asset_metadata(project_root, profile))
+    return tuple(
+        record.target
+        for record in runtime_profile_asset_metadata(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
+    )
 
 
-def runtime_profile_expected_hashes(project_root: Path, profile: str = "full") -> dict[str, str]:
+def runtime_profile_expected_hashes(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    excluded_groups: object = (),
+) -> dict[str, str]:
     return {
         record.source: record.sha256
-        for record in runtime_profile_asset_metadata(project_root, profile)
+        for record in runtime_profile_asset_metadata(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
     }
 
 
-def check_runtime_profile(project_root: Path, profile: str = "full") -> RuntimeProfileCheck:
-    resolved = resolve_runtime_profile(project_root, profile)
+def check_runtime_profile(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    excluded_groups: object = (),
+) -> RuntimeProfileCheck:
+    resolved = resolve_runtime_profile(
+        project_root,
+        profile,
+        excluded_groups=excluded_groups,
+    )
     missing_modules = tuple(
         module_name
         for module_name in resolved.required_python_modules
         if importlib.util.find_spec(module_name) is None
     )
     config = load_runtime_assets_config(project_root)
-    records, metadata_errors = _runtime_profile_asset_metadata_from_config(config, profile)
+    records, metadata_errors = _runtime_profile_asset_metadata_from_config(
+        config,
+        profile,
+        excluded_groups=excluded_groups,
+    )
     missing_files = tuple(
         record.source
         for record in records
@@ -543,6 +651,8 @@ def should_include_runtime_file(
     file_path: Path,
     runtime_root: Path,
     profile: str = "full",
+    *,
+    excluded_groups: object = (),
 ) -> bool:
     if _should_skip_common(file_path):
         return False
@@ -553,7 +663,11 @@ def should_include_runtime_file(
         return False
     return source in {
         record.source
-        for record in runtime_profile_asset_metadata(project_root, profile)
+        for record in runtime_profile_asset_metadata(
+            project_root,
+            profile,
+            excluded_groups=excluded_groups,
+        )
         if record.source.startswith("runtime/")
     }
 
@@ -563,8 +677,13 @@ def collect_runtime_datas(
     profile: str = "full",
     *,
     strict_asset_hashes: bool = True,
+    excluded_groups: object = (),
 ) -> list[tuple[str, str]]:
-    profile_check = check_runtime_profile(project_root, profile)
+    profile_check = check_runtime_profile(
+        project_root,
+        profile,
+        excluded_groups=excluded_groups,
+    )
     preflight_errors = (
         list(profile_check.metadata_errors)
         + [f"missing source asset: {item}" for item in profile_check.missing_files]
@@ -577,12 +696,42 @@ def collect_runtime_datas(
             + "\n  ".join(preflight_errors)
         )
     collected: list[tuple[str, str]] = []
-    for record in runtime_profile_asset_metadata(project_root, profile):
+    for record in runtime_profile_asset_metadata(
+        project_root,
+        profile,
+        excluded_groups=excluded_groups,
+    ):
         if not record.source.startswith("runtime/"):
             continue
         file_path = project_root / record.source
         target_dir = Path(record.target).parent
         collected.append((str(file_path), str(target_dir) if str(target_dir) != "." else "."))
+    return collected
+
+
+def private_content_template_files(project_root: Path) -> tuple[Path, ...]:
+    templates_root = project_root / "runtime" / BUILD_COMPONENT_CONTENT_TEMPLATES
+    if not templates_root.is_dir():
+        return ()
+    return tuple(
+        sorted(
+            (
+                path
+                for path in templates_root.rglob("*")
+                if path.is_file() and not _should_skip_common(path)
+            ),
+            key=lambda path: path.relative_to(templates_root).as_posix().casefold(),
+        )
+    )
+
+
+def collect_private_content_template_datas(project_root: Path) -> list[tuple[str, str]]:
+    templates_root = project_root / "runtime" / BUILD_COMPONENT_CONTENT_TEMPLATES
+    collected: list[tuple[str, str]] = []
+    for file_path in private_content_template_files(project_root):
+        relative_parent = file_path.parent.relative_to(templates_root)
+        target_dir = Path("runtime") / BUILD_COMPONENT_CONTENT_TEMPLATES / relative_parent
+        collected.append((str(file_path), target_dir.as_posix()))
     return collected
 
 
@@ -698,6 +847,8 @@ def write_release_manifest(
     build_id: str | None = None,
     source_commit: str | None = None,
     source_dirty_entries: list[str] | None = None,
+    excluded_components: object = (),
+    included_components: object = (),
 ) -> Path:
     app_dir.mkdir(parents=True, exist_ok=True)
     version = read_app_version(project_root)
@@ -712,12 +863,21 @@ def write_release_manifest(
             source_dirty_entries = get_dirty_worktree_entries(project_root)
         except (OSError, RuntimeError, subprocess.SubprocessError):
             source_dirty_entries = ["git status unavailable"]
+    normalized_exclusions = normalize_build_exclusions(excluded_components)
+    normalized_inclusions = normalize_build_exclusions(included_components)
+    resolved_profile = resolve_runtime_profile(
+        project_root,
+        profile,
+        excluded_groups=normalized_exclusions,
+    )
     _atomic_write_bytes(app_dir / BUILD_ID_FILENAME, f"{resolved_build_id}\n".encode("utf-8"))
     payload = {
         "schema_version": 1,
         "version": version,
         "profile": profile,
-        "features": list(resolve_runtime_profile(project_root, profile).features),
+        "features": list(resolved_profile.features),
+        "excluded_components": list(normalized_exclusions),
+        "included_components": list(normalized_inclusions),
         "build_id": resolved_build_id,
         "built_at_utc": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "source_commit": source_commit,
@@ -726,7 +886,13 @@ def write_release_manifest(
         "clean_build": bool(clean_build),
         "hash_algorithm": "sha256",
         "dependency_versions": _release_dependency_versions(),
-        "required_runtime_files": list(runtime_profile_required_files(project_root, profile)),
+        "required_runtime_files": list(
+            runtime_profile_required_files(
+                project_root,
+                profile,
+                excluded_groups=normalized_exclusions,
+            )
+        ),
         "files": _release_file_inventory(app_dir),
     }
     manifest_path = app_dir / RELEASE_MANIFEST_FILENAME
@@ -742,9 +908,12 @@ def validate_installer_release(
     profile: str = "full",
     strict_asset_hashes: bool = True,
     strict_release: bool = True,
+    excluded_components: object = (),
+    include_content_templates: bool | None = None,
     warnings: list[str] | None = None,
 ) -> list[str]:
     errors: list[str] = []
+    normalized_exclusions = normalize_build_exclusions(excluded_components)
 
     def report_source_policy(message: str) -> None:
         if strict_release:
@@ -764,7 +933,11 @@ def validate_installer_release(
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
         report_source_policy(f"unable to determine source commit: {exc}")
         commit = None
-    profile_check = check_runtime_profile(project_root, profile)
+    profile_check = check_runtime_profile(
+        project_root,
+        profile,
+        excluded_groups=normalized_exclusions,
+    )
     if profile_check.missing_files:
         errors.append("missing source runtime assets: " + ", ".join(profile_check.missing_files))
     if profile_check.missing_python_modules:
@@ -788,6 +961,16 @@ def validate_installer_release(
         expected_profile=profile,
         expected_version=read_app_version(project_root),
         expected_commit=commit,
+        expected_excluded_components=normalized_exclusions,
+        expected_included_components=(
+            None
+            if include_content_templates is None
+            else (
+                (BUILD_COMPONENT_CONTENT_TEMPLATES,)
+                if include_content_templates
+                else ()
+            )
+        ),
         require_clean_source=strict_release,
         require_clean_build=strict_release,
         reject_extra_files=True,
@@ -805,7 +988,11 @@ def validate_installer_release(
         if isinstance(entry, dict)
     } if isinstance(manifest, dict) else {}
     try:
-        required_assets = runtime_profile_asset_metadata(project_root, profile)
+        required_assets = runtime_profile_asset_metadata(
+            project_root,
+            profile,
+            excluded_groups=normalized_exclusions,
+        )
     except RuntimeError:
         required_assets = ()
     for asset in required_assets:

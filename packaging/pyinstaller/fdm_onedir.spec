@@ -17,7 +17,12 @@ scripts_root = project_root / "scripts"
 if str(scripts_root) not in sys.path:
     sys.path.insert(0, str(scripts_root))
 
-from build_support import collect_runtime_datas
+from build_support import (
+    BUILD_COMPONENT_CONTENT_TEMPLATES,
+    collect_private_content_template_datas,
+    collect_runtime_datas,
+    normalize_build_exclusions,
+)
 
 entry_script = project_root / "src" / "fdm" / "app.py"
 worker_entry_script = project_root / "src" / "fdm" / "workers" / "area_worker.py"
@@ -26,6 +31,7 @@ console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
 build_profile = os.environ.get("FDM_BUILD_PROFILE", "full").strip().lower() or "full"
 strict_asset_hashes = os.environ.get("FDM_STRICT_ASSET_HASHES", "0") == "1"
+excluded_components = normalize_build_exclusions(os.environ.get("FDM_EXCLUDED_COMPONENTS", ""))
 
 
 def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str, str]]:
@@ -51,7 +57,10 @@ datas += collect_runtime_datas(
     project_root,
     profile=build_profile,
     strict_asset_hashes=strict_asset_hashes,
+    excluded_groups=excluded_components,
 )
+if BUILD_COMPONENT_CONTENT_TEMPLATES not in excluded_components:
+    datas += collect_private_content_template_datas(project_root)
 binaries = collect_dynamic_libs("onnxruntime")
 hiddenimports = [
     "onnxruntime",

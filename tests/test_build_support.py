@@ -18,6 +18,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 from fdm import __version__
 from build_support import (
     check_runtime_profile,
+    collect_private_content_template_datas,
     collect_runtime_datas,
     get_dirty_worktree_entries,
     read_app_version,
@@ -136,6 +137,56 @@ class BuildSupportTests(unittest.TestCase):
         self.assertNotIn((PROJECT_ROOT / "runtime" / "segment-anything" / "efficient_sam_s" / "efficient_sam_vits.pt").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "reference-instance" / "matcher" / "models" / "sam_vit_h_4b8939.pth").resolve(), collected)
         self.assertNotIn((PROJECT_ROOT / "runtime" / "area-models" / "b_c1_1.3(++).pth").resolve(), collected)
+
+    def test_private_content_templates_are_collected_without_public_asset_metadata(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            templates = root / "runtime" / "content-templates"
+            (templates / "nested").mkdir(parents=True)
+            (templates / "sheet.xlt").write_bytes(b"private")
+            (templates / "nested" / "record.xlsm").write_bytes(b"private")
+            (templates / ".DS_Store").write_bytes(b"noise")
+            datas = collect_private_content_template_datas(root)
+            collected = {
+                Path(source).relative_to(root).as_posix(): target
+                for source, target in datas
+            }
+
+        self.assertEqual(
+            collected,
+            {
+                "runtime/content-templates/nested/record.xlsm": "runtime/content-templates/nested",
+                "runtime/content-templates/sheet.xlt": "runtime/content-templates",
+            },
+        )
+        self.assertFalse(
+            any(
+                record.source.startswith("runtime/content-templates/")
+                for record in runtime_profile_asset_metadata(PROJECT_ROOT, "full")
+            )
+        )
+
+    def test_area_models_can_be_excluded_without_leaking_the_feature(self) -> None:
+        datas = collect_runtime_datas(
+            PROJECT_ROOT,
+            "full",
+            strict_asset_hashes=False,
+            excluded_groups=("area-models",),
+        )
+        collected = {
+            Path(source).relative_to(PROJECT_ROOT).as_posix()
+            for source, _target in datas
+        }
+        profile = resolve_runtime_profile(
+            PROJECT_ROOT,
+            "full",
+            excluded_groups=("area-models",),
+        )
+
+        self.assertFalse(any(path.startswith("runtime/area-models/") for path in collected))
+        self.assertIn("runtime/area-infer/app/engine.py", collected)
+        self.assertNotIn("area-inference", profile.features)
+        self.assertIn("magic-segmentation", profile.features)
 
     def test_runtime_profiles_keep_core_small_and_full_complete(self) -> None:
         core = {Path(source).relative_to(PROJECT_ROOT).as_posix() for source, _ in collect_runtime_datas(PROJECT_ROOT, "core")}
@@ -385,6 +436,48 @@ license = "LicenseRef-Test"
             self.assertIn("build-id.txt", paths)
             self.assertIn("runtime_assets.toml", paths)
             self.assertNotIn("release-manifest.json", paths)
+
+    def test_release_manifest_records_and_enforces_private_component_selection(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, _required = _create_release_fixture(root)
+            template = app_dir / "runtime" / "content-templates" / "internal.xlsm"
+            template.parent.mkdir(parents=True)
+            template.write_bytes(b"private template")
+            write_release_manifest(
+                app_dir,
+                root,
+                profile="core",
+                clean_build=True,
+                build_id="build-private",
+                source_commit="abc123",
+                source_dirty_entries=[],
+                included_components=("content-templates",),
+            )
+
+            included = verify_release_manifest(
+                app_dir,
+                expected_excluded_components=(),
+                expected_included_components=("content-templates",),
+            )
+            self.assertTrue(included["ok"], included["errors"])
+
+            write_release_manifest(
+                app_dir,
+                root,
+                profile="core",
+                clean_build=True,
+                build_id="build-excluded",
+                source_commit="abc123",
+                source_dirty_entries=[],
+                excluded_components=("content-templates",),
+            )
+            invalid_exclusion = verify_release_manifest(app_dir)
+
+            self.assertFalse(invalid_exclusion["ok"])
+            self.assertTrue(
+                any("excluded component is present" in error for error in invalid_exclusion["errors"])
+            )
 
     def test_installer_gate_blocks_dirty_tree_and_runtime_asset_changed_after_build(self) -> None:
         with TemporaryDirectory() as tmpdir:

@@ -104,14 +104,26 @@ class BuildWindowsInstallerTests(unittest.TestCase):
             )
             self.assertFalse(validate_mock.call_args.kwargs["strict_asset_hashes"])
             self.assertFalse(validate_mock.call_args.kwargs["strict_release"])
+            self.assertEqual(validate_mock.call_args.kwargs["excluded_components"], ())
+            self.assertTrue(validate_mock.call_args.kwargs["include_content_templates"])
             self.assertIsInstance(validate_mock.call_args.kwargs["warnings"], list)
 
     def test_cli_rebuilds_onedir_by_default_and_can_explicitly_reuse_it(self) -> None:
         cases = (
-            (["build_windows_installer.py"], True),
-            (["build_windows_installer.py", "--reuse-onedir"], False),
+            (["build_windows_installer.py"], True, False, False),
+            (["build_windows_installer.py", "--reuse-onedir"], False, False, False),
+            (
+                [
+                    "build_windows_installer.py",
+                    "--exclude-area-models",
+                    "--exclude-content-templates",
+                ],
+                True,
+                True,
+                True,
+            ),
         )
-        for argv, expected_rebuild in cases:
+        for argv, expected_rebuild, exclude_models, exclude_templates in cases:
             with (
                 self.subTest(argv=argv),
                 patch.object(sys, "argv", argv),
@@ -122,6 +134,11 @@ class BuildWindowsInstallerTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertEqual(build_mock.call_args.kwargs["rebuild_onedir"], expected_rebuild)
             self.assertFalse(build_mock.call_args.kwargs["strict_release"])
+            self.assertEqual(build_mock.call_args.kwargs["exclude_area_models"], exclude_models)
+            self.assertEqual(
+                build_mock.call_args.kwargs["exclude_content_templates"],
+                exclude_templates,
+            )
 
     def test_installer_can_rebuild_missing_onedir_before_compilation(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -158,6 +175,8 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 bootloader_debug=False,
                 profile="full",
                 strict_asset_hashes=False,
+                exclude_area_models=False,
+                exclude_content_templates=False,
                 root=root,
             )
 
@@ -180,6 +199,34 @@ class BuildWindowsInstallerTests(unittest.TestCase):
             self.assertEqual(result, 1)
             validate_mock.assert_not_called()
             run_mock.assert_not_called()
+
+    def test_public_variant_is_named_without_private_assets(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            compiled_output = _prepare_installer_root(root)
+            public_output = compiled_output.with_name(
+                "fiber-diameter-measurement-setup-3.1.4-public.exe"
+            )
+
+            def compile_installer(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                compiled_output.parent.mkdir(parents=True, exist_ok=True)
+                compiled_output.write_bytes(b"public installer")
+                return subprocess.CompletedProcess([], 0)
+
+            with (
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.subprocess.run", side_effect=compile_installer),
+            ):
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    exclude_area_models=True,
+                    exclude_content_templates=True,
+                )
+
+            self.assertEqual(result, 0)
+            self.assertFalse(compiled_output.exists())
+            self.assertEqual(public_output.read_bytes(), b"public installer")
 
     def test_build_installer_can_enable_strict_source_hashes(self) -> None:
         with TemporaryDirectory() as tmpdir:
