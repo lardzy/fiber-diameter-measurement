@@ -26,6 +26,13 @@ def _prepare_build_root(root: Path) -> None:
 
 
 class BuildWindowsOnedirTests(unittest.TestCase):
+    def test_spec_uses_flat_onedir_layout_for_both_executables(self) -> None:
+        spec_payload = (
+            PROJECT_ROOT / "packaging" / "pyinstaller" / "fdm_onedir.spec"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(spec_payload.count('contents_directory="."'), 2)
+
     def test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads(self) -> None:
         cases = (
             ({"ok": True, "errors": ["worker failed"]}, ["worker failed"]),
