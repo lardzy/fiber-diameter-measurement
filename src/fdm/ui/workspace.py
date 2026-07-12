@@ -99,6 +99,9 @@ class AdaptiveLayoutController(QObject):
 
     def end_window_resize(self, width: int) -> None:
         self.apply_for_width(width)
+        # Apply the saved dock widths in the same resize turn so a compact →
+        # wide transition never exposes an oversized sidebar for one frame.
+        self.restore_preferred_extents()
         QTimer.singleShot(0, self._finish_window_resize)
 
     def _finish_window_resize(self) -> None:

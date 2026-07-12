@@ -2920,7 +2920,7 @@ class MainWindow(QMainWindow):
         self._inspector_scroll = inspector_scroll
         inspector_scroll.setObjectName("measurementInspectorScroll")
         inspector_scroll.setWidgetResizable(True)
-        inspector_scroll.setMinimumWidth(280)
+        inspector_scroll.setMinimumWidth(360)
         inspector_scroll.setFrameShape(QFrame.Shape.NoFrame)
         inspector_scroll.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -3679,7 +3679,9 @@ class MainWindow(QMainWindow):
 
     def _professional_tool_icon_color(self, active: bool) -> str:
         if active:
-            return "#F7F9FA" if self._is_dark_palette() else "#FFFFFF"
+            app = QApplication.instance()
+            palette = app.palette() if app is not None else self.palette()
+            return palette.color(QPalette.ColorRole.WindowText).name()
         return "#D7E3FC" if self._is_dark_palette() else "#51606F"
 
     def _refresh_theme_sensitive_icons(self) -> None:

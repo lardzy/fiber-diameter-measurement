@@ -8,7 +8,16 @@ import cv2
 import numpy as np
 
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QImage, QMouseEvent, QPainter, QPen, QPolygonF, QWheelEvent
+from PySide6.QtGui import (
+    QColor,
+    QImage,
+    QMouseEvent,
+    QPainter,
+    QPalette,
+    QPen,
+    QPolygonF,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import QWidget
 
 from fdm.area_display import area_geometry_for_display
@@ -64,6 +73,26 @@ from fdm.ui.rendering import (
 class MagicSegmentOperationMode:
     ADD = "add"
     SUBTRACT = "subtract"
+
+
+def canvas_workspace_background(palette: QPalette) -> QColor:
+    """Return a neutral work-surface color with clear image separation."""
+
+    if palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5:
+        return QColor("#101820")
+    return QColor("#D6DEE7")
+
+
+def canvas_workspace_foreground(palette: QPalette) -> QColor:
+    if palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5:
+        return QColor("#F2F2F2")
+    return QColor("#334155")
+
+
+def canvas_image_border(palette: QPalette) -> QColor:
+    if palette.color(QPalette.ColorRole.Window).lightnessF() < 0.5:
+        return QColor("#425466")
+    return QColor("#8796A5")
 
 
 class AreaEditOperationMode:
@@ -1594,9 +1623,9 @@ class DocumentCanvas(QWidget):
 
     def paintEvent(self, event) -> None:
         painter = QPainter(self)
-        painter.fillRect(self.rect(), QColor("#101820"))
+        painter.fillRect(self.rect(), canvas_workspace_background(self.palette()))
         if self._image is None or self._document is None:
-            painter.setPen(QColor("#F2F2F2"))
+            painter.setPen(canvas_workspace_foreground(self.palette()))
             painter.drawText(self.rect(), Qt.AlignmentFlag.AlignCenter, "打开图片后开始测量")
             return
 
@@ -1607,6 +1636,13 @@ class DocumentCanvas(QWidget):
             self._image.height() * self._zoom,
         )
         painter.drawImage(target, self._image)
+        painter.save()
+        border_pen = QPen(canvas_image_border(self.palette()))
+        border_pen.setWidthF(1.0)
+        painter.setPen(border_pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(target)
+        painter.restore()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._draw_annotations(painter)
         self._draw_preview(painter)

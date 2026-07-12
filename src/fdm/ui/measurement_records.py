@@ -256,7 +256,8 @@ class MeasurementRecordsPane(QWidget):
 
     _WIDE_WIDTHS = (105, 125, 150, 90, 120, 75, 110, 125, 90, 125, 160, 120)
     HEADER_STATE_SCHEMA = "measurement-records-v2"
-    _COMPACT_WIDTHS = (34, 80, 56, 40, 52, 40, 70, 80, 60, 54, 110, 90)
+    COMPACT_HEADER_STATE_SCHEMA = "measurement-records-compact-v3"
+    _COMPACT_WIDTHS = (44, 80, 76, 40, 64, 40, 70, 80, 60, 54, 110, 90)
     _WIDE_VISIBLE = frozenset(
         {
             MeasurementResultColumn.RESULT_SEQUENCE,
@@ -415,11 +416,15 @@ class MeasurementRecordsPane(QWidget):
 
     def save_header_state(self) -> str:
         encoded = bytes(self.table.horizontalHeader().saveState().toBase64()).decode("ascii")
-        return f"{self.HEADER_STATE_SCHEMA}:{encoded}"
+        return f"{self.header_state_schema}:{encoded}"
+
+    @property
+    def header_state_schema(self) -> str:
+        return self.COMPACT_HEADER_STATE_SCHEMA if self.compact else self.HEADER_STATE_SCHEMA
 
     def restore_header_state(self, state: str, *, restore_sort: bool = False) -> bool:
         token = str(state or "").strip()
-        prefix = f"{self.HEADER_STATE_SCHEMA}:"
+        prefix = f"{self.header_state_schema}:"
         if not token.startswith(prefix):
             if token:
                 self.reset_columns()

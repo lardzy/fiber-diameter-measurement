@@ -920,7 +920,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
 
         self.assertEqual(settings.workspace_layout.project_width, 120)
-        self.assertEqual(settings.workspace_layout.inspector_width, 340)
+        self.assertEqual(settings.workspace_layout.inspector_width, 380)
         self.assertEqual(settings.workspace_layout.results_height, 2000)
         self.assertEqual(settings.workspace_layout.inspector_records_height, 260)
         self.assertTrue(settings.workspace_layout.statistics_expanded)

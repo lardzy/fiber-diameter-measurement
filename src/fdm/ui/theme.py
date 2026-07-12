@@ -9,7 +9,7 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
 _THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
 _THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
-_THEME_STYLE_REVISION = 2
+_THEME_STYLE_REVISION = 3
 
 
 def _ensure_system_theme_snapshot(app: QApplication) -> tuple[str, QPalette]:
@@ -64,7 +64,9 @@ def build_dark_palette() -> QPalette:
     _set_role_color(palette, QPalette.ColorRole.Light, "#3A4148", disabled="#3A4148")
     _set_role_color(palette, QPalette.ColorRole.Midlight, "#343B43", disabled="#343B43")
     _set_role_color(palette, QPalette.ColorRole.Dark, "#13171C", disabled="#13171C")
-    _set_role_color(palette, QPalette.ColorRole.Mid, "#252A31", disabled="#252A31")
+    # `Mid` is the shared outline token for inputs, tables and workbench
+    # cards.  It must remain visibly distinct from both Window and Base.
+    _set_role_color(palette, QPalette.ColorRole.Mid, "#46515C", disabled="#343B43")
     _set_role_color(palette, QPalette.ColorRole.Shadow, "#0B0E12", disabled="#0B0E12")
     return palette
 
@@ -201,6 +203,13 @@ def build_application_stylesheet() -> str:
             border-bottom: 1px solid palette(mid);
             background: palette(alternate-base);
             font-weight: 600;
+        }
+        QTableView, QTableWidget {
+            border: 1px solid palette(mid);
+            border-radius: 4px;
+            background: palette(base);
+            alternate-background-color: palette(alternate-base);
+            gridline-color: palette(mid);
         }
     """
 

@@ -316,14 +316,24 @@ class MeasurementResultsModelTests(unittest.TestCase):
         pane = MeasurementRecordsPane(controller, compact=True)
         header = pane.table.horizontalHeader()
         legacy_state = bytes(header.saveState().toBase64()).decode("ascii")
+        former_shared_schema_state = (
+            f"{MeasurementRecordsPane.HEADER_STATE_SCHEMA}:{legacy_state}"
+        )
         current_state = pane.save_header_state()
         self.assertTrue(
-            current_state.startswith(f"{MeasurementRecordsPane.HEADER_STATE_SCHEMA}:")
+            current_state.startswith(f"{pane.header_state_schema}:")
         )
 
         pane.table.setColumnHidden(int(MeasurementResultColumn.ID), False)
         self.assertFalse(pane.restore_header_state(legacy_state))
         self.assertTrue(pane.table.isColumnHidden(int(MeasurementResultColumn.ID)))
+
+        pane.table.setColumnWidth(int(MeasurementResultColumn.RESULT_SEQUENCE), 12)
+        self.assertFalse(pane.restore_header_state(former_shared_schema_state))
+        self.assertGreaterEqual(
+            pane.table.columnWidth(int(MeasurementResultColumn.RESULT_SEQUENCE)),
+            44,
+        )
 
         pane.reset_columns()
         pane.table.setColumnHidden(int(MeasurementResultColumn.ID), False)

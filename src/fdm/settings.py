@@ -424,9 +424,9 @@ def default_area_model_mappings() -> list[AreaModelMapping]:
 class WorkspaceLayoutSettings:
     """User-owned workbench dimensions and collapsible-panel preferences."""
 
-    version: int = 2
+    version: int = 3
     project_width: int = 260
-    inspector_width: int = 340
+    inspector_width: int = 380
     results_height: int = 260
     inspector_records_height: int = 260
     statistics_expanded: bool = False
@@ -445,9 +445,9 @@ class WorkspaceLayoutSettings:
 
     def normalized_copy(self) -> "WorkspaceLayoutSettings":
         return WorkspaceLayoutSettings(
-            version=2,
+            version=3,
             project_width=self._extent(self.project_width, 260),
-            inspector_width=self._extent(self.inspector_width, 340),
+            inspector_width=max(376, self._extent(self.inspector_width, 380)),
             results_height=self._extent(self.results_height, 260),
             inspector_records_height=self._extent(self.inspector_records_height, 260),
             statistics_expanded=bool(self.statistics_expanded),
@@ -478,9 +478,12 @@ class WorkspaceLayoutSettings:
             return cls()
         defaults = cls()
         return cls(
-            version=2,
+            version=3,
             project_width=cls._extent(payload.get("project_width"), defaults.project_width),
-            inspector_width=cls._extent(payload.get("inspector_width"), defaults.inspector_width),
+            inspector_width=max(
+                376,
+                cls._extent(payload.get("inspector_width"), defaults.inspector_width),
+            ),
             results_height=cls._extent(payload.get("results_height"), defaults.results_height),
             inspector_records_height=cls._extent(
                 payload.get("inspector_records_height"),

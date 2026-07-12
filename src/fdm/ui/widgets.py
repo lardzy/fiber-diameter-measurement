@@ -141,7 +141,11 @@ class CollapsibleSection(QFrame):
             self.setContentHeight(self._remembered_content_height, emit_signal=False)
         self.setExpanded(expanded, emit_signal=False)
         self.setStyleSheet(
-            "QFrame#collapsibleSection { border: 1px solid palette(mid); border-radius: 7px; }"
+            "QFrame#collapsibleSection {"
+            " background: palette(base);"
+            " border: 1px solid palette(mid);"
+            " border-radius: 7px;"
+            "}"
             "QLabel#collapsibleSectionSummary { color: palette(placeholder-text); }"
         )
 
@@ -213,14 +217,22 @@ class _SectionResizeHandle(QWidget):
     def __init__(self, section_title: str, parent: QWidget | None = None) -> None:
         super().__init__(parent)
         self._last_global_y: float | None = None
-        self.setFixedHeight(10)
+        self._dragging = False
+        self.setObjectName("sectionResizeHandle")
+        self.setFixedHeight(14)
         self.setCursor(Qt.CursorShape.SizeVerCursor)
         self.setAccessibleName(f"调整{section_title}高度")
         self.setToolTip("上下拖动以调整此区域高度；下次启动会恢复")
+        self.setStyleSheet(
+            "QWidget#sectionResizeHandle { background: transparent; border-radius: 5px; }"
+            "QWidget#sectionResizeHandle:hover { background: palette(alternate-base); }"
+        )
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton:
             self._last_global_y = float(event.globalPosition().y())
+            self._dragging = True
+            self.update()
             event.accept()
             return
         super().mousePressEvent(event)
@@ -239,6 +251,8 @@ class _SectionResizeHandle(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if event.button() == Qt.MouseButton.LeftButton and self._last_global_y is not None:
             self._last_global_y = None
+            self._dragging = False
+            self.update()
             event.accept()
             return
         super().mouseReleaseEvent(event)
@@ -246,12 +260,19 @@ class _SectionResizeHandle(QWidget):
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
         painter = QPainter(self)
-        pen = QPen(self.palette().color(QPalette.ColorRole.Mid))
-        pen.setWidth(1)
-        painter.setPen(pen)
-        y = self.rect().center().y()
-        half_width = min(34, max(8, self.width() // 5))
-        painter.drawLine(self.rect().center().x() - half_width, y, self.rect().center().x() + half_width, y)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        grip_color = QColor(self.palette().color(QPalette.ColorRole.Highlight))
+        grip_color.setAlpha(255 if self._dragging or self.underMouse() else 190)
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(grip_color)
+        width = min(72.0, max(40.0, self.width() * 0.24))
+        grip = QRectF(
+            (self.width() - width) / 2.0,
+            (self.height() - 4.0) / 2.0,
+            width,
+            4.0,
+        )
+        painter.drawRoundedRect(grip, 2.0, 2.0)
 
 
 class NoWheelComboBox(QComboBox):

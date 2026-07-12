@@ -152,6 +152,24 @@ def _parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--theme", choices=("dark", "light", "system"), default="dark")
     parser.add_argument(
+        "--tool-mode",
+        choices=(
+            "select",
+            "manual",
+            "continuous_manual",
+            "snap",
+            "polygon_area",
+            "freehand_area",
+            "count",
+            "magic_segment",
+            "reference_propagation",
+            "fiber_quick",
+            "calibration",
+            "overlay",
+        ),
+        default="select",
+    )
+    parser.add_argument(
         "--settings-page",
         choices=("general", "measurement", "annotation", "analysis", "area", "acquisition", "export"),
         default="general",
@@ -234,6 +252,8 @@ def main() -> int:
             widget._sync_digital_slide_mode_ui()
             widget._update_preview_analysis_controls()
         if isinstance(widget, MainWindow):
+            if args.scenario not in {"acquisition", "digital-slide"}:
+                widget.set_tool_mode(args.tool_mode)
             # The production UI uses a short debounce.  Snapshot scenes force
             # one deterministic refresh so captures never depend on wall time.
             widget._refresh_statistics_ui()
@@ -249,6 +269,7 @@ def main() -> int:
         payload = {
             "scenario": args.scenario,
             "theme": args.theme,
+            "tool_mode": args.tool_mode if args.scenario != "settings" else None,
             "settings_page": args.settings_page if args.scenario == "settings" else None,
             "results_tab": args.results_tab if args.scenario == "measurement-results" else None,
             "scale": args.scale,

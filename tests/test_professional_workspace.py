@@ -9,7 +9,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtGui import QImage, QWheelEvent
+from PySide6.QtGui import QImage, QPainter, QPalette, QWheelEvent
 from PySide6.QtCore import QItemSelectionModel, QPoint, QPointF, Qt
 from PySide6.QtWidgets import QApplication, QToolButton
 
@@ -17,8 +17,11 @@ from fdm.geometry import Line, Point
 from fdm.models import Calibration, ImageDocument, Measurement, ProjectState
 from fdm.services.measurement_statistics import MeasurementMetric
 from fdm.settings import AppSettings, WorkspaceLayoutSettings
+from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.main_window import MainWindow
+from fdm.ui.measurement_results_model import MeasurementResultColumn
 from fdm.ui.statistics_widgets import MeasurementStatisticsPanel
+from fdm.ui.theme import build_dark_palette, build_light_palette
 from fdm.ui.workspace import WorkspaceMode
 
 
@@ -27,8 +30,11 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
-    def _window(self) -> MainWindow:
-        load = patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings())
+    def _window(self, settings: AppSettings | None = None) -> MainWindow:
+        load = patch(
+            "fdm.ui.main_window.AppSettingsIO.load",
+            return_value=settings or AppSettings(),
+        )
         save = patch("fdm.ui.main_window.AppSettingsIO.save", return_value=None)
         load.start()
         save.start()
@@ -330,6 +336,25 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertIn("color: palette(highlighted-text);", stylesheet)
         self.assertLess(stylesheet.index(checked_rule), stylesheet.index(combined_rule))
 
+    def test_checked_split_tool_icon_uses_readable_theme_foreground(self) -> None:
+        for theme_mode, expected_palette in (
+            ("dark", build_dark_palette()),
+            ("light", build_light_palette()),
+        ):
+            with self.subTest(theme=theme_mode):
+                window = self._window(AppSettings(theme_mode=theme_mode))
+                window.set_tool_mode("manual")
+                button = window._manual_tool_button
+                self.assertTrue(button.isChecked())
+                expected = expected_palette.color(
+                    QPalette.ColorRole.WindowText
+                ).name()
+                self.assertEqual(window._professional_tool_icon_color(True), expected)
+                self.assertNotEqual(
+                    expected,
+                    expected_palette.color(QPalette.ColorRole.Base).name(),
+                )
+
     def test_measurement_inspector_uses_locked_section_order_and_defaults(self) -> None:
         window = self._window()
         content = window._inspector_scroll.widget()
@@ -430,6 +455,58 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         pane = window._inspector_records_pane
         self.assertIsNotNone(pane)
         self.assertEqual(pane.table.horizontalScrollBar().maximum(), 0)
+        self.assertGreaterEqual(
+            pane.table.columnWidth(int(MeasurementResultColumn.RESULT_SEQUENCE)),
+            44,
+        )
+        self.assertGreaterEqual(
+            pane.table.columnWidth(int(MeasurementResultColumn.GROUP)),
+            76,
+        )
+        self.assertGreaterEqual(
+            pane.table.columnWidth(int(MeasurementResultColumn.RESULT)),
+            64,
+        )
+
+    def test_canvas_workspace_background_follows_light_and_dark_palettes(self) -> None:
+        canvas = DocumentCanvas()
+        self.addCleanup(canvas.close)
+        canvas.resize(180, 120)
+        target = QImage(180, 120, QImage.Format.Format_ARGB32_Premultiplied)
+
+        for palette, expected in (
+            (build_dark_palette(), "#101820"),
+            (build_light_palette(), "#d6dee7"),
+        ):
+            with self.subTest(expected=expected):
+                canvas.setPalette(palette)
+                target.fill(0)
+                painter = QPainter(target)
+                try:
+                    canvas.render(painter, QPoint())
+                finally:
+                    painter.end()
+                self.assertEqual(target.pixelColor(2, 2).name(), expected)
+
+    def test_dark_palette_exposes_card_borders_and_record_resize_handle(self) -> None:
+        palette = build_dark_palette()
+        window_color = palette.color(QPalette.ColorRole.Window)
+        outline_color = palette.color(QPalette.ColorRole.Mid)
+        contrast = sum(
+            abs(left - right)
+            for left, right in zip(
+                (window_color.red(), window_color.green(), window_color.blue()),
+                (outline_color.red(), outline_color.green(), outline_color.blue()),
+                strict=True,
+            )
+        )
+        self.assertGreaterEqual(contrast, 90)
+
+        window = self._window()
+        handle = window._records_section.resizeHandle
+        self.assertFalse(handle.isHidden())
+        self.assertGreaterEqual(handle.height(), 14)
+        self.assertEqual(handle.cursor().shape(), Qt.CursorShape.SizeVerCursor)
 
     def test_workspace_mode_replaces_measurement_tools_with_acquisition_context(self) -> None:
         window = self._window()
