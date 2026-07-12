@@ -110,7 +110,6 @@ class _RuleWritePlan:
     rule: RawRecordExportRule
     writes: list[_CellWrite]
     occupied_coordinates: list[str]
-    clear_coordinates: list[str]
 
 
 def raw_record_output_suffix(template_path: str | Path) -> str:
@@ -269,7 +268,6 @@ def _build_rule_write_plan(
                 for coordinate, value in zip(coordinates, values)
             ],
             occupied_coordinates=bounded_coordinates,
-            clear_coordinates=bounded_coordinates,
         )
     if _uses_category_grouped_range(rule):
         writes = _category_grouped_writes(rule, measurement_rows=measurement_rows, category_labels=category_labels)
@@ -277,7 +275,6 @@ def _build_rule_write_plan(
             rule=rule,
             writes=writes,
             occupied_coordinates=[write.coordinate for write in writes],
-            clear_coordinates=[],
         )
     coordinates = _target_coordinates_for_rule(rule, len(values))
     return _RuleWritePlan(
@@ -287,7 +284,6 @@ def _build_rule_write_plan(
             for coordinate, value in zip(coordinates, values)
         ],
         occupied_coordinates=_occupied_coordinates_for_rule(rule, len(values)),
-        clear_coordinates=[],
     )
 
 
@@ -668,15 +664,6 @@ def _updated_sheet_xml(sheet_xml: bytes, rule_plans: list[_RuleWritePlan], *, sh
     merged_ranges = _merged_ranges(root)
     for plan in rule_plans:
         start_style = _existing_cell_style(row_map, plan.rule.start_cell)
-        for coordinate in plan.clear_coordinates:
-            _validate_merge_target(coordinate, merged_ranges, sheet_name=sheet_name)
-            row_number, _column = _parse_cell_coordinate(coordinate)
-            row = row_map.get(row_number)
-            if row is None:
-                continue
-            cell = _find_cell(row, coordinate)
-            if cell is not None:
-                _clear_cell_value(cell)
         for write in plan.writes:
             _validate_merge_target(write.coordinate, merged_ranges, sheet_name=sheet_name)
             cell = _get_or_create_cell(sheet_data, row_map, write.coordinate, inherited_style=start_style)

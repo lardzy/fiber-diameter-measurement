@@ -719,7 +719,7 @@ class ExportServiceTests(unittest.TestCase):
         self.assertNotIn("BD11", sheet_values)
         self.assertNotIn("BD12", sheet_values)
 
-    def test_raw_record_bounded_range_clears_stale_constants_and_formulas_before_writing(self) -> None:
+    def test_raw_record_bounded_range_preserves_cells_without_output(self) -> None:
         document = ImageDocument(
             id="image_bounded_clear",
             path="/tmp/raw_bounded_clear.png",
@@ -777,13 +777,18 @@ class ExportServiceTests(unittest.TestCase):
             cell.attrib["r"]: cell
             for cell in root.findall(".//xlsx:c", namespace)
         }
-        self.assertEqual(self._cell_texts(sheet_xml)["B2"], "棉")
-        for coordinate, expected_style in zip(("C2", "D2", "E2", "F2"), ("8", "9", "10", "11")):
-            cell = cells[coordinate]
-            self.assertEqual(cell.attrib.get("s"), expected_style)
-            self.assertIsNone(cell.find("xlsx:f", namespace))
-            self.assertIsNone(cell.find("xlsx:v", namespace))
-            self.assertIsNone(cell.find("xlsx:is", namespace))
+        cell_texts = self._cell_texts(sheet_xml)
+        self.assertEqual(cell_texts["B2"], "棉")
+        self.assertEqual(cell_texts["C2"], "OLD-C")
+        self.assertEqual(cell_texts["D2"], "2")
+        self.assertEqual(cell_texts["E2"], "OLD-E")
+        self.assertEqual(cell_texts["F2"], "OLD-F")
+        self.assertEqual(cells["D2"].findtext("xlsx:f", namespaces=namespace), "1+1")
+        for coordinate, expected_style in zip(
+            ("B2", "C2", "D2", "E2", "F2"),
+            ("7", "8", "9", "10", "11"),
+        ):
+            self.assertEqual(cells[coordinate].attrib.get("s"), expected_style)
 
     def test_raw_record_template_unique_field_range_uses_fiber_category_order(self) -> None:
         document = ImageDocument(
