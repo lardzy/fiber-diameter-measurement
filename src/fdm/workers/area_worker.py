@@ -24,6 +24,27 @@ MAX_DESKTOP_IMAGE_BYTES = 48 * 1024 * 1024
 ALLOW_UNTRUSTED_AREA_MODELS_ENV = "FDM_ALLOW_UNTRUSTED_AREA_MODELS"
 
 
+def _configure_protocol_streams() -> tuple[TextIO, TextIO, TextIO]:
+    """Force the worker pipe protocol to UTF-8 on every Windows code page.
+
+    A frozen console executable can recreate ``sys.std*`` using the active
+    Windows ANSI code page even when the parent process requested UTF-8.  The
+    parent always sends and receives UTF-8 JSON, so leaving the worker streams
+    on GBK corrupts paths containing Chinese characters in both directions.
+    """
+
+    stream_specs = (
+        (sys.stdin, "strict"),
+        (sys.stdout, "strict"),
+        (sys.stderr, "backslashreplace"),
+    )
+    for stream, errors in stream_specs:
+        reconfigure = getattr(stream, "reconfigure", None)
+        if callable(reconfigure):
+            reconfigure(encoding="utf-8", errors=errors)
+    return sys.stdin, sys.stdout, sys.stderr
+
+
 class _RequestFailure(RuntimeError):
     def __init__(self, code: str, message: str, *, exit_code: int = 2) -> None:
         super().__init__(message)
@@ -241,7 +262,10 @@ def _response(
 
 def _write_response(stream: TextIO, response: dict[str, object]) -> None:
     try:
-        response_text = json.dumps(response, ensure_ascii=False, allow_nan=False)
+        # Keep the wire envelope ASCII-only.  It remains valid UTF-8 JSON and
+        # also survives a frozen Windows runtime recreating a pipe with the
+        # active legacy code page before stream reconfiguration takes effect.
+        response_text = json.dumps(response, ensure_ascii=True, allow_nan=False)
     except (TypeError, ValueError) as exc:
         traceback.print_exc(file=sys.stderr)
         response_text = json.dumps(
@@ -251,7 +275,7 @@ def _write_response(stream: TextIO, response: dict[str, object]) -> None:
                 error_code="internal_error",
                 error_message=f"响应无法序列化: {exc}",
             ),
-            ensure_ascii=False,
+            ensure_ascii=True,
             allow_nan=False,
         )
     stream.write(response_text)
@@ -419,16 +443,15 @@ def _current_rss_bytes() -> int | None:
 
 
 def main() -> int:
-    protocol_stdout = sys.stdout
-    diagnostic_stream = sys.stderr
+    input_stream, protocol_stdout, diagnostic_stream = _configure_protocol_streams()
     if "--persistent" in sys.argv[1:]:
         return serve_persistent(
             protocol_stdout=protocol_stdout,
             diagnostic_stream=diagnostic_stream,
-            input_stream=sys.stdin,
+            input_stream=input_stream,
         )
 
-    raw_request = sys.stdin.read()
+    raw_request = input_stream.read()
     worker_runtime = _AreaWorkerRuntime()
     with redirect_stdout(diagnostic_stream):
         response, exit_code = _process_request(

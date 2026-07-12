@@ -7,7 +7,13 @@ from unittest.mock import patch
 
 import pytest
 
-from fdm.atomic_io import _atomic_write, atomic_copy_file, atomic_write_bytes, atomic_write_json
+from fdm.atomic_io import (
+    _atomic_write,
+    atomic_copy_file,
+    atomic_replace_file,
+    atomic_write_bytes,
+    atomic_write_json,
+)
 
 
 def test_production_json_serialization_explicitly_rejects_non_finite_values() -> None:
@@ -112,6 +118,26 @@ def test_atomic_write_preserves_original_when_file_fsync_fails(tmp_path: Path) -
 
     assert target.read_bytes() == b"old payload"
     assert list(tmp_path.iterdir()) == [target]
+
+
+def test_atomic_replace_opens_staged_file_writable_for_windows_fsync(tmp_path: Path) -> None:
+    staged = tmp_path / ".settings.json.staged"
+    target = tmp_path / "settings.json"
+    staged.write_bytes(b"new settings")
+    target.write_bytes(b"old settings")
+    opened_modes: list[str] = []
+    original_open = Path.open
+
+    def tracking_open(path: Path, mode: str = "r", *args, **kwargs):
+        if path == staged:
+            opened_modes.append(mode)
+        return original_open(path, mode, *args, **kwargs)
+
+    with patch("fdm.atomic_io.Path.open", new=tracking_open):
+        atomic_replace_file(staged, target)
+
+    assert opened_modes == ["r+b"]
+    assert target.read_bytes() == b"new settings"
 
 
 def test_atomic_json_rejects_non_finite_values_before_replacing(tmp_path: Path) -> None:

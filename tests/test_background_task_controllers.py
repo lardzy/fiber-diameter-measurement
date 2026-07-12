@@ -276,6 +276,37 @@ class _PreviewHost:
 
 @unittest.skipUnless(QT_CONTROLLER_AVAILABLE, "requires PySide6")
 class BackgroundTaskControllerTests(unittest.TestCase):
+    def test_area_progress_is_indeterminate_while_current_image_is_running(self) -> None:
+        host = _BackgroundHost()
+        controller = BackgroundTaskController(host, ThreadTaskManager(parent=_app()))
+        request = AreaInferenceRequest(
+            document_id="area-progress",
+            image_path="/tmp/current.png",
+            model_name="棉",
+            model_file="model.pth",
+            request_id="progress-request",
+            generation=4,
+        )
+        controller._area_infer_state = AreaInferenceBatchState(
+            total=1,
+            pending_requests={request.request_id: request},
+            generation=4,
+        )
+        progress = _FakeProgress()
+        controller._area_infer_progress_dialog = progress
+
+        controller._on_area_inference_progress(
+            1,
+            1,
+            request.image_path,
+            request.request_id,
+            request.generation,
+        )
+
+        self.assertEqual(progress.maximum, 0)
+        self.assertEqual(progress.value, 0)
+        self.assertIn("已完成 0/1", progress.label)
+
     def test_area_result_requires_matching_request_id_and_generation(self) -> None:
         document = ImageDocument(id="area-current", path="/tmp/current.png", image_size=(20, 10))
         document.initialize_runtime_state()

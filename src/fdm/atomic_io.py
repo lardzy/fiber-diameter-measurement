@@ -65,7 +65,11 @@ def atomic_replace_file(staged_path: str | Path, target: str | Path) -> Path:
     target_path.parent.mkdir(parents=True, exist_ok=True)
     if source.parent.resolve() != target_path.parent.resolve():
         raise ValueError("atomic replacement requires a staged file in the target directory")
-    with source.open("rb") as stream:
+    # Windows implements os.fsync() through the CRT _commit() call, which
+    # rejects a descriptor opened read-only with EBADF.  The staged file is
+    # ours and must be writable for replacement, so reopen it read/write for
+    # the final durability barrier.
+    with source.open("r+b") as stream:
         os.fsync(stream.fileno())
     os.replace(source, target_path)
     _fsync_directory_best_effort(target_path.parent)

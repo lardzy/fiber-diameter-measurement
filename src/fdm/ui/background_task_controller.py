@@ -288,8 +288,14 @@ class BackgroundTaskController(QObject):
         )
         progress = self._host._create_progress_dialog(
             title="面积自动识别",
-            label_text=f"正在识别 (1/{len(requests)})\n{Path(requests[0].image_path).name}",
-            maximum=len(requests),
+            label_text=(
+                f"正在识别 (1/{len(requests)}) · 已完成 0/{len(requests)}\n"
+                f"{Path(requests[0].image_path).name}"
+            ),
+            # A single inference has no meaningful percentage before the
+            # model returns.  Use Qt's indeterminate progress animation while
+            # the current image is running instead of presenting a frozen 0%.
+            maximum=0,
         )
         self._area_infer_progress_dialog = progress
 
@@ -332,9 +338,11 @@ class BackgroundTaskController(QObject):
         if self._area_infer_progress_dialog is None:
             return
         completed = state.completed_count
-        self._area_infer_progress_dialog.setMaximum(total)
-        self._area_infer_progress_dialog.setValue(completed)
-        self._area_infer_progress_dialog.setLabelText(f"正在识别 ({index}/{total})\n{Path(path).name}")
+        self._area_infer_progress_dialog.setMaximum(0)
+        self._area_infer_progress_dialog.setValue(0)
+        self._area_infer_progress_dialog.setLabelText(
+            f"正在识别 ({index}/{total}) · 已完成 {completed}/{total}\n{Path(path).name}"
+        )
 
     def _on_area_inference_succeeded(
         self,
@@ -367,6 +375,7 @@ class BackgroundTaskController(QObject):
                 update_project_group_templates=bool(state.update_project_group_templates),
             )
         if self._area_infer_progress_dialog is not None:
+            self._area_infer_progress_dialog.setMaximum(state.total)
             self._area_infer_progress_dialog.setValue(state.completed_count)
 
     def _on_area_inference_failed(
@@ -396,6 +405,7 @@ class BackgroundTaskController(QObject):
         if state.failures is not None:
             state.failures.append(f"{Path(path).name}: {reason}")
         if self._area_infer_progress_dialog is not None:
+            self._area_infer_progress_dialog.setMaximum(state.total)
             self._area_infer_progress_dialog.setValue(state.completed_count)
 
     def _on_area_inference_finished(

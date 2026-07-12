@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from io import StringIO
+from io import BytesIO, StringIO, TextIOWrapper
 import json
 import os
 from pathlib import Path
@@ -109,6 +109,72 @@ class AreaInferenceTests(unittest.TestCase):
         self.assertFalse(process.request_payload["runtime"]["allow_untrusted_weights"])
         self.assertTrue(process.request_payload["runtime"]["require_trusted_weights"])
         self.assertTrue(process.request_payload["runtime"]["verify_trusted_weights"])
+        environment = popen_mock.call_args.kwargs["env"]
+        self.assertEqual(environment["PYTHONUTF8"], "1")
+        self.assertEqual(environment["PYTHONIOENCODING"], "utf-8")
+
+    def test_area_worker_reconfigures_windows_code_page_streams_to_utf8(self) -> None:
+        stdin_bytes = BytesIO()
+        stdout_bytes = BytesIO()
+        stderr_bytes = BytesIO()
+        stdin_stream = TextIOWrapper(stdin_bytes, encoding="gbk")
+        stdout_stream = TextIOWrapper(stdout_bytes, encoding="gbk")
+        stderr_stream = TextIOWrapper(stderr_bytes, encoding="gbk")
+
+        with (
+            patch.object(sys, "stdin", stdin_stream),
+            patch.object(sys, "stdout", stdout_stream),
+            patch.object(sys, "stderr", stderr_stream),
+        ):
+            input_stream, protocol_stdout, diagnostic_stream = (
+                area_worker_module._configure_protocol_streams()
+            )
+            self.assertEqual(input_stream.encoding.lower().replace("-", ""), "utf8")
+            self.assertEqual(protocol_stdout.encoding.lower().replace("-", ""), "utf8")
+            self.assertEqual(diagnostic_stream.encoding.lower().replace("-", ""), "utf8")
+            protocol_stdout.write("未找到图片: F:/示例显微图像/样本.jpg")
+            protocol_stdout.flush()
+
+        self.assertEqual(
+            stdout_bytes.getvalue(),
+            "未找到图片: F:/示例显微图像/样本.jpg".encode("utf-8"),
+        )
+
+    def test_area_worker_round_trips_chinese_path_from_legacy_code_page_environment(self) -> None:
+        request = {
+            "protocol": AREA_WORKER_PROTOCOL,
+            "version": AREA_WORKER_PROTOCOL_VERSION,
+            "request_id": "chinese-path-request",
+            "op": "infer",
+            "image": {"path": "F:/Downloads/示例显微图像/样本.jpg"},
+            "model": {"name": "棉", "file": "model.pth"},
+            "runtime": {
+                "weights_dir": "F:/missing/weights",
+                "vendor_root": "F:/missing/vendor",
+                "device": "cpu",
+            },
+            "options": {"include_overlay": False, "inference": {}},
+        }
+        environment = dict(os.environ)
+        environment["PYTHONIOENCODING"] = "gbk"
+        environment["PYTHONUTF8"] = "0"
+        environment["PYTHONPATH"] = str(Path(__file__).resolve().parents[1] / "src")
+
+        completed = subprocess.run(
+            [sys.executable, str(Path(area_worker_module.__file__).resolve())],
+            input=json.dumps(request, ensure_ascii=False).encode("utf-8"),
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            env=environment,
+            timeout=10,
+            check=False,
+        )
+
+        self.assertEqual(completed.returncode, 2)
+        response = json.loads(completed.stdout.decode("utf-8"))
+        self.assertEqual(response["request_id"], "chinese-path-request")
+        self.assertEqual(response["error"]["code"], "invalid_request")
+        self.assertIn("F:/Downloads/示例显微图像/样本.jpg", response["error"]["message"])
 
     def test_custom_model_opt_in_is_source_only_and_explicit(self) -> None:
         service = AreaInferenceService()
@@ -484,7 +550,7 @@ class AreaInferenceTests(unittest.TestCase):
             "version": AREA_WORKER_PROTOCOL_VERSION,
             "request_id": request_id,
             "op": "infer",
-            "image": {"path": "/definitely/missing/image.png"},
+            "image": {"path": "/definitely/missing/示例显微图像.png"},
             "model": {"name": "棉-莱赛尔", "file": "b_c1_1.3.pth"},
             "runtime": {
                 "weights_dir": "/definitely/missing/weights",
@@ -508,6 +574,7 @@ class AreaInferenceTests(unittest.TestCase):
         self.assertEqual(response["request_id"], request_id)
         self.assertFalse(response["ok"])
         self.assertEqual(response["error"]["code"], "invalid_request")
+        self.assertIn("示例显微图像.png", response["error"]["message"])
 
     def test_persistent_worker_reuses_engine_and_recycles_at_request_limit(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:

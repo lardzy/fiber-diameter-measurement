@@ -87,6 +87,15 @@ def _allow_untrusted_development_area_models() -> bool:
     return token in {"1", "true", "yes", "on"}
 
 
+def _area_worker_environment() -> dict[str, str]:
+    """Return a deterministic UTF-8 environment for the JSON pipe protocol."""
+
+    environment = dict(os.environ)
+    environment["PYTHONUTF8"] = "1"
+    environment["PYTHONIOENCODING"] = "utf-8"
+    return environment
+
+
 @dataclass(slots=True)
 class AreaInstanceResult:
     class_name: str
@@ -175,7 +184,7 @@ class AreaWorkerSession:
             self.disable()
             raise AreaInferenceTransportError("持久面积识别 worker 未正确启动。")
         try:
-            process.stdin.write(json.dumps(payload, ensure_ascii=False, allow_nan=False) + "\n")
+            process.stdin.write(json.dumps(payload, ensure_ascii=True, allow_nan=False) + "\n")
             process.stdin.flush()
         except (BrokenPipeError, OSError, ValueError) as exc:
             self.disable()
@@ -235,8 +244,6 @@ class AreaWorkerSession:
             return
         if self._process is not None:
             self.close()
-        environment = dict(os.environ)
-        environment["PYTHONIOENCODING"] = "utf-8"
         try:
             process = subprocess.Popen(
                 [*self._worker_command, "--persistent"],
@@ -247,7 +254,7 @@ class AreaWorkerSession:
                 encoding="utf-8",
                 errors="replace",
                 bufsize=1,
-                env=environment,
+                env=_area_worker_environment(),
                 **self._subprocess_kwargs,
             )
         except OSError as exc:
@@ -292,7 +299,7 @@ class AreaWorkerSession:
         }
         try:
             process.stdin.write(
-                json.dumps(payload, ensure_ascii=False, allow_nan=False) + "\n"
+                json.dumps(payload, ensure_ascii=True, allow_nan=False) + "\n"
             )
             process.stdin.flush()
         except (BrokenPipeError, OSError, ValueError) as exc:
@@ -617,8 +624,6 @@ class AreaInferenceService:
         timeout_s: float,
         cancellation_token: CancellationToken | None,
     ) -> tuple[int, str, str]:
-        environment = dict(os.environ)
-        environment["PYTHONIOENCODING"] = "utf-8"
         try:
             process = subprocess.Popen(
                 worker_command,
@@ -628,13 +633,13 @@ class AreaInferenceService:
                 text=True,
                 encoding="utf-8",
                 errors="replace",
-                env=environment,
+                env=_area_worker_environment(),
                 **self._subprocess_kwargs(),
             )
         except OSError as exc:
             raise AreaInferenceError(f"无法启动面积识别 worker: {exc}") from exc
 
-        request_text = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+        request_text = json.dumps(payload, ensure_ascii=True, allow_nan=False)
         started_at = time.monotonic()
         first_communicate = True
         while True:
