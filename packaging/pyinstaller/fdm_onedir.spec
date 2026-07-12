@@ -58,6 +58,7 @@ hiddenimports = [
     "onnxruntime.capi",
     "onnxruntime.capi.onnxruntime_inference_collection",
     "onnxruntime.capi.onnxruntime_pybind11_state",
+    "PySide6.QtNetwork",
     "fdm.microview_helper",
 ]
 

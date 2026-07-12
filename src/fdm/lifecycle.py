@@ -9,6 +9,7 @@ from fdm.ui.thread_task_manager import TaskStopResult
 
 class TransitionIntent(str, Enum):
     CLOSE_WINDOW = "close_window"
+    OPEN_DOCUMENT = "open_document"
     OPEN_PROJECT = "open_project"
     RESET_WORKSPACE = "reset_workspace"
     SWITCH_DEVICE = "switch_device"

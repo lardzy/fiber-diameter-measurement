@@ -153,9 +153,42 @@ def main(argv: list[str] | None = None) -> int:
     _install_global_exception_hook()
 
     try:
-        app = QApplication(args)
+        from PySide6.QtCore import QTimer
+
+        from fdm.application_launch import (
+            ApplicationOpenRequest,
+            ApplicationOpenRequestError,
+            SingleInstanceCoordinator,
+            parse_application_arguments,
+        )
+
+        try:
+            qt_args, initial_open_request = parse_application_arguments(args)
+        except ApplicationOpenRequestError as exc:
+            _show_fallback_error(APP_NAME, str(exc))
+            return 2
+
+        app = QApplication(qt_args)
         app.setApplicationName(APP_NAME)
         app.setOrganizationName("Codex")
+        instance_coordinator: SingleInstanceCoordinator | None = None
+        pending_instance_requests: list[ApplicationOpenRequest] = []
+
+        def buffer_instance_request(request: ApplicationOpenRequest) -> None:
+            pending_instance_requests.append(request)
+
+        if sys.platform.startswith("win"):
+            instance_coordinator = SingleInstanceCoordinator.for_current_application(app)
+            instance_result = instance_coordinator.start_or_forward(initial_open_request)
+            if instance_result.forwarded:
+                return 0
+            if not instance_result.primary:
+                _show_fallback_error(APP_NAME, instance_result.error or "无法启动软件实例。")
+                return 1
+            instance_coordinator.requestReceived.connect(buffer_instance_request)
+            instance_coordinator.protocolError.connect(
+                lambda message: _write_startup_log("Single-instance protocol error", message)
+            )
         from fdm.settings import AppSettingsIO
         from fdm.ui.icons import application_icon
         from fdm.ui.main_window import MainWindow
@@ -164,8 +197,24 @@ def main(argv: list[str] | None = None) -> int:
         apply_application_theme(app, AppSettingsIO.load().theme_mode)
         app.setWindowIcon(application_icon())
         window = MainWindow()
+        if instance_coordinator is not None:
+            instance_coordinator.requestReceived.disconnect(buffer_instance_request)
+            instance_coordinator.requestReceived.connect(window.enqueue_application_open_request)
         window.show()
+        startup_requests: list[ApplicationOpenRequest] = []
+        if initial_open_request.paths:
+            startup_requests.append(initial_open_request)
+        startup_requests.extend(pending_instance_requests)
+        if startup_requests:
+
+            def enqueue_startup_requests() -> None:
+                for request in startup_requests:
+                    window.enqueue_application_open_request(request)
+
+            QTimer.singleShot(0, enqueue_startup_requests)
         exit_code = app.exec()
+        if instance_coordinator is not None:
+            instance_coordinator.close()
         from fdm.runtime_logging import flush_runtime_metrics
 
         flush_runtime_metrics()

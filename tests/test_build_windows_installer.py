@@ -36,6 +36,27 @@ class BuildWindowsInstallerTests(unittest.TestCase):
         self.assertIn('MyAppSourceDir + "\\release-manifest.json"', payload)
         self.assertIn('MyAppSourceDir + "\\build-id.txt"', payload)
 
+    def test_inno_script_registers_only_project_and_digital_slide_associations(self) -> None:
+        payload = (PROJECT_ROOT / "packaging" / "inno-setup" / "fdm_installer.iss").read_text(
+            encoding="utf-8"
+        )
+
+        self.assertIn("ChangesAssociations=yes", payload)
+        self.assertIn('Name: "fileassoc"', payload)
+        self.assertIn('Flags: checkedonce', payload)
+        self.assertIn('LARD.FiberDiameterMeasurement.Project', payload)
+        self.assertIn('LARD.FiberDiameterMeasurement.DigitalSlide', payload)
+        self.assertIn('Software\\Classes\\.fdmproj\\OpenWithProgids', payload)
+        self.assertIn('Software\\Classes\\.fdmslide\\OpenWithProgids', payload)
+        self.assertIn('OpenWithProgids"; ValueType: string', payload)
+        self.assertIn('SupportedTypes"; ValueType: string', payload)
+        self.assertIn('DefaultIcon"; ValueType: string; ValueName: ""; ValueData: "{app}', payload)
+        self.assertIn('"""{app}\\{#MyAppExeName}"" ""%1"""', payload)
+        self.assertIn("RemoveOwnedExtensionDefault('.fdmproj'", payload)
+        self.assertIn("RemoveOwnedExtensionDefault('.fdmslide'", payload)
+        for image_suffix in (".png", ".jpg", ".jpeg", ".tif", ".tiff", ".bmp"):
+            self.assertNotIn(f'ValueName: "{image_suffix}"', payload)
+
     def test_sync_only_refreshes_version_auto_include_from_version_py(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

@@ -438,6 +438,7 @@ class ProjectAndExportControllerTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             project_path = root / "moved_project.fdmproj"
+            project_path.write_text("{}", encoding="utf-8")
             repaired_image = root / "first.png"
             repaired_image.write_bytes(b"fake")
             missing_absolute = root / "missing" / "first.png"
@@ -467,10 +468,54 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertEqual(host.repaired_paths, [f"{missing_absolute} -> {repaired_image.resolve()}"])
             self.assertIn("已自动修复 1 张图片路径", host.status_message)
 
+    def test_project_load_preflight_rejects_corrupt_file_without_stopping_workspace(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "corrupt.fdmproj"
+            project_path.write_text("not json", encoding="utf-8")
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.warnings: list[tuple[str, str]] = []
+
+                def _show_project_warning(self, title: str, message: str) -> None:
+                    self.warnings.append((title, message))
+
+            host = Host()
+            original_documents = list(host.project.documents)
+
+            result = ProjectSessionController(host).load_project_from_path(project_path)
+
+            self.assertFalse(result)
+            self.assertFalse(host.stopped_preview)
+            self.assertFalse(host.reset)
+            self.assertEqual(host.project.documents, original_documents)
+            self.assertEqual(len(host.warnings), 1)
+            self.assertIn("当前工作区未改变", host.warnings[0][1])
+
+    def test_project_load_same_path_returns_already_open_without_reloading(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "current.fdmproj"
+            project_path.write_text("{}", encoding="utf-8")
+            host = _ProjectHost(root)
+            host._project_path = project_path
+
+            with patch("fdm.ui.project_session_controller.ProjectIO.load") as load_mock:
+                result = ProjectSessionController(host).load_project_from_path(project_path)
+
+            self.assertTrue(result)
+            self.assertTrue(result.already_open)
+            self.assertEqual(result.path, project_path.resolve())
+            load_mock.assert_not_called()
+            self.assertFalse(host.stopped_preview)
+
     def test_load_project_does_not_replace_current_project_when_workspace_reset_fails(self) -> None:
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             project_path = root / "next.fdmproj"
+            project_path.write_text("{}", encoding="utf-8")
             loaded_project = ProjectState(
                 version=PROJECT_VERSION,
                 documents=[ImageDocument(id="next", path="next.png", image_size=(20, 20))],
@@ -510,6 +555,7 @@ class ProjectAndExportControllerTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             root = Path(tmp)
             project_path = root / "missing-source.fdmproj"
+            project_path.write_text("{}", encoding="utf-8")
             missing_document = ImageDocument(
                 id=new_id("image"),
                 path="missing.png",

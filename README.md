@@ -16,7 +16,8 @@ Fiber Diameter Measurement 是一款面向显微图像的离线桌面软件，�
 
 ### 图片、项目与标定
 
-- 支持打开单张图片、多张图片、整个文件夹，也可以直接拖入图片、文件夹或 `.fdmproj` 项目文件。
+- 支持打开单张图片、多张图片、整个文件夹，也可以直接拖入图片、文件夹、`.fdmproj` 项目或 `.fdmslide` 数字化切片。
+- Windows 安装包可关联 `.fdmproj` 与 `.fdmslide`；双击文件会直接打开，已有实例时复用并激活当前工作台。
 - 多图片以工作区形式管理，每张图片保留自己的标定、类别、测量记录、画布视图和撤回 / 重做历史。
 - 支持图内比例尺标定、标定预设、项目统一比例尺和 CU 标尺导入。
 - 普通图片会在同目录读写 `*.fdm.json` 标尺侧车文件；完整会话可保存为 `.fdmproj` 项目。
@@ -80,6 +81,7 @@ Fiber Diameter Measurement 是一款面向显微图像的离线桌面软件，�
 | --- | --- |
 | `*.fdm.json` | 图片标尺侧车文件，只保存标定信息。 |
 | `*.fdmproj` | 项目文件，保存图片列表、测量记录、类别、标注、视图状态等。 |
+| `*.fdmslide` | 数字化切片 SQLite 文件，保存多焦层 tile、采集清单和切片状态。 |
 | `<project>.assets/` | 项目资产目录，用于保存抓拍导入等项目内图片。 |
 | `图片汇总.csv` | 按图片聚合的导出统计。 |
 | `纤维种类汇总.csv` | 按类别聚合的导出统计。 |
@@ -141,6 +143,15 @@ Windows onedir 打包：
 ```bash
 python scripts/build_windows_onedir.py
 ```
+
+应用也支持直接传入关联文件路径：
+
+```bash
+FiberDiameterMeasurement.exe "C:\path\example.fdmproj"
+FiberDiameterMeasurement.exe "C:\path\example.fdmslide"
+```
+
+通过 Windows installer 安装时，`.fdmproj` 和 `.fdmslide` 文件关联默认勾选；通用图片格式不会被接管。
 
 内部打包默认采用宽松的源码资源校验：`runtime_assets.toml` 中的固定哈希不一致时会显示警告，但仍打包当前文件；缺失文件、依赖或无效资源元数据仍会阻断。需要重新启用严格哈希门禁时使用：
 

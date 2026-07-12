@@ -94,6 +94,7 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertEqual(report["version"], "1.2.3")
             self.assertEqual(report["build_id"], "self-check-build")
             self.assertTrue(report["functional_checks"]["core_measurement"])
+            self.assertTrue(report["functional_checks"]["qt_local_ipc"])
             self.assertTrue(report["functional_checks"]["pe:FiberDiameterMeasurement.exe"])
 
     def test_self_check_rejects_hash_valid_non_pe_executables(self) -> None:

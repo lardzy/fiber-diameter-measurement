@@ -230,6 +230,18 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
     if not measurement_ok and not any("core measurement" in str(item) for item in errors):
         errors.append("core measurement self-check returned an unexpected value")
 
+    try:
+        from fdm.application_launch import SingleInstanceCoordinator
+        from PySide6.QtNetwork import QLocalServer, QLocalSocket
+
+        ipc_ok = all((SingleInstanceCoordinator, QLocalServer, QLocalSocket))
+    except Exception as exc:  # noqa: BLE001
+        ipc_ok = False
+        errors.append(f"Qt local IPC self-check failed: {exc}")
+    functional_checks["qt_local_ipc"] = ipc_ok
+    if not ipc_ok and not any("Qt local IPC" in str(item) for item in errors):
+        errors.append("Qt local IPC self-check is unavailable")
+
     if report.get("profile") == "full":
         versions = report.get("dependency_versions", {})
         for distribution in ("Pillow", "torch", "torchvision"):

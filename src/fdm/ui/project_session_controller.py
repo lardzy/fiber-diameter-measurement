@@ -39,6 +39,18 @@ class ProjectSaveResult:
         return self.success
 
 
+@dataclass(frozen=True, slots=True)
+class ProjectLoadResult:
+    success: bool
+    path: Path | None = None
+    cancelled: bool = False
+    already_open: bool = False
+    message: str = ""
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
 @dataclass(slots=True)
 class ProjectAssetPersistResult:
     success: bool
@@ -263,30 +275,70 @@ class ProjectSessionController:
             unresolved_count=len(self._unresolved_documents),
         )
 
-    def load_project(self) -> None:
+    def load_project(self) -> ProjectLoadResult:
         selected_path = self._host._select_project_open_path()
         if not selected_path:
-            return
-        self.load_project_from_path(Path(selected_path))
+            return ProjectLoadResult(False, cancelled=True, message="用户取消打开项目。")
+        return self.load_project_from_path(Path(selected_path))
 
-    def load_project_from_path(self, path: str | Path) -> None:
+    def load_project_from_path(self, path: str | Path) -> ProjectLoadResult:
         host = self._host
+        project_path = Path(path).expanduser().resolve(strict=False)
+        if project_path.suffix.lower() != ".fdmproj":
+            message = f"所选文件不是 .fdmproj 项目文件：\n{project_path}"
+            host._show_project_warning("打开项目", message)
+            return ProjectLoadResult(False, path=project_path, message=message)
+        if not project_path.is_file():
+            message = f"项目文件不存在或无法访问：\n{project_path}"
+            host._show_project_warning("打开项目", message)
+            return ProjectLoadResult(False, path=project_path, message=message)
+        current_project_path = getattr(host, "_project_path", None)
+        if current_project_path is not None:
+            try:
+                same_project = Path(current_project_path).resolve(strict=False) == project_path
+            except OSError:
+                same_project = False
+            if same_project:
+                message = f"项目已经打开：{project_path}"
+                host._show_status_message(message, 4000)
+                return ProjectLoadResult(
+                    True,
+                    path=project_path,
+                    already_open=True,
+                    message=message,
+                )
+        try:
+            project = ProjectIO.load(project_path)
+        except Exception as exc:  # noqa: BLE001 - external project files are an untrusted input boundary
+            message = f"无法读取项目文件，当前工作区未改变：\n{project_path}\n\n{exc}"
+            host._show_project_warning("打开项目", message)
+            return ProjectLoadResult(False, path=project_path, message=message)
+
         prepare_transition = getattr(host, "_prepare_transition", None)
         if callable(prepare_transition):
             transition = prepare_transition(TransitionIntent.OPEN_PROJECT)
             if not bool(getattr(transition, "completed", False)):
                 reason = str(getattr(transition, "reason", "") or "资源尚未安全退出，已取消打开项目。")
                 host._show_project_information("打开项目", reason)
-                return
+                return ProjectLoadResult(
+                    False,
+                    path=project_path,
+                    cancelled=bool(getattr(transition, "cancelled", False)),
+                    message=reason,
+                )
         else:
             host.stop_live_preview()
         if host.is_image_loading():
-            host._show_project_information("打开项目", "图片加载任务尚未安全退出，已阻止项目切换。")
-            return
+            message = "图片加载任务尚未安全退出，已阻止项目切换。"
+            host._show_project_information("打开项目", message)
+            return ProjectLoadResult(False, path=project_path, message=message)
         if not host._confirm_close_documents(host.project.documents):
-            return
-        project_path = Path(path).expanduser().resolve()
-        project = ProjectIO.load(project_path)
+            return ProjectLoadResult(
+                False,
+                path=project_path,
+                cancelled=True,
+                message="用户取消切换项目。",
+            )
         recalculated_area_count = _recalculate_loaded_area_measurements(project)
         missing_paths: list[str] = []
         try:
@@ -296,7 +348,7 @@ class ProjectSessionController:
                 "打开项目",
                 f"资源尚未安全退出，已取消打开项目。\n\n{exc}",
             )
-            return
+            return ProjectLoadResult(False, path=project_path, message=str(exc))
         imported_count = host._merge_legacy_calibration_presets(project.calibration_presets)
         self._begin_project_load(project.documents)
         host._project_path = project_path
@@ -356,6 +408,7 @@ class ProjectSessionController:
         if self._unresolved_documents:
             message += f"；已保留 {len(self._unresolved_documents)} 个缺失文档记录"
         host._show_status_message(message, 5000)
+        return ProjectLoadResult(True, path=project_path, message=message)
 
     def persist_project_assets(
         self,

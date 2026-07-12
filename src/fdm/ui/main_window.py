@@ -63,6 +63,7 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
+from fdm.application_launch import ApplicationOpenRequest
 from fdm.area_display import ensure_measurement_display_geometry, invalidate_measurement_display_geometry
 from fdm.geometry import Line, Point, line_length
 from fdm.lifecycle import (
@@ -182,6 +183,7 @@ from fdm.ui.dialogs import (
     ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaInferenceRequest
+from fdm.ui.associated_file_controller import AssociatedFileOpenController
 from fdm.ui.background_task_controller import AreaInferenceBatchState, BackgroundTaskController, BatchLoadState
 from fdm.ui.export_controller import ExportController
 from fdm.ui.icons import application_icon, themed_icon
@@ -203,6 +205,7 @@ from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskControlle
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.project_session_controller import (
     ProjectAssetPersistResult,
+    ProjectLoadResult,
     ProjectSaveResult,
     ProjectSessionController,
 )
@@ -1170,6 +1173,7 @@ class MainWindow(QMainWindow):
             parent=self,
         )
         self.project_session_controller = ProjectSessionController(self)
+        self.associated_file_open_controller = AssociatedFileOpenController(self, self)
         self.export_controller = ExportController(self)
 
         self._records_controller.groupChangeRequested.connect(
@@ -8348,11 +8352,35 @@ class MainWindow(QMainWindow):
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
         return self.project_session_controller.save_project(path)
 
-    def load_project(self) -> None:
-        self.project_session_controller.load_project()
+    def load_project(self) -> ProjectLoadResult:
+        return self.project_session_controller.load_project()
 
-    def _load_project_from_path(self, path: str | Path) -> None:
-        self.project_session_controller.load_project_from_path(path)
+    def _load_project_from_path(self, path: str | Path) -> ProjectLoadResult:
+        return self.project_session_controller.load_project_from_path(path)
+
+    def enqueue_application_open_request(self, request: ApplicationOpenRequest) -> None:
+        self.associated_file_open_controller.enqueue(request)
+
+    def _activate_from_external_request(self) -> None:
+        state = self.windowState()
+        if state & Qt.WindowState.WindowMinimized:
+            self.setWindowState(
+                (state & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive
+            )
+        self.show()
+        self.raise_()
+        self.activateWindow()
+        QApplication.alert(self, 0)
+
+    def _associated_open_document_id(self, path: Path) -> str | None:
+        target = self._normalize_image_path(path).casefold()
+        for document in self.project.documents:
+            if not document.is_digital_slide():
+                continue
+            resolved_path = self._resolved_document_path(document)
+            if resolved_path and self._normalize_image_path(resolved_path).casefold() == target:
+                return document.id
+        return None
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
         self.export_controller.export_results(preset)
@@ -12518,6 +12546,7 @@ class MainWindow(QMainWindow):
     ) -> AcquisitionDisposition:
         labels = {
             TransitionIntent.CLOSE_WINDOW: "关闭窗口",
+            TransitionIntent.OPEN_DOCUMENT: "打开外部文件",
             TransitionIntent.OPEN_PROJECT: "打开其他项目",
             TransitionIntent.RESET_WORKSPACE: "重置工作区",
             TransitionIntent.SWITCH_DEVICE: "切换采集设备",

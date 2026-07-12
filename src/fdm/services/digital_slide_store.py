@@ -249,6 +249,26 @@ class DigitalSlideStore:
     def is_open(self) -> bool:
         return self._conn is not None
 
+    @staticmethod
+    def read_manifest_read_only(path: str | Path) -> DigitalSlideManifest:
+        """Validate an existing slide without creating or migrating its schema."""
+
+        slide_path = Path(path).expanduser().resolve(strict=False)
+        connection = sqlite3.connect(f"{slide_path.as_uri()}?mode=ro", uri=True)
+        connection.row_factory = sqlite3.Row
+        try:
+            row = connection.execute(
+                "SELECT value FROM metadata WHERE key='manifest'"
+            ).fetchone()
+            if row is None:
+                raise ValueError(f"数字化切片缺少 manifest: {slide_path}")
+            manifest = DigitalSlideManifest.from_dict(json.loads(str(row["value"])))
+            tile_row = connection.execute("SELECT COUNT(*) AS total FROM tiles").fetchone()
+            manifest.tile_count = int(tile_row["total"] if tile_row is not None else 0)
+            return manifest
+        finally:
+            connection.close()
+
     def close(self) -> None:
         connection = self._conn
         first_error: Exception | None = None
