@@ -594,10 +594,10 @@ def get_dirty_worktree_entries(project_root: Path) -> list[str]:
         cwd=project_root,
         check=True,
         capture_output=True,
-        text=True,
+        text=False,
     )
     ignored_prefixes = release_ignored_untracked_prefixes(project_root)
-    records = completed.stdout.split("\0")
+    records = completed.stdout.split(b"\0")
     dirty: list[str] = []
     index = 0
     while index < len(records):
@@ -605,8 +605,12 @@ def get_dirty_worktree_entries(project_root: Path) -> list[str]:
         index += 1
         if not record:
             continue
-        status = record[:2]
-        path = record[3:].replace("\\", "/") if len(record) > 3 else ""
+        status = record[:2].decode("ascii", errors="replace")
+        path = (
+            record[3:].decode("utf-8", errors="replace").replace("\\", "/")
+            if len(record) > 3
+            else ""
+        )
         if status[0] in {"R", "C"} or status[1] in {"R", "C"}:
             index += 1
         if status == "??" and any(path == prefix.rstrip("/") or path.startswith(prefix) for prefix in ignored_prefixes):

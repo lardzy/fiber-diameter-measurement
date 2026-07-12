@@ -324,15 +324,21 @@ license = "LicenseRef-Test"
             "?? runtime/content-templates/sheet.xlt\0"
             "?? dist/windows/app.exe\0"
             "?? build/pyinstaller/cache.bin\0"
-            "?? docs/release-note.txt\0"
+            "?? docs/-面积法-定量试验原始记录-新系统.txt\0"
             " M src/fdm/app.py\0"
+        ).encode("utf-8")
+        completed = subprocess.CompletedProcess(
+            [],
+            0,
+            stdout=output,
+            stderr=b"",
         )
-        completed = subprocess.CompletedProcess([], 0, stdout=output, stderr="")
 
-        with patch("build_support.subprocess.run", return_value=completed):
+        with patch("build_support.subprocess.run", return_value=completed) as run_mock:
             entries = get_dirty_worktree_entries(PROJECT_ROOT)
 
-        self.assertEqual(entries, ["?? docs/release-note.txt", " M src/fdm/app.py"])
+        self.assertEqual(entries, ["?? docs/-面积法-定量试验原始记录-新系统.txt", " M src/fdm/app.py"])
+        self.assertFalse(run_mock.call_args.kwargs["text"])
 
     def test_release_manifest_detects_hash_build_id_and_stale_commit_mismatches(self) -> None:
         with TemporaryDirectory() as tmpdir:
