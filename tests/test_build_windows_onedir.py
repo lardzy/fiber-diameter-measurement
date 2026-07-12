@@ -72,7 +72,60 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             self.assertEqual(result, 0)
             environment = run_mock.call_args.kwargs["env"]
             self.assertEqual(environment["FDM_BUILD_PROFILE"], "core")
+            self.assertEqual(environment["FDM_STRICT_ASSET_HASHES"], "0")
             manifest_mock.assert_called_once_with(app_dir, root, profile="core", clean_build=True)
+
+    def test_build_warns_and_continues_on_hash_mismatch_by_default(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+            check = RuntimeProfileCheck("full", (), (), ("runtime/model.pth (hash mismatch)",))
+
+            def run_pyinstaller(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                app_dir.mkdir(parents=True, exist_ok=True)
+                (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
+                (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
+                return subprocess.CompletedProcess([], 0)
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=check),
+                patch("build_windows_onedir.subprocess.run", side_effect=run_pyinstaller) as run_mock,
+                patch(
+                    "build_windows_onedir.write_release_manifest",
+                    return_value=app_dir / "release-manifest.json",
+                ),
+                patch("build_windows_onedir.run_packaged_self_check", return_value=[]),
+            ):
+                result = build(clean=True, console=False, bootloader_debug=False, profile="full", root=root)
+
+            self.assertEqual(result, 0)
+            self.assertEqual(run_mock.call_args.kwargs["env"]["FDM_STRICT_ASSET_HASHES"], "0")
+
+    def test_build_strict_hash_mode_blocks_before_pyinstaller(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            check = RuntimeProfileCheck("full", (), (), ("runtime/model.pth (hash mismatch)",))
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile", return_value=check),
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(
+                    clean=True,
+                    console=False,
+                    bootloader_debug=False,
+                    profile="full",
+                    strict_asset_hashes=True,
+                    root=root,
+                )
+
+            self.assertEqual(result, 1)
+            run_mock.assert_not_called()
 
     def test_build_blocks_when_packaged_self_check_fails(self) -> None:
         with TemporaryDirectory() as tmpdir:

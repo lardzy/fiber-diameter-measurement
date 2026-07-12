@@ -275,6 +275,10 @@ license = "LicenseRef-Test"
             self.assertIn("runtime/models/model.bin", check.hash_mismatches[0])
             with self.assertRaisesRegex(RuntimeError, "failed asset preflight"):
                 collect_runtime_datas(root, "core")
+            self.assertEqual(
+                collect_runtime_datas(root, "core", strict_asset_hashes=False),
+                [(str(asset), "runtime/models")],
+            )
 
     def test_runtime_asset_target_controls_packaged_destination(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -395,6 +399,40 @@ license = "LicenseRef-Test"
 
             self.assertTrue(any("dirty worktree" in error for error in errors))
             self.assertTrue(any("stale dist runtime asset" in error for error in errors))
+
+    def test_installer_gate_can_warn_instead_of_blocking_on_pinned_source_hashes(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, required = _create_release_fixture(root)
+            changed_payload = b"internal build asset\n"
+            (root / required[0]).write_bytes(changed_payload)
+            (app_dir / required[0]).write_bytes(changed_payload)
+            write_release_manifest(
+                app_dir,
+                root,
+                profile="core",
+                clean_build=True,
+                build_id="build-123",
+                source_commit="abc123",
+                source_dirty_entries=[],
+            )
+            warnings: list[str] = []
+            with (
+                patch("build_support.get_git_commit", return_value="abc123"),
+                patch("build_support.get_dirty_worktree_entries", return_value=[]),
+            ):
+                strict_errors = validate_installer_release(root, app_dir, profile="core")
+                relaxed_errors = validate_installer_release(
+                    root,
+                    app_dir,
+                    profile="core",
+                    strict_asset_hashes=False,
+                    warnings=warnings,
+                )
+
+            self.assertTrue(any("source runtime asset hash mismatch" in error for error in strict_errors))
+            self.assertEqual(relaxed_errors, [])
+            self.assertTrue(any("source runtime asset hash mismatch" in warning for warning in warnings))
 
 
 if __name__ == "__main__":

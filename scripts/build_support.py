@@ -546,12 +546,17 @@ def should_include_runtime_file(
     }
 
 
-def collect_runtime_datas(project_root: Path, profile: str = "full") -> list[tuple[str, str]]:
+def collect_runtime_datas(
+    project_root: Path,
+    profile: str = "full",
+    *,
+    strict_asset_hashes: bool = True,
+) -> list[tuple[str, str]]:
     profile_check = check_runtime_profile(project_root, profile)
     preflight_errors = (
         list(profile_check.metadata_errors)
         + [f"missing source asset: {item}" for item in profile_check.missing_files]
-        + list(profile_check.hash_mismatches)
+        + (list(profile_check.hash_mismatches) if strict_asset_hashes else [])
         + [f"missing build dependency: {item}" for item in profile_check.missing_python_modules]
     )
     if preflight_errors:
@@ -714,7 +719,14 @@ def write_release_manifest(
     return manifest_path
 
 
-def validate_installer_release(project_root: Path, app_dir: Path, *, profile: str = "full") -> list[str]:
+def validate_installer_release(
+    project_root: Path,
+    app_dir: Path,
+    *,
+    profile: str = "full",
+    strict_asset_hashes: bool = True,
+    warnings: list[str] | None = None,
+) -> list[str]:
     errors: list[str] = []
     try:
         dirty_entries = get_dirty_worktree_entries(project_root)
@@ -733,7 +745,11 @@ def validate_installer_release(project_root: Path, app_dir: Path, *, profile: st
     if profile_check.missing_python_modules:
         errors.append("missing build dependencies: " + ", ".join(profile_check.missing_python_modules))
     if profile_check.hash_mismatches:
-        errors.append("source runtime asset hash mismatch: " + ", ".join(profile_check.hash_mismatches))
+        message = "source runtime asset hash mismatch: " + ", ".join(profile_check.hash_mismatches)
+        if strict_asset_hashes:
+            errors.append(message)
+        elif warnings is not None:
+            warnings.append(message)
     if profile_check.metadata_errors:
         errors.append("invalid runtime asset metadata: " + ", ".join(profile_check.metadata_errors))
     report = verify_release_manifest(

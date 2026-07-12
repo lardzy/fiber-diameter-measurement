@@ -88,6 +88,7 @@ def build_installer(
     compiler_path: str | None = None,
     sign_command: str | None = None,
     verify_signature_command: str | None = None,
+    strict_asset_hashes: bool = False,
 ) -> int:
     iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
     app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
@@ -112,7 +113,18 @@ def build_installer(
         )
         return 1
 
-    release_errors = validate_installer_release(root, app_dir, profile="full")
+    release_warnings: list[str] = []
+    release_errors = validate_installer_release(
+        root,
+        app_dir,
+        profile="full",
+        strict_asset_hashes=strict_asset_hashes,
+        warnings=release_warnings,
+    )
+    if release_warnings:
+        print("Internal release warnings:", file=sys.stderr)
+        for warning in release_warnings:
+            print(f"  - {warning}", file=sys.stderr)
     if release_errors:
         print("Formal release checks failed:", file=sys.stderr)
         for error in release_errors:
@@ -202,6 +214,11 @@ def main() -> int:
         default="",
         help="Optional signature verification command template containing {file}; also accepted via FDM_VERIFY_SIGNATURE_COMMAND.",
     )
+    parser.add_argument(
+        "--strict-asset-hashes",
+        action="store_true",
+        help="Fail when source runtime files differ from the hashes pinned in runtime_assets.toml.",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -212,6 +229,7 @@ def main() -> int:
         compiler_path=compiler,
         sign_command=args.sign_command.strip() or None,
         verify_signature_command=args.verify_signature_command.strip() or None,
+        strict_asset_hashes=args.strict_asset_hashes,
     )
 
 

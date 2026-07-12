@@ -98,6 +98,7 @@ def build(
     console: bool,
     bootloader_debug: bool,
     profile: str = "full",
+    strict_asset_hashes: bool = False,
     root: Path | None = None,
 ) -> int:
     root = root or Path(__file__).resolve().parents[1]
@@ -139,12 +140,19 @@ def build(
         )
         return 1
     if profile_check.hash_mismatches:
+        if strict_asset_hashes:
+            print(
+                f"Runtime profile {profile!r} contains files with unexpected hashes:\n  "
+                + "\n  ".join(profile_check.hash_mismatches),
+                file=sys.stderr,
+            )
+            return 1
         print(
-            f"Runtime profile {profile!r} contains files with unexpected hashes:\n  "
+            f"Warning: runtime profile {profile!r} contains files whose hashes differ from "
+            "runtime_assets.toml. Internal-build mode will package the current files as-is:\n  "
             + "\n  ".join(profile_check.hash_mismatches),
             file=sys.stderr,
         )
-        return 1
     if profile_check.metadata_errors:
         print(
             f"Runtime profile {profile!r} has incomplete or invalid asset metadata:\n  "
@@ -188,6 +196,7 @@ def build(
     env["FDM_PYINSTALLER_CONSOLE"] = "1" if console else "0"
     env["FDM_PYINSTALLER_BOOTLOADER_DEBUG"] = "1" if bootloader_debug else "0"
     env["FDM_BUILD_PROFILE"] = profile
+    env["FDM_STRICT_ASSET_HASHES"] = "1" if strict_asset_hashes else "0"
     try:
         subprocess.run(command, cwd=root, check=True, env=env)
     except (OSError, subprocess.CalledProcessError) as exc:
@@ -225,6 +234,7 @@ def build(
     print(f"Console mode: {'on' if console else 'off'}")
     print(f"Bootloader debug: {'on' if bootloader_debug else 'off'}")
     print(f"Runtime profile: {profile}")
+    print(f"Source asset hash policy: {'strict' if strict_asset_hashes else 'warn only'}")
     print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
     print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
     print(f"Runtime assets: {app_dir / 'runtime'}")
@@ -257,12 +267,18 @@ def main() -> int:
         action="store_true",
         help="Enable PyInstaller bootloader debug output in the built executable.",
     )
+    parser.add_argument(
+        "--strict-asset-hashes",
+        action="store_true",
+        help="Fail when source runtime files differ from the hashes pinned in runtime_assets.toml.",
+    )
     args = parser.parse_args()
     return build(
         clean=not args.no_clean,
         console=args.console,
         bootloader_debug=args.bootloader_debug,
         profile=args.profile,
+        strict_asset_hashes=args.strict_asset_hashes,
     )
 
 

@@ -70,7 +70,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 return subprocess.CompletedProcess([], 0)
 
             with (
-                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.validate_installer_release", return_value=[]) as validate_mock,
                 patch("build_windows_installer.subprocess.run", side_effect=compile_installer) as mock_run,
             ):
                 result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
@@ -81,6 +81,30 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 cwd=root,
                 check=True,
             )
+            self.assertFalse(validate_mock.call_args.kwargs["strict_asset_hashes"])
+            self.assertIsInstance(validate_mock.call_args.kwargs["warnings"], list)
+
+    def test_build_installer_can_enable_strict_source_hashes(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_installer_root(root)
+
+            with (
+                patch(
+                    "build_windows_installer.validate_installer_release",
+                    return_value=["source runtime asset hash mismatch"],
+                ) as validate_mock,
+                patch("build_windows_installer.subprocess.run") as run_mock,
+            ):
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    strict_asset_hashes=True,
+                )
+
+            self.assertEqual(result, 1)
+            self.assertTrue(validate_mock.call_args.kwargs["strict_asset_hashes"])
+            run_mock.assert_not_called()
 
     def test_build_installer_blocks_when_release_gate_fails(self) -> None:
         with TemporaryDirectory() as tmpdir:

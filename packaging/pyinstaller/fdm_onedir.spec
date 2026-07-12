@@ -25,6 +25,7 @@ app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
 console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
 build_profile = os.environ.get("FDM_BUILD_PROFILE", "full").strip().lower() or "full"
+strict_asset_hashes = os.environ.get("FDM_STRICT_ASSET_HASHES", "0") == "1"
 
 
 def _collect_directory_files(root: Path, *, target_root: str) -> list[tuple[str, str]]:
@@ -46,7 +47,11 @@ datas = [
     (str(project_root / "runtime_assets.toml"), "."),
 ]
 datas += _collect_directory_files(project_root / "packaging" / "assets" / "icons", target_root="packaging/assets/icons")
-datas += collect_runtime_datas(project_root, profile=build_profile)
+datas += collect_runtime_datas(
+    project_root,
+    profile=build_profile,
+    strict_asset_hashes=strict_asset_hashes,
+)
 binaries = collect_dynamic_libs("onnxruntime")
 hiddenimports = [
     "onnxruntime",
