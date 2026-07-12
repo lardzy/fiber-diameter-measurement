@@ -9,8 +9,8 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtGui import QImage
-from PySide6.QtCore import QItemSelectionModel, Qt
+from PySide6.QtGui import QImage, QWheelEvent
+from PySide6.QtCore import QItemSelectionModel, QPoint, QPointF, Qt
 from PySide6.QtWidgets import QApplication, QToolButton
 
 from fdm.geometry import Line, Point
@@ -175,6 +175,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         state.results_height = 380
         state.inspector_records_height = 360
         window._statistics_section.setExpanded(True)
+        window._calibration_section.setExpanded(False)
         window._records_section.setExpanded(False)
         window._area_recognition_section.setExpanded(True)
         window._object_properties_section.setExpanded(True)
@@ -184,6 +185,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         defaults = WorkspaceLayoutSettings()
         self.assertEqual(window._app_settings.workspace_layout, defaults)
         self.assertFalse(window._statistics_section.isExpanded())
+        self.assertTrue(window._calibration_section.isExpanded())
         self.assertTrue(window._records_section.isExpanded())
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
@@ -193,18 +195,22 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         window.resize(1600, 900)
         window.show()
         self.app.processEvents()
-        splitter = window._inspector_splitter
-        total = splitter.height()
-        splitter.setSizes([max(100, total - 410), 300, 110])
+        section = window._records_section
+        section.setContentHeight(340)
         self.app.processEvents()
-        remembered = window._records_section.height()
-        window._records_section.setExpanded(False)
+        remembered = section.height()
+        self.assertEqual(section.contentHeight(), 340)
+        self.assertEqual(
+            window._app_settings.workspace_layout.inspector_records_height,
+            340,
+        )
+        section.setExpanded(False)
         self.app.processEvents()
-        self.assertLess(window._records_section.height(), remembered)
-        window._records_section.setExpanded(True)
+        self.assertLess(section.height(), remembered)
+        self.assertEqual(section.contentHeight(), 340)
+        section.setExpanded(True)
         self.app.processEvents()
-        self.app.processEvents()
-        self.assertAlmostEqual(window._records_section.height(), remembered, delta=16)
+        self.assertAlmostEqual(section.height(), remembered, delta=4)
 
     def test_right_and_bottom_record_views_share_state_but_keep_column_layouts(self) -> None:
         window = self._window()
@@ -260,12 +266,12 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                 self.assertEqual(window._file_toolbar.toolButtonStyle(), command_style)
                 self.assertGreaterEqual(window.tab_widget.width(), 560)
                 self.assertEqual(
-                    window._inspector_splitter.widget(0).horizontalScrollBarPolicy(),
+                    window._inspector_scroll.horizontalScrollBarPolicy(),
                     Qt.ScrollBarPolicy.ScrollBarAlwaysOff,
                 )
                 self.assertEqual(
-                    window._inspector_splitter.widget(2).horizontalScrollBarPolicy(),
-                    Qt.ScrollBarPolicy.ScrollBarAlwaysOff,
+                    window._inspector_scroll.verticalScrollBarPolicy(),
+                    Qt.ScrollBarPolicy.ScrollBarAsNeeded,
                 )
                 self.assertIsNotNone(window.findChild(QToolButton, "openCommandButton"))
                 self.assertIsNotNone(window.findChild(QToolButton, "moreCommandButton"))
@@ -326,18 +332,95 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
 
     def test_measurement_inspector_uses_locked_section_order_and_defaults(self) -> None:
         window = self._window()
-        splitter = window._inspector_splitter
-        top_content = splitter.widget(0).widget()
-        lower_content = splitter.widget(2).widget()
-        self.assertIs(top_content.layout().itemAt(0).widget(), window._statistics_section)
-        self.assertEqual(top_content.layout().itemAt(1).widget().objectName(), "calibrationBox")
-        self.assertIs(splitter.widget(1), window._records_section)
-        self.assertIs(lower_content.layout().itemAt(0).widget(), window._area_recognition_section)
-        self.assertIs(lower_content.layout().itemAt(1).widget(), window._object_properties_section)
+        content = window._inspector_scroll.widget()
+        self.assertIs(content, window._inspector_content)
+        ordered = [content.layout().itemAt(index).widget() for index in range(5)]
+        self.assertEqual(
+            ordered,
+            [
+                window._statistics_section,
+                window._calibration_section,
+                window._records_section,
+                window._area_recognition_section,
+                window._object_properties_section,
+            ],
+        )
         self.assertFalse(window._statistics_section.isExpanded())
+        self.assertTrue(window._calibration_section.isExpanded())
         self.assertTrue(window._records_section.isExpanded())
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
+
+    def test_inspector_sections_remain_contiguous_and_expansion_pushes_down(self) -> None:
+        window = self._window()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        content = window._inspector_content
+        layout = content.layout()
+        sections = (
+            window._statistics_section,
+            window._calibration_section,
+            window._records_section,
+            window._area_recognition_section,
+            window._object_properties_section,
+        )
+
+        initial_tops = [section.y() for section in sections]
+        window._statistics_section.setExpanded(True)
+        self.app.processEvents()
+        expanded_tops = [section.y() for section in sections]
+        self.assertEqual(expanded_tops[0], initial_tops[0])
+        for before, after in zip(initial_tops[1:], expanded_tops[1:], strict=True):
+            self.assertGreaterEqual(after, before)
+
+        window._records_section.setExpanded(False)
+        self.app.processEvents()
+        for current, following in zip(sections, sections[1:]):
+            gap = following.y() - (current.y() + current.height())
+            self.assertGreaterEqual(gap, 0)
+            self.assertLessEqual(gap, layout.spacing() + 1)
+
+    def test_inspector_value_editors_redirect_wheel_to_page_scroll(self) -> None:
+        window = self._window()
+        window.resize(1093, 576)
+        window.show()
+        self.app.processEvents()
+        scroll_bar = window._inspector_scroll.verticalScrollBar()
+        self.assertGreater(scroll_bar.maximum(), 0)
+        window.preset_combo.addItems(["预设 A", "预设 B"])
+        window.preset_combo.setCurrentIndex(0)
+
+        controls = (
+            (window.preset_combo, lambda widget: widget.currentIndex()),
+            (window._statistics_panel.metric_combo, lambda widget: widget.currentIndex()),
+            (window._inspector_records_pane.kind_filter, lambda widget: widget.currentIndex()),
+            (window._object_inspector._stroke_width_spin, lambda widget: widget.value()),
+            (window._object_inspector._font_size_spin, lambda widget: widget.value()),
+            (
+                window._object_inspector._font_combo,
+                lambda widget: widget.currentFont().family(),
+            ),
+        )
+        for control, getter in controls:
+            with self.subTest(control=type(control).__name__):
+                scroll_bar.setValue(0)
+                before = getter(control)
+                local = QPoint(4, 4)
+                event = QWheelEvent(
+                    QPointF(local),
+                    QPointF(control.mapToGlobal(local)),
+                    QPoint(),
+                    QPoint(0, -120),
+                    Qt.MouseButton.NoButton,
+                    Qt.KeyboardModifier.NoModifier,
+                    Qt.ScrollPhase.ScrollUpdate,
+                    False,
+                )
+                QApplication.sendEvent(control, event)
+                self.app.processEvents()
+                self.assertEqual(getter(control), before)
+                self.assertGreater(scroll_bar.value(), 0)
 
     def test_compact_record_columns_fit_the_inspector_without_horizontal_scroll(self) -> None:
         window = self._window()

@@ -201,6 +201,7 @@ class AdaptiveLayoutController(QObject):
         self._layout_settings.results_height = defaults.results_height
         self._layout_settings.inspector_records_height = defaults.inspector_records_height
         self._layout_settings.statistics_expanded = defaults.statistics_expanded
+        self._layout_settings.calibration_expanded = defaults.calibration_expanded
         self._layout_settings.records_expanded = defaults.records_expanded
         self._layout_settings.area_recognition_expanded = defaults.area_recognition_expanded
         self._layout_settings.object_properties_expanded = defaults.object_properties_expanded

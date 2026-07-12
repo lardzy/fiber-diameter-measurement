@@ -3,15 +3,19 @@ from __future__ import annotations
 from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QFontMetrics, QIcon, QMouseEvent, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
+    QAbstractScrollArea,
     QApplication,
     QComboBox,
+    QDoubleSpinBox,
     QFrame,
+    QFontComboBox,
     QHBoxLayout,
     QLabel,
     QLayout,
     QLayoutItem,
     QMenu,
     QSizePolicy,
+    QSpinBox,
     QToolButton,
     QVBoxLayout,
     QWidget,
@@ -39,10 +43,37 @@ def _application_palette_is_dark(widget: QWidget) -> bool:
     return _application_palette(widget).color(QPalette.ColorRole.Window).lightnessF() < 0.5
 
 
+def _redirect_wheel_to_inspector_scroll(widget: QWidget, event) -> None:
+    """Scroll the inspector page without letting an editor mutate its value."""
+
+    parent = widget.parentWidget()
+    while parent is not None:
+        if (
+            isinstance(parent, QAbstractScrollArea)
+            and parent.objectName() == "measurementInspectorScroll"
+        ):
+            bar = parent.verticalScrollBar()
+            pixel_delta = event.pixelDelta().y() if hasattr(event, "pixelDelta") else 0
+            angle_delta = event.angleDelta().y() if hasattr(event, "angleDelta") else 0
+            if pixel_delta:
+                amount = -int(pixel_delta)
+            elif angle_delta:
+                amount = -int(round(angle_delta / 120.0 * max(12, bar.singleStep() * 3)))
+            else:
+                amount = 0
+            if amount:
+                bar.setValue(bar.value() + amount)
+            event.accept()
+            return
+        parent = parent.parentWidget()
+    event.ignore()
+
+
 class CollapsibleSection(QFrame):
     """Restrained, keyboard-accessible section with a persistent header."""
 
     expandedChanged = Signal(bool)
+    contentHeightChanged = Signal(int)
 
     def __init__(
         self,
@@ -50,10 +81,30 @@ class CollapsibleSection(QFrame):
         *,
         expanded: bool = False,
         summary: str = "",
+        resizable: bool = False,
+        content_height: int | None = None,
+        minimum_content_height: int = 120,
+        maximum_content_height: int = 1200,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
+        self._resizable = bool(resizable)
+        self._minimum_content_height = max(40, int(minimum_content_height))
+        self._maximum_content_height = max(
+            self._minimum_content_height,
+            int(maximum_content_height),
+        )
+        initial_height = (
+            self._minimum_content_height
+            if content_height is None
+            else int(content_height)
+        )
+        self._remembered_content_height = max(
+            self._minimum_content_height,
+            min(self._maximum_content_height, initial_height),
+        )
         self.setObjectName("collapsibleSection")
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Maximum)
         root = QVBoxLayout(self)
         root.setContentsMargins(8, 6, 8, 8)
         root.setSpacing(6)
@@ -67,7 +118,10 @@ class CollapsibleSection(QFrame):
         self.toggleButton.setAccessibleName(title)
         self.summaryLabel = QLabel(summary, self)
         self.summaryLabel.setObjectName("collapsibleSectionSummary")
-        self.summaryLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.summaryLabel.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Fixed,
+        )
         self.summaryLabel.setMinimumWidth(0)
         header.addWidget(self.toggleButton)
         header.addStretch(1)
@@ -78,7 +132,13 @@ class CollapsibleSection(QFrame):
         self.contentLayout.setContentsMargins(0, 0, 0, 0)
         self.contentLayout.setSpacing(6)
         root.addWidget(self.contentWidget)
+        self.resizeHandle = _SectionResizeHandle(title, self)
+        self.resizeHandle.setVisible(self._resizable)
+        self.resizeHandle.dragDelta.connect(self._resize_content_by)
+        root.addWidget(self.resizeHandle)
         self.toggleButton.toggled.connect(self._on_toggled)
+        if self._resizable:
+            self.setContentHeight(self._remembered_content_height, emit_signal=False)
         self.setExpanded(expanded, emit_signal=False)
         self.setStyleSheet(
             "QFrame#collapsibleSection { border: 1px solid palette(mid); border-radius: 7px; }"
@@ -96,6 +156,24 @@ class CollapsibleSection(QFrame):
     def isExpanded(self) -> bool:
         return self.toggleButton.isChecked()
 
+    def contentHeight(self) -> int:
+        return int(self._remembered_content_height)
+
+    def setContentHeight(self, height: int, *, emit_signal: bool = True) -> None:
+        if not self._resizable:
+            return
+        normalized = max(
+            self._minimum_content_height,
+            min(self._maximum_content_height, int(height)),
+        )
+        changed = normalized != self._remembered_content_height
+        self._remembered_content_height = normalized
+        self.contentWidget.setFixedHeight(normalized)
+        self.contentWidget.updateGeometry()
+        self.updateGeometry()
+        if emit_signal and changed:
+            self.contentHeightChanged.emit(normalized)
+
     def setExpanded(self, expanded: bool, *, emit_signal: bool = True) -> None:
         expanded = bool(expanded)
         self.toggleButton.blockSignals(True)
@@ -107,6 +185,7 @@ class CollapsibleSection(QFrame):
 
     def setSummary(self, text: str) -> None:
         self.summaryLabel.setText(str(text or ""))
+        self.summaryLabel.setToolTip(str(text or ""))
         self.summaryLabel.setVisible(bool(str(text or "").strip()))
 
     def _on_toggled(self, expanded: bool) -> None:
@@ -118,7 +197,89 @@ class CollapsibleSection(QFrame):
             Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow
         )
         self.contentWidget.setVisible(bool(expanded))
+        self.resizeHandle.setVisible(bool(expanded) and self._resizable)
         self.summaryLabel.setVisible(bool(self.summaryLabel.text().strip()))
+        self.updateGeometry()
+
+    def _resize_content_by(self, delta: int) -> None:
+        self.setContentHeight(self._remembered_content_height + int(delta))
+
+
+class _SectionResizeHandle(QWidget):
+    """Small bottom grip that grows only its owning section downward."""
+
+    dragDelta = Signal(int)
+
+    def __init__(self, section_title: str, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._last_global_y: float | None = None
+        self.setFixedHeight(10)
+        self.setCursor(Qt.CursorShape.SizeVerCursor)
+        self.setAccessibleName(f"调整{section_title}高度")
+        self.setToolTip("上下拖动以调整此区域高度；下次启动会恢复")
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton:
+            self._last_global_y = float(event.globalPosition().y())
+            event.accept()
+            return
+        super().mousePressEvent(event)
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._last_global_y is None:
+            super().mouseMoveEvent(event)
+            return
+        current_y = float(event.globalPosition().y())
+        delta = int(round(current_y - self._last_global_y))
+        if delta:
+            self._last_global_y = current_y
+            self.dragDelta.emit(delta)
+        event.accept()
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        if event.button() == Qt.MouseButton.LeftButton and self._last_global_y is not None:
+            self._last_global_y = None
+            event.accept()
+            return
+        super().mouseReleaseEvent(event)
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        painter = QPainter(self)
+        pen = QPen(self.palette().color(QPalette.ColorRole.Mid))
+        pen.setWidth(1)
+        painter.setPen(pen)
+        y = self.rect().center().y()
+        half_width = min(34, max(8, self.width() // 5))
+        painter.drawLine(self.rect().center().x() - half_width, y, self.rect().center().x() + half_width, y)
+
+
+class NoWheelComboBox(QComboBox):
+    """Combo box that never changes selection from an incidental wheel."""
+
+    def wheelEvent(self, event) -> None:
+        _redirect_wheel_to_inspector_scroll(self, event)
+
+
+class NoWheelSpinBox(QSpinBox):
+    """Integer editor that leaves wheel gestures to the containing scroller."""
+
+    def wheelEvent(self, event) -> None:
+        _redirect_wheel_to_inspector_scroll(self, event)
+
+
+class NoWheelDoubleSpinBox(QDoubleSpinBox):
+    """Float editor that leaves wheel gestures to the containing scroller."""
+
+    def wheelEvent(self, event) -> None:
+        _redirect_wheel_to_inspector_scroll(self, event)
+
+
+class NoWheelFontComboBox(QFontComboBox):
+    """Font selector protected from accidental wheel-based changes."""
+
+    def wheelEvent(self, event) -> None:
+        _redirect_wheel_to_inspector_scroll(self, event)
 
 
 class MeasurementGroupComboBox(QComboBox):
@@ -133,11 +294,7 @@ class MeasurementGroupComboBox(QComboBox):
         self.setFocusPolicy(Qt.FocusPolicy.NoFocus)
 
     def wheelEvent(self, event) -> None:
-        view = self.view()
-        if view is not None and view.isVisible():
-            super().wheelEvent(event)
-            return
-        event.ignore()
+        _redirect_wheel_to_inspector_scroll(self, event)
 
 
 class FlowLayout(QLayout):

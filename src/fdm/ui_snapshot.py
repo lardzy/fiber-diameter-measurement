@@ -141,6 +141,7 @@ def _parse_args() -> argparse.Namespace:
             "empty",
             "measurement",
             "measurement-object",
+            "measurement-calibration-collapsed",
             "measurement-records-collapsed",
             "measurement-results",
             "acquisition",
@@ -221,6 +222,8 @@ def main() -> int:
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-object":
             widget._object_properties_section.setExpanded(True)
             widget._refresh_object_inspector()
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-calibration-collapsed":
+            widget._calibration_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":
             widget._records_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario in {"acquisition", "digital-slide"}:

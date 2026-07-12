@@ -424,12 +424,13 @@ def default_area_model_mappings() -> list[AreaModelMapping]:
 class WorkspaceLayoutSettings:
     """User-owned workbench dimensions and collapsible-panel preferences."""
 
-    version: int = 1
+    version: int = 2
     project_width: int = 260
     inspector_width: int = 340
     results_height: int = 260
     inspector_records_height: int = 260
     statistics_expanded: bool = False
+    calibration_expanded: bool = True
     records_expanded: bool = True
     area_recognition_expanded: bool = False
     object_properties_expanded: bool = False
@@ -444,12 +445,13 @@ class WorkspaceLayoutSettings:
 
     def normalized_copy(self) -> "WorkspaceLayoutSettings":
         return WorkspaceLayoutSettings(
-            version=1,
+            version=2,
             project_width=self._extent(self.project_width, 260),
             inspector_width=self._extent(self.inspector_width, 340),
             results_height=self._extent(self.results_height, 260),
             inspector_records_height=self._extent(self.inspector_records_height, 260),
             statistics_expanded=bool(self.statistics_expanded),
+            calibration_expanded=bool(self.calibration_expanded),
             records_expanded=bool(self.records_expanded),
             area_recognition_expanded=bool(self.area_recognition_expanded),
             object_properties_expanded=bool(self.object_properties_expanded),
@@ -464,6 +466,7 @@ class WorkspaceLayoutSettings:
             "results_height": normalized.results_height,
             "inspector_records_height": normalized.inspector_records_height,
             "statistics_expanded": normalized.statistics_expanded,
+            "calibration_expanded": normalized.calibration_expanded,
             "records_expanded": normalized.records_expanded,
             "area_recognition_expanded": normalized.area_recognition_expanded,
             "object_properties_expanded": normalized.object_properties_expanded,
@@ -475,7 +478,7 @@ class WorkspaceLayoutSettings:
             return cls()
         defaults = cls()
         return cls(
-            version=1,
+            version=2,
             project_width=cls._extent(payload.get("project_width"), defaults.project_width),
             inspector_width=cls._extent(payload.get("inspector_width"), defaults.inspector_width),
             results_height=cls._extent(payload.get("results_height"), defaults.results_height),
@@ -484,6 +487,9 @@ class WorkspaceLayoutSettings:
                 defaults.inspector_records_height,
             ),
             statistics_expanded=bool(payload.get("statistics_expanded", defaults.statistics_expanded)),
+            calibration_expanded=bool(
+                payload.get("calibration_expanded", defaults.calibration_expanded)
+            ),
             records_expanded=bool(payload.get("records_expanded", defaults.records_expanded)),
             area_recognition_expanded=bool(
                 payload.get("area_recognition_expanded", defaults.area_recognition_expanded)

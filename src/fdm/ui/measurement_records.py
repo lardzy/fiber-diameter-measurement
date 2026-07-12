@@ -13,7 +13,6 @@ from PySide6.QtCore import (
 )
 from PySide6.QtWidgets import (
     QAbstractItemView,
-    QComboBox,
     QHBoxLayout,
     QHeaderView,
     QLabel,
@@ -34,7 +33,27 @@ from fdm.ui.measurement_results_model import (
     MeasurementResultsModel,
     MeasurementResultsProxyModel,
 )
-from fdm.ui.widgets import FlowLayout
+from fdm.ui.widgets import FlowLayout, NoWheelComboBox
+
+
+class _MeasurementRecordsHeader(QHeaderView):
+    """Give the narrow inspector concise labels without changing shared data."""
+
+    def __init__(self, *, compact: bool, parent: QWidget | None = None) -> None:
+        super().__init__(Qt.Orientation.Horizontal, parent)
+        self._compact = bool(compact)
+
+    def display_label(self, logical_index: int, fallback: str) -> str:
+        if (
+            self._compact
+            and int(logical_index) == int(MeasurementResultColumn.RESULT_SEQUENCE)
+        ):
+            return "序号"
+        return fallback
+
+    def initStyleOptionForIndex(self, option, logical_index: int) -> None:
+        super().initStyleOptionForIndex(option, logical_index)
+        option.text = self.display_label(logical_index, option.text)
 
 
 class MeasurementRecordsController(QObject):
@@ -237,7 +256,7 @@ class MeasurementRecordsPane(QWidget):
 
     _WIDE_WIDTHS = (105, 125, 150, 90, 120, 75, 110, 125, 90, 125, 160, 120)
     HEADER_STATE_SCHEMA = "measurement-records-v2"
-    _COMPACT_WIDTHS = (48, 80, 58, 42, 54, 42, 70, 80, 60, 56, 110, 90)
+    _COMPACT_WIDTHS = (34, 80, 56, 40, 52, 40, 70, 80, 60, 54, 110, 90)
     _WIDE_VISIBLE = frozenset(
         {
             MeasurementResultColumn.RESULT_SEQUENCE,
@@ -285,14 +304,14 @@ class MeasurementRecordsPane(QWidget):
         self.search_edit = QLineEdit(self)
         self.search_edit.setPlaceholderText("搜索类别、类型、状态或 ID")
         self.search_edit.setClearButtonEnabled(True)
-        self.kind_filter = QComboBox(self)
+        self.kind_filter = NoWheelComboBox(self)
         self.kind_filter.addItem("全部类型", "")
         self.kind_filter.addItem("长度", "length")
         self.kind_filter.addItem("面积", "area")
         self.kind_filter.addItem("计数", "count")
-        self.group_filter = QComboBox(self)
+        self.group_filter = NoWheelComboBox(self)
         self.group_filter.addItem("全部类别", "")
-        self.status_filter = QComboBox(self)
+        self.status_filter = NoWheelComboBox(self)
         self.status_filter.addItem("全部状态", "")
         self.status_filter.addItem("有效", "valid")
         self.status_filter.addItem("需复核", "review")
@@ -311,6 +330,8 @@ class MeasurementRecordsPane(QWidget):
             layout.addLayout(filter_row)
 
         self.table = QTableView(self)
+        self._header = _MeasurementRecordsHeader(compact=self.compact, parent=self.table)
+        self.table.setHorizontalHeader(self._header)
         self.table.setModel(controller.proxy_model)
         self.table.setSelectionModel(controller.selection_model)
         self.table.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
@@ -329,7 +350,7 @@ class MeasurementRecordsPane(QWidget):
         self.table.setSortingEnabled(True)
         initial_sort_column, initial_sort_order = controller.sort_state
         controller.proxy_model.sort(initial_sort_column, initial_sort_order)
-        header = self.table.horizontalHeader()
+        header = self._header
         header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
         header.setStretchLastSection(True)
         header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
@@ -472,7 +493,7 @@ class MeasurementRecordsPane(QWidget):
             self._set_combo_data(self.group_filter, current)
 
     @staticmethod
-    def _set_combo_data(combo: QComboBox, value: str) -> None:
+    def _set_combo_data(combo: NoWheelComboBox, value: str) -> None:
         index = combo.findData(value)
         if index < 0 and isinstance(value, str):
             target = value.casefold()
@@ -515,7 +536,8 @@ class MeasurementRecordsPane(QWidget):
         menu = QMenu(header)
         model = self.table.model()
         for column in range(model.columnCount() if model is not None else 0):
-            label = str(model.headerData(column, Qt.Orientation.Horizontal) or column)
+            model_label = str(model.headerData(column, Qt.Orientation.Horizontal) or column)
+            label = self._header.display_label(column, model_label)
             action = menu.addAction(label)
             action.setCheckable(True)
             action.setChecked(not self.table.isColumnHidden(column))

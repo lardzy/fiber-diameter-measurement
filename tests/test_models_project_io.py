@@ -748,6 +748,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                 results_height=330,
                 inspector_records_height=280,
                 statistics_expanded=True,
+                calibration_expanded=False,
                 records_expanded=False,
                 area_recognition_expanded=True,
                 object_properties_expanded=True,
@@ -804,6 +805,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.workspace_layout.results_height, 330)
         self.assertEqual(loaded.workspace_layout.inspector_records_height, 280)
         self.assertTrue(loaded.workspace_layout.statistics_expanded)
+        self.assertFalse(loaded.workspace_layout.calibration_expanded)
         self.assertFalse(loaded.workspace_layout.records_expanded)
         self.assertTrue(loaded.workspace_layout.area_recognition_expanded)
         self.assertTrue(loaded.workspace_layout.object_properties_expanded)
@@ -912,6 +914,7 @@ class ModelsProjectIOTests(unittest.TestCase):
                     "results_height": 99_999,
                     "inspector_records_height": float("inf"),
                     "statistics_expanded": True,
+                    "calibration_expanded": False,
                 }
             }
         )
@@ -921,6 +924,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.workspace_layout.results_height, 2000)
         self.assertEqual(settings.workspace_layout.inspector_records_height, 260)
         self.assertTrue(settings.workspace_layout.statistics_expanded)
+        self.assertFalse(settings.workspace_layout.calibration_expanded)
 
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(

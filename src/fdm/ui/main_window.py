@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QInputDialog,
     QLabel,
+    QLayout,
     QListView,
     QListWidget,
     QListWidgetItem,
@@ -232,6 +233,7 @@ from fdm.ui.widgets import (
     FiberGroupListItemWidget,
     FlowLayout,
     MeasurementToolStrip,
+    NoWheelComboBox,
     OverlayToolSplitButton,
 )
 from fdm.ui.workspace import AdaptiveLayoutController, WorkspaceDockWidget, WorkspaceMode
@@ -921,13 +923,14 @@ class MainWindow(QMainWindow):
         self._measurement_group_delegate: MeasurementGroupDelegate | None = None
         self._bottom_records_pane: MeasurementRecordsPane | None = None
         self._inspector_records_pane: MeasurementRecordsPane | None = None
-        self._inspector_splitter: QSplitter | None = None
+        self._inspector_scroll: QScrollArea | None = None
+        self._inspector_content: QWidget | None = None
         self._statistics_section: CollapsibleSection | None = None
+        self._calibration_section: CollapsibleSection | None = None
         self._records_section: CollapsibleSection | None = None
         self._area_recognition_section: CollapsibleSection | None = None
         self._object_properties_section: CollapsibleSection | None = None
         self._object_inspector: CurrentObjectInspector | None = None
-        self._restoring_inspector_splitter = False
         self._statistics_panel: MeasurementStatisticsPanel | None = None
         self._statistics_detail_label: QLabel | None = None
         self._statistics_summary_table: QTableWidget | None = None
@@ -1072,10 +1075,12 @@ class MainWindow(QMainWindow):
         self._workspace_layout_save_timer.setSingleShot(True)
         self._workspace_layout_save_timer.setInterval(250)
         self._workspace_layout_save_timer.timeout.connect(self._persist_workspace_layout_preferences)
-        self._inspector_splitter_restore_timer = QTimer(self)
-        self._inspector_splitter_restore_timer.setSingleShot(True)
-        self._inspector_splitter_restore_timer.setInterval(40)
-        self._inspector_splitter_restore_timer.timeout.connect(self._restore_inspector_splitter_sizes)
+        self._inspector_layout_restore_timer = QTimer(self)
+        self._inspector_layout_restore_timer.setSingleShot(True)
+        self._inspector_layout_restore_timer.setInterval(40)
+        self._inspector_layout_restore_timer.timeout.connect(
+            self._restore_inspector_section_sizes
+        )
         self._slide_motion = MotionController(parent=self)
         self._slide_jog_timer = QTimer(self)
         self._slide_jog_timer.timeout.connect(self._perform_digital_slide_jog_repeat)
@@ -1397,7 +1402,7 @@ class MainWindow(QMainWindow):
         )
         self._adaptive_layout.layoutPreferencesChanged.connect(self._schedule_workspace_layout_save)
         self._inspector_dock.extentChanged.connect(
-            lambda _size: self._schedule_inspector_splitter_restore()
+            lambda _size: self._schedule_inspector_layout_restore()
         )
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             dock.visibilityChanged.connect(self._on_workspace_dock_visibility_changed)
@@ -2706,31 +2711,44 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(8, 8, 8, 8)
 
         state = self._app_settings.workspace_layout
-        top_container = QWidget(container)
-        top_container.setMinimumWidth(0)
-        top_layout = QVBoxLayout(top_container)
-        top_layout.setContentsMargins(0, 0, 0, 0)
-        top_layout.setSpacing(8)
+        inspector_content = QWidget(container)
+        self._inspector_content = inspector_content
+        inspector_content.setObjectName("measurementInspectorContent")
+        inspector_content.setMinimumWidth(0)
+        inspector_content.setSizePolicy(
+            QSizePolicy.Policy.Preferred,
+            QSizePolicy.Policy.Preferred,
+        )
+        inspector_layout = QVBoxLayout(inspector_content)
+        inspector_layout.setContentsMargins(0, 0, 0, 0)
+        inspector_layout.setSpacing(6)
+        inspector_layout.setHorizontalSizeConstraint(
+            QLayout.SizeConstraint.SetDefaultConstraint
+        )
+        inspector_layout.setVerticalSizeConstraint(
+            QLayout.SizeConstraint.SetMinimumSize
+        )
 
-        self._statistics_panel = MeasurementStatisticsPanel(top_container)
+        self._statistics_panel = MeasurementStatisticsPanel(inspector_content)
         self._statistics_panel.resultsRequested.connect(self._toggle_results_panel)
         self._statistics_panel.statisticsChanged.connect(self._sync_statistics_detail_views)
         self._statistics_section = CollapsibleSection(
             "实时统计",
             expanded=state.statistics_expanded,
             summary="N / 均值 / SD / CV",
-            parent=top_container,
+            parent=inspector_content,
         )
         self._statistics_section.setContentWidget(self._statistics_panel)
         self._statistics_section.expandedChanged.connect(
             lambda expanded: self._set_inspector_section_state("statistics_expanded", expanded)
         )
-        top_layout.addWidget(self._statistics_section)
+        inspector_layout.addWidget(self._statistics_section)
 
-        calibration_box = QGroupBox("标定", top_container)
-        calibration_box.setObjectName("calibrationBox")
-        calibration_layout = QVBoxLayout(calibration_box)
-        self._calibration_status_card = QFrame(calibration_box)
+        calibration_panel = QWidget(inspector_content)
+        calibration_panel.setObjectName("calibrationBox")
+        calibration_layout = QVBoxLayout(calibration_panel)
+        calibration_layout.setContentsMargins(0, 0, 0, 0)
+        self._calibration_status_card = QFrame(calibration_panel)
         self._calibration_status_card.setObjectName("calibrationStatusCard")
         card_layout = QVBoxLayout(self._calibration_status_card)
         card_layout.setContentsMargins(12, 10, 12, 10)
@@ -2778,7 +2796,7 @@ class MainWindow(QMainWindow):
         card_layout.addWidget(self._calibration_label_scroll)
 
         calibration_layout.addWidget(self._calibration_status_card)
-        self.preset_combo = QComboBox()
+        self.preset_combo = NoWheelComboBox(calibration_panel)
         self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_combo.setMinimumContentsLength(10)
@@ -2798,7 +2816,7 @@ class MainWindow(QMainWindow):
         preset_row.addWidget(self._edit_preset_button)
         preset_row.addWidget(self._delete_preset_button)
         calibration_layout.addLayout(preset_row)
-        self._calibration_preset_action_row = QWidget(calibration_box)
+        self._calibration_preset_action_row = QWidget(calibration_panel)
         preset_action_layout = QHBoxLayout(self._calibration_preset_action_row)
         preset_action_layout.setContentsMargins(0, 0, 0, 0)
         preset_action_layout.setSpacing(8)
@@ -2813,46 +2831,53 @@ class MainWindow(QMainWindow):
         self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
         preset_action_layout.addWidget(self._import_cu_preset_button, 1)
         calibration_layout.addWidget(self._calibration_preset_action_row)
-        top_layout.addWidget(calibration_box)
-        top_layout.addStretch(1)
-
-        top_scroll = QScrollArea(container)
-        top_scroll.setObjectName("measurementInspectorTopScroll")
-        top_scroll.setWidgetResizable(True)
-        top_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        top_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        top_scroll.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
-        top_scroll.setMinimumHeight(0)
-        top_scroll.setWidget(top_container)
+        self._calibration_section = CollapsibleSection(
+            "标定",
+            expanded=state.calibration_expanded,
+            summary="请先确认标定状态",
+            parent=inspector_content,
+        )
+        self._calibration_section.setContentWidget(calibration_panel)
+        self._calibration_section.expandedChanged.connect(
+            lambda expanded: self._set_inspector_section_state(
+                "calibration_expanded",
+                expanded,
+            )
+        )
+        inspector_layout.addWidget(self._calibration_section)
 
         self._inspector_records_pane = MeasurementRecordsPane(
             self._records_controller,
             compact=True,
             show_actions=True,
-            parent=container,
+            parent=inspector_content,
         )
         self._wire_records_pane(self._inspector_records_pane)
         self._records_section = CollapsibleSection(
             "测量记录",
             expanded=state.records_expanded,
             summary="0 条",
-            parent=container,
+            resizable=True,
+            content_height=state.inspector_records_height,
+            minimum_content_height=180,
+            maximum_content_height=900,
+            parent=inspector_content,
         )
         self._records_section.setContentWidget(self._inspector_records_pane)
-        self._records_section.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
         self._records_section.expandedChanged.connect(self._on_inspector_records_expanded)
+        self._records_section.contentHeightChanged.connect(
+            self._on_inspector_records_height_changed
+        )
         self._records_controller.countsChanged.connect(
             lambda visible, total: self._records_section
             and self._records_section.setSummary(
                 f"{visible}/{total} 条" if visible != total else f"{total} 条"
             )
         )
+        inspector_layout.addWidget(self._records_section)
 
-        lower_container = QWidget(container)
-        lower_layout = QVBoxLayout(lower_container)
-        lower_layout.setContentsMargins(0, 0, 0, 0)
-        lower_layout.setSpacing(8)
-        model_panel = QWidget(lower_container)
+        model_panel = QWidget(inspector_content)
+        model_panel.setObjectName("areaRecognitionBox")
         model_layout = QVBoxLayout(model_panel)
         model_layout.setContentsMargins(0, 0, 0, 0)
         self._area_auto_button = QPushButton("面积自动识别...", model_panel)
@@ -2862,16 +2887,15 @@ class MainWindow(QMainWindow):
         self._area_recognition_section = CollapsibleSection(
             "面积识别",
             expanded=state.area_recognition_expanded,
-            parent=lower_container,
+            parent=inspector_content,
         )
-        self._area_recognition_section.setObjectName("areaRecognitionBox")
         self._area_recognition_section.setContentWidget(model_panel)
         self._area_recognition_section.expandedChanged.connect(
             lambda expanded: self._set_inspector_section_state("area_recognition_expanded", expanded)
         )
-        lower_layout.addWidget(self._area_recognition_section)
+        inspector_layout.addWidget(self._area_recognition_section)
 
-        self._object_inspector = CurrentObjectInspector(lower_container)
+        self._object_inspector = CurrentObjectInspector(inspector_content)
         self._object_inspector.appearanceChangeRequested.connect(self._on_object_appearance_change_requested)
         self._object_inspector.measurementGroupChangeRequested.connect(
             self._on_measurement_group_change_requested
@@ -2883,37 +2907,34 @@ class MainWindow(QMainWindow):
             "当前对象属性",
             expanded=state.object_properties_expanded,
             summary="未选择对象",
-            parent=lower_container,
+            parent=inspector_content,
         )
         self._object_properties_section.setContentWidget(self._object_inspector)
         self._object_properties_section.expandedChanged.connect(
             lambda expanded: self._set_inspector_section_state("object_properties_expanded", expanded)
         )
-        lower_layout.addWidget(self._object_properties_section)
-        lower_layout.addStretch(1)
+        inspector_layout.addWidget(self._object_properties_section)
+        inspector_layout.addStretch(1)
 
-        lower_scroll = QScrollArea(container)
-        lower_scroll.setObjectName("measurementInspectorLowerScroll")
-        lower_scroll.setWidgetResizable(True)
-        lower_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        lower_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        lower_scroll.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
-        lower_scroll.setMinimumHeight(0)
-        lower_scroll.setWidget(lower_container)
-
-        self._inspector_splitter = QSplitter(Qt.Orientation.Vertical, container)
-        self._inspector_splitter.setObjectName("measurementInspectorSplitter")
-        self._inspector_splitter.setChildrenCollapsible(False)
-        self._inspector_splitter.addWidget(top_scroll)
-        self._inspector_splitter.addWidget(self._records_section)
-        self._inspector_splitter.addWidget(lower_scroll)
-        self._inspector_splitter.setStretchFactor(0, 1)
-        self._inspector_splitter.setStretchFactor(1, 2)
-        self._inspector_splitter.setStretchFactor(2, 0)
-        self._inspector_splitter.splitterMoved.connect(self._on_inspector_splitter_moved)
-        self._right_standard_panel = self._inspector_splitter
-        layout.addWidget(self._inspector_splitter, 1)
-        QTimer.singleShot(0, self._restore_inspector_splitter_sizes)
+        inspector_scroll = QScrollArea(container)
+        self._inspector_scroll = inspector_scroll
+        inspector_scroll.setObjectName("measurementInspectorScroll")
+        inspector_scroll.setWidgetResizable(True)
+        inspector_scroll.setMinimumWidth(280)
+        inspector_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        inspector_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        inspector_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        inspector_scroll.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
+        inspector_scroll.setWidget(inspector_content)
+        self._right_standard_panel = inspector_scroll
+        layout.addWidget(inspector_scroll, 1)
+        QTimer.singleShot(0, self._restore_inspector_section_sizes)
 
         self._acquisition_right_panel = self._build_acquisition_right_panel(container)
         self._acquisition_right_panel.hide()
@@ -2952,7 +2973,8 @@ class MainWindow(QMainWindow):
 
     def _set_inspector_section_state(self, field_name: str, expanded: bool) -> None:
         setattr(self._app_settings.workspace_layout, field_name, bool(expanded))
-        self._schedule_inspector_splitter_restore()
+        if self._inspector_content is not None:
+            self._inspector_content.updateGeometry()
         self._schedule_workspace_layout_save()
 
     def _on_inspector_records_expanded(self, expanded: bool) -> None:
@@ -2960,30 +2982,21 @@ class MainWindow(QMainWindow):
         if section is None:
             return
         state = self._app_settings.workspace_layout
-        if not expanded and section.height() > 120:
-            adaptive = self._adaptive_layout
-            splitter = self._inspector_splitter
-            results_visible = bool(self._results_dock is not None and self._results_dock.isVisible())
-            unconstrained = bool(
-                splitter is not None
-                and splitter.height() >= section.height() + 220
-                and (adaptive is None or not adaptive.is_compact)
-                and not results_visible
-            )
-            if unconstrained:
-                state.inspector_records_height = section.height()
         state.records_expanded = bool(expanded)
         if expanded:
-            section.setMinimumHeight(72)
-            section.setMaximumHeight(16_777_215)
-            self._schedule_inspector_splitter_restore(immediate=True)
-        else:
-            section.setMinimumHeight(0)
-            section.setMaximumHeight(max(42, section.toggleButton.sizeHint().height() + 22))
+            section.setContentHeight(state.inspector_records_height, emit_signal=False)
+        if self._inspector_content is not None:
+            self._inspector_content.updateGeometry()
         self._schedule_workspace_layout_save()
 
-    def _schedule_inspector_splitter_restore(self, *, immediate: bool = False) -> None:
-        timer = getattr(self, "_inspector_splitter_restore_timer", None)
+    def _on_inspector_records_height_changed(self, height: int) -> None:
+        self._app_settings.workspace_layout.inspector_records_height = int(height)
+        if self._inspector_content is not None:
+            self._inspector_content.updateGeometry()
+        self._schedule_workspace_layout_save()
+
+    def _schedule_inspector_layout_restore(self, *, immediate: bool = False) -> None:
+        timer = getattr(self, "_inspector_layout_restore_timer", None)
         if timer is None:
             return
         try:
@@ -2993,90 +3006,21 @@ class MainWindow(QMainWindow):
             # destroyed.  There is no layout left to restore in that case.
             return
 
-    def _on_inspector_splitter_moved(self, _position: int, _index: int) -> None:
-        if self._restoring_inspector_splitter:
-            return
+    def _restore_inspector_section_sizes(self) -> None:
         section = self._records_section
-        if section is None or not section.isExpanded():
+        if section is None:
             return
-        height = int(section.height())
-        if height >= 120:
-            self._app_settings.workspace_layout.inspector_records_height = height
-            self._schedule_workspace_layout_save()
-
-    def _restore_inspector_splitter_sizes(self) -> None:
-        splitter = self._inspector_splitter
-        section = self._records_section
-        if splitter is None or section is None or splitter.height() <= 0:
-            return
-        self._restoring_inspector_splitter = True
-        try:
-            total = int(splitter.height())
-            if total <= 0:
-                return
-            state = self._app_settings.workspace_layout
-            top = 180 if state.statistics_expanded else 70
-            if state.object_properties_expanded:
-                lower = 340
-                lower_minimum = 140
-            elif state.area_recognition_expanded:
-                lower = 160
-                lower_minimum = 96
-            else:
-                # Reserve a compact scrollable strip for the two collapsed
-                # headers without donating the high-frequency records region
-                # to empty scroll-area space.
-                lower = 96 if total >= 520 else 60
-                lower_minimum = 60 if total >= 520 else 48
-            if section.isExpanded():
-                section.setMinimumHeight(72)
-                section.setMaximumHeight(16_777_215)
-                records = max(120, int(state.inspector_records_height))
-                records_minimum = 120
-            else:
-                section.setMinimumHeight(0)
-                records = max(42, section.toggleButton.sizeHint().height() + 22)
-                records_minimum = records
-                section.setMaximumHeight(records)
-
-            # Temporary height pressure (small screen, bottom results opened,
-            # or an expanded object editor) may clamp the visible records
-            # region, but must not overwrite its wide-layout preference.
-            overflow = max(0, top + records + lower - total)
-            reduction = min(overflow, max(0, records - records_minimum))
-            records -= reduction
-            overflow -= reduction
-            reduction = min(overflow, max(0, lower - lower_minimum))
-            lower -= reduction
-            overflow -= reduction
-            reduction = min(overflow, max(0, top - 48))
-            top -= reduction
-            overflow -= reduction
-            if overflow:
-                # Extremely short unsupported windows still degrade safely.
-                reduction = min(overflow, max(0, records - 72))
-                records -= reduction
-                overflow -= reduction
-                lower = max(36, lower - overflow)
-            remaining = max(0, total - top - records - lower)
-            if remaining:
-                # Keep the ordered sections visually contiguous on tall
-                # screens.  Once the top calibration/statistics content has a
-                # practical viewport, surplus space belongs below the final
-                # section instead of becoming a gap above the records header.
-                top_target = 620 if state.statistics_expanded else 330
-                top_growth = min(remaining, max(0, top_target - top))
-                top += top_growth
-                remaining -= top_growth
-                lower += remaining
-            splitter.setSizes([top, records, lower])
-        finally:
-            self._restoring_inspector_splitter = False
+        state = self._app_settings.workspace_layout
+        section.setContentHeight(state.inspector_records_height, emit_signal=False)
+        state.inspector_records_height = section.contentHeight()
+        if self._inspector_content is not None:
+            self._inspector_content.updateGeometry()
 
     def _restore_inspector_section_defaults(self) -> None:
         defaults = self._app_settings.workspace_layout
         sections = (
             (self._statistics_section, defaults.statistics_expanded),
+            (self._calibration_section, defaults.calibration_expanded),
             (self._records_section, defaults.records_expanded),
             (self._area_recognition_section, defaults.area_recognition_expanded),
             (self._object_properties_section, defaults.object_properties_expanded),
@@ -3084,7 +3028,7 @@ class MainWindow(QMainWindow):
         for section, expanded in sections:
             if section is not None:
                 section.setExpanded(expanded)
-        QTimer.singleShot(0, self._restore_inspector_splitter_sizes)
+        QTimer.singleShot(0, self._restore_inspector_section_sizes)
 
     def _build_acquisition_right_panel(self, parent: QWidget) -> QWidget:
         scroll = QScrollArea(parent)
@@ -3838,6 +3782,11 @@ class MainWindow(QMainWindow):
         self._calibration_status_summary_label.setToolTip("\n".join(part for part in [title, summary, details] if part))
         self._calibration_status_summary_label.setStyleSheet(f"color: {text_color};")
         self.calibration_label = self._calibration_status_summary_label
+        if self._calibration_section is not None:
+            self._calibration_section.setSummary(title)
+            self._calibration_section.summaryLabel.setToolTip(
+                "\n".join(part for part in (title, summary, details) if part)
+            )
         if self._calibration_details_label is not None:
             self._calibration_details_label.setText(details)
             self._calibration_details_label.setToolTip(details)
@@ -3958,7 +3907,7 @@ class MainWindow(QMainWindow):
         super().resizeEvent(event)
         if self._adaptive_layout is not None:
             self._adaptive_layout.end_window_resize(self.width())
-        self._schedule_inspector_splitter_restore()
+        self._schedule_inspector_layout_restore()
 
     def _on_workspace_dock_visibility_changed(self, _visible: bool) -> None:
         if self._adaptive_layout is not None:
@@ -3990,7 +3939,7 @@ class MainWindow(QMainWindow):
         if self._adaptive_layout is not None:
             self._adaptive_layout.toggle_results()
         self._on_workspace_dock_visibility_changed(False)
-        self._schedule_inspector_splitter_restore(immediate=True)
+        self._schedule_inspector_layout_restore(immediate=True)
         QTimer.singleShot(0, self._refresh_distribution_if_visible)
 
     def _reset_workspace_layout(self) -> None:

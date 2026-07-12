@@ -267,6 +267,27 @@ class MeasurementResultsModelTests(unittest.TestCase):
 
         self.assertIs(wide.table.model(), compact.table.model())
         self.assertIs(wide.table.selectionModel(), compact.table.selectionModel())
+        source_label = str(
+            controller.proxy_model.headerData(
+                int(MeasurementResultColumn.RESULT_SEQUENCE),
+                Qt.Orientation.Horizontal,
+            )
+        )
+        self.assertEqual(source_label, "纤维结果序号")
+        self.assertEqual(
+            compact._header.display_label(
+                int(MeasurementResultColumn.RESULT_SEQUENCE),
+                source_label,
+            ),
+            "序号",
+        )
+        self.assertEqual(
+            wide._header.display_label(
+                int(MeasurementResultColumn.RESULT_SEQUENCE),
+                source_label,
+            ),
+            "纤维结果序号",
+        )
         wide.search_edit.setText("cotton")
         self.assertEqual(compact.search_edit.text(), "cotton")
         self.assertEqual(controller.proxy_model.rowCount(), 1)

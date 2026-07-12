@@ -7,16 +7,12 @@ from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QColor, QFont
 from PySide6.QtWidgets import (
     QColorDialog,
-    QComboBox,
-    QDoubleSpinBox,
-    QFontComboBox,
     QFormLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
     QPlainTextEdit,
     QPushButton,
-    QSpinBox,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -32,6 +28,12 @@ from fdm.models import (
 )
 from fdm.settings import AppSettings
 from fdm.ui.measurement_results_model import format_measurement_mode, format_measurement_status
+from fdm.ui.widgets import (
+    NoWheelComboBox,
+    NoWheelDoubleSpinBox,
+    NoWheelFontComboBox,
+    NoWheelSpinBox,
+)
 
 
 class CurrentObjectInspector(QWidget):
@@ -83,7 +85,7 @@ class CurrentObjectInspector(QWidget):
 
         self._metadata_group = QGroupBox("对象属性", self._editor_page)
         metadata_form = QFormLayout(self._metadata_group)
-        self._group_combo = QComboBox(self._metadata_group)
+        self._group_combo = NoWheelComboBox(self._metadata_group)
         self._group_combo.activated.connect(self._request_group_change)
         metadata_form.addRow("所属类别", self._group_combo)
         page_layout.addWidget(self._metadata_group)
@@ -92,14 +94,14 @@ class CurrentObjectInspector(QWidget):
         appearance_form = QFormLayout(self._appearance_group)
         self._appearance_form = appearance_form
         self._stroke_color_button = self._make_color_button("stroke_color")
-        self._stroke_width_spin = QDoubleSpinBox(self._appearance_group)
+        self._stroke_width_spin = NoWheelDoubleSpinBox(self._appearance_group)
         self._stroke_width_spin.setRange(0.5, 24.0)
         self._stroke_width_spin.setDecimals(1)
         self._stroke_width_spin.setSingleStep(0.5)
         self._stroke_width_spin.editingFinished.connect(
             lambda: self._request_appearance_change("stroke_width", self._stroke_width_spin.value())
         )
-        self._marker_scale_spin = QDoubleSpinBox(self._appearance_group)
+        self._marker_scale_spin = NoWheelDoubleSpinBox(self._appearance_group)
         self._marker_scale_spin.setRange(0.25, 4.0)
         self._marker_scale_spin.setDecimals(2)
         self._marker_scale_spin.setSingleStep(0.25)
@@ -107,11 +109,11 @@ class CurrentObjectInspector(QWidget):
             lambda: self._request_appearance_change("marker_scale", self._marker_scale_spin.value())
         )
         self._text_color_button = self._make_color_button("text_color")
-        self._font_combo = QFontComboBox(self._appearance_group)
+        self._font_combo = NoWheelFontComboBox(self._appearance_group)
         self._font_combo.activated.connect(
             lambda _index: self._request_font_change(self._font_combo.currentFont())
         )
-        self._font_size_spin = QSpinBox(self._appearance_group)
+        self._font_size_spin = NoWheelSpinBox(self._appearance_group)
         self._font_size_spin.setRange(8, 144)
         self._font_size_spin.editingFinished.connect(
             lambda: self._request_appearance_change("font_size", self._font_size_spin.value())

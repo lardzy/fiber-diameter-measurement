@@ -12,7 +12,6 @@ from PySide6.QtCore import (
     Slot,
 )
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QGridLayout,
     QHBoxLayout,
@@ -34,6 +33,7 @@ from fdm.ui.statistics_distribution import (
     DistributionRecordFilterRequest as DistributionRecordFilterRequest,
     StatisticsDistributionWidget,
 )
+from fdm.ui.widgets import NoWheelComboBox
 
 
 def metric_for_tool_mode(tool_mode: str) -> MeasurementMetric:
@@ -176,23 +176,27 @@ class MeasurementStatisticsPanel(QWidget):
         root.addLayout(header)
 
         filter_row = QHBoxLayout()
-        self.metric_combo = QComboBox(self)
+        self.metric_combo = NoWheelComboBox(self)
         self.metric_combo.addItem("自动", None)
         self.metric_combo.addItem("长度", MeasurementMetric.LENGTH)
         self.metric_combo.addItem("面积", MeasurementMetric.AREA)
         self.metric_combo.addItem("计数", MeasurementMetric.COUNT)
         self.metric_combo.setMinimumWidth(0)
         self.metric_combo.setMinimumContentsLength(4)
-        self.metric_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.metric_combo.setSizeAdjustPolicy(
+            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.metric_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.metric_combo.currentIndexChanged.connect(self.refresh)
-        self.scope_combo = QComboBox(self)
+        self.scope_combo = NoWheelComboBox(self)
         self.scope_combo.addItem("当前类别", StatisticsScope.CURRENT_CATEGORY)
         self.scope_combo.addItem("当前图片", StatisticsScope.CURRENT_DOCUMENT)
         self.scope_combo.addItem("整个项目", StatisticsScope.PROJECT)
         self.scope_combo.setMinimumWidth(0)
         self.scope_combo.setMinimumContentsLength(4)
-        self.scope_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
+        self.scope_combo.setSizeAdjustPolicy(
+            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
         self.scope_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.scope_combo.currentIndexChanged.connect(self.refresh)
         filter_row.addWidget(self.metric_combo, 1)
