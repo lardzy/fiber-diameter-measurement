@@ -304,8 +304,8 @@ target = "runtime/area-infer/app/engine.py"
 group = "area-infer"
 feature = "area-inference"
 required = true
-size = 36740
-sha256 = "6ad716c2a930ea434f184464197a3bcf19cacccb51b4c4079a7cc6fffc4b523f"
+size = 40255
+sha256 = "2876ded96056ee25adb7bf2af7948f34f001c8f15824bb0a7e870be50d7734db"
 license = "GPL-3.0-only"
 
 [[assets]]

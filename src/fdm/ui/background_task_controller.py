@@ -9,6 +9,10 @@ from PySide6.QtGui import QImage
 
 from fdm.models import ImageDocument, ProjectState
 from fdm.settings import AppSettings
+from fdm.services.area_inference import (
+    DEFAULT_AREA_INFERENCE_TIMEOUT_S,
+    area_inference_diagnostic_hint,
+)
 from fdm.ui.area_inference_worker import AreaBatchInferenceWorker, AreaInferenceRequest
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryWorker
 from fdm.ui.image_loader import ImageBatchLoaderWorker, ImageLoadRequest
@@ -289,13 +293,11 @@ class BackgroundTaskController(QObject):
         progress = self._host._create_progress_dialog(
             title="面积自动识别",
             label_text=(
-                f"正在识别 (1/{len(requests)}) · 已完成 0/{len(requests)}\n"
+                f"正在识别 (1/{len(requests)}) · 已完成 0/{len(requests)}"
+                f" · 最长等待 {DEFAULT_AREA_INFERENCE_TIMEOUT_S:g} 秒\n"
                 f"{Path(requests[0].image_path).name}"
             ),
-            # A single inference has no meaningful percentage before the
-            # model returns.  Use Qt's indeterminate progress animation while
-            # the current image is running instead of presenting a frozen 0%.
-            maximum=0,
+            maximum=len(requests),
         )
         self._area_infer_progress_dialog = progress
 
@@ -338,10 +340,11 @@ class BackgroundTaskController(QObject):
         if self._area_infer_progress_dialog is None:
             return
         completed = state.completed_count
-        self._area_infer_progress_dialog.setMaximum(0)
-        self._area_infer_progress_dialog.setValue(0)
+        self._area_infer_progress_dialog.setMaximum(total)
+        self._area_infer_progress_dialog.setValue(completed)
         self._area_infer_progress_dialog.setLabelText(
-            f"正在识别 ({index}/{total}) · 已完成 {completed}/{total}\n{Path(path).name}"
+            f"正在识别 ({index}/{total}) · 已完成 {completed}/{total}"
+            f" · 最长等待 {DEFAULT_AREA_INFERENCE_TIMEOUT_S:g} 秒\n{Path(path).name}"
         )
 
     def _on_area_inference_succeeded(
@@ -426,7 +429,12 @@ class BackgroundTaskController(QObject):
         self._close_area_progress()
 
         if state.failures:
-            self._host._show_area_inference_warning("以下图片识别失败:\n" + "\n".join(state.failures[:10]))
+            self._host._show_area_inference_warning(
+                "以下图片识别失败:\n"
+                + "\n".join(state.failures[:10])
+                + "\n\n"
+                + area_inference_diagnostic_hint()
+            )
         if completed_count > 0:
             self._host._show_status_message(
                 f"面积自动识别已处理 {completed_count - failed_count} / {completed_count} 张图片",

@@ -276,7 +276,7 @@ class _PreviewHost:
 
 @unittest.skipUnless(QT_CONTROLLER_AVAILABLE, "requires PySide6")
 class BackgroundTaskControllerTests(unittest.TestCase):
-    def test_area_progress_is_indeterminate_while_current_image_is_running(self) -> None:
+    def test_area_progress_reports_real_completed_count_and_timeout(self) -> None:
         host = _BackgroundHost()
         controller = BackgroundTaskController(host, ThreadTaskManager(parent=_app()))
         request = AreaInferenceRequest(
@@ -303,9 +303,10 @@ class BackgroundTaskControllerTests(unittest.TestCase):
             request.generation,
         )
 
-        self.assertEqual(progress.maximum, 0)
+        self.assertEqual(progress.maximum, 1)
         self.assertEqual(progress.value, 0)
         self.assertIn("已完成 0/1", progress.label)
+        self.assertIn("最长等待 180 秒", progress.label)
 
     def test_area_result_requires_matching_request_id_and_generation(self) -> None:
         document = ImageDocument(id="area-current", path="/tmp/current.png", image_size=(20, 10))
@@ -371,10 +372,6 @@ class BackgroundTaskControllerTests(unittest.TestCase):
         worker.succeeded.connect(lambda *args: succeeded.append(args))
         worker.finished.connect(lambda *args: finished.append(args))
 
-        class Session:
-            def close(self) -> None:
-                return
-
         class Result:
             instances = ["late"]
 
@@ -382,7 +379,7 @@ class BackgroundTaskControllerTests(unittest.TestCase):
             worker.cancel()
             return Result()
 
-        with patch("fdm.ui.area_inference_worker.AreaInferenceService.create_batch_session", return_value=Session()), patch(
+        with patch(
             "fdm.ui.area_inference_worker.AreaInferenceService.infer_image",
             side_effect=infer,
         ):

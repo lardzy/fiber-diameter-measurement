@@ -15,6 +15,14 @@ import uuid
 from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.cancellation import CancellationToken
 from fdm.geometry import Point
+from fdm.runtime_logging import (
+    RUNTIME_LOG_BACKUP_COUNT,
+    RUNTIME_LOG_MAX_BYTES,
+    _rotate_runtime_log_if_needed,
+    append_runtime_log,
+    area_worker_log_path,
+    runtime_log_path,
+)
 from fdm.settings import AppSettings
 
 
@@ -28,6 +36,8 @@ MAX_AREA_INSTANCES = 10_000
 MAX_AREA_STDERR_CHARS = 1024 * 1024
 PERSISTENT_HANDSHAKE_TIMEOUT_S = 5.0
 ALLOW_UNTRUSTED_AREA_MODELS_ENV = "FDM_ALLOW_UNTRUSTED_AREA_MODELS"
+AREA_WORKER_DIAGNOSTICS_ENV = "FDM_AREA_WORKER_DIAGNOSTICS"
+AREA_WORKER_LOG_PATH_ENV = "FDM_AREA_WORKER_LOG_PATH"
 
 LABEL_ALIAS: dict[str, str] = {
     "粘": "粘纤",
@@ -93,7 +103,32 @@ def _area_worker_environment() -> dict[str, str]:
     environment = dict(os.environ)
     environment["PYTHONUTF8"] = "1"
     environment["PYTHONIOENCODING"] = "utf-8"
+    if _area_worker_diagnostics_enabled():
+        environment[AREA_WORKER_DIAGNOSTICS_ENV] = "1"
+        environment[AREA_WORKER_LOG_PATH_ENV] = (
+            str(environment.get(AREA_WORKER_LOG_PATH_ENV) or "").strip()
+            or str(area_worker_log_path())
+        )
     return environment
+
+
+def _area_worker_diagnostics_enabled() -> bool:
+    if getattr(sys, "frozen", False):
+        return True
+    token = str(os.environ.get(AREA_WORKER_DIAGNOSTICS_ENV, "")).strip().lower()
+    return token in {"1", "true", "yes", "on"}
+
+
+def _append_area_diagnostic(title: str, details: str) -> None:
+    if _area_worker_diagnostics_enabled():
+        append_runtime_log(title, details)
+
+
+def area_inference_diagnostic_hint() -> str:
+    return (
+        f"主程序日志: {runtime_log_path()}\n"
+        f"Worker 阶段日志: {area_worker_log_path()}"
+    )
 
 
 @dataclass(slots=True)
@@ -624,6 +659,24 @@ class AreaInferenceService:
         timeout_s: float,
         cancellation_token: CancellationToken | None,
     ) -> tuple[int, str, str]:
+        request_id = str(payload.get("request_id") or "")
+        _append_area_diagnostic(
+            "Area worker spawn requested",
+            (
+                f"request_id={request_id}, transport=one_shot, "
+                f"command={worker_command!r}"
+            ),
+        )
+        if _area_worker_diagnostics_enabled():
+            try:
+                _rotate_runtime_log_if_needed(
+                    area_worker_log_path(),
+                    incoming_bytes=64 * 1024,
+                    max_bytes=RUNTIME_LOG_MAX_BYTES,
+                    backup_count=RUNTIME_LOG_BACKUP_COUNT,
+                )
+            except OSError:
+                pass
         try:
             process = subprocess.Popen(
                 worker_command,
@@ -637,19 +690,45 @@ class AreaInferenceService:
                 **self._subprocess_kwargs(),
             )
         except OSError as exc:
+            _append_area_diagnostic(
+                "Area worker spawn failed",
+                f"request_id={request_id}, error={exc}",
+            )
             raise AreaInferenceError(f"无法启动面积识别 worker: {exc}") from exc
 
         request_text = json.dumps(payload, ensure_ascii=True, allow_nan=False)
         started_at = time.monotonic()
+        process_id = getattr(process, "pid", "unknown")
+        _append_area_diagnostic(
+            "Area worker spawned",
+            f"request_id={request_id}, pid={process_id}",
+        )
         first_communicate = True
         while True:
             if cancellation_token is not None and cancellation_token.is_cancelled:
                 _terminate_then_kill(process)
+                _append_area_diagnostic(
+                    "Area worker cancelled",
+                    (
+                        f"request_id={request_id}, pid={process_id}, "
+                        f"elapsed_s={time.monotonic() - started_at:.3f}"
+                    ),
+                )
                 raise AreaInferenceCancelledError("面积识别已取消。")
             elapsed_s = time.monotonic() - started_at
             if elapsed_s >= timeout_s:
                 _terminate_then_kill(process)
-                raise AreaInferenceTimeoutError(f"面积识别超过 {timeout_s:g} 秒，已终止 worker。")
+                _append_area_diagnostic(
+                    "Area worker timed out",
+                    (
+                        f"request_id={request_id}, pid={process_id}, "
+                        f"elapsed_s={elapsed_s:.3f}"
+                    ),
+                )
+                raise AreaInferenceTimeoutError(
+                    f"面积识别超过 {timeout_s:g} 秒，已终止 Worker。\n"
+                    f"request_id: {request_id}\n{area_inference_diagnostic_hint()}"
+                )
             wait_s = min(AREA_INFERENCE_POLL_INTERVAL_S, timeout_s - elapsed_s)
             try:
                 stdout, stderr = process.communicate(
@@ -662,6 +741,13 @@ class AreaInferenceService:
 
         stdout = stdout or ""
         stderr = stderr or ""
+        _append_area_diagnostic(
+            "Area worker exited",
+            (
+                f"request_id={request_id}, pid={process_id}, returncode={process.returncode}, "
+                f"elapsed_s={time.monotonic() - started_at:.3f}, stderr_tail={stderr[-2000:]!r}"
+            ),
+        )
         if len(stdout.encode("utf-8", errors="replace")) > MAX_AREA_RESPONSE_BYTES:
             raise AreaInferenceProtocolError(
                 f"面积识别响应超过 {MAX_AREA_RESPONSE_BYTES // (1024 * 1024)} MiB 上限。"

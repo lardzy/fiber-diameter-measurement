@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from time import monotonic
 from uuid import uuid4
 
 from PySide6.QtCore import QObject, Signal, Slot
@@ -11,6 +12,7 @@ from fdm.services.area_inference import (
     AreaInferenceCancelledError,
     AreaInferenceService,
 )
+from fdm.runtime_logging import append_runtime_log
 from fdm.settings import AppSettings
 
 
@@ -65,14 +67,29 @@ class AreaBatchInferenceWorker(QObject):
     @Slot()
     def run(self) -> None:
         service = AreaInferenceService()
-        worker_session = service.create_batch_session(self._settings)
         total = len(self._requests)
         completed_count = 0
         failed_count = 0
+        append_runtime_log(
+            "Area inference batch started",
+            (
+                f"generation={self._generation}, total={total}, transport=one_shot, "
+                f"device={self._settings.area_infer_device}, timeout_s={self._timeout_s:g}"
+            ),
+        )
         try:
             for index, request in enumerate(self._requests, start=1):
                 if self._cancellation.token.is_cancelled:
                     break
+                request_started_at = monotonic()
+                append_runtime_log(
+                    "Area inference request started",
+                    (
+                        f"request_id={request.request_id}, generation={request.generation}, "
+                        f"index={index}/{total}, model={request.model_file}, "
+                        f"image={request.image_path}"
+                    ),
+                )
                 self.progress.emit(
                     index,
                     total,
@@ -88,7 +105,6 @@ class AreaBatchInferenceWorker(QObject):
                         settings=self._settings,
                         timeout_s=self._timeout_s,
                         cancellation_token=self._cancellation.token,
-                        worker_session=worker_session,
                     )
                     if self._cancellation.token.is_cancelled:
                         break
@@ -98,9 +114,24 @@ class AreaBatchInferenceWorker(QObject):
                         request.request_id,
                         request.generation,
                     )
+                    append_runtime_log(
+                        "Area inference request completed",
+                        (
+                            f"request_id={request.request_id}, elapsed_s="
+                            f"{monotonic() - request_started_at:.3f}, "
+                            f"instances={len(result.instances)}"
+                        ),
+                    )
                     if self._cancellation.token.is_cancelled:
                         break
                 except AreaInferenceCancelledError:
+                    append_runtime_log(
+                        "Area inference request cancelled",
+                        (
+                            f"request_id={request.request_id}, elapsed_s="
+                            f"{monotonic() - request_started_at:.3f}"
+                        ),
+                    )
                     self._cancellation.cancel()
                     break
                 except Exception as exc:  # noqa: BLE001
@@ -114,12 +145,26 @@ class AreaBatchInferenceWorker(QObject):
                         request.request_id,
                         request.generation,
                     )
+                    append_runtime_log(
+                        "Area inference request failed",
+                        (
+                            f"request_id={request.request_id}, elapsed_s="
+                            f"{monotonic() - request_started_at:.3f}, error={exc}"
+                        ),
+                    )
                 completed_count += 1
         finally:
-            worker_session.close()
-        self.finished.emit(
-            self._cancellation.token.is_cancelled,
-            completed_count,
-            failed_count,
-            self._generation,
-        )
+            cancelled = self._cancellation.token.is_cancelled
+            append_runtime_log(
+                "Area inference batch finished",
+                (
+                    f"generation={self._generation}, completed={completed_count}/{total}, "
+                    f"failed={failed_count}, cancelled={cancelled}"
+                ),
+            )
+            self.finished.emit(
+                cancelled,
+                completed_count,
+                failed_count,
+                self._generation,
+            )

@@ -355,46 +355,36 @@ def _probe_area_worker(root: Path) -> dict[str, Any]:
     model_files = sorted(weights_dir.glob("*.pth"))
     if not model_files:
         raise RuntimeError("no packaged area model")
-    model_file = model_files[0]
+    preferred_model = weights_dir / "b_v1_1.3.pth"
+    model_file = preferred_model if preferred_model.is_file() else model_files[0]
     request_id = "self-check-infer"
-    with tempfile.TemporaryDirectory(prefix="fdm-self-check-") as tmpdir:
+    with tempfile.TemporaryDirectory(prefix="fdm-面积识别-self-check-") as tmpdir:
         from PIL import Image
 
-        image_path = Path(tmpdir) / "probe.png"
-        Image.new("RGB", (64, 64), color=(255, 255, 255)).save(image_path, format="PNG")
-        requests = [
-            {
-                "protocol": AREA_WORKER_PROTOCOL,
-                "version": AREA_WORKER_PROTOCOL_VERSION,
-                "request_id": "self-check-hello",
-                "op": "hello",
+        image_path = Path(tmpdir) / "面积识别自检.png"
+        Image.new("RGB", (1280, 960), color=(255, 255, 255)).save(image_path, format="PNG")
+        request = {
+            "protocol": AREA_WORKER_PROTOCOL,
+            "version": AREA_WORKER_PROTOCOL_VERSION,
+            "request_id": request_id,
+            "op": "infer",
+            "image": {"path": str(image_path)},
+            "model": {"name": model_file.stem, "file": model_file.name},
+            "runtime": {
+                "weights_dir": str(weights_dir),
+                "vendor_root": str(vendor_root),
+                "device": "cpu",
+                "require_trusted_weights": True,
+                "verify_trusted_weights": True,
             },
-            {
-                "protocol": AREA_WORKER_PROTOCOL,
-                "version": AREA_WORKER_PROTOCOL_VERSION,
-                "request_id": request_id,
-                "op": "infer",
-                "image": {"path": str(image_path)},
-                "model": {"name": model_file.stem, "file": model_file.name},
-                "runtime": {
-                    "weights_dir": str(weights_dir),
-                    "vendor_root": str(vendor_root),
-                    "device": "cpu",
-                    "require_trusted_weights": True,
-                    "verify_trusted_weights": True,
-                },
-                "options": {
-                    "include_overlay": False,
-                    "inference": {"top_k": 5, "nms_top_k": 20},
-                },
+            "options": {
+                "include_overlay": False,
+                "inference": {"top_k": 5, "nms_top_k": 20},
             },
-        ]
-        payload = "".join(
-            json.dumps(item, ensure_ascii=False, allow_nan=False) + "\n"
-            for item in requests
-        )
+        }
+        payload = json.dumps(request, ensure_ascii=True, allow_nan=False)
         completed = subprocess.run(
-            [str(worker), "--persistent"],
+            [str(worker)],
             input=payload,
             text=True,
             encoding="utf-8",
@@ -404,25 +394,25 @@ def _probe_area_worker(root: Path) -> dict[str, Any]:
             check=False,
         )
     lines = [line for line in completed.stdout.splitlines() if line.strip()]
-    if completed.returncode != 0 or len(lines) != 2:
+    if completed.returncode != 0 or len(lines) != 1:
         raise RuntimeError(
             f"worker protocol failed rc={completed.returncode}, lines={len(lines)}, "
             f"stderr={completed.stderr[-1000:]}"
         )
-    responses = [json.loads(line) for line in lines]
-    if any(response.get("protocol") != AREA_WORKER_PROTOCOL for response in responses):
+    response = json.loads(lines[0])
+    if response.get("protocol") != AREA_WORKER_PROTOCOL:
         raise RuntimeError("worker returned an invalid protocol envelope")
-    if responses[0].get("request_id") != "self-check-hello" or responses[0].get("ok") is not True:
-        raise RuntimeError("worker persistent hello failed")
-    if responses[1].get("request_id") != request_id or responses[1].get("ok") is not True:
-        raise RuntimeError(f"worker CPU inference failed: {responses[1].get('error')}")
-    result = responses[1].get("result")
+    if response.get("request_id") != request_id or response.get("ok") is not True:
+        raise RuntimeError(f"worker CPU inference failed: {response.get('error')}")
+    result = response.get("result")
     if not isinstance(result, dict) or not isinstance(result.get("instances"), list):
         raise RuntimeError("worker inference result schema is invalid")
     return {
-        "mode": "persistent",
+        "mode": "one_shot",
         "device": "cpu",
         "model_file": model_file.name,
+        "image_size": [1280, 960],
+        "unicode_path": True,
         "instance_count": len(result["instances"]),
     }
 

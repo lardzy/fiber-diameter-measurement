@@ -41,6 +41,12 @@ def runtime_log_path() -> Path:
     return log_dir / "startup.log"
 
 
+def area_worker_log_path() -> Path:
+    """Return the diagnostic trace used by the packaged area worker."""
+
+    return runtime_log_path().with_name("area-worker.log")
+
+
 def append_runtime_log(title: str, details: str = "") -> None:
     try:
         log_path = runtime_log_path()

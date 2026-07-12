@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from contextlib import redirect_stdout
+from datetime import datetime
 from pathlib import Path
 from queue import Empty, Queue
 from threading import Thread
@@ -22,6 +23,9 @@ PERSISTENT_IDLE_TIMEOUT_S = 60.0
 PERSISTENT_MAX_RSS_BYTES = 1536 * 1024 * 1024
 MAX_DESKTOP_IMAGE_BYTES = 48 * 1024 * 1024
 ALLOW_UNTRUSTED_AREA_MODELS_ENV = "FDM_ALLOW_UNTRUSTED_AREA_MODELS"
+AREA_WORKER_DIAGNOSTICS_ENV = "FDM_AREA_WORKER_DIAGNOSTICS"
+AREA_WORKER_LOG_PATH_ENV = "FDM_AREA_WORKER_LOG_PATH"
+AREA_WORKER_REQUEST_ID_ENV = "FDM_AREA_WORKER_REQUEST_ID"
 
 
 def _configure_protocol_streams() -> tuple[TextIO, TextIO, TextIO]:
@@ -43,6 +47,52 @@ def _configure_protocol_streams() -> tuple[TextIO, TextIO, TextIO]:
         if callable(reconfigure):
             reconfigure(encoding="utf-8", errors=errors)
     return sys.stdin, sys.stdout, sys.stderr
+
+
+def _trace_worker_stage(
+    stage: str,
+    *,
+    request_id: str = "",
+    diagnostic_stream: TextIO | None = None,
+    **details: object,
+) -> None:
+    payload = {
+        "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+        "pid": os.getpid(),
+        "request_id": str(request_id or ""),
+        "stage": str(stage),
+        "details": {key: value for key, value in details.items()},
+    }
+    try:
+        line = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+    except (TypeError, ValueError):
+        line = json.dumps(
+            {
+                "timestamp": payload["timestamp"],
+                "pid": payload["pid"],
+                "request_id": payload["request_id"],
+                "stage": payload["stage"],
+                "details": {"serialization_error": True},
+            },
+            ensure_ascii=False,
+            allow_nan=False,
+        )
+    stream = diagnostic_stream or sys.stderr
+    try:
+        print(f"area_worker_stage {line}", file=stream, flush=True)
+    except (OSError, ValueError):
+        pass
+    enabled = str(os.environ.get(AREA_WORKER_DIAGNOSTICS_ENV, "")).strip().lower()
+    log_token = str(os.environ.get(AREA_WORKER_LOG_PATH_ENV, "")).strip()
+    if enabled not in {"1", "true", "yes", "on"} or not log_token:
+        return
+    try:
+        log_path = Path(log_token)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+    except OSError:
+        return
 
 
 class _RequestFailure(RuntimeError):
@@ -175,6 +225,7 @@ def _execute_request(
     payload: dict[str, object],
     *,
     worker_runtime: _AreaWorkerRuntime | None = None,
+    diagnostic_stream: TextIO | None = None,
 ) -> dict[str, object]:
     image = _mapping(payload, "image")
     model = _mapping(payload, "model")
@@ -192,6 +243,7 @@ def _execute_request(
     verify_trusted_weights = True
     include_overlay = options.get("include_overlay", False)
     inference_options = options.get("inference", {})
+    request_id = str(payload.get("request_id") or "")
 
     if not image_path.is_file():
         raise _RequestFailure("invalid_request", f"未找到图片: {image_path}")
@@ -211,8 +263,27 @@ def _execute_request(
     if not isinstance(inference_options, dict):
         raise _RequestFailure("invalid_request", "options.inference 必须是对象。")
 
+    _trace_worker_stage(
+        "image_read_started",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        image_path=str(image_path),
+    )
     raw = image_path.read_bytes()
+    _trace_worker_stage(
+        "image_read_completed",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        image_bytes=len(raw),
+    )
     runtime_state = worker_runtime or _AreaWorkerRuntime()
+    _trace_worker_stage(
+        "engine_prepare_started",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        model_file=model_file,
+        device=infer_device,
+    )
     engine = runtime_state.engine_for(
         vendor_root=vendor_root,
         weights_dir=weights_dir,
@@ -220,13 +291,32 @@ def _execute_request(
         require_trusted_weights=require_trusted_weights,
         verify_trusted_weights=verify_trusted_weights,
     )
+    _trace_worker_stage(
+        "engine_prepare_completed",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+    )
     engine_options = dict(inference_options)
     engine_options["include_overlay"] = include_overlay
+    os.environ[AREA_WORKER_REQUEST_ID_ENV] = request_id
+    _trace_worker_stage(
+        "inference_started",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        model_file=model_file,
+        device=infer_device,
+    )
     result = engine.infer(
         model_name=model_name,
         model_file=model_file,
         image_bytes_b64=base64.b64encode(raw).decode("ascii"),
         inference_options=engine_options,
+    )
+    _trace_worker_stage(
+        "inference_completed",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        instance_count=(len(result.get("instances", [])) if isinstance(result, dict) else -1),
     )
     if not isinstance(result, dict):
         raise RuntimeError("area engine 返回值不是对象。")
@@ -290,6 +380,12 @@ def _process_request(
     diagnostic_stream: TextIO,
 ) -> tuple[dict[str, object], int]:
     request_id = _request_id_from_raw(raw_request)
+    _trace_worker_stage(
+        "request_received",
+        request_id=request_id,
+        diagnostic_stream=diagnostic_stream,
+        request_bytes=len(raw_request.encode("utf-8", errors="replace")),
+    )
     try:
         request_id, payload = _parse_request(raw_request)
         if payload.get("op") == "hello":
@@ -301,9 +397,26 @@ def _process_request(
                 "max_rss_bytes": PERSISTENT_MAX_RSS_BYTES,
             }
         else:
-            result = _execute_request(payload, worker_runtime=worker_runtime)
+            result = _execute_request(
+                payload,
+                worker_runtime=worker_runtime,
+                diagnostic_stream=diagnostic_stream,
+            )
+        _trace_worker_stage(
+            "response_ready",
+            request_id=request_id,
+            diagnostic_stream=diagnostic_stream,
+            ok=True,
+        )
         return _response(request_id=request_id, ok=True, result=result), 0
     except _RequestFailure as exc:
+        _trace_worker_stage(
+            "request_failed",
+            request_id=request_id,
+            diagnostic_stream=diagnostic_stream,
+            error_code=exc.code,
+            error=str(exc),
+        )
         print(str(exc), file=diagnostic_stream)
         return (
             _response(
@@ -315,6 +428,13 @@ def _process_request(
             exc.exit_code,
         )
     except ModuleNotFoundError as exc:
+        _trace_worker_stage(
+            "request_failed",
+            request_id=request_id,
+            diagnostic_stream=diagnostic_stream,
+            error_code="runtime_unavailable",
+            error=str(exc),
+        )
         traceback.print_exc(file=diagnostic_stream)
         return (
             _response(
@@ -336,6 +456,13 @@ def _process_request(
             error_code, exit_code = "invalid_request", 2
         else:
             error_code, exit_code = "internal_error", 1
+        _trace_worker_stage(
+            "request_failed",
+            request_id=request_id,
+            diagnostic_stream=diagnostic_stream,
+            error_code=error_code,
+            error=str(exc),
+        )
         return (
             _response(
                 request_id=request_id,

@@ -3,9 +3,11 @@ from __future__ import annotations
 import base64
 from collections import OrderedDict
 from collections.abc import Mapping
+from datetime import datetime
 import gc
 import hashlib
 import io
+import json
 import os
 import secrets
 import sys
@@ -26,6 +28,33 @@ from app.model_metadata import (
     parse_model_classes,
     resolve_model_classes,
 )
+
+
+AREA_WORKER_DIAGNOSTICS_ENV = "FDM_AREA_WORKER_DIAGNOSTICS"
+AREA_WORKER_LOG_PATH_ENV = "FDM_AREA_WORKER_LOG_PATH"
+AREA_WORKER_REQUEST_ID_ENV = "FDM_AREA_WORKER_REQUEST_ID"
+
+
+def _trace_area_stage(stage: str, **details: object) -> None:
+    enabled = str(os.environ.get(AREA_WORKER_DIAGNOSTICS_ENV, "")).strip().lower()
+    log_token = str(os.environ.get(AREA_WORKER_LOG_PATH_ENV, "")).strip()
+    if enabled not in {"1", "true", "yes", "on"} or not log_token:
+        return
+    payload = {
+        "timestamp": datetime.now().isoformat(timespec="milliseconds"),
+        "pid": os.getpid(),
+        "request_id": str(os.environ.get(AREA_WORKER_REQUEST_ID_ENV, "")),
+        "stage": str(stage),
+        "details": {key: value for key, value in details.items()},
+    }
+    try:
+        line = json.dumps(payload, ensure_ascii=False, allow_nan=False)
+        log_path = Path(log_token)
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(line + "\n")
+    except (OSError, TypeError, ValueError):
+        return
 
 
 PALETTE: list[tuple[int, int, int]] = [
@@ -187,6 +216,7 @@ class AreaNativeEngine:
 
     def _ensure_runtime(self) -> None:
         if self._runtime_loaded:
+            _trace_area_stage("runtime_import_cached")
             return
 
         if not self.vendor_root.exists():
@@ -196,6 +226,7 @@ class AreaNativeEngine:
         if vendor_str not in sys.path:
             sys.path.insert(0, vendor_str)
 
+        _trace_area_stage("runtime_import_started", vendor_root=str(self.vendor_root))
         try:
             import torch
             from data import cfg
@@ -214,6 +245,11 @@ class AreaNativeEngine:
         self._yolact_base_config = yolact_base_config
         self._resolve_runtime_device()
         self._runtime_loaded = True
+        _trace_area_stage(
+            "runtime_import_completed",
+            torch_version=str(getattr(self._torch, "__version__", "unknown")),
+            effective_device=self._effective_device_key,
+        )
 
     def _build_cfg(self, class_names: list[str]) -> Any:
         dataset = self._yolact_base_config.dataset.copy(
@@ -264,6 +300,7 @@ class AreaNativeEngine:
         return normalized
 
     def _decode_image(self, image_bytes_b64: str) -> np.ndarray:
+        _trace_area_stage("image_decode_started", encoded_chars=len(image_bytes_b64))
         try:
             raw = base64.b64decode(image_bytes_b64, validate=True)
             if len(raw) > self._max_image_bytes:
@@ -298,6 +335,12 @@ class AreaNativeEngine:
                 "infer_request_too_large",
                 f"decoded_image_pixels_exceeded:{pixels}>{self._max_image_pixels}",
             )
+        _trace_area_stage(
+            "image_decode_completed",
+            width=int(width),
+            height=int(height),
+            pixels=pixels,
+        )
         return image_bgr
 
     def _validate_mask_working_budget(self, *, pixels: int, top_k: int) -> None:
@@ -377,8 +420,18 @@ class AreaNativeEngine:
             expected_sha256,
         )
         if cached == fingerprint:
+            _trace_area_stage(
+                "weight_hash_cached",
+                model_file=path.name,
+                size_bytes=int(stat.st_size),
+            )
             return True
         digest = hashlib.sha256()
+        _trace_area_stage(
+            "weight_hash_started",
+            model_file=path.name,
+            size_bytes=int(stat.st_size),
+        )
         try:
             with path.open("rb") as handle:
                 for chunk in iter(lambda: handle.read(4 * 1024 * 1024), b""):
@@ -392,11 +445,13 @@ class AreaNativeEngine:
                 f"weight_sha256_mismatch:{path.name}:{actual_sha256}",
             )
         self._verified_weights[path] = fingerprint
+        _trace_area_stage("weight_hash_completed", model_file=path.name)
         return True
 
     def _load_state_dict_safely(self, path: Path) -> OrderedDict[str, Any]:
         """Load a tensor-only checkpoint without invoking arbitrary pickle code."""
 
+        _trace_area_stage("checkpoint_load_started", model_file=path.name)
         try:
             payload = self._torch.load(
                 str(path),
@@ -432,6 +487,11 @@ class AreaNativeEngine:
                 "infer_model_load_failed",
                 f"safe_weights_only_invalid_state_dict:{path.name}:all parameter keys must be strings",
             )
+        _trace_area_stage(
+            "checkpoint_load_completed",
+            model_file=path.name,
+            parameter_count=len(payload),
+        )
         return OrderedDict(payload.items())
 
     def _evict_runtime(self, runtime: _ModelRuntime) -> None:
@@ -462,6 +522,11 @@ class AreaNativeEngine:
         return (Path(model_file).name, class_names, self._effective_device_key)
 
     def _load_model(self, *, model_name: str, model_file: str) -> _ModelRuntime:
+        _trace_area_stage(
+            "model_load_started",
+            model_name=model_name,
+            model_file=Path(model_file).name,
+        )
         weight_path = self._resolve_weight_path(model_file)
         trusted_metadata = self._verify_weight_path(
             model_name=model_name,
@@ -476,6 +541,7 @@ class AreaNativeEngine:
         if cache_key in self._cache:
             runtime = self._cache.pop(cache_key)
             self._cache[cache_key] = runtime
+            _trace_area_stage("model_load_cached", model_file=runtime.model_file)
             return runtime
 
         cfg_obj = self._build_cfg(list(classes))
@@ -523,6 +589,12 @@ class AreaNativeEngine:
         )
         self._cache[cache_key] = runtime
         self._enforce_cache_limit()
+        _trace_area_stage(
+            "model_load_completed",
+            model_file=runtime.model_file,
+            device=runtime.device,
+            class_count=len(runtime.class_names),
+        )
         return runtime
 
     def health(self) -> dict[str, Any]:
@@ -671,15 +743,25 @@ class AreaNativeEngine:
 
         frame = self._torch.from_numpy(image_bgr).to(self._effective_device).float().unsqueeze(0)
         batch = transform(frame)
+        _trace_area_stage(
+            "model_forward_started",
+            width=int(w),
+            height=int(h),
+            device=self._effective_device_key,
+        )
         with self._torch.no_grad():
             preds = net(batch)
-        return self._postprocess_fn(
+        _trace_area_stage("model_forward_completed")
+        _trace_area_stage("postprocess_started")
+        result = self._postprocess_fn(
             preds,
             w,
             h,
             score_threshold=float(options["score_threshold"]),
             crop_masks=True,
         )
+        _trace_area_stage("postprocess_completed")
+        return result
 
     def infer(
         self,
@@ -690,6 +772,11 @@ class AreaNativeEngine:
         inference_options: dict[str, Any] | None,
     ) -> dict[str, Any]:
         t0 = time.time()
+        _trace_area_stage(
+            "engine_infer_started",
+            model_name=model_name,
+            model_file=Path(model_file).name,
+        )
         with self._lock:
             runtime = self._load_model(model_name=model_name, model_file=model_file)
             options = self._normalize_options(inference_options)
@@ -815,6 +902,11 @@ class AreaNativeEngine:
             }
             if overlay_png_b64 is not None:
                 response["overlay_png_b64"] = overlay_png_b64
+            _trace_area_stage(
+                "engine_infer_completed",
+                elapsed_ms=float(response["engine_meta"]["elapsed_ms"]),
+                instance_count=len(instances),
+            )
             return response
 
 

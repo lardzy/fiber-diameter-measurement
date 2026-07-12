@@ -176,6 +176,51 @@ class AreaInferenceTests(unittest.TestCase):
         self.assertEqual(response["error"]["code"], "invalid_request")
         self.assertIn("F:/Downloads/示例显微图像/样本.jpg", response["error"]["message"])
 
+    def test_area_worker_persists_request_phase_trace_when_diagnostics_are_enabled(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            trace_path = Path(tmp) / "area-worker.log"
+            request = {
+                "protocol": AREA_WORKER_PROTOCOL,
+                "version": AREA_WORKER_PROTOCOL_VERSION,
+                "request_id": "trace-request",
+                "op": "infer",
+                "image": {"path": str(Path(tmp) / "missing-image.png")},
+                "model": {"name": "棉", "file": "model.pth"},
+                "runtime": {
+                    "weights_dir": str(Path(tmp) / "weights"),
+                    "vendor_root": str(Path(tmp) / "vendor"),
+                    "device": "cpu",
+                },
+                "options": {"include_overlay": False, "inference": {}},
+            }
+            diagnostics = StringIO()
+            with patch.dict(
+                os.environ,
+                {
+                    "FDM_AREA_WORKER_DIAGNOSTICS": "1",
+                    "FDM_AREA_WORKER_LOG_PATH": str(trace_path),
+                },
+            ):
+                response, exit_code = area_worker_module._process_request(
+                    json.dumps(request, ensure_ascii=False),
+                    worker_runtime=area_worker_module._AreaWorkerRuntime(),
+                    diagnostic_stream=diagnostics,
+                )
+
+            records = [
+                json.loads(line)
+                for line in trace_path.read_text(encoding="utf-8").splitlines()
+                if line.strip()
+            ]
+
+        self.assertEqual(exit_code, 2)
+        self.assertFalse(response["ok"])
+        self.assertEqual(
+            [record["stage"] for record in records],
+            ["request_received", "request_failed"],
+        )
+        self.assertTrue(all(record["request_id"] == "trace-request" for record in records))
+
     def test_custom_model_opt_in_is_source_only_and_explicit(self) -> None:
         service = AreaInferenceService()
         process = _ProtocolProcess()
@@ -770,12 +815,42 @@ class AreaInferenceTests(unittest.TestCase):
 
         from unittest.mock import patch
 
-        with patch("fdm.ui.area_inference_worker.AreaInferenceService.infer_image", return_value=_FakeResult()):
+        with patch(
+            "fdm.ui.area_inference_worker.AreaInferenceService.infer_image",
+            return_value=_FakeResult(),
+        ) as infer_mock:
             worker.run()
 
         self.assertEqual(emitted_progress, [(1, 1, "/tmp/fake-image.png", "request-1", 7)])
         self.assertEqual(emitted_success, [("doc-1", ["ok"], "request-1", 7)])
         self.assertEqual(emitted_finished, [(False, 1, 0, 7)])
+        self.assertNotIn("worker_session", infer_mock.call_args.kwargs)
+
+    @unittest.skipUnless(QT_AREA_WORKER_AVAILABLE, "requires Qt area worker")
+    def test_area_batch_timeout_emits_failure_and_terminal_signal(self) -> None:
+        request = AreaInferenceRequest(
+            document_id="doc-timeout",
+            image_path="/tmp/timeout-image.png",
+            model_name="棉",
+            model_file="model.pth",
+            request_id="timeout-request",
+            generation=3,
+        )
+        worker = AreaBatchInferenceWorker([request], settings=AppSettings())
+        failures: list[tuple[str, str, str, str, int]] = []
+        finished: list[tuple[bool, int, int, int]] = []
+        worker.failed.connect(lambda *args: failures.append(args))
+        worker.finished.connect(lambda *args: finished.append(args))
+
+        with patch(
+            "fdm.ui.area_inference_worker.AreaInferenceService.infer_image",
+            side_effect=AreaInferenceTimeoutError("面积识别超过 180 秒"),
+        ):
+            worker.run()
+
+        self.assertEqual(len(failures), 1)
+        self.assertIn("超过 180 秒", failures[0][2])
+        self.assertEqual(finished, [(False, 1, 1, 3)])
 
     @unittest.skipUnless(QT_AREA_WORKER_AVAILABLE, "requires Qt area worker")
     def test_area_batch_worker_cancel_is_thread_safe_and_stops_current_subprocess(self) -> None:

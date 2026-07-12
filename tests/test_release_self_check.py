@@ -84,42 +84,31 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             (root / "runtime" / "area-infer" / "vendor" / "yolact").mkdir(parents=True)
 
             def run_worker(command, **kwargs) -> subprocess.CompletedProcess[str]:
-                requests = [json.loads(line) for line in kwargs["input"].splitlines()]
-                self.assertEqual(
-                    [request["protocol"] for request in requests],
-                    [AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL],
-                )
-                self.assertEqual(
-                    [request["version"] for request in requests],
-                    [AREA_WORKER_PROTOCOL_VERSION, AREA_WORKER_PROTOCOL_VERSION],
-                )
-                responses = [
-                    {
-                        "protocol": AREA_WORKER_PROTOCOL,
-                        "version": AREA_WORKER_PROTOCOL_VERSION,
-                        "request_id": "self-check-hello",
-                        "ok": True,
-                        "result": {"status": "ready"},
-                    },
-                    {
-                        "protocol": AREA_WORKER_PROTOCOL,
-                        "version": AREA_WORKER_PROTOCOL_VERSION,
-                        "request_id": "self-check-infer",
-                        "ok": True,
-                        "result": {"instances": []},
-                    },
-                ]
+                self.assertEqual(command, [str(root / "FiberAreaWorker.exe")])
+                request = json.loads(kwargs["input"])
+                self.assertEqual(request["protocol"], AREA_WORKER_PROTOCOL)
+                self.assertEqual(request["version"], AREA_WORKER_PROTOCOL_VERSION)
+                self.assertIn("面积识别自检.png", request["image"]["path"])
+                response = {
+                    "protocol": AREA_WORKER_PROTOCOL,
+                    "version": AREA_WORKER_PROTOCOL_VERSION,
+                    "request_id": "self-check-infer",
+                    "ok": True,
+                    "result": {"instances": []},
+                }
                 return subprocess.CompletedProcess(
                     command,
                     0,
-                    stdout="\n".join(json.dumps(item) for item in responses) + "\n",
+                    stdout=json.dumps(response) + "\n",
                     stderr="",
                 )
 
             with patch("fdm.release_manifest.subprocess.run", side_effect=run_worker):
                 result = _probe_area_worker(root)
 
-            self.assertEqual(result["mode"], "persistent")
+            self.assertEqual(result["mode"], "one_shot")
+            self.assertTrue(result["unicode_path"])
+            self.assertEqual(result["image_size"], [1280, 960])
             self.assertEqual(result["instance_count"], 0)
 
     def test_development_wheel_without_runtime_assets_reports_capability_hint(self) -> None:
