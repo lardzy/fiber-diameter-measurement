@@ -2634,9 +2634,18 @@ class DocumentCanvas(QWidget):
     def _hit_test_area_measurement(self, image_point: Point) -> str | None:
         if self._document is None:
             return None
-        tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
+        area_measurements = [
+            measurement
+            for measurement in self._document.measurements
+            if measurement.measurement_kind == "area"
+        ]
+        tolerance = max(
+            (self._measurement_hit_tolerance(measurement) for measurement in area_measurements),
+            default=max(5.0, 10.0 / max(self._zoom, 0.001)),
+        )
         selected_measurement_id = self._document.view_state.selected_measurement_id
         for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
+            measurement_tolerance = self._measurement_hit_tolerance(measurement)
             outline_points, fill_rings, bounds = area_geometry_for_display(
                 measurement,
                 selected=measurement.id == selected_measurement_id,
@@ -2645,25 +2654,29 @@ class DocumentCanvas(QWidget):
                 continue
             if bounds is None:
                 continue
-            if not point_near_bounds(image_point, bounds, tolerance):
+            if not point_near_bounds(image_point, bounds, measurement_tolerance):
                 continue
             if fill_rings:
                 if point_in_area_rings(image_point, fill_rings):
                     return measurement.id
-                if point_to_area_rings_edge_distance(image_point, fill_rings) <= tolerance:
+                if point_to_area_rings_edge_distance(image_point, fill_rings) <= measurement_tolerance:
                     return measurement.id
                 continue
             if point_in_polygon(image_point, outline_points):
                 return measurement.id
-            if point_to_polygon_edge_distance(image_point, outline_points) <= tolerance:
+            if point_to_polygon_edge_distance(image_point, outline_points) <= measurement_tolerance:
                 return measurement.id
         return None
 
     def _hit_test_measurement(self, image_point: Point) -> str | None:
         if self._document is None:
             return None
-        tolerance = max(5.0, 10.0 / max(self._zoom, 0.001))
+        tolerance = max(
+            (self._measurement_hit_tolerance(measurement) for measurement in self._document.measurements),
+            default=max(5.0, 10.0 / max(self._zoom, 0.001)),
+        )
         for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
+            measurement_tolerance = self._measurement_hit_tolerance(measurement)
             if measurement.measurement_kind == "line":
                 line = measurement.effective_line()
                 bounds = (
@@ -2672,24 +2685,42 @@ class DocumentCanvas(QWidget):
                     max(line.start.x, line.end.x),
                     max(line.start.y, line.end.y),
                 )
-                if not point_near_bounds(image_point, bounds, tolerance):
+                if not point_near_bounds(image_point, bounds, measurement_tolerance):
                     continue
-                if self._point_to_segment_distance(image_point, line) <= tolerance:
+                if self._point_to_segment_distance(image_point, line) <= measurement_tolerance:
                     return measurement.id
                 continue
             if measurement.measurement_kind == "polyline" and len(measurement.polyline_px) >= 2:
                 xs = [point.x for point in measurement.polyline_px]
                 ys = [point.y for point in measurement.polyline_px]
                 bounds = (min(xs), min(ys), max(xs), max(ys))
-                if not point_near_bounds(image_point, bounds, tolerance):
+                if not point_near_bounds(image_point, bounds, measurement_tolerance):
                     continue
-                if point_to_polyline_distance(image_point, measurement.polyline_px) <= tolerance:
+                if point_to_polyline_distance(image_point, measurement.polyline_px) <= measurement_tolerance:
                     return measurement.id
                 continue
             if measurement.measurement_kind == "count" and measurement.point_px is not None:
-                if distance(image_point, measurement.point_px) <= tolerance:
+                if distance(image_point, measurement.point_px) <= measurement_tolerance:
                     return measurement.id
         return None
+
+    def _measurement_hit_tolerance(self, measurement: Measurement) -> float:
+        zoom = max(self._zoom, 0.001)
+        base = max(5.0, 10.0 / zoom)
+        appearance = measurement.appearance
+        if measurement.measurement_kind == "count":
+            marker_scale = (
+                appearance.marker_scale
+                if appearance is not None and appearance.marker_scale is not None
+                else 1.0
+            )
+            return max(base, (5.5 * marker_scale) / zoom)
+        stroke_width = (
+            appearance.stroke_width
+            if appearance is not None and appearance.stroke_width is not None
+            else 2.0
+        )
+        return max(base, ((stroke_width * 0.6) + 3.0) / zoom)
 
     def _selected_endpoint_tolerance(self) -> float:
         return max(4.0, 9.0 / max(self._zoom, 0.001))
@@ -2744,6 +2775,12 @@ class DocumentCanvas(QWidget):
 
     def _overlay_shape_hit(self, annotation: OverlayAnnotation, image_point: Point, tolerance: float) -> bool:
         kind = annotation.normalized_kind()
+        if annotation.appearance is not None and annotation.appearance.stroke_width is not None:
+            tolerance = max(
+                tolerance,
+                ((annotation.appearance.stroke_width * 0.5) + 3.0)
+                / max(self._zoom, 0.001),
+            )
         min_x, min_y, max_x, max_y = overlay_annotation_bounds(annotation)
         bounds = (min_x, min_y, max_x, max_y)
         if not point_near_bounds(image_point, bounds, tolerance):

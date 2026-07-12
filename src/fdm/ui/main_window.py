@@ -76,6 +76,7 @@ from fdm.models import (
     FiberGroup,
     ImageDocument,
     Measurement,
+    ObjectAppearanceOverride,
     OverlayAnnotation,
     OverlayAnnotationKind,
     ProjectGroupTemplate,
@@ -195,6 +196,8 @@ from fdm.ui.measurement_results_model import (
     format_measurement_mode as _format_measurement_mode_label,
     format_measurement_status as _format_measurement_status_label,
 )
+from fdm.ui.measurement_records import MeasurementRecordsController, MeasurementRecordsPane
+from fdm.ui.object_inspector import CurrentObjectInspector
 from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.project_session_controller import (
@@ -207,7 +210,12 @@ from fdm.ui.reference_instance_worker import ReferenceInstancePropagationRequest
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest
 from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
-from fdm.ui.statistics_widgets import MeasurementStatisticsPanel, StatisticsDistributionWidget
+from fdm.ui.statistics_widgets import (
+    DistributionRecordFilterRequest,
+    MeasurementStatisticsPanel,
+    StatisticsDistributionWidget,
+    metric_for_tool_mode,
+)
 from fdm.ui.thread_task_manager import (
     TASK_AREA_INFERENCE,
     TASK_FIBER_QUICK_COMMIT_GEOMETRY,
@@ -220,6 +228,7 @@ from fdm.ui.thread_task_manager import (
     ThreadTaskManager,
 )
 from fdm.ui.widgets import (
+    CollapsibleSection,
     FiberGroupListItemWidget,
     FlowLayout,
     MeasurementToolStrip,
@@ -906,20 +915,25 @@ class MainWindow(QMainWindow):
         self._results_kind_filter: QComboBox | None = None
         self._results_status_filter: QComboBox | None = None
         self._results_group_filter: QComboBox | None = None
-        self._measurement_results_model: MeasurementResultsModel | None = None
-        self._measurement_results_proxy: MeasurementResultsProxyModel | None = None
+        self._records_controller = MeasurementRecordsController(self)
+        self._measurement_results_model: MeasurementResultsModel | None = self._records_controller.source_model
+        self._measurement_results_proxy: MeasurementResultsProxyModel | None = self._records_controller.proxy_model
         self._measurement_group_delegate: MeasurementGroupDelegate | None = None
+        self._bottom_records_pane: MeasurementRecordsPane | None = None
+        self._inspector_records_pane: MeasurementRecordsPane | None = None
+        self._inspector_splitter: QSplitter | None = None
+        self._statistics_section: CollapsibleSection | None = None
+        self._records_section: CollapsibleSection | None = None
+        self._area_recognition_section: CollapsibleSection | None = None
+        self._object_properties_section: CollapsibleSection | None = None
+        self._object_inspector: CurrentObjectInspector | None = None
+        self._restoring_inspector_splitter = False
         self._statistics_panel: MeasurementStatisticsPanel | None = None
         self._statistics_detail_label: QLabel | None = None
         self._statistics_summary_table: QTableWidget | None = None
         self._statistics_category_table: QTableWidget | None = None
         self._distribution_widget: StatisticsDistributionWidget | None = None
-        self._pending_distribution_snapshot = None
         self._project_summary_label: QLabel | None = None
-        self._current_category_property_label: QLabel | None = None
-        self._current_scale_anchor_property_label: QLabel | None = None
-        self._edit_current_category_button: QPushButton | None = None
-        self._pick_scale_anchor_button: QPushButton | None = None
         self._left_standard_splitter: QSplitter | None = None
         self._digital_slide_left_panel: QWidget | None = None
         self._right_standard_panel: QWidget | None = None
@@ -1054,10 +1068,14 @@ class MainWindow(QMainWindow):
         self._statistics_refresh_timer.setSingleShot(True)
         self._statistics_refresh_timer.setInterval(75)
         self._statistics_refresh_timer.timeout.connect(self._refresh_statistics_ui)
-        self._distribution_refresh_timer = QTimer(self)
-        self._distribution_refresh_timer.setSingleShot(True)
-        self._distribution_refresh_timer.setInterval(200)
-        self._distribution_refresh_timer.timeout.connect(self._apply_pending_distribution_snapshot)
+        self._workspace_layout_save_timer = QTimer(self)
+        self._workspace_layout_save_timer.setSingleShot(True)
+        self._workspace_layout_save_timer.setInterval(250)
+        self._workspace_layout_save_timer.timeout.connect(self._persist_workspace_layout_preferences)
+        self._inspector_splitter_restore_timer = QTimer(self)
+        self._inspector_splitter_restore_timer.setSingleShot(True)
+        self._inspector_splitter_restore_timer.setInterval(40)
+        self._inspector_splitter_restore_timer.timeout.connect(self._restore_inspector_splitter_sizes)
         self._slide_motion = MotionController(parent=self)
         self._slide_jog_timer = QTimer(self)
         self._slide_jog_timer.timeout.connect(self._perform_digital_slide_jog_repeat)
@@ -1148,6 +1166,13 @@ class MainWindow(QMainWindow):
         )
         self.project_session_controller = ProjectSessionController(self)
         self.export_controller = ExportController(self)
+
+        self._records_controller.groupChangeRequested.connect(
+            self._on_measurement_group_change_requested
+        )
+        self._records_controller.selection_model.selectionChanged.connect(
+            self._on_measurement_selection_changed
+        )
 
         self._build_ui()
         self._refresh_theme_sensitive_icons()
@@ -1367,11 +1392,15 @@ class MainWindow(QMainWindow):
             project_dock=self._project_dock,
             inspector_dock=self._inspector_dock,
             results_dock=self._results_dock,
+            layout_settings=self._app_settings.workspace_layout,
             parent=self,
+        )
+        self._adaptive_layout.layoutPreferencesChanged.connect(self._schedule_workspace_layout_save)
+        self._inspector_dock.extentChanged.connect(
+            lambda _size: self._schedule_inspector_splitter_restore()
         )
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             dock.visibilityChanged.connect(self._on_workspace_dock_visibility_changed)
-        self._adaptive_layout.reset_defaults()
         QTimer.singleShot(0, lambda: self._adaptive_layout and self._adaptive_layout.apply_for_width(self.width(), force=True))
 
     def _create_actions(self) -> None:
@@ -1742,7 +1771,6 @@ class MainWindow(QMainWindow):
     def _build_count_controls(self) -> QWidget:
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
-        container.setLayout(layout)
 
         self._count_numbers_button = QToolButton(container)
         self._count_numbers_button.setProperty("contextTool", True)
@@ -1757,7 +1785,6 @@ class MainWindow(QMainWindow):
     def _build_magic_segment_controls(self) -> QWidget:
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
-        container.setLayout(layout)
         self._magic_prompt_label = QLabel(container)
         self._magic_prompt_label.setProperty("contextLabel", True)
         layout.addWidget(self._magic_prompt_label)
@@ -1865,7 +1892,6 @@ class MainWindow(QMainWindow):
     def _build_preview_analysis_controls(self) -> QWidget:
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
-        container.setLayout(layout)
 
         header_button = QToolButton(container)
         header_button.setProperty("contextTool", True)
@@ -1895,7 +1921,6 @@ class MainWindow(QMainWindow):
     def _build_path_drawing_controls(self) -> QWidget:
         container = QWidget(self)
         layout = FlowLayout(container, h_spacing=6, v_spacing=6)
-        container.setLayout(layout)
 
         self._area_operation_button = QToolButton(container)
         self._area_operation_button.setProperty("contextTool", True)
@@ -2027,6 +2052,12 @@ class MainWindow(QMainWindow):
             QMenu#{object_name}::item:checked {{
                 border-left: 3px solid #2A9D8F;
                 background: palette(alternate-base);
+                color: palette(text);
+            }}
+            QMenu#{object_name}::item:checked:selected {{
+                border-left: 3px solid #2A9D8F;
+                background: palette(highlight);
+                color: palette(highlighted-text);
             }}
             QMenu#{object_name}::icon {{
                 padding-left: 2px;
@@ -2294,23 +2325,24 @@ class MainWindow(QMainWindow):
         )
         self.group_list.itemSelectionChanged.connect(self._on_group_selection_changed)
         group_layout.addWidget(self.group_list, 1)
-        group_button_row = FlowLayout(h_spacing=8, v_spacing=8)
-        self._add_group_button = QPushButton("新增类别")
+        group_button_host = QWidget(group_box)
+        group_button_row = FlowLayout(group_button_host, h_spacing=8, v_spacing=8)
+        self._add_group_button = QPushButton("新增类别", group_button_host)
         self._add_group_button.setIcon(themed_icon("add", color="#7BD389"))
         self._add_group_button.clicked.connect(self.add_fiber_group)
         self._add_group_button.setMinimumWidth(104)
-        self._rename_group_button = QPushButton("编辑")
+        self._rename_group_button = QPushButton("编辑", group_button_host)
         self._rename_group_button.setIcon(themed_icon("rename", color="#D7E3FC"))
         self._rename_group_button.clicked.connect(self.rename_active_group)
         self._rename_group_button.setMinimumWidth(92)
-        self.delete_group_button = QPushButton("删除")
+        self.delete_group_button = QPushButton("删除", group_button_host)
         self.delete_group_button.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_group_button.clicked.connect(self.delete_active_group)
         self.delete_group_button.setMinimumWidth(80)
         group_button_row.addWidget(self._add_group_button)
         group_button_row.addWidget(self._rename_group_button)
         group_button_row.addWidget(self.delete_group_button)
-        group_layout.addLayout(group_button_row)
+        group_layout.addWidget(group_button_host)
 
         splitter = QSplitter(Qt.Orientation.Vertical)
         self._left_panel_splitter = splitter
@@ -2673,9 +2705,9 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setContentsMargins(8, 8, 8, 8)
 
-        top_container = QWidget()
+        state = self._app_settings.workspace_layout
+        top_container = QWidget(container)
         top_container.setMinimumWidth(0)
-        top_container.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         top_layout = QVBoxLayout(top_container)
         top_layout.setContentsMargins(0, 0, 0, 0)
         top_layout.setSpacing(8)
@@ -2683,32 +2715,19 @@ class MainWindow(QMainWindow):
         self._statistics_panel = MeasurementStatisticsPanel(top_container)
         self._statistics_panel.resultsRequested.connect(self._toggle_results_panel)
         self._statistics_panel.statisticsChanged.connect(self._sync_statistics_detail_views)
-        top_layout.addWidget(self._statistics_panel)
+        self._statistics_section = CollapsibleSection(
+            "实时统计",
+            expanded=state.statistics_expanded,
+            summary="N / 均值 / SD / CV",
+            parent=top_container,
+        )
+        self._statistics_section.setContentWidget(self._statistics_panel)
+        self._statistics_section.expandedChanged.connect(
+            lambda expanded: self._set_inspector_section_state("statistics_expanded", expanded)
+        )
+        top_layout.addWidget(self._statistics_section)
 
-        properties_box = QGroupBox("当前图片属性", top_container)
-        properties_box.setObjectName("currentImagePropertiesBox")
-        properties_layout = QVBoxLayout(properties_box)
-        self._current_category_property_label = QLabel("类别：—", properties_box)
-        self._current_category_property_label.setWordWrap(True)
-        properties_layout.addWidget(self._current_category_property_label)
-        self._edit_current_category_button = QPushButton("编辑当前类别", properties_box)
-        self._edit_current_category_button.setIcon(themed_icon("rename", color=self._professional_tool_icon_color(False)))
-        self._edit_current_category_button.clicked.connect(self.rename_active_group)
-        properties_layout.addWidget(self._edit_current_category_button)
-        self._current_scale_anchor_property_label = QLabel("比例尺位置：自动", properties_box)
-        self._current_scale_anchor_property_label.setWordWrap(True)
-        properties_layout.addWidget(self._current_scale_anchor_property_label)
-        self._pick_scale_anchor_button = QPushButton("在画布选择比例尺位置", properties_box)
-        self._pick_scale_anchor_button.clicked.connect(lambda _checked=False: self._begin_scale_anchor_pick(self.current_document()))
-        properties_layout.addWidget(self._pick_scale_anchor_button)
-        model_box = QGroupBox("面积识别")
-        model_box.setObjectName("areaRecognitionBox")
-        model_layout = QVBoxLayout(model_box)
-        self._area_auto_button = QPushButton("面积自动识别...")
-        self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
-        self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
-        model_layout.addWidget(self._area_auto_button)
-        calibration_box = QGroupBox("标定")
+        calibration_box = QGroupBox("标定", top_container)
         calibration_box.setObjectName("calibrationBox")
         calibration_layout = QVBoxLayout(calibration_box)
         self._calibration_status_card = QFrame(calibration_box)
@@ -2794,22 +2813,108 @@ class MainWindow(QMainWindow):
         self._import_cu_preset_button.clicked.connect(self.import_cu_calibration_presets)
         preset_action_layout.addWidget(self._import_cu_preset_button, 1)
         calibration_layout.addWidget(self._calibration_preset_action_row)
-        # Keep calibration close to the live measurement summary; current
-        # image properties are lower-frequency and live at the former
-        # calibration position below area recognition.
         top_layout.addWidget(calibration_box)
-        top_layout.addWidget(model_box)
-        top_layout.addWidget(properties_box)
-
         top_layout.addStretch(1)
-        standard_scroll = QScrollArea(container)
-        standard_scroll.setObjectName("measurementInspectorScroll")
-        standard_scroll.setWidgetResizable(True)
-        standard_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        standard_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        standard_scroll.setWidget(top_container)
-        self._right_standard_panel = standard_scroll
-        layout.addWidget(standard_scroll, 1)
+
+        top_scroll = QScrollArea(container)
+        top_scroll.setObjectName("measurementInspectorTopScroll")
+        top_scroll.setWidgetResizable(True)
+        top_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        top_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        top_scroll.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+        top_scroll.setMinimumHeight(0)
+        top_scroll.setWidget(top_container)
+
+        self._inspector_records_pane = MeasurementRecordsPane(
+            self._records_controller,
+            compact=True,
+            show_actions=True,
+            parent=container,
+        )
+        self._wire_records_pane(self._inspector_records_pane)
+        self._records_section = CollapsibleSection(
+            "测量记录",
+            expanded=state.records_expanded,
+            summary="0 条",
+            parent=container,
+        )
+        self._records_section.setContentWidget(self._inspector_records_pane)
+        self._records_section.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+        self._records_section.expandedChanged.connect(self._on_inspector_records_expanded)
+        self._records_controller.countsChanged.connect(
+            lambda visible, total: self._records_section
+            and self._records_section.setSummary(
+                f"{visible}/{total} 条" if visible != total else f"{total} 条"
+            )
+        )
+
+        lower_container = QWidget(container)
+        lower_layout = QVBoxLayout(lower_container)
+        lower_layout.setContentsMargins(0, 0, 0, 0)
+        lower_layout.setSpacing(8)
+        model_panel = QWidget(lower_container)
+        model_layout = QVBoxLayout(model_panel)
+        model_layout.setContentsMargins(0, 0, 0, 0)
+        self._area_auto_button = QPushButton("面积自动识别...", model_panel)
+        self._area_auto_button.setIcon(themed_icon("area_auto", color="#7BD389"))
+        self._area_auto_button.clicked.connect(self.run_area_auto_recognition)
+        model_layout.addWidget(self._area_auto_button)
+        self._area_recognition_section = CollapsibleSection(
+            "面积识别",
+            expanded=state.area_recognition_expanded,
+            parent=lower_container,
+        )
+        self._area_recognition_section.setObjectName("areaRecognitionBox")
+        self._area_recognition_section.setContentWidget(model_panel)
+        self._area_recognition_section.expandedChanged.connect(
+            lambda expanded: self._set_inspector_section_state("area_recognition_expanded", expanded)
+        )
+        lower_layout.addWidget(self._area_recognition_section)
+
+        self._object_inspector = CurrentObjectInspector(lower_container)
+        self._object_inspector.appearanceChangeRequested.connect(self._on_object_appearance_change_requested)
+        self._object_inspector.measurementGroupChangeRequested.connect(
+            self._on_measurement_group_change_requested
+        )
+        self._object_inspector.overlayContentChangeRequested.connect(
+            self._on_overlay_content_change_requested
+        )
+        self._object_properties_section = CollapsibleSection(
+            "当前对象属性",
+            expanded=state.object_properties_expanded,
+            summary="未选择对象",
+            parent=lower_container,
+        )
+        self._object_properties_section.setContentWidget(self._object_inspector)
+        self._object_properties_section.expandedChanged.connect(
+            lambda expanded: self._set_inspector_section_state("object_properties_expanded", expanded)
+        )
+        lower_layout.addWidget(self._object_properties_section)
+        lower_layout.addStretch(1)
+
+        lower_scroll = QScrollArea(container)
+        lower_scroll.setObjectName("measurementInspectorLowerScroll")
+        lower_scroll.setWidgetResizable(True)
+        lower_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        lower_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        lower_scroll.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Ignored)
+        lower_scroll.setMinimumHeight(0)
+        lower_scroll.setWidget(lower_container)
+
+        self._inspector_splitter = QSplitter(Qt.Orientation.Vertical, container)
+        self._inspector_splitter.setObjectName("measurementInspectorSplitter")
+        self._inspector_splitter.setChildrenCollapsible(False)
+        self._inspector_splitter.addWidget(top_scroll)
+        self._inspector_splitter.addWidget(self._records_section)
+        self._inspector_splitter.addWidget(lower_scroll)
+        self._inspector_splitter.setStretchFactor(0, 1)
+        self._inspector_splitter.setStretchFactor(1, 2)
+        self._inspector_splitter.setStretchFactor(2, 0)
+        self._inspector_splitter.splitterMoved.connect(self._on_inspector_splitter_moved)
+        self._right_standard_panel = self._inspector_splitter
+        layout.addWidget(self._inspector_splitter, 1)
+        QTimer.singleShot(0, self._restore_inspector_splitter_sizes)
+
         self._acquisition_right_panel = self._build_acquisition_right_panel(container)
         self._acquisition_right_panel.hide()
         layout.addWidget(self._acquisition_right_panel, 1)
@@ -2818,6 +2923,168 @@ class MainWindow(QMainWindow):
         layout.addWidget(self._digital_slide_right_panel)
 
         return container
+
+    def _wire_records_pane(self, pane: MeasurementRecordsPane) -> None:
+        pane.delete_selected_button.setIcon(themed_icon("delete", color="#F28482"))
+        pane.delete_category_button.setIcon(themed_icon("delete", color="#F28482"))
+        pane.delete_all_button.setIcon(themed_icon("delete", color="#F28482"))
+        pane.measurementActivated.connect(self._activate_measurement_id)
+        pane.deleteSelectedRequested.connect(
+            lambda _measurement_ids: self.delete_selected_measurement()
+        )
+        pane.deleteCategoryRequested.connect(self.delete_measurements_by_category)
+        pane.deleteAllRequested.connect(self.delete_all_measurements)
+        if pane.compact:
+            pane.headerStateChanged.connect(
+                lambda state: self._store_records_header_state(state, inspector=True)
+            )
+        else:
+            pane.headerStateChanged.connect(
+                lambda state: self._store_records_header_state(state, inspector=False)
+            )
+
+    def _store_records_header_state(self, state: str, *, inspector: bool) -> None:
+        if inspector:
+            self._app_settings.inspector_measurement_results_header_state = str(state or "")
+        else:
+            self._app_settings.measurement_results_header_state = str(state or "")
+        self._schedule_workspace_layout_save()
+
+    def _set_inspector_section_state(self, field_name: str, expanded: bool) -> None:
+        setattr(self._app_settings.workspace_layout, field_name, bool(expanded))
+        self._schedule_inspector_splitter_restore()
+        self._schedule_workspace_layout_save()
+
+    def _on_inspector_records_expanded(self, expanded: bool) -> None:
+        section = self._records_section
+        if section is None:
+            return
+        state = self._app_settings.workspace_layout
+        if not expanded and section.height() > 120:
+            adaptive = self._adaptive_layout
+            splitter = self._inspector_splitter
+            results_visible = bool(self._results_dock is not None and self._results_dock.isVisible())
+            unconstrained = bool(
+                splitter is not None
+                and splitter.height() >= section.height() + 220
+                and (adaptive is None or not adaptive.is_compact)
+                and not results_visible
+            )
+            if unconstrained:
+                state.inspector_records_height = section.height()
+        state.records_expanded = bool(expanded)
+        if expanded:
+            section.setMinimumHeight(72)
+            section.setMaximumHeight(16_777_215)
+            self._schedule_inspector_splitter_restore(immediate=True)
+        else:
+            section.setMinimumHeight(0)
+            section.setMaximumHeight(max(42, section.toggleButton.sizeHint().height() + 22))
+        self._schedule_workspace_layout_save()
+
+    def _schedule_inspector_splitter_restore(self, *, immediate: bool = False) -> None:
+        timer = getattr(self, "_inspector_splitter_restore_timer", None)
+        if timer is None:
+            return
+        try:
+            timer.start(0 if immediate else 40)
+        except RuntimeError:
+            # Late resize notifications can arrive while the window is being
+            # destroyed.  There is no layout left to restore in that case.
+            return
+
+    def _on_inspector_splitter_moved(self, _position: int, _index: int) -> None:
+        if self._restoring_inspector_splitter:
+            return
+        section = self._records_section
+        if section is None or not section.isExpanded():
+            return
+        height = int(section.height())
+        if height >= 120:
+            self._app_settings.workspace_layout.inspector_records_height = height
+            self._schedule_workspace_layout_save()
+
+    def _restore_inspector_splitter_sizes(self) -> None:
+        splitter = self._inspector_splitter
+        section = self._records_section
+        if splitter is None or section is None or splitter.height() <= 0:
+            return
+        self._restoring_inspector_splitter = True
+        try:
+            total = int(splitter.height())
+            if total <= 0:
+                return
+            state = self._app_settings.workspace_layout
+            top = 180 if state.statistics_expanded else 70
+            if state.object_properties_expanded:
+                lower = 340
+                lower_minimum = 140
+            elif state.area_recognition_expanded:
+                lower = 160
+                lower_minimum = 96
+            else:
+                # Reserve a compact scrollable strip for the two collapsed
+                # headers without donating the high-frequency records region
+                # to empty scroll-area space.
+                lower = 96 if total >= 520 else 60
+                lower_minimum = 60 if total >= 520 else 48
+            if section.isExpanded():
+                section.setMinimumHeight(72)
+                section.setMaximumHeight(16_777_215)
+                records = max(120, int(state.inspector_records_height))
+                records_minimum = 120
+            else:
+                section.setMinimumHeight(0)
+                records = max(42, section.toggleButton.sizeHint().height() + 22)
+                records_minimum = records
+                section.setMaximumHeight(records)
+
+            # Temporary height pressure (small screen, bottom results opened,
+            # or an expanded object editor) may clamp the visible records
+            # region, but must not overwrite its wide-layout preference.
+            overflow = max(0, top + records + lower - total)
+            reduction = min(overflow, max(0, records - records_minimum))
+            records -= reduction
+            overflow -= reduction
+            reduction = min(overflow, max(0, lower - lower_minimum))
+            lower -= reduction
+            overflow -= reduction
+            reduction = min(overflow, max(0, top - 48))
+            top -= reduction
+            overflow -= reduction
+            if overflow:
+                # Extremely short unsupported windows still degrade safely.
+                reduction = min(overflow, max(0, records - 72))
+                records -= reduction
+                overflow -= reduction
+                lower = max(36, lower - overflow)
+            remaining = max(0, total - top - records - lower)
+            if remaining:
+                # Keep the ordered sections visually contiguous on tall
+                # screens.  Once the top calibration/statistics content has a
+                # practical viewport, surplus space belongs below the final
+                # section instead of becoming a gap above the records header.
+                top_target = 620 if state.statistics_expanded else 330
+                top_growth = min(remaining, max(0, top_target - top))
+                top += top_growth
+                remaining -= top_growth
+                lower += remaining
+            splitter.setSizes([top, records, lower])
+        finally:
+            self._restoring_inspector_splitter = False
+
+    def _restore_inspector_section_defaults(self) -> None:
+        defaults = self._app_settings.workspace_layout
+        sections = (
+            (self._statistics_section, defaults.statistics_expanded),
+            (self._records_section, defaults.records_expanded),
+            (self._area_recognition_section, defaults.area_recognition_expanded),
+            (self._object_properties_section, defaults.object_properties_expanded),
+        )
+        for section, expanded in sections:
+            if section is not None:
+                section.setExpanded(expanded)
+        QTimer.singleShot(0, self._restore_inspector_splitter_sizes)
 
     def _build_acquisition_right_panel(self, parent: QWidget) -> QWidget:
         scroll = QScrollArea(parent)
@@ -2888,6 +3155,9 @@ class MainWindow(QMainWindow):
         return scroll
 
     def _show_measurement_columns_menu(self, position: QPoint) -> None:
+        if self._bottom_records_pane is not None:
+            self._bottom_records_pane._show_columns_menu(position)  # noqa: SLF001
+            return
         header = self.measurement_table.horizontalHeader()
         model = self.measurement_table.model()
         menu = QMenu(header)
@@ -2908,14 +3178,8 @@ class MainWindow(QMainWindow):
         menu.exec(header.mapToGlobal(position))
 
     def _reset_measurement_columns(self) -> None:
-        widths = (150, 90, 130, 80, 130, 90, 130, 120)
-        for column, width in enumerate(widths):
-            self.measurement_table.setColumnHidden(column, False)
-            self.measurement_table.setColumnWidth(column, width)
-        proxy = self._measurement_results_proxy
-        if proxy is not None:
-            proxy.sort(-1)
-        self.measurement_table.horizontalHeader().setSortIndicatorShown(False)
+        if self._bottom_records_pane is not None:
+            self._bottom_records_pane.reset_columns()
 
     def _build_results_panel(self) -> QWidget:
         panel = QWidget(self)
@@ -2923,131 +3187,38 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(8, 6, 8, 8)
         layout.setSpacing(6)
 
-        summary_row = QHBoxLayout()
-        summary_row.setContentsMargins(0, 0, 0, 0)
-        title = QLabel("测量记录", panel)
-        title.setStyleSheet("font-weight: 700;")
-        self._results_count_label = QLabel("0 条", panel)
-        self._results_count_label.setStyleSheet(f"color: {self._status_color('muted')};")
-        summary_row.addWidget(title)
-        summary_row.addWidget(self._results_count_label)
-        summary_row.addStretch(1)
-        layout.addLayout(summary_row)
-
         self._results_tabs = QTabWidget(panel)
         records_page = QWidget(self._results_tabs)
         records_layout = QVBoxLayout(records_page)
         records_layout.setContentsMargins(0, 0, 0, 0)
         records_layout.setSpacing(6)
 
-        filters = QHBoxLayout()
-        filters.setContentsMargins(0, 0, 0, 0)
-        filters.setSpacing(6)
-        self._results_search_edit = QLineEdit(records_page)
-        self._results_search_edit.setPlaceholderText("搜索类别、类型、状态或 ID")
-        self._results_search_edit.setClearButtonEnabled(True)
-        self._results_search_edit.textChanged.connect(self._filter_measurement_rows)
-        self._results_kind_filter = QComboBox(records_page)
-        self._results_kind_filter.addItem("全部类型", "")
-        self._results_kind_filter.addItem("长度", "length")
-        self._results_kind_filter.addItem("面积", "area")
-        self._results_kind_filter.addItem("计数", "count")
-        self._results_kind_filter.currentIndexChanged.connect(self._filter_measurement_rows)
-        self._results_group_filter = QComboBox(records_page)
-        self._results_group_filter.addItem("全部类别", "")
-        self._results_group_filter.currentIndexChanged.connect(self._filter_measurement_rows)
-        self._results_status_filter = QComboBox(records_page)
-        self._results_status_filter.addItem("全部状态", "")
-        self._results_status_filter.addItem("有效", "valid")
-        self._results_status_filter.addItem("需复核", "review")
-        self._results_status_filter.addItem("失败", "failed")
-        self._results_status_filter.currentIndexChanged.connect(self._filter_measurement_rows)
-        filters.addWidget(self._results_search_edit, 1)
-        filters.addWidget(self._results_kind_filter)
-        filters.addWidget(self._results_group_filter)
-        filters.addWidget(self._results_status_filter)
-        records_layout.addLayout(filters)
-
-        self._measurement_results_model = MeasurementResultsModel(self)
-        self._measurement_results_proxy = MeasurementResultsProxyModel(self)
-        self._measurement_results_proxy.setSourceModel(self._measurement_results_model)
-        self._measurement_group_delegate = MeasurementGroupDelegate(self)
-        self.measurement_table = QTableView(records_page)
-        self.measurement_table.setModel(self._measurement_results_proxy)
-        # The bottom drawer owns the available height.  Ignoring the view's
-        # generous platform size hint keeps the compact 1093x576 window from
-        # being enlarged when results are opened; rows remain scrollable.
-        self.measurement_table.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Ignored,
+        self._bottom_records_pane = MeasurementRecordsPane(
+            self._records_controller,
+            compact=False,
+            show_actions=True,
+            parent=records_page,
         )
-        self.measurement_table.setItemDelegateForColumn(
-            self.TABLE_COL_GROUP,
-            self._measurement_group_delegate,
+        self._wire_records_pane(self._bottom_records_pane)
+        records_layout.addWidget(self._bottom_records_pane, 1)
+        self.measurement_table = self._bottom_records_pane.table
+        self._results_search_edit = self._bottom_records_pane.search_edit
+        self._results_kind_filter = self._bottom_records_pane.kind_filter
+        self._results_group_filter = self._bottom_records_pane.group_filter
+        self._results_status_filter = self._bottom_records_pane.status_filter
+        self._results_count_label = self._bottom_records_pane.count_label
+        self.delete_measurement_button = self._bottom_records_pane.delete_selected_button
+        self._delete_group_measurements_button = self._bottom_records_pane.delete_category_button
+        self._delete_all_measurements_button = self._bottom_records_pane.delete_all_button
+        self._bottom_records_pane.restore_header_state(
+            self._app_settings.measurement_results_header_state,
+            restore_sort=True,
         )
-        header = self.measurement_table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        header.setStretchLastSection(True)
-        header.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-        header.customContextMenuRequested.connect(self._show_measurement_columns_menu)
-        self.measurement_table.setAlternatingRowColors(True)
-        self.measurement_table.setSortingEnabled(True)
-        self._measurement_results_proxy.sort(-1)
-        header.setSortIndicatorShown(False)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_GROUP, 150)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_KIND, 90)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_RESULT, 130)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_UNIT, 80)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_MODE, 130)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_CONFIDENCE, 90)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_STATUS, 130)
-        self.measurement_table.setColumnWidth(self.TABLE_COL_ID, 120)
-        header_state = str(self._app_settings.measurement_results_header_state or "").strip()
-        if header_state:
-            restored_header = header.restoreState(QByteArray.fromBase64(header_state.encode("ascii")))
-            if restored_header and header.isSortIndicatorShown():
-                self._measurement_results_proxy.sort(
-                    header.sortIndicatorSection(),
-                    header.sortIndicatorOrder(),
-                )
-        self.measurement_table.verticalHeader().setVisible(False)
-        self.measurement_table.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
-        self.measurement_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.measurement_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.measurement_table.setEditTriggers(
-            QAbstractItemView.EditTrigger.DoubleClicked
-            | QAbstractItemView.EditTrigger.EditKeyPressed
-        )
-        selection_model = self.measurement_table.selectionModel()
-        if selection_model is not None:
-            selection_model.selectionChanged.connect(self._on_measurement_selection_changed)
-        self.measurement_table.doubleClicked.connect(self._on_measurement_table_double_clicked)
-        self._measurement_results_model.groupChangeRequested.connect(
-            self._on_measurement_group_change_requested
-        )
-        records_layout.addWidget(self.measurement_table, 1)
-
-        measurement_action_row = QWidget(records_page)
-        measurement_action_layout = QHBoxLayout(measurement_action_row)
-        measurement_action_layout.setContentsMargins(0, 0, 0, 0)
-        measurement_action_layout.setSpacing(8)
-
-        self.delete_measurement_button = QPushButton("删除选中")
-        self.delete_measurement_button.setIcon(themed_icon("delete", color="#F28482"))
-        self.delete_measurement_button.clicked.connect(self.delete_selected_measurement)
-        measurement_action_layout.addWidget(self.delete_measurement_button)
-
-        self._delete_group_measurements_button = QPushButton("删除类别")
-        self._delete_group_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
-        self._delete_group_measurements_button.clicked.connect(self.delete_measurements_by_category)
-        measurement_action_layout.addWidget(self._delete_group_measurements_button)
-
-        self._delete_all_measurements_button = QPushButton("删除全部")
-        self._delete_all_measurements_button.setIcon(themed_icon("delete", color="#F28482"))
-        self._delete_all_measurements_button.clicked.connect(self.delete_all_measurements)
-        measurement_action_layout.addWidget(self._delete_all_measurements_button)
-        measurement_action_layout.addStretch(1)
-        records_layout.addWidget(measurement_action_row)
+        if self._inspector_records_pane is not None:
+            self._inspector_records_pane.restore_header_state(
+                self._app_settings.inspector_measurement_results_header_state,
+                restore_sort=False,
+            )
 
         self._results_tabs.addTab(records_page, "记录")
         self._statistics_page = QWidget(self._results_tabs)
@@ -3112,8 +3283,12 @@ class MainWindow(QMainWindow):
         self._distribution_page_layout = QVBoxLayout(self._distribution_page)
         self._distribution_page_layout.setContentsMargins(8, 8, 8, 8)
         self._distribution_widget = StatisticsDistributionWidget(self._distribution_page)
+        self._distribution_widget.recordFilterRequested.connect(
+            self._on_distribution_record_filter_requested
+        )
         self._distribution_page_layout.addWidget(self._distribution_widget, 1)
         self._results_tabs.addTab(self._distribution_page, "分布")
+        self._results_tabs.currentChanged.connect(self._on_results_tab_changed)
         layout.addWidget(self._results_tabs, 1)
         return panel
 
@@ -3778,9 +3953,12 @@ class MainWindow(QMainWindow):
         # medium-width range, the expanded labels would otherwise push the
         # fixed trailing Preferences command into qt_toolbar_ext_button.
         self._update_main_command_bar_density(event.size().width())
+        if self._adaptive_layout is not None:
+            self._adaptive_layout.begin_window_resize()
         super().resizeEvent(event)
         if self._adaptive_layout is not None:
-            self._adaptive_layout.apply_for_width(self.width())
+            self._adaptive_layout.end_window_resize(self.width())
+        self._schedule_inspector_splitter_restore()
 
     def _on_workspace_dock_visibility_changed(self, _visible: bool) -> None:
         if self._adaptive_layout is not None:
@@ -3811,18 +3989,14 @@ class MainWindow(QMainWindow):
     def _toggle_results_panel(self, _checked: bool = False) -> None:
         if self._adaptive_layout is not None:
             self._adaptive_layout.toggle_results()
-        if self._results_dock is not None and self._results_dock.isVisible():
-            compact = bool(self._adaptive_layout and self._adaptive_layout.is_compact)
-            self.resizeDocks(
-                [self._results_dock],
-                [210 if compact else 260],
-                Qt.Orientation.Vertical,
-            )
         self._on_workspace_dock_visibility_changed(False)
+        self._schedule_inspector_splitter_restore(immediate=True)
+        QTimer.singleShot(0, self._refresh_distribution_if_visible)
 
     def _reset_workspace_layout(self) -> None:
         if self._adaptive_layout is not None:
             self._adaptive_layout.reset_defaults()
+        self._restore_inspector_section_defaults()
         self.statusBar().showMessage("已恢复默认工作区布局", 3000)
 
     def _activate_measure_workspace(self, checked: bool = False) -> None:
@@ -3908,17 +4082,13 @@ class MainWindow(QMainWindow):
             tool_mode=self._tool_mode,
             selected_measurement=selected,
         )
+        self._refresh_distribution_if_visible()
         count = len(document.measurements) if document is not None else 0
-        if self._results_count_label is not None:
-            self._results_count_label.setText(f"{count} 条")
         if self._results_tabs is not None:
             self._results_tabs.setTabText(0, f"记录 ({count})")
 
     def _sync_statistics_detail_views(self, snapshots) -> None:
         snapshots = tuple(snapshots or ())
-        snapshot = snapshots[0] if snapshots else None
-        self._pending_distribution_snapshot = snapshot
-        self._distribution_refresh_timer.start()
         summary_table = self._statistics_summary_table
         category_table = self._statistics_category_table
         panel = self._statistics_panel
@@ -4019,9 +4189,53 @@ class MainWindow(QMainWindow):
                 ),
             )
 
-    def _apply_pending_distribution_snapshot(self) -> None:
-        if self._distribution_widget is not None:
-            self._distribution_widget.set_snapshot(self._pending_distribution_snapshot)
+    def _on_results_tab_changed(self, _index: int) -> None:
+        self._refresh_distribution_if_visible()
+
+    def _refresh_distribution_if_visible(self) -> None:
+        widget = self._distribution_widget
+        tabs = self._results_tabs
+        dock = self._results_dock
+        if (
+            widget is None
+            or tabs is None
+            or dock is None
+            or not dock.isVisible()
+            or tabs.currentWidget() is not self._distribution_page
+        ):
+            return
+        widget.set_context(
+            self.project,
+            self.current_document(),
+            suggested_metric=metric_for_tool_mode(self._tool_mode),
+        )
+
+    def _on_distribution_record_filter_requested(self, request: object) -> None:
+        if not isinstance(request, DistributionRecordFilterRequest):
+            return
+        document = self.current_document()
+        if document is None or request.document_id != document.id:
+            return
+        query, _kind, _group, status = self._records_controller.filters
+        self._records_controller.set_filters(
+            query=query,
+            kind=request.metric.value,
+            group=request.category_label,
+            status=status,
+        )
+        if self._records_section is not None and not self._records_section.isExpanded():
+            self._records_section.setExpanded(True)
+        if self._results_tabs is not None:
+            self._results_tabs.setCurrentIndex(0)
+        metric_label = {
+            "length": "长度",
+            "area": "面积",
+            "count": "计数",
+        }.get(request.metric.value, "测量")
+        self.statusBar().showMessage(
+            f"已筛选当前图片中的“{request.category_label}”{metric_label}记录",
+            3500,
+        )
 
     def _apply_tool_menu_stylesheets(self) -> None:
         menu_specs = (
@@ -6743,6 +6957,22 @@ class MainWindow(QMainWindow):
             return False
         return True
 
+    def _schedule_workspace_layout_save(self) -> None:
+        try:
+            self._workspace_layout_save_timer.start()
+        except RuntimeError:
+            # Child header destruction can emit a final section change after
+            # the owning window timer has already been deleted.
+            return
+
+    def _persist_workspace_layout_preferences(self) -> None:
+        try:
+            AppSettingsIO.save(self._app_settings)
+        except OSError:
+            # Resizing a panel should never interrupt the active measurement
+            # task with a modal warning. The close path retries the same save.
+            return
+
     def _update_count_numbers_button(self) -> None:
         if self._count_numbers_button is None or self._measurement_tool_strip is None:
             return
@@ -6787,10 +7017,13 @@ class MainWindow(QMainWindow):
                 QByteArray.fromBase64(state_token.encode("ascii")),
                 2,
             )
+            if self._workspace_state_restored and self._adaptive_layout is not None:
+                self._adaptive_layout.capture_restored_visibility()
         if restored and self._app_settings.main_window_is_maximized:
             self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
         if self._adaptive_layout is not None:
             self._adaptive_layout.apply_for_width(self.width(), force=True)
+            QTimer.singleShot(0, self._adaptive_layout.restore_preferred_extents)
 
     def _available_screens(self):
         return list(QGuiApplication.screens())
@@ -6819,12 +7052,18 @@ class MainWindow(QMainWindow):
         self.setGeometry(left, top, width, height)
 
     def _persist_window_geometry(self) -> None:
+        if self._adaptive_layout is not None:
+            self._app_settings.workspace_layout = self._adaptive_layout.layout_settings
         self._app_settings.main_window_geometry = bytes(self.saveGeometry().toBase64()).decode("ascii")
         self._app_settings.main_window_state = bytes(self.saveState(2).toBase64()).decode("ascii")
-        if hasattr(self, "measurement_table"):
-            self._app_settings.measurement_results_header_state = bytes(
-                self.measurement_table.horizontalHeader().saveState().toBase64()
-            ).decode("ascii")
+        if self._bottom_records_pane is not None:
+            self._app_settings.measurement_results_header_state = (
+                self._bottom_records_pane.save_header_state()
+            )
+        if self._inspector_records_pane is not None:
+            self._app_settings.inspector_measurement_results_header_state = (
+                self._inspector_records_pane.save_header_state()
+            )
         self._app_settings.main_window_is_maximized = bool(self.windowState() & Qt.WindowState.WindowMaximized)
         try:
             AppSettingsIO.save(self._app_settings)
@@ -8219,34 +8458,6 @@ class MainWindow(QMainWindow):
         refresh_widget_theme(dialog)
         self._save_app_settings(context="设置")
 
-        document = self.current_document()
-        if document is not None:
-            group_colors = dialog.group_colors()
-            if group_colors:
-                local_group_colors: dict[str, str] = {}
-                project_template_colors: dict[str, str] = {}
-                for group in document.sorted_groups():
-                    if group.id not in group_colors:
-                        continue
-                    target_color = self._normalize_group_color(group_colors[group.id], fallback=group.color)
-                    label = normalize_group_label(group.label)
-                    if label and self._project_group_template_for_label(label) is not None:
-                        project_template_colors[label] = target_color
-                    elif group.color != target_color:
-                        local_group_colors[group.id] = target_color
-                if local_group_colors:
-                    def mutate_group_colors() -> None:
-                        for group in document.sorted_groups():
-                            if group.id in local_group_colors:
-                                group.color = local_group_colors[group.id]
-
-                    self._apply_document_change(document, "更新类别颜色", mutate_group_colors)
-                if project_template_colors:
-                    self._sync_project_group_template_colors(
-                        project_template_colors,
-                        history_label="同步项目全局类别颜色",
-                    )
-
         should_pick_scale_anchor = dialog.wants_scale_anchor_pick()
         if should_pick_scale_anchor and self.current_document() is not None:
             if not close_after:
@@ -8269,6 +8480,10 @@ class MainWindow(QMainWindow):
 
     def _activate_app_settings(self, settings: AppSettings) -> None:
         self._app_settings = settings
+        if self._adaptive_layout is not None:
+            self._adaptive_layout.set_layout_settings(settings.workspace_layout)
+            QTimer.singleShot(0, self._adaptive_layout.restore_preferred_extents)
+        self._restore_inspector_section_defaults()
         self._apply_theme_mode()
         self._refresh_theme_sensitive_icons()
         if self._measurement_tool_strip is not None:
@@ -8322,6 +8537,7 @@ class MainWindow(QMainWindow):
         self._update_capture_device_ui()
         self._refresh_preset_combo()
         self._refresh_canvases_for_settings()
+        self._refresh_object_inspector()
 
     def open_shortcut_help_dialog(self) -> None:
         dialog = ShortcutHelpDialog(self)
@@ -8933,18 +9149,7 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
 
     def _selected_measurement_ids_from_table(self) -> list[str]:
-        selection_model = self.measurement_table.selectionModel()
-        if selection_model is None:
-            return []
-        measurement_ids: list[str] = []
-        seen: set[str] = set()
-        for row_index in selection_model.selectedRows():
-            measurement_id = self._measurement_id_for_proxy_index(row_index)
-            if not measurement_id or measurement_id in seen:
-                continue
-            seen.add(measurement_id)
-            measurement_ids.append(measurement_id)
-        return measurement_ids
+        return self._records_controller.selected_measurement_ids()
 
     def _prompt_measurement_delete_options(
         self,
@@ -9737,6 +9942,7 @@ class MainWindow(QMainWindow):
             canvas.update()
         self._update_action_states()
         self._schedule_statistics_refresh()
+        self._refresh_object_inspector()
 
     def _apply_documents_change(
         self,
@@ -9978,6 +10184,7 @@ class MainWindow(QMainWindow):
         self._sync_measurement_table_selection(document)
         self._update_action_states()
         self._schedule_statistics_refresh()
+        self._refresh_object_inspector()
         self._focus_current_canvas()
 
     def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, payload: object) -> None:
@@ -10075,6 +10282,8 @@ class MainWindow(QMainWindow):
             document.select_measurement(None)
         self._sync_measurement_table_selection(document)
         self._update_action_states()
+        self._schedule_statistics_refresh()
+        self._refresh_object_inspector()
         self._focus_current_canvas()
 
     def _on_canvas_overlay_edited(self, document_id: str, overlay_id: str, payload: object) -> None:
@@ -10097,6 +10306,107 @@ class MainWindow(QMainWindow):
             label = "移动文字"
         self._apply_document_change(document, label, mutate)
         self._focus_current_canvas()
+
+    def _on_object_appearance_change_requested(
+        self,
+        object_type: str,
+        object_id: str,
+        appearance: object,
+    ) -> None:
+        document = self.current_document()
+        if document is None:
+            return
+        normalized = appearance if isinstance(appearance, ObjectAppearanceOverride) else None
+        if appearance is not None and normalized is None:
+            return
+
+        if object_type == "measurement":
+            measurement = document.get_measurement(object_id)
+            if measurement is None:
+                return
+
+            def mutate_measurement() -> None:
+                current = document.get_measurement(object_id)
+                if current is not None:
+                    current.appearance = normalized
+                    document.select_measurement(current.id)
+
+            label = "恢复测量对象继承样式" if normalized is None else "更新测量对象样式"
+            self._apply_document_change(document, label, mutate_measurement)
+        elif object_type == "overlay":
+            overlay = document.get_overlay_annotation(object_id)
+            if overlay is None:
+                return
+
+            def mutate_overlay() -> None:
+                current = document.get_overlay_annotation(object_id)
+                if current is not None:
+                    document.replace_overlay_annotation(
+                        object_id,
+                        current.clone(appearance=normalized),
+                    )
+                    document.select_overlay_annotation(object_id)
+
+            label = "恢复叠加对象继承样式" if normalized is None else "更新叠加对象样式"
+            self._apply_document_change(document, label, mutate_overlay)
+        self._refresh_object_inspector()
+        self._focus_current_canvas()
+
+    def _on_overlay_content_change_requested(self, overlay_id: str, content: str) -> None:
+        document = self.current_document()
+        overlay = document.get_overlay_annotation(overlay_id) if document is not None else None
+        normalized_content = str(content or "").strip()
+        if document is None or overlay is None or not overlay.is_text():
+            return
+        if not normalized_content:
+            self.statusBar().showMessage("文字内容不能为空；如需移除请删除该对象。", 3500)
+            return
+
+        def mutate() -> None:
+            current = document.get_overlay_annotation(overlay_id)
+            if current is not None:
+                document.replace_overlay_annotation(
+                    overlay_id,
+                    current.clone(content=normalized_content),
+                )
+                document.select_overlay_annotation(overlay_id)
+
+        self._apply_document_change(document, "编辑叠加文字", mutate)
+        self._refresh_object_inspector()
+        self._focus_current_canvas()
+
+    def _refresh_object_inspector(self) -> None:
+        inspector = self._object_inspector
+        if inspector is None:
+            return
+        document = self.current_document()
+        selected_ids = self._records_controller.selected_measurement_ids()
+        if document is not None and not selected_ids and document.view_state.selected_measurement_id:
+            selected_ids = [document.view_state.selected_measurement_id]
+        overlay_id = document.selected_overlay_id if document is not None else None
+        inspector.set_context(
+            document,
+            settings=self._app_settings,
+            measurement_ids=selected_ids,
+            overlay_id=overlay_id,
+        )
+        section = self._object_properties_section
+        if section is None:
+            return
+        if overlay_id and document is not None:
+            overlay = document.get_overlay_annotation(overlay_id)
+            section.setSummary(
+                "文字" if overlay is not None and overlay.is_text() else "叠加图形"
+            )
+        elif len(selected_ids) > 1:
+            section.setSummary(f"已选择 {len(selected_ids)} 个")
+        elif selected_ids and document is not None:
+            measurement = document.get_measurement(selected_ids[0])
+            section.setSummary(
+                self._format_measurement_kind(measurement) if measurement is not None else "未选择对象"
+            )
+        else:
+            section.setSummary("未选择对象")
 
     def _on_canvas_scale_anchor_picked(self, document_id: str, anchor: Point) -> None:
         document = self.project.get_document(document_id)
@@ -10271,7 +10581,6 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         self._populate_group_list(document)
         self._update_project_navigation_summary()
-        self._update_current_image_properties(document)
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
@@ -10300,34 +10609,6 @@ class MainWindow(QMainWindow):
             save_state = "有未保存更改" if dirty else "已保存"
         missing_text = f"缺失 {unresolved}" if unresolved else "无缺失"
         label.setText(f"{mounted} 张图片 · {missing_text} · {save_state}")
-
-    def _update_current_image_properties(self, document: ImageDocument | None) -> None:
-        group = document.get_group(document.active_group_id) if document is not None else None
-        if self._current_category_property_label is not None:
-            if document is None:
-                self._current_category_property_label.setText("类别：—")
-            elif group is None:
-                self._current_category_property_label.setText("类别：未分类")
-            else:
-                self._current_category_property_label.setText(
-                    f"类别：{group.display_name()} · 颜色 {group.color.upper()}"
-                )
-        if self._current_scale_anchor_property_label is not None:
-            anchor = document.scale_overlay_anchor if document is not None else None
-            self._current_scale_anchor_property_label.setText(
-                "比例尺位置：自动"
-                if anchor is None
-                else f"比例尺位置：({anchor.x:.1f}, {anchor.y:.1f})"
-            )
-        editable = document is not None and not self._preview_active
-        if self._edit_current_category_button is not None:
-            self._edit_current_category_button.setEnabled(
-                editable
-                and document is not None
-                and (group is not None or document.should_show_uncategorized_entry())
-            )
-        if self._pick_scale_anchor_button is not None:
-            self._pick_scale_anchor_button.setEnabled(editable)
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
         if self._preview_active:
@@ -10370,75 +10651,46 @@ class MainWindow(QMainWindow):
         )
 
     def _populate_measurement_table(self, document: ImageDocument | None) -> None:
-        model = self._measurement_results_model
-        if model is None:
-            return
         self._table_rebuilding = True
         try:
-            model.set_document(document)
+            self._records_controller.set_document(document)
         finally:
             self._table_rebuilding = False
-        self._refresh_results_group_filter(document)
-        self._filter_measurement_rows()
         if document is not None:
             self._sync_measurement_table_selection(document)
+        self._refresh_object_inspector()
 
     def _refresh_results_group_filter(self, document: ImageDocument | None) -> None:
-        combo = self._results_group_filter
-        if combo is None:
-            return
-        previous = str(combo.currentData() or "")
-        labels = [] if document is None else document.measurement_group_labels()
-        combo.blockSignals(True)
-        combo.clear()
-        combo.addItem("全部类别", "")
-        for label in labels:
-            combo.addItem(label, label)
-        index = combo.findData(previous)
-        combo.setCurrentIndex(index if index >= 0 else 0)
-        combo.blockSignals(False)
+        for pane in (self._bottom_records_pane, self._inspector_records_pane):
+            if pane is not None:
+                pane._refresh_group_filter(document)  # noqa: SLF001
 
     def _filter_measurement_rows(self, *_args) -> None:
-        proxy = self._measurement_results_proxy
-        source = self._measurement_results_model
-        if proxy is None or source is None:
-            return
         query = str(self._results_search_edit.text() if self._results_search_edit is not None else "").strip().casefold()
         kind_filter = str(self._results_kind_filter.currentData() if self._results_kind_filter is not None else "")
         group_filter = str(self._results_group_filter.currentData() if self._results_group_filter is not None else "")
         status_filter = str(self._results_status_filter.currentData() if self._results_status_filter is not None else "")
-        proxy.set_filters(
+        self._records_controller.set_filters(
             query=query,
             kind=kind_filter,
             group=group_filter,
             status=status_filter,
         )
-        if self._results_count_label is not None:
-            visible_count = proxy.rowCount()
-            total = source.rowCount()
-            self._results_count_label.setText(f"{visible_count}/{total} 条" if visible_count != total else f"{total} 条")
 
     def _append_measurement_table_row(self, document: ImageDocument, measurement: Measurement) -> None:
-        model = self._measurement_results_model
-        proxy = self._measurement_results_proxy
-        if model is None or proxy is None:
-            return
+        model = self._records_controller.source_model
         expected_existing_rows = max(0, len(document.measurements) - 1)
         if model.rowCount() != expected_existing_rows:
             self._populate_measurement_table(document)
             return
         self._table_rebuilding = True
         try:
-            if not model.append_measurement(document, measurement):
+            if not self._records_controller.append_measurement(document, measurement):
                 self._populate_measurement_table(document)
                 return
-            selection_model = self.measurement_table.selectionModel()
-            if selection_model is not None:
-                selection_model.clearSelection()
+            self._records_controller.selection_model.clearSelection()
         finally:
             self._table_rebuilding = False
-        self._refresh_results_group_filter(document)
-        self._filter_measurement_rows()
         self._select_measurement_table_id(measurement.id, scroll=True)
 
     # Compatibility adapters for older integrations which used the formatting
@@ -10474,55 +10726,39 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if document is None or canvas is None:
             return
-        selected_rows = self.measurement_table.selectionModel().selectedRows()
-        if not selected_rows:
+        selected_ids = self._records_controller.selected_measurement_ids()
+        if not selected_ids:
+            document.select_measurement(None)
+            canvas.set_selected_measurement(None)
             self._update_action_states()
+            self._schedule_statistics_refresh()
+            self._refresh_object_inspector()
             return
-        measurement_id = self._measurement_id_for_proxy_index(selected_rows[0])
+        measurement_id = selected_ids[0]
         if not measurement_id:
             return
         document.select_measurement(measurement_id)
+        document.select_overlay_annotation(None)
         canvas.set_selected_measurement(measurement_id)
+        canvas.set_selected_overlay_annotation(None)
         self._update_action_states()
         self._schedule_statistics_refresh()
+        self._refresh_object_inspector()
 
     def _measurement_id_for_proxy_index(self, proxy_index: QModelIndex) -> str | None:
-        proxy = self._measurement_results_proxy
-        model = self._measurement_results_model
-        if proxy is None or model is None or not proxy_index.isValid():
-            return None
-        source_index = proxy.mapToSource(proxy_index)
-        return model.measurement_id_at(source_index.row())
+        return self._records_controller.measurement_id_for_index(proxy_index)
 
     def _select_measurement_table_id(self, measurement_id: str | None, *, scroll: bool = False) -> None:
-        proxy = self._measurement_results_proxy
-        model = self._measurement_results_model
-        selection_model = self.measurement_table.selectionModel()
-        if proxy is None or model is None or selection_model is None:
-            return
+        selection_model = self._records_controller.selection_model
         selection_model.blockSignals(True)
         try:
-            selection_model.clearSelection()
-            source_row = model.source_row_for_id(measurement_id)
-            if source_row < 0:
-                return
-            source_index = model.index(source_row, self.TABLE_COL_GROUP)
-            proxy_index = proxy.mapFromSource(source_index)
-            if not proxy_index.isValid():
-                return
-            selection_model.select(
-                proxy_index,
-                QItemSelectionModel.SelectionFlag.ClearAndSelect
-                | QItemSelectionModel.SelectionFlag.Rows,
-            )
-            self.measurement_table.setCurrentIndex(proxy_index)
-            if scroll:
-                self.measurement_table.scrollTo(
-                    proxy_index,
-                    QAbstractItemView.ScrollHint.PositionAtCenter,
-                )
+            self._records_controller.select_measurement_id(measurement_id)
         finally:
             selection_model.blockSignals(False)
+        if scroll:
+            for pane in (self._bottom_records_pane, self._inspector_records_pane):
+                if pane is not None:
+                    pane.scroll_to_measurement(measurement_id)
 
     def _on_measurement_table_double_clicked(self, proxy_index: QModelIndex) -> None:
         # The category column reserves double-click for its editing delegate.
@@ -10540,6 +10776,23 @@ class MainWindow(QMainWindow):
         self._sync_measurement_table_selection(document)
         self._update_action_states()
         self._schedule_statistics_refresh()
+        canvas.focus_canvas()
+
+    def _activate_measurement_id(self, measurement_id: str) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        measurement = document.get_measurement(measurement_id) if document is not None else None
+        if document is None or canvas is None or measurement is None:
+            return
+        document.select_overlay_annotation(None)
+        document.select_measurement(measurement.id)
+        canvas.set_selected_overlay_annotation(None)
+        canvas.set_selected_measurement(measurement.id)
+        canvas.center_on_image_point(measurement.geometry_center())
+        self._sync_measurement_table_selection(document)
+        self._update_action_states()
+        self._schedule_statistics_refresh()
+        self._refresh_object_inspector()
         canvas.focus_canvas()
 
     def _on_measurement_group_change_requested(self, measurement_id: str, target_group_id: object) -> None:
@@ -10569,13 +10822,11 @@ class MainWindow(QMainWindow):
         if not selected_items:
             document.set_active_group(None)
             self._sync_group_list_item_widgets()
-            self._update_current_image_properties(document)
             self._update_action_states()
             self._schedule_statistics_refresh()
             return
         document.set_active_group(selected_items[0].data(Qt.ItemDataRole.UserRole))
         self._populate_group_list(document)
-        self._update_current_image_properties(document)
         self._update_action_states()
         self._schedule_statistics_refresh()
 
@@ -10798,7 +11049,6 @@ class MainWindow(QMainWindow):
         self._sync_overlay_tool_button()
         self._sync_digital_slide_navigation_action()
         self._update_project_navigation_summary()
-        self._update_current_image_properties(document)
 
     def _magic_prompt_label_text(self, prompt_type: str) -> str:
         return "当前提示：负采样点" if prompt_type == "negative" else "当前提示：正采样点"

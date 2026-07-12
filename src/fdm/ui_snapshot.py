@@ -137,7 +137,16 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate deterministic UI review screenshots.")
     parser.add_argument(
         "--scenario",
-        choices=("empty", "measurement", "measurement-results", "acquisition", "digital-slide", "settings"),
+        choices=(
+            "empty",
+            "measurement",
+            "measurement-object",
+            "measurement-records-collapsed",
+            "measurement-results",
+            "acquisition",
+            "digital-slide",
+            "settings",
+        ),
         default="measurement",
     )
     parser.add_argument("--theme", choices=("dark", "light", "system"), default="dark")
@@ -209,6 +218,11 @@ def main() -> int:
             widget._results_tabs.setCurrentIndex(
                 {"records": 0, "statistics": 1, "distribution": 2}[args.results_tab]
             )
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-object":
+            widget._object_properties_section.setExpanded(True)
+            widget._refresh_object_inspector()
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":
+            widget._records_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario in {"acquisition", "digital-slide"}:
             widget._preview_active = True
             widget._digital_slide_mode = args.scenario == "digital-slide"
@@ -220,7 +234,6 @@ def main() -> int:
             # The production UI uses a short debounce.  Snapshot scenes force
             # one deterministic refresh so captures never depend on wall time.
             widget._refresh_statistics_ui()
-            widget._apply_pending_distribution_snapshot()
         for _ in range(3):
             app.processEvents()
         widget.ensurePolished()

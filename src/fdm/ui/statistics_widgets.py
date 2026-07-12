@@ -3,8 +3,14 @@ from __future__ import annotations
 import copy
 from dataclasses import dataclass
 
-from PySide6.QtCore import QObject, QRectF, QRunnable, QThreadPool, Qt, Signal, Slot
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPalette, QPen
+from PySide6.QtCore import (
+    QObject,
+    QRunnable,
+    QThreadPool,
+    Qt,
+    Signal,
+    Slot,
+)
 from PySide6.QtWidgets import (
     QComboBox,
     QFrame,
@@ -13,7 +19,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
-    QToolButton,
     QVBoxLayout,
     QWidget,
 )
@@ -24,6 +29,10 @@ from fdm.services.measurement_statistics import (
     MeasurementStatisticsService,
     MeasurementStatisticsSnapshot,
     StatisticsScope,
+)
+from fdm.ui.statistics_distribution import (
+    DistributionRecordFilterRequest as DistributionRecordFilterRequest,
+    StatisticsDistributionWidget,
 )
 
 
@@ -130,7 +139,7 @@ class _MetricCell(QFrame):
 
 
 class MeasurementStatisticsPanel(QWidget):
-    """Compact live statistics and selected-object inspector."""
+    """Compact live statistics and the latest selected measurement result."""
 
     resultsRequested = Signal()
     statisticsChanged = Signal(object)
@@ -195,19 +204,6 @@ class MeasurementStatisticsPanel(QWidget):
         self.current_value_label.setWordWrap(True)
         self.current_value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         root.addWidget(self.current_value_label)
-        self._object_details_toggle = QToolButton(self)
-        self._object_details_toggle.setText("当前对象属性")
-        self._object_details_toggle.setCheckable(True)
-        self._object_details_toggle.setArrowType(Qt.ArrowType.RightArrow)
-        self._object_details_toggle.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
-        self._object_details_toggle.toggled.connect(self._toggle_object_details)
-        self._object_details_toggle.hide()
-        root.addWidget(self._object_details_toggle)
-        self._object_details_label = QLabel(self)
-        self._object_details_label.setWordWrap(True)
-        self._object_details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
-        self._object_details_label.hide()
-        root.addWidget(self._object_details_label)
 
         metrics = QGridLayout()
         metrics.setContentsMargins(0, 0, 0, 0)
@@ -375,8 +371,6 @@ class MeasurementStatisticsPanel(QWidget):
             group = document.get_group(document.active_group_id) if document is not None else None
             category = group.display_name() if group is not None else "未分类"
             self.current_value_label.setText(f"当前类别：{category}")
-            self._object_details_toggle.hide()
-            self._object_details_label.hide()
             return
         unit = measurement.display_unit(document.calibration if document is not None else None)
         value = measurement.display_value()
@@ -388,50 +382,12 @@ class MeasurementStatisticsPanel(QWidget):
             "count",
         }
         confidence = "手工" if measurement.mode in manual_modes else f"{measurement.confidence:.0%}"
-        if measurement.measurement_kind == "area":
-            pixel_value = measurement.area_px
-            pixel_unit = "px²"
-        elif measurement.measurement_kind == "count":
-            pixel_value = 1.0
-            pixel_unit = "个"
-        else:
-            pixel_value = measurement.diameter_px
-            pixel_unit = "px"
         group = document.get_group(measurement.fiber_group_id) if document is not None else None
         category = group.display_name() if group is not None else "未分类"
-        mode_label = {
-            "manual": "手动线段",
-            "continuous_manual": "连续折线",
-            "snap": "边缘吸附",
-            "polygon_area": "多边形面积",
-            "freehand_area": "自由圈选",
-            "count": "手工计数",
-            "magic_segment": "标准魔棒",
-            "reference_propagation": "同类扩选",
-            "fiber_quick": "快速测径",
-        }.get(measurement.mode, measurement.mode)
-        pixel_text = "—" if pixel_value is None else f"{pixel_value:.4g} {pixel_unit}"
-        created = str(measurement.created_at or "—").replace("T", " ").removesuffix("Z")
         self.current_value_label.setText(
             f"当前结果  {value:.4g} {unit}\n"
             f"{category} · {self._kind_label(measurement.measurement_kind)} · {confidence}"
         )
-        self._object_details_label.setText(
-            f"物理值：{value:.4g} {unit}\n"
-            f"像素值：{pixel_text}\n"
-            f"类别：{category}\n"
-            f"模式：{mode_label}\n"
-            f"状态：{measurement.status}\n"
-            f"创建时间：{created}"
-        )
-        self._object_details_toggle.show()
-        self._object_details_label.setVisible(self._object_details_toggle.isChecked())
-
-    def _toggle_object_details(self, expanded: bool) -> None:
-        self._object_details_toggle.setArrowType(
-            Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow
-        )
-        self._object_details_label.setVisible(bool(expanded and self._selected_measurement is not None))
 
     @staticmethod
     def _kind_label(kind: str) -> str:
@@ -515,97 +471,3 @@ class MeasurementStatisticsPanel(QWidget):
             QLabel#statisticsDetails, QLabel#statisticsQuality { color: palette(placeholder-text); }
             """
         )
-
-
-class StatisticsDistributionWidget(QWidget):
-    """Small dependency-free histogram and box plot for the active snapshot."""
-
-    def __init__(self, parent: QWidget | None = None) -> None:
-        super().__init__(parent)
-        self._snapshot: MeasurementStatisticsSnapshot | None = None
-        # The results dock must remain usable at the supported 1093x576
-        # logical viewport.  The plot scales its own drawing geometry, so a
-        # compact minimum is preferable to forcing the main window taller.
-        self.setMinimumHeight(96)
-        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-
-    def set_snapshot(self, snapshot: MeasurementStatisticsSnapshot | None) -> None:
-        self._snapshot = snapshot
-        self.update()
-
-    def paintEvent(self, event) -> None:
-        del event
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        palette = self.palette()
-        text = palette.color(QPalette.ColorRole.Text)
-        muted = palette.color(QPalette.ColorRole.PlaceholderText)
-        border = palette.color(QPalette.ColorRole.Mid)
-        accent = QColor("#2A9D8F")
-        rect = QRectF(self.rect()).adjusted(12, 10, -12, -10)
-        painter.setPen(text)
-        snapshot = self._snapshot
-        if snapshot is None or snapshot.valid_count < 2 or not snapshot.histogram_counts:
-            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, "至少需要两个有效结果才能显示分布。")
-            return
-
-        painter.drawText(QRectF(rect.left(), rect.top(), rect.width(), 20), "直方图")
-        histogram = QRectF(rect.left(), rect.top() + 26, rect.width(), max(60.0, rect.height() * 0.55))
-        painter.setPen(QPen(border, 1))
-        painter.drawLine(histogram.bottomLeft(), histogram.bottomRight())
-        maximum_count = max(snapshot.histogram_counts) or 1
-        bar_width = histogram.width() / len(snapshot.histogram_counts)
-        for index, count in enumerate(snapshot.histogram_counts):
-            height = histogram.height() * (count / maximum_count)
-            bar = QRectF(
-                histogram.left() + index * bar_width + 1,
-                histogram.bottom() - height,
-                max(1.0, bar_width - 2),
-                height,
-            )
-            painter.fillRect(bar, QColor(accent.red(), accent.green(), accent.blue(), 190))
-
-        box_top = histogram.bottom() + 24
-        box_rect = QRectF(rect.left(), box_top, rect.width(), max(36.0, rect.bottom() - box_top))
-        painter.setPen(muted)
-        painter.drawText(QRectF(box_rect.left(), box_rect.top(), box_rect.width(), 18), "箱线图（1.5×IQR）")
-        minimum = snapshot.minimum
-        maximum = snapshot.maximum
-        if minimum is None or maximum is None or maximum <= minimum:
-            return
-
-        axis = QRectF(box_rect.left() + 8, box_rect.top() + 24, box_rect.width() - 16, 24)
-
-        def x_for(value: float | None) -> float:
-            if value is None:
-                return axis.left()
-            return axis.left() + ((value - minimum) / (maximum - minimum)) * axis.width()
-
-        median_x = x_for(snapshot.median)
-        q1_x = x_for(snapshot.q1)
-        q3_x = x_for(snapshot.q3)
-        lower_whisker_x = x_for(snapshot.lower_whisker)
-        upper_whisker_x = x_for(snapshot.upper_whisker)
-        center_y = axis.center().y()
-        painter.setPen(QPen(border, 1.5))
-        painter.drawLine(lower_whisker_x, center_y, upper_whisker_x, center_y)
-        cap_half_height = axis.height() * 0.24
-        painter.drawLine(
-            lower_whisker_x,
-            center_y - cap_half_height,
-            lower_whisker_x,
-            center_y + cap_half_height,
-        )
-        painter.drawLine(
-            upper_whisker_x,
-            center_y - cap_half_height,
-            upper_whisker_x,
-            center_y + cap_half_height,
-        )
-        painter.fillRect(QRectF(q1_x, axis.top() + 3, max(2.0, q3_x - q1_x), axis.height() - 6), QColor(accent.red(), accent.green(), accent.blue(), 85))
-        painter.drawRect(QRectF(q1_x, axis.top() + 3, max(2.0, q3_x - q1_x), axis.height() - 6))
-        painter.setPen(QPen(accent, 2))
-        painter.drawLine(median_x, axis.top() + 2, median_x, axis.bottom() - 2)
-        painter.setBrush(accent)
-        for value in snapshot.outlier_values:
-            painter.drawEllipse(QRectF(x_for(value) - 3, center_y - 3, 6, 6))

@@ -5,7 +5,9 @@ from PySide6.QtGui import QAction, QColor, QFont, QFontMetrics, QIcon, QMouseEve
 from PySide6.QtWidgets import (
     QApplication,
     QComboBox,
+    QFrame,
     QHBoxLayout,
+    QLabel,
     QLayout,
     QLayoutItem,
     QMenu,
@@ -35,6 +37,88 @@ def _application_palette(widget: QWidget) -> QPalette:
 
 def _application_palette_is_dark(widget: QWidget) -> bool:
     return _application_palette(widget).color(QPalette.ColorRole.Window).lightnessF() < 0.5
+
+
+class CollapsibleSection(QFrame):
+    """Restrained, keyboard-accessible section with a persistent header."""
+
+    expandedChanged = Signal(bool)
+
+    def __init__(
+        self,
+        title: str,
+        *,
+        expanded: bool = False,
+        summary: str = "",
+        parent: QWidget | None = None,
+    ) -> None:
+        super().__init__(parent)
+        self.setObjectName("collapsibleSection")
+        root = QVBoxLayout(self)
+        root.setContentsMargins(8, 6, 8, 8)
+        root.setSpacing(6)
+        header = QHBoxLayout()
+        header.setContentsMargins(0, 0, 0, 0)
+        header.setSpacing(6)
+        self.toggleButton = QToolButton(self)
+        self.toggleButton.setText(title)
+        self.toggleButton.setCheckable(True)
+        self.toggleButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.toggleButton.setAccessibleName(title)
+        self.summaryLabel = QLabel(summary, self)
+        self.summaryLabel.setObjectName("collapsibleSectionSummary")
+        self.summaryLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.summaryLabel.setMinimumWidth(0)
+        header.addWidget(self.toggleButton)
+        header.addStretch(1)
+        header.addWidget(self.summaryLabel)
+        root.addLayout(header)
+        self.contentWidget = QWidget(self)
+        self.contentLayout = QVBoxLayout(self.contentWidget)
+        self.contentLayout.setContentsMargins(0, 0, 0, 0)
+        self.contentLayout.setSpacing(6)
+        root.addWidget(self.contentWidget)
+        self.toggleButton.toggled.connect(self._on_toggled)
+        self.setExpanded(expanded, emit_signal=False)
+        self.setStyleSheet(
+            "QFrame#collapsibleSection { border: 1px solid palette(mid); border-radius: 7px; }"
+            "QLabel#collapsibleSectionSummary { color: palette(placeholder-text); }"
+        )
+
+    def setContentWidget(self, widget: QWidget) -> None:
+        while self.contentLayout.count():
+            item = self.contentLayout.takeAt(0)
+            old_widget = item.widget()
+            if old_widget is not None and old_widget is not widget:
+                old_widget.setParent(None)
+        self.contentLayout.addWidget(widget)
+
+    def isExpanded(self) -> bool:
+        return self.toggleButton.isChecked()
+
+    def setExpanded(self, expanded: bool, *, emit_signal: bool = True) -> None:
+        expanded = bool(expanded)
+        self.toggleButton.blockSignals(True)
+        self.toggleButton.setChecked(expanded)
+        self.toggleButton.blockSignals(False)
+        self._apply_expanded(expanded)
+        if emit_signal:
+            self.expandedChanged.emit(expanded)
+
+    def setSummary(self, text: str) -> None:
+        self.summaryLabel.setText(str(text or ""))
+        self.summaryLabel.setVisible(bool(str(text or "").strip()))
+
+    def _on_toggled(self, expanded: bool) -> None:
+        self._apply_expanded(expanded)
+        self.expandedChanged.emit(bool(expanded))
+
+    def _apply_expanded(self, expanded: bool) -> None:
+        self.toggleButton.setArrowType(
+            Qt.ArrowType.DownArrow if expanded else Qt.ArrowType.RightArrow
+        )
+        self.contentWidget.setVisible(bool(expanded))
+        self.summaryLabel.setVisible(bool(self.summaryLabel.text().strip()))
 
 
 class MeasurementGroupComboBox(QComboBox):

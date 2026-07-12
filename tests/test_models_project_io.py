@@ -49,6 +49,7 @@ from fdm.settings import (
     RawRecordTemplate,
     ScaleOverlayPlacementMode,
     ScaleOverlayStyle,
+    WorkspaceLayoutSettings,
     application_root,
     bundle_resource_root,
     default_area_model_mappings,
@@ -740,6 +741,17 @@ class ModelsProjectIOTests(unittest.TestCase):
             main_window_geometry="Zm9v",
             main_window_state="YmFy",
             measurement_results_header_state="YmF6",
+            inspector_measurement_results_header_state="cmlnaHQ=",
+            workspace_layout=WorkspaceLayoutSettings(
+                project_width=310,
+                inspector_width=390,
+                results_height=330,
+                inspector_records_height=280,
+                statistics_expanded=True,
+                records_expanded=False,
+                area_recognition_expanded=True,
+                object_properties_expanded=True,
+            ),
             main_window_is_maximized=True,
         )
 
@@ -786,6 +798,15 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.main_window_geometry, "Zm9v")
         self.assertEqual(loaded.main_window_state, "YmFy")
         self.assertEqual(loaded.measurement_results_header_state, "YmF6")
+        self.assertEqual(loaded.inspector_measurement_results_header_state, "cmlnaHQ=")
+        self.assertEqual(loaded.workspace_layout.project_width, 310)
+        self.assertEqual(loaded.workspace_layout.inspector_width, 390)
+        self.assertEqual(loaded.workspace_layout.results_height, 330)
+        self.assertEqual(loaded.workspace_layout.inspector_records_height, 280)
+        self.assertTrue(loaded.workspace_layout.statistics_expanded)
+        self.assertFalse(loaded.workspace_layout.records_expanded)
+        self.assertTrue(loaded.workspace_layout.area_recognition_expanded)
+        self.assertTrue(loaded.workspace_layout.object_properties_expanded)
         self.assertTrue(loaded.main_window_is_maximized)
 
     def test_app_settings_replace_with_file_copies_source_after_validation(self) -> None:
@@ -879,7 +900,27 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(settings.fiber_quick_edge_trim_enabled)
         self.assertAlmostEqual(settings.fiber_quick_line_extension_px, 0.0)
         self.assertEqual(settings.main_window_geometry, "")
+        self.assertEqual(settings.workspace_layout, WorkspaceLayoutSettings())
         self.assertFalse(settings.main_window_is_maximized)
+
+    def test_workspace_layout_settings_clamp_invalid_extents(self) -> None:
+        settings = AppSettings.from_dict(
+            {
+                "workspace_layout": {
+                    "project_width": -10,
+                    "inspector_width": "invalid",
+                    "results_height": 99_999,
+                    "inspector_records_height": float("inf"),
+                    "statistics_expanded": True,
+                }
+            }
+        )
+
+        self.assertEqual(settings.workspace_layout.project_width, 120)
+        self.assertEqual(settings.workspace_layout.inspector_width, 340)
+        self.assertEqual(settings.workspace_layout.results_height, 2000)
+        self.assertEqual(settings.workspace_layout.inspector_records_height, 260)
+        self.assertTrue(settings.workspace_layout.statistics_expanded)
 
     def test_app_settings_clamp_new_overlay_and_focus_fields(self) -> None:
         settings = AppSettings.from_dict(

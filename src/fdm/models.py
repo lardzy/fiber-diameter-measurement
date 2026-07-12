@@ -70,6 +70,120 @@ def require_positive_finite(value: float, *, field_name: str = "pixels_per_unit"
     return normalized
 
 
+def _normalize_appearance_color(value: object) -> str | None:
+    token = str(value or "").strip()
+    if not token.startswith("#"):
+        return None
+    hex_value = token[1:]
+    if len(hex_value) == 3:
+        hex_value = "".join(character * 2 for character in hex_value)
+    if len(hex_value) != 6:
+        return None
+    if any(character not in "0123456789abcdefABCDEF" for character in hex_value):
+        return None
+    return f"#{hex_value.upper()}"
+
+
+def _normalize_optional_finite(
+    value: object,
+    *,
+    minimum: float,
+    maximum: float,
+) -> float | None:
+    if value is None:
+        return None
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError):
+        return None
+    if not math.isfinite(numeric):
+        return None
+    return max(minimum, min(maximum, numeric))
+
+
+@dataclass(slots=True)
+class ObjectAppearanceOverride:
+    """Optional per-object visual values layered over category/application defaults."""
+
+    stroke_color: str | None = None
+    stroke_width: float | None = None
+    text_color: str | None = None
+    font_family: str | None = None
+    font_size: int | None = None
+    marker_scale: float | None = None
+
+    def __post_init__(self) -> None:
+        self.stroke_color = _normalize_appearance_color(self.stroke_color)
+        self.stroke_width = _normalize_optional_finite(
+            self.stroke_width,
+            minimum=0.5,
+            maximum=24.0,
+        )
+        self.text_color = _normalize_appearance_color(self.text_color)
+        family = str(self.font_family or "").strip()
+        self.font_family = family[:128] or None
+        normalized_font_size = _normalize_optional_finite(
+            self.font_size,
+            minimum=8.0,
+            maximum=144.0,
+        )
+        self.font_size = int(round(normalized_font_size)) if normalized_font_size is not None else None
+        self.marker_scale = _normalize_optional_finite(
+            self.marker_scale,
+            minimum=0.25,
+            maximum=4.0,
+        )
+
+    def is_empty(self) -> bool:
+        return all(
+            value is None
+            for value in (
+                self.stroke_color,
+                self.stroke_width,
+                self.text_color,
+                self.font_family,
+                self.font_size,
+                self.marker_scale,
+            )
+        )
+
+    def clone(self, **changes: object) -> "ObjectAppearanceOverride":
+        return replace(self, **changes)
+
+    def to_dict(self) -> dict[str, Any]:
+        payload: dict[str, Any] = {}
+        for key in (
+            "stroke_color",
+            "stroke_width",
+            "text_color",
+            "font_family",
+            "font_size",
+            "marker_scale",
+        ):
+            value = getattr(self, key)
+            if value is not None:
+                payload[key] = value
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "ObjectAppearanceOverride":
+        return cls(
+            stroke_color=payload.get("stroke_color"),
+            stroke_width=payload.get("stroke_width"),
+            text_color=payload.get("text_color"),
+            font_family=payload.get("font_family"),
+            font_size=payload.get("font_size"),
+            marker_scale=payload.get("marker_scale"),
+        )
+
+
+def _appearance_from_payload(payload: object) -> ObjectAppearanceOverride | None:
+    if not isinstance(payload, dict):
+        return None
+    appearance = ObjectAppearanceOverride.from_dict(payload)
+    return None if appearance.is_empty() else appearance
+
+
 @dataclass(slots=True)
 class Calibration:
     mode: str
@@ -276,6 +390,7 @@ class Measurement:
     status: str = "ready"
     created_at: str = field(default_factory=utc_now_iso)
     debug_payload: dict[str, Any] = field(default_factory=dict)
+    appearance: ObjectAppearanceOverride | None = None
     display_polygon_px: list[Point] = field(default_factory=list, repr=False)
     display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
     display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
@@ -358,7 +473,7 @@ class Measurement:
         self.area_unit = None
 
     def to_dict(self) -> dict[str, Any]:
-        return {
+        payload = {
             "id": self.id,
             "image_id": self.image_id,
             "fiber_group_id": self.fiber_group_id,
@@ -383,6 +498,9 @@ class Measurement:
             "created_at": self.created_at,
             "debug_payload": self.debug_payload,
         }
+        if self.appearance is not None and not self.appearance.is_empty():
+            payload["appearance"] = self.appearance.to_dict()
+        return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "Measurement":
@@ -434,6 +552,7 @@ class Measurement:
             status=status,
             created_at=str(payload.get("created_at", utc_now_iso())),
             debug_payload=dict(payload.get("debug_payload", {})),
+            appearance=_appearance_from_payload(payload.get("appearance")),
         )
 
 
@@ -493,6 +612,7 @@ class OverlayAnnotation:
     start_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
     end_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
     created_at: str = field(default_factory=utc_now_iso)
+    appearance: ObjectAppearanceOverride | None = None
 
     def normalized_kind(self) -> str:
         if self.kind in {
@@ -532,6 +652,8 @@ class OverlayAnnotation:
         else:
             payload["start_px"] = self.start_px.to_dict()
             payload["end_px"] = self.end_px.to_dict()
+        if self.appearance is not None and not self.appearance.is_empty():
+            payload["appearance"] = self.appearance.to_dict()
         return payload
 
     @classmethod
@@ -553,6 +675,7 @@ class OverlayAnnotation:
                 content=str(payload.get("content", "")),
                 anchor_px=Point.from_dict(payload.get("anchor_px", {"x": 0.0, "y": 0.0})),
                 created_at=str(payload.get("created_at", utc_now_iso())),
+                appearance=_appearance_from_payload(payload.get("appearance")),
             )
         return cls(
             id=str(payload["id"]),
@@ -561,6 +684,7 @@ class OverlayAnnotation:
             start_px=Point.from_dict(payload.get("start_px", {"x": 0.0, "y": 0.0})),
             end_px=Point.from_dict(payload.get("end_px", {"x": 0.0, "y": 0.0})),
             created_at=str(payload.get("created_at", utc_now_iso())),
+            appearance=_appearance_from_payload(payload.get("appearance")),
         )
 
 

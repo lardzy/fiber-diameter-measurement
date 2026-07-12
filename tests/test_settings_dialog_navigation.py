@@ -10,8 +10,11 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
+    from PySide6.QtCore import QPoint
     from PySide6.QtWidgets import QApplication, QDialogButtonBox
 
+    from fdm.geometry import Point
+    from fdm.models import ImageDocument
     from fdm.settings import AppSettings
     from fdm.ui.dialogs import SettingsDialog
 
@@ -110,6 +113,31 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                 assert button is not None
                 self.assertEqual(button.text(), text)
             self.assertEqual(dialog._restore_page_defaults_button.text(), "恢复本页默认值")  # noqa: SLF001
+        finally:
+            dialog.close()
+
+    def test_footer_keeps_restore_button_away_from_left_edge(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            dialog.resize(900, 640)
+            dialog.show()
+            self.app.processEvents()
+            restore_left = dialog._restore_page_defaults_button.mapTo(dialog, QPoint(0, 0)).x()  # noqa: SLF001
+            ok_button = dialog.button_box.button(QDialogButtonBox.StandardButton.Ok)
+            ok_right = ok_button.mapTo(dialog, QPoint(ok_button.width(), 0)).x()
+            self.assertGreaterEqual(restore_left, 12)
+            self.assertLessEqual(ok_right, dialog.width() - 12)
+        finally:
+            dialog.close()
+
+    def test_annotation_page_exposes_current_image_scale_anchor_pick(self) -> None:
+        document = ImageDocument(id="image", path="/tmp/image.png", image_size=(100, 80))
+        document.scale_overlay_anchor = Point(24, 36)
+        dialog = SettingsDialog(AppSettings(), document=document)
+        try:
+            dialog._settings_navigation.setCurrentRow(2)  # noqa: SLF001
+            self.assertTrue(dialog._scale_anchor_pick_button.isEnabled())  # noqa: SLF001
+            self.assertEqual(dialog._scale_anchor_status_label.text(), "当前锚点：(24.0, 36.0)")  # noqa: SLF001
         finally:
             dialog.close()
 

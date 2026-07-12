@@ -421,6 +421,80 @@ def default_area_model_mappings() -> list[AreaModelMapping]:
 
 
 @dataclass(slots=True)
+class WorkspaceLayoutSettings:
+    """User-owned workbench dimensions and collapsible-panel preferences."""
+
+    version: int = 1
+    project_width: int = 260
+    inspector_width: int = 340
+    results_height: int = 260
+    inspector_records_height: int = 260
+    statistics_expanded: bool = False
+    records_expanded: bool = True
+    area_recognition_expanded: bool = False
+    object_properties_expanded: bool = False
+
+    @staticmethod
+    def _extent(value: object, default: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError, OverflowError):
+            numeric = int(default)
+        return max(120, min(2000, numeric))
+
+    def normalized_copy(self) -> "WorkspaceLayoutSettings":
+        return WorkspaceLayoutSettings(
+            version=1,
+            project_width=self._extent(self.project_width, 260),
+            inspector_width=self._extent(self.inspector_width, 340),
+            results_height=self._extent(self.results_height, 260),
+            inspector_records_height=self._extent(self.inspector_records_height, 260),
+            statistics_expanded=bool(self.statistics_expanded),
+            records_expanded=bool(self.records_expanded),
+            area_recognition_expanded=bool(self.area_recognition_expanded),
+            object_properties_expanded=bool(self.object_properties_expanded),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        normalized = self.normalized_copy()
+        return {
+            "version": normalized.version,
+            "project_width": normalized.project_width,
+            "inspector_width": normalized.inspector_width,
+            "results_height": normalized.results_height,
+            "inspector_records_height": normalized.inspector_records_height,
+            "statistics_expanded": normalized.statistics_expanded,
+            "records_expanded": normalized.records_expanded,
+            "area_recognition_expanded": normalized.area_recognition_expanded,
+            "object_properties_expanded": normalized.object_properties_expanded,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: object) -> "WorkspaceLayoutSettings":
+        if not isinstance(payload, dict):
+            return cls()
+        defaults = cls()
+        return cls(
+            version=1,
+            project_width=cls._extent(payload.get("project_width"), defaults.project_width),
+            inspector_width=cls._extent(payload.get("inspector_width"), defaults.inspector_width),
+            results_height=cls._extent(payload.get("results_height"), defaults.results_height),
+            inspector_records_height=cls._extent(
+                payload.get("inspector_records_height"),
+                defaults.inspector_records_height,
+            ),
+            statistics_expanded=bool(payload.get("statistics_expanded", defaults.statistics_expanded)),
+            records_expanded=bool(payload.get("records_expanded", defaults.records_expanded)),
+            area_recognition_expanded=bool(
+                payload.get("area_recognition_expanded", defaults.area_recognition_expanded)
+            ),
+            object_properties_expanded=bool(
+                payload.get("object_properties_expanded", defaults.object_properties_expanded)
+            ),
+        )
+
+
+@dataclass(slots=True)
 class AppSettings:
     theme_mode: str = AppThemeMode.DARK
     show_measurement_labels: bool = True
@@ -466,6 +540,8 @@ class AppSettings:
     main_window_geometry: str = ""
     main_window_state: str = ""
     measurement_results_header_state: str = ""
+    inspector_measurement_results_header_state: str = ""
+    workspace_layout: WorkspaceLayoutSettings = field(default_factory=WorkspaceLayoutSettings)
     main_window_is_maximized: bool = False
     recent_export_dir: str = ""
     recent_project_dir: str = ""
@@ -512,6 +588,7 @@ class AppSettings:
 
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
+        normalized.workspace_layout = self.workspace_layout.normalized_copy()
         normalized.theme_mode = normalize_theme_mode(self.theme_mode)
         normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
         normalized.count_number_font_size = self._normalize_font_size(self.count_number_font_size, minimum=8, maximum=96)
@@ -929,6 +1006,8 @@ class AppSettings:
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_state": normalized.main_window_state,
             "measurement_results_header_state": normalized.measurement_results_header_state,
+            "inspector_measurement_results_header_state": normalized.inspector_measurement_results_header_state,
+            "workspace_layout": normalized.workspace_layout.to_dict(),
             "main_window_is_maximized": normalized.main_window_is_maximized,
             "recent_export_dir": normalized.recent_export_dir,
             "recent_project_dir": normalized.recent_project_dir,
@@ -1108,6 +1187,13 @@ class AppSettings:
         settings.measurement_results_header_state = str(
             payload.get("measurement_results_header_state", settings.measurement_results_header_state)
         ).strip()
+        settings.inspector_measurement_results_header_state = str(
+            payload.get(
+                "inspector_measurement_results_header_state",
+                settings.inspector_measurement_results_header_state,
+            )
+        ).strip()
+        settings.workspace_layout = WorkspaceLayoutSettings.from_dict(payload.get("workspace_layout"))
         settings.main_window_is_maximized = bool(payload.get("main_window_is_maximized", settings.main_window_is_maximized))
         settings.recent_export_dir = cls._normalize_recent_directory(payload.get("recent_export_dir", settings.recent_export_dir))
         settings.recent_project_dir = cls._normalize_recent_directory(payload.get("recent_project_dir", settings.recent_project_dir))

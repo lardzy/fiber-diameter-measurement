@@ -873,7 +873,7 @@ class _SettingsTabsCompatibility:
 
     Settings pages are no longer presented as horizontal tabs.  Keeping this
     deliberately small adapter avoids coupling callers to the new navigation
-    widgets while the current-image controls move to the main inspector.
+    widgets while callers migrate to the category navigation.
     """
 
     def __init__(self, labels: list[str], pages: list[QWidget]) -> None:
@@ -918,7 +918,6 @@ class SettingsDialog(QDialog):
         self._preferred_size_applied = False
         self._initial_settings = replace(settings)
         self._document = document
-        self._group_color_buttons: dict[str | None, QPushButton] = {}
         self._request_scale_anchor_pick = False
         self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
         self._raw_record_current_template_index = -1
@@ -930,7 +929,6 @@ class SettingsDialog(QDialog):
         area_models_page = self._build_area_models_tab(settings)
         digital_slide_page = self._build_digital_slide_tab(settings, locked=digital_slide_locked)
         raw_record_page = self._build_raw_record_templates_tab(settings)
-        current_image_page = self._build_current_image_tab(document)
 
         self._settings_pages = QStackedWidget(self)
         self._settings_pages.setObjectName("settingsPages")
@@ -953,9 +951,8 @@ class SettingsDialog(QDialog):
         legacy_overlay_page = self._build_legacy_group_page(("文字默认样式", "图形默认样式"))
         legacy_scale_page.hide()
         legacy_overlay_page.hide()
-        current_image_page.hide()
         self._tabs = _SettingsTabsCompatibility(
-            ["测量标注", "比例尺叠加", "图像处理", "叠加标注", "数字化切片", "面积识别", "原始记录模板", "当前图片"],
+            ["测量标注", "比例尺叠加", "图像处理", "叠加标注", "数字化切片", "面积识别", "原始记录模板"],
             [
                 measurement_page,
                 legacy_scale_page,
@@ -964,7 +961,6 @@ class SettingsDialog(QDialog):
                 digital_slide_page,
                 area_models_page,
                 raw_record_page,
-                current_image_page,
             ],
         )
 
@@ -1059,7 +1055,11 @@ class SettingsDialog(QDialog):
         layout.setContentsMargins(0, 0, 12, 12)
         layout.setSpacing(8)
         layout.addLayout(content_layout, 1)
-        layout.addWidget(self._button_box)
+        footer_layout = QHBoxLayout()
+        footer_layout.setContentsMargins(12, 0, 0, 0)
+        footer_layout.setSpacing(0)
+        footer_layout.addWidget(self._button_box)
+        layout.addLayout(footer_layout)
         self.setStyleSheet(
             """
             QFrame#settingsSidebar {
@@ -1411,16 +1411,6 @@ class SettingsDialog(QDialog):
             )
         return templates
 
-    def group_colors(self) -> dict[str, str]:
-        if self._document is None:
-            return {}
-        colors: dict[str, str] = {}
-        for group in self._document.sorted_groups():
-            button = self._group_color_buttons.get(group.id)
-            if button is not None:
-                colors[group.id] = str(button.property("color_value") or group.color)
-        return colors
-
     def wants_scale_anchor_pick(self) -> bool:
         return self._document is not None and self._request_scale_anchor_pick
 
@@ -1455,7 +1445,10 @@ class SettingsDialog(QDialog):
         display_form.addRow("界面主题", self._theme_mode_combo)
         display_form.addRow("打开图片默认视图", self._open_view_mode_combo)
 
-        hint = QLabel("这些选项是长期偏好；当前图片的标定、类别颜色和比例尺锚点由测量工作台的属性检查器管理。")
+        hint = QLabel(
+            "这些选项是长期偏好；当前图片标定由工作台的标定区管理，类别颜色由左侧项目导航管理；"
+            "比例尺锚点仅在“标注与比例尺”页显式触发选点。"
+        )
         hint.setWordWrap(True)
         layout.addWidget(display_group)
         layout.addWidget(hint)
@@ -1781,11 +1774,38 @@ class SettingsDialog(QDialog):
         layout.addWidget(placement_group)
         layout.addWidget(style_group)
         layout.addWidget(display_hint)
+        layout.addWidget(self._build_current_scale_anchor_group())
         layout.addWidget(text_group)
         layout.addWidget(shape_group)
 
         layout.addStretch(1)
         return self._wrap_settings_page(page)
+
+    def _build_current_scale_anchor_group(self) -> QGroupBox:
+        group = QGroupBox("当前图片比例尺位置")
+        group_layout = QVBoxLayout(group)
+        document = self._document
+        if document is None:
+            status = QLabel("当前没有打开的图片，无法设置手动比例尺位置。", group)
+        elif document.scale_overlay_anchor is None:
+            status = QLabel("当前图片尚未设置手动位置。", group)
+        else:
+            anchor = document.scale_overlay_anchor
+            status = QLabel(f"当前锚点：({anchor.x:.1f}, {anchor.y:.1f})", group)
+        self._scale_anchor_status_label = status
+        status.setWordWrap(True)
+        group_layout.addWidget(status)
+        hint = QLabel(
+            "只有点击下方按钮才会关闭首选项并进入画布选点；修改其它比例尺设置不会触发选点。",
+            group,
+        )
+        hint.setWordWrap(True)
+        group_layout.addWidget(hint)
+        self._scale_anchor_pick_button = QPushButton("在画布重新选择位置", group)
+        self._scale_anchor_pick_button.setEnabled(document is not None)
+        self._scale_anchor_pick_button.clicked.connect(self._trigger_scale_anchor_pick)
+        group_layout.addWidget(self._scale_anchor_pick_button)
+        return group
 
     def _build_digital_slide_tab(self, settings: AppSettings, *, locked: bool = False) -> QWidget:
         page = QWidget()
@@ -2119,43 +2139,6 @@ class SettingsDialog(QDialog):
             self._load_raw_record_rules_into_table(0)
         else:
             self._load_raw_record_rules_into_table(-1)
-        return self._wrap_settings_page(page)
-
-    def _build_current_image_tab(self, document: ImageDocument | None) -> QWidget:
-        page = QWidget()
-        layout = QVBoxLayout(page)
-        if document is None:
-            layout.addWidget(QLabel("当前没有打开的图片。"))
-            layout.addStretch(1)
-            return self._wrap_settings_page(page)
-
-        group_box = QGroupBox("类别颜色")
-        group_layout = QFormLayout(group_box)
-        if not document.fiber_groups:
-            group_layout.addRow(QLabel("当前图片还没有已定义类别。"))
-        for group in document.sorted_groups():
-            button = self._create_color_button(group.color)
-            self._group_color_buttons[group.id] = button
-            group_layout.addRow(group.display_name(), button)
-
-        scale_box = QGroupBox("比例尺锚点")
-        scale_layout = QVBoxLayout(scale_box)
-        anchor = document.scale_overlay_anchor
-        status_text = "当前未设置手动位置。"
-        if anchor is not None:
-            status_text = f"当前锚点: ({anchor.x:.1f}, {anchor.y:.1f})"
-        scale_layout.addWidget(QLabel(status_text))
-        hint = QLabel("手动比例尺位置只会在你显式点击“重新选择位置”后进入画布选点；单独修改其它设置不会触发选点。")
-        hint.setWordWrap(True)
-        scale_layout.addWidget(hint)
-        pick_button = QPushButton("重新选择位置")
-        pick_button.clicked.connect(self._trigger_scale_anchor_pick)
-        scale_layout.addWidget(pick_button)
-        scale_layout.addStretch(1)
-
-        layout.addWidget(group_box)
-        layout.addWidget(scale_box)
-        layout.addStretch(1)
         return self._wrap_settings_page(page)
 
     def _insert_raw_record_template_row(self, template: RawRecordTemplate) -> None:

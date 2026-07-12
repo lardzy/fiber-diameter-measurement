@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from enum import StrEnum
 
-from PySide6.QtCore import QObject, Qt, Signal
+from PySide6.QtCore import QObject, QSize, Qt, QTimer, Signal
 from PySide6.QtWidgets import QDockWidget, QMainWindow, QWidget
+
+from fdm.settings import WorkspaceLayoutSettings
 
 
 class WorkspaceMode(StrEnum):
@@ -22,6 +24,8 @@ class WorkspaceDockWidget(QDockWidget):
     predictable layout on the company workstations it targets.
     """
 
+    extentChanged = Signal(QSize)
+
     def __init__(self, title: str, object_name: str, parent: QMainWindow) -> None:
         super().__init__(title, parent)
         self.setObjectName(object_name)
@@ -30,6 +34,11 @@ class WorkspaceDockWidget(QDockWidget):
 
     def setPanelWidget(self, widget: QWidget) -> None:
         self.setWidget(widget)
+
+    def resizeEvent(self, event) -> None:
+        super().resizeEvent(event)
+        if self.isVisible():
+            self.extentChanged.emit(event.size())
 
 
 class AdaptiveLayoutController(QObject):
@@ -47,6 +56,7 @@ class AdaptiveLayoutController(QObject):
         project_dock: QDockWidget,
         inspector_dock: QDockWidget,
         results_dock: QDockWidget,
+        layout_settings: WorkspaceLayoutSettings | None = None,
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent or window)
@@ -54,14 +64,23 @@ class AdaptiveLayoutController(QObject):
         self._project_dock = project_dock
         self._inspector_dock = inspector_dock
         self._results_dock = results_dock
+        self._layout_settings = layout_settings or WorkspaceLayoutSettings()
         self._workspace = WorkspaceMode.MEASURE
         self._compact = False
         self._applying = False
+        self._suppress_extent_capture = False
         self._wide_visibility = {
             "project": True,
             "inspector": True,
             "results": False,
         }
+        for dock in (self._project_dock, self._inspector_dock, self._results_dock):
+            if isinstance(dock, WorkspaceDockWidget):
+                dock.extentChanged.connect(
+                    lambda size, target=dock: self._on_dock_extent_changed(target, size)
+                )
+
+    layoutPreferencesChanged = Signal()
 
     @property
     def workspace(self) -> WorkspaceMode:
@@ -74,6 +93,20 @@ class AdaptiveLayoutController(QObject):
     def set_workspace(self, workspace: WorkspaceMode | str) -> None:
         self._workspace = WorkspaceMode(workspace)
         self.apply_for_width(self._window.width(), force=True)
+
+    def begin_window_resize(self) -> None:
+        self._suppress_extent_capture = True
+
+    def end_window_resize(self, width: int) -> None:
+        self.apply_for_width(width)
+        QTimer.singleShot(0, self._finish_window_resize)
+
+    def _finish_window_resize(self) -> None:
+        self.restore_preferred_extents()
+        QTimer.singleShot(0, self._release_extent_capture)
+
+    def _release_extent_capture(self) -> None:
+        self._suppress_extent_capture = False
 
     def apply_for_width(self, width: int, *, force: bool = False) -> None:
         compact = int(width) < self.COMPACT_WIDTH
@@ -115,6 +148,7 @@ class AdaptiveLayoutController(QObject):
                     self._results_dock.setVisible(results_visible)
         finally:
             self._applying = False
+        QTimer.singleShot(0, self.restore_preferred_extents)
         self.layoutChanged.emit(compact)
 
     def toggle_project(self) -> None:
@@ -127,6 +161,8 @@ class AdaptiveLayoutController(QObject):
             return
         self._project_dock.setVisible(not self._project_dock.isVisible())
         self._wide_visibility["project"] = self._project_dock.isVisible()
+        if self._project_dock.isVisible():
+            QTimer.singleShot(0, self.restore_preferred_extents)
 
     def toggle_inspector(self) -> None:
         if self._compact:
@@ -138,6 +174,8 @@ class AdaptiveLayoutController(QObject):
             return
         self._inspector_dock.setVisible(not self._inspector_dock.isVisible())
         self._wide_visibility["inspector"] = self._inspector_dock.isVisible()
+        if self._inspector_dock.isVisible():
+            QTimer.singleShot(0, self.restore_preferred_extents)
 
     def toggle_results(self) -> None:
         show = not self._results_dock.isVisible()
@@ -152,17 +190,94 @@ class AdaptiveLayoutController(QObject):
                 self._project_dock.setVisible(self._wide_visibility["project"])
         finally:
             self._applying = False
+        if show:
+            QTimer.singleShot(0, self.restore_preferred_extents)
         self.layoutChanged.emit(self._compact)
 
     def reset_defaults(self) -> None:
+        defaults = WorkspaceLayoutSettings()
+        self._layout_settings.project_width = defaults.project_width
+        self._layout_settings.inspector_width = defaults.inspector_width
+        self._layout_settings.results_height = defaults.results_height
+        self._layout_settings.inspector_records_height = defaults.inspector_records_height
+        self._layout_settings.statistics_expanded = defaults.statistics_expanded
+        self._layout_settings.records_expanded = defaults.records_expanded
+        self._layout_settings.area_recognition_expanded = defaults.area_recognition_expanded
+        self._layout_settings.object_properties_expanded = defaults.object_properties_expanded
         self._wide_visibility = {"project": True, "inspector": True, "results": False}
         self.apply_for_width(self._window.width(), force=True)
-        if not self._compact:
-            self._window.resizeDocks(
-                [self._project_dock, self._inspector_dock],
-                [260, 340],
-                Qt.Orientation.Horizontal,
-            )
+        self.restore_preferred_extents()
+        self.layoutPreferencesChanged.emit()
+
+    @property
+    def layout_settings(self) -> WorkspaceLayoutSettings:
+        return self._layout_settings
+
+    def set_layout_settings(self, settings: WorkspaceLayoutSettings) -> None:
+        self._layout_settings = settings
+
+    def capture_restored_visibility(self) -> None:
+        """Adopt QMainWindow.restoreState() visibility before responsive rules run."""
+
+        self._wide_visibility = {
+            "project": not self._project_dock.isHidden(),
+            "inspector": not self._inspector_dock.isHidden(),
+            "results": not self._results_dock.isHidden(),
+        }
+
+    def restore_preferred_extents(self) -> None:
+        if self._applying or not self._window.isVisible():
+            return
+        self._applying = True
+        try:
+            if not self._compact:
+                horizontal_docks: list[QDockWidget] = []
+                horizontal_sizes: list[int] = []
+                if self._project_dock.isVisible():
+                    horizontal_docks.append(self._project_dock)
+                    horizontal_sizes.append(int(self._layout_settings.project_width))
+                if self._inspector_dock.isVisible():
+                    horizontal_docks.append(self._inspector_dock)
+                    horizontal_sizes.append(int(self._layout_settings.inspector_width))
+                if horizontal_docks:
+                    maximum_total = max(240, self._window.width() - 560)
+                    if sum(horizontal_sizes) > maximum_total:
+                        scale = maximum_total / max(1, sum(horizontal_sizes))
+                        horizontal_sizes = [max(120, int(round(size * scale))) for size in horizontal_sizes]
+                    self._window.resizeDocks(
+                        horizontal_docks,
+                        horizontal_sizes,
+                        Qt.Orientation.Horizontal,
+                    )
+            if self._results_dock.isVisible():
+                maximum_height = max(120, self._window.height() - 320)
+                preferred_height = min(int(self._layout_settings.results_height), maximum_height)
+                self._window.resizeDocks(
+                    [self._results_dock],
+                    [preferred_height],
+                    Qt.Orientation.Vertical,
+                )
+        finally:
+            self._applying = False
+
+    def _on_dock_extent_changed(self, dock: QDockWidget, size: QSize) -> None:
+        if self._applying or self._suppress_extent_capture or not dock.isVisible():
+            return
+        changed = False
+        if dock is self._project_dock and not self._compact:
+            value = max(120, int(size.width()))
+            changed = value != self._layout_settings.project_width
+            self._layout_settings.project_width = value
+        elif dock is self._inspector_dock and not self._compact:
+            value = max(120, int(size.width()))
+            changed = value != self._layout_settings.inspector_width
+            self._layout_settings.inspector_width = value
+        elif dock is self._results_dock and not self._compact:
+            value = max(120, int(size.height()))
+            changed = value != self._layout_settings.results_height
+            self._layout_settings.results_height = value
+        if changed:
+            self.layoutPreferencesChanged.emit()
 
     def note_visibility_change(self) -> None:
         if self._applying or self._compact:

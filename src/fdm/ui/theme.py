@@ -7,6 +7,9 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 
 
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
+_THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
+_THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
+_THEME_STYLE_REVISION = 2
 
 
 def _ensure_system_theme_snapshot(app: QApplication) -> tuple[str, QPalette]:
@@ -93,6 +96,14 @@ def build_light_palette() -> QPalette:
 
 def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
     normalized = normalize_theme_mode(theme_mode)
+    if (
+        app.property(_THEME_CACHE_PROPERTY) == normalized
+        and app.property(_THEME_STYLE_REVISION_PROPERTY) == _THEME_STYLE_REVISION
+    ):
+        # Reapplying an identical application palette broadcasts expensive
+        # PaletteChange/StyleChange events to every open widget.  MainWindow
+        # construction and repeated Apply presses must therefore be idempotent.
+        return normalized
     system_style_name, system_palette = _ensure_system_theme_snapshot(app)
 
     if normalized == AppThemeMode.SYSTEM:
@@ -110,6 +121,8 @@ def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
         system_font.setFamily(resolved_family)
     app.setFont(system_font)
     app.setStyleSheet(build_application_stylesheet())
+    app.setProperty(_THEME_CACHE_PROPERTY, normalized)
+    app.setProperty(_THEME_STYLE_REVISION_PROPERTY, _THEME_STYLE_REVISION)
     return normalized
 
 

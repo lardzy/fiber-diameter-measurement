@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from enum import IntEnum
 from functools import lru_cache
 import math
@@ -8,20 +9,25 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyMod
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QAbstractItemDelegate, QComboBox, QStyledItemDelegate, QWidget
 
+from fdm.geometry import area_rings_hole_area
 from fdm.models import ImageDocument, Measurement, UNCATEGORIZED_LABEL
 from fdm.services.measurement_statistics import MeasurementStatisticsService
 from fdm.ui.widgets import MeasurementGroupComboBox
 
 
 class MeasurementResultColumn(IntEnum):
-    GROUP = 0
-    KIND = 1
-    RESULT = 2
-    UNIT = 3
-    MODE = 4
-    CONFIDENCE = 5
-    STATUS = 6
-    ID = 7
+    RESULT_SEQUENCE = 0
+    CATEGORY_SEQUENCE = 1
+    GROUP = 2
+    KIND = 3
+    RESULT = 4
+    UNIT = 5
+    HOLE_AREA = 6
+    MODE = 7
+    CONFIDENCE = 8
+    STATUS = 9
+    CREATED_AT = 10
+    ID = 11
 
 
 MEASUREMENT_ID_ROLE = int(Qt.ItemDataRole.UserRole) + 1
@@ -32,7 +38,20 @@ RAW_STATUS_ROLE = int(Qt.ItemDataRole.UserRole) + 5
 SORT_ROLE = int(Qt.ItemDataRole.UserRole) + 6
 
 
-_HEADERS = ("种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID")
+_HEADERS = (
+    "纤维结果序号",
+    "纤维类别结果序号",
+    "纤维类别",
+    "类型",
+    "结果",
+    "单位",
+    "孔洞面积",
+    "模式",
+    "置信度",
+    "状态",
+    "创建时间",
+    "ID",
+)
 _MANUAL_MODES = {"manual", "continuous_manual", "count", "polygon_area", "freehand_area"}
 
 
@@ -83,8 +102,51 @@ def format_measurement_status(status: str) -> str:
     }.get(status, status)
 
 
+def _measurement_hole_area(
+    document: ImageDocument,
+    measurement: Measurement,
+) -> tuple[float, str] | None:
+    if measurement.measurement_kind != "area":
+        return None
+    value = float(area_rings_hole_area(measurement.area_rings_px))
+    calibration = document.calibration
+    if calibration is None:
+        return value, "px²"
+    return calibration.px_area_to_unit(value), f"{calibration.unit}²"
+
+
+def _parse_created_at(value: str) -> datetime | None:
+    token = str(value or "").strip()
+    if not token:
+        return None
+    if token.endswith("Z"):
+        token = f"{token[:-1]}+00:00"
+    try:
+        return datetime.fromisoformat(token)
+    except ValueError:
+        return None
+
+
+def _format_created_at(value: str) -> str:
+    parsed = _parse_created_at(value)
+    if parsed is None:
+        return str(value or "") or "—"
+    if parsed.tzinfo is not None:
+        parsed = parsed.astimezone()
+    return parsed.strftime("%Y-%m-%d %H:%M:%S")
+
+
+def _created_at_sort_value(value: str) -> float | str:
+    parsed = _parse_created_at(value)
+    if parsed is None:
+        return str(value or "").casefold()
+    if parsed.tzinfo is None:
+        parsed = parsed.astimezone()
+    return parsed.timestamp()
+
+
 class MeasurementResultsModel(QAbstractTableModel):
-    """Eight-column measurement model backed by one image document.
+    """Twelve-column measurement model backed by one image document.
 
     The model keeps its own ordered reference list so incremental inserts obey
     Qt's model-change contract even though the domain document is mutated first.
@@ -99,6 +161,8 @@ class MeasurementResultsModel(QAbstractTableModel):
         self._document: ImageDocument | None = None
         self._measurements: list[Measurement] = []
         self._row_by_id: dict[str, int] = {}
+        self._result_sequence_by_id: dict[str, int] = {}
+        self._category_sequence_by_id: dict[str, int] = {}
 
     @property
     def document(self) -> ImageDocument | None:
@@ -112,6 +176,7 @@ class MeasurementResultsModel(QAbstractTableModel):
             measurement.id: row
             for row, measurement in enumerate(self._measurements)
         }
+        self._rebuild_sequences()
         self.endResetModel()
 
     def append_measurement(self, document: ImageDocument, measurement: Measurement) -> bool:
@@ -129,6 +194,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         self.beginInsertRows(QModelIndex(), row, row)
         self._measurements.append(measurement)
         self._row_by_id[measurement.id] = row
+        self._rebuild_sequences()
         self.endInsertRows()
         return True
 
@@ -139,7 +205,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         return 0 if parent.isValid() else len(_HEADERS)
 
     def headerData(self, section: int, orientation: Qt.Orientation, role: int = Qt.ItemDataRole.DisplayRole):
-        if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
+        if role in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.ToolTipRole} and orientation == Qt.Orientation.Horizontal:
             if 0 <= section < len(_HEADERS):
                 return _HEADERS[section]
         return super().headerData(section, orientation, role)
@@ -152,7 +218,11 @@ class MeasurementResultsModel(QAbstractTableModel):
         column = MeasurementResultColumn(index.column())
         group = document.get_group(measurement.fiber_group_id)
         group_display = group.display_name() if group is not None else UNCATEGORIZED_LABEL
-        group_filter = group.label if group is not None else UNCATEGORIZED_LABEL
+        group_filter = (
+            (group.label.strip() or group.display_name())
+            if group is not None
+            else UNCATEGORIZED_LABEL
+        )
 
         if role in {Qt.ItemDataRole.UserRole, MEASUREMENT_ID_ROLE}:
             return measurement.id
@@ -167,18 +237,39 @@ class MeasurementResultsModel(QAbstractTableModel):
         if role == Qt.ItemDataRole.DecorationRole and column is MeasurementResultColumn.GROUP:
             return _color_icon(group.color if group is not None else "#98A2B3")
         if role == Qt.ItemDataRole.TextAlignmentRole:
-            if column in {MeasurementResultColumn.RESULT, MeasurementResultColumn.CONFIDENCE}:
+            if column in {
+                MeasurementResultColumn.RESULT_SEQUENCE,
+                MeasurementResultColumn.CATEGORY_SEQUENCE,
+                MeasurementResultColumn.RESULT,
+                MeasurementResultColumn.HOLE_AREA,
+                MeasurementResultColumn.CONFIDENCE,
+            }:
                 return int(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
             return int(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
-        if role == Qt.ItemDataRole.ToolTipRole and column is MeasurementResultColumn.ID:
-            return measurement.id
+        if role == Qt.ItemDataRole.ToolTipRole:
+            if column is MeasurementResultColumn.ID:
+                return measurement.id
+            if column is MeasurementResultColumn.CREATED_AT:
+                return measurement.created_at
+            if column is MeasurementResultColumn.HOLE_AREA:
+                hole_area = _measurement_hole_area(document, measurement)
+                if hole_area is not None:
+                    value, unit = hole_area
+                    return f"{value:.6g} {unit}"
         if role == SORT_ROLE:
-            return self._sort_value(column, measurement, group_display)
+            return self._sort_value(column, document, measurement, group_display)
         if role not in {Qt.ItemDataRole.DisplayRole, Qt.ItemDataRole.EditRole}:
             return None
         if role == Qt.ItemDataRole.EditRole and column is MeasurementResultColumn.GROUP:
             return measurement.fiber_group_id
-        return self._display_value(column, document, measurement, group_display)
+        return self._display_value(
+            column,
+            document,
+            measurement,
+            group_display,
+            self._result_sequence_by_id.get(measurement.id, 0),
+            self._category_sequence_by_id.get(measurement.id, 0),
+        )
 
     def flags(self, index: QModelIndex) -> Qt.ItemFlags:
         flags = super().flags(index)
@@ -231,13 +322,41 @@ class MeasurementResultsModel(QAbstractTableModel):
             ),
         )
 
+    def _rebuild_sequences(self) -> None:
+        self._result_sequence_by_id.clear()
+        self._category_sequence_by_id.clear()
+        document = self._document
+        if document is None:
+            return
+        result_sequence_by_kind: dict[str, int] = {}
+        category_sequence_by_kind_and_group: dict[tuple[str, str], int] = {}
+        for measurement in self._measurements:
+            kind_key = measurement.measurement_kind or ""
+            group = document.get_group(measurement.fiber_group_id)
+            group_key = group.label if group is not None else UNCATEGORIZED_LABEL
+            result_sequence_by_kind[kind_key] = result_sequence_by_kind.get(kind_key, 0) + 1
+            category_key = (kind_key, group_key)
+            category_sequence_by_kind_and_group[category_key] = (
+                category_sequence_by_kind_and_group.get(category_key, 0) + 1
+            )
+            self._result_sequence_by_id[measurement.id] = result_sequence_by_kind[kind_key]
+            self._category_sequence_by_id[measurement.id] = (
+                category_sequence_by_kind_and_group[category_key]
+            )
+
     @staticmethod
     def _display_value(
         column: MeasurementResultColumn,
         document: ImageDocument,
         measurement: Measurement,
         group_display: str,
+        result_sequence: int,
+        category_sequence: int,
     ):
+        if column is MeasurementResultColumn.RESULT_SEQUENCE:
+            return result_sequence
+        if column is MeasurementResultColumn.CATEGORY_SEQUENCE:
+            return category_sequence
         if column is MeasurementResultColumn.GROUP:
             return group_display
         if column is MeasurementResultColumn.KIND:
@@ -246,20 +365,30 @@ class MeasurementResultsModel(QAbstractTableModel):
             return f"{measurement.display_value():.4f}"
         if column is MeasurementResultColumn.UNIT:
             return measurement.display_unit(document.calibration)
+        if column is MeasurementResultColumn.HOLE_AREA:
+            hole_area = _measurement_hole_area(document, measurement)
+            return "—" if hole_area is None else f"{hole_area[0]:.4f}"
         if column is MeasurementResultColumn.MODE:
             return format_measurement_mode(measurement.mode)
         if column is MeasurementResultColumn.CONFIDENCE:
             return "手工" if measurement.mode in _MANUAL_MODES else f"{measurement.confidence:.2f}"
         if column is MeasurementResultColumn.STATUS:
             return format_measurement_status(measurement.status)
-        return measurement.id.split("_")[-1]
+        if column is MeasurementResultColumn.CREATED_AT:
+            return _format_created_at(measurement.created_at)
+        return measurement.id
 
-    @staticmethod
     def _sort_value(
+        self,
         column: MeasurementResultColumn,
+        document: ImageDocument,
         measurement: Measurement,
         group_display: str,
     ):
+        if column is MeasurementResultColumn.RESULT_SEQUENCE:
+            return self._result_sequence_by_id.get(measurement.id, 0)
+        if column is MeasurementResultColumn.CATEGORY_SEQUENCE:
+            return self._category_sequence_by_id.get(measurement.id, 0)
         if column is MeasurementResultColumn.GROUP:
             return group_display.casefold()
         if column is MeasurementResultColumn.KIND:
@@ -268,13 +397,18 @@ class MeasurementResultsModel(QAbstractTableModel):
             value = float(measurement.display_value())
             return value if math.isfinite(value) else None
         if column is MeasurementResultColumn.UNIT:
-            return ""
+            return measurement.display_unit(document.calibration).casefold()
+        if column is MeasurementResultColumn.HOLE_AREA:
+            hole_area = _measurement_hole_area(document, measurement)
+            return None if hole_area is None else hole_area[0]
         if column is MeasurementResultColumn.MODE:
             return format_measurement_mode(measurement.mode).casefold()
         if column is MeasurementResultColumn.CONFIDENCE:
             return measurement.confidence
         if column is MeasurementResultColumn.STATUS:
             return format_measurement_status(measurement.status).casefold()
+        if column is MeasurementResultColumn.CREATED_AT:
+            return _created_at_sort_value(measurement.created_at)
         return measurement.id.casefold()
 
 
@@ -322,7 +456,11 @@ class MeasurementResultsProxyModel(QSortFilterProxyModel):
             return False
         group = document.get_group(measurement.fiber_group_id)
         group_display = group.display_name() if group is not None else UNCATEGORIZED_LABEL
-        group_filter_label = group.label if group is not None else UNCATEGORIZED_LABEL
+        group_filter_label = (
+            (group.label.strip() or group.display_name())
+            if group is not None
+            else UNCATEGORIZED_LABEL
+        )
         if self._query:
             searchable = " ".join(
                 (
@@ -343,7 +481,7 @@ class MeasurementResultsProxyModel(QSortFilterProxyModel):
                     return False
             elif measurement.measurement_kind != self._kind_filter:
                 return False
-        if self._group_filter and group_filter_label != self._group_filter:
+        if self._group_filter and group_filter_label.casefold() != self._group_filter.casefold():
             return False
         if self._status_filter:
             hard_failures = MeasurementStatisticsService.DEFAULT_HARD_FAILURE_STATUSES

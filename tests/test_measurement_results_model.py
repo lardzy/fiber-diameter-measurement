@@ -12,7 +12,9 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QApplication, QComboBox, QStyleOptionViewItem, QTableView
 
-from fdm.models import FiberGroup, ImageDocument, Measurement
+from fdm.geometry import Point
+from fdm.models import Calibration, FiberGroup, ImageDocument, Measurement
+from fdm.ui.measurement_records import MeasurementRecordsController, MeasurementRecordsPane
 from fdm.ui.measurement_results_model import (
     GROUP_ID_ROLE,
     MEASUREMENT_ID_ROLE,
@@ -65,7 +67,7 @@ class MeasurementResultsModelTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
-    def test_model_exposes_eight_columns_roles_and_editable_category(self) -> None:
+    def test_model_exposes_twelve_columns_roles_and_editable_category(self) -> None:
         document = _document(
             [_measurement("meas_line", group_id="cotton", value=12.5)]
         )
@@ -76,7 +78,23 @@ class MeasurementResultsModelTests(unittest.TestCase):
             model.headerData(column, Qt.Orientation.Horizontal, Qt.ItemDataRole.DisplayRole)
             for column in range(model.columnCount())
         ]
-        self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
+        self.assertEqual(
+            headers,
+            [
+                "纤维结果序号",
+                "纤维类别结果序号",
+                "纤维类别",
+                "类型",
+                "结果",
+                "单位",
+                "孔洞面积",
+                "模式",
+                "置信度",
+                "状态",
+                "创建时间",
+                "ID",
+            ],
+        )
         self.assertEqual(model.rowCount(), 1)
         self.assertEqual(model.index(0, MeasurementResultColumn.GROUP).data(), "1 棉")
         self.assertEqual(model.index(0, MeasurementResultColumn.KIND).data(), "线段")
@@ -86,6 +104,46 @@ class MeasurementResultsModelTests(unittest.TestCase):
         self.assertEqual(model.index(0, MeasurementResultColumn.GROUP).data(GROUP_ID_ROLE), "cotton")
         self.assertTrue(model.flags(model.index(0, MeasurementResultColumn.GROUP)) & Qt.ItemFlag.ItemIsEditable)
         self.assertFalse(model.flags(model.index(0, MeasurementResultColumn.KIND)) & Qt.ItemFlag.ItemIsEditable)
+
+    def test_sequences_hole_area_and_created_time_reuse_export_semantics(self) -> None:
+        first = _measurement("line_cotton_1", group_id="cotton")
+        second = _measurement("line_cotton_2", group_id="cotton")
+        area = _measurement("area_cotton", kind="area", group_id="cotton")
+        area.area_rings_px = [
+            [Point(0, 0), Point(10, 0), Point(10, 10), Point(0, 10)],
+            [Point(2, 2), Point(4, 2), Point(4, 4), Point(2, 4)],
+        ]
+        area.created_at = "2026-01-02T03:04:05+00:00"
+        third = _measurement("line_flax_1", group_id="flax")
+        document = _document([first, second, area, third])
+        document.calibration = Calibration(
+            mode="manual",
+            pixels_per_unit=2.0,
+            unit="µm",
+            source_label="test",
+        )
+        model = MeasurementResultsModel()
+        model.set_document(document)
+
+        self.assertEqual(
+            [model.index(row, MeasurementResultColumn.RESULT_SEQUENCE).data() for row in range(4)],
+            [1, 2, 1, 3],
+        )
+        self.assertEqual(
+            [model.index(row, MeasurementResultColumn.CATEGORY_SEQUENCE).data() for row in range(4)],
+            [1, 2, 1, 1],
+        )
+        self.assertEqual(model.index(0, MeasurementResultColumn.HOLE_AREA).data(), "—")
+        self.assertEqual(model.index(2, MeasurementResultColumn.HOLE_AREA).data(), "1.0000")
+        self.assertEqual(
+            model.index(2, MeasurementResultColumn.HOLE_AREA).data(Qt.ItemDataRole.ToolTipRole),
+            "1 µm²",
+        )
+        self.assertIn("2026-01-02", model.index(2, MeasurementResultColumn.CREATED_AT).data())
+        self.assertEqual(
+            model.index(2, MeasurementResultColumn.CREATED_AT).data(Qt.ItemDataRole.ToolTipRole),
+            area.created_at,
+        )
 
     def test_incremental_append_emits_one_insert_without_reset(self) -> None:
         first = _measurement("first", value=10.0)
@@ -194,6 +252,106 @@ class MeasurementResultsModelTests(unittest.TestCase):
 
         self.assertEqual(requests, [("editable", "flax")])
         view.close()
+
+    def test_two_record_panes_share_filters_sort_and_selection_but_not_headers(self) -> None:
+        document = _document(
+            [
+                _measurement("cotton", group_id="cotton", value=20.0),
+                _measurement("flax", group_id="flax", value=5.0),
+            ]
+        )
+        controller = MeasurementRecordsController()
+        wide = MeasurementRecordsPane(controller, compact=False)
+        compact = MeasurementRecordsPane(controller, compact=True)
+        controller.set_document(document)
+
+        self.assertIs(wide.table.model(), compact.table.model())
+        self.assertIs(wide.table.selectionModel(), compact.table.selectionModel())
+        wide.search_edit.setText("cotton")
+        self.assertEqual(compact.search_edit.text(), "cotton")
+        self.assertEqual(controller.proxy_model.rowCount(), 1)
+        wide.search_edit.clear()
+
+        controller.set_sort(MeasurementResultColumn.RESULT, Qt.SortOrder.AscendingOrder)
+        self.assertEqual(
+            controller.proxy_model.index(0, 0).data(MEASUREMENT_ID_ROLE),
+            "flax",
+        )
+        self.assertTrue(controller.select_measurement_id("cotton"))
+        self.assertEqual(controller.selected_measurement_ids(), ["cotton"])
+        self.assertEqual(len(wide.table.selectionModel().selectedRows()), 1)
+        self.assertEqual(len(compact.table.selectionModel().selectedRows()), 1)
+
+        wide.table.setColumnHidden(int(MeasurementResultColumn.CREATED_AT), True)
+        compact.table.setColumnHidden(int(MeasurementResultColumn.CREATED_AT), False)
+        self.assertTrue(wide.table.isColumnHidden(int(MeasurementResultColumn.CREATED_AT)))
+        self.assertFalse(compact.table.isColumnHidden(int(MeasurementResultColumn.CREATED_AT)))
+
+        wide.close()
+        compact.close()
+
+    def test_record_header_state_rejects_legacy_unversioned_payload(self) -> None:
+        controller = MeasurementRecordsController()
+        pane = MeasurementRecordsPane(controller, compact=True)
+        header = pane.table.horizontalHeader()
+        legacy_state = bytes(header.saveState().toBase64()).decode("ascii")
+        current_state = pane.save_header_state()
+        self.assertTrue(
+            current_state.startswith(f"{MeasurementRecordsPane.HEADER_STATE_SCHEMA}:")
+        )
+
+        pane.table.setColumnHidden(int(MeasurementResultColumn.ID), False)
+        self.assertFalse(pane.restore_header_state(legacy_state))
+        self.assertTrue(pane.table.isColumnHidden(int(MeasurementResultColumn.ID)))
+
+        pane.reset_columns()
+        pane.table.setColumnHidden(int(MeasurementResultColumn.ID), False)
+        self.assertTrue(pane.restore_header_state(current_state))
+        self.assertTrue(pane.table.isColumnHidden(int(MeasurementResultColumn.ID)))
+        pane.close()
+
+    def test_record_category_filter_matches_unnamed_and_casefolded_chart_labels(self) -> None:
+        unnamed = FiberGroup(
+            id="unnamed",
+            image_id="image",
+            number=3,
+            color="#2A9D8F",
+            label="",
+        )
+        cotton = FiberGroup(
+            id="named",
+            image_id="image",
+            number=4,
+            color="#D97706",
+            label="cotton",
+        )
+        document = ImageDocument(
+            id="image",
+            path="/tmp/category-filter.png",
+            image_size=(100, 80),
+            fiber_groups=[unnamed, cotton],
+            measurements=[
+                _measurement("unnamed-row", group_id=unnamed.id),
+                _measurement("named-row", group_id=cotton.id),
+            ],
+        )
+        controller = MeasurementRecordsController()
+        controller.set_document(document)
+        self.assertEqual(controller.group_labels(), ("3", "cotton"))
+
+        controller.set_filters(group="3")
+        self.assertEqual(controller.proxy_model.rowCount(), 1)
+        self.assertEqual(
+            controller.proxy_model.index(0, 0).data(MEASUREMENT_ID_ROLE),
+            "unnamed-row",
+        )
+
+        controller.set_filters(group="Cotton")
+        self.assertEqual(controller.proxy_model.rowCount(), 1)
+        self.assertEqual(
+            controller.proxy_model.index(0, 0).data(MEASUREMENT_ID_ROLE),
+            "named-row",
+        )
 
 
 if __name__ == "__main__":

@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.lifecycle import AcquisitionDisposition, DigitalSlideAcquisitionSession, TransitionIntent, TransitionResult
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, OverlayAnnotationKind, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ObjectAppearanceOverride, OverlayAnnotation, OverlayAnnotationKind, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
 from fdm.settings import (
     AppThemeMode,
     AppSettings,
@@ -109,6 +109,15 @@ class RecordingPainter:
 
     def setBrush(self, brush) -> None:
         self.brush = brush
+
+    def setFont(self, _font) -> None:
+        return
+
+    def fillRect(self, _rect, _color) -> None:
+        return
+
+    def drawText(self, *_args) -> None:
+        return
 
     def drawPath(self, path) -> None:
         self.calls.append(("path", self.pen, self.brush, path.elementCount()))
@@ -3544,7 +3553,23 @@ class CanvasAndExportTests(unittest.TestCase):
                 for index in range(table_model.columnCount())
             ]
 
-            self.assertEqual(headers, ["种类", "类型", "结果", "单位", "模式", "置信度", "状态", "ID"])
+            self.assertEqual(
+                headers,
+                [
+                    "纤维结果序号",
+                    "纤维类别结果序号",
+                    "纤维类别",
+                    "类型",
+                    "结果",
+                    "单位",
+                    "孔洞面积",
+                    "模式",
+                    "置信度",
+                    "状态",
+                    "创建时间",
+                    "ID",
+                ],
+            )
             self.assertIsInstance(window.measurement_table, QTableView)
             self.assertTrue(table_model.index(0, window.TABLE_COL_ID).data(Qt.ItemDataRole.UserRole))
             self.assertEqual(window.measurement_table.columnWidth(window.TABLE_COL_GROUP), 150)
@@ -3693,8 +3718,97 @@ class CanvasAndExportTests(unittest.TestCase):
             window._statistics_refresh_timer.stop()
             window._refresh_statistics_ui()
             self.assertIn("当前结果  80 px", window._statistics_panel.current_value_label.text())
-            self.assertIn("像素值：80 px", window._statistics_panel._object_details_label.text())
-            self.assertIn("类别：1 棉", window._statistics_panel._object_details_label.text())
+            self.assertIn("像素值：80 px", window._object_inspector._summary_label.text())
+            self.assertIn("类别：1 棉", window._object_inspector._summary_label.text())
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
+    def test_current_object_inspector_updates_measurement_and_overlay_with_history(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/object_inspector_history.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            group = document.create_group(color="#2A9D8F", label="棉")
+            measurement = Measurement(
+                id="inspector_measurement",
+                image_id=document.id,
+                fiber_group_id=group.id,
+                mode="manual",
+                line_px=Line(Point(20, 40), Point(100, 40)),
+            )
+            measurement.recalculate(None)
+            document.add_measurement(measurement)
+            overlay = OverlayAnnotation(
+                id="inspector_text",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="原文字",
+                anchor_px=Point(30, 70),
+            )
+            document.add_overlay_annotation(overlay)
+            self._load_document_into_window(window, document, image)
+
+            window._on_canvas_measurement_selected(document.id, measurement.id)
+            appearance = ObjectAppearanceOverride(
+                stroke_color="#FF0000",
+                stroke_width=5.0,
+                text_color="#0000FF",
+                font_family="Arial",
+                font_size=24,
+            )
+            window._on_object_appearance_change_requested(
+                "measurement",
+                measurement.id,
+                appearance,
+            )
+            self.assertEqual(document.get_measurement(measurement.id).appearance, appearance)
+            self.assertTrue(document.history.can_undo())
+            window.undo_current_document()
+            self.assertIsNone(document.get_measurement(measurement.id).appearance)
+            window.redo_current_document()
+            self.assertEqual(document.get_measurement(measurement.id).appearance, appearance)
+
+            window._on_canvas_overlay_selected(document.id, overlay.id)
+            window._on_overlay_content_change_requested(overlay.id, "更新后的文字")
+            self.assertEqual(document.get_overlay_annotation(overlay.id).content, "更新后的文字")
+            self.assertEqual(window._object_properties_section.summaryLabel.text(), "文字")
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
+    def test_incremental_measurement_append_refreshes_object_inspector(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(160, 100, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/incremental-inspector.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            measurement = Measurement(
+                id="incremental-measurement",
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(20, 40), Point(100, 40)),
+            )
+            measurement.recalculate(None)
+
+            window._append_new_measurement(document, measurement, label="新增测量")
+
+            self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
+            self.assertEqual(window._object_inspector._object_id, measurement.id)
+            self.assertEqual(window._object_properties_section.summaryLabel.text(), "线段")
         finally:
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
@@ -3710,12 +3824,15 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(action_row)
             self.assertIs(action_row, window._delete_group_measurements_button.parentWidget())
             self.assertIs(action_row, window._delete_all_measurements_button.parentWidget())
-            self.assertIsNotNone(action_row.layout())
-            self.assertEqual(action_row.layout().count(), 4)
-            self.assertIs(action_row.layout().itemAt(0).widget(), window.delete_measurement_button)
-            self.assertIs(action_row.layout().itemAt(1).widget(), window._delete_group_measurements_button)
-            self.assertIs(action_row.layout().itemAt(2).widget(), window._delete_all_measurements_button)
-            self.assertIsNotNone(action_row.layout().itemAt(3).spacerItem())
+            self.assertIs(action_row, window._bottom_records_pane)
+            action_layout = action_row.layout().itemAt(2).layout()
+            self.assertIsNotNone(action_layout)
+            self.assertEqual(action_layout.count(), 5)
+            self.assertIs(action_layout.itemAt(0).widget(), window.delete_measurement_button)
+            self.assertIs(action_layout.itemAt(1).widget(), window._delete_group_measurements_button)
+            self.assertIs(action_layout.itemAt(2).widget(), window._delete_all_measurements_button)
+            self.assertIsNotNone(action_layout.itemAt(3).spacerItem())
+            self.assertIs(action_layout.itemAt(4).widget(), window._results_count_label)
         finally:
             window.close()
 
@@ -4077,7 +4194,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNone(getattr(window, "model_status_label", None))
             self.assertIsNotNone(window._area_auto_button)
             self.assertEqual(window._area_auto_button.text(), "面积自动识别...")
-            self.assertIn("面积识别", group_titles)
+            self.assertIsNotNone(window._area_recognition_section)
+            self.assertEqual(window._area_recognition_section.toggleButton.text(), "面积识别")
+            self.assertFalse(window._area_recognition_section.isExpanded())
+            self.assertNotIn("模型状态", group_titles)
             self.assertNotIn("模型状态", group_titles)
         finally:
             window.close()
@@ -5541,7 +5661,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
-    def test_settings_group_color_update_syncs_template_bound_groups(self) -> None:
+    def test_settings_dialog_does_not_manage_category_colors(self) -> None:
         window = MainWindow()
         try:
             window.project.project_group_templates = [ProjectGroupTemplate(label="棉", color="#1F7A8C")]
@@ -5551,7 +5671,7 @@ class CanvasAndExportTests(unittest.TestCase):
             second = ImageDocument(id=new_id("image"), path="/tmp/settings_group_color_b.png", image_size=(220, 140))
             first.initialize_runtime_state()
             second.initialize_runtime_state()
-            first_group = first.create_group(color="#1F7A8C", label="棉")
+            first.create_group(color="#1F7A8C", label="棉")
             second.create_group(color="#1F7A8C", label="棉")
             self._load_document_into_window(window, first, image)
             self._load_document_into_window(window, second, image)
@@ -5564,9 +5684,6 @@ class CanvasAndExportTests(unittest.TestCase):
                 def app_settings(self) -> AppSettings:
                     return self._settings
 
-                def group_colors(self) -> dict[str, str]:
-                    return {first_group.id: "#E07A5F"}
-
                 def wants_scale_anchor_pick(self) -> bool:
                     return False
 
@@ -5577,9 +5694,9 @@ class CanvasAndExportTests(unittest.TestCase):
             ):
                 window._apply_settings_dialog(FakeDialog(window._app_settings), close_after=False)
 
-            self.assertEqual(window.project.project_group_templates[0].color, "#e07a5f")
-            self.assertEqual(first.find_group_by_label("棉").color, "#e07a5f")
-            self.assertEqual(second.find_group_by_label("棉").color, "#e07a5f")
+            self.assertEqual(window.project.project_group_templates[0].color, "#1F7A8C")
+            self.assertEqual(first.find_group_by_label("棉").color, "#1f7a8c")
+            self.assertEqual(second.find_group_by_label("棉").color, "#1f7a8c")
         finally:
             window._reset_workspace()
             window.close()
@@ -7870,7 +7987,7 @@ class CanvasAndExportTests(unittest.TestCase):
         settings = AppSettings()
         dialog = SettingsDialog(settings, document=None)
         try:
-            self.assertEqual(dialog._tabs.count(), 8)
+            self.assertEqual(dialog._tabs.count(), 7)
             self.assertEqual(dialog._tabs.tabText(0), "测量标注")
             self.assertEqual(dialog._tabs.tabText(1), "比例尺叠加")
             self.assertEqual(dialog._tabs.tabText(2), "图像处理")
@@ -7878,7 +7995,6 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._tabs.tabText(4), "数字化切片")
             self.assertEqual(dialog._tabs.tabText(5), "面积识别")
             self.assertEqual(dialog._tabs.tabText(6), "原始记录模板")
-            self.assertEqual(dialog._tabs.tabText(7), "当前图片")
             navigation_labels = [
                 dialog._settings_navigation.item(index).text()
                 for index in range(dialog._settings_navigation.count())
@@ -8152,7 +8268,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_settings_dialog_current_image_tab_uses_reorganized_group_titles(self) -> None:
+    def test_settings_dialog_removes_current_image_category_page(self) -> None:
         document = ImageDocument(
             id=new_id("image"),
             path="/tmp/current_image_settings.png",
@@ -8162,10 +8278,16 @@ class CanvasAndExportTests(unittest.TestCase):
 
         dialog = SettingsDialog(AppSettings(), document=document)
         try:
-            current_image_tab = next(
-                index for index in range(dialog._tabs.count()) if dialog._tabs.tabText(index) == "当前图片"
-            )
-            self.assertEqual(self._group_titles_in_tab(dialog, current_image_tab), ["类别颜色", "比例尺锚点"])
+            labels = [dialog._tabs.tabText(index) for index in range(dialog._tabs.count())]
+            self.assertNotIn("当前图片", labels)
+            annotation_page = dialog._settings_pages.widget(2)
+            group_titles = [
+                group.title()
+                for group in annotation_page.findChildren(QGroupBox)
+                if group.title()
+            ]
+            self.assertIn("当前图片比例尺位置", group_titles)
+            self.assertNotIn("类别颜色", group_titles)
         finally:
             dialog.close()
 
