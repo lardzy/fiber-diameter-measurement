@@ -12,13 +12,12 @@ import sys
 import time
 import uuid
 
+from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.cancellation import CancellationToken
 from fdm.geometry import Point
 from fdm.settings import AppSettings
 
 
-AREA_WORKER_PROTOCOL = "fdm.area-worker"
-AREA_WORKER_PROTOCOL_VERSION = 1
 DEFAULT_AREA_INFERENCE_TIMEOUT_S = 180.0
 MIN_AREA_INFERENCE_TIMEOUT_S = 30.0
 MAX_AREA_INFERENCE_TIMEOUT_S = 600.0

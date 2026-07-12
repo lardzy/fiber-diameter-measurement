@@ -5,6 +5,7 @@ from io import StringIO
 import json
 import os
 from pathlib import Path
+import subprocess
 from tempfile import TemporaryDirectory
 import sys
 import unittest
@@ -17,7 +18,9 @@ sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from build_support import write_release_manifest
 from fdm import app
+from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.release_manifest import (
+    _probe_area_worker,
     packaged_runtime_features,
     run_release_self_check,
     runtime_capability_hint,
@@ -71,6 +74,54 @@ features = ["area-inference", "magic-segmentation"]
 
 
 class ReleaseSelfCheckTests(unittest.TestCase):
+    def test_packaged_area_worker_probe_uses_shared_protocol(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            (root / "FiberAreaWorker.exe").write_bytes(b"worker")
+            weights_dir = root / "runtime" / "area-models"
+            weights_dir.mkdir(parents=True)
+            (weights_dir / "probe.pth").write_bytes(b"model")
+            (root / "runtime" / "area-infer" / "vendor" / "yolact").mkdir(parents=True)
+
+            def run_worker(command, **kwargs) -> subprocess.CompletedProcess[str]:
+                requests = [json.loads(line) for line in kwargs["input"].splitlines()]
+                self.assertEqual(
+                    [request["protocol"] for request in requests],
+                    [AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL],
+                )
+                self.assertEqual(
+                    [request["version"] for request in requests],
+                    [AREA_WORKER_PROTOCOL_VERSION, AREA_WORKER_PROTOCOL_VERSION],
+                )
+                responses = [
+                    {
+                        "protocol": AREA_WORKER_PROTOCOL,
+                        "version": AREA_WORKER_PROTOCOL_VERSION,
+                        "request_id": "self-check-hello",
+                        "ok": True,
+                        "result": {"status": "ready"},
+                    },
+                    {
+                        "protocol": AREA_WORKER_PROTOCOL,
+                        "version": AREA_WORKER_PROTOCOL_VERSION,
+                        "request_id": "self-check-infer",
+                        "ok": True,
+                        "result": {"instances": []},
+                    },
+                ]
+                return subprocess.CompletedProcess(
+                    command,
+                    0,
+                    stdout="\n".join(json.dumps(item) for item in responses) + "\n",
+                    stderr="",
+                )
+
+            with patch("fdm.release_manifest.subprocess.run", side_effect=run_worker):
+                result = _probe_area_worker(root)
+
+            self.assertEqual(result["mode"], "persistent")
+            self.assertEqual(result["instance_count"], 0)
+
     def test_development_wheel_without_runtime_assets_reports_capability_hint(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

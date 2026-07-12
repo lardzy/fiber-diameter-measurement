@@ -9,6 +9,8 @@ import sys
 import tempfile
 from typing import Any
 
+from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
+
 
 RELEASE_MANIFEST_FILENAME = "release-manifest.json"
 BUILD_ID_FILENAME = "build-id.txt"
@@ -305,14 +307,14 @@ def _probe_area_worker(root: Path) -> dict[str, Any]:
         Image.new("RGB", (64, 64), color=(255, 255, 255)).save(image_path, format="PNG")
         requests = [
             {
-                "protocol": "fdm-area-worker",
-                "version": 1,
+                "protocol": AREA_WORKER_PROTOCOL,
+                "version": AREA_WORKER_PROTOCOL_VERSION,
                 "request_id": "self-check-hello",
                 "op": "hello",
             },
             {
-                "protocol": "fdm-area-worker",
-                "version": 1,
+                "protocol": AREA_WORKER_PROTOCOL,
+                "version": AREA_WORKER_PROTOCOL_VERSION,
                 "request_id": request_id,
                 "op": "infer",
                 "image": {"path": str(image_path)},
@@ -351,7 +353,7 @@ def _probe_area_worker(root: Path) -> dict[str, Any]:
             f"stderr={completed.stderr[-1000:]}"
         )
     responses = [json.loads(line) for line in lines]
-    if any(response.get("protocol") != "fdm-area-worker" for response in responses):
+    if any(response.get("protocol") != AREA_WORKER_PROTOCOL for response in responses):
         raise RuntimeError("worker returned an invalid protocol envelope")
     if responses[0].get("request_id") != "self-check-hello" or responses[0].get("ok") is not True:
         raise RuntimeError("worker persistent hello failed")
