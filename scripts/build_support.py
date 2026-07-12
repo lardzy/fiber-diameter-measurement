@@ -104,6 +104,18 @@ class RuntimeProfileCheck:
         )
 
 
+def summarize_runtime_hash_mismatches(
+    mismatches: tuple[str, ...] | list[str],
+    *,
+    limit: int = 8,
+) -> str:
+    names = [str(item).split(" (expected", 1)[0] for item in mismatches]
+    preview = ", ".join(names[: max(1, int(limit))])
+    remaining = len(names) - min(len(names), max(1, int(limit)))
+    suffix = f"，另有 {remaining} 个" if remaining > 0 else ""
+    return f"{len(names)} 个文件：{preview}{suffix}"
+
+
 def read_app_version(project_root: Path) -> str:
     version_file = project_root / "src" / "fdm" / "version.py"
     payload = version_file.read_text(encoding="utf-8")
@@ -729,19 +741,28 @@ def validate_installer_release(
     *,
     profile: str = "full",
     strict_asset_hashes: bool = True,
+    strict_release: bool = True,
     warnings: list[str] | None = None,
 ) -> list[str]:
     errors: list[str] = []
+
+    def report_source_policy(message: str) -> None:
+        if strict_release:
+            errors.append(message)
+        elif warnings is not None:
+            warnings.append(message)
+
     try:
         dirty_entries = get_dirty_worktree_entries(project_root)
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
-        return [f"unable to inspect git worktree: {exc}"]
+        dirty_entries = []
+        report_source_policy(f"unable to inspect git worktree: {exc}")
     if dirty_entries:
-        errors.append("dirty worktree: " + ", ".join(dirty_entries))
+        report_source_policy("dirty worktree: " + ", ".join(dirty_entries))
     try:
         commit = get_git_commit(project_root)
     except (OSError, RuntimeError, subprocess.SubprocessError) as exc:
-        errors.append(f"unable to determine source commit: {exc}")
+        report_source_policy(f"unable to determine source commit: {exc}")
         commit = None
     profile_check = check_runtime_profile(project_root, profile)
     if profile_check.missing_files:
@@ -749,11 +770,17 @@ def validate_installer_release(
     if profile_check.missing_python_modules:
         errors.append("missing build dependencies: " + ", ".join(profile_check.missing_python_modules))
     if profile_check.hash_mismatches:
-        message = "source runtime asset hash mismatch: " + ", ".join(profile_check.hash_mismatches)
         if strict_asset_hashes:
-            errors.append(message)
+            errors.append(
+                "source runtime asset hash mismatch: "
+                + ", ".join(profile_check.hash_mismatches)
+            )
         elif warnings is not None:
-            warnings.append(message)
+            warnings.append(
+                "source runtime asset hash mismatch (current files will be packaged; "
+                "Windows line endings may account for some differences): "
+                + summarize_runtime_hash_mismatches(profile_check.hash_mismatches)
+            )
     if profile_check.metadata_errors:
         errors.append("invalid runtime asset metadata: " + ", ".join(profile_check.metadata_errors))
     report = verify_release_manifest(
@@ -761,8 +788,8 @@ def validate_installer_release(
         expected_profile=profile,
         expected_version=read_app_version(project_root),
         expected_commit=commit,
-        require_clean_source=True,
-        require_clean_build=True,
+        require_clean_source=strict_release,
+        require_clean_build=strict_release,
         reject_extra_files=True,
     )
     errors.extend(str(item) for item in report["errors"])

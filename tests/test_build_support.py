@@ -440,6 +440,38 @@ license = "LicenseRef-Test"
             self.assertEqual(relaxed_errors, [])
             self.assertTrue(any("source runtime asset hash mismatch" in warning for warning in warnings))
 
+    def test_internal_installer_gate_warns_instead_of_blocking_on_dirty_source(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            app_dir, _required = _create_release_fixture(root)
+            write_release_manifest(
+                app_dir,
+                root,
+                profile="core",
+                clean_build=True,
+                build_id="build-123",
+                source_commit="abc123",
+                source_dirty_entries=[" M src/fiber_diameter_measurement.egg-info/SOURCES.txt"],
+            )
+            warnings: list[str] = []
+            with (
+                patch("build_support.get_git_commit", return_value="abc123"),
+                patch(
+                    "build_support.get_dirty_worktree_entries",
+                    return_value=[" M src/fiber_diameter_measurement.egg-info/SOURCES.txt"],
+                ),
+            ):
+                errors = validate_installer_release(
+                    root,
+                    app_dir,
+                    profile="core",
+                    strict_release=False,
+                    warnings=warnings,
+                )
+
+            self.assertEqual(errors, [])
+            self.assertTrue(any("dirty worktree" in warning for warning in warnings))
+
 
 if __name__ == "__main__":
     unittest.main()

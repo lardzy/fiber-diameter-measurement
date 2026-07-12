@@ -10,6 +10,7 @@ import sys
 from pathlib import Path
 
 from build_support import read_app_version, validate_installer_release, write_installer_version_include
+from build_windows_onedir import build as build_onedir
 
 
 def _discard_failed_installer(path: Path) -> None:
@@ -89,6 +90,8 @@ def build_installer(
     sign_command: str | None = None,
     verify_signature_command: str | None = None,
     strict_asset_hashes: bool = False,
+    strict_release: bool = False,
+    rebuild_onedir: bool = False,
 ) -> int:
     iss_path = root / "packaging" / "inno-setup" / "fdm_installer.iss"
     app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
@@ -105,9 +108,23 @@ def build_installer(
         print("Sync only mode: version.auto.iss has been refreshed from src/fdm/version.py")
         return 0
 
+    if rebuild_onedir:
+        print("Building a clean full-profile onedir package before the installer...")
+        onedir_result = build_onedir(
+            clean=True,
+            console=False,
+            bootloader_debug=False,
+            profile="full",
+            strict_asset_hashes=strict_asset_hashes,
+            root=root,
+        )
+        if onedir_result != 0:
+            print("Onedir prerequisite build failed; installer compilation was not started.", file=sys.stderr)
+            return 1
+
     if not app_dir.exists():
         print(
-            "PyInstaller output not found. Build the onedir package first:\n"
+            "PyInstaller output not found. Run this command without --reuse-onedir, or build it first:\n"
             "  python scripts/build_windows_onedir.py",
             file=sys.stderr,
         )
@@ -119,6 +136,7 @@ def build_installer(
         app_dir,
         profile="full",
         strict_asset_hashes=strict_asset_hashes,
+        strict_release=strict_release,
         warnings=release_warnings,
     )
     if release_warnings:
@@ -126,7 +144,8 @@ def build_installer(
         for warning in release_warnings:
             print(f"  - {warning}", file=sys.stderr)
     if release_errors:
-        print("Formal release checks failed:", file=sys.stderr)
+        heading = "Formal release checks failed:" if strict_release else "Installer package validation failed:"
+        print(heading, file=sys.stderr)
         for error in release_errors:
             print(f"  - {error}", file=sys.stderr)
         return 1
@@ -219,6 +238,16 @@ def main() -> int:
         action="store_true",
         help="Fail when source runtime files differ from the hashes pinned in runtime_assets.toml.",
     )
+    parser.add_argument(
+        "--strict-release",
+        action="store_true",
+        help="Require a clean Git worktree and a clean-build manifest for a formal release.",
+    )
+    parser.add_argument(
+        "--reuse-onedir",
+        action="store_true",
+        help="Reuse dist/windows/FiberDiameterMeasurement instead of rebuilding the onedir prerequisite.",
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -230,6 +259,8 @@ def main() -> int:
         sign_command=args.sign_command.strip() or None,
         verify_signature_command=args.verify_signature_command.strip() or None,
         strict_asset_hashes=args.strict_asset_hashes,
+        strict_release=args.strict_release,
+        rebuild_onedir=not args.reuse_onedir,
     )
 
 

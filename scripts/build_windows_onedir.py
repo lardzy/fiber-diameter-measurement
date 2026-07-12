@@ -13,6 +13,7 @@ from build_support import (
     PACKAGED_SEGMENT_ANYTHING_DIRS,
     PACKAGED_SEGMENT_ANYTHING_FILENAMES,
     check_runtime_profile,
+    summarize_runtime_hash_mismatches,
     write_release_manifest,
     write_installer_version_include,
 )
@@ -149,8 +150,9 @@ def build(
             return 1
         print(
             f"Warning: runtime profile {profile!r} contains files whose hashes differ from "
-            "runtime_assets.toml. Internal-build mode will package the current files as-is:\n  "
-            + "\n  ".join(profile_check.hash_mismatches),
+            "runtime_assets.toml. Internal-build mode will package the current files as-is; "
+            "Windows line endings may account for some differences.\n  "
+            + summarize_runtime_hash_mismatches(profile_check.hash_mismatches),
             file=sys.stderr,
         )
     if profile_check.metadata_errors:

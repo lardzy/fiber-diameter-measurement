@@ -11,7 +11,7 @@ from unittest.mock import patch
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
-from build_windows_installer import build_installer
+from build_windows_installer import build_installer, main as installer_main
 
 
 def _prepare_installer_root(root: Path, *, version: str = "3.1.4") -> Path:
@@ -103,7 +103,83 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 check=True,
             )
             self.assertFalse(validate_mock.call_args.kwargs["strict_asset_hashes"])
+            self.assertFalse(validate_mock.call_args.kwargs["strict_release"])
             self.assertIsInstance(validate_mock.call_args.kwargs["warnings"], list)
+
+    def test_cli_rebuilds_onedir_by_default_and_can_explicitly_reuse_it(self) -> None:
+        cases = (
+            (["build_windows_installer.py"], True),
+            (["build_windows_installer.py", "--reuse-onedir"], False),
+        )
+        for argv, expected_rebuild in cases:
+            with (
+                self.subTest(argv=argv),
+                patch.object(sys, "argv", argv),
+                patch("build_windows_installer.build_installer", return_value=0) as build_mock,
+            ):
+                result = installer_main()
+
+            self.assertEqual(result, 0)
+            self.assertEqual(build_mock.call_args.kwargs["rebuild_onedir"], expected_rebuild)
+            self.assertFalse(build_mock.call_args.kwargs["strict_release"])
+
+    def test_installer_can_rebuild_missing_onedir_before_compilation(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            expected_output = _prepare_installer_root(root)
+            app_dir = root / "dist" / "windows" / "FiberDiameterMeasurement"
+            app_dir.rmdir()
+
+            def build_prerequisite(**_kwargs) -> int:
+                app_dir.mkdir(parents=True)
+                (app_dir / "release-manifest.json").write_text("{}", encoding="utf-8")
+                return 0
+
+            def compile_installer(*_args, **_kwargs) -> subprocess.CompletedProcess[str]:
+                expected_output.parent.mkdir(parents=True, exist_ok=True)
+                expected_output.write_bytes(b"installer")
+                return subprocess.CompletedProcess([], 0)
+
+            with (
+                patch("build_windows_installer.build_onedir", side_effect=build_prerequisite) as onedir_mock,
+                patch("build_windows_installer.validate_installer_release", return_value=[]),
+                patch("build_windows_installer.subprocess.run", side_effect=compile_installer),
+            ):
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    rebuild_onedir=True,
+                )
+
+            self.assertEqual(result, 0)
+            onedir_mock.assert_called_once_with(
+                clean=True,
+                console=False,
+                bootloader_debug=False,
+                profile="full",
+                strict_asset_hashes=False,
+                root=root,
+            )
+
+    def test_installer_stops_when_onedir_prerequisite_fails(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_installer_root(root)
+
+            with (
+                patch("build_windows_installer.build_onedir", return_value=1),
+                patch("build_windows_installer.validate_installer_release") as validate_mock,
+                patch("build_windows_installer.subprocess.run") as run_mock,
+            ):
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    rebuild_onedir=True,
+                )
+
+            self.assertEqual(result, 1)
+            validate_mock.assert_not_called()
+            run_mock.assert_not_called()
 
     def test_build_installer_can_enable_strict_source_hashes(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -121,10 +197,12 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                     root=root,
                     compiler_path="C:/Tools/ISCC.exe",
                     strict_asset_hashes=True,
+                    strict_release=True,
                 )
 
             self.assertEqual(result, 1)
             self.assertTrue(validate_mock.call_args.kwargs["strict_asset_hashes"])
+            self.assertTrue(validate_mock.call_args.kwargs["strict_release"])
             run_mock.assert_not_called()
 
     def test_build_installer_blocks_when_release_gate_fails(self) -> None:
@@ -139,7 +217,11 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 patch("build_windows_installer.validate_installer_release", return_value=["dirty worktree"]),
                 patch("build_windows_installer.subprocess.run") as mock_run,
             ):
-                result = build_installer(root=root, compiler_path="C:/Tools/ISCC.exe")
+                result = build_installer(
+                    root=root,
+                    compiler_path="C:/Tools/ISCC.exe",
+                    strict_release=True,
+                )
 
             self.assertEqual(result, 1)
             mock_run.assert_not_called()

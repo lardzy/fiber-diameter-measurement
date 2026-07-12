@@ -138,10 +138,17 @@ fdm
 python -m unittest discover -s tests
 ```
 
-Windows onedir 打包：
+Windows 安装器一键打包（默认先重新生成干净的 full onedir）：
+
+```bash
+python scripts/build_windows_installer.py
+```
+
+只生成 onedir，或确认现有 onedir 已有效后直接复用：
 
 ```bash
 python scripts/build_windows_onedir.py
+python scripts/build_windows_installer.py --reuse-onedir
 ```
 
 应用也支持直接传入关联文件路径：
@@ -153,11 +160,10 @@ FiberDiameterMeasurement.exe "C:\path\example.fdmslide"
 
 通过 Windows installer 安装时，`.fdmproj` 和 `.fdmslide` 文件关联默认勾选；通用图片格式不会被接管。
 
-内部打包默认采用宽松的源码资源校验：`runtime_assets.toml` 中的固定哈希不一致时会显示警告，但仍打包当前文件；缺失文件、依赖或无效资源元数据仍会阻断。需要重新启用严格哈希门禁时使用：
+内部打包默认允许脏工作区，并对 `runtime_assets.toml` 固定哈希差异给出警告后打包当前文件；缺失文件、依赖、无效元数据、损坏清单或包内文件不一致仍会阻断。需要恢复正式发布的干净工作区和严格哈希门禁时使用：
 
 ```bash
-python scripts/build_windows_onedir.py --strict-asset-hashes
-python scripts/build_windows_installer.py --strict-asset-hashes
+python scripts/build_windows_installer.py --strict-release --strict-asset-hashes
 ```
 
 同步安装器版本号：
