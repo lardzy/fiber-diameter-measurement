@@ -198,7 +198,9 @@ class CollapsibleSection(QFrame):
     def setSummary(self, text: str) -> None:
         self.summaryLabel.setText(str(text or ""))
         self.summaryLabel.setToolTip(str(text or ""))
-        self.summaryLabel.setVisible(bool(str(text or "").strip()))
+        # Keep the empty label in the layout as a stretchable spacer. Hiding it
+        # leaves the toggle as the only header item and some styles center it.
+        self.summaryLabel.setVisible(True)
 
     def _on_toggled(self, expanded: bool) -> None:
         self._apply_expanded(expanded)
@@ -210,7 +212,7 @@ class CollapsibleSection(QFrame):
         )
         self.contentWidget.setVisible(bool(expanded))
         self.resizeHandle.setVisible(bool(expanded) and self._resizable)
-        self.summaryLabel.setVisible(bool(self.summaryLabel.text().strip()))
+        self.summaryLabel.setVisible(True)
         self.updateGeometry()
 
     def _resize_content_by(self, delta: int) -> None:

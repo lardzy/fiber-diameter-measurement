@@ -333,6 +333,24 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
 
+    def test_collapsible_section_without_summary_keeps_title_left_aligned(self) -> None:
+        window = self._window()
+        window.resize(1280, 720)
+        window.show()
+        for _ in range(3):
+            self.app.processEvents()
+
+        section = window._area_recognition_section
+        self.assertEqual(section.summaryLabel.text(), "")
+        self.assertTrue(section.summaryLabel.isVisible())
+        self.assertGreater(section.summaryLabel.width(), 40)
+        self.assertLessEqual(section.toggleButton.x(), 16)
+        self.assertAlmostEqual(
+            section.toggleButton.x(),
+            window._object_properties_section.toggleButton.x(),
+            delta=2,
+        )
+
     def test_inspector_records_collapse_restores_dragged_height(self) -> None:
         window = self._window()
         window.resize(1600, 900)
