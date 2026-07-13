@@ -44,13 +44,16 @@ def _application_palette_is_dark(widget: QWidget) -> bool:
 
 
 def _redirect_wheel_to_inspector_scroll(widget: QWidget, event) -> None:
-    """Scroll the inspector page without letting an editor mutate its value."""
+    """Scroll an opted-in editor page without mutating the editor value."""
 
     parent = widget.parentWidget()
     while parent is not None:
         if (
             isinstance(parent, QAbstractScrollArea)
-            and parent.objectName() == "measurementInspectorScroll"
+            and (
+                parent.objectName() == "measurementInspectorScroll"
+                or bool(parent.property("redirectEditorWheel"))
+            )
         ):
             bar = parent.verticalScrollBar()
             pixel_delta = event.pixelDelta().y() if hasattr(event, "pixelDelta") else 0
@@ -119,13 +122,18 @@ class CollapsibleSection(QFrame):
         self.summaryLabel = QLabel(summary, self)
         self.summaryLabel.setObjectName("collapsibleSectionSummary")
         self.summaryLabel.setSizePolicy(
-            QSizePolicy.Policy.Preferred,
+            # Section summaries are informational and may contain user-owned
+            # names.  They must yield to the available dock width instead of
+            # contributing their full text width to the panel minimum.
+            QSizePolicy.Policy.Ignored,
             QSizePolicy.Policy.Fixed,
         )
         self.summaryLabel.setMinimumWidth(0)
+        self.summaryLabel.setAlignment(
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        )
         header.addWidget(self.toggleButton)
-        header.addStretch(1)
-        header.addWidget(self.summaryLabel)
+        header.addWidget(self.summaryLabel, 1)
         root.addLayout(header)
         self.contentWidget = QWidget(self)
         self.contentLayout = QVBoxLayout(self.contentWidget)

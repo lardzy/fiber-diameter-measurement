@@ -317,6 +317,17 @@ class MeasurementRecordsPane(QWidget):
         self.status_filter.addItem("有效", "valid")
         self.status_filter.addItem("需复核", "review")
         self.status_filter.addItem("失败", "failed")
+        for combo in (self.kind_filter, self.group_filter, self.status_filter):
+            combo.setMinimumWidth(0)
+            combo.setMinimumContentsLength(6)
+            combo.setSizeAdjustPolicy(
+                NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+            )
+            combo.setSizePolicy(
+                QSizePolicy.Policy.Ignored,
+                QSizePolicy.Policy.Fixed,
+            )
+        self.group_filter.currentTextChanged.connect(self.group_filter.setToolTip)
         if self.compact:
             layout.addWidget(self.search_edit)
             filter_row.addWidget(self.kind_filter, 1)
@@ -496,6 +507,7 @@ class MeasurementRecordsPane(QWidget):
             for label in self.controller.group_labels():
                 self.group_filter.addItem(label, label)
             self._set_combo_data(self.group_filter, current)
+        self.group_filter.setToolTip(self.group_filter.currentText())
 
     @staticmethod
     def _set_combo_data(combo: NoWheelComboBox, value: str) -> None:

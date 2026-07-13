@@ -11,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtGui import QImage, QPainter, QPalette, QWheelEvent
 from PySide6.QtCore import QItemSelectionModel, QPoint, QPointF, Qt
-from PySide6.QtWidgets import QApplication, QToolButton
+from PySide6.QtWidgets import QApplication, QSizePolicy, QToolButton
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, ImageDocument, Measurement, ProjectState
@@ -75,24 +75,135 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.app.processEvents()
         self.assertTrue(window._results_dock.isVisible())
 
-    def test_medium_layout_temporarily_hides_project_when_results_expand(self) -> None:
+    def test_medium_layout_keeps_project_visible_when_results_expand(self) -> None:
         window = self._window()
         window.resize(1280, 720)
         window.show()
-        self.app.processEvents()
+        for _ in range(3):
+            self.app.processEvents()
         self.assertTrue(window._project_dock.isVisible())
 
         window._toggle_results_panel()
         self.app.processEvents()
-        self.assertEqual(window.height(), 720)
-        self.assertFalse(window._project_dock.isVisible())
+        self.app.processEvents()
+        self.assertEqual(window.size().toTuple(), (1280, 720))
+        self.assertTrue(window._project_dock.isVisible())
         self.assertTrue(window._inspector_dock.isVisible())
         self.assertTrue(window._results_dock.isVisible())
         self.assertGreaterEqual(window.tab_widget.width(), 560)
+        self.assertGreaterEqual(window.tab_widget.height(), 120)
 
         window._toggle_results_panel()
         self.app.processEvents()
         self.assertTrue(window._project_dock.isVisible())
+
+    def test_long_calibration_source_does_not_expand_inspector_dock(self) -> None:
+        window = self._window()
+        window.resize(1280, 720)
+        window.show()
+        for _ in range(3):
+            self.app.processEvents()
+        initial_width = window._inspector_dock.width()
+        long_name = "LaserConfocal_" + ("UnbrokenPresetName" * 32)
+        preferred_width = window._app_settings.workspace_layout.inspector_width
+
+        window._set_calibration_status_card(
+            title=f"已标定 · {long_name}",
+            summary="0.133333 um/px",
+            status="calibrated",
+            details=f"标定来源: {long_name}\n换算关系: 7.5 px/um",
+        )
+        window.preset_combo.addItem(f"{long_name} (7.5 px/um)")
+        window.preset_combo.setCurrentIndex(window.preset_combo.count() - 1)
+        for _ in range(3):
+            self.app.processEvents()
+
+        self.assertEqual(window.size().toTuple(), (1280, 720))
+        self.assertAlmostEqual(window._inspector_dock.width(), initial_width, delta=12)
+        self.assertGreaterEqual(window.tab_widget.width(), 560)
+        self.assertLessEqual(
+            window._inspector_content.minimumSizeHint().width(),
+            window._inspector_scroll.viewport().width(),
+        )
+        self.assertEqual(
+            window._calibration_section.summaryLabel.sizePolicy().horizontalPolicy(),
+            QSizePolicy.Policy.Ignored,
+        )
+        self.assertEqual(window._calibration_section.summaryLabel.text(), "0.133333 um/px")
+        self.assertGreater(window._calibration_section.summaryLabel.width(), 40)
+        self.assertIn(long_name, window._calibration_section.summaryLabel.toolTip())
+        self.assertEqual(window.preset_combo.toolTip(), window.preset_combo.currentText())
+        self.assertEqual(
+            window._app_settings.workspace_layout.inspector_width,
+            preferred_width,
+        )
+
+        window._calibration_section.setExpanded(False)
+        self.app.processEvents()
+        self.assertAlmostEqual(window._inspector_dock.width(), initial_width, delta=12)
+        self.assertLessEqual(
+            window._calibration_section.minimumSizeHint().width(),
+            window._inspector_scroll.viewport().width(),
+        )
+
+        window.resize(1093, 576)
+        for _ in range(4):
+            self.app.processEvents()
+        self.assertTrue(window._adaptive_layout.is_compact)
+        self.assertGreaterEqual(window.tab_widget.width(), 560)
+        self.assertEqual(
+            window._app_settings.workspace_layout.inspector_width,
+            preferred_width,
+        )
+
+    def test_compact_layout_temporarily_clamps_oversized_sidebars(self) -> None:
+        settings = AppSettings()
+        settings.workspace_layout.project_width = 700
+        settings.workspace_layout.inspector_width = 700
+        window = self._window(settings)
+        window.resize(1700, 900)
+        window.show()
+        for _ in range(3):
+            self.app.processEvents()
+        expected = (
+            settings.workspace_layout.project_width,
+            settings.workspace_layout.inspector_width,
+        )
+
+        window.resize(1093, 576)
+        for _ in range(5):
+            self.app.processEvents()
+        self.assertTrue(window._adaptive_layout.is_compact)
+        self.assertTrue(window._inspector_dock.isVisible())
+        self.assertGreaterEqual(window.tab_widget.width(), 560)
+        self.assertLessEqual(
+            window._inspector_dock.width(),
+            window.width() - 560 + 2,
+        )
+        self.assertEqual(
+            (
+                settings.workspace_layout.project_width,
+                settings.workspace_layout.inspector_width,
+            ),
+            expected,
+        )
+
+        window._toggle_project_panel()
+        for _ in range(3):
+            self.app.processEvents()
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertGreaterEqual(window.tab_widget.width(), 560)
+        self.assertLessEqual(
+            window._project_dock.width(),
+            window.width() - 560 + 2,
+        )
+        self.assertEqual(
+            (
+                settings.workspace_layout.project_width,
+                settings.workspace_layout.inspector_width,
+            ),
+            expected,
+        )
 
     def test_compact_results_drawer_does_not_resize_window_beyond_screen(self) -> None:
         window = self._window()
@@ -100,16 +211,42 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         window.show()
         self.app.processEvents()
 
+        window._toggle_project_panel()
+        self.app.processEvents()
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
         window._toggle_results_panel()
+        self.app.processEvents()
         self.app.processEvents()
 
         self.assertEqual(window.size().toTuple(), (1093, 576))
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
         self.assertTrue(window._results_dock.isVisible())
         self.assertGreaterEqual(window._results_tabs.height(), 120)
+        self.assertGreaterEqual(window.tab_widget.height(), 120)
+        self.assertGreater(window._left_standard_splitter.verticalScrollBar().maximum(), 0)
         preferred_height = window._app_settings.workspace_layout.results_height
         window.resizeDocks([window._results_dock], [160], Qt.Orientation.Vertical)
         self.app.processEvents()
         self.assertEqual(window._app_settings.workspace_layout.results_height, preferred_height)
+
+    def test_results_height_uses_document_area_budget_without_overwriting_preference(self) -> None:
+        settings = AppSettings()
+        settings.workspace_layout.results_height = 1000
+        window = self._window(settings)
+        window.resize(1280, 720)
+        window.show()
+        self.app.processEvents()
+
+        window._toggle_results_panel()
+        self.app.processEvents()
+        self.app.processEvents()
+
+        self.assertEqual(window.size().toTuple(), (1280, 720))
+        self.assertGreaterEqual(window.tab_widget.height(), 120)
+        self.assertLess(window._results_dock.height(), 1000)
+        self.assertEqual(settings.workspace_layout.results_height, 1000)
 
     def test_results_and_side_docks_restore_last_user_extents(self) -> None:
         window = self._window()

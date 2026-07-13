@@ -11,8 +11,8 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import QPointF
-from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtCore import QPointF, Qt
+from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Line, Point
@@ -23,7 +23,8 @@ from fdm.models import (
     OverlayAnnotation,
     OverlayAnnotationKind,
 )
-from fdm.settings import AppSettings
+from fdm.settings import AppSettings, MeasurementLabelStyleSettings
+import fdm.ui.rendering as rendering
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.object_inspector import CurrentObjectInspector
 from fdm.ui.rendering import (
@@ -211,6 +212,128 @@ class ObjectAppearanceTests(unittest.TestCase):
         image_point = canvas.widget_to_image(widget_point)
         self.assertEqual(canvas._hit_test_overlay_annotation(widget_point, image_point), text.id)
 
+    def test_text_layout_cache_is_bounded_and_shared_with_multiline_hit_bounds(self) -> None:
+        rendering._TEXT_LAYOUT_CACHE.clear()
+        rendering._TEXT_LAYOUT_CACHE_CHARACTERS = 0
+        font = QFont("Arial")
+        font.setPixelSize(24)
+        with (
+            patch.object(rendering, "_TEXT_LAYOUT_MAX_ENTRIES", 3),
+            patch.object(rendering, "_TEXT_LAYOUT_MAX_CHARACTERS", 18),
+        ):
+            first = rendering._cached_text_layout(font, "中文\n第二行", render_mode="overlay")
+            repeated = rendering._cached_text_layout(font, "中文\n第二行", render_mode="overlay")
+            self.assertIs(first, repeated)
+            for index in range(8):
+                rendering._cached_text_layout(font, f"文字{index}", render_mode="overlay")
+            self.assertLessEqual(len(rendering._TEXT_LAYOUT_CACHE), 3)
+            self.assertLessEqual(rendering._TEXT_LAYOUT_CACHE_CHARACTERS, 18)
+
+        annotation = OverlayAnnotation(
+            id="multiline",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="中文\n第二行",
+            anchor_px=Point(20, 30),
+            appearance=ObjectAppearanceOverride(font_family="Arial", font_size=24),
+        )
+        rect = annotation_rect(annotation, AppSettings(), lambda point: QPointF(point.x, point.y))
+        self.assertAlmostEqual(rect.width(), first.width + 12.0)
+        self.assertAlmostEqual(rect.height(), first.height + 8.0)
+
+    def test_offscreen_overlay_text_is_culled_before_drawing(self) -> None:
+        document = ImageDocument(id="image", path="/tmp/image.png", image_size=(100, 80))
+        document.overlay_annotations = [
+            OverlayAnnotation(
+                id="outside",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="画布外文字",
+                anchor_px=Point(500, 500),
+            )
+        ]
+        target = QImage(100, 80, QImage.Format.Format_ARGB32)
+        target.fill(QColor("#00000000"))
+        painter = QPainter(target)
+        try:
+            with patch("fdm.ui.rendering._draw_cached_text") as draw_cached:
+                draw_overlay_annotations(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x, point.y),
+                    AppSettings(),
+                )
+            draw_cached.assert_not_called()
+        finally:
+            painter.end()
+
+    def test_area_display_path_cache_reuses_path_and_preserves_hole_and_exact_area(self) -> None:
+        rendering._AREA_DISPLAY_PATH_CACHE.clear()
+        rendering._AREA_DISPLAY_PATH_CACHE_BYTES = 0
+        outer = [Point(10, 10), Point(90, 10), Point(90, 90), Point(10, 90)]
+        hole = [Point(35, 35), Point(35, 65), Point(65, 65), Point(65, 35)]
+        measurement = Measurement(
+            id="area",
+            image_id="image",
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=outer,
+            area_rings_px=[outer, hole],
+            exact_area_px=4321.0,
+        )
+        measurement.recalculate(None)
+        document = ImageDocument(id="image", path="/tmp/image.png", image_size=(100, 100))
+        document.add_measurement(measurement)
+        transform = lambda point: QPointF(point.x, point.y)
+
+        first = rendering._cached_area_display_path(
+            document,
+            measurement,
+            measurement.area_rings_px,
+            transform,
+            selected=False,
+        )
+        second = rendering._cached_area_display_path(
+            document,
+            measurement,
+            measurement.area_rings_px,
+            transform,
+            selected=False,
+        )
+        self.assertIs(first, second)
+        self.assertEqual(first.fillRule(), Qt.FillRule.OddEvenFill)
+        self.assertTrue(first.contains(QPointF(20, 20)))
+        self.assertFalse(first.contains(QPointF(50, 50)))
+        self.assertEqual(measurement.area_px, 4321.0)
+
+        document.mark_measurement_geometry_changed()
+        third = rendering._cached_area_display_path(
+            document,
+            measurement,
+            measurement.area_rings_px,
+            transform,
+            selected=False,
+        )
+        self.assertIsNot(first, third)
+
+        rendering._AREA_DISPLAY_PATH_CACHE.clear()
+        rendering._AREA_DISPLAY_PATH_CACHE_BYTES = 0
+        with (
+            patch.object(rendering, "_AREA_PATH_MAX_ENTRIES", 2),
+            patch.object(rendering, "_AREA_PATH_MAX_ESTIMATED_BYTES", 600),
+        ):
+            for offset in range(6):
+                rendering._cached_area_display_path(
+                    document,
+                    measurement,
+                    measurement.area_rings_px,
+                    lambda point, offset=offset: QPointF(point.x + offset, point.y),
+                    selected=False,
+                )
+            self.assertLessEqual(len(rendering._AREA_DISPLAY_PATH_CACHE), 2)
+            self.assertLessEqual(rendering._AREA_DISPLAY_PATH_CACHE_BYTES, 600)
+
     def test_count_number_offsets_are_grouped_by_marker_scale(self) -> None:
         document = ImageDocument(id="image", path="/tmp/counts.png", image_size=(120, 80))
         document.measurements = [
@@ -292,6 +415,65 @@ class ObjectAppearanceTests(unittest.TestCase):
             painter.end()
         self.assertEqual(calls, [area])
         self.assertEqual(measurement_label_font(AppSettings(), area).pixelSize(), 28)
+
+    def test_length_and_area_labels_use_independent_styles(self) -> None:
+        document = ImageDocument(id="mixed", path="/tmp/mixed.png", image_size=(160, 120))
+        line = Measurement(
+            id="line",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(10, 20), Point(110, 20)),
+        )
+        area = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=[Point(20, 50), Point(100, 50), Point(100, 100), Point(20, 100)],
+        )
+        document.add_measurement(line)
+        document.add_measurement(area)
+        settings = AppSettings(
+            length_measurement_label_style=MeasurementLabelStyleSettings(
+                enabled=False,
+                font_family="Arial",
+                font_size=18,
+                decimals=1,
+            ),
+            area_measurement_label_style=MeasurementLabelStyleSettings(
+                enabled=True,
+                font_family="Arial",
+                font_size=30,
+                decimals=3,
+            ),
+        )
+        target = QImage(160, 120, QImage.Format.Format_ARGB32)
+        target.fill(QColor("#00000000"))
+        painter = QPainter(target)
+        try:
+            with (
+                patch("fdm.ui.rendering.draw_measurement_label") as draw_length,
+                patch("fdm.ui.rendering.draw_area_measurement_label") as draw_area,
+            ):
+                draw_measurements(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x, point.y),
+                    settings,
+                    line_width=2.0,
+                    endpoint_radius=4.0,
+                )
+            draw_length.assert_not_called()
+            draw_area.assert_called_once()
+        finally:
+            painter.end()
+
+        self.assertEqual(measurement_label_font(settings, line).pixelSize(), 18)
+        self.assertEqual(measurement_label_font(settings, area).pixelSize(), 30)
+        self.assertTrue(rendering.measurement_display_text_with_settings(line, document, settings).endswith(".0 px"))
+        self.assertTrue(rendering.measurement_display_text_with_settings(area, document, settings).endswith(".000 px²"))
 
     def test_mixed_measurement_overrides_render_without_bypassing_object_colors(self) -> None:
         document = ImageDocument(id="image_1", path="/tmp/image.png", image_size=(180, 140))
@@ -419,6 +601,72 @@ class ObjectAppearanceTests(unittest.TestCase):
         self.assertFalse(inspector._stroke_color_button.isHidden())
         self.assertTrue(inspector._stroke_width_spin.isHidden())
         self.assertFalse(inspector._marker_scale_spin.isHidden())
+        inspector.close()
+
+    def test_area_inspector_uses_area_label_style_defaults(self) -> None:
+        document = ImageDocument(id="area-inspector", path="/tmp/area.png", image_size=(80, 60))
+        area = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=[Point(5, 5), Point(50, 5), Point(50, 45), Point(5, 45)],
+        )
+        area.recalculate(None)
+        document.measurements = [area]
+        settings = AppSettings(
+            length_measurement_label_style=MeasurementLabelStyleSettings(
+                color="#112233",
+                font_size=18,
+            ),
+            area_measurement_label_style=MeasurementLabelStyleSettings(
+                color="#AABBCC",
+                font_size=31,
+            ),
+        )
+        inspector = CurrentObjectInspector()
+        inspector.set_context(
+            document,
+            settings=settings,
+            measurement_ids=[area.id],
+        )
+
+        self.assertEqual(inspector._text_color_button.property("color_value"), "#AABBCC")
+        self.assertEqual(inspector._font_size_spin.value(), 31)
+        self.assertEqual(inspector._control_values["text_color"], "#AABBCC")
+        inspector.close()
+
+    def test_inspector_long_category_does_not_create_a_wide_minimum(self) -> None:
+        document = ImageDocument(id="long-group", path="/tmp/group.png", image_size=(80, 60))
+        long_label = "Category_" + ("UnbrokenName" * 40)
+        group = document.create_group(color="#2A9D8F", label=long_label)
+        measurement = Measurement(
+            id="line",
+            image_id=document.id,
+            fiber_group_id=group.id,
+            mode="manual",
+            line_px=Line(Point(5, 10), Point(45, 10)),
+        )
+        measurement.recalculate(None)
+        document.measurements = [measurement]
+        inspector = CurrentObjectInspector()
+        inspector.resize(320, 500)
+        inspector.set_context(
+            document,
+            settings=AppSettings(),
+            measurement_ids=[measurement.id],
+        )
+        inspector.show()
+        self.app.processEvents()
+
+        self.assertLessEqual(inspector.minimumSizeHint().width(), 320)
+        self.assertLessEqual(inspector._group_combo.minimumSizeHint().width(), 180)
+        self.assertIn(long_label, inspector._group_combo.currentText())
+        self.assertEqual(
+            inspector._group_combo.toolTip(),
+            inspector._group_combo.currentText(),
+        )
         inspector.close()
 
 

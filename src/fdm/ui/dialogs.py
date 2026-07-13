@@ -4,8 +4,8 @@ from dataclasses import replace
 from pathlib import Path
 from threading import Thread
 
-from PySide6.QtCore import QEvent, QLineF, QObject, QRectF, QSize, Qt, Signal
-from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPalette, QPen
+from PySide6.QtCore import QEvent, QLineF, QObject, QPointF, QRectF, QSize, Qt, Signal
+from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
     QApplication,
     QColorDialog,
@@ -50,6 +50,7 @@ from fdm.settings import (
     FocusStackProfile,
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
+    MeasurementLabelStyleSettings,
     OpenImageViewMode,
     RawRecordDataSource,
     RawRecordExportDirection,
@@ -102,8 +103,9 @@ RAW_RECORD_DIRECTION_ITEMS = [
 class _MeasurementStylePreview(QWidget):
     """Small live preview for clean-profile measurement appearance settings."""
 
-    def __init__(self, parent: QWidget | None = None) -> None:
+    def __init__(self, parent: QWidget | None = None, *, metric: str = "length") -> None:
         super().__init__(parent)
+        self._metric = "area" if metric == "area" else "length"
         self._show_label = True
         self._font = QFont()
         self._label_color = QColor("#F4F1DE")
@@ -146,28 +148,39 @@ class _MeasurementStylePreview(QWidget):
         right = rect.right() - 28
         y = rect.center().y() + 10
         painter.setPen(QPen(self._line_color, 2.5))
-        painter.drawLine(QLineF(left, y, right, y))
-        if self._endpoint_style == MeasurementEndpointStyle.CIRCLE:
-            painter.setBrush(self._line_color)
-            painter.drawEllipse(QRectF(left - 3, y - 3, 6, 6))
-            painter.drawEllipse(QRectF(right - 3, y - 3, 6, 6))
-        elif self._endpoint_style == MeasurementEndpointStyle.BAR:
-            painter.drawLine(QLineF(left, y - 7, left, y + 7))
-            painter.drawLine(QLineF(right, y - 7, right, y + 7))
-        elif self._endpoint_style in {
-            MeasurementEndpointStyle.ARROW_INSIDE,
-            MeasurementEndpointStyle.ARROW_OUTSIDE,
-        }:
-            direction = 1 if self._endpoint_style == MeasurementEndpointStyle.ARROW_INSIDE else -1
-            painter.drawLine(QLineF(left, y, left + 8 * direction, y - 5))
-            painter.drawLine(QLineF(left, y, left + 8 * direction, y + 5))
-            painter.drawLine(QLineF(right, y, right - 8 * direction, y - 5))
-            painter.drawLine(QLineF(right, y, right - 8 * direction, y + 5))
+        if self._metric == "area":
+            path = QPainterPath()
+            path.moveTo(QPointF(left + 30, y + 11))
+            path.lineTo(QPointF(left + 52, y - 18))
+            path.lineTo(QPointF(right - 36, y - 12))
+            path.lineTo(QPointF(right - 18, y + 14))
+            path.lineTo(QPointF(left + 30, y + 11))
+            painter.setBrush(QColor(self._line_color.red(), self._line_color.green(), self._line_color.blue(), 48))
+            painter.drawPath(path)
+        else:
+            painter.drawLine(QLineF(left, y, right, y))
+            if self._endpoint_style == MeasurementEndpointStyle.CIRCLE:
+                painter.setBrush(self._line_color)
+                painter.drawEllipse(QRectF(left - 3, y - 3, 6, 6))
+                painter.drawEllipse(QRectF(right - 3, y - 3, 6, 6))
+            elif self._endpoint_style == MeasurementEndpointStyle.BAR:
+                painter.drawLine(QLineF(left, y - 7, left, y + 7))
+                painter.drawLine(QLineF(right, y - 7, right, y + 7))
+            elif self._endpoint_style in {
+                MeasurementEndpointStyle.ARROW_INSIDE,
+                MeasurementEndpointStyle.ARROW_OUTSIDE,
+            }:
+                direction = 1 if self._endpoint_style == MeasurementEndpointStyle.ARROW_INSIDE else -1
+                painter.drawLine(QLineF(left, y, left + 8 * direction, y - 5))
+                painter.drawLine(QLineF(left, y, left + 8 * direction, y + 5))
+                painter.drawLine(QLineF(right, y, right - 8 * direction, y - 5))
+                painter.drawLine(QLineF(right, y, right - 8 * direction, y + 5))
 
         if not self._show_label:
             return
         painter.setFont(self._font)
-        text = f"{12.3456:.{self._decimals}f} μm"
+        suffix = " μm²" if self._metric == "area" else " μm"
+        text = f"{12.3456:.{self._decimals}f}{suffix}"
         metrics = QFontMetrics(self._font)
         text_rect = QRectF(metrics.boundingRect(text)).adjusted(-6, -3, 6, 3)
         text_rect.moveCenter(QRectF(rect.left(), rect.top(), rect.width(), rect.height() * 0.55).center())
@@ -1280,15 +1293,34 @@ class SettingsDialog(QDialog):
                     target.setItem(row, column, item.clone())
 
     def app_settings(self) -> AppSettings:
+        length_label_style = MeasurementLabelStyleSettings(
+            enabled=self._show_length_measurement_labels.isChecked(),
+            font_family=self._font_combo_family_value(self._length_measurement_label_font),
+            font_size=self._length_measurement_label_size.value(),
+            color=str(
+                self._length_measurement_label_color.property("color_value")
+                or self._initial_settings.length_measurement_label_style.color
+            ),
+            decimals=self._length_measurement_label_decimals.value(),
+            background_enabled=self._length_measurement_label_background.isChecked(),
+            parallel_to_line=self._length_measurement_label_parallel.isChecked(),
+        )
+        area_label_style = MeasurementLabelStyleSettings(
+            enabled=self._show_area_measurement_labels.isChecked(),
+            font_family=self._font_combo_family_value(self._area_measurement_label_font),
+            font_size=self._area_measurement_label_size.value(),
+            color=str(
+                self._area_measurement_label_color.property("color_value")
+                or self._initial_settings.area_measurement_label_style.color
+            ),
+            decimals=self._area_measurement_label_decimals.value(),
+            background_enabled=self._area_measurement_label_background.isChecked(),
+            parallel_to_line=False,
+        )
         return AppSettings(
             theme_mode=self._theme_mode_combo.currentData(),
-            show_measurement_labels=self._show_measurement_labels.isChecked(),
-            measurement_label_font_family=self._font_combo_family_value(self._measurement_label_font),
-            measurement_label_font_size=self._measurement_label_size.value(),
-            measurement_label_color=self._measurement_label_color.property("color_value") or self._initial_settings.measurement_label_color,
-            measurement_label_decimals=self._measurement_label_decimals.value(),
-            measurement_label_parallel_to_line=self._measurement_label_parallel.isChecked(),
-            measurement_label_background_enabled=self._measurement_label_background.isChecked(),
+            length_measurement_label_style=length_label_style,
+            area_measurement_label_style=area_label_style,
             show_count_numbers=self._show_count_numbers.isChecked(),
             count_number_font_family=self._font_combo_family_value(self._count_number_font),
             count_number_font_size=self._count_number_size.value(),
@@ -1508,43 +1540,128 @@ class SettingsDialog(QDialog):
             return requested
         return combo.currentFont().family()
 
-    def _update_measurement_style_preview(self, *_args) -> None:
-        preview = getattr(self, "_measurement_style_preview", None)
+    def _update_length_measurement_style_preview(self, *_args) -> None:
+        preview = getattr(self, "_length_measurement_style_preview", None)
         if preview is None:
             return
-        font = QFont(self._measurement_label_font.currentFont())
-        font.setPointSize(self._measurement_label_size.value())
+        font = QFont(self._length_measurement_label_font.currentFont())
+        font.setPointSize(self._length_measurement_label_size.value())
         preview.set_preview_style(
-            show_label=self._show_measurement_labels.isChecked(),
+            show_label=self._show_length_measurement_labels.isChecked(),
             font=font,
-            label_color=str(self._measurement_label_color.property("color_value") or "#F4F1DE"),
+            label_color=str(
+                self._length_measurement_label_color.property("color_value") or "#F4F1DE"
+            ),
             line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
-            background_enabled=self._measurement_label_background.isChecked(),
-            decimals=self._measurement_label_decimals.value(),
+            background_enabled=self._length_measurement_label_background.isChecked(),
+            decimals=self._length_measurement_label_decimals.value(),
             endpoint_style=str(self._endpoint_style_combo.currentData() or MeasurementEndpointStyle.BAR),
         )
+
+    def _update_area_measurement_style_preview(self, *_args) -> None:
+        preview = getattr(self, "_area_measurement_style_preview", None)
+        if preview is None:
+            return
+        font = QFont(self._area_measurement_label_font.currentFont())
+        font.setPointSize(self._area_measurement_label_size.value())
+        preview.set_preview_style(
+            show_label=self._show_area_measurement_labels.isChecked(),
+            font=font,
+            label_color=str(
+                self._area_measurement_label_color.property("color_value") or "#F4F1DE"
+            ),
+            line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
+            background_enabled=self._area_measurement_label_background.isChecked(),
+            decimals=self._area_measurement_label_decimals.value(),
+            endpoint_style=str(self._endpoint_style_combo.currentData() or MeasurementEndpointStyle.BAR),
+        )
+
+    def _update_measurement_style_preview(self, *_args) -> None:
+        """Refresh both metric previews; retained for compatibility callers."""
+        self._update_length_measurement_style_preview()
+        self._update_area_measurement_style_preview()
 
     def _build_measurement_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
 
-        label_group = QGroupBox("结果文字")
-        label_form = QFormLayout(label_group)
-        self._show_measurement_labels = QCheckBox("在测量线旁显示结果文字")
-        self._show_measurement_labels.setChecked(settings.show_measurement_labels)
-        self._measurement_label_font = NoWheelFontComboBox()
-        self._configure_font_combo(self._measurement_label_font, settings.measurement_label_font_family)
-        self._measurement_label_size = NoWheelSpinBox()
-        self._measurement_label_size.setRange(8, 96)
-        self._measurement_label_size.setValue(settings.measurement_label_font_size)
-        self._measurement_label_color = self._create_color_button(settings.measurement_label_color)
-        self._measurement_label_decimals = NoWheelSpinBox()
-        self._measurement_label_decimals.setRange(0, 8)
-        self._measurement_label_decimals.setValue(settings.measurement_label_decimals)
-        self._measurement_label_parallel = QCheckBox("结果文字与测量线平行")
-        self._measurement_label_parallel.setChecked(settings.measurement_label_parallel_to_line)
-        self._measurement_label_background = QCheckBox("显示结果文字浅黑底")
-        self._measurement_label_background.setChecked(settings.measurement_label_background_enabled)
+        length_style = settings.length_measurement_label_style
+        area_style = settings.area_measurement_label_style
+
+        length_group = QGroupBox("直径/长度结果")
+        length_form = QFormLayout(length_group)
+        self._show_length_measurement_labels = QCheckBox("在线段和折线旁显示结果文字")
+        self._show_length_measurement_labels.setChecked(length_style.enabled)
+        self._length_measurement_label_font = NoWheelFontComboBox()
+        self._configure_font_combo(
+            self._length_measurement_label_font,
+            length_style.font_family,
+        )
+        self._length_measurement_label_size = NoWheelSpinBox()
+        self._length_measurement_label_size.setRange(8, 96)
+        self._length_measurement_label_size.setValue(length_style.font_size)
+        self._length_measurement_label_color = self._create_color_button(length_style.color)
+        self._length_measurement_label_decimals = NoWheelSpinBox()
+        self._length_measurement_label_decimals.setRange(0, 8)
+        self._length_measurement_label_decimals.setValue(length_style.decimals)
+        self._length_measurement_label_parallel = QCheckBox("结果文字与测量线平行")
+        self._length_measurement_label_parallel.setChecked(length_style.parallel_to_line)
+        self._length_measurement_label_background = QCheckBox("显示结果文字浅黑底")
+        self._length_measurement_label_background.setChecked(length_style.background_enabled)
+        self._length_measurement_style_preview = _MeasurementStylePreview(
+            length_group,
+            metric="length",
+        )
+        length_form.addRow("", self._show_length_measurement_labels)
+        length_form.addRow("结果文字字体", self._length_measurement_label_font)
+        length_form.addRow("结果文字字号", self._length_measurement_label_size)
+        length_form.addRow("结果文字颜色", self._length_measurement_label_color)
+        length_form.addRow("结果文字小数位", self._length_measurement_label_decimals)
+        length_form.addRow("", self._length_measurement_label_parallel)
+        length_form.addRow("", self._length_measurement_label_background)
+        length_form.addRow("预览", self._length_measurement_style_preview)
+
+        area_group = QGroupBox("面积结果")
+        area_form = QFormLayout(area_group)
+        self._show_area_measurement_labels = QCheckBox("在面积对象旁显示结果文字")
+        self._show_area_measurement_labels.setChecked(area_style.enabled)
+        self._area_measurement_label_font = NoWheelFontComboBox()
+        self._configure_font_combo(
+            self._area_measurement_label_font,
+            area_style.font_family,
+        )
+        self._area_measurement_label_size = NoWheelSpinBox()
+        self._area_measurement_label_size.setRange(8, 96)
+        self._area_measurement_label_size.setValue(area_style.font_size)
+        self._area_measurement_label_color = self._create_color_button(area_style.color)
+        self._area_measurement_label_decimals = NoWheelSpinBox()
+        self._area_measurement_label_decimals.setRange(0, 8)
+        self._area_measurement_label_decimals.setValue(area_style.decimals)
+        self._area_measurement_label_background = QCheckBox("显示结果文字浅黑底")
+        self._area_measurement_label_background.setChecked(area_style.background_enabled)
+        self._area_measurement_style_preview = _MeasurementStylePreview(
+            area_group,
+            metric="area",
+        )
+        area_form.addRow("", self._show_area_measurement_labels)
+        area_form.addRow("结果文字字体", self._area_measurement_label_font)
+        area_form.addRow("结果文字字号", self._area_measurement_label_size)
+        area_form.addRow("结果文字颜色", self._area_measurement_label_color)
+        area_form.addRow("结果文字小数位", self._area_measurement_label_decimals)
+        area_form.addRow("", self._area_measurement_label_background)
+        area_form.addRow("预览", self._area_measurement_style_preview)
+
+        # Private aliases preserve existing integrations while directing them
+        # to the length-specific controls.
+        self._show_measurement_labels = self._show_length_measurement_labels
+        self._measurement_label_font = self._length_measurement_label_font
+        self._measurement_label_size = self._length_measurement_label_size
+        self._measurement_label_color = self._length_measurement_label_color
+        self._measurement_label_decimals = self._length_measurement_label_decimals
+        self._measurement_label_parallel = self._length_measurement_label_parallel
+        self._measurement_label_background = self._length_measurement_label_background
+        self._measurement_style_preview = self._length_measurement_style_preview
+
         self._show_count_numbers = QCheckBox("显示计数点编号")
         self._show_count_numbers.setChecked(settings.show_count_numbers)
         self._count_number_font = NoWheelFontComboBox()
@@ -1561,14 +1678,6 @@ class SettingsDialog(QDialog):
         self._endpoint_style_combo.addItem("无端点", MeasurementEndpointStyle.NONE)
         self._endpoint_style_combo.setCurrentIndex(max(0, self._endpoint_style_combo.findData(settings.measurement_endpoint_style)))
         self._default_measurement_color = self._create_color_button(settings.default_measurement_color)
-        label_form.addRow("", self._show_measurement_labels)
-        label_form.addRow("结果文字字体", self._measurement_label_font)
-        label_form.addRow("结果文字字号", self._measurement_label_size)
-        label_form.addRow("结果文字颜色", self._measurement_label_color)
-        label_form.addRow("结果文字小数位", self._measurement_label_decimals)
-        label_form.addRow("", self._measurement_label_parallel)
-        label_form.addRow("", self._measurement_label_background)
-
         count_group = QGroupBox("计数点编号")
         count_form = QFormLayout(count_group)
         count_form.addRow("", self._show_count_numbers)
@@ -1581,22 +1690,24 @@ class SettingsDialog(QDialog):
         measurement_form.addRow("端点样式", self._endpoint_style_combo)
         measurement_form.addRow("未分类测量线颜色", self._default_measurement_color)
 
-        preview_group = QGroupBox("样式预览")
-        preview_layout = QVBoxLayout(preview_group)
-        self._measurement_style_preview = _MeasurementStylePreview(preview_group)
-        preview_layout.addWidget(self._measurement_style_preview)
-        self._show_measurement_labels.toggled.connect(self._update_measurement_style_preview)
-        self._measurement_label_font.currentFontChanged.connect(self._update_measurement_style_preview)
-        self._measurement_label_size.valueChanged.connect(self._update_measurement_style_preview)
-        self._measurement_label_color.clicked.connect(self._update_measurement_style_preview)
-        self._measurement_label_decimals.valueChanged.connect(self._update_measurement_style_preview)
-        self._measurement_label_background.toggled.connect(self._update_measurement_style_preview)
+        self._show_length_measurement_labels.toggled.connect(self._update_length_measurement_style_preview)
+        self._length_measurement_label_font.currentFontChanged.connect(self._update_length_measurement_style_preview)
+        self._length_measurement_label_size.valueChanged.connect(self._update_length_measurement_style_preview)
+        self._length_measurement_label_color.clicked.connect(self._update_length_measurement_style_preview)
+        self._length_measurement_label_decimals.valueChanged.connect(self._update_length_measurement_style_preview)
+        self._length_measurement_label_background.toggled.connect(self._update_length_measurement_style_preview)
+        self._show_area_measurement_labels.toggled.connect(self._update_area_measurement_style_preview)
+        self._area_measurement_label_font.currentFontChanged.connect(self._update_area_measurement_style_preview)
+        self._area_measurement_label_size.valueChanged.connect(self._update_area_measurement_style_preview)
+        self._area_measurement_label_color.clicked.connect(self._update_area_measurement_style_preview)
+        self._area_measurement_label_decimals.valueChanged.connect(self._update_area_measurement_style_preview)
+        self._area_measurement_label_background.toggled.connect(self._update_area_measurement_style_preview)
         self._endpoint_style_combo.currentIndexChanged.connect(self._update_measurement_style_preview)
         self._default_measurement_color.clicked.connect(self._update_measurement_style_preview)
         self._update_measurement_style_preview()
 
-        layout.addWidget(preview_group)
-        layout.addWidget(label_group)
+        layout.addWidget(length_group)
+        layout.addWidget(area_group)
         layout.addWidget(count_group)
         layout.addWidget(measurement_group)
         layout.addStretch(1)

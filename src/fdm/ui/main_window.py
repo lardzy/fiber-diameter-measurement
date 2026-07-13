@@ -940,7 +940,7 @@ class MainWindow(QMainWindow):
         self._statistics_category_table: QTableWidget | None = None
         self._distribution_widget: StatisticsDistributionWidget | None = None
         self._project_summary_label: QLabel | None = None
-        self._left_standard_splitter: QSplitter | None = None
+        self._left_standard_splitter: QScrollArea | None = None
         self._digital_slide_left_panel: QWidget | None = None
         self._right_standard_panel: QWidget | None = None
         self._acquisition_right_panel: QWidget | None = None
@@ -2269,21 +2269,44 @@ class MainWindow(QMainWindow):
         self._left_panel = container
         container.setMinimumWidth(220)
         layout = QVBoxLayout(container)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(8)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
 
-        self._project_summary_label = QLabel("0 张图片 · 无缺失 · 尚未保存", container)
+        standard_scroll = QScrollArea(container)
+        standard_scroll.setObjectName("projectNavigatorScroll")
+        standard_scroll.setWidgetResizable(True)
+        standard_scroll.setFrameShape(QFrame.Shape.NoFrame)
+        standard_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        standard_scroll.setVerticalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAsNeeded
+        )
+        standard_scroll.setAlignment(
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        )
+        standard_scroll.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Ignored,
+        )
+        standard_content = QWidget(standard_scroll)
+        standard_layout = QVBoxLayout(standard_content)
+        standard_layout.setContentsMargins(8, 8, 8, 8)
+        standard_layout.setSpacing(8)
+        standard_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+
+        self._project_summary_label = QLabel("0 张图片 · 无缺失 · 尚未保存", standard_content)
         self._project_summary_label.setObjectName("projectSummaryLabel")
         self._project_summary_label.setWordWrap(True)
-        layout.addWidget(self._project_summary_label)
+        standard_layout.addWidget(self._project_summary_label)
 
-        image_box = QGroupBox("已打开图片")
+        image_box = QGroupBox("已打开图片", standard_content)
         image_layout = QVBoxLayout(image_box)
         self.image_list = QListWidget()
         self.image_list.currentRowChanged.connect(self._on_image_list_changed)
         image_layout.addWidget(self.image_list)
 
-        group_box = QGroupBox("纤维类别")
+        group_box = QGroupBox("纤维类别", standard_content)
         group_layout = QVBoxLayout(group_box)
         header_row = QHBoxLayout()
         header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
@@ -2355,14 +2378,16 @@ class MainWindow(QMainWindow):
 
         splitter = QSplitter(Qt.Orientation.Vertical)
         self._left_panel_splitter = splitter
-        self._left_standard_splitter = splitter
         splitter.setChildrenCollapsible(False)
         splitter.addWidget(image_box)
         splitter.addWidget(group_box)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 0)
         splitter.setSizes([280, 420])
-        layout.addWidget(splitter, 1)
+        standard_layout.addWidget(splitter, 1)
+        standard_scroll.setWidget(standard_content)
+        self._left_standard_splitter = standard_scroll
+        layout.addWidget(standard_scroll, 1)
         self._digital_slide_left_panel = self._build_digital_slide_left_panel(container)
         self._digital_slide_left_panel.hide()
         layout.addWidget(self._digital_slide_left_panel, 1)
@@ -2720,7 +2745,9 @@ class MainWindow(QMainWindow):
         inspector_content.setObjectName("measurementInspectorContent")
         inspector_content.setMinimumWidth(0)
         inspector_content.setSizePolicy(
-            QSizePolicy.Policy.Preferred,
+            # The scroll viewport owns the inspector width. Dynamic user text
+            # inside a section must wrap or clip, never resize the dock.
+            QSizePolicy.Policy.Ignored,
             QSizePolicy.Policy.Preferred,
         )
         inspector_layout = QVBoxLayout(inspector_content)
@@ -2750,6 +2777,11 @@ class MainWindow(QMainWindow):
 
         calibration_panel = QWidget(inspector_content)
         calibration_panel.setObjectName("calibrationBox")
+        calibration_panel.setMinimumWidth(0)
+        calibration_panel.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         calibration_layout = QVBoxLayout(calibration_panel)
         calibration_layout.setContentsMargins(0, 0, 0, 0)
         self._calibration_status_card = QFrame(calibration_panel)
@@ -2760,6 +2792,11 @@ class MainWindow(QMainWindow):
 
         self._calibration_status_title_label = QLabel("未标定", self._calibration_status_card)
         self._calibration_status_title_label.setWordWrap(True)
+        self._calibration_status_title_label.setMinimumWidth(0)
+        self._calibration_status_title_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self._calibration_status_title_label.setStyleSheet("font-weight: 800;")
         card_layout.addWidget(self._calibration_status_title_label)
 
@@ -2801,6 +2838,7 @@ class MainWindow(QMainWindow):
 
         calibration_layout.addWidget(self._calibration_status_card)
         self.preset_combo = NoWheelComboBox(calibration_panel)
+        self.preset_combo.setMinimumWidth(0)
         self.preset_combo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.preset_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.preset_combo.setMinimumContentsLength(10)
@@ -3053,6 +3091,11 @@ class MainWindow(QMainWindow):
         device_layout = QVBoxLayout(device_box)
         self._acquisition_device_label = QLabel("尚未选择采集设备", device_box)
         self._acquisition_device_label.setWordWrap(True)
+        self._acquisition_device_label.setMinimumWidth(0)
+        self._acquisition_device_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         device_layout.addWidget(self._acquisition_device_label)
         switch_button = QToolButton(device_box)
         switch_button.setDefaultAction(self.switch_capture_device_action)
@@ -3065,6 +3108,11 @@ class MainWindow(QMainWindow):
         preview_layout = QVBoxLayout(preview_box)
         self._acquisition_preview_label = QLabel("等待实时预览", preview_box)
         self._acquisition_preview_label.setWordWrap(True)
+        self._acquisition_preview_label.setMinimumWidth(0)
+        self._acquisition_preview_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         preview_layout.addWidget(self._acquisition_preview_label)
         capture_button = QToolButton(preview_box)
         capture_button.setDefaultAction(self.capture_frame_action)
@@ -3789,7 +3837,10 @@ class MainWindow(QMainWindow):
         self._calibration_status_summary_label.setStyleSheet(f"color: {text_color};")
         self.calibration_label = self._calibration_status_summary_label
         if self._calibration_section is not None:
-            self._calibration_section.setSummary(title)
+            # The full source name remains in the card and tooltip.  Keep the
+            # one-line section header compact so a long preset cannot dominate
+            # the right dock width.
+            self._calibration_section.setSummary(summary if status == "calibrated" else title)
             self._calibration_section.summaryLabel.setToolTip(
                 "\n".join(part for part in (title, summary, details) if part)
             )

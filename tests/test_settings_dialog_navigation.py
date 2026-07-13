@@ -15,7 +15,7 @@ try:
 
     from fdm.geometry import Point
     from fdm.models import ImageDocument
-    from fdm.settings import AppSettings
+    from fdm.settings import AppSettings, MeasurementLabelStyleSettings
     from fdm.ui.dialogs import SettingsDialog
 
     PYSIDE_AVAILABLE = True
@@ -159,23 +159,40 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             dialog.close()
 
     def test_measurement_page_has_live_style_preview(self) -> None:
-        dialog = SettingsDialog(AppSettings(), document=None)
+        dialog = SettingsDialog(
+            AppSettings(
+                length_measurement_label_style=MeasurementLabelStyleSettings(decimals=2),
+                area_measurement_label_style=MeasurementLabelStyleSettings(
+                    decimals=5,
+                    color="#88AA44",
+                ),
+            ),
+            document=None,
+        )
         try:
             dialog._settings_navigation.setCurrentRow(1)  # noqa: SLF001
-            preview = dialog._measurement_style_preview  # noqa: SLF001
-            self.assertTrue(preview._show_label)  # noqa: SLF001
-            self.assertEqual(preview._label_color.name().upper(), "#F4F1DE")  # noqa: SLF001
-            self.assertEqual(preview._line_color.name().upper(), "#2A9D8F")  # noqa: SLF001
-            dialog._measurement_label_decimals.setValue(4)  # noqa: SLF001
-            dialog._measurement_label_background.setChecked(False)  # noqa: SLF001
-            self.assertEqual(preview._decimals, 4)  # noqa: SLF001
-            self.assertFalse(preview._background_enabled)  # noqa: SLF001
-            preview.resize(480, 100)
-            self.assertFalse(preview.grab().isNull())
+            length_preview = dialog._length_measurement_style_preview  # noqa: SLF001
+            area_preview = dialog._area_measurement_style_preview  # noqa: SLF001
+            self.assertTrue(length_preview._show_label)  # noqa: SLF001
+            self.assertEqual(length_preview._label_color.name().upper(), "#F4F1DE")  # noqa: SLF001
+            self.assertEqual(area_preview._label_color.name().upper(), "#88AA44")  # noqa: SLF001
+            self.assertEqual(area_preview._metric, "area")  # noqa: SLF001
+            dialog._length_measurement_label_decimals.setValue(4)  # noqa: SLF001
+            dialog._length_measurement_label_background.setChecked(False)  # noqa: SLF001
+            dialog._area_measurement_label_decimals.setValue(7)  # noqa: SLF001
+            self.assertEqual(length_preview._decimals, 4)  # noqa: SLF001
+            self.assertEqual(area_preview._decimals, 7)  # noqa: SLF001
+            self.assertFalse(length_preview._background_enabled)  # noqa: SLF001
+            self.assertTrue(area_preview._background_enabled)  # noqa: SLF001
+            length_preview.resize(480, 100)
+            area_preview.resize(480, 100)
+            self.assertFalse(length_preview.grab().isNull())
+            self.assertFalse(area_preview.grab().isNull())
             self.assertEqual(
-                dialog.app_settings().measurement_label_font_family,
-                AppSettings().measurement_label_font_family,
+                dialog.app_settings().length_measurement_label_style.font_family,
+                AppSettings().length_measurement_label_style.font_family,
             )
+            self.assertEqual(dialog.app_settings().area_measurement_label_style.decimals, 7)
         finally:
             dialog.close()
 

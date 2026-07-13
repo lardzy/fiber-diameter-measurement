@@ -5,13 +5,13 @@ from dataclasses import dataclass
 import hashlib
 import math
 
-from PySide6.QtCore import QObject, QRectF, QRunnable, QSize, QThreadPool, QTimer, Qt, Signal, Slot
+from PySide6.QtCore import QEvent, QObject, QRectF, QRunnable, QSize, QThreadPool, QTimer, Qt, Signal, Slot
 from PySide6.QtGui import QColor, QPainter, QPainterPath, QPalette, QPen
 from PySide6.QtWidgets import (
-    QComboBox,
     QFrame,
     QGridLayout,
     QLabel,
+    QLayout,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -26,6 +26,7 @@ from fdm.services.measurement_statistics import (
     MeasurementStatisticsSnapshot,
     StatisticsScope,
 )
+from fdm.ui.widgets import NoWheelComboBox
 
 
 @dataclass(frozen=True, slots=True)
@@ -604,60 +605,84 @@ class StatisticsDistributionWidget(QWidget):
 
         root = QVBoxLayout(self)
         root.setContentsMargins(0, 0, 0, 0)
-        root.setSpacing(6)
+        root.setSpacing(0)
+
+        # The whole dashboard scrolls as one page.  Keeping the controls and
+        # context outside a cards-only scroll area left almost no chart viewport
+        # in the compact results drawer and made the final card unreachable.
+        self._scroll = QScrollArea(self)
+        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
+        self._scroll.setWidgetResizable(True)
+        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self._scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAsNeeded)
+        self._scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
+        self._scroll.setProperty("redirectEditorWheel", True)
+        self._scroll.viewport().installEventFilter(self)
+        self._scroll_content = QWidget(self._scroll)
+        self._scroll_content.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
+        self._scroll_content_layout = QVBoxLayout(self._scroll_content)
+        self._scroll_content_layout.setContentsMargins(0, 0, 0, 0)
+        self._scroll_content_layout.setSpacing(6)
+        self._scroll_content_layout.setSizeConstraint(
+            QLayout.SizeConstraint.SetMinimumSize
+        )
+        self._scroll.setWidget(self._scroll_content)
+        root.addWidget(self._scroll, 1)
+
         self._controls_layout = QGridLayout()
         self._controls_layout.setContentsMargins(0, 0, 0, 0)
         self._controls_layout.setHorizontalSpacing(8)
         self._controls_layout.setVerticalSpacing(5)
-        root.addLayout(self._controls_layout)
+        self._scroll_content_layout.addLayout(self._controls_layout)
 
-        self.metric_combo = QComboBox(self)
+        self.metric_combo = NoWheelComboBox(self._scroll_content)
         self.metric_combo.addItem("长度", MeasurementMetric.LENGTH)
         self.metric_combo.addItem("面积", MeasurementMetric.AREA)
         self.metric_combo.addItem("计数", MeasurementMetric.COUNT)
-        self.scope_combo = QComboBox(self)
+        self.scope_combo = NoWheelComboBox(self._scroll_content)
         self.scope_combo.addItem("当前图片", StatisticsScope.CURRENT_DOCUMENT)
         self.scope_combo.addItem("整个项目", StatisticsScope.PROJECT)
-        self.target_combo = QComboBox(self)
+        self.target_combo = NoWheelComboBox(self._scroll_content)
         self.target_combo.addItem("整体", "overall")
         self.target_combo.addItem("指定类别", "category")
-        self.unit_combo = QComboBox(self)
-        self.category_combo = QComboBox(self)
-        self.bar_metric_combo = QComboBox(self)
+        self.unit_combo = NoWheelComboBox(self._scroll_content)
+        self.category_combo = NoWheelComboBox(self._scroll_content)
+        self.bar_metric_combo = NoWheelComboBox(self._scroll_content)
         self.bar_metric_combo.addItem("有效 N", "valid_count")
         self.bar_metric_combo.addItem("均值", "mean")
         self.bar_metric_combo.addItem("中位数", "median")
         self.bar_metric_combo.addItem("总量", "total_value")
         self.bar_metric_combo.setCurrentIndex(1)
-        self.filter_records_button = QPushButton("筛选当前图片记录", self)
+        self.filter_records_button = QPushButton("筛选当前图片记录", self._scroll_content)
         self.filter_records_button.setEnabled(False)
         self._control_widgets = (
-            _control_group("指标", self.metric_combo, self),
-            _control_group("范围", self.scope_combo, self),
-            _control_group("数据对象", self.target_combo, self),
-            _control_group("单位", self.unit_combo, self),
-            _control_group("类别", self.category_combo, self),
-            _control_group("柱状图指标", self.bar_metric_combo, self),
-            _control_group("记录联动", self.filter_records_button, self),
+            _control_group("指标", self.metric_combo, self._scroll_content),
+            _control_group("范围", self.scope_combo, self._scroll_content),
+            _control_group("数据对象", self.target_combo, self._scroll_content),
+            _control_group("单位", self.unit_combo, self._scroll_content),
+            _control_group("类别", self.category_combo, self._scroll_content),
+            _control_group("柱状图指标", self.bar_metric_combo, self._scroll_content),
+            _control_group("记录联动", self.filter_records_button, self._scroll_content),
         )
 
-        self.context_label = QLabel("等待统计数据。", self)
+        self.context_label = QLabel("等待统计数据。", self._scroll_content)
         self.context_label.setObjectName("distributionContextLabel")
         self.context_label.setWordWrap(True)
-        root.addWidget(self.context_label)
+        self._scroll_content_layout.addWidget(self.context_label)
 
-        self._scroll = QScrollArea(self)
-        self._scroll.setFrameShape(QFrame.Shape.NoFrame)
-        self._scroll.setWidgetResizable(True)
-        self._scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self._scroll.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Ignored)
-        self._cards_container = QWidget(self._scroll)
+        self._cards_container = QWidget(self._scroll_content)
+        self._cards_container.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Preferred,
+        )
         self._cards_layout = QGridLayout(self._cards_container)
         self._cards_layout.setContentsMargins(0, 0, 0, 0)
         self._cards_layout.setHorizontalSpacing(8)
         self._cards_layout.setVerticalSpacing(8)
-        self._scroll.setWidget(self._cards_container)
-        root.addWidget(self._scroll, 1)
+        self._scroll_content_layout.addWidget(self._cards_container)
 
         self.histogram_canvas = _HistogramCanvas(self)
         self.box_plot_canvas = _BoxPlotCanvas(self)
@@ -1077,12 +1102,16 @@ class StatisticsDistributionWidget(QWidget):
 
     def resizeEvent(self, event) -> None:
         super().resizeEvent(event)
-        self._apply_responsive_layout(event.size().width())
+        self._apply_responsive_layout(max(1, self._scroll.viewport().width()))
+
+    def eventFilter(self, watched: QObject, event: QEvent) -> bool:
+        if watched is self._scroll.viewport() and event.type() == QEvent.Type.Resize:
+            self._apply_responsive_layout(max(1, self._scroll.viewport().width()))
+        return super().eventFilter(watched, event)
 
     def minimumSizeHint(self) -> QSize:
         # A collapsed results drawer must never force the supported 1093x576
-        # main window to grow.  The chart area is internally scrollable, while
-        # the controls remain reachable at this compact height.
+        # main window to grow.  The complete dashboard is internally scrollable.
         return QSize(320, 112)
 
     def sizeHint(self) -> QSize:
@@ -1107,9 +1136,12 @@ class StatisticsDistributionWidget(QWidget):
     def _apply_responsive_layout(self, width: int) -> None:
         chart_columns = self.chart_columns_for_width(width)
         if chart_columns != self._chart_columns:
+            previous_columns = self._chart_columns
             self._chart_columns = chart_columns
             while self._cards_layout.count():
                 self._cards_layout.takeAt(0)
+            for column in range(max(previous_columns, chart_columns)):
+                self._cards_layout.setColumnStretch(column, 0)
             for index, card in enumerate(self._cards):
                 self._cards_layout.addWidget(
                     card,
@@ -1120,9 +1152,12 @@ class StatisticsDistributionWidget(QWidget):
                 self._cards_layout.setColumnStretch(column, 1)
         control_columns = self.control_columns_for_width(width)
         if control_columns != self._control_columns:
+            previous_columns = self._control_columns
             self._control_columns = control_columns
             while self._controls_layout.count():
                 self._controls_layout.takeAt(0)
+            for column in range(max(previous_columns, control_columns)):
+                self._controls_layout.setColumnStretch(column, 0)
             for index, control in enumerate(self._control_widgets):
                 self._controls_layout.addWidget(
                     control,

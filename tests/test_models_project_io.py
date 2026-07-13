@@ -41,6 +41,7 @@ from fdm.settings import (
     FocusStackProfile,
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
+    MeasurementLabelStyleSettings,
     OpenImageViewMode,
     RawRecordDataSource,
     RawRecordExportDirection,
@@ -810,6 +811,63 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.workspace_layout.area_recognition_expanded)
         self.assertTrue(loaded.workspace_layout.object_properties_expanded)
         self.assertTrue(loaded.main_window_is_maximized)
+
+    def test_measurement_label_styles_roundtrip_independently(self) -> None:
+        settings = AppSettings(
+            length_measurement_label_style=MeasurementLabelStyleSettings(
+                enabled=False,
+                font_family="Arial",
+                font_size=21,
+                color="#123456",
+                decimals=3,
+                background_enabled=False,
+                parallel_to_line=True,
+            ),
+            area_measurement_label_style=MeasurementLabelStyleSettings(
+                enabled=True,
+                font_family="Times New Roman",
+                font_size=27,
+                color="#ABCDEF",
+                decimals=5,
+                background_enabled=True,
+            ),
+        )
+
+        payload = settings.to_dict()
+        loaded = AppSettings.from_dict(payload)
+
+        self.assertEqual(payload["version"], 2)
+        self.assertEqual(
+            loaded.length_measurement_label_style,
+            settings.length_measurement_label_style,
+        )
+        self.assertEqual(
+            loaded.area_measurement_label_style,
+            settings.area_measurement_label_style,
+        )
+        self.assertEqual(loaded.measurement_label_decimals, 3)
+
+    def test_legacy_measurement_label_payload_migrates_to_both_styles(self) -> None:
+        loaded = AppSettings.from_dict(
+            {
+                "show_measurement_labels": False,
+                "measurement_label_font_family": "Arial",
+                "measurement_label_font_size": 31,
+                "measurement_label_color": "#334455",
+                "measurement_label_decimals": 6,
+                "measurement_label_parallel_to_line": True,
+                "measurement_label_background_enabled": False,
+            }
+        )
+
+        self.assertEqual(
+            loaded.length_measurement_label_style,
+            loaded.area_measurement_label_style,
+        )
+        self.assertFalse(loaded.length_measurement_label_style.enabled)
+        self.assertEqual(loaded.area_measurement_label_style.decimals, 6)
+        self.assertTrue(loaded.length_measurement_label_style.parallel_to_line)
+        self.assertFalse(loaded.area_measurement_label_style.background_enabled)
 
     def test_app_settings_replace_with_file_copies_source_after_validation(self) -> None:
         with TemporaryDirectory() as tmp_dir:

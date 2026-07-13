@@ -56,6 +56,97 @@ def normalize_theme_mode(value: str | None) -> str:
     return AppThemeMode.DARK
 
 
+@dataclass(slots=True)
+class MeasurementLabelStyleSettings:
+    """Display-only defaults for one family of measurement result labels."""
+
+    enabled: bool = True
+    font_family: str = "Microsoft YaHei UI"
+    font_size: int = 14
+    color: str = "#F4F1DE"
+    decimals: int = 2
+    background_enabled: bool = True
+    parallel_to_line: bool = False
+
+    @staticmethod
+    def _bounded_int(value: object, *, default: int, minimum: int, maximum: int) -> int:
+        try:
+            numeric = int(round(float(value)))
+        except (TypeError, ValueError, OverflowError):
+            numeric = int(default)
+        return max(int(minimum), min(int(maximum), numeric))
+
+    def normalized_copy(self) -> "MeasurementLabelStyleSettings":
+        defaults = MeasurementLabelStyleSettings()
+        return MeasurementLabelStyleSettings(
+            enabled=bool(self.enabled),
+            font_family=str(self.font_family or defaults.font_family).strip()
+            or defaults.font_family,
+            font_size=self._bounded_int(
+                self.font_size,
+                default=defaults.font_size,
+                minimum=8,
+                maximum=96,
+            ),
+            color=str(self.color or defaults.color).strip() or defaults.color,
+            decimals=self._bounded_int(
+                self.decimals,
+                default=defaults.decimals,
+                minimum=0,
+                maximum=8,
+            ),
+            background_enabled=bool(self.background_enabled),
+            parallel_to_line=bool(self.parallel_to_line),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        normalized = self.normalized_copy()
+        return {
+            "enabled": normalized.enabled,
+            "font_family": normalized.font_family,
+            "font_size": normalized.font_size,
+            "color": normalized.color,
+            "decimals": normalized.decimals,
+            "background_enabled": normalized.background_enabled,
+            "parallel_to_line": normalized.parallel_to_line,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        payload: object,
+        *,
+        fallback: "MeasurementLabelStyleSettings | None" = None,
+    ) -> "MeasurementLabelStyleSettings":
+        base = (fallback or cls()).normalized_copy()
+        if not isinstance(payload, dict):
+            return base
+        return cls(
+            enabled=bool(payload.get("enabled", base.enabled)),
+            font_family=str(payload.get("font_family", base.font_family)),
+            font_size=cls._bounded_int(
+                payload.get("font_size"),
+                default=base.font_size,
+                minimum=8,
+                maximum=96,
+            ),
+            color=str(payload.get("color", base.color)),
+            decimals=cls._bounded_int(
+                payload.get("decimals"),
+                default=base.decimals,
+                minimum=0,
+                maximum=8,
+            ),
+            background_enabled=bool(
+                payload.get("background_enabled", base.background_enabled)
+            ),
+            parallel_to_line=bool(payload.get("parallel_to_line", base.parallel_to_line)),
+        ).normalized_copy()
+
+
+_MEASUREMENT_LABEL_STYLE_UNSET = object()
+
+
 class FocusStackProfile:
     SHARP = "sharp"
     BALANCED = "balanced"
@@ -506,6 +597,15 @@ class WorkspaceLayoutSettings:
 @dataclass(slots=True)
 class AppSettings:
     theme_mode: str = AppThemeMode.DARK
+    length_measurement_label_style: MeasurementLabelStyleSettings = field(
+        default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
+    )
+    area_measurement_label_style: MeasurementLabelStyleSettings = field(
+        default=_MEASUREMENT_LABEL_STYLE_UNSET  # type: ignore[arg-type]
+    )
+    # Deprecated flat aliases are retained for callers constructing AppSettings
+    # directly. The typed styles are canonical once construction completes;
+    # persistence and rendering never read later mutations of these aliases.
     show_measurement_labels: bool = True
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
@@ -595,13 +695,50 @@ class AppSettings:
     digital_slide_discard_frames: int = 2
     digital_slide_focus_wheel_step: int = 1
 
+    def __post_init__(self) -> None:
+        legacy_style = MeasurementLabelStyleSettings(
+            enabled=self.show_measurement_labels,
+            font_family=self.measurement_label_font_family,
+            font_size=self.measurement_label_font_size,
+            color=self.measurement_label_color,
+            decimals=self.measurement_label_decimals,
+            background_enabled=self.measurement_label_background_enabled,
+            parallel_to_line=self.measurement_label_parallel_to_line,
+        ).normalized_copy()
+        if self.length_measurement_label_style is _MEASUREMENT_LABEL_STYLE_UNSET:
+            self.length_measurement_label_style = replace(legacy_style)
+        else:
+            self.length_measurement_label_style = (
+                self.length_measurement_label_style.normalized_copy()
+            )
+        if self.area_measurement_label_style is _MEASUREMENT_LABEL_STYLE_UNSET:
+            self.area_measurement_label_style = replace(legacy_style)
+        else:
+            self.area_measurement_label_style = self.area_measurement_label_style.normalized_copy()
+        self._sync_legacy_measurement_label_fields()
+
+    def _sync_legacy_measurement_label_fields(self) -> None:
+        style = self.length_measurement_label_style.normalized_copy()
+        self.show_measurement_labels = style.enabled
+        self.measurement_label_font_family = style.font_family
+        self.measurement_label_font_size = style.font_size
+        self.measurement_label_color = style.color
+        self.measurement_label_decimals = style.decimals
+        self.measurement_label_parallel_to_line = style.parallel_to_line
+        self.measurement_label_background_enabled = style.background_enabled
+
     def normalized_copy(self) -> "AppSettings":
         normalized = replace(self)
         normalized.workspace_layout = self.workspace_layout.normalized_copy()
         normalized.theme_mode = normalize_theme_mode(self.theme_mode)
-        normalized.measurement_label_font_size = self._normalize_font_size(self.measurement_label_font_size, minimum=8, maximum=96)
+        normalized.length_measurement_label_style = (
+            self.length_measurement_label_style.normalized_copy()
+        )
+        normalized.area_measurement_label_style = (
+            self.area_measurement_label_style.normalized_copy()
+        )
+        normalized._sync_legacy_measurement_label_fields()
         normalized.count_number_font_size = self._normalize_font_size(self.count_number_font_size, minimum=8, maximum=96)
-        normalized.measurement_label_decimals = self._normalize_measurement_label_decimals(self.measurement_label_decimals)
         normalized.measurement_endpoint_style = self._normalize_measurement_endpoint_style(self.measurement_endpoint_style)
         normalized.open_image_view_mode = self._normalize_open_image_view_mode(self.open_image_view_mode)
         normalized.scale_overlay_placement_mode = self._normalize_scale_overlay_placement_mode(self.scale_overlay_placement_mode)
@@ -970,8 +1107,12 @@ class AppSettings:
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
-            "version": 1,
+            "version": 2,
             "theme_mode": normalized.theme_mode,
+            "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
+            "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
+            # Keep flat aliases for older application builds. They mirror the
+            # length style and are ignored when typed style payloads exist.
             "show_measurement_labels": normalized.show_measurement_labels,
             "measurement_label_font_family": normalized.measurement_label_font_family,
             "measurement_label_font_size": normalized.measurement_label_font_size,
@@ -1065,19 +1206,53 @@ class AppSettings:
     def from_dict(cls, payload: dict[str, object]) -> "AppSettings":
         settings = cls()
         settings.theme_mode = normalize_theme_mode(payload.get("theme_mode", settings.theme_mode))
-        settings.show_measurement_labels = bool(payload.get("show_measurement_labels", settings.show_measurement_labels))
-        settings.measurement_label_font_family = str(payload.get("measurement_label_font_family", settings.measurement_label_font_family))
-        settings.measurement_label_font_size = cls._normalize_font_size(
-            payload.get("measurement_label_font_size", settings.measurement_label_font_size),
-            minimum=8,
-            maximum=96,
+        legacy_style = MeasurementLabelStyleSettings(
+            enabled=bool(payload.get("show_measurement_labels", settings.show_measurement_labels)),
+            font_family=str(
+                payload.get(
+                    "measurement_label_font_family",
+                    settings.measurement_label_font_family,
+                )
+            ),
+            font_size=cls._normalize_font_size(
+                payload.get(
+                    "measurement_label_font_size",
+                    settings.measurement_label_font_size,
+                ),
+                minimum=8,
+                maximum=96,
+            ),
+            color=str(
+                payload.get("measurement_label_color", settings.measurement_label_color)
+            ),
+            decimals=cls._normalize_measurement_label_decimals(
+                payload.get(
+                    "measurement_label_decimals",
+                    settings.measurement_label_decimals,
+                )
+            ),
+            parallel_to_line=bool(
+                payload.get(
+                    "measurement_label_parallel_to_line",
+                    settings.measurement_label_parallel_to_line,
+                )
+            ),
+            background_enabled=bool(
+                payload.get(
+                    "measurement_label_background_enabled",
+                    settings.measurement_label_background_enabled,
+                )
+            ),
+        ).normalized_copy()
+        settings.length_measurement_label_style = MeasurementLabelStyleSettings.from_dict(
+            payload.get("length_measurement_label_style"),
+            fallback=legacy_style,
         )
-        settings.measurement_label_color = str(payload.get("measurement_label_color", settings.measurement_label_color))
-        settings.measurement_label_decimals = cls._normalize_measurement_label_decimals(
-            payload.get("measurement_label_decimals", settings.measurement_label_decimals)
+        settings.area_measurement_label_style = MeasurementLabelStyleSettings.from_dict(
+            payload.get("area_measurement_label_style"),
+            fallback=legacy_style,
         )
-        settings.measurement_label_parallel_to_line = bool(payload.get("measurement_label_parallel_to_line", settings.measurement_label_parallel_to_line))
-        settings.measurement_label_background_enabled = bool(payload.get("measurement_label_background_enabled", settings.measurement_label_background_enabled))
+        settings._sync_legacy_measurement_label_fields()
         settings.show_count_numbers = bool(payload.get("show_count_numbers", settings.show_count_numbers))
         settings.count_number_font_family = str(payload.get("count_number_font_family", settings.count_number_font_family))
         settings.count_number_font_size = cls._normalize_font_size(

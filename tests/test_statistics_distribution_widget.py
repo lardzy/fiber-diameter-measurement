@@ -8,7 +8,9 @@ import unittest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtWidgets import QApplication
+from PySide6.QtCore import QPoint, QPointF, Qt
+from PySide6.QtGui import QWheelEvent
+from PySide6.QtWidgets import QApplication, QScrollArea
 
 from fdm.models import Calibration, ImageDocument, Measurement, ProjectState
 from fdm.services.measurement_statistics import MeasurementMetric, StatisticsScope
@@ -257,6 +259,61 @@ class StatisticsDistributionWidgetTests(unittest.TestCase):
         self.assertEqual(StatisticsDistributionWidget.control_columns_for_width(1200), 7)
         self.assertEqual(StatisticsDistributionWidget.control_columns_for_width(900), 4)
         self.assertEqual(StatisticsDistributionWidget.control_columns_for_width(500), 2)
+
+    def test_compact_dashboard_uses_one_scroll_page_and_reaches_final_card(self) -> None:
+        widget = self._widget()
+        widget.resize(600, 160)
+        widget.show()
+        self.app.processEvents()
+
+        self.assertEqual(widget.findChildren(QScrollArea), [widget._scroll])
+        for child in (
+            widget.metric_combo,
+            widget.context_label,
+            widget.histogram_card,
+            widget.bar_card,
+        ):
+            self.assertTrue(widget._scroll_content.isAncestorOf(child))
+        self.assertEqual(widget._chart_columns, 1)
+        self.assertEqual(widget._control_columns, 2)
+        self.assertEqual(widget.bar_card.width(), widget._cards_container.width())
+
+        scroll_bar = widget._scroll.verticalScrollBar()
+        self.assertGreater(scroll_bar.maximum(), 0)
+        scroll_bar.setValue(scroll_bar.maximum())
+        self.app.processEvents()
+        viewport = widget._scroll.viewport()
+        final_card_top = widget.bar_card.mapTo(viewport, QPoint(0, 0)).y()
+        final_card_bottom = widget.bar_card.mapTo(
+            viewport,
+            QPoint(0, widget.bar_card.height()),
+        ).y()
+        self.assertLess(final_card_top, viewport.height())
+        self.assertLessEqual(final_card_bottom, viewport.height())
+
+    def test_compact_dashboard_combo_wheel_scrolls_page_without_changing_value(self) -> None:
+        widget = self._widget()
+        widget.resize(600, 160)
+        widget.show()
+        self.app.processEvents()
+        widget.metric_combo.setCurrentIndex(1)
+        scroll_bar = widget._scroll.verticalScrollBar()
+        self.assertGreater(scroll_bar.maximum(), 0)
+
+        event = QWheelEvent(
+            QPointF(5, 5),
+            QPointF(5, 5),
+            QPoint(0, 0),
+            QPoint(0, -120),
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+            Qt.ScrollPhase.ScrollUpdate,
+            False,
+        )
+        QApplication.sendEvent(widget.metric_combo, event)
+
+        self.assertEqual(widget.metric_combo.currentIndex(), 1)
+        self.assertGreater(scroll_bar.value(), 0)
 
     def test_late_background_result_is_ignored_by_generation(self) -> None:
         document = _document(

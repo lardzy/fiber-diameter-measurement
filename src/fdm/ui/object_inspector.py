@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QPlainTextEdit,
     QPushButton,
+    QSizePolicy,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -61,6 +62,11 @@ class CurrentObjectInspector(QWidget):
 
         self._empty_label = QLabel("请选择一个测量或叠加对象。", self._stack)
         self._empty_label.setWordWrap(True)
+        self._empty_label.setMinimumWidth(0)
+        self._empty_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self._empty_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self._stack.addWidget(self._empty_label)
 
@@ -70,6 +76,11 @@ class CurrentObjectInspector(QWidget):
         page_layout.setSpacing(8)
         self._summary_label = QLabel(self._editor_page)
         self._summary_label.setWordWrap(True)
+        self._summary_label.setMinimumWidth(0)
+        self._summary_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self._summary_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         page_layout.addWidget(self._summary_label)
 
@@ -86,6 +97,16 @@ class CurrentObjectInspector(QWidget):
         self._metadata_group = QGroupBox("对象属性", self._editor_page)
         metadata_form = QFormLayout(self._metadata_group)
         self._group_combo = NoWheelComboBox(self._metadata_group)
+        self._group_combo.setMinimumWidth(0)
+        self._group_combo.setMinimumContentsLength(10)
+        self._group_combo.setSizeAdjustPolicy(
+            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self._group_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._group_combo.currentTextChanged.connect(self._group_combo.setToolTip)
         self._group_combo.activated.connect(self._request_group_change)
         metadata_form.addRow("所属类别", self._group_combo)
         page_layout.addWidget(self._metadata_group)
@@ -110,6 +131,11 @@ class CurrentObjectInspector(QWidget):
         )
         self._text_color_button = self._make_color_button("text_color")
         self._font_combo = NoWheelFontComboBox(self._appearance_group)
+        self._font_combo.setMinimumWidth(0)
+        self._font_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
         self._font_combo.activated.connect(
             lambda _index: self._request_font_change(self._font_combo.currentFont())
         )
@@ -128,6 +154,11 @@ class CurrentObjectInspector(QWidget):
 
         self._inheritance_label = QLabel("当前对象继承类别和首选项样式。", self._editor_page)
         self._inheritance_label.setWordWrap(True)
+        self._inheritance_label.setMinimumWidth(0)
+        self._inheritance_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         page_layout.addWidget(self._inheritance_label)
         self._reset_button = QPushButton("恢复继承样式", self._editor_page)
         self._reset_button.clicked.connect(self._request_reset)
@@ -200,23 +231,28 @@ class CurrentObjectInspector(QWidget):
             self._populate_group_combo(measurement.fiber_group_id)
             group_color = group.color if group is not None else self._settings.default_measurement_color
             is_count = measurement.measurement_kind == "count"
+            label_style = (
+                self._settings.area_measurement_label_style
+                if measurement.measurement_kind == "area"
+                else self._settings.length_measurement_label_style
+            )
             self._set_appearance_controls(
                 stroke_color=(measurement.appearance.stroke_color if measurement.appearance else None) or group_color,
                 stroke_width=(measurement.appearance.stroke_width if measurement.appearance else None) or 2.0,
                 marker_scale=(measurement.appearance.marker_scale if measurement.appearance else None) or 1.0,
                 text_color=(measurement.appearance.text_color if measurement.appearance else None)
-                or (self._settings.count_number_color if is_count else self._settings.measurement_label_color),
+                or (self._settings.count_number_color if is_count else label_style.color),
                 font_family=(measurement.appearance.font_family if measurement.appearance else None)
                 or (
                     self._settings.count_number_font_family
                     if is_count
-                    else self._settings.measurement_label_font_family
+                    else label_style.font_family
                 ),
                 font_size=(measurement.appearance.font_size if measurement.appearance else None)
                 or (
                     self._settings.count_number_font_size
                     if is_count
-                    else self._settings.measurement_label_font_size
+                    else label_style.font_size
                 ),
                 show_stroke=True,
                 show_stroke_width=not is_count,
@@ -283,6 +319,7 @@ class CurrentObjectInspector(QWidget):
         index = self._group_combo.findData(selected_group_id)
         self._group_combo.setCurrentIndex(max(0, index))
         self._group_combo.blockSignals(False)
+        self._group_combo.setToolTip(self._group_combo.currentText())
 
     def _set_appearance_controls(
         self,

@@ -133,6 +133,11 @@ class _MetricCell(QFrame):
         title_label.setProperty("statisticsCaption", True)
         self.value_label = QLabel("—", self)
         self.value_label.setProperty("statisticsValue", True)
+        self.value_label.setMinimumWidth(0)
+        self.value_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
         self.value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         layout.addWidget(title_label)
         layout.addWidget(self.value_label)
@@ -206,6 +211,11 @@ class MeasurementStatisticsPanel(QWidget):
         self.current_value_label = QLabel("尚未选择测量对象", self)
         self.current_value_label.setObjectName("currentMeasurementValue")
         self.current_value_label.setWordWrap(True)
+        self.current_value_label.setMinimumWidth(0)
+        self.current_value_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self.current_value_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         root.addWidget(self.current_value_label)
 
@@ -226,11 +236,21 @@ class MeasurementStatisticsPanel(QWidget):
         self.details_label = QLabel("", self)
         self.details_label.setObjectName("statisticsDetails")
         self.details_label.setWordWrap(True)
+        self.details_label.setMinimumWidth(0)
+        self.details_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self.details_label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
         root.addWidget(self.details_label)
         self.quality_label = QLabel("有效 0 · 需复核 0 · 失败 0", self)
         self.quality_label.setObjectName("statisticsQuality")
         self.quality_label.setWordWrap(True)
+        self.quality_label.setMinimumWidth(0)
+        self.quality_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         root.addWidget(self.quality_label)
         self._apply_style()
 

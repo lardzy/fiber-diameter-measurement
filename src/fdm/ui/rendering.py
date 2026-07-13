@@ -1,17 +1,60 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from dataclasses import dataclass
 import math
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QPainterPath, QPen, QPolygonF, QStaticText
+from PySide6.QtGui import (
+    QColor,
+    QFont,
+    QFontMetricsF,
+    QPainter,
+    QPainterPath,
+    QPen,
+    QPolygonF,
+    QStaticText,
+    QTransform,
+)
 
 from fdm.area_display import area_geometry_for_display
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
 
-_COUNT_LABEL_CACHE: dict[tuple[str, str, int], QStaticText] = {}
+_TEXT_LAYOUT_MAX_ENTRIES = 2048
+_TEXT_LAYOUT_MAX_CHARACTERS = 128 * 1024
+_AREA_PATH_MAX_ENTRIES = 256
+_AREA_PATH_MAX_ESTIMATED_BYTES = 64 * 1024 * 1024
+
+
+@dataclass(slots=True)
+class _CachedTextLine:
+    static_text: QStaticText
+    width: float
+    top: float
+    baseline: float
+
+
+@dataclass(slots=True)
+class _CachedTextLayout:
+    metrics: QFontMetricsF
+    lines: tuple[_CachedTextLine, ...]
+    width: float
+    height: float
+    character_count: int
+
+
+@dataclass(slots=True)
+class _CachedAreaPath:
+    path: QPainterPath
+    estimated_bytes: int
+
+
+_TEXT_LAYOUT_CACHE: OrderedDict[tuple[object, ...], _CachedTextLayout] = OrderedDict()
+_TEXT_LAYOUT_CACHE_CHARACTERS = 0
+_AREA_DISPLAY_PATH_CACHE: OrderedDict[tuple[object, ...], _CachedAreaPath] = OrderedDict()
+_AREA_DISPLAY_PATH_CACHE_BYTES = 0
 
 
 @dataclass(slots=True)
@@ -81,17 +124,31 @@ def measurement_display_text_with_settings(
 ) -> str:
     value = measurement.display_value()
     unit = measurement.display_unit(document.calibration)
-    decimals = settings.measurement_label_decimals if settings is not None else 4
+    style = _measurement_label_style(settings, measurement) if settings is not None else None
+    decimals = int(
+        getattr(
+            style,
+            "decimals",
+            getattr(settings, "measurement_label_decimals", 4) if settings is not None else 4,
+        )
+    )
     return format_measurement_label_value(value, unit, decimals)
 
 
 def measurement_label_font(settings: AppSettings, measurement: Measurement | None = None) -> QFont:
+    style = _measurement_label_style(settings, measurement)
     font = QFont()
     appearance = measurement.appearance if measurement is not None else None
     font.setFamily(
         appearance.font_family
         if appearance is not None and appearance.font_family
-        else settings.measurement_label_font_family
+        else str(
+            getattr(
+                style,
+                "font_family",
+                getattr(settings, "measurement_label_font_family", "Segoe UI"),
+            )
+        )
     )
     font.setPixelSize(
         int(
@@ -99,12 +156,71 @@ def measurement_label_font(settings: AppSettings, measurement: Measurement | Non
                 8,
                 appearance.font_size
                 if appearance is not None and appearance.font_size is not None
-                else settings.measurement_label_font_size,
+                else getattr(
+                    style,
+                    "font_size",
+                    getattr(settings, "measurement_label_font_size", 16),
+                ),
             )
         )
     )
     font.setBold(True)
     return font
+
+
+def _measurement_label_style(settings: AppSettings | None, measurement: Measurement | None):
+    if settings is None:
+        return None
+    attribute = (
+        "area_measurement_label_style"
+        if measurement is not None and measurement.measurement_kind == "area"
+        else "length_measurement_label_style"
+    )
+    return getattr(settings, attribute, None)
+
+
+def _measurement_label_enabled(settings: AppSettings, measurement: Measurement) -> bool:
+    style = _measurement_label_style(settings, measurement)
+    return bool(
+        getattr(
+            style,
+            "enabled",
+            getattr(settings, "show_measurement_labels", True),
+        )
+    )
+
+
+def _measurement_label_color(settings: AppSettings, measurement: Measurement) -> str:
+    style = _measurement_label_style(settings, measurement)
+    return str(
+        getattr(
+            style,
+            "color",
+            getattr(settings, "measurement_label_color", "#FFFFFF"),
+        )
+    )
+
+
+def _measurement_label_background_enabled(settings: AppSettings, measurement: Measurement) -> bool:
+    style = _measurement_label_style(settings, measurement)
+    return bool(
+        getattr(
+            style,
+            "background_enabled",
+            getattr(settings, "measurement_label_background_enabled", True),
+        )
+    )
+
+
+def _measurement_label_parallel_to_line(settings: AppSettings, measurement: Measurement) -> bool:
+    style = _measurement_label_style(settings, measurement)
+    return bool(
+        getattr(
+            style,
+            "parallel_to_line",
+            getattr(settings, "measurement_label_parallel_to_line", False),
+        )
+    )
 
 
 def area_rings_path(area_rings: list[list[Point]], image_to_output) -> QPainterPath:
@@ -116,6 +232,62 @@ def area_rings_path(area_rings: list[list[Point]], image_to_output) -> QPainterP
         polygon = QPolygonF([image_to_output(point) for point in ring])
         if polygon.size() >= 3:
             path.addPolygon(polygon)
+            path.closeSubpath()
+    return path
+
+
+def _transform_fingerprint(image_to_output) -> tuple[float, ...]:
+    """Describe the affine image-to-output transform without retaining its callable."""
+    samples = (
+        image_to_output(Point(0.0, 0.0)),
+        image_to_output(Point(1.0, 0.0)),
+        image_to_output(Point(0.0, 1.0)),
+    )
+    return tuple(
+        round(value, 9)
+        for point in samples
+        for value in (float(point.x()), float(point.y()))
+    )
+
+
+def _cached_area_display_path(
+    document: ImageDocument,
+    measurement: Measurement,
+    area_rings: list[list[Point]],
+    image_to_output,
+    *,
+    selected: bool,
+) -> QPainterPath:
+    global _AREA_DISPLAY_PATH_CACHE_BYTES
+
+    key = (
+        id(document),
+        document.id,
+        id(measurement),
+        measurement.id,
+        document.measurement_geometry_revision,
+        bool(selected),
+        _transform_fingerprint(image_to_output),
+    )
+    cached = _AREA_DISPLAY_PATH_CACHE.get(key)
+    if cached is not None:
+        _AREA_DISPLAY_PATH_CACHE.move_to_end(key)
+        return cached.path
+
+    path = area_rings_path(area_rings, image_to_output)
+    # QPainterPath uses implicit sharing and does not expose allocated bytes.
+    # A conservative element estimate keeps this display-only cache bounded.
+    estimated_bytes = max(256, int(path.elementCount()) * 48)
+    if estimated_bytes > _AREA_PATH_MAX_ESTIMATED_BYTES:
+        return path
+    while _AREA_DISPLAY_PATH_CACHE and (
+        len(_AREA_DISPLAY_PATH_CACHE) >= _AREA_PATH_MAX_ENTRIES
+        or _AREA_DISPLAY_PATH_CACHE_BYTES + estimated_bytes > _AREA_PATH_MAX_ESTIMATED_BYTES
+    ):
+        _old_key, old = _AREA_DISPLAY_PATH_CACHE.popitem(last=False)
+        _AREA_DISPLAY_PATH_CACHE_BYTES -= old.estimated_bytes
+    _AREA_DISPLAY_PATH_CACHE[key] = _CachedAreaPath(path=path, estimated_bytes=estimated_bytes)
+    _AREA_DISPLAY_PATH_CACHE_BYTES += estimated_bytes
     return path
 
 
@@ -180,12 +352,134 @@ def scale_overlay_font(settings: AppSettings, *, suggested_font_px: float, rende
     return font, resolved_px
 
 
-def _text_layout(font: QFont, content: str) -> tuple[QFontMetricsF, list[str], float, float]:
+def _font_cache_key(font: QFont) -> tuple[object, ...]:
+    return (
+        font.family(),
+        font.styleName(),
+        font.pixelSize(),
+        round(font.pointSizeF(), 3),
+        font.weight(),
+        font.italic(),
+        font.underline(),
+        font.strikeOut(),
+        font.letterSpacingType().value,
+        round(font.letterSpacing(), 3),
+    )
+
+
+def _cached_text_layout(font: QFont, content: str, *, render_mode: str = "default") -> _CachedTextLayout:
+    global _TEXT_LAYOUT_CACHE_CHARACTERS
+
+    normalized_content = str(content)
+    key = (normalized_content, *_font_cache_key(font), str(render_mode))
+    cached = _TEXT_LAYOUT_CACHE.get(key)
+    if cached is not None:
+        _TEXT_LAYOUT_CACHE.move_to_end(key)
+        return cached
+
     metrics = QFontMetricsF(font)
-    lines = content.splitlines() or [""]
-    width = max(metrics.horizontalAdvance(line or " ") for line in lines)
-    height = max(1.0, metrics.lineSpacing() * len(lines))
-    return metrics, lines, width, height
+    source_lines = normalized_content.splitlines() or [""]
+    line_spacing = max(1.0, metrics.lineSpacing())
+    cached_lines: list[_CachedTextLine] = []
+    width = 0.0
+    for index, line in enumerate(source_lines):
+        line_width = metrics.horizontalAdvance(line or " ")
+        static_text = QStaticText(line)
+        try:
+            static_text.setPerformanceHint(QStaticText.PerformanceHint.AggressiveCaching)
+        except AttributeError:
+            pass
+        static_text.prepare(QTransform(), font)
+        top = index * line_spacing
+        cached_lines.append(
+            _CachedTextLine(
+                static_text=static_text,
+                width=line_width,
+                top=top,
+                baseline=top + metrics.ascent(),
+            )
+        )
+        width = max(width, line_width)
+    height = max(1.0, ((len(source_lines) - 1) * line_spacing) + metrics.height())
+    layout = _CachedTextLayout(
+        metrics=metrics,
+        lines=tuple(cached_lines),
+        width=width,
+        height=height,
+        character_count=len(normalized_content),
+    )
+
+    if layout.character_count > _TEXT_LAYOUT_MAX_CHARACTERS:
+        return layout
+    while _TEXT_LAYOUT_CACHE and (
+        len(_TEXT_LAYOUT_CACHE) >= _TEXT_LAYOUT_MAX_ENTRIES
+        or _TEXT_LAYOUT_CACHE_CHARACTERS + layout.character_count > _TEXT_LAYOUT_MAX_CHARACTERS
+    ):
+        _old_key, old = _TEXT_LAYOUT_CACHE.popitem(last=False)
+        _TEXT_LAYOUT_CACHE_CHARACTERS -= old.character_count
+    _TEXT_LAYOUT_CACHE[key] = layout
+    _TEXT_LAYOUT_CACHE_CHARACTERS += layout.character_count
+    return layout
+
+
+def _text_layout(font: QFont, content: str) -> tuple[QFontMetricsF, list[str], float, float]:
+    """Compatibility wrapper backed by the shared text-layout cache."""
+    layout = _cached_text_layout(font, content)
+    return layout.metrics, content.splitlines() or [""], layout.width, layout.height
+
+
+def _painter_visible_rect(painter: QPainter) -> QRectF | None:
+    has_clipping = getattr(painter, "hasClipping", None)
+    if callable(has_clipping) and has_clipping():
+        clipped = painter.clipBoundingRect()
+        if clipped.isValid() and not clipped.isEmpty():
+            return clipped
+    viewport = getattr(painter, "viewport", None)
+    return QRectF(viewport()) if callable(viewport) else None
+
+
+def _is_visible_to_painter(painter: QPainter, rect: QRectF, *, padding: float = 4.0) -> bool:
+    visible_rect = _painter_visible_rect(painter)
+    return visible_rect is None or visible_rect.intersects(
+        rect.adjusted(-padding, -padding, padding, padding)
+    )
+
+
+def _draw_cached_text(
+    painter: QPainter,
+    layout: _CachedTextLayout,
+    top_left: QPointF,
+    *,
+    color: QColor,
+    outline: QColor | None,
+    horizontal_center: float | None = None,
+) -> None:
+    save = getattr(painter, "save", None)
+    restore = getattr(painter, "restore", None)
+    draw_static_text = getattr(painter, "drawStaticText", None)
+    if callable(save):
+        save()
+    for line in layout.lines:
+        x = top_left.x()
+        if horizontal_center is not None:
+            x = horizontal_center - (line.width / 2.0)
+        anchor = QPointF(x, top_left.y() + line.top)
+        if callable(draw_static_text):
+            if outline is not None:
+                painter.setPen(outline)
+                for dx, dy in ((1.0, 0.0), (-1.0, 0.0), (0.0, 1.0), (0.0, -1.0)):
+                    draw_static_text(QPointF(anchor.x() + dx, anchor.y() + dy), line.static_text)
+            painter.setPen(color)
+            draw_static_text(anchor, line.static_text)
+            continue
+        # Lightweight recording painters used by rendering tests may only
+        # implement drawText. Keep their compatibility without bypassing the
+        # static-text fast path used by real QPainter instances.
+        baseline_anchor = QPointF(anchor.x(), top_left.y() + line.baseline)
+        painter.setPen(color)
+        painter.drawText(baseline_anchor, line.static_text.text())
+    if callable(restore):
+        restore()
 
 
 def overlay_annotation_bounds(annotation: OverlayAnnotation) -> tuple[float, float, float, float]:
@@ -228,15 +522,15 @@ def overlay_annotation_rect(annotation: OverlayAnnotation, settings: AppSettings
         height = max(1.0, abs(end.y() - start.y()))
         return QRectF(left, top, width, height)
     font = overlay_text_font(settings, annotation)
-    _metrics, _lines, width, height = _text_layout(font, annotation.content)
+    layout = _cached_text_layout(font, annotation.content, render_mode="overlay")
     top_left = image_to_output(annotation.anchor_px)
     padding_x = 6.0
     padding_y = 4.0
     return QRectF(
         top_left.x() - padding_x,
         top_left.y() - padding_y,
-        width + (padding_x * 2.0),
-        height + (padding_y * 2.0),
+        layout.width + (padding_x * 2.0),
+        layout.height + (padding_y * 2.0),
     )
 
 
@@ -261,8 +555,7 @@ def draw_overlay_annotations(
         kind = annotation.normalized_kind()
         if kind == OverlayAnnotationKind.TEXT:
             font = overlay_text_font(settings, annotation)
-            text_metrics, _lines_template, _width, _height = _text_layout(font, " ")
-            line_spacing = text_metrics.lineSpacing()
+            layout = _cached_text_layout(font, annotation.content, render_mode=render_mode)
             text_color = QColor(
                 annotation.appearance.text_color
                 if annotation.appearance is not None and annotation.appearance.text_color
@@ -271,17 +564,16 @@ def draw_overlay_annotations(
             text_outline = _overlay_outline_color(text_color)
             painter.setFont(font)
             rect = overlay_annotation_rect(annotation, settings, image_to_output)
+            if not _is_visible_to_painter(painter, rect, padding=4.0):
+                continue
             top_left = rect.topLeft() + QPointF(6.0, 4.0)
-            painter.setPen(QPen(text_outline, 3))
-            y = top_left.y() + text_metrics.ascent()
-            for line in annotation.content.splitlines() or [""]:
-                painter.drawText(QPointF(top_left.x(), y), line)
-                y += line_spacing
-            painter.setPen(QPen(text_color, 1))
-            y = top_left.y() + text_metrics.ascent()
-            for line in annotation.content.splitlines() or [""]:
-                painter.drawText(QPointF(top_left.x(), y), line)
-                y += line_spacing
+            _draw_cached_text(
+                painter,
+                layout,
+                top_left,
+                color=text_color,
+                outline=text_outline,
+            )
             if annotation.id == selected_overlay_id:
                 painter.setBrush(QColor(0, 0, 0, 0))
                 painter.setPen(QPen(QColor("#F4D35E"), 1.8, Qt.PenStyle.DashLine))
@@ -508,7 +800,7 @@ def draw_measurements(
                 * (1.15 if selected else 1.0)
             ),
         )
-        if settings.show_measurement_labels:
+        if _measurement_label_enabled(settings, measurement):
             draw_measurement_label(painter, measurement, document, settings, start_point, end_point)
     draw_count_measurements_batch(
         painter,
@@ -611,7 +903,7 @@ def draw_polyline_measurement(
         resolved_endpoint_radius = endpoint_radius * measurement_marker_scale(measurement)
         for point in path_points:
             painter.drawEllipse(point, resolved_endpoint_radius * 0.72, resolved_endpoint_radius * 0.72)
-    if settings.show_measurement_labels:
+    if _measurement_label_enabled(settings, measurement):
         draw_polyline_measurement_label(
             painter,
             measurement,
@@ -727,19 +1019,7 @@ def draw_count_measurements_batch(
 
 
 def _count_label_static_text(text: str, font: QFont) -> QStaticText:
-    key = (text, font.family(), int(round(font.pointSizeF() if font.pointSizeF() > 0 else font.pixelSize())))
-    cached = _COUNT_LABEL_CACHE.get(key)
-    if cached is not None:
-        return cached
-    if len(_COUNT_LABEL_CACHE) > 5000:
-        _COUNT_LABEL_CACHE.clear()
-    static = QStaticText(text)
-    try:
-        static.setPerformanceHint(QStaticText.PerformanceHint.AggressiveCaching)
-    except AttributeError:
-        pass
-    _COUNT_LABEL_CACHE[key] = static
-    return static
+    return _cached_text_layout(font, text, render_mode="count").lines[0].static_text
 
 
 def _count_number_font(settings: AppSettings, measurement: Measurement | None = None) -> QFont:
@@ -831,9 +1111,14 @@ def draw_area_measurement(
     if len(outline_points) < 3:
         return
     color = measurement_color(document, measurement, settings)
-    polygon = QPolygonF([image_to_output(point) for point in outline_points])
     outline_rings = fill_rings or ([outline_points] if len(outline_points) >= 3 else [])
-    fill_path = area_rings_path(fill_rings, image_to_output)
+    display_path = _cached_area_display_path(
+        document,
+        measurement,
+        outline_rings,
+        image_to_output,
+        selected=selected,
+    )
     base_line_width = measurement_line_width(measurement, line_width)
     minimum_width = (
         0.5
@@ -846,22 +1131,13 @@ def draw_area_measurement(
         fill.setAlpha(80 if not selected else 110)
         painter.setBrush(fill)
         painter.setPen(Qt.PenStyle.NoPen)
-        if fill_path.elementCount() > 0:
-                painter.drawPath(fill_path)
-        else:
-            painter.drawPolygon(polygon)
+        painter.drawPath(display_path)
     painter.setBrush(Qt.BrushStyle.NoBrush)
     painter.setPen(QPen(QColor("#0B0B0B"), max(outline_width * 1.9, outline_width + 1.0), Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    for ring in outline_rings:
-        if len(ring) < 3:
-            continue
-        painter.drawPolygon(QPolygonF([image_to_output(point) for point in ring]))
+    painter.drawPath(display_path)
     painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-    for ring in outline_rings:
-        if len(ring) < 3:
-            continue
-        painter.drawPolygon(QPolygonF([image_to_output(point) for point in ring]))
-    if settings.show_measurement_labels:
+    painter.drawPath(display_path)
+    if _measurement_label_enabled(settings, measurement):
         draw_area_measurement_label(
             painter,
             measurement,
@@ -900,10 +1176,10 @@ def draw_area_measurement_label(
 ) -> None:
     font = measurement_label_font(settings, measurement)
     painter.setFont(font)
-    metrics = QFontMetricsF(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
-    text_width = metrics.horizontalAdvance(text)
-    text_height = metrics.height()
+    layout = _cached_text_layout(font, text, render_mode="measurement-area")
+    text_width = layout.width
+    text_height = layout.height
     label_center = QPointF(center.x(), center.y() - max(14.0, text_height * 0.9))
     rect = QRectF(
         label_center.x() - (text_width / 2.0) - 6.0,
@@ -911,13 +1187,19 @@ def draw_area_measurement_label(
         text_width + 12.0,
         text_height + 6.0,
     )
-    if settings.measurement_label_background_enabled:
+    if not _is_visible_to_painter(painter, rect, padding=4.0):
+        return
+    if _measurement_label_background_enabled(settings, measurement):
         painter.fillRect(rect, QColor(16, 24, 32, 168))
-    text_color = measurement_text_color(measurement, settings.measurement_label_color)
-    painter.setPen(QPen(_overlay_outline_color(text_color), 3))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
-    painter.setPen(QPen(text_color, 1))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+    text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
+    _draw_cached_text(
+        painter,
+        layout,
+        QPointF(rect.left() + 6.0, rect.top() + 3.0),
+        color=text_color,
+        outline=_overlay_outline_color(text_color),
+        horizontal_center=rect.center().x(),
+    )
 
 
 def draw_measurement_label(
@@ -930,11 +1212,11 @@ def draw_measurement_label(
 ) -> None:
     font = measurement_label_font(settings, measurement)
     painter.setFont(font)
-    metrics = QFontMetricsF(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
-    text_width = metrics.horizontalAdvance(text)
-    text_height = metrics.height()
-    text_color = measurement_text_color(measurement, settings.measurement_label_color)
+    layout = _cached_text_layout(font, text, render_mode="measurement-length")
+    text_width = layout.width
+    text_height = layout.height
+    text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
     text_outline = _overlay_outline_color(text_color)
     axis = direction(measurement.effective_line())
     normal_axis = normal(axis)
@@ -949,35 +1231,49 @@ def draw_measurement_label(
         text_width + 12.0,
         text_height + 6.0,
     )
-    if settings.measurement_label_parallel_to_line:
+    if _measurement_label_parallel_to_line(settings, measurement):
         angle = math.degrees(math.atan2(end_point.y() - start_point.y(), end_point.x() - start_point.x()))
         if angle > 90.0:
             angle -= 180.0
         elif angle < -90.0:
             angle += 180.0
-        painter.save()
-        painter.translate(center)
-        painter.rotate(angle)
         parallel_rect = QRectF(
             -(text_width / 2.0) - 6.0,
             -(text_height / 2.0) - 3.0,
             text_width + 12.0,
             text_height + 6.0,
         )
-        if settings.measurement_label_background_enabled:
+        radius = math.hypot(parallel_rect.width(), parallel_rect.height()) / 2.0
+        visible_bounds = QRectF(center.x() - radius, center.y() - radius, radius * 2.0, radius * 2.0)
+        if not _is_visible_to_painter(painter, visible_bounds, padding=4.0):
+            return
+        painter.save()
+        painter.translate(center)
+        painter.rotate(angle)
+        if _measurement_label_background_enabled(settings, measurement):
             painter.fillRect(parallel_rect, QColor(16, 24, 32, 168))
-        painter.setPen(QPen(text_outline, 3))
-        painter.drawText(parallel_rect, Qt.AlignmentFlag.AlignCenter, text)
-        painter.setPen(QPen(text_color, 1))
-        painter.drawText(parallel_rect, Qt.AlignmentFlag.AlignCenter, text)
+        _draw_cached_text(
+            painter,
+            layout,
+            QPointF(parallel_rect.left() + 6.0, parallel_rect.top() + 3.0),
+            color=text_color,
+            outline=text_outline,
+            horizontal_center=0.0,
+        )
         painter.restore()
         return
-    if settings.measurement_label_background_enabled:
+    if not _is_visible_to_painter(painter, rect, padding=4.0):
+        return
+    if _measurement_label_background_enabled(settings, measurement):
         painter.fillRect(rect, QColor(16, 24, 32, 168))
-    painter.setPen(QPen(text_outline, 3))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
-    painter.setPen(QPen(text_color, 1))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+    _draw_cached_text(
+        painter,
+        layout,
+        QPointF(rect.left() + 6.0, rect.top() + 3.0),
+        color=text_color,
+        outline=text_outline,
+        horizontal_center=rect.center().x(),
+    )
 
 
 def draw_polyline_measurement_label(
@@ -992,11 +1288,11 @@ def draw_polyline_measurement_label(
         return
     font = measurement_label_font(settings, measurement)
     painter.setFont(font)
-    metrics = QFontMetricsF(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
-    text_width = metrics.horizontalAdvance(text)
-    text_height = metrics.height()
-    text_color = measurement_text_color(measurement, settings.measurement_label_color)
+    layout = _cached_text_layout(font, text, render_mode="measurement-polyline")
+    text_width = layout.width
+    text_height = layout.height
+    text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
     text_outline = _overlay_outline_color(text_color)
     center_point = measurement.geometry_center()
     center = image_to_output(center_point)
@@ -1009,12 +1305,18 @@ def draw_polyline_measurement_label(
         text_width + 12.0,
         text_height + 6.0,
     )
-    if settings.measurement_label_background_enabled:
+    if not _is_visible_to_painter(painter, rect, padding=4.0):
+        return
+    if _measurement_label_background_enabled(settings, measurement):
         painter.fillRect(rect, QColor(16, 24, 32, 168))
-    painter.setPen(QPen(text_outline, 3))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
-    painter.setPen(QPen(text_color, 1))
-    painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, text)
+    _draw_cached_text(
+        painter,
+        layout,
+        QPointF(rect.left() + 6.0, rect.top() + 3.0),
+        color=text_color,
+        outline=text_outline,
+        horizontal_center=rect.center().x(),
+    )
 
 
 def draw_endpoint_style(

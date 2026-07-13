@@ -8021,7 +8021,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(dialog._area_infer_device_combo.currentData(), "cpu")
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 0),
-                ["样式预览", "结果文字", "计数点编号", "测量线与端点"],
+                ["直径/长度结果", "面积结果", "计数点编号", "测量线与端点"],
             )
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
@@ -8540,10 +8540,10 @@ class CanvasAndExportTests(unittest.TestCase):
             show_handles=False,
         )
 
-        self.assertEqual([call[0] for call in painter.calls], ["path", "polygon", "polygon", "polygon", "polygon"])
+        self.assertEqual([call[0] for call in painter.calls], ["path", "path", "path"])
         self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
         self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
-        self.assertEqual(painter.calls[3][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+        self.assertEqual(painter.calls[2][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
 
     def test_unselected_magic_segment_area_draws_with_simplified_display_geometry(self) -> None:
         document, _, _canvas = self._create_canvas_document()
@@ -8620,7 +8620,7 @@ class CanvasAndExportTests(unittest.TestCase):
         )
 
         self.assertLess(unselected_painter.calls[0][3], len(dense_ring))
-        self.assertEqual(selected_painter.calls[0][3], len(dense_ring))
+        self.assertEqual(selected_painter.calls[0][3], len(dense_ring) + 1)
 
     def test_dragging_area_vertex_preserves_magic_rings_and_clears_exact_area(self) -> None:
         document, _image, canvas = self._create_canvas_document()
