@@ -9,6 +9,7 @@ import math
 import sys
 import unicodedata
 import unittest
+from unittest.mock import patch
 import zipfile
 from xml.etree import ElementTree
 
@@ -1811,16 +1812,65 @@ class ExportServiceTests(unittest.TestCase):
             output_path.write_bytes(b"rendered-png")
             return RenderedExport(output_path, 10, 10)
 
+        opened_render_modes: list[str] = []
+        original_open = Path.open
+
+        def tracking_open(path: Path, mode: str = "r", *args, **kwargs):
+            if path.name.startswith(".fdm-render-"):
+                opened_render_modes.append(mode)
+            return original_open(path, mode, *args, **kwargs)
+
         with TemporaryDirectory() as tmp_dir:
-            outputs = ExportService().export_project(
-                ProjectState(version="0.1.0", documents=[document]),
-                tmp_dir,
-                selection=selection,
-                overlay_renderer=renderer,
-            )
+            with patch("fdm.atomic_io.Path.open", new=tracking_open):
+                outputs = ExportService().export_project(
+                    ProjectState(version="0.1.0", documents=[document]),
+                    tmp_dir,
+                    selection=selection,
+                    overlay_renderer=renderer,
+                )
             output_path = outputs["measurement_overlays"][0]
             self.assertEqual(output_path.read_bytes(), b"rendered-png")
             self.assertEqual(list(Path(tmp_dir).glob(".fdm-render-*")), [])
+        self.assertIn("r+b", opened_render_modes)
+        self.assertNotIn("rb", opened_render_modes)
+
+    def test_overlay_publish_failure_preserves_existing_file_and_cleans_stage(self) -> None:
+        document = ImageDocument(
+            id="image_publish_failure",
+            path="/tmp/publish_failure.png",
+            image_size=(10, 10),
+        )
+        document.initialize_runtime_state()
+        selection = ExportSelection(
+            include_measurement_overlay=True,
+            scope=ExportScope.CURRENT,
+        )
+        service = ExportService()
+        plan = service.build_plan([document], selection)
+
+        def renderer(_document, output_path, **_kwargs):
+            output_path.write_bytes(b"new-render")
+            return RenderedExport(output_path, 10, 10)
+
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            target = root / plan.files[0].filename
+            target.write_bytes(b"existing-render")
+            with patch(
+                "fdm.services.export_service.atomic_replace_file",
+                side_effect=OSError("injected publish failure"),
+            ):
+                with self.assertRaisesRegex(OSError, "publish failure"):
+                    service.export_project(
+                        ProjectState(version="0.1.0", documents=[document]),
+                        root,
+                        selection=selection,
+                        export_plan=plan,
+                        overlay_renderer=renderer,
+                    )
+
+            self.assertEqual(target.read_bytes(), b"existing-render")
+            self.assertEqual(list(root.glob(".fdm-render-*")), [])
 
     def test_overlay_renderer_must_return_structured_result_and_failure_preserves_existing_file(self) -> None:
         document = ImageDocument(id="image_legacy_render", path="/tmp/legacy.png", image_size=(10, 10))

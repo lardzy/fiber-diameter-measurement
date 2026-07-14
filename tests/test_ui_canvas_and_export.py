@@ -3079,6 +3079,33 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_full_resolution_overlay_service_publishes_rendered_png(self) -> None:
+        window, document = self._create_main_window_fixture()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                outputs = window.export_service.export_project(
+                    ProjectState(version="test", documents=[document]),
+                    tmp_dir,
+                    selection=ExportSelection(
+                        include_measurement_overlay=True,
+                        scope=ExportScope.CURRENT,
+                        render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+                    ),
+                    overlay_renderer=window._render_overlay_image,
+                )
+
+                output_path = outputs["measurement_overlays"][0]
+                rendered = QImage(str(output_path))
+                self.assertTrue(output_path.is_file())
+                self.assertGreater(output_path.stat().st_size, 0)
+                self.assertFalse(rendered.isNull())
+                self.assertEqual(
+                    (rendered.width(), rendered.height()),
+                    document.image_size,
+                )
+        finally:
+            window.close()
+
     def test_export_results_uses_save_dialog_for_single_output_and_remembers_directory(self) -> None:
         window = MainWindow()
         try:

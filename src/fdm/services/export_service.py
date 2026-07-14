@@ -16,6 +16,7 @@ import zipfile
 from xml.sax.saxutils import escape
 
 from fdm.area_display import area_derived_geometry_service
+from fdm.atomic_io import atomic_replace_file
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
 from fdm.services.raw_record_export import (
@@ -741,9 +742,7 @@ class ExportService:
                 raise ValueError("叠加图渲染器必须写入服务提供的临时目标路径。")
             if not rendered_path.is_file() or rendered_path.stat().st_size <= 0:
                 raise OSError(f"叠加图渲染未生成有效文件：{output_path}")
-            with rendered_path.open("rb") as stream:
-                os.fsync(stream.fileno())
-            os.replace(rendered_path, output_path)
+            atomic_replace_file(rendered_path, output_path)
             return RenderedExport(path=output_path, width=result.width, height=result.height)
         finally:
             temporary_path.unlink(missing_ok=True)
