@@ -171,27 +171,96 @@ class ProjectIO:
     """Read and write lightweight project files."""
 
     @staticmethod
+    def persistent_payload(
+        project: ProjectState,
+        *,
+        documents: tuple[ImageDocument, ...] | list[ImageDocument] | None = None,
+        version: str | None = None,
+    ) -> dict:
+        """Build a project payload containing persistence fields only.
+
+        ``ImageDocument.to_dict()`` deliberately excludes runtime state such as
+        history, dirty trackers, decoded images and display caches.  Accepting an
+        explicit ordered document sequence lets the project-session controller
+        preserve unresolved placeholders without deep-copying live documents.
+        """
+
+        ordered_documents = list(getattr(project, "documents", []) if documents is None else documents)
+        projected = ProjectState(
+            version=str(getattr(project, "version", "") if version is None else version),
+            documents=ordered_documents,
+            calibration_presets=list(getattr(project, "calibration_presets", [])),
+            project_default_calibration=getattr(project, "project_default_calibration", None),
+            project_group_templates=list(getattr(project, "project_group_templates", [])),
+            metadata=getattr(project, "metadata", {}),
+            load_issues=list(getattr(project, "load_issues", [])),
+        )
+        payload = projected.to_dict()
+        # Model serializers already allocate independent geometry/list payloads,
+        # but metadata is intentionally returned by reference.  Snapshot only
+        # these comparatively small persistent branches so asset staging cannot
+        # mutate the live project through an alias.
+        payload["metadata"] = copy.deepcopy(getattr(project, "metadata", {}))
+        for document_payload, document in zip(payload.get("documents", []), ordered_documents):
+            if isinstance(document_payload, dict):
+                document_payload["metadata"] = copy.deepcopy(document.metadata)
+        serialized_issues = _serialize_load_issues(projected)
+        if serialized_issues:
+            payload["load_issues"] = serialized_issues
+        return payload
+
+    @staticmethod
+    def save_payload(
+        payload: dict,
+        path: str | Path,
+        *,
+        document_sources: tuple[ImageDocument, ...] | list[ImageDocument] | None = None,
+        preserve_path_document_ids: set[str] | None = None,
+    ) -> Path:
+        """Atomically publish an already materialized persistent payload.
+
+        Filesystem path normalization is kept at this final boundary.  Only the
+        document dictionaries whose paths need normalization are copied; area
+        coordinate arrays and all other immutable plan data remain shared.
+        """
+
+        output_path = Path(path)
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_payload = dict(payload)
+        payload_documents = payload.get("documents", [])
+        if not isinstance(payload_documents, list):
+            raise ValueError("项目 payload 的 documents 必须是列表")
+        output_documents = list(payload_documents)
+        sources = list(document_sources or [])
+        if sources and len(sources) != len(output_documents):
+            raise ValueError("项目 payload 与文档源数量不一致")
+        preserved_ids = set(preserve_path_document_ids or set())
+        project_dir = output_path.expanduser().resolve().parent
+        for index, source in enumerate(sources):
+            document_payload = output_documents[index]
+            if not isinstance(document_payload, dict) or source.id in preserved_ids:
+                continue
+            normalized_payload = dict(document_payload)
+            _apply_document_save_path(normalized_payload, source, project_dir)
+            output_documents[index] = normalized_payload
+        output_payload["documents"] = output_documents
+        atomic_write_json(output_path, output_payload, ensure_ascii=False, indent=2)
+        return output_path
+
+    @staticmethod
     def save(
         project: ProjectState,
         path: str | Path,
         *,
         preserve_path_document_ids: set[str] | None = None,
     ) -> Path:
-        output_path = Path(path)
-        output_path.parent.mkdir(parents=True, exist_ok=True)
-        payload = project.to_dict()
-        project_dir = output_path.expanduser().resolve().parent
-        preserved_ids = set(preserve_path_document_ids or set())
-        for document_payload, document in zip(payload.get("documents", []), project.documents):
-            if isinstance(document_payload, dict):
-                if document.id in preserved_ids:
-                    continue
-                _apply_document_save_path(document_payload, document, project_dir)
-        serialized_issues = _serialize_load_issues(project)
-        if serialized_issues:
-            payload["load_issues"] = serialized_issues
-        atomic_write_json(output_path, payload, ensure_ascii=False, indent=2)
-        return output_path
+        payload = ProjectIO.persistent_payload(project)
+        return ProjectIO.save_payload(
+            payload,
+            path,
+            document_sources=project.documents,
+            preserve_path_document_ids=preserve_path_document_ids,
+        )
 
     @staticmethod
     def load(path: str | Path) -> ProjectState:
@@ -227,8 +296,14 @@ class ProjectIO:
 def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[dict]]:
     if not isinstance(payload, dict):
         raise ValueError("项目文件根节点必须是 JSON 对象")
-    sanitized = copy.deepcopy(payload)
-    issues = _deserialize_load_issues(sanitized.pop("load_issues", []))
+    # Calibration quarantine is intentionally copy-on-write.  Project payloads can
+    # contain millions of geometry coordinates, so deep-copying the root before
+    # model construction doubles both the peak memory and the amount of Python
+    # object traversal during load.  The sanitizer only ever replaces calibration
+    # branches; all unrelated payload branches therefore remain safe to share.
+    sanitized = dict(payload)
+    issues = _deserialize_load_issues(payload.get("load_issues", []))
+    sanitized.pop("load_issues", None)
 
     project_default = sanitized.get("project_default_calibration")
     if isinstance(project_default, dict):
@@ -244,9 +319,10 @@ def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[
             )
             sanitized["project_default_calibration"] = None
 
-    documents = sanitized.get("documents", [])
+    documents = payload.get("documents", [])
     if isinstance(documents, list):
-        for document in documents:
+        sanitized_documents: list[object] | None = None
+        for index, document in enumerate(documents):
             if not isinstance(document, dict) or not isinstance(document.get("calibration"), dict):
                 continue
             raw_calibration = document["calibration"]
@@ -261,18 +337,27 @@ def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[
                         "raw_payload": copy.deepcopy(raw_calibration),
                     }
                 )
-                document["calibration"] = None
+                if sanitized_documents is None:
+                    sanitized_documents = list(documents)
+                sanitized_document = dict(document)
+                sanitized_document["calibration"] = None
+                sanitized_documents[index] = sanitized_document
+        if sanitized_documents is not None:
+            sanitized["documents"] = sanitized_documents
 
-    presets = sanitized.get("calibration_presets", [])
+    presets = payload.get("calibration_presets", [])
     if isinstance(presets, list):
-        valid_presets: list[object] = []
+        valid_presets: list[object] | None = None
         for index, preset in enumerate(presets):
             if not isinstance(preset, dict):
-                valid_presets.append(preset)
+                if valid_presets is not None:
+                    valid_presets.append(preset)
                 continue
             try:
                 CalibrationPreset.from_dict(preset)
             except (KeyError, TypeError, ValueError) as exc:
+                if valid_presets is None:
+                    valid_presets = list(presets[:index])
                 issues.append(
                     {
                         "kind": "calibration_preset",
@@ -282,8 +367,10 @@ def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[
                     }
                 )
             else:
-                valid_presets.append(preset)
-        sanitized["calibration_presets"] = valid_presets
+                if valid_presets is not None:
+                    valid_presets.append(preset)
+        if valid_presets is not None:
+            sanitized["calibration_presets"] = valid_presets
     return sanitized, issues
 
 
@@ -320,7 +407,12 @@ def _deserialize_load_issues(payload: object) -> list[dict]:
     for item in payload:
         if not isinstance(item, dict):
             continue
-        issue = copy.deepcopy(item)
+        issue = dict(item)
+        if "raw_payload" in issue:
+            # Legacy issue registries may already contain the decoded calibration
+            # payload.  Keep that small branch independent without recursively
+            # copying unrelated issue metadata.
+            issue["raw_payload"] = copy.deepcopy(issue["raw_payload"])
         raw_json = issue.pop("raw_payload_json", None)
         if isinstance(raw_json, str):
             try:

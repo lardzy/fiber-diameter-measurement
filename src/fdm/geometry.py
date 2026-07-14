@@ -150,6 +150,18 @@ def area_rings_area(rings: list[list[Point]]) -> float:
     return area
 
 
+def area_rings_area_and_centroid(rings: list[list[Point]]) -> tuple[float, Point]:
+    """Return odd-even area and centroid from one path simplification pass."""
+
+    flattened = [point for ring in rings for point in ring]
+    if not flattened:
+        return 0.0, Point(0.0, 0.0)
+    area, moment_x, moment_y = _odd_even_moments(rings)
+    if area <= 1e-9:
+        return area, polygon_bounds_center(flattened)
+    return area, Point(moment_x / area, moment_y / area)
+
+
 def area_rings_hole_area(rings: list[list[Point]]) -> float:
     if len(rings) <= 1:
         return 0.0
@@ -157,18 +169,27 @@ def area_rings_hole_area(rings: list[list[Point]]) -> float:
 
 
 def area_rings_centroid(rings: list[list[Point]]) -> Point:
-    flattened = [point for ring in rings for point in ring]
-    if not flattened:
-        return Point(0.0, 0.0)
-    area, moment_x, moment_y = _odd_even_moments(rings)
-    if area <= 1e-9:
-        return polygon_bounds_center(flattened)
-    return Point(moment_x / area, moment_y / area)
+    return area_rings_area_and_centroid(rings)[1]
 
 
 def _odd_even_moments(rings: list[list[Point]]) -> tuple[float, float, float]:
     """Return filled area and first moments from Qt's OddEvenFill geometry."""
-    simplified = _simplified_odd_even_path(rings)
+
+    return odd_even_path_moments(
+        _simplified_odd_even_path(rings),
+        path_is_simplified=True,
+    )
+
+
+def odd_even_path_moments(
+    path: QPainterPath,
+    *,
+    path_is_simplified: bool = False,
+) -> tuple[float, float, float]:
+    """Return exact odd-even moments, optionally reusing a simplified path."""
+
+    simplified = path if path_is_simplified else path.simplified()
+    simplified.setFillRule(Qt.FillRule.OddEvenFill)
     polygon_records: list[tuple[float, Point, QPointF, QPainterPath]] = []
     for polygon in simplified.toSubpathPolygons():
         points = [Point(float(point.x()), float(point.y())) for point in polygon]
@@ -299,8 +320,18 @@ def _interior_sample(
 
 
 def area_rings_bounds(rings: list[list[Point]]) -> tuple[float, float, float, float]:
-    flattened = [point for ring in rings for point in ring]
-    return polygon_bounds(flattened)
+    points = (point for ring in rings for point in ring)
+    first = next(points, None)
+    if first is None:
+        return 0.0, 0.0, 0.0, 0.0
+    min_x = max_x = first.x
+    min_y = max_y = first.y
+    for point in points:
+        min_x = min(min_x, point.x)
+        min_y = min(min_y, point.y)
+        max_x = max(max_x, point.x)
+        max_y = max(max_y, point.y)
+    return min_x, min_y, max_x, max_y
 
 
 def point_near_bounds(point: Point, bounds: tuple[float, float, float, float], tolerance: float) -> bool:

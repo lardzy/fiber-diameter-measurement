@@ -64,8 +64,19 @@ from PySide6.QtWidgets import (
 
 from fdm import __version__
 from fdm.application_launch import ApplicationOpenRequest
-from fdm.area_display import ensure_measurement_display_geometry, invalidate_measurement_display_geometry
+from fdm.area_display import (
+    AREA_GEOMETRY_RAW,
+    area_derived_geometry_service,
+    clear_area_derived_geometry_cache,
+    ensure_measurement_display_geometry,
+)
 from fdm.geometry import Line, Point, line_length
+from fdm.history import (
+    DocumentChangeImpact,
+    DocumentHistoryState,
+    WorkspaceHistoryBudget,
+    dirty_domains_for_impact,
+)
 from fdm.lifecycle import (
     AcquisitionDisposition,
     DigitalSlideAcquisitionSession,
@@ -75,6 +86,7 @@ from fdm.lifecycle import (
 from fdm.models import (
     Calibration,
     CalibrationPreset,
+    DirtyDomain,
     FiberGroup,
     ImageDocument,
     Measurement,
@@ -166,6 +178,7 @@ from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
 from fdm.ui.canvas import (
     AreaEditOperationMode,
+    CanvasSelectionRef,
     DocumentCanvas,
     MagicSegmentOperationMode,
     MagicSegmentSubtractInputMode,
@@ -204,8 +217,10 @@ from fdm.ui.object_inspector import CurrentObjectInspector
 from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
 from fdm.ui.project_session_controller import (
+    ProjectDirtySnapshot,
     ProjectAssetPersistResult,
     ProjectLoadResult,
+    ProjectPersistenceSnapshot,
     ProjectSaveResult,
     ProjectSessionController,
 )
@@ -872,6 +887,7 @@ class MainWindow(QMainWindow):
         except OSError:
             pass
         self._document_order: list[str] = []
+        self._workspace_history_budget = WorkspaceHistoryBudget()
         self._images: dict[str, QImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
@@ -1144,7 +1160,7 @@ class MainWindow(QMainWindow):
         self._transition_in_progress = False
         self._capture_devices: list[CaptureDevice] = []
         self._microview_optimize_hints_shown: set[str] = set()
-        self._project_clean_snapshot: dict[str, object] | None = None
+        self._project_clean_snapshot: ProjectDirtySnapshot | None = None
         self._pending_project_load_snapshot = False
         self._capture_manager = CaptureSessionManager(
             selected_device_id=self._app_settings.selected_capture_device_id,
@@ -7086,34 +7102,45 @@ class MainWindow(QMainWindow):
             return None
         return preset_index, presets[preset_index]
 
-    def _project_snapshot(self) -> dict[str, object]:
-        inherited_ids = sorted(
+    def _project_snapshot(self) -> ProjectDirtySnapshot:
+        inherited_ids = tuple(sorted(
             document.id
             for document in self.project.documents
             if document.calibration is not None and document.calibration.mode == "project_default"
-        )
-        project_assets = sorted(
+        ))
+        project_assets = tuple(sorted(
             (document.id, document.path)
             for document in self.project.documents
             if document.is_project_asset()
-        )
-        project_group_templates = [
-            template.to_dict()
+        ))
+        project_group_templates = tuple(
+            (normalize_group_label(template.label), template.color)
             for template in self.project.project_group_templates
             if normalize_group_label(template.label)
-        ]
+        )
+        calibration = self.project.project_default_calibration
+        calibration_identity = (
+            (
+                calibration.mode,
+                calibration.pixels_per_unit,
+                calibration.unit,
+                calibration.source_label,
+            )
+            if calibration is not None
+            else None
+        )
         persistence_snapshot = (
             self.project_session_controller.persistence_snapshot()
             if self._project_path is not None or self.project_session_controller.unresolved_documents()
-            else ((), ())
+            else ProjectPersistenceSnapshot(documents=(), unresolved=())
         )
-        return {
-            "project_default_calibration": self.project.project_default_calibration.to_dict() if self.project.project_default_calibration else None,
-            "project_default_document_ids": inherited_ids,
-            "project_asset_documents": project_assets,
-            "project_group_templates": project_group_templates,
-            "document_persistence": persistence_snapshot,
-        }
+        return ProjectDirtySnapshot(
+            project_default_calibration=calibration_identity,
+            project_default_document_ids=inherited_ids,
+            project_asset_documents=project_assets,
+            project_group_templates=project_group_templates,
+            document_persistence=persistence_snapshot,
+        )
 
     def _mark_project_saved(self) -> None:
         self._project_clean_snapshot = self._project_snapshot()
@@ -7270,13 +7297,50 @@ class MainWindow(QMainWindow):
 
     def _apply_project_default_calibration(self, calibration: Calibration, *, label: str) -> None:
         project_default = calibration.as_project_default()
+        previous_project_default = self.project.project_default_calibration
+        captures = [
+            (document, document.state_stamp, DocumentHistoryState.capture(document))
+            for document in self.project.documents
+        ]
         self.project.project_default_calibration = project_default.clone()
-        for document in self.project.documents:
-            before = document.snapshot_state()
-            self._set_document_project_default_calibration(document)
-            after = document.snapshot_state()
+        after_states: list[tuple[ImageDocument, object, DocumentHistoryState, DocumentHistoryState]] = []
+        try:
+            for document, before_stamp, before in captures:
+                self._set_document_project_default_calibration(document)
+                after_states.append(
+                    (
+                        document,
+                        before_stamp,
+                        before,
+                        DocumentHistoryState.capture(document),
+                    )
+                )
+        except Exception:
+            self.project.project_default_calibration = previous_project_default
+            for document, before_stamp, before in reversed(captures):
+                before.restore(document)
+                document.restore_state_stamp(before_stamp)
+            raise
+
+        for document, before_stamp, before, after in after_states:
             if document.history is not None and before != after:
-                document.history.push(label, before, after)
+                after_stamp = document.advance_state(
+                    {DirtyDomain.SESSION, DirtyDomain.CALIBRATION}
+                )
+                document.history.push_delta(
+                    label,
+                    before=before,
+                    after=after,
+                    before_stamp=before_stamp,
+                    after_stamp=after_stamp,
+                    impact=DocumentChangeImpact.CALIBRATION,
+                )
+            elif before != after:
+                document.advance_state(
+                    {DirtyDomain.SESSION, DirtyDomain.CALIBRATION}
+                )
+            else:
+                document.restore_state_stamp(before_stamp)
         self._update_ui_for_current_document()
 
     def _prompt_project_default_conflict(self, *, image_name: str, document_calibration: Calibration) -> bool:
@@ -7955,7 +8019,18 @@ class MainWindow(QMainWindow):
         if not selected_path:
             return
         source_path = Path(selected_path).expanduser().resolve()
-        document = copy.deepcopy(unresolved.document)
+        # Relocation needs a detached persistent document, not a deep copy of
+        # runtime history/caches.  Rehydrate only serialized project fields so
+        # a dense unresolved document cannot copy its undo stack and derived
+        # geometry on the UI thread.
+        source_document = unresolved.document
+        document = ImageDocument.from_dict(source_document.to_dict())
+        document.calibration_load_error = source_document.calibration_load_error
+        document.calibration_load_payload = (
+            dict(source_document.calibration_load_payload)
+            if isinstance(source_document.calibration_load_payload, dict)
+            else None
+        )
         selected_is_slide = is_digital_slide_path(source_path)
         if selected_is_slide != document.is_digital_slide():
             expected = "数字化切片（.fdmslide）" if document.is_digital_slide() else "普通图片"
@@ -8233,6 +8308,8 @@ class MainWindow(QMainWindow):
         *,
         tooltip: str,
     ) -> None:
+        if document.history is not None:
+            document.history.set_workspace_budget(self._workspace_history_budget)
         canvas = DocumentCanvas()
         canvas.set_document(document, image)
         canvas.set_settings(self._app_settings)
@@ -8241,12 +8318,11 @@ class MainWindow(QMainWindow):
             self._sync_canvas_magic_subtract_input_mode(canvas)
         canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
-        canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
+        canvas.objectSelectionChanged.connect(self._on_canvas_object_selection_changed)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
         canvas.pathSessionChanged.connect(self._on_canvas_path_session_changed)
         canvas.areaEditRejected.connect(self._on_canvas_area_edit_rejected)
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
-        canvas.overlaySelected.connect(self._on_canvas_overlay_selected)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
@@ -8315,6 +8391,8 @@ class MainWindow(QMainWindow):
             slide_meta["working_path"] = str(source_path)
         target_document.metadata["digital_slide"] = slide_meta
         target_document.initialize_runtime_state()
+        if target_document.history is not None:
+            target_document.history.set_workspace_budget(self._workspace_history_budget)
         if target_document.calibration is None and self.project.project_default_calibration is not None:
             target_document.calibration = self._digital_slide_scaled_calibration(
                 self.project.project_default_calibration,
@@ -8331,12 +8409,11 @@ class MainWindow(QMainWindow):
         canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
         canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
-        canvas.measurementSelected.connect(self._on_canvas_measurement_selected)
+        canvas.objectSelectionChanged.connect(self._on_canvas_object_selection_changed)
         canvas.measurementEdited.connect(self._on_canvas_measurement_edited)
         canvas.pathSessionChanged.connect(self._on_canvas_path_session_changed)
         canvas.areaEditRejected.connect(self._on_canvas_area_edit_rejected)
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
-        canvas.overlaySelected.connect(self._on_canvas_overlay_selected)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
@@ -8734,7 +8811,13 @@ class MainWindow(QMainWindow):
             document.recalculate_measurements()
             document.metadata.pop("calibration_line", None)
 
-        self._apply_document_change(document, "应用标定预设", mutate, sync_sidecar=True)
+        self._apply_document_change(
+            document,
+            "应用标定预设",
+            mutate,
+            sync_sidecar=True,
+            impact=DocumentChangeImpact.CALIBRATION,
+        )
         self.statusBar().showMessage(f"已应用标定预设: {preset.name}", 4000)
 
     def add_fiber_group(self) -> None:
@@ -9777,22 +9860,32 @@ class MainWindow(QMainWindow):
 
     def undo_current_document(self) -> None:
         document = self.current_document()
-        if document is None or document.history is None or not document.history.undo(document):
+        if document is None or document.history is None:
             return
-        if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
-            document.mark_calibration_saved()
-        else:
-            self._save_calibration_sidecar(document, context="撤销")
+        previous_measurements = tuple(document.measurements)
+        if not document.history.undo(document):
+            return
+        self._discard_detached_area_geometry(previous_measurements, document)
+        if DirtyDomain.CALIBRATION in document.history.last_affected_domains:
+            if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
+                document.mark_calibration_saved()
+            else:
+                self._save_calibration_sidecar(document, context="撤销")
         self._update_ui_for_current_document()
 
     def redo_current_document(self) -> None:
         document = self.current_document()
-        if document is None or document.history is None or not document.history.redo(document):
+        if document is None or document.history is None:
             return
-        if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
-            document.mark_calibration_saved()
-        else:
-            self._save_calibration_sidecar(document, context="重做")
+        previous_measurements = tuple(document.measurements)
+        if not document.history.redo(document):
+            return
+        self._discard_detached_area_geometry(previous_measurements, document)
+        if DirtyDomain.CALIBRATION in document.history.last_affected_domains:
+            if document.calibration is not None and (document.calibration.mode == "project_default" or not document.uses_sidecar()):
+                document.mark_calibration_saved()
+            else:
+                self._save_calibration_sidecar(document, context="重做")
         self._update_ui_for_current_document()
 
     def _save_calibration_sidecar(self, document: ImageDocument, *, context: str) -> bool:
@@ -9842,6 +9935,10 @@ class MainWindow(QMainWindow):
         self._hide_small_object_preview()
         self._clear_prompt_segmentation_cache()
         canvases = list(self._canvases.values())
+        for document in self.project.documents:
+            if document.history is not None:
+                document.history.set_workspace_budget(None)
+        clear_area_derived_geometry_cache()
         tab_widgets = [
             self.tab_widget.widget(index)
             for index in range(self.tab_widget.count())
@@ -9880,6 +9977,15 @@ class MainWindow(QMainWindow):
     def _remove_document(self, document_id: str) -> None:
         if document_id not in self._document_order:
             return
+        document = self.project.get_document(document_id)
+        unresolved = self.project_session_controller.unresolved_document(document_id)
+        cached_document = document or (unresolved.document if unresolved is not None else None)
+        if cached_document is not None:
+            for measurement in cached_document.measurements:
+                if measurement.measurement_kind == "area":
+                    area_derived_geometry_service.discard_measurement(measurement)
+        if document is not None and document.history is not None:
+            document.history.set_workspace_budget(None)
         index = self._document_order.index(document_id)
         self._document_order.pop(index)
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
@@ -9902,6 +10008,26 @@ class MainWindow(QMainWindow):
         self._clear_prompt_segmentation_cache()
         self._end_project_session_if_empty()
         self._update_ui_for_current_document()
+
+    @staticmethod
+    def _discard_detached_area_geometry(
+        previous_measurements: tuple[Measurement, ...],
+        document: ImageDocument,
+    ) -> None:
+        """Release cache owners replaced or removed by undo/redo.
+
+        Geometry edits on an object retained in the document are invalidated by
+        its own revision.  Membership changes can instead reconstruct a new
+        Measurement with the same persisted ID, so explicitly release the old
+        owner's bounded caches here.
+        """
+
+        current_by_id = {measurement.id: measurement for measurement in document.measurements}
+        for measurement in previous_measurements:
+            if measurement.measurement_kind != "area":
+                continue
+            if current_by_id.get(measurement.id) is not measurement:
+                area_derived_geometry_service.discard_measurement(measurement)
 
     def _end_project_session_if_empty(self) -> bool:
         """Detach an empty workspace from its previous project file.
@@ -9929,41 +10055,67 @@ class MainWindow(QMainWindow):
         mutator,
         *,
         sync_sidecar: bool = False,
+        impact: DocumentChangeImpact = DocumentChangeImpact.SESSION,
+        geometry_measurement_ids: tuple[str, ...] = (),
     ) -> bool:
-        before = document.snapshot_state()
+        before_stamp = document.state_stamp
+        before = DocumentHistoryState.capture(
+            document,
+            geometry_measurement_ids=geometry_measurement_ids,
+        )
         mutator()
         document.rebuild_group_memberships()
-        document.mark_measurement_geometry_changed()
-        document.refresh_dirty_flags()
-        after = document.snapshot_state()
+        after = DocumentHistoryState.capture(
+            document,
+            geometry_measurement_ids=geometry_measurement_ids,
+        )
         changed = before != after
-        if changed and document.history is not None:
-            document.history.push(label, before, after)
-        if sync_sidecar and document.uses_sidecar():
+        if changed:
+            self._discard_detached_area_geometry(before.measurement_objects, document)
+            if impact & DocumentChangeImpact.GEOMETRY:
+                document.mark_measurement_geometry_changed()
+            after_stamp = document.advance_state(dirty_domains_for_impact(impact))
+            if document.history is not None:
+                document.history.push_delta(
+                    label,
+                    before=before,
+                    after=after,
+                    before_stamp=before_stamp,
+                    after_stamp=after_stamp,
+                    impact=impact,
+                )
+        else:
+            # Model helpers may optimistically mark a domain.  Preserve the
+            # exact no-op semantics formerly provided by snapshot comparison.
+            document.restore_state_stamp(before_stamp)
+        if changed and sync_sidecar and document.uses_sidecar():
             self._save_calibration_sidecar(document, context=label)
-        elif sync_sidecar:
+        elif changed and sync_sidecar:
             document.mark_calibration_saved()
         self._update_ui_for_current_document()
         return changed
 
     def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
-        previous_selected_measurement_id = document.view_state.selected_measurement_id
-        previous_selected_overlay_id = document.selected_overlay_id
-        measurement_index = len(document.measurements)
+        before_stamp = document.state_stamp
+        before = DocumentHistoryState.capture(document)
         document.insert_measurement_incremental(measurement)
+        after = DocumentHistoryState.capture(document)
+        after_stamp = document.advance_state({DirtyDomain.SESSION})
         if document.history is not None:
-            document.history.push_add_measurement(
+            document.history.push_delta(
                 label,
-                measurement_payload=measurement.to_dict(),
-                index=measurement_index,
-                previous_selected_measurement_id=previous_selected_measurement_id,
-                previous_selected_overlay_id=previous_selected_overlay_id,
+                before=before,
+                after=after,
+                before_stamp=before_stamp,
+                after_stamp=after_stamp,
+                impact=DocumentChangeImpact.SESSION,
             )
         self._refresh_measurement_append_ui(document, measurement)
 
     def _refresh_measurement_append_ui(self, document: ImageDocument, measurement: Measurement) -> None:
         if document is not self.current_document():
             self._update_action_states()
+            self._show_pending_history_budget_notice()
             return
         self._refresh_group_list_counts(document)
         self._append_measurement_table_row(document, measurement)
@@ -9973,6 +10125,7 @@ class MainWindow(QMainWindow):
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
+        self._show_pending_history_budget_notice()
 
     def _apply_documents_change(
         self,
@@ -9980,19 +10133,50 @@ class MainWindow(QMainWindow):
         label: str,
         mutator,
     ) -> int:
+        captures = [
+            (document, document.state_stamp, DocumentHistoryState.capture(document))
+            for document in documents
+        ]
         total_removed = 0
+        applied: list[
+            tuple[ImageDocument, object, DocumentHistoryState, DocumentHistoryState]
+        ] = []
+        try:
+            for document, before_stamp, before in captures:
+                removed_count = mutator(document)
+                total_removed += int(removed_count or 0)
+                document.rebuild_group_memberships()
+                after = DocumentHistoryState.capture(document)
+                applied.append((document, before_stamp, before, after))
+        except Exception:
+            for document, before_stamp, before, _after in reversed(applied):
+                before.restore(document)
+                document.restore_state_stamp(before_stamp)
+            # The failing document may have been changed before raising.
+            applied_ids = {document.id for document, *_rest in applied}
+            for document, before_stamp, before in reversed(captures):
+                if document.id not in applied_ids:
+                    before.restore(document)
+                    document.restore_state_stamp(before_stamp)
+            raise
+
         changed_any = False
-        for document in documents:
-            before = document.snapshot_state()
-            removed_count = mutator(document)
-            total_removed += int(removed_count or 0)
-            document.rebuild_group_memberships()
-            document.mark_measurement_geometry_changed()
-            document.refresh_dirty_flags()
-            after = document.snapshot_state()
+        for document, before_stamp, before, after in applied:
             changed = before != after
-            if changed and document.history is not None:
-                document.history.push(label, before, after)
+            if changed:
+                self._discard_detached_area_geometry(before.measurement_objects, document)
+                after_stamp = document.advance_state({DirtyDomain.SESSION})
+                if document.history is not None:
+                    document.history.push_delta(
+                        label,
+                        before=before,
+                        after=after,
+                        before_stamp=before_stamp,
+                        after_stamp=after_stamp,
+                        impact=DocumentChangeImpact.SESSION,
+                    )
+            else:
+                document.restore_state_stamp(before_stamp)
             changed_any = changed_any or changed
         if changed_any:
             self._update_ui_for_current_document()
@@ -10206,16 +10390,57 @@ class MainWindow(QMainWindow):
             debug_payload=debug_payload,
         )
 
-    def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str | None) -> None:
+    @staticmethod
+    def _document_selection_ref(document: ImageDocument) -> CanvasSelectionRef:
+        annotation = document.get_overlay_annotation(document.selected_overlay_id)
+        if annotation is not None:
+            return CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
+        measurement = document.get_measurement(document.view_state.selected_measurement_id)
+        if measurement is not None:
+            return CanvasSelectionRef.measurement(measurement.id)
+        return CanvasSelectionRef.none()
+
+    def _on_canvas_object_selection_changed(
+        self,
+        document_id: str,
+        selection: object,
+    ) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
-        document.select_measurement(measurement_id or None)
+        if not isinstance(selection, CanvasSelectionRef):
+            selection = CanvasSelectionRef.none()
+        if selection.kind == "measurement" and selection.object_id:
+            measurement = document.get_measurement(selection.object_id)
+            if measurement is not None:
+                document.select_measurement(measurement.id)
+            else:
+                document.select_measurement(None)
+                document.select_overlay_annotation(None)
+        elif selection.kind == "overlay" and selection.object_id:
+            annotation = document.get_overlay_annotation(selection.object_id)
+            if annotation is not None:
+                document.select_overlay_annotation(annotation.id)
+            else:
+                document.select_measurement(None)
+                document.select_overlay_annotation(None)
+        else:
+            document.select_measurement(None)
+            document.select_overlay_annotation(None)
         self._sync_measurement_table_selection(document)
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
         self._focus_current_canvas()
+
+    def _on_canvas_measurement_selected(self, document_id: str, measurement_id: str | None) -> None:
+        """Compatibility adapter for integrations using the legacy signal."""
+
+        document = self.project.get_document(document_id)
+        if document is None:
+            return
+        document.select_measurement(measurement_id or None)
+        self._on_canvas_object_selection_changed(document_id, self._document_selection_ref(document))
 
     def _on_canvas_measurement_edited(self, document_id: str, measurement_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
@@ -10227,25 +10452,39 @@ class MainWindow(QMainWindow):
             if measurement is None:
                 return
             if isinstance(payload, dict) and payload.get("measurement_kind") == "area":
-                measurement.polygon_px = list(payload.get("polygon_px", []))
-                measurement.area_rings_px = [list(ring) for ring in payload.get("area_rings_px", [])]
-                measurement.exact_area_px = float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None
-                measurement.measurement_kind = "area"
+                measurement.replace_area_geometry(
+                    polygon_px=list(payload.get("polygon_px", [])),
+                    area_rings_px=[list(ring) for ring in payload.get("area_rings_px", [])],
+                    exact_area_px=(
+                        float(payload["exact_area_px"])
+                        if payload.get("exact_area_px") is not None
+                        else None
+                    ),
+                    calibration=document.calibration,
+                )
                 payload_mode = payload.get("mode")
                 if isinstance(payload_mode, str) and payload_mode:
                     measurement.mode = payload_mode
-                invalidate_measurement_display_geometry(measurement)
             elif isinstance(payload, Line):
-                measurement.snapped_line_px = payload
+                if measurement.line_px is None:
+                    return
+                measurement.replace_line_geometry(
+                    line_px=measurement.line_px,
+                    snapped_line_px=payload,
+                    calibration=document.calibration,
+                )
             else:
                 return
             measurement.status = "edited"
-            measurement.recalculate(document.calibration)
-            if measurement.measurement_kind == "area" and measurement.mode == "magic_segment":
-                ensure_measurement_display_geometry(measurement)
             document.select_measurement(measurement.id)
 
-        self._apply_document_change(document, "编辑测量线", mutate)
+        self._apply_document_change(
+            document,
+            "编辑测量线",
+            mutate,
+            impact=DocumentChangeImpact.SESSION | DocumentChangeImpact.GEOMETRY,
+            geometry_measurement_ids=(measurement_id,),
+        )
         self._focus_current_canvas()
 
     def _on_canvas_overlay_create_requested(self, document_id: str, payload: object) -> None:
@@ -10304,17 +10543,15 @@ class MainWindow(QMainWindow):
         self._focus_current_canvas()
 
     def _on_canvas_overlay_selected(self, document_id: str, overlay_id: str | None) -> None:
+        """Compatibility adapter for integrations using the legacy signal."""
+
         document = self.project.get_document(document_id)
         if document is None:
             return
         document.select_overlay_annotation(overlay_id or None)
         if overlay_id:
             document.select_measurement(None)
-        self._sync_measurement_table_selection(document)
-        self._update_action_states()
-        self._schedule_statistics_refresh()
-        self._refresh_object_inspector()
-        self._focus_current_canvas()
+        self._on_canvas_object_selection_changed(document_id, self._document_selection_ref(document))
 
     def _on_canvas_overlay_edited(self, document_id: str, overlay_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
@@ -10475,7 +10712,13 @@ class MainWindow(QMainWindow):
             document.metadata["calibration_line"] = line.to_dict()
             document.recalculate_measurements()
 
-        self._apply_document_change(document, "图内标定", mutate, sync_sidecar=True)
+        self._apply_document_change(
+            document,
+            "图内标定",
+            mutate,
+            sync_sidecar=True,
+            impact=DocumentChangeImpact.CALIBRATION,
+        )
         self.statusBar().showMessage("图内标尺标定已更新", 4000)
 
     def _refresh_preset_combo(self, *, selected_name: str | None = None) -> None:
@@ -10610,7 +10853,6 @@ class MainWindow(QMainWindow):
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
         self._populate_group_list(document)
-        self._update_project_navigation_summary()
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
@@ -10622,6 +10864,20 @@ class MainWindow(QMainWindow):
             canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
         self._update_action_states()
         self._schedule_statistics_refresh()
+        self._show_pending_history_budget_notice()
+
+    def _show_pending_history_budget_notice(self) -> None:
+        history_budget_notice = False
+        for item in self.project.documents:
+            if item.history is not None:
+                history_budget_notice = (
+                    item.history.consume_budget_notice() or history_budget_notice
+                )
+        if history_budget_notice:
+            self.statusBar().showMessage(
+                "撤销历史已达到内存预算；较早记录可能已清理，最新操作仍保留一次撤销。",
+                7000,
+            )
 
     def _update_project_navigation_summary(self) -> None:
         label = self._project_summary_label
@@ -11169,13 +11425,29 @@ class MainWindow(QMainWindow):
         return False
 
     def _set_magic_roi_enabled(self, tool_mode: str, enabled: bool, *, operation_mode: str | None = None) -> None:
+        enabled = bool(enabled)
+        settings_changed = False
         if is_fiber_quick_tool_mode(tool_mode):
-            self._fiber_quick_roi_enabled = bool(enabled)
+            self._fiber_quick_roi_enabled = enabled
+            if self._app_settings.fiber_quick_roi_enabled != enabled:
+                self._app_settings.fiber_quick_roi_enabled = enabled
+                settings_changed = True
         elif is_magic_segment_tool_mode(tool_mode):
             if operation_mode == MagicSegmentOperationMode.SUBTRACT:
-                self._magic_standard_subtract_roi_enabled = bool(enabled)
+                self._magic_standard_subtract_roi_enabled = enabled
+                if self._app_settings.magic_segment_standard_subtract_roi_enabled != enabled:
+                    self._app_settings.magic_segment_standard_subtract_roi_enabled = enabled
+                    settings_changed = True
             else:
-                self._magic_standard_add_roi_enabled = bool(enabled)
+                self._magic_standard_add_roi_enabled = enabled
+                if self._app_settings.magic_segment_standard_add_roi_enabled != enabled:
+                    self._app_settings.magic_segment_standard_add_roi_enabled = enabled
+                    settings_changed = True
+                if self._app_settings.magic_segment_standard_roi_enabled != enabled:
+                    self._app_settings.magic_segment_standard_roi_enabled = enabled
+                    settings_changed = True
+        if settings_changed:
+            self._save_app_settings(context="魔杖选项")
 
     def _set_active_magic_roi_checked(self, checked: bool) -> None:
         if not (is_magic_segment_tool_mode(self._tool_mode) or is_fiber_quick_tool_mode(self._tool_mode)):
@@ -12367,6 +12639,7 @@ class MainWindow(QMainWindow):
                 line_width=line_width,
                 endpoint_radius=endpoint_radius,
                 show_area_fill=self._show_area_fill,
+                area_geometry_mode=AREA_GEOMETRY_RAW,
             )
 
         if include_measurements or include_scale:

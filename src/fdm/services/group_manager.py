@@ -4,7 +4,9 @@ from dataclasses import dataclass
 import re
 from typing import Callable
 
+from fdm.history import DocumentChangeImpact, DocumentHistoryState
 from fdm.models import (
+    DirtyDomain,
     FiberGroup,
     ImageDocument,
     ProjectGroupTemplate,
@@ -55,6 +57,53 @@ class GroupManager:
                 fallback_token = "#" + "".join(char * 2 for char in fallback_token[1:])
             return fallback_token.lower()
         return "#1f7a8c"
+
+    def _apply_atomic_document_mutations(
+        self,
+        *,
+        history_label: str,
+        mutator: Callable[[ImageDocument], None],
+    ) -> bool:
+        captures = [
+            (document, document.state_stamp, DocumentHistoryState.capture(document))
+            for document in self.project.documents
+        ]
+        after_states: list[tuple[ImageDocument, object, DocumentHistoryState, DocumentHistoryState]] = []
+        try:
+            for document, before_stamp, before in captures:
+                mutator(document)
+                document.rebuild_group_memberships()
+                after_states.append(
+                    (
+                        document,
+                        before_stamp,
+                        before,
+                        DocumentHistoryState.capture(document),
+                    )
+                )
+        except Exception:
+            for document, before_stamp, before in reversed(captures):
+                before.restore(document)
+                document.restore_state_stamp(before_stamp)
+            raise
+
+        any_changed = False
+        for document, before_stamp, before, after in after_states:
+            if before == after:
+                document.restore_state_stamp(before_stamp)
+                continue
+            after_stamp = document.advance_state({DirtyDomain.SESSION})
+            if document.history is not None:
+                document.history.push_delta(
+                    history_label,
+                    before=before,
+                    after=after,
+                    before_stamp=before_stamp,
+                    after_stamp=after_stamp,
+                    impact=DocumentChangeImpact.SESSION,
+                )
+            any_changed = True
+        return any_changed
 
     def project_group_template_for_label(self, label: str) -> ProjectGroupTemplate | None:
         token = normalize_group_label(label)
@@ -189,17 +238,13 @@ class GroupManager:
         return changed
 
     def sync_project_group_templates(self, *, history_label: str, labels: set[str] | None = None) -> bool:
-        any_changed = False
-        for document in self.project.documents:
-            before = document.snapshot_state()
-            changed = self.apply_project_group_templates_to_document(document, labels=labels)
-            after = document.snapshot_state()
-            if changed and document.history is not None and before != after:
-                document.history.push(history_label, before, after)
-                any_changed = True
-            elif changed:
-                any_changed = True
-        return any_changed
+        return self._apply_atomic_document_mutations(
+            history_label=history_label,
+            mutator=lambda document: self.apply_project_group_templates_to_document(
+                document,
+                labels=labels,
+            ),
+        )
 
     def sync_project_group_template_edit_to_documents(
         self,
@@ -214,45 +259,34 @@ class GroupManager:
             return False
         original_token = normalize_group_label(original_label)
         normalized_color = self.normalize_group_color(color)
-        any_changed = False
-        for document in self.project.documents:
-            before = document.snapshot_state()
-            changed = False
+        def mutate_document(document: ImageDocument) -> None:
             original_group = document.find_group_by_label(original_token) if original_token else None
             target_group = document.find_group_by_label(target_token)
             if original_group is not None and target_group is not None and original_group.id != target_group.id:
-                changed = document.merge_group_into(original_group.id, target_group.id) or changed
+                document.merge_group_into(original_group.id, target_group.id)
                 target_group = document.find_group_by_label(target_token)
             elif original_group is not None:
                 if normalize_group_label(original_group.label) != target_token:
                     original_group.label = target_token
-                    changed = True
                 target_group = original_group
             elif target_group is None:
-                target_group, ensured_changed = self.ensure_document_named_group(
+                target_group, _ensured_changed = self.ensure_document_named_group(
                     document,
                     label=target_token,
                     color=normalized_color,
                     activate=False,
                     sync_color=True,
                 )
-                changed = ensured_changed or changed
             if target_group is not None and target_group.color != normalized_color:
                 target_group.color = normalized_color
-                changed = True
             if original_token and original_token != target_token:
-                changed = document.unsuppress_project_group_label(original_token) or changed
-            changed = document.unsuppress_project_group_label(target_token) or changed
-            if changed:
-                document.rebuild_group_memberships()
-                document.refresh_dirty_flags()
-            after = document.snapshot_state()
-            if changed and document.history is not None and before != after:
-                document.history.push(history_label, before, after)
-                any_changed = True
-            elif changed:
-                any_changed = True
-        return any_changed
+                document.unsuppress_project_group_label(original_token)
+            document.unsuppress_project_group_label(target_token)
+
+        return self._apply_atomic_document_mutations(
+            history_label=history_label,
+            mutator=mutate_document,
+        )
 
     def area_inference_group_color_for_label(self, label: str) -> str:
         token = normalize_group_label(label)

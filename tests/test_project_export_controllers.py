@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import hashlib
+import json
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import sys
@@ -9,7 +10,7 @@ from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fdm.models import ImageDocument, ProjectState, new_id
+from fdm.models import CalibrationPreset, ImageDocument, ProjectState, new_id
 from fdm.project_io import ProjectIO
 from fdm.settings import AppSettings, RawRecordTemplate
 from fdm.services.export_service import (
@@ -314,7 +315,7 @@ class ProjectAndExportControllerTests(unittest.TestCase):
         with TemporaryDirectory() as tmp:
             host = _ProjectHost(Path(tmp))
             controller = ProjectSessionController(host)
-            with patch("fdm.ui.project_session_controller.ProjectIO.save") as save_mock:
+            with patch("fdm.ui.project_session_controller.ProjectIO.save_payload") as save_mock:
                 self.assertTrue(controller.save_project())
 
             self.assertEqual(host.default_save_path, Path(tmp) / "fiber_measurement.fdmproj")
@@ -323,6 +324,150 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertTrue(host.saved)
             self.assertTrue(host.updated)
             self.assertIn("项目已保存", host.status_message)
+
+    def test_post_commit_asset_cleanup_failure_does_not_change_save_success(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            host = _ProjectHost(root)
+            document = host.project.documents[0]
+            document.mark_session_dirty()
+            document.mark_calibration_dirty()
+            controller = ProjectSessionController(host)
+            project_path = root / "cleanup-failure.fdmproj"
+
+            with patch.object(
+                controller,
+                "_cleanup_unreferenced_revision_assets_payload",
+                side_effect=OSError("injected cleanup failure"),
+            ):
+                result = controller.save_project(str(project_path))
+
+            self.assertTrue(result)
+            self.assertTrue(project_path.is_file())
+            self.assertEqual(host._project_path, project_path)
+            self.assertTrue(host.saved)
+            self.assertTrue(host.updated)
+            self.assertFalse(document.dirty_flags.session_dirty)
+            self.assertFalse(document.dirty_flags.calibration_dirty)
+
+    def test_project_commit_failure_preserves_live_savepoints_and_previous_file(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "commit-failure.fdmproj"
+            previous = b'{"version":"previous"}'
+            project_path.write_bytes(previous)
+            host = _ProjectHost(root)
+            document = host.project.documents[0]
+            document.mark_session_dirty()
+            document.mark_calibration_dirty()
+            controller = ProjectSessionController(host)
+
+            with (
+                patch("fdm.atomic_io.os.replace", side_effect=OSError("injected commit failure")),
+                patch.object(host, "_show_project_warning") as warning_mock,
+            ):
+                result = controller.save_project(str(project_path))
+
+            self.assertFalse(result)
+            self.assertEqual(project_path.read_bytes(), previous)
+            self.assertIsNone(host._project_path)
+            self.assertEqual(host.project.version, PROJECT_VERSION)
+            self.assertFalse(host.saved)
+            self.assertFalse(host.updated)
+            self.assertTrue(document.dirty_flags.session_dirty)
+            self.assertTrue(document.dirty_flags.calibration_dirty)
+            warning_mock.assert_called_once()
+
+    def test_compatibility_project_views_preserve_legacy_calibration_presets(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            host = _ProjectHost(root)
+            preset = CalibrationPreset(
+                name="legacy-40x",
+                pixels_per_unit=12.5,
+                unit="um",
+            )
+            host.project.calibration_presets = [preset]
+            controller = ProjectSessionController(host)
+
+            project_for_save = controller._project_for_save()  # noqa: SLF001
+            asset_result = controller.persist_project_assets(root / "compat.fdmproj")
+
+            self.assertEqual(
+                [item.to_dict() for item in project_for_save.calibration_presets],
+                [preset.to_dict()],
+            )
+            self.assertEqual(
+                [item.to_dict() for item in asset_result.project.calibration_presets],
+                [preset.to_dict()],
+            )
+            self.assertIsNot(project_for_save.calibration_presets[0], preset)
+            self.assertIsNot(asset_result.project.calibration_presets[0], preset)
+
+    def test_save_preserves_mixed_live_unresolved_order_and_original_path_tokens(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            first_path = root / "first.png"
+            last_path = root / "last.png"
+            added_path = root / "added.png"
+            for image_path in (first_path, last_path, added_path):
+                image_path.write_bytes(b"image")
+            first = ImageDocument(id="first", path=str(first_path), image_size=(10, 10))
+            missing_windows = ImageDocument(
+                id="missing-windows",
+                path=r"images\missing.png",
+                absolute_path=r"D:\legacy\images\missing.png",
+                image_size=(10, 10),
+            )
+            last = ImageDocument(id="last", path=str(last_path), image_size=(10, 10))
+            missing_relative = ImageDocument(
+                id="missing-relative",
+                path="archive/missing-relative.png",
+                image_size=(10, 10),
+            )
+            added = ImageDocument(id="added", path=str(added_path), image_size=(10, 10))
+            for document in (first, missing_windows, last, missing_relative, added):
+                document.initialize_runtime_state()
+
+            host = _ProjectHost(root)
+            host.project = ProjectState(
+                version=PROJECT_VERSION,
+                documents=[first, last, added],
+            )
+            controller = ProjectSessionController(host)
+            controller._begin_project_load(  # noqa: SLF001
+                [first, missing_windows, last, missing_relative]
+            )
+            controller.register_unresolved_document(
+                missing_windows,
+                attempted_path=r"D:\legacy\images\missing.png",
+                reason="源文件不存在",
+                original_index=1,
+            )
+            controller.register_unresolved_document(
+                missing_relative,
+                attempted_path=str(root / "archive" / "missing-relative.png"),
+                reason="源文件不存在",
+                original_index=3,
+            )
+            project_path = root / "ordered.fdmproj"
+
+            result = controller.save_project(str(project_path))
+
+            self.assertTrue(result)
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            documents = payload["documents"]
+            self.assertEqual(
+                [document["id"] for document in documents],
+                ["first", "missing-windows", "last", "missing-relative", "added"],
+            )
+            self.assertEqual(documents[1]["path"], r"images\missing.png")
+            self.assertEqual(
+                documents[1]["absolute_path"],
+                r"D:\legacy\images\missing.png",
+            )
+            self.assertEqual(documents[3]["path"], "archive/missing-relative.png")
+            self.assertNotIn("absolute_path", documents[3])
 
     def test_multi_asset_failure_keeps_previous_project_and_rolls_back_new_revisions(self) -> None:
         with TemporaryDirectory() as tmp:

@@ -2882,6 +2882,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 with patch(
                     "fdm.ui.main_window.QFileDialog.getOpenFileName",
                     return_value=(str(relocated), window.IMAGE_FILTER),
+                ), patch(
+                    "fdm.ui.main_window.copy.deepcopy",
+                    side_effect=AssertionError("relocation deep-copied runtime document state"),
                 ):
                     window._relocate_unresolved_project_document(document.id)
 
@@ -3794,6 +3797,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 image_size=(image.width(), image.height()),
             )
             document.initialize_runtime_state()
+            document.history._max_bytes = 64
             self._load_document_into_window(window, document, image)
             measurement = Measurement(
                 id="incremental-measurement",
@@ -3809,6 +3813,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
             self.assertEqual(window._object_inspector._object_id, measurement.id)
             self.assertEqual(window._object_properties_section.summaryLabel.text(), "线段")
+            self.assertIn("撤销历史已达到内存预算", window.statusBar().currentMessage())
+            self.assertFalse(document.history.consume_budget_notice())
         finally:
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
@@ -4768,6 +4774,11 @@ class CanvasAndExportTests(unittest.TestCase):
     def test_standard_magic_roi_state_is_independent_by_operation_mode(self) -> None:
         with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
             window = MainWindow()
+        save_patcher = patch(
+            "fdm.ui.main_window.AppSettingsIO.save",
+            return_value=Path("/tmp/settings.json"),
+        )
+        save_mock = save_patcher.start()
         try:
             image = QImage(220, 140, QImage.Format.Format_RGB32)
             image.fill(QColor("#FFFFFF"))
@@ -4787,9 +4798,11 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(window._magic_roi_option_checkbox.isChecked())
             self.assertFalse(window._magic_small_object_option_checkbox.isEnabled())
 
-            window._toggle_active_magic_roi()
+            window._magic_roi_option_checkbox.setChecked(True)
             self.assertTrue(window._magic_standard_add_roi_enabled)
             self.assertTrue(window._magic_standard_subtract_roi_enabled)
+            self.assertTrue(window._app_settings.magic_segment_standard_add_roi_enabled)
+            self.assertTrue(window._app_settings.magic_segment_standard_roi_enabled)
 
             canvas._magic_segment.active_stage = MagicSegmentOperationMode.SUBTRACT
             window._update_magic_segment_controls()
@@ -4802,18 +4815,31 @@ class CanvasAndExportTests(unittest.TestCase):
             window._toggle_active_magic_roi()
             self.assertTrue(window._magic_standard_add_roi_enabled)
             self.assertFalse(window._magic_standard_subtract_roi_enabled)
+            self.assertFalse(window._app_settings.magic_segment_standard_subtract_roi_enabled)
             self.assertFalse(window._magic_small_object_option_checkbox.isEnabled())
+            self.assertEqual(save_mock.call_count, 2)
+
+            window._set_magic_roi_enabled(MagicSegmentToolMode.FIBER_QUICK, False)
+            self.assertFalse(window._fiber_quick_roi_enabled)
+            self.assertFalse(window._app_settings.fiber_quick_roi_enabled)
+            self.assertEqual(save_mock.call_count, 3)
+
+            window._set_magic_roi_enabled(MagicSegmentToolMode.FIBER_QUICK, False)
+            self.assertEqual(save_mock.call_count, 3)
         finally:
             window._reset_workspace()
             window.close()
+            save_patcher.stop()
 
     def test_standard_magic_subtract_input_mode_remembers_last_choice(self) -> None:
         settings = AppSettings(magic_segment_standard_subtract_input_mode=MagicSegmentSubtractInputMode.FREEHAND)
-        with (
-            patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings),
-            patch("fdm.ui.main_window.AppSettingsIO.save", return_value=Path("/tmp/settings.json")) as save_mock,
-        ):
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings):
             window = MainWindow()
+        save_patcher = patch(
+            "fdm.ui.main_window.AppSettingsIO.save",
+            return_value=Path("/tmp/settings.json"),
+        )
+        save_mock = save_patcher.start()
         try:
             image = QImage(120, 90, QImage.Format.Format_RGB32)
             image.fill(QColor("#FFFFFF"))
@@ -4847,6 +4873,7 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window._reset_workspace()
             window.close()
+            save_patcher.stop()
 
     def test_magic_segment_subtract_roi_request_uses_primary_bounds_constraint(self) -> None:
         window = MainWindow()
@@ -7056,6 +7083,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.delete_selected_measurement()
             self.assertEqual(len(document.overlay_annotations), 0)
         finally:
+            window._reset_workspace()
             window.close()
 
     def test_delete_selected_measurement_prioritizes_table_multi_selection(self) -> None:
@@ -8316,8 +8344,10 @@ class CanvasAndExportTests(unittest.TestCase):
         settings = AppSettings(measurement_label_decimals=4)
         self.assertEqual(measurement_display_text_with_settings(measurement, document, settings), "10.0000 um")
 
-        measurement.line_px = Line(Point(0, 0), Point(22.246, 0))
-        measurement.recalculate(document.calibration)
+        measurement.replace_line_geometry(
+            line_px=Line(Point(0, 0), Point(22.246, 0)),
+            calibration=document.calibration,
+        )
         self.assertEqual(measurement_display_text_with_settings(measurement, document, settings), "11.1230 um")
 
     def test_main_window_progress_dialog_uses_standard_qprogressdialog_with_width(self) -> None:
@@ -8799,7 +8829,7 @@ class CanvasAndExportTests(unittest.TestCase):
             ["剔除区域未与当前面积相交", "当前版本不支持剔除后拆成多个独立区域"],
         )
 
-    def test_unselected_magic_segment_hit_test_uses_simplified_geometry_until_selected(self) -> None:
+    def test_magic_segment_hit_test_always_uses_raw_geometry(self) -> None:
         document, _image, canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -8845,7 +8875,11 @@ class CanvasAndExportTests(unittest.TestCase):
         document.add_measurement(measurement)
         document.select_measurement(None)
 
-        self.assertIsNone(canvas._hit_test_area_measurement(Point(30, 100)))
+        # Legacy display geometry intentionally omits the thin lower tail. Hit
+        # testing must still use the original rings even while the object is
+        # unselected; screen-only simplification must never make valid geometry
+        # impossible to select.
+        self.assertEqual(canvas._hit_test_area_measurement(Point(30, 100)), measurement.id)
 
         document.select_measurement(measurement.id)
         self.assertEqual(canvas._hit_test_area_measurement(Point(30, 100)), measurement.id)

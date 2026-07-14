@@ -8,10 +8,12 @@ import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from fdm.geometry import Point
 from fdm.models import Calibration, ImageDocument, Measurement, ProjectState
 from fdm.services.measurement_statistics import (
     MeasurementMetric,
     MeasurementStatisticsService,
+    StatisticsInputSnapshot,
     StatisticsScope,
 )
 
@@ -438,6 +440,94 @@ class MeasurementStatisticsServiceTests(unittest.TestCase):
                 scope=StatisticsScope.CURRENT_CATEGORY,
                 document_id="missing",
             )
+
+    def test_geometry_free_input_snapshot_matches_live_project_statistics(self) -> None:
+        first = _document(
+            "first",
+            [
+                _measurement("line", image_id="first", value=10.0),
+                _measurement(
+                    "reviewed_area",
+                    image_id="first",
+                    kind="area",
+                    value=40.0,
+                    status="manual_review",
+                ),
+                _measurement("count", image_id="first", kind="count"),
+            ],
+            unit="um",
+        )
+        group = first.create_group(color="#2A9D8F", label="棉")
+        first.measurements[0].fiber_group_id = group.id
+        first.measurements[1].fiber_group_id = group.id
+        # Dense geometry is intentionally present on the source model but must
+        # never enter the worker input snapshot.
+        dense_ring = [Point(float(index), float(index % 17)) for index in range(2000)]
+        first.measurements[1].replace_area_geometry(
+            polygon_px=dense_ring,
+            area_rings_px=[dense_ring],
+            # Preserve the original 40 um² statistics value at 2 px/um.
+            exact_area_px=160.0,
+            calibration=first.calibration,
+        )
+        first.rebuild_group_memberships()
+        second = _document(
+            "second",
+            [_measurement("other", image_id="second", value=30.0)],
+        )
+        project = ProjectState(version="test", documents=[first, second])
+        input_snapshot = StatisticsInputSnapshot.from_project(project)
+
+        for metric, scope, document_id, group_id in (
+            (MeasurementMetric.LENGTH, StatisticsScope.PROJECT, None, None),
+            (MeasurementMetric.AREA, StatisticsScope.CURRENT_DOCUMENT, first.id, None),
+            (MeasurementMetric.LENGTH, StatisticsScope.CURRENT_CATEGORY, first.id, group.id),
+            (MeasurementMetric.COUNT, StatisticsScope.CURRENT_DOCUMENT, first.id, None),
+        ):
+            expected = self.service.summarize(
+                project,
+                metric=metric,
+                scope=scope,
+                document_id=document_id,
+                fiber_group_id=group_id,
+            )
+            actual = self.service.summarize_input(
+                input_snapshot,
+                metric=metric,
+                scope=scope,
+                document_id=document_id,
+                fiber_group_id=group_id,
+            )
+            self.assertEqual(actual, expected)
+
+        self.assertEqual(
+            self.service.summarize_by_category(
+                input_snapshot.documents,
+                metric=MeasurementMetric.LENGTH,
+            ),
+            self.service.summarize_by_category(
+                project.documents,
+                metric=MeasurementMetric.LENGTH,
+            ),
+        )
+        input_measurement = input_snapshot.documents[0].measurements[1]
+        self.assertFalse(hasattr(input_measurement, "polygon_px"))
+        self.assertFalse(hasattr(input_measurement, "area_rings_px"))
+        self.assertEqual(input_snapshot.measurement_count, 4)
+
+        # A queued worker sees the immutable scalar values captured at request
+        # time, not later UI/model edits.
+        first.measurements[0].diameter_unit = 999.0
+        frozen_result = self.service.summarize_input(
+            input_snapshot,
+            metric=MeasurementMetric.LENGTH,
+            scope=StatisticsScope.CURRENT_CATEGORY,
+            document_id=first.id,
+            fiber_group_id=group.id,
+        )[0]
+        self.assertEqual(frozen_result.total_value, 10.0)
+        with self.assertRaises(FrozenInstanceError):
+            input_snapshot.documents[0].base_unit = "mm"  # type: ignore[misc]
 
 
 if __name__ == "__main__":

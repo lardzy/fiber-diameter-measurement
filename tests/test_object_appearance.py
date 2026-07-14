@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import os
 from pathlib import Path
 import sys
@@ -15,6 +16,8 @@ from PySide6.QtCore import QPointF, Qt
 from PySide6.QtGui import QColor, QFont, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
+import fdm.area_display as area_display
+from fdm.area_display import area_derived_geometry_service
 from fdm.geometry import Line, Point
 from fdm.models import (
     ImageDocument,
@@ -268,8 +271,7 @@ class ObjectAppearanceTests(unittest.TestCase):
             painter.end()
 
     def test_area_display_path_cache_reuses_path_and_preserves_hole_and_exact_area(self) -> None:
-        rendering._AREA_DISPLAY_PATH_CACHE.clear()
-        rendering._AREA_DISPLAY_PATH_CACHE_BYTES = 0
+        area_derived_geometry_service.clear()
         outer = [Point(10, 10), Point(90, 10), Point(90, 90), Point(10, 90)]
         hole = [Point(35, 35), Point(35, 65), Point(65, 65), Point(65, 35)]
         measurement = Measurement(
@@ -285,54 +287,44 @@ class ObjectAppearanceTests(unittest.TestCase):
         measurement.recalculate(None)
         document = ImageDocument(id="image", path="/tmp/image.png", image_size=(100, 100))
         document.add_measurement(measurement)
-        transform = lambda point: QPointF(point.x, point.y)
 
-        first = rendering._cached_area_display_path(
-            document,
-            measurement,
-            measurement.area_rings_px,
-            transform,
-            selected=False,
-        )
-        second = rendering._cached_area_display_path(
-            document,
-            measurement,
-            measurement.area_rings_px,
-            transform,
-            selected=False,
-        )
+        first = area_derived_geometry_service.raw_path(measurement)
+        second = area_derived_geometry_service.raw_path(measurement)
         self.assertIs(first, second)
         self.assertEqual(first.fillRule(), Qt.FillRule.OddEvenFill)
         self.assertTrue(first.contains(QPointF(20, 20)))
         self.assertFalse(first.contains(QPointF(50, 50)))
         self.assertEqual(measurement.area_px, 4321.0)
 
-        document.mark_measurement_geometry_changed()
-        third = rendering._cached_area_display_path(
-            document,
-            measurement,
-            measurement.area_rings_px,
-            transform,
-            selected=False,
+        measurement.replace_area_geometry(
+            polygon_px=measurement.polygon_px,
+            area_rings_px=measurement.area_rings_px,
+            exact_area_px=measurement.exact_area_px,
         )
+        third = area_derived_geometry_service.raw_path(measurement)
         self.assertIsNot(first, third)
 
-        rendering._AREA_DISPLAY_PATH_CACHE.clear()
-        rendering._AREA_DISPLAY_PATH_CACHE_BYTES = 0
+        area_derived_geometry_service.clear()
         with (
-            patch.object(rendering, "_AREA_PATH_MAX_ENTRIES", 2),
-            patch.object(rendering, "_AREA_PATH_MAX_ESTIMATED_BYTES", 600),
+            patch.object(area_display, "_PATH_MAX_ENTRIES", 2),
+            patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 600),
         ):
             for offset in range(6):
-                rendering._cached_area_display_path(
-                    document,
-                    measurement,
-                    measurement.area_rings_px,
-                    lambda point, offset=offset: QPointF(point.x + offset, point.y),
-                    selected=False,
+                candidate = Measurement(
+                    id=f"area-{offset}",
+                    image_id=document.id,
+                    fiber_group_id=None,
+                    mode="polygon_area",
+                    measurement_kind="area",
+                    polygon_px=[Point(point.x + offset, point.y) for point in outer],
                 )
-            self.assertLessEqual(len(rendering._AREA_DISPLAY_PATH_CACHE), 2)
-            self.assertLessEqual(rendering._AREA_DISPLAY_PATH_CACHE_BYTES, 600)
+                area_derived_geometry_service.raw_path(candidate)
+            self.assertLessEqual(
+                len(area_derived_geometry_service._raw_paths)
+                + len(area_derived_geometry_service._proxies),
+                2,
+            )
+            self.assertLessEqual(area_derived_geometry_service._path_bytes, 600)
 
     def test_count_number_offsets_are_grouped_by_marker_scale(self) -> None:
         document = ImageDocument(id="image", path="/tmp/counts.png", image_size=(120, 80))
@@ -415,6 +407,46 @@ class ObjectAppearanceTests(unittest.TestCase):
             painter.end()
         self.assertEqual(calls, [area])
         self.assertEqual(measurement_label_font(AppSettings(), area).pixelSize(), 28)
+
+    def test_selected_dense_raw_area_keeps_exact_label_without_proxy_retry(self) -> None:
+        area_derived_geometry_service.clear()
+        ring = [
+            Point(
+                60.0 + (35.0 * math.cos(2.0 * math.pi * index / 512)),
+                50.0 + (25.0 * math.sin(2.0 * math.pi * index / 512)),
+            )
+            for index in range(512)
+        ]
+        document = ImageDocument(id="selected-area", path="/tmp/area.png", image_size=(120, 100))
+        area = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=ring,
+            area_rings_px=[ring],
+        )
+        document.measurements = [area]
+        target = QImage(120, 100, QImage.Format.Format_ARGB32)
+        target.fill(QColor("#00000000"))
+        painter = QPainter(target)
+        try:
+            with patch("fdm.ui.rendering.draw_area_measurement_label") as draw_label:
+                deferred = draw_measurements(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x, point.y),
+                    AppSettings(show_measurement_labels=True),
+                    line_width=2.0,
+                    endpoint_radius=4.0,
+                    selected_measurement_id=area.id,
+                )
+        finally:
+            painter.end()
+
+        draw_label.assert_called_once()
+        self.assertFalse(deferred)
 
     def test_length_and_area_labels_use_independent_styles(self) -> None:
         document = ImageDocument(id="mixed", path="/tmp/mixed.png", image_size=(160, 120))

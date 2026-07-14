@@ -15,3 +15,7 @@ __pycache__/
 /runtime/area-models/b_cv_1.3.pth
 /runtime/area-models/b_cvlm_1.3.pth
 /runtime/area-models/b_v1_1.3.pth
+/runtime/content-templates/-面积法-定量试验原始记录-新系统.xls
+/docs/release-posters/fdm-v0.2.6-update-poster.png
+/runtime/content-templates/sheet.xlt
+/runtime/content-templates/副本-面积法-定量试验原始记录-新系统.xlsm

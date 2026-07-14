@@ -869,6 +869,17 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.length_measurement_label_style.parallel_to_line)
         self.assertFalse(loaded.area_measurement_label_style.background_enabled)
 
+    def test_existing_area_label_preferences_override_new_default(self) -> None:
+        typed = AppSettings.from_dict(
+            {"area_measurement_label_style": {"enabled": True}}
+        )
+        legacy = AppSettings.from_dict({"show_measurement_labels": True})
+        direct_legacy = AppSettings(show_measurement_labels=True)
+
+        self.assertTrue(typed.area_measurement_label_style.enabled)
+        self.assertTrue(legacy.area_measurement_label_style.enabled)
+        self.assertTrue(direct_legacy.area_measurement_label_style.enabled)
+
     def test_app_settings_replace_with_file_copies_source_after_validation(self) -> None:
         with TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
@@ -932,6 +943,8 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.measurement_label_color, "#F4F1DE")
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertTrue(settings.measurement_label_background_enabled)
+        self.assertTrue(settings.length_measurement_label_style.enabled)
+        self.assertFalse(settings.area_measurement_label_style.enabled)
         self.assertEqual(settings.measurement_endpoint_style, MeasurementEndpointStyle.BAR)
         self.assertFalse(settings.show_count_numbers)
         self.assertEqual(settings.count_number_font_size, 12)

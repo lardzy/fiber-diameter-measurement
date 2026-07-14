@@ -40,6 +40,10 @@ class CalibrationSidecarIO:
 
     @classmethod
     def save_document(cls, document: ImageDocument) -> SidecarSaveResult:
+        # Legacy integrations may still assign ``document.calibration``
+        # directly.  Detect that small scalar change at the persistence edge so
+        # a failed write cannot incorrectly leave the document clean.
+        document.ensure_external_calibration_change_is_dirty()
         if not document.uses_sidecar():
             document.mark_calibration_saved()
             return SidecarSaveResult(True, action="not_applicable")

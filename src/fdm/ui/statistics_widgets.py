@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import copy
 from dataclasses import dataclass
 
 from PySide6.QtCore import (
@@ -27,6 +26,7 @@ from fdm.services.measurement_statistics import (
     MeasurementMetric,
     MeasurementStatisticsService,
     MeasurementStatisticsSnapshot,
+    StatisticsInputSnapshot,
     StatisticsScope,
 )
 from fdm.ui.statistics_distribution import (
@@ -75,7 +75,7 @@ class _StatisticsTask(QRunnable):
         *,
         generation: int,
         signals: _StatisticsTaskSignals,
-        project: ProjectState,
+        input_snapshot: StatisticsInputSnapshot,
         metric: MeasurementMetric,
         scope: StatisticsScope,
         document_id: str | None,
@@ -84,7 +84,7 @@ class _StatisticsTask(QRunnable):
         super().__init__()
         self._generation = generation
         self._signals = signals
-        self._project = project
+        self._input_snapshot = input_snapshot
         self._metric = metric
         self._scope = scope
         self._document_id = document_id
@@ -94,17 +94,17 @@ class _StatisticsTask(QRunnable):
     def run(self) -> None:
         try:
             service = MeasurementStatisticsService()
-            snapshots = service.summarize(
-                self._project,
+            snapshots = service.summarize_input(
+                self._input_snapshot,
                 metric=self._metric,
                 scope=self._scope,
                 document_id=self._document_id,
                 fiber_group_id=self._fiber_group_id,
             )
             if self._scope is StatisticsScope.PROJECT:
-                category_documents = self._project.documents
+                category_documents = self._input_snapshot.documents
             else:
-                selected_document = self._project.get_document(self._document_id or "")
+                selected_document = self._input_snapshot.get_document(self._document_id or "")
                 category_documents = (selected_document,) if selected_document is not None else ()
             category_comparisons = service.summarize_by_category(
                 category_documents,
@@ -300,14 +300,12 @@ class MeasurementStatisticsPanel(QWidget):
             self._render_empty(metric)
             self.statisticsChanged.emit(self._snapshots)
             return
-        candidate_count = sum(
-            len(item.measurements)
-            for item in (
-                self._project.documents
-                if scope is StatisticsScope.PROJECT
-                else ([document] if document is not None else [])
-            )
+        comparison_documents = (
+            tuple(self._project.documents)
+            if scope is StatisticsScope.PROJECT
+            else ((document,) if document is not None else ())
         )
+        candidate_count = sum(len(item.measurements) for item in comparison_documents)
         self._render_selected_measurement(document)
         if candidate_count > self.BACKGROUND_THRESHOLD:
             self._category_comparisons = ()
@@ -315,7 +313,9 @@ class MeasurementStatisticsPanel(QWidget):
             task = _StatisticsTask(
                 generation=generation,
                 signals=self._task_signals,
-                project=copy.deepcopy(self._project),
+                input_snapshot=StatisticsInputSnapshot.from_documents(
+                    comparison_documents
+                ),
                 metric=metric,
                 scope=scope,
                 document_id=document.id if document is not None else None,
@@ -330,11 +330,6 @@ class MeasurementStatisticsPanel(QWidget):
                 scope=scope,
                 document_id=document.id if document is not None else None,
                 fiber_group_id=document.active_group_id if document is not None else None,
-            )
-            comparison_documents = (
-                self._project.documents
-                if scope is StatisticsScope.PROJECT
-                else ([document] if document is not None else [])
             )
             self._category_comparisons = self._service.summarize_by_category(
                 comparison_documents,

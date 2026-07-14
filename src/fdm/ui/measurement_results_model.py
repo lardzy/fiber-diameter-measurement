@@ -9,7 +9,7 @@ from PySide6.QtCore import QAbstractTableModel, QModelIndex, QSortFilterProxyMod
 from PySide6.QtGui import QColor, QIcon, QPainter, QPixmap
 from PySide6.QtWidgets import QAbstractItemDelegate, QComboBox, QStyledItemDelegate, QWidget
 
-from fdm.geometry import area_rings_hole_area
+from fdm.area_display import area_derived_geometry_service
 from fdm.models import ImageDocument, Measurement, UNCATEGORIZED_LABEL
 from fdm.services.measurement_statistics import MeasurementStatisticsService
 from fdm.ui.widgets import MeasurementGroupComboBox
@@ -108,7 +108,7 @@ def _measurement_hole_area(
 ) -> tuple[float, str] | None:
     if measurement.measurement_kind != "area":
         return None
-    value = float(area_rings_hole_area(measurement.area_rings_px))
+    value = area_derived_geometry_service.scalar_geometry(measurement).hole_area_px
     calibration = document.calibration
     if calibration is None:
         return value, "px²"

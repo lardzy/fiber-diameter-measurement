@@ -196,6 +196,23 @@ class SettingsDialogNavigationTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_area_result_label_is_off_only_for_fresh_default_settings(self) -> None:
+        default_dialog = SettingsDialog(AppSettings(), document=None)
+        configured_dialog = SettingsDialog(
+            AppSettings(
+                area_measurement_label_style=MeasurementLabelStyleSettings(
+                    enabled=True
+                )
+            ),
+            document=None,
+        )
+        try:
+            self.assertFalse(default_dialog._show_area_measurement_labels.isChecked())  # noqa: SLF001
+            self.assertTrue(configured_dialog._show_area_measurement_labels.isChecked())  # noqa: SLF001
+        finally:
+            default_dialog.close()
+            configured_dialog.close()
+
     def test_show_applies_preferred_size_clamped_to_available_screen(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:

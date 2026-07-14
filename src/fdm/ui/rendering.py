@@ -17,15 +17,19 @@ from PySide6.QtGui import (
     QTransform,
 )
 
-from fdm.area_display import area_geometry_for_display
+from fdm.area_display import (
+    AREA_GEOMETRY_RAW,
+    AREA_GEOMETRY_SCREEN,
+    AreaProxyBuildBudget,
+    area_derived_geometry_service,
+    area_geometry_raw,
+)
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
 
 _TEXT_LAYOUT_MAX_ENTRIES = 2048
 _TEXT_LAYOUT_MAX_CHARACTERS = 128 * 1024
-_AREA_PATH_MAX_ENTRIES = 256
-_AREA_PATH_MAX_ESTIMATED_BYTES = 64 * 1024 * 1024
 
 
 @dataclass(slots=True)
@@ -45,16 +49,8 @@ class _CachedTextLayout:
     character_count: int
 
 
-@dataclass(slots=True)
-class _CachedAreaPath:
-    path: QPainterPath
-    estimated_bytes: int
-
-
 _TEXT_LAYOUT_CACHE: OrderedDict[tuple[object, ...], _CachedTextLayout] = OrderedDict()
 _TEXT_LAYOUT_CACHE_CHARACTERS = 0
-_AREA_DISPLAY_PATH_CACHE: OrderedDict[tuple[object, ...], _CachedAreaPath] = OrderedDict()
-_AREA_DISPLAY_PATH_CACHE_BYTES = 0
 
 
 @dataclass(slots=True)
@@ -236,59 +232,74 @@ def area_rings_path(area_rings: list[list[Point]], image_to_output) -> QPainterP
     return path
 
 
-def _transform_fingerprint(image_to_output) -> tuple[float, ...]:
-    """Describe the affine image-to-output transform without retaining its callable."""
+def _image_to_output_transform(image_to_output) -> QTransform:
+    """Build the affine transform represented by the rendering callback."""
+
     samples = (
         image_to_output(Point(0.0, 0.0)),
         image_to_output(Point(1.0, 0.0)),
         image_to_output(Point(0.0, 1.0)),
     )
-    return tuple(
-        round(value, 9)
-        for point in samples
-        for value in (float(point.x()), float(point.y()))
+    origin, unit_x, unit_y = samples
+    return QTransform(
+        float(unit_x.x() - origin.x()),
+        float(unit_x.y() - origin.y()),
+        float(unit_y.x() - origin.x()),
+        float(unit_y.y() - origin.y()),
+        float(origin.x()),
+        float(origin.y()),
     )
 
 
-def _cached_area_display_path(
-    document: ImageDocument,
+def _image_to_output_scale(transform: QTransform) -> float:
+    scale_x = math.hypot(transform.m11(), transform.m12())
+    scale_y = math.hypot(transform.m21(), transform.m22())
+    return max(1e-9, math.sqrt(max(1e-18, scale_x * scale_y)))
+
+
+def _area_geometry_and_output_path(
     measurement: Measurement,
-    area_rings: list[list[Point]],
     image_to_output,
     *,
     selected: bool,
-) -> QPainterPath:
-    global _AREA_DISPLAY_PATH_CACHE_BYTES
+    geometry_mode: str,
+    proxy_build_budget: AreaProxyBuildBudget | None = None,
+):
+    transform = _image_to_output_transform(image_to_output)
+    if geometry_mode == AREA_GEOMETRY_RAW:
+        geometry = area_derived_geometry_service.raw_geometry(measurement)
+    else:
+        geometry = area_derived_geometry_service.screen_geometry(
+            measurement,
+            zoom=_image_to_output_scale(transform),
+            selected=selected,
+            build_budget=proxy_build_budget,
+        )
+    return geometry, transform, transform.map(geometry.path)
 
-    key = (
-        id(document),
-        document.id,
-        id(measurement),
-        measurement.id,
-        document.measurement_geometry_revision,
-        bool(selected),
-        _transform_fingerprint(image_to_output),
-    )
-    cached = _AREA_DISPLAY_PATH_CACHE.get(key)
-    if cached is not None:
-        _AREA_DISPLAY_PATH_CACHE.move_to_end(key)
-        return cached.path
 
-    path = area_rings_path(area_rings, image_to_output)
-    # QPainterPath uses implicit sharing and does not expose allocated bytes.
-    # A conservative element estimate keeps this display-only cache bounded.
-    estimated_bytes = max(256, int(path.elementCount()) * 48)
-    if estimated_bytes > _AREA_PATH_MAX_ESTIMATED_BYTES:
-        return path
-    while _AREA_DISPLAY_PATH_CACHE and (
-        len(_AREA_DISPLAY_PATH_CACHE) >= _AREA_PATH_MAX_ENTRIES
-        or _AREA_DISPLAY_PATH_CACHE_BYTES + estimated_bytes > _AREA_PATH_MAX_ESTIMATED_BYTES
-    ):
-        _old_key, old = _AREA_DISPLAY_PATH_CACHE.popitem(last=False)
-        _AREA_DISPLAY_PATH_CACHE_BYTES -= old.estimated_bytes
-    _AREA_DISPLAY_PATH_CACHE[key] = _CachedAreaPath(path=path, estimated_bytes=estimated_bytes)
-    _AREA_DISPLAY_PATH_CACHE_BYTES += estimated_bytes
-    return path
+def _area_handle_points_for_display(
+    rings: list[list[Point]],
+    *,
+    output_scale: float,
+    spacing_px: float = 8.0,
+) -> list[Point]:
+    """Thin only painted handles; exact hit testing retains every raw vertex."""
+
+    cell_size = max(1e-9, float(spacing_px) / max(float(output_scale), 1e-9))
+    visible: list[Point] = []
+    occupied: set[tuple[int, int]] = set()
+    for ring in rings:
+        for point in ring:
+            key = (
+                math.floor(point.x / cell_size),
+                math.floor(point.y / cell_size),
+            )
+            if key in occupied:
+                continue
+            occupied.add(key)
+            visible.append(point)
+    return visible
 
 
 def overlay_text_font(settings: AppSettings, annotation: OverlayAnnotation | None = None) -> QFont:
@@ -713,7 +724,13 @@ def draw_measurements(
     show_area_fill: bool = True,
     show_area_handles: bool = False,
     visible_rect: QRectF | None = None,
-) -> None:
+    area_geometry_mode: str = AREA_GEOMETRY_SCREEN,
+) -> bool:
+    proxy_build_budget = (
+        AreaProxyBuildBudget()
+        if area_geometry_mode == AREA_GEOMETRY_SCREEN
+        else None
+    )
     count_measurements: list[tuple[Measurement, int]] = []
     selected_count_measurement: tuple[Measurement, int] | None = None
     visible_padding = max(12.0, endpoint_radius * 4.0)
@@ -746,6 +763,8 @@ def draw_measurements(
                 selected=selected,
                 show_fill=show_area_fill,
                 show_handles=show_area_handles and selected,
+                geometry_mode=area_geometry_mode,
+                proxy_build_budget=proxy_build_budget,
             )
             continue
         if measurement.measurement_kind == "polyline":
@@ -822,6 +841,7 @@ def draw_measurements(
             selected=True,
             count_number=selected_number,
         )
+    return bool(proxy_build_budget is not None and proxy_build_budget.deferred)
 
 
 def _measurement_intersects_rect(measurement: Measurement, rect: QRectF, *, padding: float) -> bool:
@@ -854,8 +874,7 @@ def _measurement_bounds(measurement: Measurement) -> tuple[float, float, float, 
         ys = [point.y for point in measurement.polyline_px]
         return min(xs), min(ys), max(xs), max(ys)
     if measurement.measurement_kind == "area":
-        _outline_points, _fill_rings, bounds = area_geometry_for_display(measurement, selected=False)
-        return bounds
+        return area_geometry_raw(measurement).bounds
     return None
 
 
@@ -1106,19 +1125,21 @@ def draw_area_measurement(
     selected: bool,
     show_fill: bool,
     show_handles: bool,
+    geometry_mode: str = AREA_GEOMETRY_SCREEN,
+    proxy_build_budget: AreaProxyBuildBudget | None = None,
 ) -> None:
-    outline_points, fill_rings, _bounds = area_geometry_for_display(measurement, selected=selected)
+    geometry, output_transform, display_path = _area_geometry_and_output_path(
+        measurement,
+        image_to_output,
+        selected=selected,
+        geometry_mode=geometry_mode,
+        proxy_build_budget=proxy_build_budget,
+    )
+    outline_points = geometry.outline_points
+    fill_rings = geometry.fill_rings
     if len(outline_points) < 3:
         return
     color = measurement_color(document, measurement, settings)
-    outline_rings = fill_rings or ([outline_points] if len(outline_points) >= 3 else [])
-    display_path = _cached_area_display_path(
-        document,
-        measurement,
-        outline_rings,
-        image_to_output,
-        selected=selected,
-    )
     base_line_width = measurement_line_width(measurement, line_width)
     minimum_width = (
         0.5
@@ -1138,20 +1159,40 @@ def draw_area_measurement(
     painter.setPen(QPen(color, outline_width, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
     painter.drawPath(display_path)
     if _measurement_label_enabled(settings, measurement):
-        draw_area_measurement_label(
-            painter,
-            measurement,
-            document,
-            settings,
-            image_to_output(measurement.geometry_center()),
-        )
+        label_center = area_derived_geometry_service.cached_centroid(measurement)
+        if label_center is None and geometry.proxy_deferred:
+            # Proxy validation computes the exact RAW odd-even centroid. When
+            # this object's optional build was deferred by the frame budget,
+            # postpone only its label rather than synchronously recomputing all
+            # centroids and defeating progressive warming. The label appears
+            # on the frame where its exact centroid becomes available.
+            proxy_build_budget.deferred = True
+        else:
+            if label_center is None:
+                label_center = measurement.geometry_center()
+            draw_area_measurement_label(
+                painter,
+                measurement,
+                document,
+                settings,
+                image_to_output(label_center),
+            )
     if not show_handles:
         return
     resolved_endpoint_radius = endpoint_radius * measurement_marker_scale(measurement)
-    handle_rings = fill_rings or ([outline_points] if len(outline_points) >= 3 else [])
-    for ring in handle_rings:
-        for point in ring:
-            _draw_circle_endpoint(painter, image_to_output(point), color, resolved_endpoint_radius * 0.95)
+    # Editing controls always expose the exact stored geometry, even when the
+    # unselected screen outline uses a simplified proxy.
+    raw_geometry = area_geometry_raw(measurement)
+    handle_rings = raw_geometry.fill_rings or (
+        [raw_geometry.outline_points]
+        if len(raw_geometry.outline_points) >= 3
+        else []
+    )
+    for point in _area_handle_points_for_display(
+        handle_rings,
+        output_scale=_image_to_output_scale(output_transform),
+    ):
+        _draw_circle_endpoint(painter, image_to_output(point), color, resolved_endpoint_radius * 0.95)
     center_point = image_to_output(measurement.polygon_center())
     painter.setBrush(QColor("#FFFFFF"))
     painter.setPen(QPen(QColor("#0B0B0B"), 1.6))

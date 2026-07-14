@@ -145,6 +145,7 @@ class MeasurementLabelStyleSettings:
 
 
 _MEASUREMENT_LABEL_STYLE_UNSET = object()
+_MEASUREMENT_LABEL_VISIBILITY_UNSET = object()
 
 
 class FocusStackProfile:
@@ -606,7 +607,9 @@ class AppSettings:
     # Deprecated flat aliases are retained for callers constructing AppSettings
     # directly. The typed styles are canonical once construction completes;
     # persistence and rendering never read later mutations of these aliases.
-    show_measurement_labels: bool = True
+    show_measurement_labels: bool = field(
+        default=_MEASUREMENT_LABEL_VISIBILITY_UNSET  # type: ignore[arg-type]
+    )
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
     measurement_label_color: str = "#F4F1DE"
@@ -696,8 +699,15 @@ class AppSettings:
     digital_slide_focus_wheel_step: int = 1
 
     def __post_init__(self) -> None:
+        legacy_visibility_was_explicit = (
+            self.show_measurement_labels is not _MEASUREMENT_LABEL_VISIBILITY_UNSET
+        )
         legacy_style = MeasurementLabelStyleSettings(
-            enabled=self.show_measurement_labels,
+            enabled=(
+                bool(self.show_measurement_labels)
+                if legacy_visibility_was_explicit
+                else True
+            ),
             font_family=self.measurement_label_font_family,
             font_size=self.measurement_label_font_size,
             color=self.measurement_label_color,
@@ -712,7 +722,17 @@ class AppSettings:
                 self.length_measurement_label_style.normalized_copy()
             )
         if self.area_measurement_label_style is _MEASUREMENT_LABEL_STYLE_UNSET:
-            self.area_measurement_label_style = replace(legacy_style)
+            # Keep fresh installations visually quiet while preserving the
+            # deprecated direct-constructor alias when callers explicitly use
+            # it. Existing persisted settings are restored by ``from_dict``.
+            self.area_measurement_label_style = replace(
+                legacy_style,
+                enabled=(
+                    legacy_style.enabled
+                    if legacy_visibility_was_explicit
+                    else False
+                ),
+            )
         else:
             self.area_measurement_label_style = self.area_measurement_label_style.normalized_copy()
         self._sync_legacy_measurement_label_fields()
@@ -1248,9 +1268,17 @@ class AppSettings:
             payload.get("length_measurement_label_style"),
             fallback=legacy_style,
         )
+        area_fallback = replace(
+            legacy_style,
+            enabled=(
+                legacy_style.enabled
+                if "show_measurement_labels" in payload
+                else settings.area_measurement_label_style.enabled
+            ),
+        )
         settings.area_measurement_label_style = MeasurementLabelStyleSettings.from_dict(
             payload.get("area_measurement_label_style"),
-            fallback=legacy_style,
+            fallback=area_fallback,
         )
         settings._sync_legacy_measurement_label_fields()
         settings.show_count_numbers = bool(payload.get("show_count_numbers", settings.show_count_numbers))

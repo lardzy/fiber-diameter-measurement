@@ -6,7 +6,7 @@ import copy
 import hashlib
 import math
 import re
-from typing import Protocol
+from typing import Any, Protocol
 
 from fdm import __version__
 from fdm.atomic_io import atomic_replace_file, staged_path_for
@@ -25,6 +25,48 @@ class UnresolvedProjectDocument:
     reason: str
     original_path_token: str
     original_absolute_path_token: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentPersistenceIdentity:
+    """Lightweight identity for an ordered document persisted by the project."""
+
+    document_id: str
+    source_type: str
+    document_kind: str
+    path: str
+    absolute_path: str
+
+
+@dataclass(frozen=True, slots=True)
+class UnresolvedPersistenceIdentity:
+    """Lightweight unresolved state which affects project persistence."""
+
+    document_id: str
+    original_index: int
+    attempted_path: str
+    reason: str
+    original_path_token: str
+    original_absolute_path_token: str
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectPersistenceSnapshot:
+    """Persistence-sensitive state without measurement geometry or runtime data."""
+
+    documents: tuple[DocumentPersistenceIdentity, ...]
+    unresolved: tuple[UnresolvedPersistenceIdentity, ...]
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectDirtySnapshot:
+    """Small immutable project state used exclusively for dirty comparisons."""
+
+    project_default_calibration: tuple[str, float, str, str] | None
+    project_default_document_ids: tuple[str, ...]
+    project_asset_documents: tuple[tuple[str, str], ...]
+    project_group_templates: tuple[tuple[str, str], ...]
+    document_persistence: ProjectPersistenceSnapshot
 
 
 @dataclass(frozen=True, slots=True)
@@ -56,6 +98,71 @@ class ProjectAssetPersistResult:
     success: bool
     project: ProjectState
     created_paths: list[Path]
+    message: str = ""
+
+    def __bool__(self) -> bool:
+        return self.success
+
+
+@dataclass(frozen=True, slots=True)
+class PersistentDocumentSnapshot:
+    """One ordered document and its runtime-free persistence payload."""
+
+    document_id: str
+    source_document: ImageDocument
+    payload: dict[str, Any]
+    unresolved: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentSaveOverride:
+    """Asset fields published to JSON and live state only after staging."""
+
+    document_id: str
+    path: str
+    metadata: dict[str, Any]
+
+
+@dataclass(frozen=True, slots=True)
+class AssetWriteOperation:
+    """A project asset write derived from an immutable save plan."""
+
+    snapshot: PersistentDocumentSnapshot
+    source_document: ImageDocument
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectSavePlan:
+    """Runtime-free project payload plus ordered source identities."""
+
+    payload: dict[str, Any]
+    documents: tuple[PersistentDocumentSnapshot, ...]
+    preserve_path_document_ids: frozenset[str]
+
+    def payload_with_overrides(
+        self,
+        overrides: tuple[DocumentSaveOverride, ...] | list[DocumentSaveOverride],
+    ) -> dict[str, Any]:
+        override_by_id = {item.document_id: item for item in overrides}
+        documents: list[dict[str, Any]] = []
+        for snapshot in self.documents:
+            document_payload = dict(snapshot.payload)
+            override = override_by_id.get(snapshot.document_id)
+            if override is not None:
+                document_payload["path"] = override.path
+                document_payload["metadata"] = copy.deepcopy(override.metadata)
+                document_payload.pop("absolute_path", None)
+            documents.append(document_payload)
+        output = dict(self.payload)
+        output["documents"] = documents
+        return output
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectAssetStageResult:
+    success: bool
+    overrides: tuple[DocumentSaveOverride, ...] = ()
+    created_paths: tuple[Path, ...] = ()
     message: str = ""
 
     def __bool__(self) -> bool:
@@ -152,39 +259,15 @@ class ProjectSessionController:
         self._unresolved_documents.pop(document_id, None)
         self._project_document_order = [item for item in self._project_document_order if item != document_id]
 
-    def persistence_snapshot(self) -> tuple[object, ...]:
-        """Return ordered document identity and unresolved state used by save."""
+    def _ordered_persisted_document_sources(self) -> tuple[ImageDocument, ...]:
+        """Return live/unresolved document references in their persisted order.
 
-        documents = tuple(
-            (
-                document.id,
-                document.source_type,
-                document.document_kind,
-                str(document.path),
-                str(document.absolute_path or ""),
-            )
-            for document in self._project_for_save().documents
-        )
-        unresolved = tuple(
-            (
-                item.document.id,
-                item.original_index,
-                item.attempted_path,
-                item.reason,
-                item.original_path_token,
-                item.original_absolute_path_token or "",
-            )
-            for item in self.unresolved_documents()
-        )
-        return documents, unresolved
+        This is deliberately the single ordering implementation shared by dirty
+        checks and the save-only deep-copy boundary.  Callers must not mutate the
+        returned documents while iterating them.
+        """
 
-    def _begin_project_load(self, documents: list[ImageDocument]) -> None:
-        self._unresolved_documents.clear()
-        self._project_document_order = [document.id for document in documents]
-
-    def _project_for_save(self) -> ProjectState:
-        host = self._host
-        live_by_id = {document.id: document for document in host.project.documents}
+        live_by_id = {document.id: document for document in self._host.project.documents}
         ordered: list[ImageDocument] = []
         seen: set[str] = set()
         for document_id in self._project_document_order:
@@ -193,26 +276,126 @@ class ProjectSessionController:
                 unresolved = self._unresolved_documents.get(document_id)
                 document = unresolved.document if unresolved is not None else None
             if document is not None and document.id not in seen:
-                ordered.append(copy.deepcopy(document))
+                ordered.append(document)
                 seen.add(document.id)
-        for document in host.project.documents:
+        for document in self._host.project.documents:
             if document.id not in seen:
-                ordered.append(copy.deepcopy(document))
+                ordered.append(document)
                 seen.add(document.id)
-        return ProjectState(
-            version=str(getattr(host.project, "version", __version__)),
-            documents=ordered,
-            calibration_presets=list(getattr(host.project, "calibration_presets", [])),
-            project_default_calibration=getattr(host.project, "project_default_calibration", None),
-            project_group_templates=list(getattr(host.project, "project_group_templates", [])),
-            metadata=dict(getattr(host.project, "metadata", {})),
-            load_issues=list(getattr(host.project, "load_issues", [])),
+        return tuple(ordered)
+
+    def persistence_snapshot(self) -> ProjectPersistenceSnapshot:
+        """Return ordered document identity and unresolved state used by save."""
+
+        documents = tuple(
+            DocumentPersistenceIdentity(
+                document_id=document.id,
+                source_type=document.source_type,
+                document_kind=document.document_kind,
+                path=str(document.path),
+                absolute_path=str(document.absolute_path or ""),
+            )
+            for document in self._ordered_persisted_document_sources()
         )
+        unresolved = tuple(
+            UnresolvedPersistenceIdentity(
+                document_id=item.document.id,
+                original_index=item.original_index,
+                attempted_path=item.attempted_path,
+                reason=item.reason,
+                original_path_token=item.original_path_token,
+                original_absolute_path_token=item.original_absolute_path_token or "",
+            )
+            for item in self.unresolved_documents()
+        )
+        return ProjectPersistenceSnapshot(documents=documents, unresolved=unresolved)
+
+    def _begin_project_load(self, documents: list[ImageDocument]) -> None:
+        self._unresolved_documents.clear()
+        self._project_document_order = [document.id for document in documents]
+
+    def _build_project_save_plan(
+        self,
+        *,
+        project: ProjectState | None = None,
+        version: str | None = None,
+    ) -> ProjectSavePlan:
+        """Snapshot persistence fields without copying ImageDocument runtime state."""
+
+        source_project = project or self._host.project
+        ordered_sources = (
+            tuple(source_project.documents)
+            if project is not None
+            else self._ordered_persisted_document_sources()
+        )
+        payload = ProjectIO.persistent_payload(
+            source_project,
+            documents=ordered_sources,
+            version=version,
+        )
+        payload_documents = payload.get("documents", [])
+        if not isinstance(payload_documents, list) or len(payload_documents) != len(ordered_sources):
+            raise ValueError("项目持久化 payload 与文档顺序不一致")
+
+        live_ids = {document.id for document in self._host.project.documents}
+        snapshots: list[PersistentDocumentSnapshot] = []
+        preserved_ids: set[str] = set()
+        for source_document, raw_payload in zip(ordered_sources, payload_documents):
+            if not isinstance(raw_payload, dict):
+                raise ValueError(f"文档 {source_document.id} 的持久化 payload 无效")
+            document_payload = raw_payload
+            unresolved = source_document.id not in live_ids and source_document.id in self._unresolved_documents
+            if unresolved:
+                unresolved_record = self._unresolved_documents[source_document.id]
+                document_payload["path"] = unresolved_record.original_path_token
+                if unresolved_record.original_absolute_path_token:
+                    document_payload["absolute_path"] = unresolved_record.original_absolute_path_token
+                else:
+                    document_payload.pop("absolute_path", None)
+                preserved_ids.add(source_document.id)
+            snapshots.append(
+                PersistentDocumentSnapshot(
+                    document_id=source_document.id,
+                    source_document=source_document,
+                    payload=document_payload,
+                    unresolved=unresolved,
+                )
+            )
+        payload["documents"] = [snapshot.payload for snapshot in snapshots]
+        return ProjectSavePlan(
+            payload=payload,
+            documents=tuple(snapshots),
+            preserve_path_document_ids=frozenset(preserved_ids),
+        )
+
+    def _project_for_save(self) -> ProjectState:
+        """Compatibility view for callers which still expect a ProjectState.
+
+        The normal save path uses :class:`ProjectSavePlan` directly.  This
+        compatibility method reconstructs only serialized fields and never
+        traverses history, clean snapshots or display caches through deepcopy.
+        """
+
+        plan = self._build_project_save_plan()
+        project = ProjectState.from_dict(plan.payload_with_overrides(()))
+        # Calibration presets are a legacy in-memory compatibility field and
+        # are intentionally not part of the project JSON.  The former
+        # deepcopy-based compatibility view nevertheless retained them, so do
+        # the same without copying any document geometry/runtime state.
+        project.calibration_presets = copy.deepcopy(
+            self._host.project.calibration_presets
+        )
+        project.load_issues = copy.deepcopy(self._host.project.load_issues)
+        return project
 
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
         host = self._host
-        project_to_save = self._project_for_save()
-        if not project_to_save.documents:
+        try:
+            save_plan = self._build_project_save_plan(version=__version__)
+        except Exception as exc:  # noqa: BLE001 - normalize snapshot failures for the UI
+            host._show_project_warning("保存项目", f"无法构造项目保存计划，当前项目未改变：\n{exc}")
+            return ProjectSaveResult(False, message=str(exc))
+        if not save_plan.documents:
             host._show_project_information("保存项目", "请先打开图片。")
             return ProjectSaveResult(False, message="当前项目没有文档。")
         target_path = Path(path) if path else host._project_path
@@ -224,21 +407,21 @@ class ProjectSessionController:
             if not selected_path:
                 return ProjectSaveResult(False, cancelled=True, message="用户取消保存。")
             target_path = host._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
-        host.project.version = __version__
-        project_to_save.version = __version__
-        asset_result = self.persist_project_assets(target_path, project=project_to_save)
+        asset_result = self._stage_project_assets(target_path, save_plan)
         if not asset_result:
             return ProjectSaveResult(
                 False,
                 path=target_path,
                 message=asset_result.message or "项目资产写入失败。",
             )
+        committed_payload = save_plan.payload_with_overrides(asset_result.overrides)
         try:
             # The project JSON is the commit point and is always published last.
-            ProjectIO.save(
-                project_to_save,
+            ProjectIO.save_payload(
+                committed_payload,
                 target_path,
-                preserve_path_document_ids=set(self._unresolved_documents),
+                document_sources=tuple(item.source_document for item in save_plan.documents),
+                preserve_path_document_ids=set(save_plan.preserve_path_document_ids),
             )
         except Exception as exc:  # noqa: BLE001 - preserve the previous project on any storage failure
             for created_path in asset_result.created_paths:
@@ -248,14 +431,26 @@ class ProjectSessionController:
                     pass
             host._show_project_warning("保存项目", f"项目文件写入失败，旧项目保持不变：\n{exc}")
             return ProjectSaveResult(False, path=target_path, message=str(exc))
-        saved_by_id = {document.id: document for document in project_to_save.documents}
+
+        # Publish save-only overrides to live state strictly after the project
+        # JSON commit.  Any asset or JSON failure above leaves live paths,
+        # metadata, version and dirty savepoints untouched.
+        override_by_id = {item.document_id: item for item in asset_result.overrides}
         for document in host.project.documents:
-            saved_document = saved_by_id.get(document.id)
-            if saved_document is None or not document.is_project_asset():
+            override = override_by_id.get(document.id)
+            if override is None:
                 continue
-            document.path = saved_document.path
-            document.metadata = copy.deepcopy(saved_document.metadata)
-        self._cleanup_unreferenced_revision_assets(target_path, project_to_save)
+            document.path = override.path
+            document.metadata = copy.deepcopy(override.metadata)
+        host.project.version = __version__
+        # The JSON replacement above is the save commit point.  Removing old
+        # revision assets is deliberately post-commit housekeeping: a denied
+        # directory traversal, disappearing mount, or antivirus race must not
+        # turn an already committed project into a reported/dirty half-save.
+        try:
+            self._cleanup_unreferenced_revision_assets_payload(target_path, committed_payload)
+        except Exception:  # noqa: BLE001 - post-commit cleanup is strictly best-effort
+            pass
         host._project_path = target_path
         host._remember_recent_directory(
             setting_name="recent_project_dir",
@@ -416,36 +611,67 @@ class ProjectSessionController:
         *,
         project: ProjectState | None = None,
     ) -> ProjectAssetPersistResult:
+        """Compatibility wrapper around the non-mutating asset staging plan."""
+
+        plan = self._build_project_save_plan(project=project)
+        result = self._stage_project_assets(target_path, plan)
+        payload = plan.payload_with_overrides(result.overrides)
+        compatibility_project = ProjectState.from_dict(payload)
+        compatibility_project.calibration_presets = copy.deepcopy(
+            getattr(project or self._host.project, "calibration_presets", [])
+        )
+        compatibility_project.load_issues = copy.deepcopy(
+            getattr(project or self._host.project, "load_issues", [])
+        )
+        return ProjectAssetPersistResult(
+            result.success,
+            compatibility_project,
+            list(result.created_paths),
+            result.message,
+        )
+
+    def _stage_project_assets(
+        self,
+        target_path: Path,
+        plan: ProjectSavePlan,
+    ) -> ProjectAssetStageResult:
         host = self._host
-        project_to_persist = project or self._project_for_save()
-        source_by_id = {document.id: document for document in host.project.documents}
-        source_by_id.update(
-            {
-                document_id: unresolved.document
-                for document_id, unresolved in self._unresolved_documents.items()
-            }
+        live_by_id = {document.id: document for document in host.project.documents}
+        operations = tuple(
+            AssetWriteOperation(
+                snapshot=snapshot,
+                source_document=live_by_id.get(snapshot.document_id, snapshot.source_document),
+            )
+            for snapshot in plan.documents
+            if snapshot.payload.get("source_type") == "project_asset" and not snapshot.unresolved
         )
         created_paths: list[Path] = []
-        for document in project_to_persist.documents:
-            if not document.is_project_asset() or document.id in self._unresolved_documents:
-                continue
-            source_document = source_by_id.get(document.id, document)
-            if document.is_digital_slide():
+        overrides: list[DocumentSaveOverride] = []
+        for operation in operations:
+            snapshot = operation.snapshot
+            source_document = operation.source_document
+            document_path = str(snapshot.payload.get("path", ""))
+            document_kind = str(snapshot.payload.get("document_kind", "image"))
+            document_metadata = (
+                copy.deepcopy(snapshot.payload.get("metadata", {}))
+                if isinstance(snapshot.payload.get("metadata"), dict)
+                else {}
+            )
+            if document_kind == "digital_slide":
                 source_meta = source_document.metadata.get("digital_slide", {})
                 source_token = (
                     str(source_meta.get("working_path", "")).strip()
                     if isinstance(source_meta, dict)
                     else ""
                 )
-                original_target = project_assets_root(target_path) / document.path
+                original_target = project_assets_root(target_path) / document_path
                 source_path = Path(source_token).expanduser() if source_token else original_target
                 if not source_path.exists():
                     host._show_project_warning(
                         "保存项目",
                         f"无法找到项目内数字化切片数据: {host._document_display_name(source_document)}",
                     )
-                    return _failed_asset_result(
-                        project_to_persist,
+                    return _failed_asset_stage_result(
                         created_paths,
                         "数字化切片源文件不存在。",
                     )
@@ -454,7 +680,7 @@ class ProjectSessionController:
                     with staged_path_for(original_target, suffix=".fdmslide") as staged_path:
                         copy_slide_file(source_path, staged_path)
                         digest = _file_sha256(staged_path)
-                        revised_relative = _revisioned_asset_path(document.path, digest)
+                        revised_relative = _revisioned_asset_path(document_path, digest)
                         slide_target_path = project_assets_root(target_path) / revised_relative
                         if slide_target_path.exists():
                             if _file_sha256(slide_target_path) != digest:
@@ -468,9 +694,8 @@ class ProjectSessionController:
                             created_paths.append(slide_target_path)
                 except Exception as exc:  # noqa: BLE001 - normalize backend failures for the UI
                     host._show_project_warning("保存项目", f"写入数字化切片失败: {slide_target_path}\n{exc}")
-                    return _failed_asset_result(project_to_persist, created_paths, str(exc))
-                document.path = revised_relative
-                output_meta = copy.deepcopy(document.metadata)
+                    return _failed_asset_stage_result(created_paths, str(exc))
+                output_meta = document_metadata
                 output_slide_meta = (
                     dict(output_meta.get("digital_slide", {}))
                     if isinstance(output_meta.get("digital_slide"), dict)
@@ -478,7 +703,13 @@ class ProjectSessionController:
                 )
                 output_slide_meta["working_path"] = str(slide_target_path)
                 output_meta["digital_slide"] = output_slide_meta
-                document.metadata = output_meta
+                overrides.append(
+                    DocumentSaveOverride(
+                        document_id=snapshot.document_id,
+                        path=revised_relative,
+                        metadata=output_meta,
+                    )
+                )
                 continue
 
             image = host._project_asset_image_for_save(source_document)
@@ -487,12 +718,11 @@ class ProjectSessionController:
                     "保存项目",
                     f"无法找到项目内图片数据: {host._document_display_name(source_document)}",
                 )
-                return _failed_asset_result(
-                    project_to_persist,
+                return _failed_asset_stage_result(
                     created_paths,
                     "项目内图片数据不可用。",
                 )
-            original_target = project_assets_root(target_path) / document.path
+            original_target = project_assets_root(target_path) / document_path
             output_path = original_target
             original_target.parent.mkdir(parents=True, exist_ok=True)
             try:
@@ -500,7 +730,7 @@ class ProjectSessionController:
                     if not image.save(str(staged_path), "PNG") or staged_path.stat().st_size <= 0:
                         raise OSError("QImage 未生成有效 PNG")
                     digest = _file_sha256(staged_path)
-                    revised_relative = _revisioned_asset_path(document.path, digest)
+                    revised_relative = _revisioned_asset_path(document_path, digest)
                     output_path = project_assets_root(target_path) / revised_relative
                     if output_path.exists():
                         if _file_sha256(output_path) != digest:
@@ -512,20 +742,37 @@ class ProjectSessionController:
                         output_path.parent.mkdir(parents=True, exist_ok=True)
                         atomic_replace_file(staged_path, output_path)
                         created_paths.append(output_path)
-                    document.path = revised_relative
             except Exception as exc:  # noqa: BLE001 - storage failures share one UI contract
                 host._show_project_warning("保存项目", f"写入项目内图片失败: {output_path}\n{exc}")
-                return _failed_asset_result(project_to_persist, created_paths, str(exc))
-        return ProjectAssetPersistResult(True, project_to_persist, created_paths)
+                return _failed_asset_stage_result(created_paths, str(exc))
+            overrides.append(
+                DocumentSaveOverride(
+                    document_id=snapshot.document_id,
+                    path=revised_relative,
+                    metadata=document_metadata,
+                )
+            )
+        return ProjectAssetStageResult(
+            True,
+            overrides=tuple(overrides),
+            created_paths=tuple(created_paths),
+        )
 
     def _cleanup_unreferenced_revision_assets(self, target_path: Path, project: ProjectState) -> None:
+        self._cleanup_unreferenced_revision_assets_payload(target_path, project.to_dict())
+
+    def _cleanup_unreferenced_revision_assets_payload(
+        self,
+        target_path: Path,
+        payload: dict[str, Any],
+    ) -> None:
         asset_root = project_assets_root(target_path)
         if not asset_root.exists():
             return
         referenced = {
-            (asset_root / document.path).resolve()
-            for document in project.documents
-            if document.is_project_asset()
+            (asset_root / str(document.get("path", ""))).resolve()
+            for document in payload.get("documents", [])
+            if isinstance(document, dict) and document.get("source_type") == "project_asset"
         }
         for candidate in asset_root.rglob("*"):
             if not candidate.is_file() or candidate.resolve() in referenced:
@@ -549,17 +796,16 @@ def _file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _failed_asset_result(
-    project: ProjectState,
+def _failed_asset_stage_result(
     created_paths: list[Path],
     message: str,
-) -> ProjectAssetPersistResult:
+) -> ProjectAssetStageResult:
     for created_path in created_paths:
         try:
             created_path.unlink(missing_ok=True)
         except OSError:
             pass
-    return ProjectAssetPersistResult(False, project, [], message)
+    return ProjectAssetStageResult(False, message=message)
 
 
 def _revisioned_asset_path(path_token: str, digest: str) -> str:

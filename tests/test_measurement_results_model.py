@@ -109,10 +109,16 @@ class MeasurementResultsModelTests(unittest.TestCase):
         first = _measurement("line_cotton_1", group_id="cotton")
         second = _measurement("line_cotton_2", group_id="cotton")
         area = _measurement("area_cotton", kind="area", group_id="cotton")
-        area.area_rings_px = [
+        rings = [
             [Point(0, 0), Point(10, 0), Point(10, 10), Point(0, 10)],
             [Point(2, 2), Point(4, 2), Point(4, 4), Point(2, 4)],
         ]
+        area.replace_area_geometry(
+            polygon_px=rings[0],
+            area_rings_px=rings,
+            exact_area_px=area.area_px,
+            calibration=None,
+        )
         area.created_at = "2026-01-02T03:04:05+00:00"
         third = _measurement("line_flax_1", group_id="flax")
         document = _document([first, second, area, third])

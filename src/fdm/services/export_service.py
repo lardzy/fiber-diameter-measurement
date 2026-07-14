@@ -15,7 +15,7 @@ from typing import Callable
 import zipfile
 from xml.sax.saxutils import escape
 
-from fdm.geometry import area_rings_hole_area
+from fdm.area_display import area_derived_geometry_service
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
 from fdm.services.raw_record_export import (
@@ -978,7 +978,7 @@ class ExportService:
     def _measurement_hole_area_px(self, measurement) -> float | None:
         if measurement.measurement_kind != "area":
             return None
-        return area_rings_hole_area(measurement.area_rings_px)
+        return area_derived_geometry_service.scalar_geometry(measurement).hole_area_px
 
     def _measurement_hole_area_value(self, measurement, document: ImageDocument) -> float | None:
         hole_area_px = self._measurement_hole_area_px(measurement)

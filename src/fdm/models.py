@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
+from enum import Enum
 from pathlib import Path
 from typing import Any
 import math
@@ -12,7 +13,6 @@ from fdm.geometry import (
     Line,
     Point,
     area_rings_area,
-    area_rings_centroid,
     line_length,
     midpoint,
     polygon_area,
@@ -312,6 +312,25 @@ class DirtyFlags:
         )
 
 
+class DirtyDomain(str, Enum):
+    """Independent persistence domains tracked by the runtime savepoint."""
+
+    SESSION = "session"
+    CALIBRATION = "calibration"
+
+
+@dataclass(frozen=True, slots=True)
+class DocumentStateStamp:
+    """O(1) dirty-state identity restored verbatim by undo/redo.
+
+    The values are runtime-only monotonic identities, not project revisions and
+    therefore deliberately never serialized into project or sidecar files.
+    """
+
+    session_state_id: int = 0
+    calibration_state_id: int = 0
+
+
 @dataclass(slots=True)
 class FiberGroup:
     id: str
@@ -394,6 +413,97 @@ class Measurement:
     display_polygon_px: list[Point] = field(default_factory=list, repr=False)
     display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
     display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
+    _geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
+
+    @property
+    def geometry_revision(self) -> int:
+        """Runtime-only revision for geometry-derived caches.
+
+        The revision is deliberately excluded from project serialization.  A
+        freshly loaded measurement starts at revision zero and receives a new
+        cache namespace through its object identity.
+        """
+
+        return self._geometry_revision
+
+    @staticmethod
+    def _copy_point(point: Point) -> Point:
+        return Point(float(point.x), float(point.y))
+
+    @classmethod
+    def _copy_line(cls, line: Line | None) -> Line | None:
+        if line is None:
+            return None
+        return Line(cls._copy_point(line.start), cls._copy_point(line.end))
+
+    @classmethod
+    def _copy_points(cls, points: list[Point]) -> list[Point]:
+        return [cls._copy_point(point) for point in points]
+
+    @classmethod
+    def _copy_rings(cls, rings: list[list[Point]]) -> list[list[Point]]:
+        return [cls._copy_points(ring) for ring in rings]
+
+    def _advance_geometry_revision(self) -> None:
+        self._geometry_revision += 1
+        # Keep the legacy display fields empty after production mutations.
+        # The bounded derived-geometry service owns all new runtime caches.
+        self.display_polygon_px = []
+        self.display_area_rings_px = []
+        self.display_bounds_px = None
+
+    def replace_area_geometry(
+        self,
+        *,
+        polygon_px: list[Point],
+        area_rings_px: list[list[Point]] | None = None,
+        exact_area_px: float | None = None,
+        calibration: Calibration | None = None,
+    ) -> None:
+        """Atomically replace area geometry using private coordinate copies."""
+
+        if self.measurement_kind != "area":
+            self.measurement_kind = "area"
+        copied_polygon = self._copy_points(polygon_px)
+        copied_rings = self._copy_rings(area_rings_px or [])
+        if len(copied_polygon) < 3 and copied_rings:
+            copied_polygon = self._copy_points(copied_rings[0])
+        self.polygon_px = copied_polygon
+        self.area_rings_px = copied_rings
+        self.exact_area_px = float(exact_area_px) if exact_area_px is not None else None
+        self._advance_geometry_revision()
+        self.recalculate(calibration)
+
+    def replace_line_geometry(
+        self,
+        *,
+        line_px: Line,
+        snapped_line_px: Line | None = None,
+        calibration: Calibration | None = None,
+    ) -> None:
+        """Atomically replace a straight-line measurement's geometry."""
+
+        self.measurement_kind = "line"
+        copied_line = self._copy_line(line_px)
+        if copied_line is None:  # pragma: no cover - guarded by the signature
+            raise ValueError("line_px is required")
+        self.line_px = copied_line
+        self.snapped_line_px = self._copy_line(snapped_line_px)
+        self._advance_geometry_revision()
+        self.recalculate(calibration)
+
+    def replace_polyline_geometry(
+        self,
+        *,
+        polyline_px: list[Point],
+        calibration: Calibration | None = None,
+    ) -> None:
+        """Atomically replace continuous length geometry."""
+
+        self.measurement_kind = "polyline"
+        self.polyline_px = self._copy_points(polyline_px)
+        self._advance_geometry_revision()
+        self.recalculate(calibration)
 
     def effective_line(self) -> Line:
         if self.measurement_kind != "line" or self.line_px is None:
@@ -422,8 +532,18 @@ class Measurement:
         )
 
     def polygon_center(self) -> Point:
-        if self.measurement_kind == "area" and self.area_rings_px:
-            return area_rings_centroid(self.area_rings_px)
+        if self.measurement_kind == "area" and (
+            self.area_rings_px or len(self.polygon_px) >= 3
+        ):
+            # Import lazily to keep the model independent from Qt cache setup
+            # during module initialization.  The cached value is always
+            # derived from RAW geometry and keyed by this measurement's
+            # geometry revision.  Polygon-only inference objects use the same
+            # path; requesting a label center does not build the independent
+            # hole-area cache.
+            from fdm.area_display import area_derived_geometry_service
+
+            return area_derived_geometry_service.centroid(self)
         return polygon_centroid(self.polygon_px)
 
     def geometry_center(self) -> Point:
@@ -760,15 +880,29 @@ class ImageDocument:
     calibration_load_payload: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
-    _session_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
-    _calibration_clean_snapshot: dict[str, Any] | None = field(default=None, repr=False, compare=False)
+    _current_state_stamp: DocumentStateStamp = field(
+        default_factory=DocumentStateStamp,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _saved_state_stamp: DocumentStateStamp | None = field(default=None, init=False, repr=False, compare=False)
+    _saved_calibration_signature: tuple[object, ...] | None = field(
+        default=None,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _next_state_id: int = field(default=1, init=False, repr=False, compare=False)
     _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     def initialize_runtime_state(self) -> None:
         from fdm.history import DocumentHistory
 
         if self.history is None:
-            self.history = DocumentHistory()
+            self.history = DocumentHistory(owner=self)
+        else:
+            self.history.bind_document(self)
         if self.sidecar_path is None and self.path and self.uses_sidecar():
             self.sidecar_path = self.default_sidecar_path()
         self.fiber_groups.sort(key=lambda group: group.number)
@@ -778,10 +912,10 @@ class ImageDocument:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
         if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
             self.selected_overlay_id = None
-        if self._session_clean_snapshot is None:
-            self.mark_session_saved()
-        if self._calibration_clean_snapshot is None:
-            self.mark_calibration_saved()
+        if self._saved_state_stamp is None:
+            self._saved_state_stamp = self._current_state_stamp
+        if self._saved_calibration_signature is None:
+            self._saved_calibration_signature = self.calibration_signature()
         self.refresh_dirty_flags()
 
     def default_sidecar_path(self) -> str:
@@ -985,9 +1119,8 @@ class ImageDocument:
         self.select_overlay_annotation(annotation.id if annotation is not None else None)
 
     def add_measurement(self, measurement: Measurement) -> None:
-        self.insert_measurement_incremental(measurement, mark_dirty=False)
+        self.insert_measurement_incremental(measurement, mark_dirty=True)
         self.rebuild_group_memberships()
-        self.refresh_dirty_flags()
 
     def insert_measurement_incremental(
         self,
@@ -1071,7 +1204,7 @@ class ImageDocument:
             self.select_measurement(None)
         self.rebuild_group_memberships()
         self.mark_measurement_geometry_changed()
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return removed_count
 
     def remove_measurements_for_group(self, group_id: str | None) -> int:
@@ -1135,9 +1268,11 @@ class ImageDocument:
             return
         if group_id is not None and self.get_group(group_id) is None:
             return
+        if measurement.fiber_group_id == group_id:
+            return
         measurement.fiber_group_id = group_id
         self.rebuild_group_memberships()
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
 
     def move_uncategorized_measurements_to_group(self, group_id: str) -> int:
         if self.get_group(group_id) is None:
@@ -1150,7 +1285,8 @@ class ImageDocument:
         if self.active_group_id is None:
             self.active_group_id = group_id
         self.rebuild_group_memberships()
-        self.refresh_dirty_flags()
+        if moved_count:
+            self.mark_session_dirty()
         return moved_count
 
     def rebuild_group_memberships(self) -> None:
@@ -1183,13 +1319,13 @@ class ImageDocument:
             self.active_group_id = target_group_id
         self.rebuild_group_memberships()
         self.renumber_groups()
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return True
 
     def add_overlay_annotation(self, annotation: OverlayAnnotation) -> None:
         self.overlay_annotations.append(annotation)
         self.select_overlay_annotation(annotation.id)
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
 
     def add_text_annotation(self, annotation: TextAnnotation) -> None:
         self.add_overlay_annotation(annotation.to_overlay())
@@ -1197,9 +1333,11 @@ class ImageDocument:
     def replace_overlay_annotation(self, overlay_id: str, replacement: OverlayAnnotation) -> None:
         for index, annotation in enumerate(self.overlay_annotations):
             if annotation.id == overlay_id:
+                if annotation == replacement:
+                    return
                 self.overlay_annotations[index] = replacement
                 self.select_overlay_annotation(replacement.id)
-                self.refresh_dirty_flags()
+                self.mark_session_dirty()
                 return
 
     def move_overlay_annotation(self, overlay_id: str, dx: float, dy: float) -> None:
@@ -1215,13 +1353,15 @@ class ImageDocument:
         self.replace_overlay_annotation(text_id, annotation.clone(anchor_px=anchor_px))
 
     def remove_overlay_annotation(self, overlay_id: str) -> None:
+        if self.get_overlay_annotation(overlay_id) is None:
+            return
         self.overlay_annotations = [
             annotation for annotation in self.overlay_annotations
             if annotation.id != overlay_id
         ]
         if self.selected_overlay_id == overlay_id:
             self.select_overlay_annotation(None)
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
 
     def remove_text_annotation(self, text_id: str) -> None:
         self.remove_overlay_annotation(text_id)
@@ -1258,7 +1398,7 @@ class ImageDocument:
             self.active_group_id = None if moved_measurements else (self.sorted_groups()[0].id if self.fiber_groups else None)
         self.rebuild_group_memberships()
         self.renumber_groups()
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return True
 
     def hide_uncategorized_entry(self) -> bool:
@@ -1266,7 +1406,7 @@ class ImageDocument:
             return False
         if self.active_group_id is None:
             self.active_group_id = self.sorted_groups()[0].id
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return True
 
     def is_project_group_label_suppressed(self, label: str) -> bool:
@@ -1279,7 +1419,7 @@ class ImageDocument:
             return False
         self.suppressed_project_group_labels.append(token)
         self.suppressed_project_group_labels.sort()
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return True
 
     def unsuppress_project_group_label(self, label: str) -> bool:
@@ -1291,7 +1431,7 @@ class ImageDocument:
             for item in self.suppressed_project_group_labels
             if item != token
         ]
-        self.refresh_dirty_flags()
+        self.mark_session_dirty()
         return True
 
     @staticmethod
@@ -1331,6 +1471,9 @@ class ImageDocument:
     def recalculate_measurements(self) -> None:
         for measurement in self.measurements:
             measurement.recalculate(self.calibration)
+        # Recalculation is a derived-value operation.  The command that changes
+        # calibration owns both dirty domains; load-time recalculation must not
+        # manufacture a dirty sidecar state.
         self.refresh_dirty_flags()
 
     def session_snapshot(self) -> dict[str, Any]:
@@ -1351,6 +1494,12 @@ class ImageDocument:
 
     def snapshot_state(self) -> dict[str, Any]:
         return {
+            # Runtime-only compatibility metadata for legacy History.push().
+            # Project/sidecar serializers never call snapshot_state().
+            "_runtime_state_stamp": {
+                "session_state_id": self._current_state_stamp.session_state_id,
+                "calibration_state_id": self._current_state_stamp.calibration_state_id,
+            },
             "calibration": self.calibration.to_dict() if self.calibration else None,
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
@@ -1406,25 +1555,118 @@ class ImageDocument:
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
-        self._session_clean_snapshot = self.session_snapshot()
+        saved = self._saved_state_stamp or self._current_state_stamp
+        self._saved_state_stamp = DocumentStateStamp(
+            session_state_id=self._current_state_stamp.session_state_id,
+            calibration_state_id=saved.calibration_state_id,
+        )
         self.refresh_dirty_flags()
 
     def mark_calibration_saved(self) -> None:
-        self._calibration_clean_snapshot = self.calibration_snapshot()
+        saved = self._saved_state_stamp or self._current_state_stamp
+        self._saved_state_stamp = DocumentStateStamp(
+            session_state_id=saved.session_state_id,
+            calibration_state_id=self._current_state_stamp.calibration_state_id,
+        )
+        self._saved_calibration_signature = self.calibration_signature()
         self.refresh_dirty_flags()
 
+    def calibration_signature(self) -> tuple[object, ...]:
+        calibration = self.calibration
+        if calibration is None:
+            calibration_token: tuple[object, ...] = (None,)
+        else:
+            calibration_token = (
+                calibration.mode,
+                float(calibration.pixels_per_unit),
+                calibration.unit,
+                calibration.source_label,
+            )
+        line_payload = self.metadata.get("calibration_line")
+        line_token: tuple[object, ...] | None = None
+        if isinstance(line_payload, Line):
+            line_token = (
+                float(line_payload.start.x),
+                float(line_payload.start.y),
+                float(line_payload.end.x),
+                float(line_payload.end.y),
+            )
+        elif isinstance(line_payload, dict):
+            try:
+                line = Line.from_dict(line_payload)
+            except (KeyError, TypeError, ValueError):
+                line_token = (repr(line_payload),)
+            else:
+                line_token = (
+                    float(line.start.x),
+                    float(line.start.y),
+                    float(line.end.x),
+                    float(line.end.y),
+                )
+        return calibration_token + (line_token,)
+
+    def ensure_external_calibration_change_is_dirty(self) -> None:
+        """Bridge direct legacy assignments at the sidecar persistence edge."""
+
+        if (
+            not self.dirty_flags.calibration_dirty
+            and self._saved_calibration_signature is not None
+            and self.calibration_signature() != self._saved_calibration_signature
+        ):
+            self.mark_calibration_dirty()
+
     def mark_session_dirty(self) -> None:
-        self.dirty_flags = DirtyFlags(
-            session_dirty=True,
-            calibration_dirty=self.dirty_flags.calibration_dirty,
+        self.advance_state({DirtyDomain.SESSION})
+
+    def mark_calibration_dirty(self) -> None:
+        # A calibration changes the physical values persisted in the project,
+        # in addition to the independently persisted sidecar calibration.
+        self.advance_state({DirtyDomain.SESSION, DirtyDomain.CALIBRATION})
+
+    @property
+    def state_stamp(self) -> DocumentStateStamp:
+        return self._current_state_stamp
+
+    @property
+    def saved_state_stamp(self) -> DocumentStateStamp:
+        return self._saved_state_stamp or self._current_state_stamp
+
+    def advance_state(self, domains: set[DirtyDomain] | frozenset[DirtyDomain]) -> DocumentStateStamp:
+        normalized = frozenset(domains)
+        if not normalized:
+            return self._current_state_stamp
+        state_id = self._next_state_id
+        self._next_state_id += 1
+        current = self._current_state_stamp
+        self._current_state_stamp = DocumentStateStamp(
+            session_state_id=(
+                state_id
+                if DirtyDomain.SESSION in normalized
+                else current.session_state_id
+            ),
+            calibration_state_id=(
+                state_id
+                if DirtyDomain.CALIBRATION in normalized
+                else current.calibration_state_id
+            ),
         )
+        self.refresh_dirty_flags()
+        return self._current_state_stamp
+
+    def restore_state_stamp(self, stamp: DocumentStateStamp) -> None:
+        self._current_state_stamp = stamp
+        self._next_state_id = max(
+            self._next_state_id,
+            stamp.session_state_id + 1,
+            stamp.calibration_state_id + 1,
+        )
+        self.refresh_dirty_flags()
 
     def refresh_dirty_flags(self) -> None:
-        session_dirty = self._session_clean_snapshot is not None and self.session_snapshot() != self._session_clean_snapshot
-        calibration_dirty = self._calibration_clean_snapshot is not None and self.calibration_snapshot() != self._calibration_clean_snapshot
+        saved = self._saved_state_stamp or self._current_state_stamp
         self.dirty_flags = DirtyFlags(
-            session_dirty=session_dirty,
-            calibration_dirty=calibration_dirty,
+            session_dirty=self._current_state_stamp.session_state_id != saved.session_state_id,
+            calibration_dirty=self._current_state_stamp.calibration_state_id != saved.calibration_state_id,
         )
 
     def to_dict(self) -> dict[str, Any]:

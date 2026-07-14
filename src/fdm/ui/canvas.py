@@ -20,17 +20,15 @@ from PySide6.QtGui import (
 )
 from PySide6.QtWidgets import QWidget
 
-from fdm.area_display import area_geometry_for_display
+from fdm.area_display import area_derived_geometry_service, area_geometry_raw
 from fdm.geometry import (
     Line,
     Point,
     clamp,
     distance,
     nearest_endpoint,
-    point_in_area_rings,
     point_in_polygon,
     point_near_bounds,
-    point_to_area_rings_edge_distance,
     point_to_polyline_distance,
     point_to_polygon_edge_distance,
     polygon_translate,
@@ -73,6 +71,27 @@ from fdm.ui.rendering import (
 class MagicSegmentOperationMode:
     ADD = "add"
     SUBTRACT = "subtract"
+
+
+@dataclass(frozen=True, slots=True)
+class CanvasSelectionRef:
+    """The canvas' single, mutually-exclusive object selection."""
+
+    kind: str
+    object_id: str | None = None
+    overlay_kind: str | None = None
+
+    @classmethod
+    def none(cls) -> "CanvasSelectionRef":
+        return cls(kind="none")
+
+    @classmethod
+    def measurement(cls, measurement_id: str) -> "CanvasSelectionRef":
+        return cls(kind="measurement", object_id=measurement_id)
+
+    @classmethod
+    def overlay(cls, overlay_id: str, overlay_kind: str) -> "CanvasSelectionRef":
+        return cls(kind="overlay", object_id=overlay_id, overlay_kind=overlay_kind)
 
 
 def canvas_workspace_background(palette: QPalette) -> QColor:
@@ -226,18 +245,7 @@ class MeasurementSpatialIndex:
             ys = [point.y for point in measurement.polyline_px]
             return min(xs), min(ys), max(xs), max(ys)
         if measurement.measurement_kind == "area":
-            _outline, _rings, unselected_bounds = area_geometry_for_display(measurement, selected=False)
-            _selected_outline, _selected_rings, selected_bounds = area_geometry_for_display(measurement, selected=True)
-            if unselected_bounds is None:
-                return selected_bounds
-            if selected_bounds is None:
-                return unselected_bounds
-            return (
-                min(unselected_bounds[0], selected_bounds[0]),
-                min(unselected_bounds[1], selected_bounds[1]),
-                max(unselected_bounds[2], selected_bounds[2]),
-                max(unselected_bounds[3], selected_bounds[3]),
-            )
+            return area_geometry_raw(measurement).bounds
         return None
 
 
@@ -420,6 +428,7 @@ class FiberQuickDiameterSession:
 
 class DocumentCanvas(QWidget):
     lineCommitted = Signal(str, str, object)
+    objectSelectionChanged = Signal(str, object)
     measurementSelected = Signal(str, object)
     measurementEdited = Signal(str, str, object)
     pathSessionChanged = Signal(str)
@@ -1490,7 +1499,11 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return
         previous_measurement_id = self._document.view_state.selected_measurement_id
-        self._document.select_measurement(measurement_id)
+        if measurement_id and self._document.get_measurement(measurement_id) is not None:
+            self._set_object_selection(CanvasSelectionRef.measurement(measurement_id), notify=False)
+        else:
+            # Programmatic table synchronization clears only its own domain.
+            self._document.select_measurement(None)
         if previous_measurement_id != measurement_id and self._tool_mode in {"polygon_area", "freehand_area"}:
             self._area_edit_operation_mode = AreaEditOperationMode.ADD
         self.update()
@@ -1498,14 +1511,84 @@ class DocumentCanvas(QWidget):
     def set_selected_overlay_annotation(self, overlay_id: str | None) -> None:
         if self._document is None:
             return
-        self._document.select_overlay_annotation(overlay_id)
+        annotation = self._document.get_overlay_annotation(overlay_id)
+        if annotation is not None:
+            self._set_object_selection(
+                CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind()),
+                notify=False,
+            )
+        else:
+            self._document.select_overlay_annotation(None)
         self.update()
 
     def set_selected_text_annotation(self, text_id: str | None) -> None:
         if self._document is None:
             return
-        self._document.select_text_annotation(text_id)
+        annotation = self._document.get_text_annotation(text_id)
+        if annotation is not None:
+            self._set_object_selection(
+                CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind()),
+                notify=False,
+            )
+        else:
+            self._document.select_text_annotation(None)
         self.update()
+
+    def _current_object_selection(self) -> CanvasSelectionRef:
+        if self._document is None:
+            return CanvasSelectionRef.none()
+        annotation = self._document.get_overlay_annotation(self._document.selected_overlay_id)
+        if annotation is not None:
+            return CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
+        measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
+        if measurement is not None:
+            return CanvasSelectionRef.measurement(measurement.id)
+        return CanvasSelectionRef.none()
+
+    def _set_object_selection(self, selection: CanvasSelectionRef, *, notify: bool = True) -> bool:
+        """Apply one selection and notify only when the effective state changes."""
+
+        if self._document is None:
+            return False
+        previous = self._current_object_selection()
+        if selection.kind == "measurement" and selection.object_id:
+            measurement = self._document.get_measurement(selection.object_id)
+            if measurement is None:
+                selection = CanvasSelectionRef.none()
+            else:
+                self._document.select_measurement(measurement.id)
+        elif selection.kind == "overlay" and selection.object_id:
+            annotation = self._document.get_overlay_annotation(selection.object_id)
+            if annotation is None:
+                selection = CanvasSelectionRef.none()
+            else:
+                selection = CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
+                self._document.select_overlay_annotation(annotation.id)
+        if selection.kind == "none":
+            self._document.select_measurement(None)
+            self._document.select_overlay_annotation(None)
+
+        current = self._current_object_selection()
+        if current == previous:
+            return False
+        if notify:
+            self.objectSelectionChanged.emit(self._document.id, current)
+            # Compatibility signals remain for integrations outside MainWindow.
+            self.measurementSelected.emit(
+                self._document.id,
+                current.object_id if current.kind == "measurement" else "",
+            )
+            self.overlaySelected.emit(
+                self._document.id,
+                current.object_id if current.kind == "overlay" else "",
+            )
+            self.textSelected.emit(
+                self._document.id,
+                current.object_id
+                if current.kind == "overlay" and current.overlay_kind == OverlayAnnotationKind.TEXT
+                else "",
+            )
+        return True
 
     def begin_scale_anchor_pick(self) -> None:
         self._scale_anchor_pick_active = True
@@ -1702,11 +1785,7 @@ class DocumentCanvas(QWidget):
         if is_magic_segment_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
                 return
-            self._document.select_measurement(None)
-            self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            self._set_object_selection(CanvasSelectionRef.none())
             point = self._clamp_to_image(image_point, pixel_center=False)
             active_stage = self._magic_segment.active_stage
             if active_stage == MagicSegmentOperationMode.SUBTRACT and self._magic_manual_subtract_mode_active():
@@ -1746,11 +1825,7 @@ class DocumentCanvas(QWidget):
         if is_fiber_quick_tool_mode(self._tool_mode):
             if not self._point_in_image(image_point):
                 return
-            self._document.select_measurement(None)
-            self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            self._set_object_selection(CanvasSelectionRef.none())
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._fiber_quick.prompt_type == "negative":
                 self._fiber_quick.negative_points.append(point)
@@ -1776,11 +1851,7 @@ class DocumentCanvas(QWidget):
                 return
             if self._reference_instance.busy:
                 return
-            self._document.select_measurement(None)
-            self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            self._set_object_selection(CanvasSelectionRef.none())
             point = self._clamp_to_image(image_point, pixel_center=False)
             measurement_id = self._hit_test_area_measurement(point)
             if measurement_id is not None:
@@ -1822,11 +1893,7 @@ class DocumentCanvas(QWidget):
                     anchor = self._clamp_to_image(image_point, pixel_center=False)
                     self._drawing_overlay_start = anchor
                     self._drawing_overlay_end = anchor
-                    self._document.select_measurement(None)
-                    self._document.select_overlay_annotation(None)
-                    self.measurementSelected.emit(self._document.id, "")
-                    self.overlaySelected.emit(self._document.id, "")
-                    self.textSelected.emit(self._document.id, "")
+                    self._set_object_selection(CanvasSelectionRef.none())
                     self.update()
             return
 
@@ -1835,11 +1902,10 @@ class DocumentCanvas(QWidget):
                 return
             subtract_active = self._area_subtract_mode_active()
             if not subtract_active:
-                self._document.select_measurement(None)
-                self.measurementSelected.emit(self._document.id, "")
-            self._document.select_overlay_annotation(None)
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+                self._set_object_selection(CanvasSelectionRef.none())
+            elif self._document.selected_overlay_id is not None:
+                # Subtract keeps the selected area but still dismisses overlays.
+                self._document.select_overlay_annotation(None)
             point = self._clamp_to_image(image_point, pixel_center=False)
             if self._can_close_polygon_with_point(point):
                 if subtract_active:
@@ -1856,11 +1922,7 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "continuous_manual":
             if not self._point_in_image(image_point):
                 return
-            self._document.select_measurement(None)
-            self._document.select_overlay_annotation(None)
-            self.measurementSelected.emit(self._document.id, "")
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            self._set_object_selection(CanvasSelectionRef.none())
             point = self._clamp_to_image(image_point, pixel_center=False)
             if not self._continuous_manual_tool_strategy.should_append_point(
                 self._drawing_polygon_points,
@@ -1877,11 +1939,9 @@ class DocumentCanvas(QWidget):
             if not self._point_in_image(image_point):
                 return
             if not self._area_subtract_mode_active():
-                self._document.select_measurement(None)
-                self.measurementSelected.emit(self._document.id, "")
-            self._document.select_overlay_annotation(None)
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+                self._set_object_selection(CanvasSelectionRef.none())
+            elif self._document.selected_overlay_id is not None:
+                self._document.select_overlay_annotation(None)
             point = self._clamp_to_image(image_point, pixel_center=False)
             self._drawing_polygon_points = [point]
             self._area_hover_point = point
@@ -1895,9 +1955,8 @@ class DocumentCanvas(QWidget):
             if not self._point_in_image(image_point):
                 return
             point = self._clamp_to_image(image_point, pixel_center=False)
-            self._document.select_overlay_annotation(None)
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            if self._document.selected_overlay_id is not None:
+                self._set_object_selection(CanvasSelectionRef.none())
             self.lineCommitted.emit(
                 self._document.id,
                 "count",
@@ -1928,12 +1987,9 @@ class DocumentCanvas(QWidget):
             if overlay_handle is not None:
                 annotation = self._document.get_overlay_annotation(overlay_handle[0])
                 if annotation is not None:
-                    self._document.select_overlay_annotation(annotation.id)
-                    self.overlaySelected.emit(self._document.id, annotation.id)
-                    if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
-                        self.textSelected.emit(self._document.id, annotation.id)
-                    else:
-                        self.textSelected.emit(self._document.id, "")
+                    self._set_object_selection(
+                        CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
+                    )
                     self._dragging_overlay_handle = overlay_handle
                     self._drag_overlay_press_point = image_point
                     self._drag_overlay_origin = annotation.clone()
@@ -1945,12 +2001,9 @@ class DocumentCanvas(QWidget):
             if overlay_hit is not None:
                 annotation = self._document.get_overlay_annotation(overlay_hit)
                 if annotation is not None:
-                    self._document.select_overlay_annotation(annotation.id)
-                    self.overlaySelected.emit(self._document.id, annotation.id)
-                    if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
-                        self.textSelected.emit(self._document.id, annotation.id)
-                    else:
-                        self.textSelected.emit(self._document.id, "")
+                    self._set_object_selection(
+                        CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
+                    )
                     self._dragging_overlay_id = annotation.id
                     self._drag_overlay_press_point = image_point
                     self._drag_overlay_origin = annotation.clone()
@@ -1974,10 +2027,7 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "select":
             area_measurement_id = self._hit_test_area_measurement(image_point)
             if area_measurement_id is not None:
-                self._document.select_measurement(area_measurement_id)
-                self.measurementSelected.emit(self._document.id, area_measurement_id)
-                self.overlaySelected.emit(self._document.id, "")
-                self.textSelected.emit(self._document.id, "")
+                self._set_object_selection(CanvasSelectionRef.measurement(area_measurement_id))
                 self.update()
                 return
 
@@ -1985,17 +2035,17 @@ class DocumentCanvas(QWidget):
             if handle is not None:
                 self._dragging_handle = handle
                 self._drag_preview_line = self._measurement_line(handle[0])
-                self._document.select_measurement(handle[0])
-                self.measurementSelected.emit(self._document.id, handle[0])
-                self.overlaySelected.emit(self._document.id, "")
+                self._set_object_selection(CanvasSelectionRef.measurement(handle[0]))
                 self.update()
                 return
 
             measurement_id = self._hit_test_measurement(image_point)
-            self._document.select_measurement(measurement_id)
-            self.measurementSelected.emit(self._document.id, measurement_id or "")
-            self.overlaySelected.emit(self._document.id, "")
-            self.textSelected.emit(self._document.id, "")
+            selection = (
+                CanvasSelectionRef.measurement(measurement_id)
+                if measurement_id is not None
+                else CanvasSelectionRef.none()
+            )
+            self._set_object_selection(selection)
             self.update()
             return
 
@@ -2431,7 +2481,7 @@ class DocumentCanvas(QWidget):
     def _draw_annotations(self, painter: QPainter) -> None:
         if self._document is None:
             return
-        draw_measurements(
+        proxies_deferred = draw_measurements(
             painter,
             self._document,
             self.image_to_widget,
@@ -2452,6 +2502,10 @@ class DocumentCanvas(QWidget):
             show_handles=self._tool_mode == "select",
             render_mode="screen_scale_full_image",
         )
+        if proxies_deferred:
+            # Continue optional proxy warming without blocking the current
+            # paint. Cached RAW paths remain the exact visible fallback.
+            self.update()
 
     def _draw_pending_path_preview(
         self,
@@ -2652,14 +2706,11 @@ class DocumentCanvas(QWidget):
             or (len(measurement.polygon_px) < 3 and not measurement.area_rings_px)
         ):
             return None
-        editable_rings = measurement.area_rings_px or ([measurement.polygon_px] if len(measurement.polygon_px) >= 3 else [])
-        nearest_vertex: tuple[int, int, float] | None = None
-        for ring_index, ring in enumerate(editable_rings):
-            for point_index, point in enumerate(ring):
-                vertex_distance = distance(point, image_point)
-                if vertex_distance <= self._selected_endpoint_tolerance():
-                    if nearest_vertex is None or vertex_distance < nearest_vertex[2]:
-                        nearest_vertex = (ring_index, point_index, vertex_distance)
+        nearest_vertex = area_derived_geometry_service.nearest_vertex(
+            measurement,
+            image_point,
+            self._selected_endpoint_tolerance(),
+        )
         if nearest_vertex is not None:
             return measurement.id, "vertex", nearest_vertex[0], nearest_vertex[1]
         center = measurement.polygon_center()
@@ -2679,13 +2730,12 @@ class DocumentCanvas(QWidget):
             (self._measurement_hit_tolerance(measurement) for measurement in area_measurements),
             default=max(5.0, 10.0 / max(self._zoom, 0.001)),
         )
-        selected_measurement_id = self._document.view_state.selected_measurement_id
         for measurement in self._measurement_candidates(image_point, tolerance=tolerance):
             measurement_tolerance = self._measurement_hit_tolerance(measurement)
-            outline_points, fill_rings, bounds = area_geometry_for_display(
-                measurement,
-                selected=measurement.id == selected_measurement_id,
-            )
+            raw_geometry = area_geometry_raw(measurement)
+            outline_points = raw_geometry.outline_points
+            fill_rings = raw_geometry.fill_rings
+            bounds = raw_geometry.bounds
             if measurement.measurement_kind != "area" or (len(outline_points) < 3 and not fill_rings):
                 continue
             if bounds is None:
@@ -2693,9 +2743,13 @@ class DocumentCanvas(QWidget):
             if not point_near_bounds(image_point, bounds, measurement_tolerance):
                 continue
             if fill_rings:
-                if point_in_area_rings(image_point, fill_rings):
+                if area_derived_geometry_service.contains_raw(measurement, image_point):
                     return measurement.id
-                if point_to_area_rings_edge_distance(image_point, fill_rings) <= measurement_tolerance:
+                if area_derived_geometry_service.near_edge(
+                    measurement,
+                    image_point,
+                    measurement_tolerance,
+                ):
                     return measurement.id
                 continue
             if point_in_polygon(image_point, outline_points):
@@ -3401,8 +3455,7 @@ class DocumentCanvas(QWidget):
         measurement = self._document.get_measurement(handle[0])
         if measurement is None or measurement.measurement_kind != "area":
             return
-        self._document.select_measurement(measurement.id)
-        self.measurementSelected.emit(self._document.id, measurement.id)
+        self._set_object_selection(CanvasSelectionRef.measurement(measurement.id))
         self._dragging_area_handle = handle
         self._drag_area_origin_rings = self._clone_magic_rings(measurement.area_rings_px) if measurement.area_rings_px else None
         if self._drag_area_origin_rings:

@@ -5,6 +5,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 import math
 import statistics
+from typing import TypeAlias
 
 from fdm.models import ImageDocument, Measurement, ProjectState, UNCATEGORIZED_LABEL, square_unit
 
@@ -23,6 +24,153 @@ class MeasurementMetric(str, Enum):
     LENGTH = "length"
     AREA = "area"
     COUNT = "count"
+
+
+class _InvalidStatisticsValue(str, Enum):
+    """Immutable marker for a non-scalar value found in a corrupt runtime model."""
+
+    INVALID = "invalid"
+
+
+StatisticsScalarValue: TypeAlias = float | int | str | None | _InvalidStatisticsValue
+
+
+def _statistics_scalar(value: object) -> StatisticsScalarValue:
+    """Copy a numeric candidate without retaining mutable model-owned objects.
+
+    Persisted measurements use ``float | None`` values.  The defensive branches
+    keep the statistics service's old behaviour for hand-constructed or corrupt
+    runtime models: scalar strings remain convertible by ``float()``, numeric
+    objects such as ``Decimal`` are detached as floats, and unsupported mutable
+    values are counted as non-finite rather than retained by a worker task.
+    """
+
+    if value is None or isinstance(value, (float, int, str)):
+        return value
+    try:
+        return float(value)
+    except (TypeError, ValueError, OverflowError):
+        return _InvalidStatisticsValue.INVALID
+
+
+@dataclass(frozen=True, slots=True)
+class StatisticsMeasurementInput:
+    """Geometry-free measurement values safe to hand to a background worker."""
+
+    id: str
+    fiber_group_id: str | None
+    measurement_kind: str
+    status: str
+    diameter_px: StatisticsScalarValue
+    diameter_unit: StatisticsScalarValue
+    area_px: StatisticsScalarValue
+    area_unit: StatisticsScalarValue
+
+    @classmethod
+    def from_measurement(cls, measurement: Measurement) -> "StatisticsMeasurementInput":
+        return cls(
+            id=str(measurement.id),
+            fiber_group_id=(
+                str(measurement.fiber_group_id)
+                if measurement.fiber_group_id is not None
+                else None
+            ),
+            measurement_kind=str(measurement.measurement_kind),
+            status=str(measurement.status or ""),
+            diameter_px=_statistics_scalar(measurement.diameter_px),
+            diameter_unit=_statistics_scalar(measurement.diameter_unit),
+            area_px=_statistics_scalar(measurement.area_px),
+            area_unit=_statistics_scalar(measurement.area_unit),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class StatisticsCategoryInput:
+    """Document-local category identity and its resolved display label."""
+
+    id: str
+    display_label: str
+
+
+@dataclass(frozen=True, slots=True)
+class StatisticsDocumentInput:
+    """Only the immutable scalars required by descriptive statistics."""
+
+    id: str
+    has_calibration: bool
+    base_unit: str
+    categories: tuple[StatisticsCategoryInput, ...]
+    measurements: tuple[StatisticsMeasurementInput, ...]
+
+    @classmethod
+    def from_document(cls, document: ImageDocument) -> "StatisticsDocumentInput":
+        return cls(
+            id=str(document.id),
+            has_calibration=document.calibration is not None,
+            base_unit=(
+                str(document.calibration.unit)
+                if document.calibration is not None
+                else "px"
+            ),
+            categories=tuple(
+                StatisticsCategoryInput(
+                    id=str(group.id),
+                    display_label=str(group.label.strip() or group.display_name()),
+                )
+                for group in document.fiber_groups
+            ),
+            measurements=tuple(
+                StatisticsMeasurementInput.from_measurement(measurement)
+                for measurement in document.measurements
+            ),
+        )
+
+    def category_label(self, group_id: str | None) -> str:
+        if group_id is None:
+            return UNCATEGORIZED_LABEL
+        return next(
+            (
+                category.display_label
+                for category in self.categories
+                if category.id == group_id
+            ),
+            UNCATEGORIZED_LABEL,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class StatisticsInputSnapshot:
+    """Immutable, geometry-free input for generation-guarded statistics tasks.
+
+    Creating the snapshot is O(number of measurements), never O(number of area
+    vertices).  It intentionally contains no ``ProjectState``, ``ImageDocument``
+    or ``Measurement`` references, so a worker cannot observe later UI edits.
+    """
+
+    documents: tuple[StatisticsDocumentInput, ...]
+
+    @classmethod
+    def from_project(cls, project: ProjectState) -> "StatisticsInputSnapshot":
+        return cls.from_documents(project.documents)
+
+    @classmethod
+    def from_documents(
+        cls,
+        documents: Iterable[ImageDocument],
+    ) -> "StatisticsInputSnapshot":
+        return cls(
+            tuple(
+                StatisticsDocumentInput.from_document(item)
+                for item in documents
+            )
+        )
+
+    def get_document(self, document_id: str) -> StatisticsDocumentInput | None:
+        return next((item for item in self.documents if item.id == document_id), None)
+
+    @property
+    def measurement_count(self) -> int:
+        return sum(len(document.measurements) for document in self.documents)
 
 
 @dataclass(frozen=True, slots=True)
@@ -145,9 +293,39 @@ class MeasurementStatisticsService:
             fiber_group_id=fiber_group_id,
         )
 
+    def summarize_input(
+        self,
+        input_snapshot: StatisticsInputSnapshot,
+        *,
+        metric: MeasurementMetric,
+        scope: StatisticsScope,
+        document_id: str | None = None,
+        fiber_group_id: str | None = None,
+    ) -> tuple[MeasurementStatisticsSnapshot, ...]:
+        """Summarize an immutable UI/background-task input snapshot.
+
+        This is deliberately additive: export and other service clients keep
+        using :meth:`summarize` with ``ProjectState`` while UI worker tasks can
+        avoid copying geometry, images, history, and runtime caches.
+        """
+
+        metric = MeasurementMetric(metric)
+        scope = StatisticsScope(scope)
+        documents = self._select_input_documents(
+            input_snapshot,
+            scope=scope,
+            document_id=document_id,
+        )
+        return self.summarize_documents(
+            documents,
+            metric=metric,
+            scope=scope,
+            fiber_group_id=fiber_group_id,
+        )
+
     def summarize_documents(
         self,
-        documents: Iterable[ImageDocument],
+        documents: Iterable[ImageDocument | StatisticsDocumentInput],
         *,
         metric: MeasurementMetric,
         scope: StatisticsScope = StatisticsScope.PROJECT,
@@ -194,7 +372,7 @@ class MeasurementStatisticsService:
 
     def summarize_by_category(
         self,
-        documents: Iterable[ImageDocument],
+        documents: Iterable[ImageDocument | StatisticsDocumentInput],
         *,
         metric: MeasurementMetric,
         scope: StatisticsScope = StatisticsScope.PROJECT,
@@ -214,15 +392,7 @@ class MeasurementStatisticsService:
             for measurement in document.measurements:
                 if not self._matches_metric(measurement, metric):
                     continue
-                group = document.get_group(measurement.fiber_group_id)
-                if group is None:
-                    label = UNCATEGORIZED_LABEL
-                else:
-                    # Group IDs and sequence numbers are document-local.  A
-                    # project comparison therefore uses the stable category
-                    # label when one exists, while still giving unnamed groups
-                    # an intelligible fallback.
-                    label = group.label.strip() or group.display_name()
+                label = self._category_label(document, measurement.fiber_group_id)
                 key = label.strip().casefold()
                 display_label, buckets = categories.setdefault(key, (label, {}))
                 bucket = buckets.setdefault(unit, _UnitBucket())
@@ -261,7 +431,26 @@ class MeasurementStatisticsService:
         return (document,)
 
     @staticmethod
-    def _matches_metric(measurement: Measurement, metric: MeasurementMetric) -> bool:
+    def _select_input_documents(
+        input_snapshot: StatisticsInputSnapshot,
+        *,
+        scope: StatisticsScope,
+        document_id: str | None,
+    ) -> tuple[StatisticsDocumentInput, ...]:
+        if scope is StatisticsScope.PROJECT:
+            return input_snapshot.documents
+        if document_id is None:
+            raise ValueError(f"{scope.value} scope requires document_id")
+        document = input_snapshot.get_document(document_id)
+        if document is None:
+            raise KeyError(f"Unknown document_id: {document_id}")
+        return (document,)
+
+    @staticmethod
+    def _matches_metric(
+        measurement: Measurement | StatisticsMeasurementInput,
+        metric: MeasurementMetric,
+    ) -> bool:
         if metric is MeasurementMetric.LENGTH:
             return measurement.measurement_kind in {"line", "polyline"}
         if metric is MeasurementMetric.AREA:
@@ -277,10 +466,17 @@ class MeasurementStatisticsService:
         return "px"
 
     @classmethod
-    def _unit_for(cls, document: ImageDocument, metric: MeasurementMetric) -> str:
+    def _unit_for(
+        cls,
+        document: ImageDocument | StatisticsDocumentInput,
+        metric: MeasurementMetric,
+    ) -> str:
         if metric is MeasurementMetric.COUNT:
             return "个"
-        base_unit = document.calibration.unit if document.calibration is not None else "px"
+        if isinstance(document, StatisticsDocumentInput):
+            base_unit = document.base_unit
+        else:
+            base_unit = document.calibration.unit if document.calibration is not None else "px"
         return square_unit(base_unit) if metric is MeasurementMetric.AREA else base_unit
 
     @classmethod
@@ -291,21 +487,26 @@ class MeasurementStatisticsService:
 
     @staticmethod
     def _raw_value(
-        document: ImageDocument,
-        measurement: Measurement,
+        document: ImageDocument | StatisticsDocumentInput,
+        measurement: Measurement | StatisticsMeasurementInput,
         metric: MeasurementMetric,
     ) -> object:
         if metric is MeasurementMetric.COUNT:
             return 1.0
+        has_calibration = (
+            document.has_calibration
+            if isinstance(document, StatisticsDocumentInput)
+            else document.calibration is not None
+        )
         if metric is MeasurementMetric.AREA:
-            return measurement.area_unit if document.calibration is not None else measurement.area_px
-        return measurement.diameter_unit if document.calibration is not None else measurement.diameter_px
+            return measurement.area_unit if has_calibration else measurement.area_px
+        return measurement.diameter_unit if has_calibration else measurement.diameter_px
 
     def _collect(
         self,
         bucket: _UnitBucket,
-        document: ImageDocument,
-        measurement: Measurement,
+        document: ImageDocument | StatisticsDocumentInput,
+        measurement: Measurement | StatisticsMeasurementInput,
         metric: MeasurementMetric,
     ) -> None:
         bucket.total_count += 1
@@ -331,6 +532,21 @@ class MeasurementStatisticsService:
         if is_hard_failure:
             return
         bucket.values.append((measurement.id, value))
+
+    @staticmethod
+    def _category_label(
+        document: ImageDocument | StatisticsDocumentInput,
+        group_id: str | None,
+    ) -> str:
+        if isinstance(document, StatisticsDocumentInput):
+            return document.category_label(group_id)
+        group = document.get_group(group_id)
+        if group is None:
+            return UNCATEGORIZED_LABEL
+        # Group IDs and sequence numbers are document-local.  A project
+        # comparison therefore uses the stable category label when one exists,
+        # while still giving unnamed groups an intelligible fallback.
+        return group.label.strip() or group.display_name()
 
     def _snapshot(
         self,

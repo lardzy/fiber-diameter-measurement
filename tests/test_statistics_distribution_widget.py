@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -13,7 +14,11 @@ from PySide6.QtGui import QWheelEvent
 from PySide6.QtWidgets import QApplication, QScrollArea
 
 from fdm.models import Calibration, ImageDocument, Measurement, ProjectState
-from fdm.services.measurement_statistics import MeasurementMetric, StatisticsScope
+from fdm.services.measurement_statistics import (
+    MeasurementMetric,
+    StatisticsInputSnapshot,
+    StatisticsScope,
+)
 from fdm.ui.statistics_distribution import (
     DistributionRecordFilterRequest,
     StatisticsDistributionWidget,
@@ -338,6 +343,66 @@ class StatisticsDistributionWidgetTests(unittest.TestCase):
         )
 
         self.assertEqual(widget.snapshots, completed)
+
+    def test_background_dashboards_queue_geometry_free_scalar_snapshots(self) -> None:
+        document = _document(
+            "background",
+            category_values=(("棉", "#2A9D8F", (10.0, 20.0)),),
+        )
+        project = ProjectState(version="test", documents=[document])
+        queued_tasks: list[object] = []
+
+        class _Pool:
+            def start(self, task: object) -> None:
+                queued_tasks.append(task)
+
+        widget = self._widget()
+        widget.BACKGROUND_THRESHOLD = 0
+        widget.set_context(
+            project,
+            document,
+            suggested_metric=MeasurementMetric.LENGTH,
+        )
+        widget._refresh_timer.stop()
+        with patch(
+            "copy.deepcopy",
+            side_effect=AssertionError("statistics tasks must not deepcopy the project"),
+        ):
+            with patch(
+                "fdm.ui.statistics_distribution.QThreadPool.globalInstance",
+                return_value=_Pool(),
+            ):
+                widget._refresh_now()
+
+            panel = MeasurementStatisticsPanel()
+            self.addCleanup(panel.close)
+            panel.BACKGROUND_THRESHOLD = 0
+            with patch(
+                "fdm.ui.statistics_widgets.QThreadPool.globalInstance",
+                return_value=_Pool(),
+            ):
+                panel.set_context(
+                    project,
+                    document,
+                    tool_mode="manual",
+                    selected_measurement=None,
+                )
+
+        self.assertEqual(len(queued_tasks), 2)
+        for task in queued_tasks:
+            input_snapshot = task._input_snapshot
+            self.assertIsInstance(input_snapshot, StatisticsInputSnapshot)
+            self.assertFalse(hasattr(task, "_project"))
+            measurement = input_snapshot.documents[0].measurements[0]
+            self.assertFalse(hasattr(measurement, "line_px"))
+            self.assertFalse(hasattr(measurement, "area_rings_px"))
+            self.assertEqual(measurement.diameter_px, 10.0)
+
+        document.measurements[0].diameter_px = 999.0
+        self.assertEqual(
+            queued_tasks[0]._input_snapshot.documents[0].measurements[0].diameter_px,
+            10.0,
+        )
 
     def test_live_statistics_keeps_result_but_no_longer_owns_object_details(self) -> None:
         document = _document(
