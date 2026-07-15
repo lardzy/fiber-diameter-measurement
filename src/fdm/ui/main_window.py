@@ -898,6 +898,7 @@ class MainWindow(QMainWindow):
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._group_list_rebuilding = False
         self._table_rebuilding = False
+        self._syncing_measurement_table_selection = False
         self._file_toolbar: QToolBar | None = None
         self._measure_toolbar: QToolBar | None = None
         self._settings_command_button: QToolButton | None = None
@@ -10427,7 +10428,7 @@ class MainWindow(QMainWindow):
         else:
             document.select_measurement(None)
             document.select_overlay_annotation(None)
-        self._sync_measurement_table_selection(document)
+        self._sync_measurement_table_selection(document, scroll=True)
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
@@ -11002,11 +11003,19 @@ class MainWindow(QMainWindow):
             "edge_pair_not_found": "未找到有效边缘，已保留原线供人工修正",
         }.get(result.status, "边缘吸附已完成")
 
-    def _sync_measurement_table_selection(self, document: ImageDocument) -> None:
-        self._select_measurement_table_id(document.view_state.selected_measurement_id)
+    def _sync_measurement_table_selection(
+        self,
+        document: ImageDocument,
+        *,
+        scroll: bool = False,
+    ) -> None:
+        self._select_measurement_table_id(
+            document.view_state.selected_measurement_id,
+            scroll=scroll,
+        )
 
     def _on_measurement_selection_changed(self, *_args) -> None:
-        if self._table_rebuilding:
+        if self._table_rebuilding or self._syncing_measurement_table_selection:
             return
         document = self.current_document()
         canvas = self.current_canvas()
@@ -11035,12 +11044,12 @@ class MainWindow(QMainWindow):
         return self._records_controller.measurement_id_for_index(proxy_index)
 
     def _select_measurement_table_id(self, measurement_id: str | None, *, scroll: bool = False) -> None:
-        selection_model = self._records_controller.selection_model
-        selection_model.blockSignals(True)
+        previous_syncing = self._syncing_measurement_table_selection
+        self._syncing_measurement_table_selection = True
         try:
             self._records_controller.select_measurement_id(measurement_id)
         finally:
-            selection_model.blockSignals(False)
+            self._syncing_measurement_table_selection = previous_syncing
         if scroll:
             for pane in (self._bottom_records_pane, self._inspector_records_pane):
                 if pane is not None:

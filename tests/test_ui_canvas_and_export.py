@@ -3736,14 +3736,47 @@ class CanvasAndExportTests(unittest.TestCase):
             window._refresh_statistics_ui()
             self.assertNotIn("当前结果", window._statistics_panel.current_value_label.text())
 
-            canvas.mousePressEvent(
-                FakeMouseEvent(
-                    canvas.image_to_widget(Point(80, 80)),
-                    button=Qt.MouseButton.LeftButton,
-                )
+            bottom_records = window._bottom_records_pane
+            inspector_records = window._inspector_records_pane
+            self.assertIsNotNone(bottom_records)
+            self.assertIsNotNone(inspector_records)
+            selection_notifications: list[object] = []
+            window._records_controller.selection_model.selectionChanged.connect(
+                lambda selected, _deselected: selection_notifications.append(selected)
             )
+            with (
+                patch.object(
+                    bottom_records,
+                    "scroll_to_measurement",
+                    wraps=bottom_records.scroll_to_measurement,
+                ) as bottom_scroll,
+                patch.object(
+                    inspector_records,
+                    "scroll_to_measurement",
+                    wraps=inspector_records.scroll_to_measurement,
+                ) as inspector_scroll,
+            ):
+                canvas.mousePressEvent(
+                    FakeMouseEvent(
+                        canvas.image_to_widget(Point(80, 80)),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
 
             self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
+            self.assertTrue(selection_notifications)
+            self.assertIs(
+                bottom_records.table.selectionModel(),
+                inspector_records.table.selectionModel(),
+            )
+            selected_rows = inspector_records.table.selectionModel().selectedRows()
+            self.assertEqual(len(selected_rows), 1)
+            self.assertEqual(
+                selected_rows[0].data(Qt.ItemDataRole.UserRole),
+                measurement.id,
+            )
+            bottom_scroll.assert_called_once_with(measurement.id)
+            inspector_scroll.assert_called_once_with(measurement.id)
             self.assertTrue(window._statistics_refresh_timer.isActive())
             window._statistics_refresh_timer.stop()
             window._refresh_statistics_ui()
