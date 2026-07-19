@@ -3787,6 +3787,49 @@ class CanvasAndExportTests(unittest.TestCase):
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
 
+    def test_object_style_edit_does_not_escalate_to_full_canvas_update(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(960, 540, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/local_style_refresh.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            measurement = Measurement(
+                id="local-style",
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                measurement_kind="line",
+                line_px=Line(Point(320, 260), Point(420, 260)),
+            )
+            measurement.recalculate(None)
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._sync_overlay_visual_state()  # noqa: SLF001
+
+            with patch.object(canvas, "update") as update:
+                window._on_object_appearance_change_requested(
+                    "measurement",
+                    measurement.id,
+                    ObjectAppearanceOverride(stroke_color="#FF0000"),
+                )
+
+            self.assertTrue(update.call_args_list)
+            for repaint in update.call_args_list:
+                self.assertTrue(
+                    repaint.args,
+                    "single-object style edit requested an unbounded update()",
+                )
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
     def test_current_object_inspector_updates_measurement_and_overlay_with_history(self) -> None:
         window = MainWindow()
         try:
@@ -3839,7 +3882,20 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(document.get_measurement(measurement.id).appearance, appearance)
 
             window._on_canvas_overlay_selected(document.id, overlay.id)
-            window._on_overlay_content_change_requested(overlay.id, "更新后的文字")
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._sync_overlay_visual_state()  # noqa: SLF001
+            with patch.object(canvas, "update") as update:
+                window._on_overlay_content_change_requested(
+                    overlay.id,
+                    "更新后的文字",
+                )
+            self.assertTrue(update.call_args_list)
+            for repaint in update.call_args_list:
+                self.assertTrue(
+                    repaint.args,
+                    "single-overlay edit requested an unbounded update()",
+                )
             self.assertEqual(document.get_overlay_annotation(overlay.id).content, "更新后的文字")
             self.assertEqual(window._object_properties_section.summaryLabel.text(), "文字")
         finally:
@@ -8600,7 +8656,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual([number for _point, number in captured], [1, 2])
 
-    def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
+    def test_area_measurement_combines_fill_with_outer_stroke_for_all_rings(self) -> None:
         document, _, _canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -8630,10 +8686,16 @@ class CanvasAndExportTests(unittest.TestCase):
             show_handles=False,
         )
 
-        self.assertEqual([call[0] for call in painter.calls], ["path", "path", "path"])
-        self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
-        self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
-        self.assertEqual(painter.calls[2][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+        self.assertEqual([call[0] for call in painter.calls], ["path", "path"])
+        self.assertEqual(painter.calls[0][1].color().name().lower(), "#0b0b0b")
+        self.assertEqual(painter.calls[0][2].alpha(), 80)
+        self.assertEqual(
+            painter.calls[1][1].color().name().lower(),
+            QColor(AppSettings().default_measurement_color).name().lower(),
+        )
+        self.assertEqual(painter.calls[1][2], Qt.BrushStyle.NoBrush)
+        self.assertGreater(painter.calls[0][3], 8)
+        self.assertEqual(painter.calls[0][3], painter.calls[1][3])
 
     def test_unselected_magic_segment_area_draws_with_simplified_display_geometry(self) -> None:
         document, _, _canvas = self._create_canvas_document()

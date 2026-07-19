@@ -7,7 +7,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF
 from PySide6.QtGui import QColor, QImage, QPainter, QRegion
@@ -450,7 +450,16 @@ class DigitalSlideStore:
             )
         return image
 
-    def read_tiles_for_viewport(self, *, x: int, y: int, width: int, height: int, z_index: int) -> list[tuple[DigitalSlideTile, QImage]]:
+    def read_tiles_for_viewport(
+        self,
+        *,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        z_index: int,
+        cancellation_requested: Callable[[], bool] | None = None,
+    ) -> list[tuple[DigitalSlideTile, QImage]]:
         conn = self._connection()
         self._initialize_schema()
         x2 = int(x) + int(width)
@@ -470,7 +479,11 @@ class DigitalSlideStore:
         ).fetchall()
         tiles: list[tuple[DigitalSlideTile, QImage]] = []
         for row in rows:
+            if cancellation_requested is not None and cancellation_requested():
+                break
             image = self._decode_tile_image(int(row["id"]), bytes(row["image_png"]), str(row["codec"] or "png"))
+            if cancellation_requested is not None and cancellation_requested():
+                break
             if image.isNull():
                 continue
             tiles.append(
@@ -535,6 +548,7 @@ class DigitalSlideStore:
         height: int,
         z_index: int,
         blend_width: int = 0,
+        cancellation_requested: Callable[[], bool] | None = None,
     ) -> QImage:
         output = QImage(max(1, int(width)), max(1, int(height)), QImage.Format.Format_RGB32)
         output.fill(QColor("#101820"))
@@ -558,7 +572,16 @@ class DigitalSlideStore:
                 ),
             )
 
-        for tile, image in self.read_tiles_for_viewport(x=x, y=y, width=width, height=height, z_index=z_index):
+        for tile, image in self.read_tiles_for_viewport(
+            x=x,
+            y=y,
+            width=width,
+            height=height,
+            z_index=z_index,
+            cancellation_requested=cancellation_requested,
+        ):
+            if cancellation_requested is not None and cancellation_requested():
+                break
             source_left = max(0, int(x) - tile.x)
             source_top = max(0, int(y) - tile.y)
             source_right = min(tile.width, int(x) + int(width) - tile.x)

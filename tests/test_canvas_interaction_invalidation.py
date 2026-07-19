@@ -1,0 +1,590 @@
+from __future__ import annotations
+
+import os
+from pathlib import Path
+import sys
+import unittest
+from unittest.mock import patch
+
+os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
+
+from PySide6.QtCore import QPointF, QRect, QRectF, Qt
+from PySide6.QtGui import QColor, QImage, QPainter, QRegion
+from PySide6.QtWidgets import QApplication
+
+from fdm.geometry import Line, Point
+from fdm.models import ImageDocument, Measurement
+from fdm.settings import (
+    AppSettings,
+    MagicSegmentToolMode,
+    MeasurementLabelStyleSettings,
+)
+from fdm.ui.canvas import (
+    DocumentCanvas,
+    MagicSegmentOperationMode,
+    MagicSegmentSubtractInputMode,
+    canvas_workspace_background,
+)
+from fdm.ui.rendering import measurement_label_image_bounds
+
+
+class _PointerEvent:
+    def __init__(
+        self,
+        position: QPointF,
+        *,
+        button: Qt.MouseButton = Qt.MouseButton.LeftButton,
+    ) -> None:
+        self._position = position
+        self._button = button
+
+    def position(self) -> QPointF:
+        return self._position
+
+    @staticmethod
+    def modifiers() -> Qt.KeyboardModifiers:
+        return Qt.KeyboardModifier.NoModifier
+
+    def button(self) -> Qt.MouseButton:
+        return self._button
+
+
+def _bounding_update_rect(update_mock) -> QRect:
+    """Return the union of requested dirty regions and reject full updates."""
+
+    combined = QRect()
+    assert update_mock.call_args_list, "interaction did not request a repaint"
+    for call in update_mock.call_args_list:
+        assert call.args, "interaction requested an unbounded full-canvas update()"
+        dirty = call.args[0]
+        if isinstance(dirty, QRegion):
+            rect = dirty.boundingRect()
+        elif isinstance(dirty, QRectF):
+            rect = dirty.toAlignedRect()
+        elif isinstance(dirty, QRect):
+            rect = dirty
+        else:  # pragma: no cover - documents the accepted QWidget overloads
+            raise AssertionError(f"unexpected update argument: {type(dirty)!r}")
+        assert rect.isValid() and not rect.isEmpty()
+        combined = rect if combined.isNull() else combined.united(rect)
+    return combined
+
+
+class CanvasInteractionInvalidationTests(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.app = QApplication.instance() or QApplication([])
+
+    @staticmethod
+    def _canvas(
+        document: ImageDocument,
+        *,
+        width: int = 320,
+        height: int = 240,
+    ) -> DocumentCanvas:
+        canvas = DocumentCanvas()
+        canvas.resize(width, height)
+        image_width, image_height = document.image_size
+        image = QImage(
+            image_width,
+            image_height,
+            QImage.Format.Format_RGB32,
+        )
+        image.fill(0)
+        canvas.set_document(document, image)
+        return canvas
+
+    @staticmethod
+    def _assert_local_update(
+        canvas: DocumentCanvas,
+        update_mock,
+        *image_points: Point,
+    ) -> QRect:
+        dirty = _bounding_update_rect(update_mock)
+        for point in image_points:
+            widget_point = canvas.image_to_widget(point).toPoint()
+            assert dirty.contains(widget_point), (
+                f"dirty region {dirty!r} does not cover {widget_point!r}"
+            )
+        assert dirty != canvas.rect(), "interaction invalidated the whole canvas"
+        assert dirty.width() < canvas.width() or dirty.height() < canvas.height()
+        return dirty
+
+    def test_polygon_hover_invalidates_old_and_new_preview_only(self) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+        )
+        canvas = self._canvas(document)
+        previous_hover = Point(82.0, 74.0)
+        new_hover = Point(126.0, 96.0)
+        last_vertex = Point(58.0, 52.0)
+        try:
+            canvas._tool_mode = "polygon_area"  # noqa: SLF001
+            canvas._drawing_polygon_points = [Point(28.0, 30.0), last_vertex]  # noqa: SLF001
+            canvas._area_hover_point = previous_hover  # noqa: SLF001
+
+            with patch.object(canvas, "update") as update:
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(new_hover))
+                )
+
+            self._assert_local_update(
+                canvas,
+                update,
+                last_vertex,
+                previous_hover,
+                new_hover,
+            )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_area_point_landing_uses_local_dirty_region_for_each_tool(
+        self,
+    ) -> None:
+        cases = (
+            ("polygon_area", False),
+            ("continuous_manual", False),
+            (MagicSegmentToolMode.STANDARD, True),
+        )
+        for tool_mode, magic_subtract in cases:
+            with self.subTest(tool_mode=tool_mode):
+                document = ImageDocument(
+                    id=f"doc-{tool_mode}",
+                    path=f"/tmp/{tool_mode}.png",
+                    image_size=(320, 240),
+                )
+                canvas = self._canvas(document)
+                first = Point(54.0, 62.0)
+                second = Point(138.0, 104.0)
+                try:
+                    canvas.set_tool_mode(tool_mode)
+                    if magic_subtract:
+                        canvas._magic_segment.active_stage = (  # noqa: SLF001
+                            MagicSegmentOperationMode.SUBTRACT
+                        )
+                        canvas.set_magic_subtract_input_mode(
+                            MagicSegmentSubtractInputMode.POLYGON
+                        )
+
+                    with patch.object(canvas, "update") as update:
+                        canvas.mousePressEvent(
+                            _PointerEvent(canvas.image_to_widget(first))
+                        )
+                        canvas.mousePressEvent(
+                            _PointerEvent(canvas.image_to_widget(second))
+                        )
+
+                    self._assert_local_update(
+                        canvas,
+                        update,
+                        first,
+                        second,
+                    )
+                    self.assertEqual(
+                        canvas._drawing_polygon_points,  # noqa: SLF001
+                        [first, second],
+                    )
+                finally:
+                    canvas.clear_document()
+                    canvas.close()
+
+    def test_freehand_sampling_invalidates_only_new_segment(self) -> None:
+        document = ImageDocument(
+            id="doc-freehand",
+            path="/tmp/freehand.png",
+            image_size=(320, 240),
+        )
+        canvas = self._canvas(document)
+        first = Point(46.0, 58.0)
+        second = Point(124.0, 92.0)
+        try:
+            canvas.set_tool_mode("freehand_area")
+            with patch.object(canvas, "update") as update:
+                canvas.mousePressEvent(
+                    _PointerEvent(canvas.image_to_widget(first))
+                )
+                canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(second))
+                )
+
+            self._assert_local_update(
+                canvas,
+                update,
+                first,
+                second,
+            )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_manual_line_start_move_and_commit_use_local_regions(self) -> None:
+        document = ImageDocument(
+            id="doc-line",
+            path="/tmp/line.png",
+            image_size=(320, 240),
+        )
+        canvas = self._canvas(document)
+        start = Point(62.0, 74.0)
+        end = Point(174.0, 132.0)
+        try:
+            canvas.set_tool_mode("manual")
+            with patch.object(canvas, "update") as update:
+                canvas.mousePressEvent(
+                    _PointerEvent(canvas.image_to_widget(start))
+                )
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(end))
+                )
+                canvas.mouseReleaseEvent(
+                    _PointerEvent(canvas.image_to_widget(end))
+                )
+
+            self._assert_local_update(
+                canvas,
+                update,
+                start,
+                end,
+            )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_line_endpoint_continuous_moves_use_local_regions(self) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+        )
+        measurement = Measurement(
+            id="line",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="line",
+            line_px=Line(Point(50.0, 70.0), Point(190.0, 140.0)),
+        )
+        document.add_measurement(measurement)
+        canvas = self._canvas(document)
+        original_start = measurement.line_px.start
+        first_position = Point(72.0, 84.0)
+        second_position = Point(94.0, 98.0)
+        fixed_endpoint = measurement.line_px.end
+        try:
+            canvas._dragging_handle = (measurement.id, "start")  # noqa: SLF001
+            canvas._drag_preview_line = measurement.effective_line()  # noqa: SLF001
+
+            with patch.object(canvas, "update") as update:
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(first_position))
+                )
+                first_dirty = self._assert_local_update(
+                    canvas,
+                    update,
+                    original_start,
+                    first_position,
+                    fixed_endpoint,
+                )
+
+                update.reset_mock()
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(second_position))
+                )
+                second_dirty = self._assert_local_update(
+                    canvas,
+                    update,
+                    first_position,
+                    second_position,
+                    fixed_endpoint,
+                )
+
+            self.assertLess(first_dirty.width() * first_dirty.height(), canvas.width() * canvas.height())
+            self.assertLess(second_dirty.width() * second_dirty.height(), canvas.width() * canvas.height())
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_area_center_drag_continuous_moves_use_local_regions(self) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+        )
+        outer = [
+            Point(40.0, 45.0),
+            Point(130.0, 45.0),
+            Point(130.0, 125.0),
+            Point(40.0, 125.0),
+        ]
+        measurement = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=list(outer),
+            area_rings_px=[list(outer)],
+        )
+        document.add_measurement(measurement)
+        canvas = self._canvas(document)
+        press = Point(85.0, 85.0)
+        first_position = Point(101.0, 95.0)
+        second_position = Point(119.0, 110.0)
+        try:
+            canvas._begin_area_drag(  # noqa: SLF001
+                (measurement.id, "center", None, None),
+                press,
+            )
+
+            with patch.object(canvas, "update") as update:
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(first_position))
+                )
+                self._assert_local_update(
+                    canvas,
+                    update,
+                    outer[0],
+                    Point(outer[2].x + 16.0, outer[2].y + 10.0),
+                )
+
+                update.reset_mock()
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(second_position))
+                )
+                self._assert_local_update(
+                    canvas,
+                    update,
+                    Point(outer[0].x + 16.0, outer[0].y + 10.0),
+                    Point(outer[2].x + 34.0, outer[2].y + 25.0),
+                )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_area_drag_dirty_bounds_include_result_label_outside_geometry(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+        )
+        outer = [
+            Point(60.0, 4.0),
+            Point(180.0, 4.0),
+            Point(180.0, 16.0),
+            Point(60.0, 16.0),
+        ]
+        measurement = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=list(outer),
+            area_rings_px=[list(outer)],
+        )
+        document.add_measurement(measurement)
+        canvas = self._canvas(document)
+        canvas.set_settings(
+            AppSettings(
+                area_measurement_label_style=MeasurementLabelStyleSettings(
+                    enabled=True,
+                    font_size=20,
+                )
+            )
+        )
+        try:
+            label_bounds = measurement_label_image_bounds(
+                measurement,
+                document,
+                canvas._settings,  # noqa: SLF001
+                canvas.image_to_widget,
+                exact_area=True,
+            )
+            drag_bounds = canvas._area_drag_display_bounds(  # noqa: SLF001
+                measurement,
+                Point(0.0, 0.0),
+            )
+            self.assertIsNotNone(label_bounds)
+            self.assertIsNotNone(drag_bounds)
+            self.assertLess(label_bounds.top(), min(point.y for point in outer))
+            self.assertTrue(
+                drag_bounds.image_rect.contains(label_bounds)
+            )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_selection_background_patch_clears_label_outside_image_bounds(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(200, 100),
+        )
+        measurement = Measurement(
+            id="line",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="line",
+            line_px=Line(Point(150.0, 0.0), Point(50.0, 0.0)),
+        )
+        document.add_measurement(measurement)
+        document.select_measurement(measurement.id)
+        canvas = DocumentCanvas()
+        canvas.resize(300, 200)
+        image = QImage(200, 100, QImage.Format.Format_RGB32)
+        image.fill(Qt.GlobalColor.white)
+        canvas.set_document(document, image)
+        canvas._zoom = 1.0  # noqa: SLF001
+        canvas._pan = Point(40.0, 40.0)  # noqa: SLF001
+        canvas.set_settings(
+            AppSettings(
+                length_measurement_label_style=MeasurementLabelStyleSettings(
+                    enabled=True,
+                    font_size=20,
+                    background_enabled=True,
+                )
+            )
+        )
+        label_bounds = measurement_label_image_bounds(
+            measurement,
+            document,
+            canvas._settings,  # noqa: SLF001
+            canvas.image_to_widget,
+        )
+        self.assertIsNotNone(label_bounds)
+        label_center = canvas.image_to_widget(
+            Point(label_bounds.center().x(), label_bounds.center().y())
+        )
+        self.assertLess(label_center.y(), canvas._pan.y)  # noqa: SLF001
+
+        target = QImage(
+            canvas.width(),
+            canvas.height(),
+            QImage.Format.Format_ARGB32_Premultiplied,
+        )
+        target.fill(QColor("#FF00FF"))
+        painter = QPainter(target)
+        try:
+            with patch.object(
+                canvas,
+                "_draw_measurements_direct",
+                return_value=False,
+            ):
+                canvas._redraw_selected_measurement_background(  # noqa: SLF001
+                    painter,
+                    canvas._paint_context(),  # noqa: SLF001
+                )
+        finally:
+            painter.end()
+        sample = QColor(
+            target.pixel(
+                int(round(label_center.x())),
+                int(round(label_center.y())),
+            )
+        )
+        self.assertEqual(
+            sample.name(),
+            canvas_workspace_background(canvas.palette()).name(),
+        )
+        canvas.clear_document()
+        canvas.close()
+
+    def test_visible_tile_change_cancels_stale_active_and_replaces_queue(self) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(4096, 1024),
+        )
+        canvas = self._canvas(document, width=400, height=300)
+        try:
+            canvas._zoom = 1.0  # noqa: SLF001
+            canvas._pan = Point(0.0, 0.0)  # noqa: SLF001
+            old_keys = canvas._visible_overlay_tile_keys(  # noqa: SLF001
+                canvas._paint_context()  # noqa: SLF001
+            )
+            self.assertTrue(old_keys)
+            stale_active = old_keys[0]
+            canvas._overlay_tile_active = stale_active  # noqa: SLF001
+            canvas._overlay_tile_queue = list(old_keys[1:])  # noqa: SLF001
+            canvas._overlay_tile_queued = set(old_keys[1:])  # noqa: SLF001
+
+            canvas._pan = Point(-2048.0, 0.0)  # noqa: SLF001
+            current_keys = canvas._visible_overlay_tile_keys(  # noqa: SLF001
+                canvas._paint_context()  # noqa: SLF001
+            )
+            current_set = set(current_keys)
+            self.assertTrue(current_set)
+            self.assertNotIn(stale_active, current_set)
+
+            with (
+                patch(
+                    "fdm.ui.canvas.canvas_overlay_tile_cache.cancel"
+                ) as cancel,
+                patch(
+                    "fdm.ui.canvas.canvas_overlay_tile_cache.contains",
+                    return_value=False,
+                ),
+                patch(
+                    "fdm.ui.canvas.canvas_overlay_tile_cache.is_pending",
+                    return_value=False,
+                ),
+                patch("fdm.ui.canvas.QTimer.singleShot"),
+            ):
+                canvas._enqueue_overlay_tiles(current_keys)  # noqa: SLF001
+
+            cancel.assert_called_once_with(stale_active)
+            self.assertIsNone(canvas._overlay_tile_active)  # noqa: SLF001
+            self.assertEqual(
+                set(canvas._overlay_tile_queue),  # noqa: SLF001
+                current_set,
+            )
+            self.assertEqual(
+                canvas._overlay_tile_queued,  # noqa: SLF001
+                current_set,
+            )
+            self.assertFalse(
+                canvas._overlay_tile_key_is_current(stale_active)  # noqa: SLF001
+            )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_pan_release_requests_one_warmable_frame(self) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(1024, 768),
+        )
+        canvas = self._canvas(document, width=400, height=300)
+        try:
+            canvas._panning = True  # noqa: SLF001
+            canvas._pan_button = Qt.MouseButton.LeftButton  # noqa: SLF001
+            canvas._last_mouse_pos = QPointF(120.0, 100.0)  # noqa: SLF001
+
+            with patch.object(canvas, "update") as update:
+                canvas.mouseReleaseEvent(
+                    _PointerEvent(
+                        QPointF(160.0, 120.0),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
+
+            update.assert_called_once_with()
+            self.assertFalse(canvas._panning)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_button)  # noqa: SLF001
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+
+if __name__ == "__main__":
+    unittest.main()

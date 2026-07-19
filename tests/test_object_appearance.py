@@ -305,10 +305,7 @@ class ObjectAppearanceTests(unittest.TestCase):
         self.assertIsNot(first, third)
 
         area_derived_geometry_service.clear()
-        with (
-            patch.object(area_display, "_PATH_MAX_ENTRIES", 2),
-            patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 600),
-        ):
+        with patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 600):
             for offset in range(6):
                 candidate = Measurement(
                     id=f"area-{offset}",

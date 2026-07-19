@@ -196,6 +196,7 @@ from fdm.ui.dialogs import (
     ShortcutHelpDialog,
 )
 from fdm.ui.area_inference_worker import AreaInferenceRequest
+from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.associated_file_controller import AssociatedFileOpenController
 from fdm.ui.background_task_controller import AreaInferenceBatchState, BackgroundTaskController, BatchLoadState
 from fdm.ui.export_controller import ExportController
@@ -9954,8 +9955,7 @@ class MainWindow(QMainWindow):
         self.image_list.clear()
         self.tab_widget.clear()
         for canvas in canvases:
-            if isinstance(canvas, DigitalSlideCanvas):
-                canvas.shutdown()
+            self._release_document_canvas(canvas)
             canvas.deleteLater()
         canvas_ids = {id(canvas) for canvas in canvases}
         for widget in tab_widgets:
@@ -9999,8 +9999,7 @@ class MainWindow(QMainWindow):
         tab_widget = self.tab_widget.widget(index)
         self.tab_widget.removeTab(index)
         if canvas is not None:
-            if isinstance(canvas, DigitalSlideCanvas):
-                canvas.shutdown()
+            self._release_document_canvas(canvas)
             canvas.deleteLater()
         elif tab_widget is not None:
             tab_widget.deleteLater()
@@ -10009,6 +10008,23 @@ class MainWindow(QMainWindow):
         self._clear_prompt_segmentation_cache()
         self._end_project_session_if_empty()
         self._update_ui_for_current_document()
+
+    @staticmethod
+    def _release_document_canvas(canvas: DocumentCanvas) -> None:
+        """Detach every canvas-owned resource before scheduling Qt deletion.
+
+        Digital-slide canvases additionally own navigation timers and a
+        best-effort viewport buffer worker.  Stop those producers first, then
+        use the common document detach path to cancel proxy warming and
+        overlay-tile requests and release the document's bounded geometry
+        caches.  Keeping this order in one place prevents a late worker result
+        from repopulating a canvas after its tab has already been removed.
+        """
+
+        shutdown = getattr(canvas, "shutdown", None)
+        if callable(shutdown):
+            shutdown()
+        canvas.clear_document()
 
     @staticmethod
     def _discard_detached_area_geometry(
@@ -10029,6 +10045,7 @@ class MainWindow(QMainWindow):
                 continue
             if current_by_id.get(measurement.id) is not measurement:
                 area_derived_geometry_service.discard_measurement(measurement)
+                area_handle_display_cache.discard_measurement(measurement)
 
     def _end_project_session_if_empty(self) -> bool:
         """Detach an empty workspace from its previous project file.
@@ -10122,7 +10139,7 @@ class MainWindow(QMainWindow):
         self._append_measurement_table_row(document, measurement)
         canvas = self.current_canvas()
         if canvas is not None:
-            canvas.update()
+            canvas.notify_document_visual_changed()
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
@@ -10863,6 +10880,7 @@ class MainWindow(QMainWindow):
             canvas.set_settings(self._app_settings)
             canvas.set_tool_mode("select" if self._preview_active and canvas is self._preview_canvas else self._tool_mode)
             canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
+            canvas.notify_document_visual_changed()
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._show_pending_history_budget_notice()
@@ -13041,6 +13059,5 @@ class MainWindow(QMainWindow):
         self._hide_small_object_preview()
         self._clear_prompt_segmentation_cache()
         for canvas in self._canvases.values():
-            if isinstance(canvas, DigitalSlideCanvas):
-                canvas.shutdown()
+            self._release_document_canvas(canvas)
         event.accept()

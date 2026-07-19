@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import math
 import time
+from collections import OrderedDict
 from unittest.mock import patch
 
 import fdm.area_display as area_display
@@ -37,6 +38,24 @@ def _dense_area(measurement_id: str = "area") -> Measurement:
     )
     measurement.recalculate(None)
     return measurement
+
+
+def _small_area(measurement_id: str, offset: float = 0.0) -> Measurement:
+    outer = [
+        Point(offset, 0.0),
+        Point(offset + 10.0, 0.0),
+        Point(offset + 10.0, 10.0),
+        Point(offset, 10.0),
+    ]
+    return Measurement(
+        id=measurement_id,
+        image_id="image",
+        fiber_group_id=None,
+        mode="polygon_area",
+        measurement_kind="area",
+        polygon_px=outer,
+        area_rings_px=[outer],
+    )
 
 
 def test_screen_proxy_never_changes_raw_area_or_serialized_geometry() -> None:
@@ -102,6 +121,23 @@ def test_raw_geometry_does_not_eagerly_compute_centroid_or_hole_area() -> None:
     assert raw.path.elementCount() > 0
     assert not service._moments
     assert not service._hole_areas
+
+
+def test_raw_bounds_does_not_construct_or_cache_a_painter_path() -> None:
+    service = AreaDerivedGeometryService()
+    measurement = _dense_area()
+
+    with patch.object(
+        area_display,
+        "_rings_path",
+        side_effect=AssertionError("bounds query must not construct a path"),
+    ):
+        bounds = service.raw_bounds(measurement)
+
+    assert bounds is not None
+    assert not service._raw_paths
+    assert service.path_cache_entry_count == 0
+    assert service.path_cache_bytes == 0
 
 
 def test_polygon_only_area_uses_cached_scalar_derivatives() -> None:
@@ -201,19 +237,115 @@ def test_handle_display_is_thinned_but_hit_index_returns_original_vertex() -> No
 def test_raw_and_proxy_paths_share_one_bounded_budget_including_proxy_points() -> None:
     service = AreaDerivedGeometryService()
     measurements = [_dense_area(f"area-{index}") for index in range(4)]
-    with (
-        patch.object(area_display, "_PATH_MAX_ENTRIES", 3),
-        patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 120_000),
-    ):
+    with patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 60_000):
         for measurement in measurements:
             service.screen_geometry(measurement, zoom=1.0, selected=False)
 
-    assert len(service._raw_paths) + len(service._proxies) <= 3
-    assert service._path_bytes <= 120_000
+    assert service.path_cache_bytes <= 60_000
+    assert service.path_cache_entry_count == (
+        len(service._raw_paths) + len(service._proxies)
+    )
     assert all(
         entry.estimated_bytes > area_display._path_bytes(entry.path)
         for entry in service._proxies.values()
     )
+
+
+def test_path_cache_has_no_low_entry_limit_when_byte_budget_has_capacity() -> None:
+    service = AreaDerivedGeometryService()
+    measurements = [_small_area(f"area-{index}", float(index * 20)) for index in range(300)]
+
+    with service.path_render_pass():
+        for measurement in measurements:
+            service.raw_path(measurement)
+
+    assert service.path_cache_entry_count == 300
+    assert service.path_cache_bytes <= area_display._PATH_MAX_ESTIMATED_BYTES
+
+
+def test_render_pass_pinning_prevents_sequential_lru_scan_thrash() -> None:
+    service = AreaDerivedGeometryService()
+    measurements = [_small_area(f"area-{index}", float(index * 20)) for index in range(3)]
+
+    with patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 512):
+        with service.path_render_pass():
+            for measurement in measurements:
+                service.raw_path(measurement)
+        stable_keys = tuple(service._raw_paths)
+        assert len(stable_keys) == 2
+
+        for _pass_index in range(2):
+            with patch.object(
+                area_display,
+                "_rings_path",
+                wraps=area_display._rings_path,
+            ) as build_path:
+                with service.path_render_pass():
+                    for measurement in measurements:
+                        service.raw_path(measurement)
+            assert build_path.call_count == 1
+            assert tuple(service._raw_paths) == stable_keys
+
+
+def test_render_pass_keeps_proxy_working_set_stable_when_budget_is_full() -> None:
+    service = AreaDerivedGeometryService()
+    measurements = [_dense_area(f"area-{index}") for index in range(3)]
+
+    with patch.object(area_display, "_PATH_MAX_ESTIMATED_BYTES", 50_000):
+        with service.path_render_pass():
+            for measurement in measurements:
+                service.screen_geometry(measurement, zoom=1.0, selected=False)
+        stable_keys = tuple(service._proxies)
+        assert len(stable_keys) == 2
+
+        with patch.object(
+            service,
+            "_build_proxy",
+            wraps=service._build_proxy,
+        ) as build_proxy:
+            with service.path_render_pass():
+                geometries = [
+                    service.screen_geometry(
+                        measurement,
+                        zoom=1.0,
+                        selected=False,
+                    )
+                    for measurement in measurements
+                ]
+
+        assert [geometry.source for geometry in geometries] == [
+            AREA_GEOMETRY_SCREEN,
+            AREA_GEOMETRY_SCREEN,
+            AREA_GEOMETRY_RAW,
+        ]
+        assert build_proxy.call_count == 1
+        assert tuple(service._proxies) == stable_keys
+
+
+def test_path_cache_stats_and_generation_only_change_with_path_entries() -> None:
+    service = AreaDerivedGeometryService()
+    measurement = _small_area("area")
+
+    assert service.path_cache_generation == 0
+    service.raw_bounds(measurement)
+    assert service.path_cache_generation == 0
+
+    first = service.raw_path(measurement)
+    assert first.elementCount() > 0
+    assert service.path_cache_generation == 1
+    assert service.path_cache_entry_count == 1
+    assert service.path_cache_bytes > 0
+
+    assert service.raw_path(measurement) is first
+    assert service.path_cache_generation == 1
+
+    service.discard_measurement(measurement)
+    assert service.path_cache_generation == 2
+    assert service.path_cache_entry_count == 0
+    assert service.path_cache_bytes == 0
+
+    service.clear()
+    assert service.path_cache_generation == 2
 
 
 def test_hit_index_is_bounded_and_entries_verify_their_owner() -> None:
@@ -246,6 +378,55 @@ def test_discard_document_releases_all_owner_bound_geometry_entries() -> None:
     assert not service._hit_indexes
     assert service._path_bytes == 0
     assert service._hit_index_bytes == 0
+
+
+def test_discard_document_uses_owner_index_without_scanning_unrelated_caches() -> None:
+    class IterationForbiddenOrderedDict(OrderedDict):
+        def __iter__(self):
+            raise AssertionError("discard must not scan a complete cache")
+
+    service = AreaDerivedGeometryService()
+    first = _dense_area("first")
+    second = _dense_area("second")
+    for measurement in (first, second):
+        service.screen_geometry(measurement, zoom=1.0, selected=False)
+        service.scalar_geometry(measurement)
+        service.nearest_vertex(measurement, measurement.area_rings_px[0][0], 1.0)
+
+    first_identity = (id(first), first.id)
+    second_identity = (id(second), second.id)
+    assert first_identity in service._owner_cache_keys
+    assert second_identity in service._owner_cache_keys
+
+    for attribute in (
+        "_bounds",
+        "_moments",
+        "_hole_areas",
+        "_raw_paths",
+        "_proxies",
+        "_proxy_failures",
+        "_hit_indexes",
+    ):
+        setattr(
+            service,
+            attribute,
+            IterationForbiddenOrderedDict(getattr(service, attribute)),
+        )
+
+    service.discard_document([first])
+
+    assert first_identity not in service._owner_cache_keys
+    assert second_identity in service._owner_cache_keys
+    for cache in (
+        service._bounds,
+        service._moments,
+        service._hole_areas,
+        service._raw_paths,
+        service._proxies,
+        service._proxy_failures,
+        service._hit_indexes,
+    ):
+        assert all(key[:2] == second_identity for key in cache.keys())
 
 
 def test_compact_hit_index_stays_cached_and_fits_six_hundred_thousand_points() -> None:
@@ -400,6 +581,56 @@ def test_failed_proxy_validation_is_not_repeated_every_paint() -> None:
     with patch.object(service, "_build_proxy", return_value=None) as rebuild_proxy:
         service.screen_geometry(measurement, zoom=1.0, selected=False)
     assert rebuild_proxy.call_count == 1
+
+
+def test_failed_proxy_memoization_has_a_global_lru_limit() -> None:
+    service = AreaDerivedGeometryService()
+    measurements = [_dense_area(f"failure-{index}") for index in range(7)]
+
+    with (
+        patch.object(area_display, "_PROXY_FAILURE_MAX_ENTRIES", 4),
+        patch.object(service, "_build_proxy", return_value=None),
+    ):
+        for measurement in measurements[:5]:
+            service.screen_geometry(measurement, zoom=1.0, selected=False)
+
+        # A failed lookup is still a cache hit and therefore refreshes its LRU
+        # position before the next distinct failure is admitted.
+        service.screen_geometry(measurements[1], zoom=1.0, selected=False)
+        for measurement in measurements[5:]:
+            service.screen_geometry(measurement, zoom=1.0, selected=False)
+
+    assert len(service._proxy_failures) == 4
+    retained_ids = [entry.owner.id for entry in service._proxy_failures.values()]
+    assert retained_ids == ["failure-4", "failure-1", "failure-5", "failure-6"]
+
+    retained_keys = set(service._proxy_failures)
+    for measurement in measurements:
+        owner_keys = service._owner_cache_keys[(id(measurement), measurement.id)]
+        expected = {
+            key
+            for key in retained_keys
+            if key[:2] == (id(measurement), measurement.id)
+        }
+        assert owner_keys.proxy_failures == expected
+
+
+def test_discard_document_releases_globally_bounded_proxy_failures() -> None:
+    service = AreaDerivedGeometryService()
+    measurements = [_dense_area(f"discard-failure-{index}") for index in range(9)]
+
+    with (
+        patch.object(area_display, "_PROXY_FAILURE_MAX_ENTRIES", 5),
+        patch.object(service, "_build_proxy", return_value=None),
+    ):
+        for measurement in measurements:
+            service.screen_geometry(measurement, zoom=1.0, selected=False)
+
+    assert len(service._proxy_failures) == 5
+    service.discard_document(measurements)
+
+    assert not service._proxy_failures
+    assert not service._owner_cache_keys
 
 
 def test_hot_screen_proxy_does_not_rebuild_or_retain_the_raw_path() -> None:
