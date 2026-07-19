@@ -53,7 +53,11 @@ from fdm.models import (
     ImageViewState,
     Measurement,
 )
-from fdm.settings import AppSettings, MeasurementLabelStyleSettings
+from fdm.settings import (
+    AppSettings,
+    MagicSegmentToolMode,
+    MeasurementLabelStyleSettings,
+)
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.canvas_overlay_cache import (
@@ -83,6 +87,7 @@ class ScenarioDefinition:
     labels_enabled: bool
     description: str
     default_coordinate_count: int | None = None
+    composition: str = "spaced"
 
 
 @dataclass(slots=True)
@@ -166,6 +171,28 @@ SCENARIOS: dict[str, ScenarioDefinition] = {
             description="Visible areas with 600,000 total RAW ring coordinates.",
         ),
         ScenarioDefinition(
+            name="magic_wand_dense_110",
+            family="magic_area",
+            default_object_count=110,
+            labels_enabled=True,
+            description=(
+                "110 dense standard-magic-wand areas built from real "
+                "mask-to-rings geometry."
+            ),
+            composition="dense",
+        ),
+        ScenarioDefinition(
+            name="magic_wand_overlap_110",
+            family="magic_area",
+            default_object_count=110,
+            labels_enabled=True,
+            description=(
+                "110 overlapping standard-magic-wand areas exercising "
+                "composition-sensitive overlay tiles."
+            ),
+            composition="overlap",
+        ),
+        ScenarioDefinition(
             name="offscreen_5000",
             family="offscreen",
             default_object_count=5_000,
@@ -179,9 +206,16 @@ SCENARIOS: dict[str, ScenarioDefinition] = {
 class _BenchmarkCanvas(DocumentCanvas):
     """Canvas variant that records how many paint events the run requested."""
 
-    def __init__(self) -> None:
+    def __init__(self, *, device_pixel_ratio: float = 1.0) -> None:
+        self._benchmark_device_pixel_ratio = max(
+            1.0,
+            float(device_pixel_ratio),
+        )
         super().__init__()
         self.paint_event_count = 0
+
+    def devicePixelRatioF(self) -> float:  # noqa: N802 - Qt virtual name
+        return float(self._benchmark_device_pixel_ratio)
 
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt virtual name
         self.paint_event_count += 1
@@ -198,10 +232,17 @@ class _BenchmarkDigitalSlideCanvas(DigitalSlideCanvas):
     still come from :class:`DigitalSlideCanvas`.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, *, device_pixel_ratio: float = 1.0) -> None:
+        self._benchmark_device_pixel_ratio = max(
+            1.0,
+            float(device_pixel_ratio),
+        )
         super().__init__()
         self.paint_event_count = 0
         self.viewport_buffer_request_count = 0
+
+    def devicePixelRatioF(self) -> float:  # noqa: N802 - Qt virtual name
+        return float(self._benchmark_device_pixel_ratio)
 
     def paintEvent(self, event) -> None:  # noqa: N802 - Qt virtual name
         self.paint_event_count += 1
@@ -545,6 +586,256 @@ def _area_measurements(
     return measurements
 
 
+_MAGIC_WAND_TEMPLATE: tuple[
+    tuple[tuple[tuple[float, float], ...], ...],
+    tuple[tuple[float, float], ...],
+    float,
+] | None = None
+
+
+def _magic_wand_geometry_template() -> tuple[
+    tuple[tuple[tuple[float, float], ...], ...],
+    tuple[tuple[float, float], ...],
+    float,
+]:
+    """Build one deterministic standard-wand contour through production code.
+
+    A smooth synthetic ellipse substantially understates the cost of a real
+    segmentation boundary.  This binary fixture combines several boundary
+    frequencies and one hole, then uses the same ``magic_mask_to_geometry``
+    conversion as a committed standard-wand measurement.  Coordinate tuples
+    are cached instead of mutable ``Point`` objects so scenarios never share
+    editable geometry.
+    """
+
+    global _MAGIC_WAND_TEMPLATE
+    if _MAGIC_WAND_TEMPLATE is not None:
+        return _MAGIC_WAND_TEMPLATE
+
+    import cv2
+    import numpy as np
+
+    from fdm.services.prompt_segmentation import (
+        magic_mask_area_px,
+        magic_mask_to_geometry,
+    )
+
+    sample_count = 1_440
+    angles = np.linspace(0.0, math.tau, sample_count, endpoint=False)
+    radius = (
+        180.0
+        + (18.0 * np.sin(13.0 * angles))
+        + (8.0 * np.sin(37.0 * angles))
+        + (4.0 * np.sin(83.0 * angles))
+    )
+    contour = np.stack(
+        (
+            256.0 + (radius * np.cos(angles)),
+            256.0 + (radius * np.sin(angles)),
+        ),
+        axis=1,
+    ).round().astype(np.int32)
+    mask = np.zeros((512, 512), dtype=np.uint8)
+    cv2.fillPoly(mask, [contour], 1)
+    cv2.circle(mask, (280, 244), 38, 0, thickness=cv2.FILLED)
+    selected_mask, rings, polygon, _stats = magic_mask_to_geometry(
+        mask.astype(bool),
+        select_prompt_component=False,
+    )
+    if selected_mask is None or not rings or len(polygon) < 3:
+        raise RuntimeError("deterministic magic-wand mask produced no geometry")
+
+    all_points = [point for ring in rings for point in ring]
+    center_x = (
+        min(point.x for point in all_points)
+        + max(point.x for point in all_points)
+    ) / 2.0
+    center_y = (
+        min(point.y for point in all_points)
+        + max(point.y for point in all_points)
+    ) / 2.0
+    normalized_rings = tuple(
+        tuple(
+            (float(point.x) - center_x, float(point.y) - center_y)
+            for point in ring
+        )
+        for ring in rings
+    )
+    normalized_polygon = tuple(
+        (float(point.x) - center_x, float(point.y) - center_y)
+        for point in polygon
+    )
+    _MAGIC_WAND_TEMPLATE = (
+        normalized_rings,
+        normalized_polygon,
+        float(magic_mask_area_px(selected_mask)),
+    )
+    return _MAGIC_WAND_TEMPLATE
+
+
+def _resample_closed_coordinates(
+    coordinates: Sequence[tuple[float, float]],
+    target_count: int,
+) -> list[tuple[float, float]]:
+    """Resample one closed ring to an exact count for small test overrides."""
+
+    count = max(3, int(target_count))
+    if count == len(coordinates):
+        return list(coordinates)
+    if not coordinates:
+        return []
+    segment_lengths: list[float] = []
+    perimeter = 0.0
+    for index, start in enumerate(coordinates):
+        end = coordinates[(index + 1) % len(coordinates)]
+        length = math.hypot(end[0] - start[0], end[1] - start[1])
+        segment_lengths.append(length)
+        perimeter += length
+    if perimeter <= 1e-9:
+        return [coordinates[index % len(coordinates)] for index in range(count)]
+
+    result: list[tuple[float, float]] = []
+    segment_index = 0
+    segment_start_distance = 0.0
+    for sample_index in range(count):
+        target_distance = perimeter * sample_index / count
+        while (
+            segment_index < len(segment_lengths) - 1
+            and target_distance
+            > segment_start_distance + segment_lengths[segment_index]
+        ):
+            segment_start_distance += segment_lengths[segment_index]
+            segment_index += 1
+        start = coordinates[segment_index]
+        end = coordinates[(segment_index + 1) % len(coordinates)]
+        length = segment_lengths[segment_index]
+        ratio = (
+            0.0
+            if length <= 1e-9
+            else (target_distance - segment_start_distance) / length
+        )
+        result.append(
+            (
+                start[0] + ((end[0] - start[0]) * ratio),
+                start[1] + ((end[1] - start[1]) * ratio),
+            )
+        )
+    return result
+
+
+def _magic_wand_measurements(
+    count: int,
+    *,
+    scenario_name: str,
+    image_size: tuple[int, int],
+    seed: int,
+    requested_coordinate_count: int | None,
+    composition: str,
+) -> list[Measurement]:
+    """Create dense or overlapping measurements from real mask-derived rings."""
+
+    template_rings, template_polygon, template_area = (
+        _magic_wand_geometry_template()
+    )
+    width, height = image_size
+    aspect = width / max(1.0, float(height))
+    columns = max(1, math.ceil(math.sqrt(count * aspect)))
+    rows = max(1, math.ceil(count / columns))
+    cell_width = (width - 64.0) / columns
+    cell_height = (height - 64.0) / rows
+    template_points = [
+        point
+        for ring in template_rings
+        for point in ring
+    ]
+    half_width = max(abs(point[0]) for point in template_points)
+    half_height = max(abs(point[1]) for point in template_points)
+    radius_fraction = 0.58 if composition == "overlap" else 0.38
+    per_object_counts = (
+        _coordinates_per_area(
+            object_count=count,
+            requested_total=requested_coordinate_count,
+        )
+        if requested_coordinate_count is not None
+        else None
+    )
+    original_total = sum(len(ring) for ring in template_rings)
+    outer_fraction = len(template_rings[0]) / max(1, original_total)
+    measurements: list[Measurement] = []
+    seed_phase = (seed % 997) / 997.0 * math.tau
+
+    for index in range(count):
+        column = index % columns
+        row = index // columns
+        center_x = 32.0 + ((column + 0.5) * cell_width)
+        center_y = 32.0 + ((row + 0.5) * cell_height)
+        if composition == "dense":
+            center_x += (((index * 37) % 11) - 5) * cell_width * 0.008
+            center_y += (((index * 53) % 11) - 5) * cell_height * 0.008
+
+        if per_object_counts is None:
+            source_rings = [list(ring) for ring in template_rings]
+        else:
+            total = per_object_counts[index]
+            outer_count = max(4, int(round(total * outer_fraction)))
+            hole_count = max(4, total - outer_count)
+            outer_count = total - hole_count
+            source_rings = [
+                _resample_closed_coordinates(template_rings[0], outer_count),
+                _resample_closed_coordinates(template_rings[1], hole_count),
+            ]
+
+        size_scale = 0.92 + (0.12 * ((index % 17) / 16.0))
+        scale_x = (
+            (cell_width * radius_fraction) / max(half_width, 1e-9)
+        ) * size_scale
+        scale_y = (
+            (cell_height * radius_fraction) / max(half_height, 1e-9)
+        ) * size_scale
+        angle = seed_phase + ((index % 9) - 4) * 0.025
+        cosine = math.cos(angle)
+        sine = math.sin(angle)
+
+        def transform(coordinate: tuple[float, float]) -> Point:
+            x = coordinate[0] * scale_x
+            y = coordinate[1] * scale_y
+            return Point(
+                center_x + (x * cosine) - (y * sine),
+                center_y + (x * sine) + (y * cosine),
+            )
+
+        rings = [
+            [transform(coordinate) for coordinate in ring]
+            for ring in source_rings
+        ]
+        polygon = [
+            transform(coordinate)
+            for coordinate in template_polygon
+        ]
+        exact_area = max(1.0, template_area * scale_x * scale_y)
+        measurements.append(
+            Measurement(
+                id=f"{scenario_name}-magic-{index:06d}",
+                image_id=f"benchmark-{scenario_name}",
+                fiber_group_id=None,
+                mode="magic_segment",
+                measurement_kind="area",
+                polygon_px=polygon,
+                area_rings_px=rings,
+                exact_area_px=exact_area,
+                area_px=exact_area,
+                area_unit=exact_area / 4.0,
+                confidence=1.0,
+                status="manual",
+                debug_payload={
+                    "benchmark_geometry_source": "magic_mask_to_geometry",
+                    "benchmark_composition": composition,
+                },
+            )
+        )
+    return measurements
+
+
 def build_scenario(
     scenario_name: str,
     *,
@@ -590,6 +881,17 @@ def build_scenario(
             seed=seed,
         )
         view_state = _fit_view_state(image_size, canvas_size)
+    elif definition.family == "magic_area":
+        image_size = (2400, 1600)
+        measurements = _magic_wand_measurements(
+            resolved_count,
+            scenario_name=scenario_name,
+            image_size=image_size,
+            seed=seed,
+            requested_coordinate_count=coordinate_count,
+            composition=definition.composition,
+        )
+        view_state = _fit_view_state(image_size, canvas_size)
     else:
         image_size = (1800, 1200)
         requested_coordinates = (
@@ -621,6 +923,10 @@ def build_scenario(
         measurements=measurements,
         view_state=view_state,
     )
+    if definition.family == "magic_area" and document.measurements:
+        # Standard-wand commits select the newest area, which remains an exact
+        # active layer above the passive tile cache during navigation.
+        document.select_measurement(document.measurements[-1].id)
     return ScenarioData(
         definition=definition,
         document=document,
@@ -1049,6 +1355,188 @@ def _not_applicable_phase(reason: str) -> dict[str, object]:
     }
 
 
+def _visible_overlay_phase_set(
+    canvas: DocumentCanvas,
+) -> tuple[tuple[float, float], ...]:
+    keys = canvas._visible_overlay_tile_keys(canvas._paint_context())
+    return tuple(
+        sorted(
+            {
+                (
+                    float(key.device_phase_x),
+                    float(key.device_phase_y),
+                )
+                for key in keys
+            }
+        )
+    )
+
+
+def _overlay_payload_summary(canvas: DocumentCanvas) -> dict[str, int]:
+    """Describe cached representations without changing hit/miss counters."""
+
+    visible = set(
+        canvas._visible_overlay_tile_keys(canvas._paint_context())
+    )
+    tiles = getattr(canvas_overlay_tile_cache, "_tiles", {})
+    summary = {
+        "visible_keys": len(visible),
+        "available": 0,
+        "image_only": 0,
+        "picture_only": 0,
+        "image_and_picture": 0,
+    }
+    for key in visible:
+        payload = tiles.get(key)
+        if payload is None:
+            continue
+        summary["available"] += 1
+        has_image = payload.image is not None
+        has_picture = payload.picture is not None
+        if has_image and has_picture:
+            summary["image_and_picture"] += 1
+        elif has_image:
+            summary["image_only"] += 1
+        elif has_picture:
+            summary["picture_only"] += 1
+    return summary
+
+
+def _benchmark_continuous_pan(
+    app: QApplication,
+    canvas: DocumentCanvas,
+    surface: QImage,
+    *,
+    frames: int,
+    overlay_cache_enabled: bool,
+) -> dict[str, object]:
+    """Measure actual 1-logical-pixel mouse dragging at the canvas DPR.
+
+    Calling the real mouse handlers makes this phase sensitive to the exact
+    device-pixel phase used by overlay tile keys.  At 125% scaling an
+    unaligned implementation cycles through four phases and falls back to RAW
+    vector rendering on three frames out of four; 150% cycles through two.
+    """
+
+    if not overlay_cache_enabled:
+        return _not_applicable_phase(
+            "continuous pan requires the passive overlay cache"
+        )
+    if isinstance(canvas, DigitalSlideCanvas):
+        return _not_applicable_phase(
+            "digital-slide navigation has a separate viewport benchmark"
+        )
+    if frames <= 0:
+        return _not_applicable_phase("continuous pan frame count is zero")
+
+    original_pan = Point(canvas._pan.x, canvas._pan.y)
+    start = QPointF(canvas.width() * 0.5, canvas.height() * 0.5)
+    initial_phase = _visible_overlay_phase_set(canvas)
+    cache_before = canvas_overlay_tile_cache.stats()
+    paint_before = int(getattr(canvas, "paint_event_count", 0))
+    samples: list[float] = []
+    frame_misses: list[int] = []
+    frame_hits: list[int] = []
+    observed_phases: list[tuple[tuple[float, float], ...]] = []
+
+    press = QMouseEvent(
+        QEvent.Type.MouseButtonPress,
+        start,
+        start,
+        Qt.MouseButton.MiddleButton,
+        Qt.MouseButton.MiddleButton,
+        Qt.KeyboardModifier.NoModifier,
+    )
+    canvas.mousePressEvent(press)
+    try:
+        for index in range(frames):
+            position = QPointF(start.x() + index + 1.0, start.y())
+            move = QMouseEvent(
+                QEvent.Type.MouseMove,
+                position,
+                position,
+                Qt.MouseButton.NoButton,
+                Qt.MouseButton.MiddleButton,
+                Qt.KeyboardModifier.NoModifier,
+            )
+            canvas.mouseMoveEvent(move)
+            before_frame = canvas_overlay_tile_cache.stats()
+            samples.append(_render_frame(canvas, surface))
+            after_frame = canvas_overlay_tile_cache.stats()
+            frame_hits.append(max(0, after_frame.hits - before_frame.hits))
+            frame_misses.append(
+                max(0, after_frame.misses - before_frame.misses)
+            )
+            observed_phases.append(_visible_overlay_phase_set(canvas))
+            # Production receives worker completions through the event loop
+            # while the pointer continues to move.
+            app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 1)
+    finally:
+        release_position = QPointF(start.x() + frames, start.y())
+        release = QMouseEvent(
+            QEvent.Type.MouseButtonRelease,
+            release_position,
+            release_position,
+            Qt.MouseButton.MiddleButton,
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+        )
+        canvas.mouseReleaseEvent(release)
+        canvas._pan = original_pan
+        canvas._persist_view_state()
+
+    cache_after = canvas_overlay_tile_cache.stats()
+    paint_after = int(getattr(canvas, "paint_event_count", 0))
+    phase_change_count = sum(
+        phase != initial_phase
+        for phase in observed_phases
+    )
+    timing = _timing_summary(samples)
+    return {
+        "applicable": True,
+        "action_count": frames,
+        "render_count": frames,
+        "paint_events_delta": max(0, paint_after - paint_before),
+        "workload": (
+            "continuous 1-logical-pixel middle-button pan using real mouse "
+            "handlers and the current device-pixel phase"
+        ),
+        "logical_step_px": 1.0,
+        "device_pixel_ratio": round(
+            max(1.0, float(canvas.devicePixelRatioF())),
+            4,
+        ),
+        "initial_phases": [
+            {"x": phase[0], "y": phase[1]}
+            for phase in initial_phase
+        ],
+        "observed_phase_sets": [
+            [
+                {"x": phase[0], "y": phase[1]}
+                for phase in phase_set
+            ]
+            for phase_set in observed_phases
+        ],
+        "phase_change_count": int(phase_change_count),
+        "direct_fallback_frames": sum(
+            misses > 0 for misses in frame_misses
+        ),
+        "cached_frames": sum(
+            hits > 0 and misses == 0
+            for hits, misses in zip(frame_hits, frame_misses, strict=True)
+        ),
+        "frame_hits": frame_hits,
+        "frame_misses": frame_misses,
+        "cache_activity": _cache_activity_delta(
+            cache_before,
+            cache_after,
+        ),
+        "timing_ms": timing,
+        "combined_ms": round(sum(samples), 6),
+        "payloads": _overlay_payload_summary(canvas),
+    }
+
+
 def _canvas_async_work_state(canvas: DocumentCanvas) -> dict[str, int | bool]:
     queue_count, active, scheduled, failed_count = _overlay_wait_state(canvas)
     proxy_timer = getattr(canvas, "_proxy_warm_timer", None)
@@ -1178,6 +1666,8 @@ def _benchmark_interactions(
     scenario: ScenarioData,
     *,
     idle_ms: int,
+    continuous_pan_frames: int,
+    overlay_cache_enabled: bool,
 ) -> dict[str, object]:
     """Exercise representative user interactions after the hot-frame sample."""
 
@@ -1187,6 +1677,14 @@ def _benchmark_interactions(
         canvas.viewport_origin()
         if isinstance(canvas, DigitalSlideCanvas)
         else None
+    )
+
+    continuous_pan = _benchmark_continuous_pan(
+        app,
+        canvas,
+        surface,
+        frames=continuous_pan_frames,
+        overlay_cache_enabled=overlay_cache_enabled,
     )
 
     def pan_action() -> None:
@@ -1334,6 +1832,7 @@ def _benchmark_interactions(
     idle["settle"] = settle
     idle["valid"] = bool(settle["settled"] and idle["canvas_visible"])
     return {
+        "continuous_pan": continuous_pan,
         "pan": pan,
         "zoom": zoom,
         "selection": selection,
@@ -1471,6 +1970,8 @@ def _set_benchmark_document(
 ) -> _BenchmarkDigitalSlideStore | None:
     if canvas_kind != "digital_slide":
         canvas.set_document(scenario.document, scenario.image)
+        if scenario.definition.family == "magic_area":
+            canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
         return None
 
     assert isinstance(canvas, _BenchmarkDigitalSlideCanvas)
@@ -1496,6 +1997,8 @@ def _set_benchmark_document(
         fill_color=QColor("#25313C"),
     )
     canvas.set_slide_document(scenario.document, store)
+    if scenario.definition.family == "magic_area":
+        canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
     # ``set_slide_document()`` intentionally schedules the first fit on the
     # event loop so a real tab can obtain its final size.  The benchmark has
     # already assigned a deterministic size; settle that pending transition
@@ -1518,6 +2021,8 @@ def run_benchmark(
     overlay_cache_timeout_ms: int = 5_000,
     canvas_kind: str = "document",
     idle_ms: int = 500,
+    device_pixel_ratio: float = 1.0,
+    continuous_pan_frames: int = 12,
 ) -> dict[str, object]:
     """Run a scenario and return its versioned, JSON-serializable result."""
 
@@ -1531,6 +2036,14 @@ def run_benchmark(
         raise ValueError("canvas_kind must be 'document' or 'digital_slide'")
     if idle_ms < 0:
         raise ValueError("idle_ms cannot be negative")
+    if (
+        not math.isfinite(float(device_pixel_ratio))
+        or float(device_pixel_ratio) < 1.0
+        or float(device_pixel_ratio) > 4.0
+    ):
+        raise ValueError("device_pixel_ratio must be between 1.0 and 4.0")
+    if continuous_pan_frames < 0:
+        raise ValueError("continuous_pan_frames cannot be negative")
 
     app = _ensure_application()
     gc.collect()
@@ -1546,9 +2059,13 @@ def run_benchmark(
     cache_before = canvas_overlay_tile_cache.stats()
     with _overlay_cache_environment(overlay_cache):
         canvas = (
-            _BenchmarkDigitalSlideCanvas()
+            _BenchmarkDigitalSlideCanvas(
+                device_pixel_ratio=device_pixel_ratio,
+            )
             if canvas_kind == "digital_slide"
-            else _BenchmarkCanvas()
+            else _BenchmarkCanvas(
+                device_pixel_ratio=device_pixel_ratio,
+            )
         )
         canvas.resize(*canvas_size)
         canvas.set_settings(scenario.settings)
@@ -1558,11 +2075,13 @@ def run_benchmark(
             canvas_kind=canvas_kind,
         )
         runtime_cache_before = _runtime_cache_snapshot()
+        surface_dpr = max(1.0, float(device_pixel_ratio))
         surface = QImage(
-            canvas_size[0],
-            canvas_size[1],
+            max(1, int(math.ceil(canvas_size[0] * surface_dpr))),
+            max(1, int(math.ceil(canvas_size[1] * surface_dpr))),
             QImage.Format.Format_ARGB32_Premultiplied,
         )
+        surface.setDevicePixelRatio(surface_dpr)
         rss_after_setup, setup_rss_provider = _current_rss_bytes()
         if rss_provider is None:
             rss_provider = setup_rss_provider
@@ -1612,6 +2131,8 @@ def run_benchmark(
                     surface,
                     scenario,
                     idle_ms=idle_ms,
+                    continuous_pan_frames=continuous_pan_frames,
+                    overlay_cache_enabled=overlay_cache,
                 )
                 cache_after_interactions = canvas_overlay_tile_cache.stats()
                 runtime_cache_after_interactions = _runtime_cache_snapshot()
@@ -1691,6 +2212,7 @@ def run_benchmark(
                         "object_count": scenario.object_count,
                         "coordinate_count": scenario.coordinate_count,
                         "labels_enabled": scenario.definition.labels_enabled,
+                        "composition": scenario.definition.composition,
                         "seed": scenario.seed,
                         "image_size": {
                             "width": scenario.image.width(),
@@ -1701,6 +2223,10 @@ def run_benchmark(
                             "height": canvas_size[1],
                         },
                         "canvas_kind": canvas_kind,
+                        "device_pixel_ratio": round(
+                            float(device_pixel_ratio),
+                            4,
+                        ),
                         "digital_slide": digital_slide_payload,
                     },
                     "render_path": {
@@ -1869,9 +2395,13 @@ def _human_summary(result: dict[str, object]) -> str:
     cache_tiles = overlay_cache["tiles"]
     cache_hot = overlay_cache["hot_activity"]
     cache_wait = overlay_cache["wait"]
+    interactions = result["interactions"]
     assert isinstance(cache_tiles, dict)
     assert isinstance(cache_hot, dict)
     assert isinstance(cache_wait, dict)
+    assert isinstance(interactions, dict)
+    continuous_pan = interactions.get("continuous_pan", {})
+    assert isinstance(continuous_pan, dict)
     rss_after = rss.get("after_frames_bytes")
     rss_text = (
         f"{int(rss_after) / (1024 * 1024):.1f} MiB"
@@ -1903,6 +2433,14 @@ def _human_summary(result: dict[str, object]) -> str:
                 f"tiles={cache_tiles['entries']}  bytes={cache_tiles['bytes']}  "
                 f"hot-hit-rate={float(cache_hot['hit_rate']):.3f}  "
                 f"late/drop={overlay_cache['late_drop_count']}"
+            ),
+            (
+                "Continuous pan: "
+                f"applicable={continuous_pan.get('applicable', False)}  "
+                f"DPR={continuous_pan.get('device_pixel_ratio', 'n/a')}  "
+                f"phase-changes={continuous_pan.get('phase_change_count', 0)}  "
+                f"direct-fallback-frames="
+                f"{continuous_pan.get('direct_fallback_frames', 0)}"
             ),
             f"RSS after frames: {rss_text}",
         )
@@ -1966,6 +2504,24 @@ def _parser() -> argparse.ArgumentParser:
         help="Idle observation window used to detect unsolicited repaints.",
     )
     parser.add_argument(
+        "--device-pixel-ratio",
+        type=float,
+        default=1.0,
+        help=(
+            "Deterministic canvas DPR override; use 1.25 or 1.5 to reproduce "
+            "common Windows scaling."
+        ),
+    )
+    parser.add_argument(
+        "--pan-frames",
+        type=int,
+        default=12,
+        help=(
+            "Continuous one-logical-pixel pan frames measured after overlay "
+            "cache warm-up."
+        ),
+    )
+    parser.add_argument(
         "--json",
         action="store_true",
         help="Print the complete machine-readable result.",
@@ -2004,6 +2560,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             overlay_cache_timeout_ms=arguments.overlay_cache_timeout_ms,
             canvas_kind=arguments.canvas_kind,
             idle_ms=arguments.idle_ms,
+            device_pixel_ratio=arguments.device_pixel_ratio,
+            continuous_pan_frames=arguments.pan_frames,
         )
         encoded = json.dumps(
             result,

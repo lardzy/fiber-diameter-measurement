@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections import OrderedDict
+from collections.abc import Iterable
 from dataclasses import dataclass
 import math
 import queue
@@ -101,11 +102,11 @@ class AreaOverlayDrawCommand:
 class CanvasOverlayRenderSnapshot:
     """UI-thread-recorded commands safe to hand to a cache worker.
 
-    ``exact_composition`` keeps the command stream instead of flattening it on
-    a transparent image.  Replaying those commands directly over the current
-    image is required for semi-transparent area fills and label backgrounds:
-    precomposing them onto transparency changes 8-bit Porter-Duff rounding and
-    can leave visible seams when many objects overlap.
+    ``exact_composition`` retains the command stream for stable display and a
+    same-generation transparent raster for continuous navigation. Replaying
+    the commands directly over the current image is required at rest for rare
+    semi-transparent compositions whose 8-bit Porter-Duff rounding would
+    otherwise leave visible seams.
     """
 
     request_id: int
@@ -117,6 +118,7 @@ class CanvasOverlayRenderSnapshot:
     exact_composition: bool = False
     adaptive_composition: bool = False
     composition_probe_rgba: int = 0xFFFFFFFF
+    known_empty: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -266,8 +268,23 @@ class _TileRenderRunnable(QRunnable):
 
     def _render(self) -> tuple[QImage | None, QPicture | None]:
         snapshot = self._snapshot
+        if snapshot.known_empty:
+            # Keep empty viewport/guard tiles as a tiny no-op command stream;
+            # allocating a full transparent 512×DPR raster would waste several
+            # MiB without changing a single pixel.
+            return None, QPicture()
         if snapshot.exact_composition:
-            return None, self._exact_picture(snapshot)
+            # Keep two representations for the rare exact-composition path:
+            # the QPicture remains authoritative while the view is still, and
+            # the transparent raster is used only during continuous panning.
+            # Replaying hundreds of high-vertex magic-wand paths for every
+            # mouse move defeats the cache; translating this same-generation
+            # raster mirrors the interaction strategy used by mature image
+            # viewers. The exact command stream is shown again on release.
+            rendered = self._rasterize(snapshot, fill_rgba=0)
+            if self._cancellation.is_cancelled():
+                return rendered, None
+            return rendered, self._exact_picture(snapshot)
         rendered = self._rasterize(snapshot, fill_rgba=0)
         if self._cancellation.is_cancelled():
             return rendered, None
@@ -294,7 +311,7 @@ class _TileRenderRunnable(QRunnable):
                 direct_on_opaque,
                 flattened_on_opaque,
             ):
-                return None, self._exact_picture(snapshot)
+                return rendered, self._exact_picture(snapshot)
         return rendered, None
 
     def _exact_picture(
@@ -521,6 +538,10 @@ class CanvasOverlayTileCache(QObject):
         self._pending: dict[CanvasOverlayTileKey, _PendingTile] = {}
         self._inflight_sequences: set[int] = set()
         self._inflight_estimated_bytes: dict[int, int] = {}
+        self._protected_by_owner: dict[
+            int,
+            frozenset[CanvasOverlayTileKey],
+        ] = {}
         self._completions: queue.SimpleQueue[_TileRenderCompletion] = queue.SimpleQueue()
         self._request_sequence = 0
         self._completion_timer = QTimer(self)
@@ -531,6 +552,33 @@ class CanvasOverlayTileCache(QObject):
         self._misses = 0
         self._completed = 0
         self._dropped = 0
+
+    @property
+    def max_entries(self) -> int:
+        """Maximum number of completed tiles retained by this cache."""
+
+        return self._max_entries
+
+    @property
+    def max_bytes(self) -> int:
+        """Maximum completed-payload byte budget for this cache."""
+
+        return self._max_bytes
+
+    def protect(
+        self,
+        owner_token: int,
+        keys: Iterable[CanvasOverlayTileKey],
+    ) -> None:
+        """Protect an owner's visible tiles from guard-prefetch eviction."""
+
+        self._require_owner_thread()
+        token = int(owner_token)
+        protected = frozenset(keys)
+        if protected:
+            self._protected_by_owner[token] = protected
+        else:
+            self._protected_by_owner.pop(token, None)
 
     def get(self, key: CanvasOverlayTileKey) -> QImage | None:
         self._require_owner_thread()
@@ -617,6 +665,7 @@ class CanvasOverlayTileCache(QObject):
             exact_composition=snapshot.exact_composition,
             adaptive_composition=snapshot.adaptive_composition,
             composition_probe_rgba=snapshot.composition_probe_rgba,
+            known_empty=snapshot.known_empty,
         )
         cancellation = _CancellationFlag()
         self._request_sequence += 1
@@ -671,6 +720,7 @@ class CanvasOverlayTileCache(QObject):
                 continue
             pending.cancellation.cancel()
             self._pending.pop(key, None)
+        self._discard_protected_document(token)
 
     def invalidate_namespace(
         self,
@@ -749,6 +799,7 @@ class CanvasOverlayTileCache(QObject):
         self._tiles.clear()
         self._bytes = 0
         self._area_centroids.clear()
+        self._protected_by_owner.clear()
 
     def stats(self) -> CanvasOverlayCacheStats:
         self._require_owner_thread()
@@ -834,12 +885,15 @@ class CanvasOverlayTileCache(QObject):
             self._dropped += 1
             self.tileFailed.emit(key, "tile worker returned an empty payload")
             return
+        # A composition-sensitive tile can keep both its exact command stream
+        # and its pan-only raster. Charge both payloads to the existing bounded
+        # LRU rather than allowing interaction acceleration to bypass the
+        # 128 MiB workspace budget.
         estimated_bytes = (
-            max(1, int(image.sizeInBytes()))
-            if image is not None
+            (max(1, int(image.sizeInBytes())) if image is not None else 0)
             # QPicture.size() reports the recorded payload without copying the
             # entire byte stream back onto the UI thread.
-            else max(1, int(picture.size()))
+            + (max(1, int(picture.size())) if picture is not None else 0)
         )
         if estimated_bytes > self._max_bytes:
             self._dropped += 1
@@ -848,7 +902,13 @@ class CanvasOverlayTileCache(QObject):
                 "rendered tile exceeds the overlay cache byte budget",
             )
             return
-        self._evict_for(estimated_bytes)
+        if not self._evict_for(estimated_bytes):
+            self._dropped += 1
+            self.tileFailed.emit(
+                key,
+                "rendered tile cannot be admitted without evicting a visible overlay tile",
+            )
+            return
         self._tiles[key] = _CachedTile(
             image=image,
             picture=picture,
@@ -876,18 +936,50 @@ class CanvasOverlayTileCache(QObject):
         self._pending.pop(key, None)
         self.tileFailed.emit(key, str(message))
 
-    def _evict_for(self, required_bytes: int) -> None:
+    def _evict_for(self, required_bytes: int) -> bool:
         while self._tiles and (
             len(self._tiles) >= self._max_entries
             or self._bytes + required_bytes > self._max_bytes
         ):
-            oldest_key = next(iter(self._tiles))
+            protected = self._protected_keys()
+            oldest_key = next(
+                (
+                    candidate
+                    for candidate in self._tiles
+                    if candidate not in protected
+                ),
+                None,
+            )
+            if oldest_key is None:
+                return False
             self._remove_tile(oldest_key)
+        return (
+            len(self._tiles) < self._max_entries
+            and self._bytes + required_bytes <= self._max_bytes
+        )
 
     def _remove_tile(self, key: CanvasOverlayTileKey) -> None:
         cached = self._tiles.pop(key, None)
         if cached is not None:
             self._bytes = max(0, self._bytes - cached.estimated_bytes)
+
+    def _protected_keys(self) -> set[CanvasOverlayTileKey]:
+        protected: set[CanvasOverlayTileKey] = set()
+        for keys in self._protected_by_owner.values():
+            protected.update(keys)
+        return protected
+
+    def _discard_protected_document(self, document_token: int) -> None:
+        for owner_token, keys in list(self._protected_by_owner.items()):
+            remaining = frozenset(
+                key
+                for key in keys
+                if key.document_token != document_token
+            )
+            if remaining:
+                self._protected_by_owner[owner_token] = remaining
+            else:
+                self._protected_by_owner.pop(owner_token, None)
 
     def _pending_bytes(self) -> int:
         # Sequence ownership outlives the visible pending-key entry.  A
@@ -921,6 +1013,17 @@ class CanvasOverlayTileCache(QObject):
             raise ValueError("overlay tile logical size must be positive")
         if int(snapshot.bleed_device_pixels) < 0:
             raise ValueError("overlay tile bleed must not be negative")
+        if snapshot.known_empty:
+            if (
+                snapshot.picture is not None
+                or snapshot.area_commands
+                or snapshot.exact_composition
+                or snapshot.adaptive_composition
+            ):
+                raise ValueError(
+                    "known-empty overlay tile cannot contain draw commands"
+                )
+            return
         if (snapshot.picture is None) == (not snapshot.area_commands):
             raise ValueError(
                 "overlay tile snapshot must contain exactly one command payload"

@@ -67,6 +67,8 @@ from fdm.ui.canvas_tool_strategies import (
 )
 from fdm.ui.canvas_overlay_cache import (
     OVERLAY_TILE_LOGICAL_SIZE,
+    OVERLAY_TILE_MAX_BYTES,
+    OVERLAY_TILE_MAX_ENTRIES,
     CanvasOverlayRenderSnapshot,
     CanvasOverlayTileKey,
     canvas_overlay_tile_cache,
@@ -92,6 +94,10 @@ from fdm.ui.rendering import (
 class MagicSegmentOperationMode:
     ADD = "add"
     SUBTRACT = "subtract"
+
+
+OVERLAY_CACHE_MIN_MEASUREMENTS = 64
+OVERLAY_CACHE_MIN_AREA_VERTICES = 10_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -766,6 +772,9 @@ class DocumentCanvas(QWidget):
         self._panning = False
         self._pan_button: Qt.MouseButton | None = None
         self._last_mouse_pos = QPointF()
+        self._pan_drag_unsnapped: Point | None = None
+        self._pan_drag_device_phase: tuple[float, float] | None = None
+        self._pan_drag_device_pixel_ratio: float | None = None
         self._space_pressed = False
         self._temporary_grab_active = False
 
@@ -809,6 +818,7 @@ class DocumentCanvas(QWidget):
         self._overlay_known_namespaces: set[tuple[float, float]] = set()
         self._overlay_namespace_order: list[tuple[float, float]] = []
         self._overlay_visible_keys: set[CanvasOverlayTileKey] = set()
+        self._overlay_strict_visible_keys: set[CanvasOverlayTileKey] = set()
         self._overlay_tile_queue: list[CanvasOverlayTileKey] = []
         self._overlay_tile_queued: set[CanvasOverlayTileKey] = set()
         self._overlay_tile_active: CanvasOverlayTileKey | None = None
@@ -820,6 +830,7 @@ class DocumentCanvas(QWidget):
         self._overlay_calibration_signature: tuple[object, ...] | None = None
         self._overlay_measurement_order_signature: tuple[str, ...] | None = None
         self._overlay_max_object_font_size = 0.0
+        self._overlay_area_vertex_count = 0
         self._overlay_measurement_state: dict[
             str,
             tuple[tuple[object, ...], tuple[float, float, float, float] | None],
@@ -852,6 +863,8 @@ class DocumentCanvas(QWidget):
         return self._document.id if self._document else None
 
     def set_document(self, document: ImageDocument, image: QImage) -> None:
+        self._end_canvas_pan()
+        canvas_overlay_tile_cache.protect(id(self), ())
         previous_document = self._document
         self._document = document
         self._image = image
@@ -891,6 +904,8 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        self._end_canvas_pan()
+        canvas_overlay_tile_cache.protect(id(self), ())
         previous_document = self._document
         document_id = self.document_id
         document_token = id(self._document) if self._document is not None else None
@@ -2344,6 +2359,8 @@ class DocumentCanvas(QWidget):
     def hideEvent(self, event) -> None:
         """Stop producers owned by a canvas that is no longer visible."""
 
+        self._end_canvas_pan()
+        canvas_overlay_tile_cache.protect(id(self), ())
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
         super().hideEvent(event)
@@ -2369,21 +2386,87 @@ class DocumentCanvas(QWidget):
         self._persist_view_state()
         self.update()
 
+    def _begin_canvas_pan(self, button: Qt.MouseButton) -> None:
+        """Start one physical-pixel-aligned pan session.
+
+        Qt reports high-DPI pointer coordinates as logical floats. Accumulating
+        those values directly can change ``pan * DPR``'s fractional phase on
+        every event, which invalidates every exact overlay tile. Preserve the
+        phase that was visible at press time and keep a separate unsnapped
+        accumulator so sub-pixel mouse movement is never lost.
+        """
+
+        self._panning = True
+        self._pan_button = button
+        self._pan_drag_unsnapped = Point(self._pan.x, self._pan.y)
+        dpr = max(1.0, float(self.devicePixelRatioF()))
+        scaled_x = float(self._pan.x) * dpr
+        scaled_y = float(self._pan.y) * dpr
+        self._pan_drag_device_phase = (
+            scaled_x - math.floor(scaled_x),
+            scaled_y - math.floor(scaled_y),
+        )
+        self._pan_drag_device_pixel_ratio = dpr
+
+    def _pan_at_stable_device_phase(self, unsnapped: Point) -> Point:
+        phase = self._pan_drag_device_phase
+        if phase is None:
+            return Point(float(unsnapped.x), float(unsnapped.y))
+        dpr = max(1.0, float(self.devicePixelRatioF()))
+        if (
+            self._pan_drag_device_pixel_ratio is None
+            or not math.isclose(
+                dpr,
+                self._pan_drag_device_pixel_ratio,
+                rel_tol=0.0,
+                abs_tol=1e-8,
+            )
+        ):
+            # Moving a window between monitors starts a new DPR namespace.
+            # Preserve the last displayed phase once, then keep that new
+            # namespace stable for the remainder of the drag.
+            scaled_x = float(self._pan.x) * dpr
+            scaled_y = float(self._pan.y) * dpr
+            phase = (
+                scaled_x - math.floor(scaled_x),
+                scaled_y - math.floor(scaled_y),
+            )
+            self._pan_drag_device_phase = phase
+            self._pan_drag_device_pixel_ratio = dpr
+        snap_x = math.floor(
+            (float(unsnapped.x) * dpr) - phase[0] + 0.5
+        )
+        snap_y = math.floor(
+            (float(unsnapped.y) * dpr) - phase[1] + 0.5
+        )
+        return Point(
+            (snap_x + phase[0]) / dpr,
+            (snap_y + phase[1]) / dpr,
+        )
+
+    def _end_canvas_pan(self) -> None:
+        self._panning = False
+        self._pan_button = None
+        self._pan_drag_unsnapped = None
+        self._pan_drag_device_phase = None
+        self._pan_drag_device_pixel_ratio = None
+
+    def _overlay_motion_active(self) -> bool:
+        return self._panning
+
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
             return
         self.setFocus(Qt.FocusReason.MouseFocusReason)
         self._last_mouse_pos = event.position()
         if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
-            self._panning = True
-            self._pan_button = event.button()
+            self._begin_canvas_pan(event.button())
             self._update_cursor()
             return
         if event.button() != Qt.MouseButton.LeftButton:
             return
         if self._temporary_grab_active:
-            self._panning = True
-            self._pan_button = event.button()
+            self._begin_canvas_pan(event.button())
             self._update_cursor()
             return
         if self._read_only:
@@ -2703,7 +2786,13 @@ class DocumentCanvas(QWidget):
             return
         if self._panning:
             delta = event.position() - self._last_mouse_pos
-            self._pan = Point(self._pan.x + delta.x(), self._pan.y + delta.y())
+            unsnapped = self._pan_drag_unsnapped or self._pan
+            unsnapped = Point(
+                unsnapped.x + delta.x(),
+                unsnapped.y + delta.y(),
+            )
+            self._pan_drag_unsnapped = unsnapped
+            self._pan = self._pan_at_stable_device_phase(unsnapped)
             self._last_mouse_pos = event.position()
             self._persist_view_state()
             self.update()
@@ -2978,8 +3067,7 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return
         if self._panning and self._pan_button == event.button():
-            self._panning = False
-            self._pan_button = None
+            self._end_canvas_pan()
             if self._space_pressed and not self._has_pointer_edit_operation():
                 self._temporary_grab_active = True
             elif not self._space_pressed:
@@ -3408,6 +3496,7 @@ class DocumentCanvas(QWidget):
         if self._overlay_cache_enabled():
             proxies_deferred = self._draw_measurement_overlay_tiles(painter, context)
         else:
+            canvas_overlay_tile_cache.protect(id(self), ())
             selected_measurement = (
                 self._document.get_measurement(
                     self._document.view_state.selected_measurement_id
@@ -3643,9 +3732,16 @@ class DocumentCanvas(QWidget):
             return True
         if os.environ.get("QT_QPA_PLATFORM", "").strip().lower() == "offscreen":
             return False
-        # Avoid worker/cache overhead for ordinary small documents. Dense
-        # projects automatically switch to the passive overlay pipeline.
-        return len(self._document.measurements) >= 64
+        # Object count alone badly underestimates standard-magic-wand output:
+        # one object can retain more than a thousand exact ring vertices.
+        # The cached passive pipeline therefore also turns on for geometrically
+        # dense area documents, while small ordinary documents stay direct.
+        return (
+            len(self._document.measurements)
+            >= OVERLAY_CACHE_MIN_MEASUREMENTS
+            or self._overlay_area_vertex_count
+            >= OVERLAY_CACHE_MIN_AREA_VERTICES
+        )
 
     def _draw_measurement_overlay_tiles(
         self,
@@ -3659,7 +3755,13 @@ class DocumentCanvas(QWidget):
         # "visible" set to one tile and cancels the next asynchronous build.
         paint_keys = self._visible_overlay_tile_keys(context)
         viewport_keys = self._visible_overlay_tile_keys(self._paint_context())
-        self._reconcile_overlay_visible_keys(viewport_keys)
+        working_keys = self._overlay_prefetch_tile_keys(viewport_keys)
+        strict_visible = set(viewport_keys)
+        newly_visible = strict_visible - self._overlay_strict_visible_keys
+        self._overlay_tile_failed.difference_update(newly_visible)
+        self._overlay_strict_visible_keys = strict_visible
+        canvas_overlay_tile_cache.protect(id(self), viewport_keys)
+        self._reconcile_overlay_visible_keys(working_keys)
         if not paint_keys:
             return False
         selected_area_ids: frozenset[str] = frozenset()
@@ -3716,7 +3818,10 @@ class DocumentCanvas(QWidget):
                 finally:
                     painter.restore()
         for key, (image, picture) in cached.items():
-            if image is not None:
+            if image is not None and (
+                self._overlay_motion_active()
+                or picture is None
+            ):
                 # The raster already has this exact DPR and subpixel phase;
                 # point placement avoids a second scaling/filtering pass.
                 painter.drawImage(
@@ -3737,16 +3842,12 @@ class DocumentCanvas(QWidget):
                 painter.restore()
         self._redraw_selected_measurement_background(painter, context)
         self._draw_selected_measurement_active_layer(painter, context)
-        if self._panning:
-            # Keep exact direct rendering during motion, but immediately cancel
-            # stale viewport work instead of filling the queue with every
-            # intermediate pan position.
-            self._reconcile_overlay_visible_keys(viewport_keys)
-        else:
-            # Queue the complete visible working set, not only tiles touched by
-            # this paint event. Cached and already-pending keys are filtered by
-            # the bounded queue controller.
-            self._enqueue_overlay_tiles(viewport_keys)
+        # Queue the complete visible set plus a byte-bounded one-tile guard
+        # ring. Physical-pixel-aligned dragging keeps this generation stable,
+        # so a recently committed magic-wand object can finish warming while
+        # the user pans and an edge tile is normally ready before it enters the
+        # viewport. Cached and pending keys are filtered by the controller.
+        self._enqueue_overlay_tiles(working_keys)
         return proxies_deferred
 
     def _redraw_selected_measurement_background(
@@ -3938,30 +4039,13 @@ class DocumentCanvas(QWidget):
         keys: list[CanvasOverlayTileKey] = []
         for tile_y in range(min_y, max_y + 1):
             for tile_x in range(min_x, max_x + 1):
-                epoch_key = (zoom, dpr, tile_x, tile_y)
-                device_start_x = (
-                    float(overlay_origin.x()) + (tile_x * tile_size)
-                ) * dpr
-                device_start_y = (
-                    float(overlay_origin.y()) + (tile_y * tile_size)
-                ) * dpr
-                phase_x = device_start_x - math.floor(device_start_x)
-                phase_y = device_start_y - math.floor(device_start_y)
-                phase_x = 0.0 if phase_x > 1.0 - 1e-8 else round(phase_x, 8)
-                phase_y = 0.0 if phase_y > 1.0 - 1e-8 else round(phase_y, 8)
                 keys.append(
-                    CanvasOverlayTileKey(
-                        document_token=id(self._document),
-                        document_id=self._document.id,
+                    self._overlay_tile_key(
+                        tile_x,
+                        tile_y,
                         zoom=zoom,
-                        device_pixel_ratio=dpr,
-                        tile_x=tile_x,
-                        tile_y=tile_y,
-                        style_generation=self._overlay_style_generation,
-                        tile_epoch=self._overlay_tile_epochs.get(epoch_key, 0),
-                        show_area_fill=self._show_area_fill,
-                        device_phase_x=phase_x,
-                        device_phase_y=phase_y,
+                        dpr=dpr,
+                        overlay_origin=overlay_origin,
                     )
                 )
         # Keep the compatibility side effect for callers requesting the whole
@@ -3970,6 +4054,140 @@ class DocumentCanvas(QWidget):
         if context.widget_rect == QRectF(self.rect()):
             self._overlay_visible_keys = set(keys)
         return keys
+
+    def _overlay_tile_key(
+        self,
+        tile_x: int,
+        tile_y: int,
+        *,
+        zoom: float,
+        dpr: float,
+        overlay_origin: QPointF | None = None,
+    ) -> CanvasOverlayTileKey:
+        if self._document is None:  # pragma: no cover - guarded by callers
+            raise RuntimeError("overlay tile key requires an active document")
+        origin = overlay_origin or self._overlay_widget_origin()
+        tile_size = float(OVERLAY_TILE_LOGICAL_SIZE)
+        epoch_key = (zoom, dpr, int(tile_x), int(tile_y))
+        device_start_x = (
+            float(origin.x()) + (int(tile_x) * tile_size)
+        ) * dpr
+        device_start_y = (
+            float(origin.y()) + (int(tile_y) * tile_size)
+        ) * dpr
+        phase_x = device_start_x - math.floor(device_start_x)
+        phase_y = device_start_y - math.floor(device_start_y)
+        phase_x = 0.0 if phase_x > 1.0 - 1e-8 else round(phase_x, 8)
+        phase_y = 0.0 if phase_y > 1.0 - 1e-8 else round(phase_y, 8)
+        return CanvasOverlayTileKey(
+            document_token=id(self._document),
+            document_id=self._document.id,
+            zoom=zoom,
+            device_pixel_ratio=dpr,
+            tile_x=int(tile_x),
+            tile_y=int(tile_y),
+            style_generation=self._overlay_style_generation,
+            tile_epoch=self._overlay_tile_epochs.get(epoch_key, 0),
+            show_area_fill=self._show_area_fill,
+            device_phase_x=phase_x,
+            device_phase_y=phase_y,
+        )
+
+    def _overlay_prefetch_tile_keys(
+        self,
+        visible_keys: list[CanvasOverlayTileKey],
+    ) -> list[CanvasOverlayTileKey]:
+        """Return visible tiles followed by a byte-bounded guard ring."""
+
+        if not visible_keys or self._document is None:
+            return list(visible_keys)
+        anchor = visible_keys[0]
+        dpr = max(1.0, float(anchor.device_pixel_ratio))
+        physical_edge = max(
+            1,
+            int(math.ceil(float(OVERLAY_TILE_LOGICAL_SIZE) * dpr)),
+        )
+        estimated_raster_bytes = physical_edge * physical_edge * 4
+        cache_byte_budget = int(
+            getattr(
+                canvas_overlay_tile_cache,
+                "max_bytes",
+                OVERLAY_TILE_MAX_BYTES,
+            )
+        )
+        cache_entry_budget = int(
+            getattr(
+                canvas_overlay_tile_cache,
+                "max_entries",
+                OVERLAY_TILE_MAX_ENTRIES,
+            )
+        )
+        prefetch_byte_budget = max(
+            estimated_raster_bytes,
+            cache_byte_budget // 2,
+        )
+        maximum_tiles = min(
+            cache_entry_budget,
+            max(
+                len(visible_keys),
+                prefetch_byte_budget // max(1, estimated_raster_bytes),
+            ),
+        )
+        if maximum_tiles <= len(visible_keys):
+            return list(visible_keys)
+
+        min_x = min(key.tile_x for key in visible_keys)
+        max_x = max(key.tile_x for key in visible_keys)
+        min_y = min(key.tile_y for key in visible_keys)
+        max_y = max(key.tile_y for key in visible_keys)
+        visible_coordinates = {
+            (key.tile_x, key.tile_y)
+            for key in visible_keys
+        }
+        center_x = (min_x + max_x) / 2.0
+        center_y = (min_y + max_y) / 2.0
+        guard_coordinates = [
+            (tile_x, tile_y)
+            for tile_y in range(min_y - 1, max_y + 2)
+            for tile_x in range(min_x - 1, max_x + 2)
+            if (tile_x, tile_y) not in visible_coordinates
+        ]
+        # Prefer the cardinal neighbours nearest the viewport center when high
+        # DPR limits how many guard tiles fit into half of the global budget.
+        guard_coordinates.sort(
+            key=lambda coordinate: (
+                abs(coordinate[0] - center_x)
+                + abs(coordinate[1] - center_y),
+                coordinate[1],
+                coordinate[0],
+            )
+        )
+        remaining = maximum_tiles - len(visible_keys)
+        overlay_origin = self._overlay_widget_origin()
+        display_index = self._measurement_display_scene_index(
+            zoom=float(anchor.zoom)
+        )
+        guard_keys: list[CanvasOverlayTileKey] = []
+        for tile_x, tile_y in guard_coordinates:
+            guard_key = self._overlay_tile_key(
+                tile_x,
+                tile_y,
+                zoom=float(anchor.zoom),
+                dpr=dpr,
+                overlay_origin=overlay_origin,
+            )
+            tile_image_rect = self._overlay_tile_image_rect(guard_key)
+            if not tile_image_rect.intersects(self._paint_image_bounds()):
+                continue
+            if (
+                display_index is not None
+                and not display_index.query_rect(tile_image_rect)
+            ):
+                continue
+            guard_keys.append(guard_key)
+            if len(guard_keys) >= remaining:
+                break
+        return [*visible_keys, *guard_keys]
 
     def _remember_overlay_namespace(self, zoom: float, dpr: float) -> None:
         namespace = (zoom, dpr)
@@ -4038,16 +4256,18 @@ class DocumentCanvas(QWidget):
         if self._document is None:
             return
         self._reconcile_overlay_visible_keys(keys)
+        reordered_queue: list[CanvasOverlayTileKey] = []
         for key in keys:
             if (
-                key in self._overlay_tile_queued
+                key == self._overlay_tile_active
                 or key in self._overlay_tile_failed
                 or canvas_overlay_tile_cache.contains(key)
                 or canvas_overlay_tile_cache.is_pending(key)
             ):
                 continue
-            self._overlay_tile_queue.append(key)
-            self._overlay_tile_queued.add(key)
+            reordered_queue.append(key)
+        self._overlay_tile_queue = reordered_queue
+        self._overlay_tile_queued = set(reordered_queue)
         if (
             self._overlay_tile_queue
             and self._overlay_tile_active is None
@@ -4141,7 +4361,13 @@ class DocumentCanvas(QWidget):
                 ),
             )
         ]
-        geometries_overlap = self._overlay_geometries_overlap(passive_candidates)
+        if not passive_candidates:
+            self._overlay_tile_request_serial += 1
+            return CanvasOverlayRenderSnapshot(
+                request_id=self._overlay_tile_request_serial,
+                key=key,
+                known_empty=True,
+            )
         if (
             passive_candidates
             and all(
@@ -4172,7 +4398,7 @@ class DocumentCanvas(QWidget):
                     key=key,
                     area_commands=tuple(commands),
                     bleed_device_pixels=2,
-                    exact_composition=geometries_overlap,
+                    exact_composition=False,
                     # Preserve the current worker-side composition guard.  If a
                     # label overlaps its translucent area body, the worker can
                     # record these same detached commands to QPicture without
@@ -4183,16 +4409,14 @@ class DocumentCanvas(QWidget):
                     # the opaque-background equivalence probe for that case;
                     # a numeric object-count shortcut would make dense tiles
                     # faster at the cost of incorrect alpha composition.
-                    adaptive_composition=(
-                        not geometries_overlap
-                        and len(passive_candidates) > 1
-                    ),
+                    adaptive_composition=len(passive_candidates) > 1,
                     composition_probe_rgba=0xFFFFFFFF,
                 )
 
-        # Mixed object kinds and defensive command construction failures retain
-        # the existing UI-recorded exact QPicture path. Overlapping pure areas
-        # are recorded from detached commands inside the worker instead.
+        # Mixed object kinds and defensive area-command failures retain the
+        # UI-recorded QPicture input. Area-heavy pictures are still flattened
+        # adaptively in the worker when the opaque-background probe proves the
+        # raster visually equivalent.
         picture = QPicture()
         picture_painter = QPainter(picture)
         if not picture_painter.isActive():
@@ -4232,62 +4456,26 @@ class DocumentCanvas(QWidget):
             measurement.measurement_kind == "area"
             for measurement in passive_candidates
         )
-        dense_non_area_tile = (
-            not contains_area and len(passive_candidates) > 64
+        adaptive_picture_tile = (
+            contains_area or len(passive_candidates) > 64
         )
         return CanvasOverlayRenderSnapshot(
             request_id=self._overlay_tile_request_serial,
             key=key,
             picture=QPicture(picture),
             bleed_device_pixels=bleed_device_pixels,
-            # Dense line/polyline/count tiles benefit materially from one
-            # flattened image. The worker still probes composition on an
-            # opaque background and retains the exact command stream when
-            # alpha rounding would become visible. Small tiles remain exact,
-            # and any tile containing an area remains exact because fill
-            # overlap order is part of the displayed result.
-            exact_composition=not dense_non_area_tile,
-            adaptive_composition=dense_non_area_tile,
+            # Dense line/polyline/count and mixed area tiles benefit materially
+            # from one flattened image. The worker probes composition on an
+            # opaque background and retains the exact command stream whenever
+            # alpha rounding would become visible. Small non-area tiles remain
+            # exact because replaying them is already cheap.
+            exact_composition=not adaptive_picture_tile,
+            adaptive_composition=adaptive_picture_tile,
             # White maximizes the observable error from flattening
             # semi-transparent antialias/background layers.  Tiles that fail
             # this probe retain exact commands instead of a raster.
             composition_probe_rgba=0xFFFFFFFF,
         )
-
-    @staticmethod
-    def _overlay_geometries_overlap(
-        measurements: list[Measurement],
-    ) -> bool:
-        """Conservatively keep draw commands when passive bodies overlap.
-
-        Flattening overlapping antialiased or semi-transparent primitives can
-        change their final pixels.  A sweep-line test avoids an O(N²) cold
-        snapshot check while ordinary separated measurements retain the much
-        faster raster tile.
-        """
-
-        bounds = [
-            bound
-            for measurement in measurements
-            if (
-                bound := MeasurementSceneIndex._measurement_bounds(measurement)
-            )
-            is not None
-        ]
-        bounds.sort(key=lambda bound: (bound[0], bound[1], bound[2], bound[3]))
-        active: list[tuple[float, float, float, float]] = []
-        for current in bounds:
-            left, top, right, bottom = current
-            active = [bound for bound in active if bound[2] >= left]
-            if any(
-                bound[3] >= top
-                and bound[1] <= bottom
-                and right >= bound[0]
-                for bound in active
-            ):
-                return True
-            active.append(current)
-        return False
 
     def _overlay_tile_key_is_current(self, key: CanvasOverlayTileKey) -> bool:
         if self._document is None:
@@ -4354,11 +4542,13 @@ class DocumentCanvas(QWidget):
         self._overlay_known_namespaces.clear()
         self._overlay_namespace_order.clear()
         self._overlay_visible_keys.clear()
+        self._overlay_strict_visible_keys.clear()
         self._overlay_tile_failed.clear()
         self._overlay_document_stamp = None
         self._overlay_group_signature = None
         self._overlay_calibration_signature = None
         self._overlay_measurement_order_signature = None
+        self._overlay_area_vertex_count = 0
         self._overlay_measurement_state.clear()
         self._overlay_annotation_state.clear()
         self._overlay_selected_measurement_id = (
@@ -4432,7 +4622,22 @@ class DocumentCanvas(QWidget):
             changed_bounds: list[tuple[float, float, float, float]] = []
             count_number = 0
             max_object_font_size = 0.0
+            area_vertex_count = 0
             for measurement in self._document.measurements:
+                if measurement.measurement_kind == "area":
+                    rings = measurement.area_rings_px
+                    area_vertex_count += sum(
+                        len(ring)
+                        for ring in (
+                            rings
+                            if rings
+                            else (
+                                [measurement.polygon_px]
+                                if measurement.polygon_px
+                                else []
+                            )
+                        )
+                    )
                 if measurement.measurement_kind == "count":
                     count_number += 1
                 appearance = measurement.appearance
@@ -4539,6 +4744,7 @@ class DocumentCanvas(QWidget):
             self._overlay_measurement_state = current
             self._overlay_annotation_state = current_annotations
             self._overlay_max_object_font_size = max_object_font_size
+            self._overlay_area_vertex_count = area_vertex_count
             self._overlay_document_stamp = document_stamp
         selected_id = self._document.view_state.selected_measurement_id
         if selected_id != self._overlay_selected_measurement_id:

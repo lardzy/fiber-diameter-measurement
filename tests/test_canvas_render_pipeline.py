@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QPointF, QRectF
-from PySide6.QtGui import QColor, QImage, QPainter
+from PySide6.QtGui import QColor, QImage, QPainter, QPicture
 from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Line, Point
@@ -30,13 +30,18 @@ from fdm.settings import (
     MeasurementLabelStyleSettings,
 )
 from fdm.ui import rendering
+import fdm.ui.canvas as canvas_module
 from fdm.ui.canvas import (
     CanvasDisplayBounds,
     CanvasVisualChange,
     DocumentCanvas,
     MeasurementSceneIndex,
 )
-from fdm.ui.canvas_overlay_cache import canvas_overlay_tile_cache
+from fdm.ui.canvas_overlay_cache import (
+    CanvasOverlayRenderSnapshot,
+    CanvasOverlayTileCache,
+    canvas_overlay_tile_cache,
+)
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 
 
@@ -97,6 +102,48 @@ class CanvasRenderPipelineTests(unittest.TestCase):
             [measurement.id for measurement in index.query_point(Point(45.0, 15.0), tolerance=10.0)],
             ["last"],
         )
+
+    def test_high_vertex_magic_area_enables_cache_below_object_threshold(
+        self,
+    ) -> None:
+        ring = [
+            Point(
+                160.0 + (100.0 * math.cos(index * math.tau / 10_000)),
+                120.0 + (80.0 * math.sin(index * math.tau / 10_000)),
+            )
+            for index in range(10_000)
+        ]
+        measurement = Measurement(
+            id="dense-magic",
+            image_id="doc",
+            fiber_group_id=None,
+            mode="magic_segment",
+            measurement_kind="area",
+            polygon_px=ring[:256],
+            area_rings_px=[ring],
+        )
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+            measurements=[measurement],
+        )
+        canvas = DocumentCanvas()
+        try:
+            canvas.set_document(
+                document,
+                QImage(320, 240, QImage.Format.Format_RGB32),
+            )
+            canvas._sync_overlay_visual_state()  # noqa: SLF001
+            with patch.dict(
+                os.environ,
+                {"QT_QPA_PLATFORM": ""},
+                clear=False,
+            ):
+                self.assertTrue(canvas._overlay_cache_enabled())  # noqa: SLF001
+        finally:
+            canvas.clear_document()
+            canvas.close()
 
     def test_oversized_area_uses_bucket_and_remains_queryable(self) -> None:
         area = Measurement(
@@ -750,8 +797,10 @@ class CanvasRenderPipelineTests(unittest.TestCase):
         full_context = canvas._paint_context()  # noqa: SLF001
         dirty_context = canvas._paint_context(QRectF(8.0, 8.0, 64.0, 64.0))  # noqa: SLF001
         full_keys = canvas._visible_overlay_tile_keys(full_context)  # noqa: SLF001
+        working_keys = canvas._overlay_prefetch_tile_keys(full_keys)  # noqa: SLF001
         dirty_keys = canvas._visible_overlay_tile_keys(dirty_context)  # noqa: SLF001
         self.assertGreater(len(full_keys), len(dirty_keys))
+        self.assertGreater(len(working_keys), len(full_keys))
 
         target = QImage(1024, 768, QImage.Format.Format_ARGB32_Premultiplied)
         painter = QPainter(target)
@@ -777,8 +826,110 @@ class CanvasRenderPipelineTests(unittest.TestCase):
             painter.end()
 
         self.assertEqual(get_payload.call_count, len(dirty_keys))
-        self.assertEqual(enqueue.call_args.args[0], full_keys)
-        self.assertEqual(canvas._overlay_visible_keys, set(full_keys))  # noqa: SLF001
+        self.assertEqual(enqueue.call_args.args[0], working_keys)
+        self.assertEqual(canvas._overlay_visible_keys, set(working_keys))  # noqa: SLF001
+        canvas.clear_document()
+        canvas.close()
+
+    def test_dual_payload_uses_picture_at_rest_and_raster_during_pan(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(320, 240),
+            measurements=[
+                self._line(f"line-{index}", float(index))
+                for index in range(64)
+            ],
+        )
+        canvas = DocumentCanvas()
+        cache = CanvasOverlayTileCache(
+            max_entries=8,
+            max_bytes=16 * 1024 * 1024,
+            thread_pool=type(
+                "InlinePool",
+                (),
+                {"start": lambda _self, runnable: runnable.run()},
+            )(),
+        )
+        canvas.resize(320, 240)
+        canvas.set_document(
+            document,
+            QImage(320, 240, QImage.Format.Format_RGB32),
+        )
+        canvas._zoom = 1.0  # noqa: SLF001
+        canvas._pan = Point(0.0, 0.0)  # noqa: SLF001
+        canvas._sync_overlay_visual_state()  # noqa: SLF001
+        context = canvas._paint_context()  # noqa: SLF001
+        key = next(
+            key
+            for key in canvas._visible_overlay_tile_keys(context)  # noqa: SLF001
+            if key.tile_x == 0 and key.tile_y == 0
+        )
+        picture = QPicture()
+        picture_painter = QPainter(picture)
+        picture_painter.fillRect(
+            QRectF(0.0, 0.0, 80.0, 80.0),
+            QColor("#FF0000"),
+        )
+        picture_painter.end()
+        with patch.object(
+            canvas_module,
+            "canvas_overlay_tile_cache",
+            cache,
+        ):
+            self.assertTrue(
+                cache.request(
+                    CanvasOverlayRenderSnapshot(
+                        request_id=1,
+                        key=key,
+                        picture=picture,
+                        exact_composition=True,
+                    )
+                )
+            )
+            image, cached_picture = cache.get_payload(key)
+            self.assertIsNotNone(image)
+            self.assertIsNotNone(cached_picture)
+            image.fill(QColor("#00FF00"))
+
+            def draw_frame(*, panning: bool) -> QImage:
+                canvas._panning = panning  # noqa: SLF001
+                target = QImage(
+                    320,
+                    240,
+                    QImage.Format.Format_ARGB32_Premultiplied,
+                )
+                target.fill(0)
+                painter = QPainter(target)
+                try:
+                    with (
+                        patch.object(
+                            canvas,
+                            "_draw_measurements_direct",
+                            return_value=False,
+                        ) as direct,
+                        patch.object(canvas, "_enqueue_overlay_tiles"),
+                    ):
+                        canvas._draw_measurement_overlay_tiles(  # noqa: SLF001
+                            painter,
+                            context,
+                        )
+                    direct.assert_not_called()
+                finally:
+                    painter.end()
+                return target
+
+            still = draw_frame(panning=False)
+            moving = draw_frame(panning=True)
+            released = draw_frame(panning=False)
+
+        self.assertEqual(still.pixelColor(20, 20).name(), "#ff0000")
+        self.assertEqual(moving.pixelColor(20, 20).name(), "#00ff00")
+        self.assertEqual(released.pixelColor(20, 20).name(), "#ff0000")
+        canvas._end_canvas_pan()  # noqa: SLF001
+        cache.clear()
         canvas.clear_document()
         canvas.close()
 

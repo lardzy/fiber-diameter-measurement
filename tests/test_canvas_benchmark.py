@@ -48,6 +48,8 @@ class CanvasBenchmarkTests(unittest.TestCase):
                 "areas_holes_500",
                 "area_coordinates_200000",
                 "area_coordinates_600000",
+                "magic_wand_dense_110",
+                "magic_wand_overlap_110",
                 "offscreen_5000",
             },
         )
@@ -59,7 +61,9 @@ class CanvasBenchmarkTests(unittest.TestCase):
                     name,
                     object_count=1,
                     coordinate_count=(
-                        8 if definition.family == "area" else None
+                        8
+                        if definition.family in {"area", "magic_area"}
+                        else None
                     ),
                     canvas_size=(160, 120),
                 )
@@ -80,6 +84,55 @@ class CanvasBenchmarkTests(unittest.TestCase):
         self.assertTrue(
             all(
                 len(measurement.area_rings_px) == 2
+                for measurement in scenario.document.measurements
+            )
+        )
+
+    def test_magic_wand_scenario_uses_real_dense_raw_rings(self) -> None:
+        scenario = build_scenario(
+            "magic_wand_dense_110",
+            canvas_size=(640, 480),
+        )
+
+        self.assertEqual(scenario.object_count, 110)
+        self.assertGreater(scenario.coordinate_count, 100_000)
+        self.assertEqual(scenario.definition.composition, "dense")
+        self.assertTrue(scenario.settings.area_measurement_label_style.enabled)
+        self.assertEqual(
+            scenario.document.view_state.selected_measurement_id,
+            scenario.document.measurements[-1].id,
+        )
+        for measurement in scenario.document.measurements:
+            with self.subTest(measurement=measurement.id):
+                self.assertEqual(measurement.mode, "magic_segment")
+                self.assertEqual(measurement.measurement_kind, "area")
+                self.assertEqual(measurement.status, "manual")
+                self.assertEqual(len(measurement.area_rings_px), 2)
+                self.assertGreater(
+                    sum(len(ring) for ring in measurement.area_rings_px),
+                    len(measurement.polygon_px),
+                )
+                self.assertEqual(
+                    measurement.debug_payload[
+                        "benchmark_geometry_source"
+                    ],
+                    "magic_mask_to_geometry",
+                )
+
+    def test_magic_wand_coordinate_override_keeps_two_rings(self) -> None:
+        scenario = build_scenario(
+            "magic_wand_overlap_110",
+            object_count=3,
+            coordinate_count=60,
+            canvas_size=(320, 240),
+        )
+
+        self.assertEqual(scenario.coordinate_count, 60)
+        self.assertEqual(scenario.definition.composition, "overlap")
+        self.assertTrue(
+            all(
+                measurement.mode == "magic_segment"
+                and len(measurement.area_rings_px) == 2
                 for measurement in scenario.document.measurements
             )
         )
@@ -155,8 +208,17 @@ class CanvasBenchmarkTests(unittest.TestCase):
         interactions = result["interactions"]
         self.assertEqual(
             set(interactions),
-            {"pan", "zoom", "selection", "area_point", "drag", "idle"},
+            {
+                "continuous_pan",
+                "pan",
+                "zoom",
+                "selection",
+                "area_point",
+                "drag",
+                "idle",
+            },
         )
+        self.assertFalse(interactions["continuous_pan"]["applicable"])
         for name in ("pan", "zoom", "selection", "drag"):
             self.assertTrue(interactions[name]["applicable"])
             self.assertEqual(interactions[name]["action_count"], 1)
@@ -275,6 +337,69 @@ class CanvasBenchmarkTests(unittest.TestCase):
         self.assertGreater(hot["hits"], 0)
         self.assertEqual(hot["misses"], 0)
         self.assertEqual(hot["hit_rate"], 1.0)
+
+    def test_magic_wand_continuous_pan_keeps_high_dpi_phase_and_cache_hits(
+        self,
+    ) -> None:
+        for device_pixel_ratio in (1.25, 1.5):
+            with self.subTest(device_pixel_ratio=device_pixel_ratio):
+                result = run_benchmark(
+                    "magic_wand_dense_110",
+                    object_count=4,
+                    coordinate_count=400,
+                    frames=1,
+                    warmup_frames=0,
+                    canvas_size=(320, 240),
+                    overlay_cache=True,
+                    overlay_cache_timeout_ms=5_000,
+                    idle_ms=5,
+                    device_pixel_ratio=device_pixel_ratio,
+                    continuous_pan_frames=8,
+                )
+
+                self.assertTrue(
+                    result["overlay_cache"]["wait"]["ready"],
+                    result,
+                )
+                pan = result["interactions"]["continuous_pan"]
+                self.assertTrue(pan["applicable"], pan)
+                self.assertEqual(
+                    pan["device_pixel_ratio"],
+                    device_pixel_ratio,
+                )
+                self.assertEqual(pan["logical_step_px"], 1.0)
+                self.assertEqual(pan["phase_change_count"], 0, pan)
+                self.assertEqual(pan["direct_fallback_frames"], 0, pan)
+                self.assertEqual(pan["cached_frames"], 8, pan)
+                self.assertTrue(all(miss == 0 for miss in pan["frame_misses"]))
+                self.assertTrue(all(hit > 0 for hit in pan["frame_hits"]))
+
+    def test_overlapping_magic_wand_tiles_use_pan_raster_without_vector_replay(
+        self,
+    ) -> None:
+        result = run_benchmark(
+            "magic_wand_overlap_110",
+            object_count=4,
+            coordinate_count=400,
+            frames=1,
+            warmup_frames=0,
+            canvas_size=(320, 240),
+            overlay_cache=True,
+            overlay_cache_timeout_ms=5_000,
+            idle_ms=5,
+            device_pixel_ratio=1.25,
+            continuous_pan_frames=4,
+        )
+
+        self.assertTrue(result["overlay_cache"]["wait"]["ready"], result)
+        pan = result["interactions"]["continuous_pan"]
+        self.assertEqual(pan["direct_fallback_frames"], 0, pan)
+        self.assertGreater(
+            pan["payloads"]["image_only"],
+            0,
+            pan,
+        )
+        self.assertEqual(pan["payloads"]["picture_only"], 0, pan)
 
     def test_cache_state_is_cold_for_each_run_and_labels_are_not_collapsed(self) -> None:
         results = [
@@ -486,6 +611,22 @@ class CanvasBenchmarkTests(unittest.TestCase):
                 object_count=1,
                 frames=1,
                 idle_ms=-1,
+            )
+        with self.assertRaisesRegex(ValueError, "device_pixel_ratio"):
+            run_benchmark(
+                "length_labels_500",
+                object_count=1,
+                frames=1,
+                device_pixel_ratio=0.75,
+                idle_ms=5,
+            )
+        with self.assertRaisesRegex(ValueError, "continuous_pan_frames"):
+            run_benchmark(
+                "length_labels_500",
+                object_count=1,
+                frames=1,
+                continuous_pan_frames=-1,
+                idle_ms=5,
             )
 
     def test_output_suffix_is_applied_before_ignored_root_validation(self) -> None:

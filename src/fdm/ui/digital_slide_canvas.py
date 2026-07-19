@@ -455,6 +455,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             or (thread is not None and thread.is_alive())
         )
 
+    def _overlay_motion_active(self) -> bool:
+        return (
+            super()._overlay_motion_active()
+            or self._overlay_navigation_is_transient()
+        )
+
     def _enqueue_overlay_tiles(self, keys: list[CanvasOverlayTileKey]) -> None:
         """Warm passive tiles only after the viewport raster has stabilized."""
 

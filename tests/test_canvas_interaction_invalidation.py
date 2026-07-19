@@ -10,7 +10,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QPointF, QRect, QRectF, Qt
-from PySide6.QtGui import QColor, QImage, QPainter, QRegion
+from PySide6.QtGui import QColor, QHideEvent, QImage, QPainter, QRegion
 from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Line, Point
@@ -581,8 +581,136 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
             update.assert_called_once_with()
             self.assertFalse(canvas._panning)  # noqa: SLF001
             self.assertIsNone(canvas._pan_button)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_drag_unsnapped)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_drag_device_phase)  # noqa: SLF001
+            self.assertIsNone(  # noqa: SLF001
+                canvas._pan_drag_device_pixel_ratio
+            )
         finally:
             canvas.clear_document()
+            canvas.close()
+
+    def test_continuous_pan_preserves_device_phase_and_raw_accumulator(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc",
+            path="/tmp/doc.png",
+            image_size=(1024, 768),
+        )
+        for device_pixel_ratio in (1.0, 1.25, 1.5):
+            with self.subTest(device_pixel_ratio=device_pixel_ratio):
+                canvas = self._canvas(document, width=400, height=300)
+                try:
+                    canvas._zoom = 1.0  # noqa: SLF001
+                    canvas._pan = Point(11.13, 7.27)  # noqa: SLF001
+                    start = Point(canvas._pan.x, canvas._pan.y)  # noqa: SLF001
+                    pointer_x = 20.0
+                    pointer_y = 20.0
+                    canvas._last_mouse_pos = QPointF(  # noqa: SLF001
+                        pointer_x,
+                        pointer_y,
+                    )
+                    with patch.object(
+                        canvas,
+                        "devicePixelRatioF",
+                        return_value=device_pixel_ratio,
+                    ):
+                        initial_key = canvas._overlay_tile_key(  # noqa: SLF001
+                            0,
+                            0,
+                            zoom=1.0,
+                            dpr=device_pixel_ratio,
+                        )
+                        canvas._begin_canvas_pan(  # noqa: SLF001
+                            Qt.MouseButton.MiddleButton
+                        )
+                        total_x = 0.0
+                        total_y = 0.0
+                        for dx, dy in (
+                            (0.2, 0.1),
+                            (0.35, -0.25),
+                            (0.6, 0.4),
+                            (1.0, 0.0),
+                        ):
+                            total_x += dx
+                            total_y += dy
+                            pointer_x += dx
+                            pointer_y += dy
+                            canvas.mouseMoveEvent(
+                                _PointerEvent(
+                                    QPointF(pointer_x, pointer_y)
+                                )
+                            )
+                            raw = canvas._pan_drag_unsnapped  # noqa: SLF001
+                            self.assertAlmostEqual(raw.x, start.x + total_x)
+                            self.assertAlmostEqual(raw.y, start.y + total_y)
+                            self.assertLessEqual(
+                                abs(canvas._pan.x - raw.x),  # noqa: SLF001
+                                (0.5 / device_pixel_ratio) + 1e-8,
+                            )
+                            self.assertLessEqual(
+                                abs(canvas._pan.y - raw.y),  # noqa: SLF001
+                                (0.5 / device_pixel_ratio) + 1e-8,
+                            )
+                            current_key = canvas._overlay_tile_key(  # noqa: SLF001
+                                0,
+                                0,
+                                zoom=1.0,
+                                dpr=device_pixel_ratio,
+                            )
+                            self.assertEqual(
+                                current_key.device_phase_x,
+                                initial_key.device_phase_x,
+                            )
+                            self.assertEqual(
+                                current_key.device_phase_y,
+                                initial_key.device_phase_y,
+                            )
+                finally:
+                    canvas.clear_document()
+                    canvas.close()
+
+    def test_pan_session_is_cleared_when_canvas_lifecycle_interrupts_drag(
+        self,
+    ) -> None:
+        first = ImageDocument(
+            id="first",
+            path="/tmp/first.png",
+            image_size=(320, 240),
+        )
+        second = ImageDocument(
+            id="second",
+            path="/tmp/second.png",
+            image_size=(320, 240),
+        )
+        canvas = self._canvas(first)
+
+        def assert_cleared() -> None:
+            self.assertFalse(canvas._panning)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_button)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_drag_unsnapped)  # noqa: SLF001
+            self.assertIsNone(canvas._pan_drag_device_phase)  # noqa: SLF001
+            self.assertIsNone(  # noqa: SLF001
+                canvas._pan_drag_device_pixel_ratio
+            )
+
+        try:
+            canvas._begin_canvas_pan(Qt.MouseButton.MiddleButton)  # noqa: SLF001
+            canvas.hideEvent(QHideEvent())
+            assert_cleared()
+
+            canvas._begin_canvas_pan(Qt.MouseButton.MiddleButton)  # noqa: SLF001
+            canvas.set_document(
+                second,
+                QImage(320, 240, QImage.Format.Format_RGB32),
+            )
+            assert_cleared()
+
+            canvas._begin_canvas_pan(Qt.MouseButton.MiddleButton)  # noqa: SLF001
+            canvas.clear_document()
+            assert_cleared()
+        finally:
             canvas.close()
 
 

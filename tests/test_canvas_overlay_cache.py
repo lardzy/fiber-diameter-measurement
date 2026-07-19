@@ -342,6 +342,91 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
         painter.end()
         self.assertGreater(surface.pixelColor(40, 40).red(), 240)
 
+    def test_exact_composition_keeps_dual_payload_and_combined_budget(self) -> None:
+        cache = CanvasOverlayTileCache(
+            max_entries=4,
+            max_bytes=8 * 1024 * 1024,
+            thread_pool=_InlineThreadPool(),
+        )
+        key = _key()
+
+        self.assertTrue(
+            cache.request(
+                CanvasOverlayRenderSnapshot(
+                    request_id=1,
+                    key=key,
+                    area_commands=(_area_command(),),
+                    exact_composition=True,
+                )
+            )
+        )
+
+        payload = cache.get_payload(key)
+        self.assertIsNotNone(payload)
+        image, picture = payload
+        self.assertIsNotNone(image)
+        self.assertIsNotNone(picture)
+        self.assertEqual(
+            cache.stats().bytes,
+            image.sizeInBytes() + picture.size(),
+        )
+
+    def test_known_empty_tile_uses_tiny_picture_sentinel(self) -> None:
+        cache = CanvasOverlayTileCache(
+            max_entries=4,
+            max_bytes=8 * 1024 * 1024,
+            thread_pool=_InlineThreadPool(),
+        )
+        key = _key()
+
+        self.assertTrue(
+            cache.request(
+                CanvasOverlayRenderSnapshot(
+                    request_id=1,
+                    key=key,
+                    known_empty=True,
+                )
+            )
+        )
+
+        image, picture = cache.get_payload(key)
+        self.assertIsNone(image)
+        self.assertIsNotNone(picture)
+        self.assertLessEqual(cache.stats().bytes, 64)
+
+    def test_guard_admission_cannot_evict_protected_visible_tiles(self) -> None:
+        cache = CanvasOverlayTileCache(
+            max_entries=2,
+            max_bytes=8 * 1024 * 1024,
+            thread_pool=_InlineThreadPool(),
+        )
+        visible = (_key(tile_x=0), _key(tile_x=1))
+        guard = _key(tile_x=2)
+        for request_id, key in enumerate(visible, start=1):
+            self.assertTrue(
+                cache.request(
+                    CanvasOverlayRenderSnapshot(
+                        request_id=request_id,
+                        key=key,
+                        picture=_picture(),
+                    )
+                )
+            )
+        cache.protect(99, visible)
+
+        self.assertTrue(
+            cache.request(
+                CanvasOverlayRenderSnapshot(
+                    request_id=3,
+                    key=guard,
+                    picture=_picture("#0000FF"),
+                )
+            )
+        )
+
+        self.assertTrue(all(cache.contains(key) for key in visible))
+        self.assertFalse(cache.contains(guard))
+
     def test_completed_picture_budget_uses_size_without_copying_data(self) -> None:
         pool = _DeferredThreadPool()
         cache = CanvasOverlayTileCache(thread_pool=pool)
@@ -912,6 +997,7 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
                 "exact_composition",
                 "adaptive_composition",
                 "composition_probe_rgba",
+                "known_empty",
                 "area_commands",
             },
         )
@@ -1049,7 +1135,7 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
             canvas.close()
             cache.clear()
 
-    def test_mixed_tile_uses_ui_picture_and_overlapping_areas_record_in_worker(
+    def test_area_tiles_use_adaptive_composition_without_bbox_forced_picture(
         self,
     ) -> None:
         cases = (
@@ -1100,7 +1186,8 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
                     )
                     snapshot = canvas._build_overlay_tile_snapshot(key)  # noqa: SLF001
                     self.assertIsNotNone(snapshot)
-                    self.assertTrue(snapshot.exact_composition)
+                    self.assertFalse(snapshot.exact_composition)
+                    self.assertTrue(snapshot.adaptive_composition)
                     if scenario == "mixed":
                         self.assertIsNotNone(snapshot.picture)
                         self.assertFalse(snapshot.area_commands)
@@ -1112,7 +1199,9 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
                         )
                         try:
                             worker_cache.request(snapshot)
-                            self.assertIsNotNone(worker_cache.get_picture(key))
+                            payload = worker_cache.get_payload(key)
+                            self.assertIsNotNone(payload)
+                            self.assertIsNotNone(payload[0])
                         finally:
                             worker_cache.clear()
                 finally:
