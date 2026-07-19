@@ -47,6 +47,7 @@ from fdm.settings import (
     AreaInferDevice,
     AreaModelMapping,
     AppSettings,
+    DEFAULT_MEASUREMENT_LABEL_COLOR,
     FocusStackProfile,
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
@@ -108,7 +109,7 @@ class _MeasurementStylePreview(QWidget):
         self._metric = "area" if metric == "area" else "length"
         self._show_label = True
         self._font = QFont()
-        self._label_color = QColor("#F4F1DE")
+        self._label_color = QColor(DEFAULT_MEASUREMENT_LABEL_COLOR)
         self._line_color = QColor("#2A9D8F")
         self._background_enabled = True
         self._decimals = 2
@@ -1550,7 +1551,8 @@ class SettingsDialog(QDialog):
             show_label=self._show_length_measurement_labels.isChecked(),
             font=font,
             label_color=str(
-                self._length_measurement_label_color.property("color_value") or "#F4F1DE"
+                self._length_measurement_label_color.property("color_value")
+                or DEFAULT_MEASUREMENT_LABEL_COLOR
             ),
             line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
             background_enabled=self._length_measurement_label_background.isChecked(),
@@ -1568,7 +1570,8 @@ class SettingsDialog(QDialog):
             show_label=self._show_area_measurement_labels.isChecked(),
             font=font,
             label_color=str(
-                self._area_measurement_label_color.property("color_value") or "#F4F1DE"
+                self._area_measurement_label_color.property("color_value")
+                or DEFAULT_MEASUREMENT_LABEL_COLOR
             ),
             line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
             background_enabled=self._area_measurement_label_background.isChecked(),

@@ -174,7 +174,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             length_preview = dialog._length_measurement_style_preview  # noqa: SLF001
             area_preview = dialog._area_measurement_style_preview  # noqa: SLF001
             self.assertTrue(length_preview._show_label)  # noqa: SLF001
-            self.assertEqual(length_preview._label_color.name().upper(), "#F4F1DE")  # noqa: SLF001
+            self.assertEqual(length_preview._label_color.name().upper(), "#FF0000")  # noqa: SLF001
             self.assertEqual(area_preview._label_color.name().upper(), "#88AA44")  # noqa: SLF001
             self.assertEqual(area_preview._metric, "area")  # noqa: SLF001
             dialog._length_measurement_label_decimals.setValue(4)  # noqa: SLF001

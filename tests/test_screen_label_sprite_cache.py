@@ -244,20 +244,28 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
             )
         )
 
-        for _ in range(2):
-            rendering.draw_measurement_label(
-                painter,
-                measurement,
-                document,
-                settings,
-                QPointF(20, 80),
-                QPointF(200, 80),
-            )
+        with patch.object(
+            screen_label_sprite_cache,
+            "get_or_create",
+            wraps=screen_label_sprite_cache.get_or_create,
+        ) as get_or_create:
+            for _ in range(2):
+                rendering.draw_measurement_label(
+                    painter,
+                    measurement,
+                    document,
+                    settings,
+                    QPointF(20, 80),
+                    QPointF(200, 80),
+                )
 
         self.assertEqual(len(painter.draw_images), 2)
         self.assertIs(painter.draw_images[0][1], painter.draw_images[1][1])
         self.assertEqual(screen_label_sprite_cache.stats().misses, 1)
         self.assertEqual(screen_label_sprite_cache.stats().hits, 1)
+        self.assertTrue(
+            all(call.kwargs["outline_color"] is None for call in get_or_create.call_args_list)
+        )
 
     def test_parallel_label_rotates_once_and_still_uses_one_draw_image(self) -> None:
         widget = QWidget()
@@ -311,11 +319,18 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
         )
         measurement.recalculate(None)
         try:
-            with patch.object(
-                screen_label_sprite_cache,
-                "get_or_create",
-                wraps=screen_label_sprite_cache.get_or_create,
-            ) as get_or_create:
+            with (
+                patch.object(
+                    screen_label_sprite_cache,
+                    "get_or_create",
+                    wraps=screen_label_sprite_cache.get_or_create,
+                ) as get_or_create,
+                patch.object(
+                    rendering,
+                    "_draw_cached_text",
+                    wraps=rendering._draw_cached_text,
+                ) as draw_cached_text,
+            ):
                 rendering.draw_measurement_label(
                     painter,
                     measurement,
@@ -325,6 +340,7 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
                     QPointF(200, 80),
                 )
             get_or_create.assert_not_called()
+            self.assertIsNone(draw_cached_text.call_args.kwargs["outline"])
         finally:
             painter.end()
 
@@ -359,23 +375,75 @@ class ScreenLabelSpriteCacheTests(unittest.TestCase):
         area.recalculate(None)
         polyline.recalculate(None)
 
-        rendering.draw_area_measurement_label(
-            painter,
-            area,
-            document,
-            AppSettings(),
-            QPointF(60, 60),
-        )
-        rendering.draw_polyline_measurement_label(
-            painter,
-            polyline,
-            document,
-            AppSettings(),
-            [QPointF(120, 20), QPointF(180, 60), QPointF(210, 110)],
-            lambda point: QPointF(point.x, point.y),
-        )
+        with patch.object(
+            screen_label_sprite_cache,
+            "get_or_create",
+            wraps=screen_label_sprite_cache.get_or_create,
+        ) as get_or_create:
+            rendering.draw_area_measurement_label(
+                painter,
+                area,
+                document,
+                AppSettings(),
+                QPointF(60, 60),
+            )
+            rendering.draw_polyline_measurement_label(
+                painter,
+                polyline,
+                document,
+                AppSettings(),
+                [QPointF(120, 20), QPointF(180, 60), QPointF(210, 110)],
+                lambda point: QPointF(point.x, point.y),
+            )
 
         self.assertEqual(len(painter.draw_images), 2)
+        self.assertEqual(len(get_or_create.call_args_list), 2)
+        self.assertTrue(
+            all(call.kwargs["outline_color"] is None for call in get_or_create.call_args_list)
+        )
+
+    def test_passive_area_overlay_label_omits_text_outline(self) -> None:
+        document = ImageDocument(
+            id="image",
+            path="/tmp/image.png",
+            image_size=(240, 180),
+        )
+        area = Measurement(
+            id="area",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=[
+                Point(20, 20),
+                Point(100, 20),
+                Point(100, 100),
+                Point(20, 100),
+            ],
+        )
+        area.recalculate(None)
+        settings = AppSettings(
+            area_measurement_label_style=MeasurementLabelStyleSettings(enabled=True)
+        )
+
+        with patch.object(
+            screen_label_sprite_cache,
+            "get_or_create",
+            wraps=screen_label_sprite_cache.get_or_create,
+        ) as get_or_create:
+            command = rendering.build_passive_area_overlay_command(
+                document,
+                area,
+                settings,
+                zoom=1.0,
+                line_width=2.0,
+                show_fill=True,
+                sprite_device_pixel_ratio=1.0,
+            )
+
+        self.assertIsNotNone(command)
+        self.assertIsNotNone(command.label)
+        self.assertIsNone(get_or_create.call_args.kwargs["outline_color"])
 
     def test_single_count_number_uses_one_complete_sprite_per_paint(self) -> None:
         widget = QWidget()

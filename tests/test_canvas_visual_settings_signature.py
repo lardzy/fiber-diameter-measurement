@@ -118,7 +118,7 @@ class CanvasVisualSettingsSignatureTests(unittest.TestCase):
             "length label color": lambda settings: setattr(
                 settings.length_measurement_label_style,
                 "color",
-                "#ff0000",
+                "#112233",
             ),
             "length label decimals": lambda settings: setattr(
                 settings.length_measurement_label_style,

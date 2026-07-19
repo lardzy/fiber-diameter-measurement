@@ -865,6 +865,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded.area_measurement_label_style,
         )
         self.assertFalse(loaded.length_measurement_label_style.enabled)
+        self.assertEqual(loaded.length_measurement_label_style.color, "#334455")
         self.assertEqual(loaded.area_measurement_label_style.decimals, 6)
         self.assertTrue(loaded.length_measurement_label_style.parallel_to_line)
         self.assertFalse(loaded.area_measurement_label_style.background_enabled)
@@ -940,7 +941,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings.from_dict({})
 
         self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
-        self.assertEqual(settings.measurement_label_color, "#F4F1DE")
+        self.assertEqual(settings.measurement_label_color, "#FF0000")
+        self.assertEqual(settings.length_measurement_label_style.color, "#FF0000")
+        self.assertEqual(settings.area_measurement_label_style.color, "#FF0000")
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertTrue(settings.measurement_label_background_enabled)
         self.assertTrue(settings.length_measurement_label_style.enabled)

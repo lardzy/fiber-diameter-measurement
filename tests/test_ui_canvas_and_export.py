@@ -7703,7 +7703,7 @@ class CanvasAndExportTests(unittest.TestCase):
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             self.assertEqual(dialog._theme_mode_combo.currentData(), AppThemeMode.DARK)
-            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#F4F1DE")
+            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#FF0000")
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
             self.assertTrue(dialog._measurement_label_background.isChecked())
             self.assertEqual(dialog._endpoint_style_combo.currentData(), MeasurementEndpointStyle.BAR)

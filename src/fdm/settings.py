@@ -11,6 +11,9 @@ from fdm.atomic_io import atomic_write_json
 from fdm.models import CalibrationPreset
 
 
+DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
+
+
 class MeasurementEndpointStyle:
     CIRCLE = "circle"
     ARROW_INSIDE = "arrow_inside"
@@ -63,7 +66,7 @@ class MeasurementLabelStyleSettings:
     enabled: bool = True
     font_family: str = "Microsoft YaHei UI"
     font_size: int = 14
-    color: str = "#F4F1DE"
+    color: str = DEFAULT_MEASUREMENT_LABEL_COLOR
     decimals: int = 2
     background_enabled: bool = True
     parallel_to_line: bool = False
@@ -612,7 +615,7 @@ class AppSettings:
     )
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
-    measurement_label_color: str = "#F4F1DE"
+    measurement_label_color: str = DEFAULT_MEASUREMENT_LABEL_COLOR
     measurement_label_decimals: int = 2
     measurement_label_parallel_to_line: bool = False
     measurement_label_background_enabled: bool = True

@@ -1916,7 +1916,7 @@ def build_passive_area_overlay_command(
             text=text,
             font=font,
             text_color=text_color,
-            outline_color=_overlay_outline_color(text_color),
+            outline_color=None,
             background_color=background_color,
             device_pixel_ratio=sprite_device_pixel_ratio,
             arrangement_mode="measurement-area",
@@ -1973,7 +1973,6 @@ def draw_area_measurement_label(
     painter.setFont(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
     text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
-    text_outline = _overlay_outline_color(text_color)
     background_color = (
         QColor(16, 24, 32, 168)
         if _measurement_label_background_enabled(settings, measurement)
@@ -1984,7 +1983,7 @@ def draw_area_measurement_label(
         text=text,
         font=font,
         text_color=text_color,
-        outline_color=text_outline,
+        outline_color=None,
         background_color=background_color,
         arrangement_mode="measurement-area",
         use_sprite_cache=use_sprite_cache,
@@ -2016,7 +2015,7 @@ def draw_area_measurement_label(
         layout,
         QPointF(rect.left() + 6.0, rect.top() + 3.0),
         color=text_color,
-        outline=_overlay_outline_color(text_color),
+        outline=None,
         horizontal_center=rect.center().x(),
     )
 
@@ -2036,7 +2035,6 @@ def draw_measurement_label(
     painter.setFont(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
     text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
-    text_outline = _overlay_outline_color(text_color)
     background_color = (
         QColor(16, 24, 32, 168)
         if _measurement_label_background_enabled(settings, measurement)
@@ -2053,7 +2051,7 @@ def draw_measurement_label(
         text=text,
         font=font,
         text_color=text_color,
-        outline_color=text_outline,
+        outline_color=None,
         background_color=background_color,
         arrangement_mode=arrangement_mode,
         use_sprite_cache=use_sprite_cache,
@@ -2108,7 +2106,7 @@ def draw_measurement_label(
                 layout,
                 QPointF(parallel_rect.left() + 6.0, parallel_rect.top() + 3.0),
                 color=text_color,
-                outline=text_outline,
+                outline=None,
                 horizontal_center=0.0,
             )
         painter.restore()
@@ -2125,7 +2123,7 @@ def draw_measurement_label(
         layout,
         QPointF(rect.left() + 6.0, rect.top() + 3.0),
         color=text_color,
-        outline=text_outline,
+        outline=None,
         horizontal_center=rect.center().x(),
     )
 
@@ -2147,7 +2145,6 @@ def draw_polyline_measurement_label(
     painter.setFont(font)
     text = measurement_display_text_with_settings(measurement, document, settings)
     text_color = measurement_text_color(measurement, _measurement_label_color(settings, measurement))
-    text_outline = _overlay_outline_color(text_color)
     background_color = (
         QColor(16, 24, 32, 168)
         if _measurement_label_background_enabled(settings, measurement)
@@ -2158,7 +2155,7 @@ def draw_polyline_measurement_label(
         text=text,
         font=font,
         text_color=text_color,
-        outline_color=text_outline,
+        outline_color=None,
         background_color=background_color,
         arrangement_mode="measurement-polyline",
         use_sprite_cache=use_sprite_cache,
@@ -2194,7 +2191,7 @@ def draw_polyline_measurement_label(
         layout,
         QPointF(rect.left() + 6.0, rect.top() + 3.0),
         color=text_color,
-        outline=text_outline,
+        outline=None,
         horizontal_center=rect.center().x(),
     )
 
