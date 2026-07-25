@@ -215,6 +215,104 @@ class ObjectAppearanceTests(unittest.TestCase):
         image_point = canvas.widget_to_image(widget_point)
         self.assertEqual(canvas._hit_test_overlay_annotation(widget_point, image_point), text.id)
 
+    def test_overlay_text_has_no_automatic_contrast_outline_on_screen_or_export(self) -> None:
+        settings = AppSettings(text_color="#112233")
+        annotation = OverlayAnnotation(
+            id="text",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="叠加文字",
+            anchor_px=Point(20, 30),
+        )
+        document = ImageDocument(
+            id="image",
+            path="/tmp/image.png",
+            image_size=(180, 120),
+            overlay_annotations=[annotation],
+        )
+
+        for render_mode in ("screen_scale_full_image", "full_resolution"):
+            with self.subTest(render_mode=render_mode):
+                target = QImage(180, 120, QImage.Format.Format_ARGB32)
+                target.fill(QColor("#00000000"))
+                painter = QPainter(target)
+                try:
+                    with patch.object(
+                        rendering,
+                        "_draw_cached_text",
+                        wraps=rendering._draw_cached_text,
+                    ) as draw_cached_text:
+                        draw_overlay_annotations(
+                            painter,
+                            document,
+                            lambda point: QPointF(point.x, point.y),
+                            settings,
+                            render_mode=render_mode,
+                        )
+                finally:
+                    painter.end()
+
+                draw_cached_text.assert_called_once()
+                self.assertEqual(
+                    draw_cached_text.call_args.kwargs["color"],
+                    QColor("#112233"),
+                )
+                self.assertIsNone(
+                    draw_cached_text.call_args.kwargs["outline"],
+                )
+
+    def test_overlay_shapes_use_only_the_configured_stroke_color(self) -> None:
+        settings = AppSettings(overlay_line_color="#112233")
+        annotations = [
+            OverlayAnnotation(
+                id=kind,
+                image_id="image",
+                kind=kind,
+                start_px=Point(15, 20 + index * 20),
+                end_px=Point(100, 35 + index * 20),
+            )
+            for index, kind in enumerate(
+                (
+                    OverlayAnnotationKind.RECT,
+                    OverlayAnnotationKind.CIRCLE,
+                    OverlayAnnotationKind.LINE,
+                    OverlayAnnotationKind.ARROW,
+                )
+            )
+        ]
+        document = ImageDocument(
+            id="image",
+            path="/tmp/image.png",
+            image_size=(140, 120),
+            overlay_annotations=annotations,
+        )
+        target = QImage(140, 120, QImage.Format.Format_ARGB32)
+        target.fill(QColor("#00000000"))
+        painter = QPainter(target)
+        stroke_colors: list[QColor] = []
+        original_draw = rendering._draw_overlay_shape_geometry
+
+        def capture_stroke(active_painter, *args, **kwargs) -> None:
+            stroke_colors.append(QColor(active_painter.pen().color()))
+            original_draw(active_painter, *args, **kwargs)
+
+        try:
+            with patch.object(
+                rendering,
+                "_draw_overlay_shape_geometry",
+                side_effect=capture_stroke,
+            ):
+                draw_overlay_annotations(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x, point.y),
+                    settings,
+                )
+        finally:
+            painter.end()
+
+        self.assertEqual(stroke_colors, [QColor("#112233")] * len(annotations))
+
     def test_text_layout_cache_is_bounded_and_shared_with_multiline_hit_bounds(self) -> None:
         rendering._TEXT_LAYOUT_CACHE.clear()
         rendering._TEXT_LAYOUT_CACHE_CHARACTERS = 0

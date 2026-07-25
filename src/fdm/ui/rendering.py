@@ -666,7 +666,6 @@ def draw_overlay_annotations(
                 if annotation.appearance is not None and annotation.appearance.text_color
                 else settings.text_color
             )
-            text_outline = _overlay_outline_color(text_color)
             painter.setFont(font)
             rect = overlay_annotation_rect(annotation, settings, image_to_output)
             if not _is_visible_to_painter(painter, rect, padding=4.0):
@@ -677,7 +676,7 @@ def draw_overlay_annotations(
                 layout,
                 top_left,
                 color=text_color,
-                outline=text_outline,
+                outline=None,
             )
             if annotation.id == selected_overlay_id:
                 painter.setBrush(QColor(0, 0, 0, 0))
