@@ -14,7 +14,11 @@ try:
     from PySide6.QtWidgets import QApplication, QDialogButtonBox
 
     from fdm.geometry import Point
-    from fdm.models import ImageDocument
+    from fdm.models import (
+        ImageDocument,
+        OverlayTextAnchorAlignment,
+        OverlayTextSizeSpace,
+    )
     from fdm.settings import AppSettings, MeasurementLabelStyleSettings
     from fdm.ui.dialogs import SettingsDialog
 
@@ -51,6 +55,34 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             self.assertNotIn("当前图片", labels)
             self.assertEqual(dialog._settings_pages.count(), 7)  # noqa: SLF001
             self.assertEqual(dialog._settings_page_title.text(), "常规")  # noqa: SLF001
+        finally:
+            dialog.close()
+
+    def test_annotation_page_persists_new_text_size_space_and_anchor(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            dialog._settings_navigation.setCurrentRow(2)  # noqa: SLF001
+            dialog._text_size_space_combo.setCurrentIndex(  # noqa: SLF001
+                dialog._text_size_space_combo.findData(  # noqa: SLF001
+                    OverlayTextSizeSpace.LEGACY_OUTPUT_PX
+                )
+            )
+            dialog._text_anchor_combo.setCurrentIndex(  # noqa: SLF001
+                dialog._text_anchor_combo.findData(  # noqa: SLF001
+                    OverlayTextAnchorAlignment.BOTTOM_RIGHT
+                )
+            )
+
+            saved = dialog.app_settings()
+
+            self.assertEqual(
+                saved.text_size_space,
+                OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+            )
+            self.assertEqual(
+                saved.text_anchor_alignment,
+                OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+            )
         finally:
             dialog.close()
 

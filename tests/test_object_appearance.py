@@ -25,6 +25,9 @@ from fdm.models import (
     ObjectAppearanceOverride,
     OverlayAnnotation,
     OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
 )
 from fdm.settings import AppSettings, MeasurementLabelStyleSettings
 import fdm.ui.rendering as rendering
@@ -38,8 +41,10 @@ from fdm.ui.rendering import (
     measurement_label_font,
     measurement_line_width,
     measurement_marker_scale,
+    overlay_annotation_rect,
     overlay_annotation_line_width,
     overlay_text_font,
+    resolve_overlay_text_layout,
 )
 
 
@@ -260,6 +265,216 @@ class ObjectAppearanceTests(unittest.TestCase):
                 self.assertIsNone(
                     draw_cached_text.call_args.kwargs["outline"],
                 )
+
+    def test_legacy_overlay_text_keeps_fixed_output_size_and_top_left_anchor(self) -> None:
+        settings = AppSettings(text_font_family="Arial", text_font_size=20)
+        annotation = OverlayAnnotation(
+            id="legacy",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="旧版\n文字",
+            anchor_px=Point(100, 80),
+            text_layout=None,
+        )
+
+        full_resolution = resolve_overlay_text_layout(
+            annotation,
+            settings,
+            lambda point: QPointF(point.x, point.y),
+            render_mode="full_resolution",
+        )
+        screen = resolve_overlay_text_layout(
+            annotation,
+            settings,
+            lambda point: QPointF(point.x * 0.1, point.y * 0.1),
+            render_mode="screen_scale_full_image",
+        )
+
+        self.assertEqual(full_resolution.font.pixelSize(), 20)
+        self.assertEqual(screen.font.pixelSize(), 20)
+        self.assertAlmostEqual(full_resolution.text_rect.left(), 100.0)
+        self.assertAlmostEqual(full_resolution.text_rect.top(), 80.0)
+        self.assertAlmostEqual(screen.text_rect.left(), 10.0)
+        self.assertAlmostEqual(screen.text_rect.top(), 8.0)
+        self.assertAlmostEqual(screen.text_rect.width(), full_resolution.text_rect.width())
+        self.assertAlmostEqual(screen.text_rect.height(), full_resolution.text_rect.height())
+        self.assertEqual(
+            overlay_annotation_rect(
+                annotation,
+                settings,
+                lambda point: QPointF(point.x * 0.1, point.y * 0.1),
+            ),
+            screen.annotation_rect,
+        )
+
+    def test_image_space_overlay_text_scales_between_screen_and_full_resolution(self) -> None:
+        annotation = OverlayAnnotation(
+            id="image-space",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="原图文字",
+            anchor_px=Point(1000, 800),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=180.0,
+            ),
+        )
+        settings = AppSettings(text_font_family="Arial", text_font_size=12)
+
+        screen = resolve_overlay_text_layout(
+            annotation,
+            settings,
+            lambda point: QPointF(point.x * 0.1, point.y * 0.1),
+            render_mode="screen_scale_full_image",
+        )
+        full_resolution = resolve_overlay_text_layout(
+            annotation,
+            settings,
+            lambda point: QPointF(point.x, point.y),
+            render_mode="full_resolution",
+        )
+
+        self.assertEqual(screen.font.pixelSize(), 18)
+        self.assertEqual(full_resolution.font.pixelSize(), 180)
+        self.assertAlmostEqual(screen.text_rect.center().x(), 100.0)
+        self.assertAlmostEqual(screen.text_rect.center().y(), 80.0)
+        self.assertAlmostEqual(full_resolution.text_rect.center().x(), 1000.0)
+        self.assertAlmostEqual(full_resolution.text_rect.center().y(), 800.0)
+        self.assertAlmostEqual(screen.annotation_rect.center().x(), 100.0)
+        self.assertAlmostEqual(screen.annotation_rect.center().y(), 80.0)
+
+    def test_explicit_legacy_size_uses_spec_without_output_scaling(self) -> None:
+        annotation = OverlayAnnotation(
+            id="explicit-legacy",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="固定字号",
+            anchor_px=Point(100, 80),
+            appearance=ObjectAppearanceOverride(font_size=72),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+                image_font_size_px=24.0,
+            ),
+        )
+        settings = AppSettings(text_font_size=16)
+
+        for scale in (0.1, 1.0):
+            with self.subTest(scale=scale):
+                resolved = resolve_overlay_text_layout(
+                    annotation,
+                    settings,
+                    lambda point, active_scale=scale: QPointF(
+                        point.x * active_scale,
+                        point.y * active_scale,
+                    ),
+                )
+                self.assertEqual(resolved.font.pixelSize(), 24)
+
+    def test_multiline_overlay_text_uses_anchor_for_the_complete_text_block(self) -> None:
+        settings = AppSettings(text_font_family="Arial")
+        expected_anchor = QPointF(240.0, 160.0)
+        for alignment, horizontal, vertical in (
+            (OverlayTextAnchorAlignment.TOP_LEFT, 0.0, 0.0),
+            (OverlayTextAnchorAlignment.TOP_CENTER, 0.5, 0.0),
+            (OverlayTextAnchorAlignment.CENTER, 0.5, 0.5),
+            (OverlayTextAnchorAlignment.BOTTOM_RIGHT, 1.0, 1.0),
+        ):
+            with self.subTest(alignment=alignment):
+                annotation = OverlayAnnotation(
+                    id=alignment,
+                    image_id="image",
+                    kind=OverlayAnnotationKind.TEXT,
+                    content="第一行\n更长的第二行",
+                    anchor_px=Point(expected_anchor.x(), expected_anchor.y()),
+                    text_layout=OverlayTextLayoutSpec(
+                        anchor_alignment=alignment,
+                        size_space=OverlayTextSizeSpace.IMAGE_PX,
+                        image_font_size_px=32.0,
+                    ),
+                )
+                resolved = resolve_overlay_text_layout(
+                    annotation,
+                    settings,
+                    lambda point: QPointF(point.x, point.y),
+                )
+
+                self.assertAlmostEqual(
+                    resolved.text_rect.left() + (resolved.text_rect.width() * horizontal),
+                    expected_anchor.x(),
+                )
+                self.assertAlmostEqual(
+                    resolved.text_rect.top() + (resolved.text_rect.height() * vertical),
+                    expected_anchor.y(),
+                )
+
+    def test_image_space_overlay_text_does_not_multiply_device_pixel_ratio(self) -> None:
+        settings = AppSettings(text_font_family="Arial")
+        annotation = OverlayAnnotation(
+            id="dpr",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="DPR",
+            anchor_px=Point(100, 80),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=180.0,
+            ),
+        )
+        document = ImageDocument(
+            id="image",
+            path="/tmp/image.png",
+            image_size=(2000, 1200),
+            overlay_annotations=[annotation],
+        )
+        target = QImage(400, 240, QImage.Format.Format_ARGB32)
+        target.setDevicePixelRatio(2.0)
+        target.fill(QColor("#00000000"))
+        painter = QPainter(target)
+        captured_font_sizes: list[int] = []
+
+        def capture_text(active_painter, *_args, **_kwargs) -> None:
+            captured_font_sizes.append(active_painter.font().pixelSize())
+
+        try:
+            with patch.object(rendering, "_draw_cached_text", side_effect=capture_text):
+                draw_overlay_annotations(
+                    painter,
+                    document,
+                    lambda point: QPointF(point.x * 0.1, point.y * 0.1),
+                    settings,
+                    render_mode="screen_scale_full_image",
+                )
+        finally:
+            painter.end()
+
+        self.assertEqual(captured_font_sizes, [18])
+
+    def test_overlay_text_output_font_clamp_does_not_mutate_persistent_size(self) -> None:
+        spec = OverlayTextLayoutSpec(
+            anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+            size_space=OverlayTextSizeSpace.IMAGE_PX,
+            image_font_size_px=8000.0,
+        )
+        annotation = OverlayAnnotation(
+            id="clamped",
+            image_id="image",
+            kind=OverlayAnnotationKind.TEXT,
+            content="极大文字",
+            anchor_px=Point(10, 10),
+            text_layout=spec,
+        )
+
+        resolved = resolve_overlay_text_layout(
+            annotation,
+            AppSettings(),
+            lambda point: QPointF(point.x * 2.0, point.y * 2.0),
+        )
+
+        self.assertEqual(resolved.font.pixelSize(), 8192)
+        self.assertEqual(spec.image_font_size_px, 8000.0)
 
     def test_overlay_shapes_use_only_the_configured_stroke_color(self) -> None:
         settings = AppSettings(overlay_line_color="#112233")
@@ -762,6 +977,148 @@ class ObjectAppearanceTests(unittest.TestCase):
         self.assertEqual(inspector._text_color_button.property("color_value"), "#AABBCC")
         self.assertEqual(inspector._font_size_spin.value(), 31)
         self.assertEqual(inspector._control_values["text_color"], "#AABBCC")
+        inspector.close()
+
+    def test_inspector_exposes_image_space_text_size_and_anchor_controls(self) -> None:
+        text = OverlayAnnotation(
+            id="image-space-text",
+            image_id="text-inspector",
+            kind=OverlayAnnotationKind.TEXT,
+            content="原图文字",
+            anchor_px=Point(500, 400),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=180.0,
+            ),
+        )
+        document = ImageDocument(
+            id="text-inspector",
+            path="/tmp/text.png",
+            image_size=(2000, 1200),
+            overlay_annotations=[text],
+        )
+        document.select_overlay_annotation(text.id)
+        inspector = CurrentObjectInspector()
+        inspector.set_context(
+            document,
+            settings=AppSettings(),
+            overlay_id=text.id,
+            view_zoom=0.1,
+        )
+
+        self.assertFalse(inspector._text_layout_group.isHidden())
+        self.assertEqual(inspector._text_size_space_label.text(), "随图像缩放（推荐）")
+        self.assertEqual(inspector._text_image_font_size_spin.value(), 180.0)
+        self.assertTrue(inspector._text_image_font_size_spin.isEnabled())
+        self.assertTrue(inspector._font_size_spin.isHidden())
+        self.assertTrue(
+            inspector._text_anchor_buttons[OverlayTextAnchorAlignment.CENTER].isChecked()
+        )
+        self.assertIn("当前画布约 18 px", inspector._text_layout_summary_label.text())
+        self.assertIn("完整分辨率导出 180 px", inspector._text_layout_summary_label.text())
+        self.assertTrue(inspector._legacy_text_layout_label.isHidden())
+        self.assertTrue(inspector._text_layout_conversion_button.isHidden())
+        self.assertFalse(inspector._text_actual_size_button.isHidden())
+
+        changes: list[tuple[str, OverlayTextLayoutSpec]] = []
+        actual_size_previews: list[str] = []
+        inspector.overlayTextLayoutChangeRequested.connect(
+            lambda overlay_id, spec: changes.append((overlay_id, spec))
+        )
+        inspector.overlayTextActualSizePreviewRequested.connect(
+            actual_size_previews.append
+        )
+        inspector._text_image_font_size_spin.setValue(220.0)
+        inspector._text_image_font_size_spin.editingFinished.emit()
+        inspector._text_anchor_buttons[OverlayTextAnchorAlignment.BOTTOM_RIGHT].click()
+        inspector._text_actual_size_button.click()
+
+        self.assertEqual(len(changes), 2)
+        self.assertEqual(changes[0][0], text.id)
+        self.assertEqual(changes[0][1].image_font_size_px, 220.0)
+        self.assertEqual(
+            changes[1][1].anchor_alignment,
+            OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+        )
+        self.assertEqual(changes[1][1].image_font_size_px, 220.0)
+        self.assertEqual(actual_size_previews, [text.id])
+        inspector.close()
+
+    def test_inspector_keeps_legacy_text_read_only_until_explicit_conversion(self) -> None:
+        text = OverlayAnnotation(
+            id="legacy-text",
+            image_id="legacy-inspector",
+            kind=OverlayAnnotationKind.TEXT,
+            content="旧版文字",
+            anchor_px=Point(20, 30),
+            appearance=ObjectAppearanceOverride(font_size=18),
+            text_layout=None,
+        )
+        document = ImageDocument(
+            id="legacy-inspector",
+            path="/tmp/legacy.png",
+            image_size=(2000, 1200),
+            overlay_annotations=[text],
+        )
+        inspector = CurrentObjectInspector()
+        inspector.set_context(
+            document,
+            settings=AppSettings(text_font_size=16),
+            overlay_id=text.id,
+            view_zoom=0.1,
+        )
+
+        self.assertEqual(inspector._text_size_space_label.text(), "旧版固定输出像素")
+        self.assertFalse(inspector._text_image_font_size_spin.isEnabled())
+        self.assertEqual(inspector._text_image_font_size_spin.value(), 180.0)
+        self.assertFalse(inspector._font_size_spin.isHidden())
+        self.assertTrue(
+            inspector._text_anchor_buttons[OverlayTextAnchorAlignment.TOP_LEFT].isChecked()
+        )
+        self.assertTrue(
+            all(not button.isEnabled() for button in inspector._text_anchor_buttons.values())
+        )
+        self.assertIn("当前画布约 18 px", inspector._text_layout_summary_label.text())
+        self.assertIn("完整分辨率导出 18 px", inspector._text_layout_summary_label.text())
+        self.assertFalse(inspector._legacy_text_layout_label.isHidden())
+        self.assertFalse(inspector._text_layout_conversion_button.isHidden())
+
+        conversions: list[str] = []
+        layout_changes: list[object] = []
+        inspector.overlayTextLayoutConversionRequested.connect(conversions.append)
+        inspector.overlayTextLayoutChangeRequested.connect(
+            lambda _overlay_id, spec: layout_changes.append(spec)
+        )
+        inspector._text_layout_conversion_button.click()
+        inspector._text_image_font_size_spin.editingFinished.emit()
+
+        self.assertEqual(conversions, [text.id])
+        self.assertEqual(layout_changes, [])
+        inspector.close()
+
+    def test_inspector_hides_text_layout_controls_for_non_text_objects(self) -> None:
+        shape = OverlayAnnotation(
+            id="shape",
+            image_id="shape-inspector",
+            kind=OverlayAnnotationKind.RECT,
+            start_px=Point(10, 10),
+            end_px=Point(40, 30),
+        )
+        document = ImageDocument(
+            id="shape-inspector",
+            path="/tmp/shape.png",
+            image_size=(80, 60),
+            overlay_annotations=[shape],
+        )
+        inspector = CurrentObjectInspector()
+        inspector.set_context(
+            document,
+            settings=AppSettings(),
+            overlay_id=shape.id,
+        )
+
+        self.assertTrue(inspector._text_layout_group.isHidden())
         inspector.close()
 
     def test_inspector_long_category_does_not_create_a_wide_minimum(self) -> None:

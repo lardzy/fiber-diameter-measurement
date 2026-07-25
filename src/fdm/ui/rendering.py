@@ -29,7 +29,16 @@ from fdm.area_display import (
     area_geometry_raw,
 )
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
-from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind, TextAnnotation, format_measurement_label_value
+from fdm.models import (
+    ImageDocument,
+    Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextSizeSpace,
+    TextAnnotation,
+    format_measurement_label_value,
+)
 from fdm.settings import AppSettings, MeasurementEndpointStyle, ScaleOverlayPlacementMode, ScaleOverlayStyle
 from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.canvas_overlay_cache import (
@@ -43,6 +52,10 @@ from fdm.ui.screen_label_sprite_cache import (
 
 _TEXT_LAYOUT_MAX_ENTRIES = 2048
 _TEXT_LAYOUT_MAX_CHARACTERS = 128 * 1024
+_OVERLAY_TEXT_MIN_OUTPUT_FONT_PX = 1
+_OVERLAY_TEXT_MAX_OUTPUT_FONT_PX = 8192
+_OVERLAY_TEXT_SELECTION_PADDING_X = 6.0
+_OVERLAY_TEXT_SELECTION_PADDING_Y = 4.0
 MEASUREMENT_DECORATION_PADDING_SCREEN_PX = 48.0
 
 
@@ -61,6 +74,18 @@ class _CachedTextLayout:
     width: float
     height: float
     character_count: int
+
+
+@dataclass(slots=True)
+class ResolvedOverlayTextLayout:
+    """One authoritative layout shared by paint, culling and hit testing."""
+
+    font: QFont
+    layout: _CachedTextLayout
+    anchor: QPointF
+    text_rect: QRectF
+    annotation_rect: QRectF
+    image_to_output_scale: float
 
 
 _TEXT_LAYOUT_CACHE: OrderedDict[tuple[object, ...], _CachedTextLayout] = OrderedDict()
@@ -456,6 +481,107 @@ def _cached_text_layout(font: QFont, content: str, *, render_mode: str = "defaul
     return layout
 
 
+def _overlay_text_output_anchor_and_scale(
+    image_to_output,
+    anchor_px: Point,
+) -> tuple[QPointF, float]:
+    """Resolve the local logical-output scale without involving device DPR."""
+
+    transform = _image_to_output_transform(image_to_output)
+    return (
+        transform.map(QPointF(anchor_px.x, anchor_px.y)),
+        _image_to_output_scale(transform),
+    )
+
+
+def _overlay_text_anchor_fractions(alignment: str) -> tuple[float, float]:
+    return {
+        OverlayTextAnchorAlignment.TOP_LEFT: (0.0, 0.0),
+        OverlayTextAnchorAlignment.TOP_CENTER: (0.5, 0.0),
+        OverlayTextAnchorAlignment.TOP_RIGHT: (1.0, 0.0),
+        OverlayTextAnchorAlignment.CENTER_LEFT: (0.0, 0.5),
+        OverlayTextAnchorAlignment.CENTER: (0.5, 0.5),
+        OverlayTextAnchorAlignment.CENTER_RIGHT: (1.0, 0.5),
+        OverlayTextAnchorAlignment.BOTTOM_LEFT: (0.0, 1.0),
+        OverlayTextAnchorAlignment.BOTTOM_CENTER: (0.5, 1.0),
+        OverlayTextAnchorAlignment.BOTTOM_RIGHT: (1.0, 1.0),
+    }.get(alignment, (0.0, 0.0))
+
+
+def resolve_overlay_text_layout(
+    annotation: OverlayAnnotation,
+    settings: AppSettings,
+    image_to_output,
+    *,
+    render_mode: str = "overlay",
+) -> ResolvedOverlayTextLayout:
+    """Resolve font, anchor and complete multiline bounds exactly once.
+
+    A missing layout specification is the legacy contract: the configured
+    font size is already an output-pixel size and the image anchor is the text
+    block's top-left corner. An explicit specification always owns its numeric
+    font size; IMAGE_PX additionally scales that value through the same
+    transform that maps its anchor.
+    """
+
+    anchor, output_scale = _overlay_text_output_anchor_and_scale(
+        image_to_output,
+        annotation.anchor_px,
+    )
+    font = overlay_text_font(settings, annotation)
+    text_layout_spec = getattr(annotation, "text_layout", None)
+    alignment = OverlayTextAnchorAlignment.TOP_LEFT
+    if text_layout_spec is not None:
+        alignment = text_layout_spec.anchor_alignment
+        requested_font_px = float(text_layout_spec.image_font_size_px)
+        if text_layout_spec.size_space == OverlayTextSizeSpace.IMAGE_PX:
+            requested_font_px *= output_scale
+        if not math.isfinite(requested_font_px):
+            requested_font_px = float(_OVERLAY_TEXT_MIN_OUTPUT_FONT_PX)
+        resolved_font_px = int(
+            round(
+                max(
+                    float(_OVERLAY_TEXT_MIN_OUTPUT_FONT_PX),
+                    min(
+                        float(_OVERLAY_TEXT_MAX_OUTPUT_FONT_PX),
+                        requested_font_px,
+                    ),
+                )
+            )
+        )
+        font = QFont(font)
+        font.setPixelSize(resolved_font_px)
+
+    layout = _cached_text_layout(
+        font,
+        annotation.content,
+        render_mode=f"overlay:{render_mode}",
+    )
+    horizontal_fraction, vertical_fraction = _overlay_text_anchor_fractions(
+        alignment
+    )
+    text_rect = QRectF(
+        anchor.x() - (layout.width * horizontal_fraction),
+        anchor.y() - (layout.height * vertical_fraction),
+        layout.width,
+        layout.height,
+    )
+    selection_rect = text_rect.adjusted(
+        -_OVERLAY_TEXT_SELECTION_PADDING_X,
+        -_OVERLAY_TEXT_SELECTION_PADDING_Y,
+        _OVERLAY_TEXT_SELECTION_PADDING_X,
+        _OVERLAY_TEXT_SELECTION_PADDING_Y,
+    )
+    return ResolvedOverlayTextLayout(
+        font=font,
+        layout=layout,
+        anchor=anchor,
+        text_rect=text_rect,
+        annotation_rect=selection_rect,
+        image_to_output_scale=output_scale,
+    )
+
+
 def _text_layout(font: QFont, content: str) -> tuple[QFontMetricsF, list[str], float, float]:
     """Compatibility wrapper backed by the shared text-layout cache."""
     layout = _cached_text_layout(font, content)
@@ -617,7 +743,13 @@ def overlay_annotation_handle_points(annotation: OverlayAnnotation) -> list[tupl
     return []
 
 
-def overlay_annotation_rect(annotation: OverlayAnnotation, settings: AppSettings, image_to_output) -> QRectF:
+def overlay_annotation_rect(
+    annotation: OverlayAnnotation,
+    settings: AppSettings,
+    image_to_output,
+    *,
+    render_mode: str = "overlay",
+) -> QRectF:
     if annotation.normalized_kind() != OverlayAnnotationKind.TEXT:
         start = image_to_output(annotation.start_px)
         end = image_to_output(annotation.end_px)
@@ -626,23 +758,34 @@ def overlay_annotation_rect(annotation: OverlayAnnotation, settings: AppSettings
         width = max(1.0, abs(end.x() - start.x()))
         height = max(1.0, abs(end.y() - start.y()))
         return QRectF(left, top, width, height)
-    font = overlay_text_font(settings, annotation)
-    layout = _cached_text_layout(font, annotation.content, render_mode="overlay")
-    top_left = image_to_output(annotation.anchor_px)
-    padding_x = 6.0
-    padding_y = 4.0
-    return QRectF(
-        top_left.x() - padding_x,
-        top_left.y() - padding_y,
-        layout.width + (padding_x * 2.0),
-        layout.height + (padding_y * 2.0),
-    )
+    return resolve_overlay_text_layout(
+        annotation,
+        settings,
+        image_to_output,
+        render_mode=render_mode,
+    ).annotation_rect
 
 
-def annotation_rect(annotation: TextAnnotation | OverlayAnnotation, settings: AppSettings, image_to_output) -> QRectF:
+def annotation_rect(
+    annotation: TextAnnotation | OverlayAnnotation,
+    settings: AppSettings,
+    image_to_output,
+    *,
+    render_mode: str = "overlay",
+) -> QRectF:
     if isinstance(annotation, TextAnnotation):
-        return overlay_annotation_rect(annotation.to_overlay(), settings, image_to_output)
-    return overlay_annotation_rect(annotation, settings, image_to_output)
+        return overlay_annotation_rect(
+            annotation.to_overlay(),
+            settings,
+            image_to_output,
+            render_mode=render_mode,
+        )
+    return overlay_annotation_rect(
+        annotation,
+        settings,
+        image_to_output,
+        render_mode=render_mode,
+    )
 
 
 def draw_overlay_annotations(
@@ -659,22 +802,25 @@ def draw_overlay_annotations(
     for annotation in annotations:
         kind = annotation.normalized_kind()
         if kind == OverlayAnnotationKind.TEXT:
-            font = overlay_text_font(settings, annotation)
-            layout = _cached_text_layout(font, annotation.content, render_mode=render_mode)
+            resolved_text = resolve_overlay_text_layout(
+                annotation,
+                settings,
+                image_to_output,
+                render_mode=render_mode,
+            )
             text_color = QColor(
                 annotation.appearance.text_color
                 if annotation.appearance is not None and annotation.appearance.text_color
                 else settings.text_color
             )
-            painter.setFont(font)
-            rect = overlay_annotation_rect(annotation, settings, image_to_output)
+            painter.setFont(resolved_text.font)
+            rect = resolved_text.annotation_rect
             if not _is_visible_to_painter(painter, rect, padding=4.0):
                 continue
-            top_left = rect.topLeft() + QPointF(6.0, 4.0)
             _draw_cached_text(
                 painter,
-                layout,
-                top_left,
+                resolved_text.layout,
+                resolved_text.text_rect.topLeft(),
                 color=text_color,
                 outline=None,
             )

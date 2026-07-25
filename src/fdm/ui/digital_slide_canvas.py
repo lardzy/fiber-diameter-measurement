@@ -435,6 +435,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             cursor_position.y() - (local_before.y * self._zoom),
         )
         self._persist_view_state()
+        self.viewZoomChanged.emit(self.view_zoom())
         self.update()
         event.accept()
 

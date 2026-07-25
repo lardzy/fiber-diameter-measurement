@@ -13,7 +13,17 @@ from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter  # noqa: E40
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from fdm.geometry import Line, Point  # noqa: E402
-from fdm.models import Calibration, ImageDocument, Measurement, new_id  # noqa: E402
+from fdm.models import (  # noqa: E402
+    Calibration,
+    ImageDocument,
+    Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
+    new_id,
+)
 from fdm.settings import AppSettings  # noqa: E402
 from fdm.ui.dialogs import SettingsDialog  # noqa: E402
 from fdm.ui.image_loader import ImageLoadRequest  # noqa: E402
@@ -141,6 +151,7 @@ def _parse_args() -> argparse.Namespace:
             "empty",
             "measurement",
             "measurement-object",
+            "overlay-text-object",
             "measurement-calibration-collapsed",
             "measurement-records-collapsed",
             "measurement-results",
@@ -195,6 +206,21 @@ def main() -> int:
     settings = AppSettings(theme_mode=args.theme)
     apply_application_theme(app, args.theme)
     document, image = _demo_document()
+    if args.scenario == "overlay-text-object":
+        text_overlay = OverlayAnnotation(
+            id=new_id("overlay"),
+            image_id=document.id,
+            kind=OverlayAnnotationKind.TEXT,
+            content="高分辨率样品\n中心锚点",
+            anchor_px=Point(640.0, 390.0),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=72.0,
+            ),
+        )
+        document.add_overlay_annotation(text_overlay)
+        document.select_overlay_annotation(text_overlay.id)
     if args.scenario == "settings":
         scenario_name = f"settings-{args.settings_page}"
     elif args.scenario == "measurement-results":
@@ -240,6 +266,17 @@ def main() -> int:
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-object":
             widget._object_properties_section.setExpanded(True)
             widget._refresh_object_inspector()
+        elif isinstance(widget, MainWindow) and args.scenario == "overlay-text-object":
+            widget._calibration_section.setExpanded(False)
+            widget._records_section.setExpanded(False)
+            widget._area_recognition_section.setExpanded(False)
+            widget._object_properties_section.setExpanded(True)
+            widget._refresh_object_inspector()
+            widget._inspector_scroll.ensureWidgetVisible(
+                widget._object_properties_section,
+                0,
+                0,
+            )
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-calibration-collapsed":
             widget._calibration_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":

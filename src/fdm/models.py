@@ -722,6 +722,104 @@ class OverlayAnnotationKind:
     ARROW = "arrow"
 
 
+class OverlayTextAnchorAlignment:
+    """Anchor point placement within an overlay text layout box."""
+
+    TOP_LEFT = "top_left"
+    TOP_CENTER = "top_center"
+    TOP_RIGHT = "top_right"
+    CENTER_LEFT = "center_left"
+    CENTER = "center"
+    CENTER_RIGHT = "center_right"
+    BOTTOM_LEFT = "bottom_left"
+    BOTTOM_CENTER = "bottom_center"
+    BOTTOM_RIGHT = "bottom_right"
+
+    # Readable aliases for callers that describe the second row as "middle".
+    MIDDLE_LEFT = CENTER_LEFT
+    MIDDLE_CENTER = CENTER
+    MIDDLE_RIGHT = CENTER_RIGHT
+
+    @classmethod
+    def normalize(cls, value: object) -> str:
+        token = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        aliases = {
+            cls.TOP_LEFT: cls.TOP_LEFT,
+            cls.TOP_CENTER: cls.TOP_CENTER,
+            cls.TOP_RIGHT: cls.TOP_RIGHT,
+            cls.CENTER_LEFT: cls.CENTER_LEFT,
+            cls.CENTER: cls.CENTER,
+            cls.CENTER_RIGHT: cls.CENTER_RIGHT,
+            cls.BOTTOM_LEFT: cls.BOTTOM_LEFT,
+            cls.BOTTOM_CENTER: cls.BOTTOM_CENTER,
+            cls.BOTTOM_RIGHT: cls.BOTTOM_RIGHT,
+            "middle_left": cls.CENTER_LEFT,
+            "middle": cls.CENTER,
+            "middle_center": cls.CENTER,
+            "middle_right": cls.CENTER_RIGHT,
+        }
+        return aliases.get(token, cls.CENTER)
+
+
+class OverlayTextSizeSpace:
+    """Coordinate space used to interpret an overlay text font size."""
+
+    LEGACY_OUTPUT_PX = "legacy_output_px"
+    IMAGE_PX = "image_px"
+
+    @classmethod
+    def normalize(cls, value: object) -> str:
+        token = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        if token == cls.LEGACY_OUTPUT_PX:
+            return cls.LEGACY_OUTPUT_PX
+        return cls.IMAGE_PX
+
+
+@dataclass(slots=True)
+class OverlayTextLayoutSpec:
+    """Explicit placement and size semantics for a text overlay.
+
+    A missing spec on :class:`OverlayAnnotation` retains the legacy fixed-output
+    pixel behavior.  New annotations use image-space sizing and a centered
+    anchor unless the caller requests otherwise.
+    """
+
+    anchor_alignment: str = OverlayTextAnchorAlignment.CENTER
+    size_space: str = OverlayTextSizeSpace.IMAGE_PX
+    image_font_size_px: float = 18.0
+
+    def __post_init__(self) -> None:
+        self.anchor_alignment = OverlayTextAnchorAlignment.normalize(self.anchor_alignment)
+        self.size_space = OverlayTextSizeSpace.normalize(self.size_space)
+        normalized_size = _normalize_optional_finite(
+            self.image_font_size_px,
+            minimum=1.0,
+            maximum=8192.0,
+        )
+        self.image_font_size_px = 18.0 if normalized_size is None else float(normalized_size)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "anchor_alignment": self.anchor_alignment,
+            "size_space": self.size_space,
+            "image_font_size_px": self.image_font_size_px,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "OverlayTextLayoutSpec":
+        return cls(
+            anchor_alignment=payload.get("anchor_alignment", OverlayTextAnchorAlignment.CENTER),
+            size_space=payload.get("size_space", OverlayTextSizeSpace.IMAGE_PX),
+            image_font_size_px=payload.get("image_font_size_px", 18.0),
+        )
+
+
+def _overlay_text_layout_from_payload(payload: object) -> OverlayTextLayoutSpec | None:
+    if not isinstance(payload, dict):
+        return None
+    return OverlayTextLayoutSpec.from_dict(payload)
+
+
 @dataclass(slots=True)
 class OverlayAnnotation:
     id: str
@@ -733,6 +831,7 @@ class OverlayAnnotation:
     end_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
     created_at: str = field(default_factory=utc_now_iso)
     appearance: ObjectAppearanceOverride | None = None
+    text_layout: OverlayTextLayoutSpec | None = None
 
     def normalized_kind(self) -> str:
         if self.kind in {
@@ -769,6 +868,8 @@ class OverlayAnnotation:
         if self.is_text():
             payload["content"] = self.content
             payload["anchor_px"] = self.anchor_px.to_dict()
+            if self.text_layout is not None:
+                payload["text_layout"] = self.text_layout.to_dict()
         else:
             payload["start_px"] = self.start_px.to_dict()
             payload["end_px"] = self.end_px.to_dict()
@@ -796,6 +897,7 @@ class OverlayAnnotation:
                 anchor_px=Point.from_dict(payload.get("anchor_px", {"x": 0.0, "y": 0.0})),
                 created_at=str(payload.get("created_at", utc_now_iso())),
                 appearance=_appearance_from_payload(payload.get("appearance")),
+                text_layout=_overlay_text_layout_from_payload(payload.get("text_layout")),
             )
         return cls(
             id=str(payload["id"]),

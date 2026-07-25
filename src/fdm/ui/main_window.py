@@ -93,6 +93,9 @@ from fdm.models import (
     ObjectAppearanceOverride,
     OverlayAnnotation,
     OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
     ProjectGroupTemplate,
     ProjectState,
     UNCATEGORIZED_LABEL,
@@ -228,7 +231,13 @@ from fdm.ui.project_session_controller import (
 from fdm.ui.prompt_segmentation_worker import PromptSegmentationRequest
 from fdm.ui.reference_instance_worker import ReferenceInstancePropagationRequest
 from fdm.ui.fiber_quick_geometry_worker import FiberQuickGeometryRequest
-from fdm.ui.rendering import draw_measurements, draw_overlay_annotations, draw_scale_overlay, overlay_metrics
+from fdm.ui.rendering import (
+    draw_measurements,
+    draw_overlay_annotations,
+    draw_scale_overlay,
+    overlay_metrics,
+    resolve_overlay_text_layout,
+)
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
 from fdm.ui.statistics_widgets import (
     DistributionRecordFilterRequest,
@@ -2963,6 +2972,15 @@ class MainWindow(QMainWindow):
         self._object_inspector.overlayContentChangeRequested.connect(
             self._on_overlay_content_change_requested
         )
+        self._object_inspector.overlayTextLayoutChangeRequested.connect(
+            self._on_overlay_text_layout_change_requested
+        )
+        self._object_inspector.overlayTextLayoutConversionRequested.connect(
+            self._on_overlay_text_layout_conversion_requested
+        )
+        self._object_inspector.overlayTextActualSizePreviewRequested.connect(
+            self._on_overlay_text_actual_size_preview_requested
+        )
         self._object_properties_section = CollapsibleSection(
             "当前对象属性",
             expanded=state.object_properties_expanded,
@@ -4358,10 +4376,33 @@ class MainWindow(QMainWindow):
             ".csv": "CSV 文件 (*.csv)",
         }.get(suffix, "所有文件 (*)")
 
+    @staticmethod
+    def _legacy_overlay_text_count(
+        documents: list[ImageDocument],
+    ) -> int:
+        return sum(
+            1
+            for document in documents
+            for annotation in document.overlay_annotations
+            if annotation.is_text() and annotation.text_layout is None
+        )
+
     def _create_export_options_dialog(self, preset: ExportSelection) -> ExportOptionsDialog:
+        current_document = self.current_document()
+        current_documents = (
+            [current_document]
+            if current_document is not None
+            else []
+        )
         return ExportOptionsDialog(
             preset,
             allow_all_scope=len(self.project.documents) > 1,
+            legacy_overlay_text_count_current=self._legacy_overlay_text_count(
+                current_documents
+            ),
+            legacy_overlay_text_count_all=self._legacy_overlay_text_count(
+                list(self.project.documents)
+            ),
             raw_record_templates=self._app_settings.raw_record_templates,
             last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
             parent=self,
@@ -8327,6 +8368,11 @@ class MainWindow(QMainWindow):
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
+        canvas.viewZoomChanged.connect(
+            lambda _zoom, document_id=document.id: self._on_canvas_view_zoom_changed(
+                document_id
+            )
+        )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
 
@@ -8418,6 +8464,11 @@ class MainWindow(QMainWindow):
         canvas.overlayCreateRequested.connect(self._on_canvas_overlay_create_requested)
         canvas.overlayEdited.connect(self._on_canvas_overlay_edited)
         canvas.scaleAnchorPicked.connect(self._on_canvas_scale_anchor_picked)
+        canvas.viewZoomChanged.connect(
+            lambda _zoom, document_id=target_document.id: self._on_canvas_view_zoom_changed(
+                document_id
+            )
+        )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
@@ -10523,16 +10574,40 @@ class MainWindow(QMainWindow):
             if not content:
                 self._focus_current_canvas()
                 return
+            canvas = self._canvases.get(document.id)
+            view_zoom = (
+                canvas.view_zoom()
+                if canvas is not None
+                else max(0.05, float(document.view_state.zoom or 1.0))
+            )
+            text_size_space = OverlayTextSizeSpace.normalize(
+                self._app_settings.text_size_space
+            )
+            stored_font_size = float(self._app_settings.text_font_size)
+            if text_size_space == OverlayTextSizeSpace.IMAGE_PX:
+                stored_font_size /= max(0.05, view_zoom)
+            text_layout = OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.normalize(
+                    self._app_settings.text_anchor_alignment
+                ),
+                size_space=text_size_space,
+                image_font_size_px=stored_font_size,
+            )
+
+            annotation = OverlayAnnotation(
+                id=new_id("overlay"),
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content=content,
+                anchor_px=anchor,
+                text_layout=text_layout,
+            )
+            if canvas is not None:
+                annotation = canvas.constrain_overlay_annotation(annotation)
 
             def mutate_text() -> None:
                 document.add_overlay_annotation(
-                    OverlayAnnotation(
-                        id=new_id("overlay"),
-                        image_id=document.id,
-                        kind=OverlayAnnotationKind.TEXT,
-                        content=content,
-                        anchor_px=anchor,
-                    )
+                    annotation
                 )
 
             self._apply_document_change(document, "新增文字", mutate_text)
@@ -10622,13 +10697,17 @@ class MainWindow(QMainWindow):
             overlay = document.get_overlay_annotation(object_id)
             if overlay is None:
                 return
+            canvas = self.current_canvas()
 
             def mutate_overlay() -> None:
                 current = document.get_overlay_annotation(object_id)
                 if current is not None:
+                    updated = current.clone(appearance=normalized)
+                    if current.is_text() and canvas is not None:
+                        updated = canvas.constrain_overlay_annotation(updated)
                     document.replace_overlay_annotation(
                         object_id,
-                        current.clone(appearance=normalized),
+                        updated,
                     )
                     document.select_overlay_annotation(object_id)
 
@@ -10646,13 +10725,17 @@ class MainWindow(QMainWindow):
         if not normalized_content:
             self.statusBar().showMessage("文字内容不能为空；如需移除请删除该对象。", 3500)
             return
+        canvas = self.current_canvas()
 
         def mutate() -> None:
             current = document.get_overlay_annotation(overlay_id)
             if current is not None:
+                updated = current.clone(content=normalized_content)
+                if canvas is not None:
+                    updated = canvas.constrain_overlay_annotation(updated)
                 document.replace_overlay_annotation(
                     overlay_id,
-                    current.clone(content=normalized_content),
+                    updated,
                 )
                 document.select_overlay_annotation(overlay_id)
 
@@ -10660,11 +10743,169 @@ class MainWindow(QMainWindow):
         self._refresh_object_inspector()
         self._focus_current_canvas()
 
+    def _on_overlay_text_layout_change_requested(
+        self,
+        overlay_id: str,
+        layout_spec: object,
+    ) -> None:
+        document = self.current_document()
+        overlay = (
+            document.get_overlay_annotation(overlay_id)
+            if document is not None
+            else None
+        )
+        if (
+            document is None
+            or overlay is None
+            or not overlay.is_text()
+            or not isinstance(layout_spec, OverlayTextLayoutSpec)
+        ):
+            return
+        normalized_spec = OverlayTextLayoutSpec(
+            anchor_alignment=layout_spec.anchor_alignment,
+            size_space=layout_spec.size_space,
+            image_font_size_px=layout_spec.image_font_size_px,
+        )
+        canvas = self.current_canvas()
+        updated_overlay = overlay.clone(text_layout=normalized_spec)
+        old_alignment = (
+            overlay.text_layout.anchor_alignment
+            if overlay.text_layout is not None
+            else OverlayTextAnchorAlignment.TOP_LEFT
+        )
+        if canvas is not None and old_alignment != normalized_spec.anchor_alignment:
+            previous_layout = resolve_overlay_text_layout(
+                overlay,
+                self._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            candidate_layout = resolve_overlay_text_layout(
+                updated_overlay,
+                self._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            offset = previous_layout.text_rect.topLeft() - candidate_layout.text_rect.topLeft()
+            updated_anchor = canvas.widget_to_image(candidate_layout.anchor + offset)
+            updated_overlay = updated_overlay.clone(anchor_px=updated_anchor)
+        if canvas is not None:
+            updated_overlay = canvas.constrain_overlay_annotation(updated_overlay)
+
+        def mutate() -> None:
+            current = document.get_overlay_annotation(overlay_id)
+            if current is None or not current.is_text():
+                return
+            document.replace_overlay_annotation(
+                overlay_id,
+                updated_overlay.clone(
+                    id=current.id,
+                    image_id=current.image_id,
+                    created_at=current.created_at,
+                ),
+            )
+            document.select_overlay_annotation(overlay_id)
+
+        self._apply_document_change(document, "更新叠加文字布局", mutate)
+        self._refresh_object_inspector()
+        self._focus_current_canvas()
+
+    def _on_overlay_text_layout_conversion_requested(self, overlay_id: str) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        overlay = (
+            document.get_overlay_annotation(overlay_id)
+            if document is not None
+            else None
+        )
+        if (
+            document is None
+            or canvas is None
+            or overlay is None
+            or not overlay.is_text()
+        ):
+            return
+        if (
+            overlay.text_layout is not None
+            and overlay.text_layout.size_space == OverlayTextSizeSpace.IMAGE_PX
+        ):
+            return
+        previous_layout = resolve_overlay_text_layout(
+            overlay,
+            self._app_settings,
+            canvas.image_to_widget,
+            render_mode="screen_scale_full_image",
+        )
+        output_font_size = max(1.0, float(previous_layout.font.pixelSize()))
+        image_font_size = output_font_size / max(0.05, canvas.view_zoom())
+        new_spec = OverlayTextLayoutSpec(
+            anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+            size_space=OverlayTextSizeSpace.IMAGE_PX,
+            image_font_size_px=image_font_size,
+        )
+        appearance = overlay.appearance
+        if appearance is not None and appearance.font_size is not None:
+            appearance = appearance.clone(font_size=None)
+            if appearance.is_empty():
+                appearance = None
+        converted = overlay.clone(
+            anchor_px=canvas.widget_to_image(previous_layout.text_rect.center()),
+            appearance=appearance,
+            text_layout=new_spec,
+        )
+
+        def mutate() -> None:
+            current = document.get_overlay_annotation(overlay_id)
+            if current is None or not current.is_text():
+                return
+            document.replace_overlay_annotation(
+                overlay_id,
+                converted.clone(
+                    id=current.id,
+                    image_id=current.image_id,
+                    created_at=current.created_at,
+                ),
+            )
+            document.select_overlay_annotation(overlay_id)
+
+        self._apply_document_change(document, "转换叠加文字布局", mutate)
+        self.statusBar().showMessage(
+            "已按当前画布外观转换为原图像素字号；可撤销此操作。",
+            4500,
+        )
+        self._refresh_object_inspector()
+        self._focus_current_canvas()
+
+    def _on_overlay_text_actual_size_preview_requested(self, overlay_id: str) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        overlay = (
+            document.get_overlay_annotation(overlay_id)
+            if document is not None
+            else None
+        )
+        if (
+            document is None
+            or canvas is None
+            or overlay is None
+            or not overlay.is_text()
+        ):
+            return
+        canvas.actual_size()
+        canvas.center_on_image_point(overlay.anchor_px)
+        self._refresh_object_inspector()
+        self.statusBar().showMessage(
+            "当前画布已切换为原始像素 1:1，可直接检查完整分辨率导出字号。",
+            4500,
+        )
+        self._focus_current_canvas()
+
     def _refresh_object_inspector(self) -> None:
         inspector = self._object_inspector
         if inspector is None:
             return
         document = self.current_document()
+        canvas = self.current_canvas()
         selected_ids = self._records_controller.selected_measurement_ids()
         if document is not None and not selected_ids and document.view_state.selected_measurement_id:
             selected_ids = [document.view_state.selected_measurement_id]
@@ -10674,6 +10915,7 @@ class MainWindow(QMainWindow):
             settings=self._app_settings,
             measurement_ids=selected_ids,
             overlay_id=overlay_id,
+            view_zoom=canvas.view_zoom() if canvas is not None else 1.0,
         )
         section = self._object_properties_section
         if section is None:
@@ -10692,6 +10934,18 @@ class MainWindow(QMainWindow):
             )
         else:
             section.setSummary("未选择对象")
+
+    def _on_canvas_view_zoom_changed(self, document_id: str) -> None:
+        document = self.current_document()
+        if (
+            document is None
+            or document.id != document_id
+            or not document.selected_overlay_id
+        ):
+            return
+        overlay = document.get_overlay_annotation(document.selected_overlay_id)
+        if overlay is not None and overlay.is_text():
+            self._refresh_object_inspector()
 
     def _on_canvas_scale_anchor_picked(self, document_id: str, anchor: Point) -> None:
         document = self.project.get_document(document_id)

@@ -8,7 +8,11 @@ import runpy
 import sys
 
 from fdm.atomic_io import atomic_write_json
-from fdm.models import CalibrationPreset
+from fdm.models import (
+    CalibrationPreset,
+    OverlayTextAnchorAlignment,
+    OverlayTextSizeSpace,
+)
 
 
 DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
@@ -636,6 +640,8 @@ class AppSettings:
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
+    text_size_space: str = OverlayTextSizeSpace.IMAGE_PX
+    text_anchor_alignment: str = OverlayTextAnchorAlignment.CENTER
     overlay_line_color: str = "#F7F4EA"
     overlay_line_width: float = 2.5
     focus_stack_profile: str = FocusStackProfile.BALANCED
@@ -769,6 +775,12 @@ class AppSettings:
         normalized.scale_overlay_length_value = self._normalize_scale_overlay_length_value(self.scale_overlay_length_value)
         normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
         normalized.text_font_size = self._normalize_font_size(self.text_font_size, minimum=8, maximum=144)
+        normalized.text_size_space = OverlayTextSizeSpace.normalize(
+            self.text_size_space
+        )
+        normalized.text_anchor_alignment = OverlayTextAnchorAlignment.normalize(
+            self.text_anchor_alignment
+        )
         normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
@@ -1160,6 +1172,8 @@ class AppSettings:
             "text_font_family": normalized.text_font_family,
             "text_font_size": normalized.text_font_size,
             "text_color": normalized.text_color,
+            "text_size_space": normalized.text_size_space,
+            "text_anchor_alignment": normalized.text_anchor_alignment,
             "overlay_line_color": normalized.overlay_line_color,
             "overlay_line_width": normalized.overlay_line_width,
             "focus_stack_profile": normalized.focus_stack_profile,
@@ -1321,6 +1335,15 @@ class AppSettings:
             maximum=144,
         )
         settings.text_color = str(payload.get("text_color", settings.text_color))
+        settings.text_size_space = OverlayTextSizeSpace.normalize(
+            payload.get("text_size_space", settings.text_size_space)
+        )
+        settings.text_anchor_alignment = OverlayTextAnchorAlignment.normalize(
+            payload.get(
+                "text_anchor_alignment",
+                settings.text_anchor_alignment,
+            )
+        )
         settings.overlay_line_color = str(payload.get("overlay_line_color", settings.overlay_line_color))
         settings.overlay_line_width = cls._normalize_overlay_line_width(
             payload.get("overlay_line_width", settings.overlay_line_width)

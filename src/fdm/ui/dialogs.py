@@ -41,7 +41,11 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from fdm.models import ImageDocument
+from fdm.models import (
+    ImageDocument,
+    OverlayTextAnchorAlignment,
+    OverlayTextSizeSpace,
+)
 from fdm.settings import (
     AppThemeMode,
     AreaInferDevice,
@@ -98,6 +102,18 @@ RAW_RECORD_FILTER_ITEMS = [
 RAW_RECORD_DIRECTION_ITEMS = [
     ("纵向", RawRecordExportDirection.VERTICAL),
     ("横向", RawRecordExportDirection.HORIZONTAL),
+]
+
+OVERLAY_TEXT_ANCHOR_ITEMS = [
+    ("左上", OverlayTextAnchorAlignment.TOP_LEFT),
+    ("上中", OverlayTextAnchorAlignment.TOP_CENTER),
+    ("右上", OverlayTextAnchorAlignment.TOP_RIGHT),
+    ("左中", OverlayTextAnchorAlignment.CENTER_LEFT),
+    ("中心", OverlayTextAnchorAlignment.CENTER),
+    ("右中", OverlayTextAnchorAlignment.CENTER_RIGHT),
+    ("左下", OverlayTextAnchorAlignment.BOTTOM_LEFT),
+    ("下中", OverlayTextAnchorAlignment.BOTTOM_CENTER),
+    ("右下", OverlayTextAnchorAlignment.BOTTOM_RIGHT),
 ]
 
 
@@ -706,12 +722,22 @@ class ExportOptionsDialog(QDialog):
         selection: ExportSelection,
         *,
         allow_all_scope: bool,
+        legacy_overlay_text_count_current: int = 0,
+        legacy_overlay_text_count_all: int = 0,
         raw_record_templates: list[RawRecordTemplate] | None = None,
         last_raw_record_template_path: str = "",
         parent=None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("导出选项")
+        self._legacy_overlay_text_count_current = max(
+            0,
+            int(legacy_overlay_text_count_current),
+        )
+        self._legacy_overlay_text_count_all = max(
+            0,
+            int(legacy_overlay_text_count_all),
+        )
 
         self._measurement_overlay = QCheckBox("测量叠加图 PNG")
         self._measurement_overlay.setChecked(selection.include_measurement_overlay)
@@ -755,8 +781,14 @@ class ExportOptionsDialog(QDialog):
         self._render_mode_combo.setCurrentIndex(max(0, render_index))
         self._render_mode_hint = QLabel("图片类导出会使用这里的渲染模式；表格和 JSON 不受影响。")
         self._render_mode_hint.setWordWrap(True)
+        self._legacy_overlay_text_warning = QLabel()
+        self._legacy_overlay_text_warning.setObjectName(
+            "exportLegacyOverlayTextWarning"
+        )
+        self._legacy_overlay_text_warning.setWordWrap(True)
         render_layout.addRow("渲染方式", self._render_mode_combo)
         render_layout.addRow("", self._render_mode_hint)
+        render_layout.addRow("", self._legacy_overlay_text_warning)
 
         raw_record_group = QGroupBox("原始记录模板")
         raw_record_layout = QFormLayout(raw_record_group)
@@ -776,6 +808,15 @@ class ExportOptionsDialog(QDialog):
         self._measurement_overlay.toggled.connect(self._update_render_mode_state)
         self._scale_overlay.toggled.connect(self._update_render_mode_state)
         self._combined_overlay.toggled.connect(self._update_render_mode_state)
+        self._scope_current.toggled.connect(
+            self._update_legacy_overlay_text_warning
+        )
+        self._scope_all.toggled.connect(
+            self._update_legacy_overlay_text_warning
+        )
+        self._render_mode_combo.currentIndexChanged.connect(
+            self._update_legacy_overlay_text_warning
+        )
         self._excel.toggled.connect(self._update_raw_record_template_state)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
@@ -799,6 +840,33 @@ class ExportOptionsDialog(QDialog):
         )
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
+        self._update_legacy_overlay_text_warning()
+
+    def _update_legacy_overlay_text_warning(self) -> None:
+        image_overlay_selected = (
+            self._measurement_overlay.isChecked()
+            or self._scale_overlay.isChecked()
+            or self._combined_overlay.isChecked()
+        )
+        full_resolution = (
+            self._render_mode_combo.currentData()
+            == ExportImageRenderMode.FULL_RESOLUTION
+        )
+        legacy_count = (
+            self._legacy_overlay_text_count_all
+            if self._scope_all.isChecked() and self._scope_all.isEnabled()
+            else self._legacy_overlay_text_count_current
+        )
+        visible = image_overlay_selected and full_resolution and legacy_count > 0
+        if visible:
+            self._legacy_overlay_text_warning.setText(
+                "⚠ 当前导出范围含 "
+                f"{legacy_count} 个旧版固定像素文字。完整分辨率导出时，"
+                "文字可能显得过小；建议先在“当前对象属性”中转换为随图像缩放文字。"
+            )
+        else:
+            self._legacy_overlay_text_warning.clear()
+        self._legacy_overlay_text_warning.setVisible(visible)
 
     def _update_raw_record_template_state(self) -> None:
         enabled = self._excel.isChecked()
@@ -1339,6 +1407,8 @@ class SettingsDialog(QDialog):
             text_font_family=self._font_combo_family_value(self._text_font),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
+            text_size_space=self._text_size_space_combo.currentData(),
+            text_anchor_alignment=self._text_anchor_combo.currentData(),
             overlay_line_color=self._overlay_line_color.property("color_value") or self._initial_settings.overlay_line_color,
             overlay_line_width=self._overlay_line_width.value(),
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
@@ -1867,9 +1937,43 @@ class SettingsDialog(QDialog):
         self._text_size.setRange(8, 144)
         self._text_size.setValue(settings.text_font_size)
         self._text_color = self._create_color_button(settings.text_color)
+        self._text_size_space_combo = NoWheelComboBox()
+        self._text_size_space_combo.addItem(
+            "随图像缩放（推荐）",
+            OverlayTextSizeSpace.IMAGE_PX,
+        )
+        self._text_size_space_combo.addItem(
+            "固定输出像素",
+            OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+        )
+        self._text_size_space_combo.setCurrentIndex(
+            max(
+                0,
+                self._text_size_space_combo.findData(settings.text_size_space),
+            )
+        )
+        self._text_anchor_combo = NoWheelComboBox()
+        for label, value in OVERLAY_TEXT_ANCHOR_ITEMS:
+            self._text_anchor_combo.addItem(label, value)
+        self._text_anchor_combo.setCurrentIndex(
+            max(
+                0,
+                self._text_anchor_combo.findData(
+                    settings.text_anchor_alignment
+                ),
+            )
+        )
         text_form.addRow("文字字体", self._text_font)
-        text_form.addRow("文字字号", self._text_size)
+        text_form.addRow("新建时屏显字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
+        text_form.addRow("尺寸基准", self._text_size_space_combo)
+        text_form.addRow("默认锚点", self._text_anchor_combo)
+        text_hint = QLabel(
+            "“随图像缩放”会在创建时按当前缩放率换算并冻结原图字号，"
+            "使画布、完整分辨率和其它图片导出模式保持同一相对大小。"
+        )
+        text_hint.setWordWrap(True)
+        text_form.addRow("", text_hint)
 
         shape_group = QGroupBox("图形标注默认样式")
         shape_form = QFormLayout(shape_group)

@@ -42,7 +42,13 @@ from fdm.geometry import (
     point_to_polygon_edge_distance,
     polygon_translate,
 )
-from fdm.models import ImageDocument, Measurement, OverlayAnnotation, OverlayAnnotationKind
+from fdm.models import (
+    ImageDocument,
+    Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
+    OverlayTextSizeSpace,
+)
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
     fill_magic_draft_internal_holes,
@@ -725,6 +731,7 @@ class DocumentCanvas(QWidget):
     magicSegmentRequested = Signal(str, object)
     magicSegmentSessionChanged = Signal(str)
     areaEditRejected = Signal(str, str)
+    viewZoomChanged = Signal(float)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -2223,6 +2230,11 @@ class DocumentCanvas(QWidget):
     def focus_canvas(self) -> None:
         self.setFocus(Qt.FocusReason.OtherFocusReason)
 
+    def view_zoom(self) -> float:
+        """Return the current logical image-to-widget scale."""
+
+        return max(0.05, float(self._zoom))
+
     def center_on_image_point(self, point: Point) -> None:
         """Keep the current zoom while bringing an image point to view center."""
 
@@ -2256,6 +2268,7 @@ class DocumentCanvas(QWidget):
                 (self.height() - target_height) / 2.0,
             )
         self._persist_view_state()
+        self.viewZoomChanged.emit(self.view_zoom())
         self.update()
 
     def actual_size(self) -> None:
@@ -2264,6 +2277,7 @@ class DocumentCanvas(QWidget):
         self._cancel_overlay_requests()
         self._pan = Point(20.0, 20.0)
         self._persist_view_state()
+        self.viewZoomChanged.emit(self.view_zoom())
         self.update()
 
     def set_temporary_grab_pressed(self, pressed: bool) -> None:
@@ -2384,6 +2398,7 @@ class DocumentCanvas(QWidget):
             cursor_position.y() - (image_before.y * self._zoom),
         )
         self._persist_view_state()
+        self.viewZoomChanged.emit(self.view_zoom())
         self.update()
 
     def _begin_canvas_pan(self, button: Qt.MouseButton) -> None:
@@ -4691,6 +4706,7 @@ class DocumentCanvas(QWidget):
                     annotation.end_px.x,
                     annotation.end_px.y,
                     repr(annotation.appearance),
+                    repr(annotation.text_layout),
                 )
                 current_annotations[annotation.id] = (
                     annotation_fingerprint,
@@ -5467,11 +5483,93 @@ class DocumentCanvas(QWidget):
 
     def _overlay_annotation_clamped(self, annotation: OverlayAnnotation) -> OverlayAnnotation:
         if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:
-            return annotation.clone(anchor_px=self._clamp_to_image(annotation.anchor_px, pixel_center=False))
+            candidate = annotation.clone(
+                anchor_px=self._clamp_to_image(
+                    annotation.anchor_px,
+                    pixel_center=False,
+                )
+            )
+            image_size = self._image_size()
+            if image_size is None:
+                return candidate
+            image_space_layout = (
+                candidate.text_layout is not None
+                and candidate.text_layout.size_space
+                == OverlayTextSizeSpace.IMAGE_PX
+            )
+            screen_rect = annotation_rect(
+                candidate,
+                self._settings,
+                self.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            if not screen_rect.isValid() or screen_rect.isEmpty():
+                return candidate
+            image_corners = [
+                self.widget_to_image(point)
+                for point in (
+                    screen_rect.topLeft(),
+                    screen_rect.topRight(),
+                    screen_rect.bottomLeft(),
+                    screen_rect.bottomRight(),
+                )
+            ]
+            if image_space_layout:
+                full_resolution_rect = annotation_rect(
+                    candidate,
+                    self._settings,
+                    lambda point: QPointF(point.x, point.y),
+                    render_mode="full_resolution",
+                )
+                image_corners.extend(
+                    Point(point.x(), point.y())
+                    for point in (
+                        full_resolution_rect.topLeft(),
+                        full_resolution_rect.topRight(),
+                        full_resolution_rect.bottomLeft(),
+                        full_resolution_rect.bottomRight(),
+                    )
+                )
+            left = min(point.x for point in image_corners)
+            top = min(point.y for point in image_corners)
+            right = max(point.x for point in image_corners)
+            bottom = max(point.y for point in image_corners)
+            width, height = image_size
+            right_limit = max(0.0, float(width) - 1.0)
+            bottom_limit = max(0.0, float(height) - 1.0)
+            dx = 0.0
+            dy = 0.0
+            if right - left <= right_limit:
+                if left < 0.0:
+                    dx = -left
+                elif right > right_limit:
+                    dx = right_limit - right
+            if bottom - top <= bottom_limit:
+                if top < 0.0:
+                    dy = -top
+                elif bottom > bottom_limit:
+                    dy = bottom_limit - bottom
+            if dx or dy:
+                candidate = candidate.translated(dx, dy)
+                candidate = candidate.clone(
+                    anchor_px=self._clamp_to_image(
+                        candidate.anchor_px,
+                        pixel_center=False,
+                    )
+                )
+            return candidate
         return annotation.clone(
             start_px=self._clamp_to_image(annotation.start_px, pixel_center=False),
             end_px=self._clamp_to_image(annotation.end_px, pixel_center=False),
         )
+
+    def constrain_overlay_annotation(
+        self,
+        annotation: OverlayAnnotation,
+    ) -> OverlayAnnotation:
+        """Keep a new or edited overlay within the source-image boundary."""
+
+        return self._overlay_annotation_clamped(annotation)
 
     def _translate_overlay_annotation(self, annotation: OverlayAnnotation, dx: float, dy: float) -> OverlayAnnotation:
         if annotation.normalized_kind() == OverlayAnnotationKind.TEXT:

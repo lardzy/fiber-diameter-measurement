@@ -25,6 +25,9 @@ from fdm.models import (
     Measurement,
     OverlayAnnotation,
     OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
     ProjectGroupTemplate,
     ProjectState,
     TextAnnotation,
@@ -355,7 +358,144 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertEqual(len(document.overlay_annotations), 1)
         self.assertEqual(document.overlay_annotations[0].kind, OverlayAnnotationKind.TEXT)
+        self.assertIsNone(document.overlay_annotations[0].text_layout)
         self.assertEqual(document.selected_overlay_id, "text_legacy")
+
+    def test_overlay_text_layout_roundtrip_preserves_image_space_anchor_semantics(self) -> None:
+        annotation = OverlayAnnotation(
+            id="overlay_text_new",
+            image_id="image_new",
+            kind=OverlayAnnotationKind.TEXT,
+            content="高分辨率文字",
+            anchor_px=Point(640.0, 480.0),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=256.5,
+            ),
+        )
+
+        payload = annotation.to_dict()
+        loaded = OverlayAnnotation.from_dict(payload)
+        cloned = loaded.clone(content="已克隆")
+        translated = loaded.translated(12.0, -8.0)
+
+        self.assertEqual(
+            payload["text_layout"],
+            {
+                "anchor_alignment": "bottom_right",
+                "size_space": "image_px",
+                "image_font_size_px": 256.5,
+            },
+        )
+        self.assertEqual(loaded.text_layout, annotation.text_layout)
+        self.assertEqual(cloned.text_layout, annotation.text_layout)
+        self.assertEqual(translated.text_layout, annotation.text_layout)
+        self.assertEqual(translated.anchor_px, Point(652.0, 472.0))
+
+    def test_overlay_text_layout_missing_field_remains_legacy(self) -> None:
+        payload = {
+            "id": "overlay_text_legacy",
+            "image_id": "image_legacy",
+            "kind": OverlayAnnotationKind.TEXT,
+            "content": "旧版文字",
+            "anchor_px": {"x": 18.0, "y": 22.0},
+        }
+
+        annotation = OverlayAnnotation.from_dict(payload)
+
+        self.assertIsNone(annotation.text_layout)
+        self.assertNotIn("text_layout", annotation.to_dict())
+        self.assertIsNone(
+            TextAnnotation.from_dict(
+                {
+                    "id": "legacy_text_annotation",
+                    "image_id": "image_legacy",
+                    "content": "更旧格式",
+                    "anchor_px": {"x": 2.0, "y": 3.0},
+                }
+            ).to_overlay().text_layout
+        )
+
+    def test_overlay_text_layout_normalizes_invalid_values_safely(self) -> None:
+        cases = (
+            (
+                {
+                    "anchor_alignment": "not-an-anchor",
+                    "size_space": "not-a-size-space",
+                    "image_font_size_px": "not-a-number",
+                },
+                OverlayTextAnchorAlignment.CENTER,
+                OverlayTextSizeSpace.IMAGE_PX,
+                18.0,
+            ),
+            (
+                {
+                    "anchor_alignment": "middle-left",
+                    "size_space": "legacy-output-px",
+                    "image_font_size_px": float("inf"),
+                },
+                OverlayTextAnchorAlignment.CENTER_LEFT,
+                OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+                18.0,
+            ),
+            (
+                {
+                    "anchor_alignment": "TOP RIGHT",
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": -100,
+                },
+                OverlayTextAnchorAlignment.TOP_RIGHT,
+                OverlayTextSizeSpace.IMAGE_PX,
+                1.0,
+            ),
+            (
+                {
+                    "anchor_alignment": OverlayTextAnchorAlignment.BOTTOM_CENTER,
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": 100_000,
+                },
+                OverlayTextAnchorAlignment.BOTTOM_CENTER,
+                OverlayTextSizeSpace.IMAGE_PX,
+                8192.0,
+            ),
+        )
+        for layout_payload, expected_anchor, expected_space, expected_size in cases:
+            with self.subTest(layout_payload=layout_payload):
+                annotation = OverlayAnnotation.from_dict(
+                    {
+                        "id": "overlay_text_invalid",
+                        "image_id": "image_invalid",
+                        "kind": OverlayAnnotationKind.TEXT,
+                        "content": "归一化",
+                        "anchor_px": {"x": 0.0, "y": 0.0},
+                        "text_layout": layout_payload,
+                    }
+                )
+                self.assertIsNotNone(annotation.text_layout)
+                assert annotation.text_layout is not None
+                self.assertEqual(annotation.text_layout.anchor_alignment, expected_anchor)
+                self.assertEqual(annotation.text_layout.size_space, expected_space)
+                self.assertEqual(annotation.text_layout.image_font_size_px, expected_size)
+
+    def test_shape_overlay_ignores_text_layout_payload(self) -> None:
+        annotation = OverlayAnnotation.from_dict(
+            {
+                "id": "overlay_rect",
+                "image_id": "image_shapes",
+                "kind": OverlayAnnotationKind.RECT,
+                "start_px": {"x": 10.0, "y": 20.0},
+                "end_px": {"x": 30.0, "y": 40.0},
+                "text_layout": {
+                    "anchor_alignment": OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": 72.0,
+                },
+            }
+        )
+
+        self.assertIsNone(annotation.text_layout)
+        self.assertNotIn("text_layout", annotation.to_dict())
 
     def test_project_roundtrip_preserves_project_asset_document_source_type(self) -> None:
         document = ImageDocument(
@@ -724,6 +864,8 @@ class ModelsProjectIOTests(unittest.TestCase):
             scale_overlay_font_size=21,
             text_font_size=26,
             text_color="#123456",
+            text_size_space=OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+            text_anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
             overlay_line_color="#FFAA00",
             overlay_line_width=3.5,
             focus_stack_profile=FocusStackProfile.SHARP,
@@ -781,6 +923,14 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.scale_overlay_font_size, 21)
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+        self.assertEqual(
+            loaded.text_size_space,
+            OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+        )
+        self.assertEqual(
+            loaded.text_anchor_alignment,
+            OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+        )
         self.assertEqual(loaded.overlay_line_color, "#FFAA00")
         self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
