@@ -1009,7 +1009,14 @@ def _prepare_kernel_request(
             generation=request.generation,
         )
     elif tool is AnalysisTool.SPATIAL_DISTRIBUTION:
-        allowed = {"points", "study_area"}
+        allowed = {
+            "points",
+            "study_area",
+            "point_scope",
+            "point_group_id",
+            "point_group_label",
+            "study_area_mode",
+        }
         _reject_unknown(parameters, allowed)
         kernel_request = SpatialDistributionRequest(
             points=_freeze_ring(parameters.get("points", ())),

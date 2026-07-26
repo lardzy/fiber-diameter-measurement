@@ -1581,6 +1581,18 @@ _DEFINITION_BY_ID = {
 }
 
 
+def image_operation_display_name(operation_id: ImageOperation | str) -> str:
+    """Return the stable Chinese operation label shared by processing UIs."""
+
+    resolved_id = (
+        operation_id.value
+        if isinstance(operation_id, ImageOperation)
+        else str(operation_id).strip()
+    )
+    definition = _DEFINITION_BY_ID.get(resolved_id)
+    return definition.label if definition is not None else resolved_id
+
+
 def _resolved_parameter_default(
     parameter: ParameterField,
     *,
@@ -1653,6 +1665,9 @@ class ImageProcessingWorkbench(QDialog):
     derivedImageReady = Signal(object)
     cancelled = Signal()
     previewChanged = Signal(object)
+    recipeSaveRequested = Signal(object)
+    recipeLoadRequested = Signal()
+    batchApplyRequested = Signal(object)
 
     PREVIEW_DEBOUNCE_MS = 150
 
@@ -1724,6 +1739,16 @@ class ImageProcessingWorkbench(QDialog):
 
     def operation_steps(self) -> tuple[ImageOperationSpec, ...]:
         return self._steps
+
+    def current_recipe(self) -> ImageProcessingRecipe:
+        return ImageProcessingRecipe.from_operations(self._steps)
+
+    def apply_loaded_recipe(self, recipe: ImageProcessingRecipe) -> None:
+        """Apply a host-selected preset without giving the workbench file access."""
+
+        if not isinstance(recipe, ImageProcessingRecipe):
+            raise TypeError("recipe 必须是 ImageProcessingRecipe")
+        self.set_operation_steps(recipe.operations)
 
     def generate_derived_image(self) -> None:
         """Start the same validated final task as the visible footer button."""
@@ -1832,10 +1857,28 @@ class ImageProcessingWorkbench(QDialog):
         self._status_label = QLabel("尚未添加处理步骤。", footer)
         self._status_label.setObjectName("imageProcessingStatus")
         footer_layout.addWidget(self._status_label, 1)
+        self._save_recipe_button = QPushButton("保存配方…", footer)
+        self._save_recipe_button.setToolTip(
+            "请求工作区保存当前有序步骤；工作台本身不直接写设置文件。"
+        )
+        self._save_recipe_button.clicked.connect(self._request_recipe_save)
+        self._load_recipe_button = QPushButton("载入配方…", footer)
+        self._load_recipe_button.setToolTip(
+            "请求工作区选择并校验一个已保存的处理配方。"
+        )
+        self._load_recipe_button.clicked.connect(self.recipeLoadRequested.emit)
+        self._batch_apply_button = QPushButton("批量应用…", footer)
+        self._batch_apply_button.setToolTip(
+            "把当前配方交给批处理窗口；成功结果仍需由项目工作区统一提交。"
+        )
+        self._batch_apply_button.clicked.connect(self._request_batch_apply)
         self._generate_button = QPushButton("生成派生图片", footer)
         self._generate_button.clicked.connect(self._generate_derived_image)
         self._cancel_button = QPushButton("取消", footer)
         self._cancel_button.clicked.connect(self._cancel_and_close)
+        footer_layout.addWidget(self._save_recipe_button)
+        footer_layout.addWidget(self._load_recipe_button)
+        footer_layout.addWidget(self._batch_apply_button)
         footer_layout.addWidget(self._generate_button)
         footer_layout.addWidget(self._cancel_button)
 
@@ -2346,6 +2389,14 @@ class ImageProcessingWorkbench(QDialog):
         self.cancelled.emit()
         self.reject()
 
+    def _request_recipe_save(self) -> None:
+        if self._steps:
+            self.recipeSaveRequested.emit(self.current_recipe())
+
+    def _request_batch_apply(self) -> None:
+        if self._steps:
+            self.batchApplyRequested.emit(self.current_recipe())
+
     def _update_actions(self) -> None:
         row = self._steps_list.currentRow()
         count = len(self._steps)
@@ -2357,6 +2408,9 @@ class ImageProcessingWorkbench(QDialog):
         self._undo_button.setEnabled(bool(self._undo_stack))
         self._redo_button.setEnabled(bool(self._redo_stack))
         self._generate_button.setEnabled(bool(self._steps) and not final_busy)
+        self._save_recipe_button.setEnabled(bool(self._steps) and not final_busy)
+        self._load_recipe_button.setEnabled(not final_busy)
+        self._batch_apply_button.setEnabled(bool(self._steps) and not final_busy)
         self._add_step_button.setEnabled(not final_busy)
 
     def _show_preview_raster(self, raster: RasterPlane) -> None:

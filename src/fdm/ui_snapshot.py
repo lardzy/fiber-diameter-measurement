@@ -22,6 +22,7 @@ from fdm.analysis_artifacts import (  # noqa: E402
 from fdm.geometry import Line, Point  # noqa: E402
 from fdm.image_processing_models import (  # noqa: E402
     DisplayTransform,
+    ImageProcessingRecipe,
 )
 from fdm.models import (  # noqa: E402
     Calibration,
@@ -42,6 +43,10 @@ from fdm.project_roi import (  # noqa: E402
     RoiPoint,
 )
 from fdm.services.export_service import ExportSelection  # noqa: E402
+from fdm.services.image_batch import (  # noqa: E402
+    BatchItemResourceEstimate,
+    BatchResourceEstimate,
+)
 from fdm.services.raster_io import qimage_to_raster_plane  # noqa: E402
 from fdm.settings import AppSettings  # noqa: E402
 from fdm.ui.dialogs import ExportOptionsDialog, SettingsDialog  # noqa: E402
@@ -51,8 +56,16 @@ from fdm.ui.image_processing_workbench import (  # noqa: E402
     ImageProcessingWorkbench,
     default_operation_spec,
 )
+from fdm.ui.image_batch_dialog import (  # noqa: E402
+    BatchDocumentOption,
+    ImageBatchProcessingDialog,
+)
 from fdm.ui.main_window import MainWindow  # noqa: E402
 from fdm.ui.analysis_results_center import AnalysisResultsCenter  # noqa: E402
+from fdm.ui.advanced_analysis_dialog import (  # noqa: E402
+    AdvancedAnalysisParametersDialog,
+)
+from fdm.ui.image_analysis_controller import AnalysisTool  # noqa: E402
 from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
 
@@ -74,8 +87,10 @@ UI_SNAPSHOT_SCENARIOS = (
     "measurement-export",
     "display-adjustment",
     "image-processing",
+    "image-batch",
     "roi-workspace",
     "analysis-results",
+    "advanced-analysis",
 )
 
 
@@ -415,6 +430,76 @@ def main() -> int:
                     ),
                 )
             )
+        elif args.scenario == "image-batch":
+            raster = qimage_to_raster_plane(image)
+            recipe = ImageProcessingRecipe.from_operations(
+                (
+                    default_operation_spec(
+                        "gaussian_blur",
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=raster.pixel_type,
+                    ),
+                    default_operation_spec(
+                        "clahe",
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=raster.pixel_type,
+                    ),
+                )
+            )
+            widget = ImageBatchProcessingDialog(
+                recipe,
+                (
+                    BatchDocumentOption(
+                        "batch-review-a",
+                        "激光共聚焦样品 A",
+                        "RGB8 · 1280×820",
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-b",
+                        "激光共聚焦样品 B",
+                        "RGB8 · 1920×1080",
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-c",
+                        "批次 07 灰度样品",
+                        "GRAY16 · 2048×1536",
+                        selected=False,
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-slide",
+                        "数字化切片（当前焦层）",
+                        "数字化切片",
+                        is_digital_slide=True,
+                    ),
+                ),
+                recipe_name="纤维对比度增强",
+            )
+            widget.apply_preflight(
+                BatchResourceEstimate(
+                    items=(
+                        BatchItemResourceEstimate(
+                            document_id="batch-review-a",
+                            source_bytes=4 << 20,
+                            estimated_output_bytes=4 << 20,
+                            estimated_peak_bytes=82 << 20,
+                            allowed=True,
+                        ),
+                        BatchItemResourceEstimate(
+                            document_id="batch-review-b",
+                            source_bytes=7 << 20,
+                            estimated_output_bytes=7 << 20,
+                            estimated_peak_bytes=126 << 20,
+                            allowed=True,
+                        ),
+                    ),
+                    estimated_total_output_bytes=11 << 20,
+                    available_disk_bytes=42 << 30,
+                    reserve_disk_bytes=2 << 30,
+                    disk_allowed=True,
+                )
+            )
         elif args.scenario == "analysis-results":
             artifacts = _demo_analysis_artifacts(document)
             widget = AnalysisResultsCenter(
@@ -426,6 +511,13 @@ def main() -> int:
                         document.measurements
                     )
                 },
+            )
+        elif args.scenario == "advanced-analysis":
+            widget = AdvancedAnalysisParametersDialog(
+                AnalysisTool.DIRECTIONALITY,
+                pixel_type=qimage_to_raster_plane(image).pixel_type,
+                has_analysis_mask=True,
+                active_group_label="玻璃纤维 · 批次 07",
             )
         else:
             widget = MainWindow()

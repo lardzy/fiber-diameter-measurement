@@ -4,11 +4,23 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
+import math
 from pathlib import Path
+from threading import Event
 from typing import TypeAlias
 
-from PySide6.QtCore import QRectF, Qt, Signal
-from PySide6.QtGui import QColor, QPainter, QPainterPath, QPalette, QPen, QPixmap
+import numpy as np
+from numpy.typing import NDArray
+from PySide6.QtCore import QObject, QRectF, QRunnable, Qt, QThreadPool, Signal
+from PySide6.QtGui import (
+    QColor,
+    QImage,
+    QPainter,
+    QPainterPath,
+    QPalette,
+    QPen,
+    QPixmap,
+)
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QDialog,
@@ -34,14 +46,27 @@ from PySide6.QtWidgets import (
 from fdm.analysis_artifacts import (
     AnalysisArtifact,
     AnalysisArtifactStatus,
+    AnalysisAssetReference,
     AnalysisAssetKind,
     AnalysisCurve,
     AnalysisObjectKind,
 )
+from fdm.services.analysis_asset_io import validate_analysis_asset_reference
 from fdm.ui.widgets import NoWheelComboBox
 
 
 NameMap: TypeAlias = Mapping[str, str] | None
+_PREVIEW_MAX_ARCHIVE_BYTES = 64 << 20
+_PREVIEW_MAX_UNCOMPRESSED_BYTES = 128 << 20
+_PREVIEW_MAX_ELEMENTS = 16_000_000
+_PREVIEW_MAX_SIDE = 640
+_PREVIEW_SCHEMA_MEMBERS = {
+    "fdm.skeleton-network.v1": ("skeleton", "skeleton"),
+    "fdm.local-thickness.v1": ("thickness_px", "heatmap"),
+    "fdm.tubeness.v1": ("response", "heatmap"),
+    "fdm.glcm-matrices.v1": ("matrices", "heatmap"),
+    "fdm.intensity-surface.v1": ("z", "heatmap"),
+}
 
 
 @dataclass(frozen=True, slots=True)
@@ -61,6 +86,206 @@ class AnalysisActionRequest:
 class AnalysisExportRequest:
     artifact_ids: tuple[str, ...]
     selected_table_name: str | None
+
+
+@dataclass(frozen=True, slots=True)
+class _AssetPreviewResult:
+    generation: int
+    artifact_id: str
+    asset_path: str
+    rgb: NDArray[np.uint8]
+    description: str
+
+
+@dataclass(frozen=True, slots=True)
+class _AssetPreviewFailure:
+    generation: int
+    artifact_id: str
+    asset_path: str
+    message: str
+
+
+class _AssetPreviewSignals(QObject):
+    ready = Signal(object)
+    failed = Signal(object)
+    finished = Signal(int)
+
+
+class _AssetPreviewTask(QRunnable):
+    def __init__(
+        self,
+        *,
+        generation: int,
+        artifact_id: str,
+        candidate: Path,
+        reference: AnalysisAssetReference,
+    ) -> None:
+        super().__init__()
+        self.generation = generation
+        self.artifact_id = artifact_id
+        self.candidate = candidate
+        self.reference = reference
+        self.signals = _AssetPreviewSignals()
+        self._cancelled = Event()
+
+    def cancel(self) -> None:
+        self._cancelled.set()
+
+    def run(self) -> None:
+        try:
+            if self._cancelled.is_set():
+                return
+            rgb, description = _load_bounded_asset_preview(
+                self.candidate,
+                self.reference,
+            )
+            if self._cancelled.is_set():
+                return
+        except Exception as exc:  # noqa: BLE001 - boundary reports safe text
+            if not self._cancelled.is_set():
+                self.signals.failed.emit(
+                    _AssetPreviewFailure(
+                        generation=self.generation,
+                        artifact_id=self.artifact_id,
+                        asset_path=self.reference.path,
+                        message=str(exc),
+                    )
+                )
+            return
+        else:
+            if not self._cancelled.is_set():
+                self.signals.ready.emit(
+                    _AssetPreviewResult(
+                        generation=self.generation,
+                        artifact_id=self.artifact_id,
+                        asset_path=self.reference.path,
+                        rgb=rgb,
+                        description=description,
+                    )
+                )
+        finally:
+            self.signals.finished.emit(self.generation)
+
+
+def _load_bounded_asset_preview(
+    candidate: Path,
+    reference: AnalysisAssetReference,
+) -> tuple[NDArray[np.uint8], str]:
+    """Load one known NPZ preview after enforcing a small UI-only budget."""
+
+    schema = str(reference.metadata.get("schema", ""))
+    member_spec = _PREVIEW_SCHEMA_MEMBERS.get(schema)
+    if member_spec is None:
+        raise ValueError("该分析资产暂无内置可视化预览。")
+    candidate = candidate.resolve()
+    if not candidate.is_file():
+        raise FileNotFoundError("分析资产尚未保存或文件已经缺失。")
+    if candidate.stat().st_size > _PREVIEW_MAX_ARCHIVE_BYTES:
+        raise ValueError("分析资产超过 64 MiB 预览上限；仍可正常导出原始结果。")
+    declared_bytes = _declared_asset_bytes(reference)
+    if declared_bytes > _PREVIEW_MAX_UNCOMPRESSED_BYTES:
+        raise ValueError("分析资产解压后超过 128 MiB 预览上限。")
+    validate_analysis_asset_reference(candidate, reference)
+    member_name, render_mode = member_spec
+    with np.load(candidate, allow_pickle=False) as archive:
+        if member_name not in archive.files:
+            raise ValueError(f"分析资产缺少预览成员：{member_name}")
+        source = np.asarray(archive[member_name])
+    if source.dtype.hasobject or source.dtype.kind not in "biufc":
+        raise ValueError("分析资产预览成员使用了不安全的数据类型。")
+    if source.size > _PREVIEW_MAX_ELEMENTS:
+        raise ValueError("分析资产预览成员超过 1600 万个元素的安全上限。")
+    if source.ndim == 3:
+        if source.shape[0] < 1:
+            raise ValueError("分析资产预览数组为空。")
+        source = source[0]
+    if source.ndim != 2 or min(source.shape) < 1:
+        raise ValueError("分析资产预览成员必须是非空二维数组。")
+    sampled, sample_note = _downsample_preview_array(source)
+    if render_mode == "skeleton":
+        rgb = _render_skeleton_preview(sampled)
+        label = "骨架网络"
+    else:
+        rgb = _render_heatmap_preview(sampled)
+        label = {
+            "fdm.local-thickness.v1": "局部厚度热力图",
+            "fdm.tubeness.v1": "Tubeness 响应热力图",
+            "fdm.glcm-matrices.v1": "第一组 GLCM 热力图",
+            "fdm.intensity-surface.v1": "二维强度表面热力图",
+        }[schema]
+    rgb = np.ascontiguousarray(rgb, dtype=np.uint8)
+    rgb.setflags(write=False)
+    return rgb, f"{label} · {source.shape[1]}×{source.shape[0]}{sample_note}"
+
+
+def _declared_asset_bytes(reference: AnalysisAssetReference) -> int:
+    members = reference.metadata.get("members")
+    if not isinstance(members, Mapping):
+        raise ValueError("分析资产缺少成员清单，无法安全预览。")
+    total = 0
+    for raw_descriptor in members.values():
+        if not isinstance(raw_descriptor, Mapping):
+            raise ValueError("分析资产成员描述不合法。")
+        dtype = np.dtype(str(raw_descriptor.get("dtype", "")))
+        if dtype.hasobject or dtype.kind not in "biufc":
+            raise ValueError("分析资产成员清单包含不安全 dtype。")
+        shape = raw_descriptor.get("shape")
+        if not isinstance(shape, list) or any(
+            isinstance(value, bool) or int(value) < 0 for value in shape
+        ):
+            raise ValueError("分析资产成员清单包含不合法 shape。")
+        elements = math.prod(int(value) for value in shape)
+        total += elements * dtype.itemsize
+        if total > _PREVIEW_MAX_UNCOMPRESSED_BYTES:
+            return total
+    return total
+
+
+def _downsample_preview_array(
+    source: NDArray[np.generic],
+) -> tuple[NDArray[np.generic], str]:
+    height, width = source.shape
+    stride = max(1, math.ceil(max(height, width) / _PREVIEW_MAX_SIDE))
+    sampled = source[::stride, ::stride]
+    return sampled, "" if stride == 1 else f" · 预览按 {stride}× 抽样"
+
+
+def _render_skeleton_preview(
+    source: NDArray[np.generic],
+) -> NDArray[np.uint8]:
+    mask = np.asarray(source, dtype=bool)
+    rgb = np.zeros((*mask.shape, 3), dtype=np.uint8)
+    rgb[..., :] = (17, 24, 39)
+    rgb[mask] = (45, 212, 191)
+    return rgb
+
+
+def _render_heatmap_preview(
+    source: NDArray[np.generic],
+) -> NDArray[np.uint8]:
+    values = np.asarray(source, dtype=np.float64)
+    finite = np.isfinite(values)
+    normalized = np.zeros(values.shape, dtype=np.float64)
+    if np.any(finite):
+        selected = values[finite]
+        low, high = np.percentile(selected, (2.0, 98.0))
+        if not math.isfinite(low) or not math.isfinite(high):
+            low, high = float(np.min(selected)), float(np.max(selected))
+        span = high - low
+        if span <= 0.0:
+            normalized[finite] = 0.5
+        else:
+            normalized[finite] = np.clip(
+                (values[finite] - low) / span,
+                0.0,
+                1.0,
+            )
+    red = np.clip(1.8 * normalized - 0.35, 0.0, 1.0)
+    green = np.clip(1.8 - np.abs(normalized - 0.58) * 3.0, 0.0, 1.0)
+    blue = np.clip(1.25 - 1.75 * normalized, 0.0, 1.0)
+    rgb = np.stack((red, green, blue), axis=2)
+    rgb[~finite] = (0.18, 0.18, 0.18)
+    return np.rint(rgb * 255.0).astype(np.uint8)
 
 
 _TOOL_NAMES = {
@@ -144,6 +369,9 @@ _FIELD_NAMES = {
     "outer_perimeter": "外轮廓周长",
     "outer_perimeter_px": "外轮廓周长（px）",
     "peak_count": "方向峰数量",
+    "point_group_id": "计数点类别 ID",
+    "point_group_label": "计数点类别",
+    "point_scope": "计数点范围",
     "point_count": "点数量",
     "quantization_maximum": "量化上限",
     "quantization_minimum": "量化下限",
@@ -157,6 +385,7 @@ _FIELD_NAMES = {
     "spatial_density": "空间密度",
     "stddev": "总体标准差",
     "study_area": "研究区域面积",
+    "study_area_mode": "研究区域面积来源",
     "suppressed_count": "抑制数量",
     "symmetric": "对称矩阵",
     "total_component_count": "连通分量总数",
@@ -181,6 +410,11 @@ _VALUE_NAMES = {
     "mask": "掩膜",
     "measurement": "测量对象",
     "roi": "ROI",
+    "active_group": "当前类别",
+    "all": "当前图片全部计数点",
+    "scope": "当前 ROI / 当前视窗",
+    "point_bounds": "点集轴对齐包围框",
+    "custom": "手工指定",
 }
 
 
@@ -284,6 +518,7 @@ class AnalysisResultsCenter(QDialog):
         measurement_names: NameMap = None,
         tool_names: NameMap = None,
         asset_root: str | Path | None = None,
+        asset_source_paths: Mapping[str, str | Path] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -301,6 +536,21 @@ class AnalysisResultsCenter(QDialog):
         self._measurement_names = dict(measurement_names or {})
         self._tool_names = dict(tool_names or {})
         self._asset_root = None if asset_root is None else Path(asset_root)
+        self._asset_source_paths = {
+            str(key): Path(value)
+            for key, value in dict(asset_source_paths or {}).items()
+        }
+        self._asset_preview_generation = 0
+        self._active_preview_task: _AssetPreviewTask | None = None
+        self._pending_preview_request: tuple[
+            int,
+            str,
+            Path,
+            AnalysisAssetReference,
+        ] | None = None
+        self._preview_thread_pool = QThreadPool(self)
+        self._preview_thread_pool.setMaxThreadCount(1)
+        self._preview_thread_pool.setExpiryTimeout(1000)
 
         root = QVBoxLayout(self)
         root.setContentsMargins(12, 12, 12, 10)
@@ -514,6 +764,29 @@ class AnalysisResultsCenter(QDialog):
         self._asset_root = None if path is None else Path(path)
         self._show_selection()
 
+    def set_asset_source_paths(
+        self,
+        paths: Mapping[str, str | Path] | None,
+    ) -> None:
+        self._asset_source_paths = {
+            str(key): Path(value)
+            for key, value in dict(paths or {}).items()
+        }
+        self._show_selection()
+
+    def set_asset_locations(
+        self,
+        *,
+        asset_root: str | Path | None,
+        asset_source_paths: Mapping[str, str | Path] | None,
+    ) -> None:
+        self._asset_root = None if asset_root is None else Path(asset_root)
+        self._asset_source_paths = {
+            str(key): Path(value)
+            for key, value in dict(asset_source_paths or {}).items()
+        }
+        self._show_selection()
+
     def filtered_artifacts(self) -> tuple[AnalysisArtifact, ...]:
         return self._filtered_artifacts
 
@@ -643,6 +916,12 @@ class AnalysisResultsCenter(QDialog):
         self._asset_preview.setWordWrap(True)
         self._asset_preview.setScaledContents(False)
         layout.addWidget(self._asset_preview, 2)
+        self._asset_preview_description = QLabel("", page)
+        self._asset_preview_description.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )
+        self._asset_preview_description.setWordWrap(True)
+        layout.addWidget(self._asset_preview_description)
         return page
 
     def _rebuild_filter_choices(self) -> None:
@@ -790,6 +1069,7 @@ class AnalysisResultsCenter(QDialog):
         self._asset_list.clear()
         self._asset_preview.setPixmap(QPixmap())
         self._asset_preview.setText("没有标签图或分析资产。")
+        self._asset_preview_description.clear()
         self._set_action_states(None)
 
     def _populate_parameters(self, artifact: AnalysisArtifact) -> None:
@@ -880,15 +1160,20 @@ class AnalysisResultsCenter(QDialog):
         else:
             self._asset_preview.setPixmap(QPixmap())
             self._asset_preview.setText("没有标签图或分析资产。")
+            self._asset_preview_description.clear()
 
     def _show_current_asset(self, row: int) -> None:
+        self._asset_preview_generation += 1
+        generation = self._asset_preview_generation
+        self._cancel_current_asset_preview()
         artifact = self.current_artifact()
         if artifact is None or not (0 <= row < len(artifact.assets)):
             self._asset_preview.setPixmap(QPixmap())
             self._asset_preview.setText("没有标签图或分析资产。")
+            self._asset_preview_description.clear()
             return
         asset = artifact.assets[row]
-        candidate = None if self._asset_root is None else self._asset_root / asset.path
+        candidate = self._asset_candidate(asset)
         image = QPixmap(str(candidate)) if candidate is not None and candidate.is_file() else QPixmap()
         if not image.isNull():
             available = self._asset_preview.size().boundedTo(image.size())
@@ -900,12 +1185,175 @@ class AnalysisResultsCenter(QDialog):
                 )
             )
             self._asset_preview.setText("")
+            self._asset_preview_description.setText(
+                f"{asset.kind.value} · {asset.path}"
+            )
+            return
+        schema = str(asset.metadata.get("schema", ""))
+        if (
+            candidate is not None
+            and schema in _PREVIEW_SCHEMA_MEMBERS
+        ):
+            self._asset_preview.setPixmap(QPixmap())
+            self._asset_preview.setText("正在安全加载分析预览…")
+            self._asset_preview_description.setText(
+                f"{schema} · {asset.path}"
+            )
+            self._queue_asset_preview(
+                generation=generation,
+                artifact_id=artifact.id,
+                candidate=candidate,
+                reference=asset,
+            )
             return
         self._asset_preview.setPixmap(QPixmap())
         self._asset_preview.setText(
             f"{asset.kind.value}\n{asset.path}\n{asset.media_type}\n"
             "该资产不是可直接预览的图片，或尚未提供项目资产目录。"
         )
+        self._asset_preview_description.clear()
+
+    def _cancel_current_asset_preview(self) -> None:
+        self._pending_preview_request = None
+        active = self._active_preview_task
+        if active is None:
+            return
+        active.cancel()
+        if self._preview_thread_pool.tryTake(active):
+            self._active_preview_task = None
+
+    def _asset_candidate(
+        self,
+        reference: AnalysisAssetReference,
+    ) -> Path | None:
+        mapped = self._asset_source_paths.get(reference.path)
+        if mapped is not None:
+            return mapped
+        if self._asset_root is None:
+            return None
+        root = self._asset_root.resolve()
+        candidate = (root / reference.path).resolve()
+        try:
+            candidate.relative_to(root)
+        except ValueError:
+            return None
+        return candidate
+
+    def _queue_asset_preview(
+        self,
+        *,
+        generation: int,
+        artifact_id: str,
+        candidate: Path,
+        reference: AnalysisAssetReference,
+    ) -> None:
+        request = (generation, artifact_id, candidate, reference)
+        active = self._active_preview_task
+        if active is not None:
+            active.cancel()
+            if self._preview_thread_pool.tryTake(active):
+                self._active_preview_task = None
+            else:
+                self._pending_preview_request = request
+                return
+        self._pending_preview_request = None
+        self._start_asset_preview_task(*request)
+
+    def _start_asset_preview_task(
+        self,
+        generation: int,
+        artifact_id: str,
+        candidate: Path,
+        reference: AnalysisAssetReference,
+    ) -> None:
+        if generation != self._asset_preview_generation:
+            return
+        task = _AssetPreviewTask(
+            generation=generation,
+            artifact_id=artifact_id,
+            candidate=candidate,
+            reference=reference,
+        )
+        task.signals.ready.connect(self._on_asset_preview_ready)
+        task.signals.failed.connect(self._on_asset_preview_failed)
+        task.signals.finished.connect(self._on_asset_preview_finished)
+        self._active_preview_task = task
+        self._preview_thread_pool.start(task)
+
+    def _on_asset_preview_ready(self, payload: object) -> None:
+        if not isinstance(payload, _AssetPreviewResult):
+            return
+        artifact = self.current_artifact()
+        row = self._asset_list.currentRow()
+        if (
+            payload.generation != self._asset_preview_generation
+            or artifact is None
+            or artifact.id != payload.artifact_id
+            or not (0 <= row < len(artifact.assets))
+            or artifact.assets[row].path != payload.asset_path
+        ):
+            return
+        rgb = np.ascontiguousarray(payload.rgb, dtype=np.uint8)
+        height, width, _channels = rgb.shape
+        image = QImage(
+            rgb.data,
+            width,
+            height,
+            width * 3,
+            QImage.Format.Format_RGB888,
+        ).copy()
+        pixmap = QPixmap.fromImage(image)
+        available = self._asset_preview.size().boundedTo(pixmap.size())
+        self._asset_preview.setPixmap(
+            pixmap.scaled(
+                available,
+                Qt.AspectRatioMode.KeepAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        )
+        self._asset_preview.setText("")
+        self._asset_preview_description.setText(payload.description)
+
+    def _on_asset_preview_failed(self, payload: object) -> None:
+        if not isinstance(payload, _AssetPreviewFailure):
+            return
+        artifact = self.current_artifact()
+        row = self._asset_list.currentRow()
+        if (
+            payload.generation != self._asset_preview_generation
+            or artifact is None
+            or artifact.id != payload.artifact_id
+            or not (0 <= row < len(artifact.assets))
+            or artifact.assets[row].path != payload.asset_path
+        ):
+            return
+        self._asset_preview.setPixmap(QPixmap())
+        self._asset_preview.setText(
+            "无法生成该资产的安全预览。\n"
+            f"{payload.message}"
+        )
+        self._asset_preview_description.setText(payload.asset_path)
+
+    def _on_asset_preview_finished(self, generation: int) -> None:
+        active = self._active_preview_task
+        if active is not None and active.generation == int(generation):
+            self._active_preview_task = None
+        pending = self._pending_preview_request
+        self._pending_preview_request = None
+        if pending is not None and pending[0] == self._asset_preview_generation:
+            self._start_asset_preview_task(*pending)
+
+    def closeEvent(self, event) -> None:
+        self._asset_preview_generation += 1
+        self._pending_preview_request = None
+        active = self._active_preview_task
+        if active is not None:
+            active.cancel()
+            self._preview_thread_pool.tryTake(active)
+            self._active_preview_task = None
+        self._preview_thread_pool.clear()
+        self._preview_thread_pool.waitForDone(1000)
+        super().closeEvent(event)
 
     def _set_action_states(self, artifact: AnalysisArtifact | None) -> None:
         available = artifact is not None

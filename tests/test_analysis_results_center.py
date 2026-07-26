@@ -3,7 +3,10 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import sys
+from tempfile import TemporaryDirectory
 import unittest
+
+import numpy as np
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -14,16 +17,20 @@ try:
     from fdm.analysis_artifacts import (
         AnalysisArtifact,
         AnalysisArtifactStatus,
+        AnalysisAssetKind,
+        AnalysisAssetReference,
         AnalysisCurve,
         AnalysisObjectKind,
         AnalysisObjectReference,
         AnalysisTable,
     )
+    from fdm.services.analysis_asset_io import write_safe_analysis_npz
     from fdm.ui.analysis_results_center import (
         AnalysisActionRequest,
         AnalysisExportRequest,
         AnalysisLocateRequest,
         AnalysisResultsCenter,
+        _load_bounded_asset_preview,
     )
 
     PYSIDE_AVAILABLE = True
@@ -50,6 +57,7 @@ def _artifact(
     tool_id: str = "fdm.particle_analysis",
     status: AnalysisArtifactStatus = AnalysisArtifactStatus.CURRENT,
     category: str = "玻璃纤维",
+    assets: tuple[AnalysisAssetReference, ...] = (),
 ) -> AnalysisArtifact:
     return AnalysisArtifact(
         id=artifact_id,
@@ -80,6 +88,7 @@ def _artifact(
                 y_unit="频数",
             ),
         ),
+        assets=assets,
         status=status,
         stale_reason="来源像素已变化" if status is AnalysisArtifactStatus.STALE else None,
         created_at="2026-07-27T08:00:00+00:00",
@@ -204,3 +213,102 @@ class AnalysisResultsCenterTests(unittest.TestCase):
             or scroll.verticalScrollBar().maximum() > 0
         )
         self.assertGreaterEqual(self.dialog._detail_table.rowCount(), 2)  # noqa: SLF001
+
+    def test_session_asset_mapping_precedes_project_root_and_previews_skeleton(
+        self,
+    ) -> None:
+        self.dialog.close()
+        with TemporaryDirectory() as project_dir, TemporaryDirectory() as session_dir:
+            relative = "analysis/live/skeleton.npz"
+            source = Path(session_dir) / relative
+            info = write_safe_analysis_npz(
+                source,
+                schema="fdm.skeleton-network.v1",
+                arrays={
+                    "skeleton": np.eye(32, dtype=np.uint8),
+                    "endpoints_xy": np.asarray(
+                        ((0.0, 0.0), (31.0, 31.0)),
+                        dtype=np.float64,
+                    ),
+                    "branchpoints_xy": np.empty((0, 2), dtype=np.float64),
+                    "branches": np.empty((0, 7), dtype=np.float64),
+                },
+            )
+            reference = AnalysisAssetReference(
+                kind=AnalysisAssetKind.GRAPH,
+                path=relative,
+                sha256=info.sha256,
+                media_type="application/x-npz",
+                metadata={
+                    "schema": info.schema,
+                    "allow_pickle": False,
+                    "members": {
+                        name: {"dtype": dtype, "shape": list(shape)}
+                        for name, dtype, shape in info.members
+                    },
+                },
+            )
+            artifact = _artifact("mapped", assets=(reference,))
+            dialog = AnalysisResultsCenter(
+                (artifact,),
+                asset_root=project_dir,
+                asset_source_paths={relative: source},
+            )
+            dialog.show()
+            self.app.processEvents()
+            dialog._preview_thread_pool.waitForDone(3000)  # noqa: SLF001
+            for _ in range(5):
+                self.app.processEvents()
+
+            self.assertEqual(
+                dialog._asset_candidate(reference),  # noqa: SLF001
+                source,
+            )
+            self.assertEqual(
+                dialog._preview_thread_pool.maxThreadCount(),  # noqa: SLF001
+                1,
+            )
+            self.assertFalse(dialog._asset_preview.pixmap().isNull())  # noqa: SLF001
+            self.assertIn(
+                "骨架网络",
+                dialog._asset_preview_description.text(),  # noqa: SLF001
+            )
+            dialog.close()
+
+    def test_known_heatmap_npz_is_loaded_with_bounded_safe_preview(self) -> None:
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "thickness.npz"
+            info = write_safe_analysis_npz(
+                source,
+                schema="fdm.local-thickness.v1",
+                arrays={
+                    "thickness_px": np.arange(
+                        48 * 64,
+                        dtype=np.float32,
+                    ).reshape((48, 64)),
+                    "maximal_circles": np.empty((0, 4), dtype=np.float64),
+                },
+            )
+            reference = AnalysisAssetReference(
+                kind=AnalysisAssetKind.OTHER,
+                path="analysis/test/thickness.npz",
+                sha256=info.sha256,
+                media_type="application/x-npz",
+                metadata={
+                    "schema": info.schema,
+                    "allow_pickle": False,
+                    "members": {
+                        name: {"dtype": dtype, "shape": list(shape)}
+                        for name, dtype, shape in info.members
+                    },
+                },
+            )
+
+            rgb, description = _load_bounded_asset_preview(
+                source,
+                reference,
+            )
+
+            self.assertEqual(rgb.shape, (48, 64, 3))
+            self.assertEqual(rgb.dtype, np.uint8)
+            self.assertIn("局部厚度热力图", description)

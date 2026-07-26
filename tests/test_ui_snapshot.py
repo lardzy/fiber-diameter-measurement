@@ -63,7 +63,9 @@ class UiSnapshotScenarioTests(unittest.TestCase):
         self.assertIn("settings", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("current-image-export", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("measurement-export", UI_SNAPSHOT_SCENARIOS)
+        self.assertIn("image-batch", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("analysis-results", UI_SNAPSHOT_SCENARIOS)
+        self.assertIn("advanced-analysis", UI_SNAPSHOT_SCENARIOS)
 
     def test_zoomed_scene_applies_deterministic_zoom_and_center(self) -> None:
         canvas = _CanvasStub()

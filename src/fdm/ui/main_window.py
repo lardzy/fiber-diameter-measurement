@@ -221,6 +221,19 @@ from fdm.services.raster_io import (
     write_native_raster_asset,
 )
 from fdm.services.image_processing import ImageOperation
+from fdm.services.image_batch import (
+    BatchExecutionResult,
+    BatchItemStatus,
+    BatchProgressUpdate,
+    BatchRasterInput,
+    BatchRecipeRequest,
+    DerivedRasterCandidate,
+    preflight_batch_recipe,
+)
+from fdm.services.image_recipe_presets import (
+    ImageRecipePresetError,
+    ImageRecipePresetStore,
+)
 from fdm.services.analysis_asset_io import (
     file_sha256 as analysis_asset_sha256,
     validate_analysis_asset_reference,
@@ -261,6 +274,11 @@ from fdm.ui.analysis_results_center import (
     AnalysisLocateRequest,
     AnalysisResultsCenter,
 )
+from fdm.ui.advanced_analysis_dialog import (
+    AdvancedAnalysisParametersDialog,
+    SPATIAL_POINT_SCOPE_KEY,
+    SPATIAL_STUDY_AREA_MODE_KEY,
+)
 from fdm.ui.image_analysis_controller import (
     AnalysisCalibrationSnapshot,
     AnalysisTaskPhaseUpdate,
@@ -282,6 +300,13 @@ from fdm.ui.image_processing_workbench import (
     WorkbenchTaskKind,
     WorkbenchTaskResult,
     default_operation_spec,
+)
+from fdm.ui.image_batch_controller import ImageBatchTaskController
+from fdm.ui.image_batch_dialog import (
+    BatchCommitUpdate,
+    BatchDialogRequest,
+    BatchDocumentOption,
+    ImageBatchProcessingDialog,
 )
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.measurement_results_model import (
@@ -833,6 +858,28 @@ class ImageProcessingSourceContext:
 
 
 @dataclass(frozen=True, slots=True)
+class ImageBatchRunContext:
+    request_id: str
+    generation: int
+    recipe: ImageProcessingRecipe
+    source_sha256: tuple[tuple[str, str], ...]
+    clear_non_uniform_calibration: bool = False
+
+    def source_sha_for(self, document_id: str) -> str | None:
+        return dict(self.source_sha256).get(document_id)
+
+
+@dataclass(frozen=True, slots=True)
+class DerivedImageCommitResult:
+    document: ImageDocument | None
+    message: str
+
+    @property
+    def success(self) -> bool:
+        return self.document is not None
+
+
+@dataclass(frozen=True, slots=True)
 class ImageAnalysisSourceContext:
     document_id: str
     plane_sha256: str
@@ -1038,6 +1085,9 @@ class MainWindow(QMainWindow):
         self._image_processing_workbench: ImageProcessingWorkbench | None = None
         self._image_processing_source_context: ImageProcessingSourceContext | None = None
         self._image_operation_actions: dict[str, QAction] = {}
+        self._image_recipe_preset_store = ImageRecipePresetStore()
+        self._image_batch_dialog: ImageBatchProcessingDialog | None = None
+        self._image_batch_run_context: ImageBatchRunContext | None = None
         self._session_processed_root: Path | None = None
         self._session_processed_assets: dict[str, Path] = {}
         self._cleanup_abandoned_processed_sessions()
@@ -1381,6 +1431,27 @@ class MainWindow(QMainWindow):
         )
         self.image_analysis_task_controller.staleResultDiscarded.connect(
             self._on_image_analysis_stale_result
+        )
+        self.image_batch_task_controller = ImageBatchTaskController(
+            parent=self,
+        )
+        self.image_batch_task_controller.batchReady.connect(
+            self._on_image_batch_ready
+        )
+        self.image_batch_task_controller.taskFailed.connect(
+            self._on_image_batch_failed
+        )
+        self.image_batch_task_controller.taskCancelled.connect(
+            self._on_image_batch_cancelled
+        )
+        self.image_batch_task_controller.progressChanged.connect(
+            self._on_image_batch_progress
+        )
+        self.image_batch_task_controller.busyChanged.connect(
+            self._on_image_batch_busy_changed
+        )
+        self.image_batch_task_controller.staleResultDiscarded.connect(
+            self._on_image_batch_stale_result
         )
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
@@ -1912,16 +1983,19 @@ class MainWindow(QMainWindow):
         self.image_processing_workbench_action.triggered.connect(
             self._open_image_processing_workbench
         )
+        self.image_batch_processing_action = QAction(
+            "批量处理图片…",
+            self,
+        )
+        self.image_batch_processing_action.setToolTip(
+            "将已保存的处理配方应用到选中的已挂载普通图片"
+        )
+        self.image_batch_processing_action.triggered.connect(
+            self._open_image_batch_dialog
+        )
         self._create_image_operation_actions()
         self._analysis_actions: dict[AnalysisTool, QAction] = {}
-        for tool in (
-            AnalysisTool.SHAPE,
-            AnalysisTool.INTENSITY,
-            AnalysisTool.HISTOGRAM,
-            AnalysisTool.PROFILE,
-            AnalysisTool.PARTICLES,
-            AnalysisTool.MAXIMA,
-        ):
+        for tool in AnalysisTool:
             action = QAction(f"{tool.chinese_name}…", self)
             action.triggered.connect(
                 lambda _checked=False, selected=tool: (
@@ -2085,6 +2159,7 @@ class MainWindow(QMainWindow):
 
         process_menu = self.menuBar().addMenu("处理")
         process_menu.addAction(self.image_processing_workbench_action)
+        process_menu.addAction(self.image_batch_processing_action)
         process_menu.addSeparator()
         process_groups: tuple[tuple[str, tuple[ImageOperation, ...]], ...] = (
             (
@@ -2164,6 +2239,17 @@ class MainWindow(QMainWindow):
             AnalysisTool.MAXIMA,
         ):
             analysis_menu.addAction(self._analysis_actions[tool])
+        advanced_analysis_menu = analysis_menu.addMenu("纤维高级分析")
+        for tool in (
+            AnalysisTool.DIRECTIONALITY,
+            AnalysisTool.SKELETON,
+            AnalysisTool.LOCAL_THICKNESS,
+            AnalysisTool.TUBENESS,
+            AnalysisTool.GLCM,
+            AnalysisTool.SPATIAL_DISTRIBUTION,
+            AnalysisTool.SURFACE,
+        ):
+            advanced_analysis_menu.addAction(self._analysis_actions[tool])
         analysis_menu.addSeparator()
         analysis_menu.addAction(self.analysis_results_center_action)
 
@@ -5113,6 +5199,15 @@ class MainWindow(QMainWindow):
         workbench.derivedImageReady.connect(
             self._on_derived_image_ready
         )
+        workbench.recipeSaveRequested.connect(
+            self._save_image_processing_recipe
+        )
+        workbench.recipeLoadRequested.connect(
+            lambda target=workbench: self._load_image_processing_recipe(target)
+        )
+        workbench.batchApplyRequested.connect(
+            self._open_image_batch_dialog
+        )
         workbench.destroyed.connect(
             lambda _object=None, target=workbench: (
                 self._clear_image_processing_workbench(target)
@@ -5217,6 +5312,587 @@ class MainWindow(QMainWindow):
         workbench.deleteLater()
         self._image_processing_workbench = None
         self._image_processing_source_context = None
+        return True
+
+    def _save_image_processing_recipe(self, payload: object) -> None:
+        if not isinstance(payload, ImageProcessingRecipe):
+            return
+        name, accepted = QInputDialog.getText(
+            self,
+            "保存图像处理配方",
+            "配方名称：",
+        )
+        if not accepted:
+            return
+        try:
+            preset = self._image_recipe_preset_store.upsert(name, payload)
+        except (ImageRecipePresetError, OSError, TypeError, ValueError) as exc:
+            QMessageBox.warning(
+                self,
+                "保存图像处理配方",
+                str(exc),
+            )
+            return
+        self.statusBar().showMessage(
+            f"已保存图像处理配方“{preset.name}”。",
+            4000,
+        )
+
+    def _load_image_processing_recipe(
+        self,
+        workbench: ImageProcessingWorkbench,
+    ) -> None:
+        if self._image_processing_workbench is not workbench:
+            return
+        try:
+            presets = self._image_recipe_preset_store.load()
+        except (ImageRecipePresetError, OSError, TypeError, ValueError) as exc:
+            QMessageBox.warning(self, "载入图像处理配方", str(exc))
+            return
+        if not presets:
+            QMessageBox.information(
+                self,
+                "载入图像处理配方",
+                "尚未保存任何图像处理配方。",
+            )
+            return
+        names = tuple(preset.name for preset in presets)
+        selected, accepted = QInputDialog.getItem(
+            self,
+            "载入图像处理配方",
+            "选择配方：",
+            names,
+            0,
+            False,
+        )
+        if not accepted:
+            return
+        preset = next(
+            (item for item in presets if item.name == selected),
+            None,
+        )
+        if preset is None:
+            return
+        try:
+            workbench.apply_loaded_recipe(preset.recipe)
+        except (TypeError, ValueError) as exc:
+            QMessageBox.warning(
+                self,
+                "载入图像处理配方",
+                f"当前源图片无法使用该配方：\n{exc}",
+            )
+
+    @staticmethod
+    def _batch_recipe_error(recipe: ImageProcessingRecipe) -> str:
+        if any(
+            operation.operation_id == ImageOperation.IMAGE_CALCULATOR.value
+            for operation in recipe.operations
+        ):
+            return (
+                "批量处理暂不支持图像计算器。"
+                "它需要为每张图片分别指定并校验第二幅对齐图像。"
+            )
+        return ""
+
+    def _choose_saved_image_processing_recipe(
+        self,
+    ) -> tuple[ImageProcessingRecipe, str] | None:
+        try:
+            presets = self._image_recipe_preset_store.load()
+        except (ImageRecipePresetError, OSError, TypeError, ValueError) as exc:
+            QMessageBox.warning(self, "批量处理图片", str(exc))
+            return None
+        if not presets:
+            QMessageBox.information(
+                self,
+                "批量处理图片",
+                "尚未保存图像处理配方。\n\n"
+                "请先在“图像处理工作台”中配置步骤并点击“保存配方…”。",
+            )
+            return None
+        names = tuple(preset.name for preset in presets)
+        selected, accepted = QInputDialog.getItem(
+            self,
+            "批量处理图片",
+            "选择处理配方：",
+            names,
+            0,
+            False,
+        )
+        if not accepted:
+            return None
+        preset = next(
+            (item for item in presets if item.name == selected),
+            None,
+        )
+        if preset is None:
+            return None
+        return preset.recipe, preset.name
+
+    def _open_image_batch_dialog(
+        self,
+        recipe: ImageProcessingRecipe | bool | None = None,
+    ) -> None:
+        recipe_name = "当前工作台配方"
+        resolved_recipe = (
+            recipe if isinstance(recipe, ImageProcessingRecipe) else None
+        )
+        if resolved_recipe is None:
+            chosen = self._choose_saved_image_processing_recipe()
+            if chosen is None:
+                return
+            resolved_recipe, recipe_name = chosen
+        recipe_error = self._batch_recipe_error(resolved_recipe)
+        if recipe_error:
+            QMessageBox.warning(
+                self,
+                "批量处理图片",
+                recipe_error,
+            )
+            return
+
+        existing = self._image_batch_dialog
+        if existing is not None:
+            if existing.isVisible():
+                existing.showNormal()
+                existing.raise_()
+                existing.activateWindow()
+                return
+            existing.deleteLater()
+            self._image_batch_dialog = None
+
+        options: list[BatchDocumentOption] = []
+        available_count = 0
+        for document_id in self._document_order:
+            document = self.project.get_document(document_id)
+            if document is None:
+                continue
+            if document.is_digital_slide():
+                options.append(
+                    BatchDocumentOption(
+                        document.id,
+                        self._document_display_name(document),
+                        "数字化切片",
+                        is_digital_slide=True,
+                    )
+                )
+                continue
+            plane = self._rasters.get(document.id)
+            if plane is None:
+                continue
+            available_count += 1
+            options.append(
+                BatchDocumentOption(
+                    document.id,
+                    self._document_display_name(document),
+                    (
+                        f"{plane.pixel_type.value} · "
+                        f"{plane.width}×{plane.height}"
+                    ),
+                )
+            )
+        if not available_count:
+            QMessageBox.information(
+                self,
+                "批量处理图片",
+                "当前没有可批量处理的已挂载普通图片。\n\n"
+                "数字化切片需要先冻结当前焦层、当前原始像素视窗，"
+                "生成普通派生图片后再参与批处理。",
+            )
+            return
+        dialog = ImageBatchProcessingDialog(
+            resolved_recipe,
+            tuple(options),
+            recipe_name=recipe_name,
+            parent=self,
+        )
+        self._image_batch_dialog = dialog
+        dialog.preflightRequested.connect(
+            lambda request, target=dialog: self._preflight_image_batch(
+                target,
+                request,
+            )
+        )
+        dialog.batchStartRequested.connect(
+            lambda request, target=dialog: self._start_image_batch(
+                target,
+                request,
+            )
+        )
+        dialog.cancelRequested.connect(
+            self.image_batch_task_controller.cancel
+        )
+        dialog.destroyed.connect(
+            lambda _object=None, target=dialog: (
+                self._clear_image_batch_dialog(target)
+            )
+        )
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+        QTimer.singleShot(0, dialog.request_preflight)
+
+    def _clear_image_batch_dialog(
+        self,
+        dialog: ImageBatchProcessingDialog,
+    ) -> None:
+        if self._image_batch_dialog is dialog:
+            self._image_batch_dialog = None
+
+    def _batch_inputs(
+        self,
+        request: BatchDialogRequest,
+    ) -> tuple[BatchRasterInput, ...]:
+        error = self._batch_recipe_error(request.recipe)
+        if error:
+            raise ValueError(error)
+        inputs: list[BatchRasterInput] = []
+        for document_id in request.document_ids:
+            document = self.project.get_document(document_id)
+            plane = self._rasters.get(document_id)
+            if (
+                document is None
+                or document_id not in self._document_order
+                or document.is_digital_slide()
+                or plane is None
+            ):
+                raise ValueError(
+                    f"图片“{document_id}”已关闭、不是普通图片或像素不可用。"
+                )
+            inputs.append(
+                BatchRasterInput(
+                    document_id=document.id,
+                    display_name=self._document_display_name(document),
+                    raster=plane,
+                    source_pixel_revision=0,
+                    source_path=document.path,
+                )
+            )
+        return tuple(inputs)
+
+    def _batch_resource_directory(self) -> Path:
+        if self._session_processed_root is not None:
+            return self._session_processed_root
+        if self._project_path is not None:
+            return project_assets_root(self._project_path)
+        return Path(tempfile.gettempdir())
+
+    def _batch_preflight(
+        self,
+        request: BatchDialogRequest,
+        inputs: tuple[BatchRasterInput, ...],
+    ):
+        return preflight_batch_recipe(
+            BatchRecipeRequest(
+                request_id=f"preflight-{id(request)}",
+                generation=0,
+                recipe=request.recipe,
+                inputs=inputs,
+                resource_directory=str(self._batch_resource_directory()),
+            )
+        )
+
+    def _preflight_image_batch(
+        self,
+        dialog: ImageBatchProcessingDialog,
+        payload: object,
+    ) -> None:
+        if (
+            self._image_batch_dialog is not dialog
+            or not isinstance(payload, BatchDialogRequest)
+        ):
+            return
+        try:
+            inputs = self._batch_inputs(payload)
+            estimate = self._batch_preflight(payload, inputs)
+        except (OSError, TypeError, ValueError) as exc:
+            dialog.apply_preflight_error(str(exc))
+            return
+        dialog.apply_preflight(
+            estimate,
+            document_ids=payload.document_ids,
+        )
+
+    def _start_image_batch(
+        self,
+        dialog: ImageBatchProcessingDialog,
+        payload: object,
+    ) -> None:
+        if (
+            self._image_batch_dialog is not dialog
+            or not isinstance(payload, BatchDialogRequest)
+            or self.image_batch_task_controller.is_busy()
+        ):
+            return
+        try:
+            inputs = self._batch_inputs(payload)
+            estimate = self._batch_preflight(payload, inputs)
+        except (OSError, TypeError, ValueError) as exc:
+            dialog.apply_preflight_error(str(exc))
+            return
+        dialog.apply_preflight(
+            estimate,
+            document_ids=payload.document_ids,
+        )
+        if not estimate.allowed:
+            return
+        requires_clear = tuple(
+            item.document_id
+            for item in inputs
+            if (
+                (document := self.project.get_document(item.document_id))
+                is not None
+                and document.calibration is not None
+                and self._recipe_has_non_uniform_scaling(
+                    item.raster,
+                    payload.recipe,
+                )
+            )
+        )
+        clear_non_uniform = False
+        if requires_clear:
+            clear_non_uniform = self._confirm_batch_calibration_clear(
+                len(requires_clear)
+            )
+            if not clear_non_uniform:
+                return
+        request = self.image_batch_task_controller.start(
+            recipe=payload.recipe,
+            inputs=inputs,
+            resource_directory=self._batch_resource_directory(),
+        )
+        self._image_batch_run_context = ImageBatchRunContext(
+            request_id=request.request_id,
+            generation=request.generation,
+            recipe=payload.recipe,
+            source_sha256=tuple(
+                (item.document_id, item.raster.sha256())
+                for item in inputs
+            ),
+            clear_non_uniform_calibration=clear_non_uniform,
+        )
+        dialog.begin_request(request.request_id, request.generation)
+        self._update_action_states()
+
+    def _confirm_batch_calibration_clear(self, count: int) -> bool:
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("批量处理中的非等比例缩放")
+        dialog.setIcon(QMessageBox.Icon.Warning)
+        dialog.setText(
+            f"当前配方会使 {int(count)} 张已标定图片发生非等比例缩放，"
+            "无法为派生图片保留统一像素标尺。"
+        )
+        dialog.setInformativeText(
+            "本次确认只出现一次。继续后仅清除对应派生图片的标定；"
+            "原图片、测量对象、标注和 ROI 均不会改变。"
+        )
+        clear_button = dialog.addButton(
+            "清除标定并继续",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        cancel_button = dialog.addButton(
+            "取消",
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        dialog.setDefaultButton(cancel_button)
+        dialog.exec()
+        return dialog.clickedButton() is clear_button
+
+    def _on_image_batch_progress(self, payload: object) -> None:
+        dialog = self._image_batch_dialog
+        if dialog is not None and isinstance(payload, BatchProgressUpdate):
+            dialog.apply_progress(payload)
+
+    def _on_image_batch_busy_changed(self, _busy: bool) -> None:
+        self._update_action_states()
+
+    def _on_image_batch_failed(self, request_id: str, message: str) -> None:
+        dialog = self._image_batch_dialog
+        if dialog is not None:
+            dialog.apply_task_failure(request_id, message)
+        context = self._image_batch_run_context
+        if context is not None and context.request_id == request_id:
+            self._image_batch_run_context = None
+        self._update_action_states()
+
+    def _on_image_batch_cancelled(self, request_id: str) -> None:
+        dialog = self._image_batch_dialog
+        if dialog is not None:
+            dialog.apply_task_cancelled(request_id)
+        context = self._image_batch_run_context
+        if context is not None and context.request_id == request_id:
+            self._image_batch_run_context = None
+        self._update_action_states()
+
+    def _on_image_batch_stale_result(
+        self,
+        request_id: str,
+        generation: int,
+    ) -> None:
+        dialog = self._image_batch_dialog
+        if dialog is not None:
+            dialog.apply_stale_discard(request_id, generation)
+        context = self._image_batch_run_context
+        if (
+            context is not None
+            and context.request_id == request_id
+            and context.generation == generation
+        ):
+            self._image_batch_run_context = None
+        self._update_action_states()
+
+    def _on_image_batch_ready(self, payload: object) -> None:
+        if not isinstance(payload, BatchExecutionResult):
+            return
+        dialog = self._image_batch_dialog
+        # The user must see the worker's per-item "pending commit" state before
+        # the UI thread performs any project mutation.
+        if dialog is not None:
+            dialog.apply_result(payload)
+        context = self._image_batch_run_context
+        if (
+            context is None
+            or payload.request_id != context.request_id
+            or payload.generation != context.generation
+            or payload.cancelled
+            or payload.stale
+        ):
+            self._image_batch_run_context = None
+            self._update_action_states()
+            return
+
+        updates: list[BatchCommitUpdate] = []
+        committed = 0
+        source_changed = 0
+        commit_failed = 0
+        for item in payload.items:
+            if item.status is not BatchItemStatus.SUCCESS:
+                continue
+            candidate = item.candidate
+            source_document = self.project.get_document(item.document_id)
+            source_plane = self._rasters.get(item.document_id)
+            expected_sha = context.source_sha_for(item.document_id)
+            current_sha = (
+                None if source_plane is None else source_plane.sha256()
+            )
+            derivation_sha = (
+                None
+                if candidate is None
+                else candidate.derivation.source_sha256
+            )
+            if (
+                candidate is None
+                or source_document is None
+                or source_document.is_digital_slide()
+                or item.document_id not in self._document_order
+                or source_plane is None
+                or not expected_sha
+                or current_sha != expected_sha
+                or derivation_sha != expected_sha
+                or candidate.source_document_id != item.document_id
+            ):
+                source_changed += 1
+                updates.append(
+                    BatchCommitUpdate(
+                        item.document_id,
+                        "来源已变化",
+                        "源图片已关闭、像素 SHA 已变化，或候选来源摘要不一致；"
+                        "该候选未提交。",
+                    )
+                )
+                continue
+            calibration = self._calibration_for_derived_recipe(
+                source_document,
+                source_plane,
+                candidate.derivation.recipe,
+                clear_non_uniform=(
+                    context.clear_non_uniform_calibration
+                ),
+            )
+            if calibration is ...:
+                commit_failed += 1
+                updates.append(
+                    BatchCommitUpdate(
+                        item.document_id,
+                        "提交失败",
+                        "派生图片的标定转换需要额外确认，当前批次未授权。",
+                    )
+                )
+                continue
+            outcome = self._commit_derived_image(
+                source_document=source_document,
+                source_plane=source_plane,
+                result_raster=candidate.raster,
+                recipe=candidate.derivation.recipe,
+                calibration=(
+                    calibration
+                    if isinstance(calibration, Calibration)
+                    else None
+                ),
+                source_path=candidate.derivation.source_path,
+                library_versions=candidate.derivation.library_versions,
+            )
+            if outcome.success:
+                committed += 1
+                updates.append(
+                    BatchCommitUpdate(
+                        item.document_id,
+                        "已加入项目",
+                        outcome.message,
+                    )
+                )
+            else:
+                commit_failed += 1
+                updates.append(
+                    BatchCommitUpdate(
+                        item.document_id,
+                        "提交失败",
+                        outcome.message,
+                    )
+                )
+        worker_failures = payload.failure_count
+        summary = (
+            f"批处理提交完成：已加入项目 {committed} 张，"
+            f"处理失败 {worker_failures} 张，"
+            f"提交失败 {commit_failed} 张，"
+            f"来源已变化 {source_changed} 张。"
+        )
+        if dialog is not None:
+            dialog.apply_commit_updates(
+                tuple(updates),
+                summary=summary,
+            )
+        self.statusBar().showMessage(summary, 7000)
+        self._image_batch_run_context = None
+        self._update_action_states()
+
+    def _stop_image_batch_tasks(self, *, wait: bool) -> bool:
+        controller = self.image_batch_task_controller
+        active = controller.active_request
+        controller.cancel()
+        stopped = not wait or controller.wait_for_done(5_000)
+        if stopped:
+            if active is not None and self._image_batch_dialog is not None:
+                self._image_batch_dialog.apply_task_cancelled(
+                    active.request_id
+                )
+            self._image_batch_run_context = None
+        return stopped
+
+    def _close_image_batch_dialog(self, *, wait: bool) -> bool:
+        if not self._stop_image_batch_tasks(wait=wait):
+            QMessageBox.warning(
+                self,
+                "批量处理图片",
+                "批处理任务尚未安全退出，已阻止当前转换。",
+            )
+            return False
+        dialog = self._image_batch_dialog
+        if dialog is not None:
+            dialog.set_busy(False)
+            dialog.close()
+            dialog.deleteLater()
+            self._image_batch_dialog = None
         return True
 
     def _processing_source_is_current(
@@ -5651,10 +6327,177 @@ class MainWindow(QMainWindow):
             ),
         )
 
+    @staticmethod
+    def _analysis_rings_mask(
+        rings: tuple[tuple[tuple[float, float], ...], ...],
+        *,
+        width: int,
+        height: int,
+    ) -> object | None:
+        if not rings:
+            return None
+        import cv2
+        import numpy as np
+
+        mask = np.zeros((height, width), dtype=bool)
+        for ring in rings:
+            if len(ring) < 3:
+                continue
+            contour = np.rint(np.asarray(ring, dtype=np.float64)).astype(
+                np.int32
+            )
+            temporary = np.zeros((height, width), dtype=np.uint8)
+            cv2.fillPoly(temporary, [contour], 1)
+            mask ^= temporary.astype(bool)
+        mask = np.ascontiguousarray(mask, dtype=bool)
+        mask.setflags(write=False)
+        return mask
+
+    def _spatial_distribution_scope_snapshot(
+        self,
+        *,
+        document: ImageDocument,
+        plane: RasterPlane,
+        source: ImageAnalysisSourceContext,
+        parameters: dict[str, object],
+    ) -> tuple[
+        object | None,
+        tuple[tuple[tuple[float, float], ...], ...],
+        float | None,
+        AnalysisObjectReference | None,
+        str,
+    ]:
+        (
+            roi_mask,
+            raw_rings,
+            exact_area_px,
+            source_reference,
+            base_summary,
+            _profile_points,
+        ) = self._analysis_scope_snapshot(
+            tool=AnalysisTool.SPATIAL_DISTRIBUTION,
+            document=document,
+            plane=plane,
+            source=source,
+        )
+        point_scope = str(
+            parameters.pop(
+                SPATIAL_POINT_SCOPE_KEY,
+                parameters.get("point_scope", "all"),
+            )
+        )
+        study_area_mode = str(
+            parameters.pop(
+                SPATIAL_STUDY_AREA_MODE_KEY,
+                parameters.get("study_area_mode", "scope"),
+            )
+        )
+        if point_scope not in {"all", "active_group"}:
+            raise ValueError("计数点范围只能是当前类别或当前图片全部计数点。")
+        if study_area_mode not in {"scope", "point_bounds", "custom"}:
+            raise ValueError("研究区域面积来源不受支持。")
+
+        group_id: str | None = None
+        group_label = ""
+        if point_scope == "active_group":
+            requested_group_id = str(
+                parameters.get("point_group_id")
+                or document.active_group_id
+                or ""
+            )
+            group = document.get_group(requested_group_id)
+            if group is None:
+                raise ValueError(
+                    "当前图片没有可用于空间分析的活动类别；"
+                    "请选择一个类别或改为“当前图片全部计数点”。"
+                )
+            group_id = group.id
+            group_label = group.label.strip() or f"类别 {group.number}"
+
+        effective_mask = roi_mask
+        if effective_mask is None and raw_rings:
+            effective_mask = self._analysis_rings_mask(
+                raw_rings,
+                width=plane.width,
+                height=plane.height,
+            )
+        origin_x, origin_y = source.viewport_origin
+        points: list[tuple[float, float]] = []
+        for measurement in document.count_measurements():
+            if measurement.point_px is None:
+                continue
+            if group_id is not None and measurement.fiber_group_id != group_id:
+                continue
+            x = float(measurement.point_px.x) - origin_x
+            y = float(measurement.point_px.y) - origin_y
+            if not (0.0 <= x < plane.width and 0.0 <= y < plane.height):
+                continue
+            if effective_mask is not None:
+                row = min(plane.height - 1, max(0, int(math.floor(y))))
+                column = min(plane.width - 1, max(0, int(math.floor(x))))
+                if not bool(effective_mask[row, column]):
+                    continue
+            points.append((x, y))
+        if len(points) < 2:
+            suffix = f"（{group_label}）" if group_label else ""
+            raise ValueError(
+                f"当前分析范围{suffix}内只有 {len(points)} 个有效计数点；"
+                "最近邻与空间密度分析至少需要 2 个 RAW 计数点。"
+            )
+
+        parameters["points"] = tuple(points)
+        parameters["point_scope"] = point_scope
+        parameters["study_area_mode"] = study_area_mode
+        if group_id is not None:
+            parameters["point_group_id"] = group_id
+            parameters["point_group_label"] = group_label
+        else:
+            parameters.pop("point_group_id", None)
+            parameters.pop("point_group_label", None)
+
+        if study_area_mode == "point_bounds":
+            parameters.pop("study_area", None)
+        elif study_area_mode == "scope":
+            if effective_mask is not None:
+                area_px = (
+                    float(exact_area_px)
+                    if exact_area_px is not None
+                    else float(effective_mask.sum())
+                )
+            else:
+                area_px = float(plane.width * plane.height)
+            if area_px <= 0.0:
+                raise ValueError("当前 ROI / 视窗没有有效研究区域面积。")
+            calibration = document.calibration
+            parameters["study_area"] = (
+                area_px
+                if calibration is None
+                else area_px / (calibration.pixels_per_unit**2)
+            )
+        else:
+            custom_area = float(parameters.get("study_area", 0.0))
+            if not math.isfinite(custom_area) or custom_area <= 0.0:
+                raise ValueError("手工研究区域面积必须是正有限数。")
+            parameters["study_area"] = custom_area
+
+        scope_label = (
+            f"{base_summary} · {group_label}"
+            if group_label
+            else f"{base_summary} · 全部计数点"
+        )
+        return (
+            effective_mask,
+            raw_rings,
+            exact_area_px,
+            source_reference,
+            scope_label,
+        )
+
     def _prompt_analysis_parameters(
         self,
         tool: AnalysisTool,
         plane: RasterPlane,
+        document: ImageDocument | None = None,
     ) -> dict[str, object] | None:
         if tool in {AnalysisTool.SHAPE, AnalysisTool.INTENSITY}:
             return {}
@@ -5738,6 +6581,47 @@ class MainWindow(QMainWindow):
                 if accepted
                 else None
             )
+        if tool in {
+            AnalysisTool.DIRECTIONALITY,
+            AnalysisTool.SKELETON,
+            AnalysisTool.LOCAL_THICKNESS,
+            AnalysisTool.TUBENESS,
+            AnalysisTool.GLCM,
+            AnalysisTool.SPATIAL_DISTRIBUTION,
+            AnalysisTool.SURFACE,
+        }:
+            active_group_label: str | None = None
+            has_analysis_mask = False
+            if document is not None:
+                group = document.get_group(document.active_group_id)
+                if group is not None:
+                    active_group_label = (
+                        group.label.strip() or f"类别 {group.number}"
+                    )
+                selected_measurement = document.get_measurement(
+                    document.view_state.selected_measurement_id
+                )
+                has_analysis_mask = (
+                    self._selected_project_roi(document.id) is not None
+                    or (
+                        selected_measurement is not None
+                        and selected_measurement.measurement_kind == "area"
+                    )
+                )
+            dialog = AdvancedAnalysisParametersDialog(
+                tool,
+                pixel_type=plane.pixel_type,
+                has_analysis_mask=has_analysis_mask,
+                active_group_label=active_group_label,
+                parent=self,
+            )
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return None
+            try:
+                return dialog.parameters()
+            except (TypeError, ValueError) as exc:
+                QMessageBox.warning(self, tool.chinese_name, str(exc))
+                return None
         return {}
 
     def _start_image_analysis(
@@ -5752,26 +6636,41 @@ class MainWindow(QMainWindow):
             return
         document, plane, source = source_result
         resolved_parameters = (
-            self._prompt_analysis_parameters(tool, plane)
+            self._prompt_analysis_parameters(tool, plane, document)
             if parameters is None and prompt_for_parameters
             else dict(parameters or {})
         )
         if resolved_parameters is None:
             return
         try:
-            (
-                roi_mask,
-                raw_rings,
-                exact_area_px,
-                source_reference,
-                scope_summary,
-                profile_points,
-            ) = self._analysis_scope_snapshot(
-                tool=tool,
-                document=document,
-                plane=plane,
-                source=source,
-            )
+            if tool is AnalysisTool.SPATIAL_DISTRIBUTION:
+                (
+                    roi_mask,
+                    raw_rings,
+                    exact_area_px,
+                    source_reference,
+                    scope_summary,
+                ) = self._spatial_distribution_scope_snapshot(
+                    document=document,
+                    plane=plane,
+                    source=source,
+                    parameters=resolved_parameters,
+                )
+                profile_points = ()
+            else:
+                (
+                    roi_mask,
+                    raw_rings,
+                    exact_area_px,
+                    source_reference,
+                    scope_summary,
+                    profile_points,
+                ) = self._analysis_scope_snapshot(
+                    tool=tool,
+                    document=document,
+                    plane=plane,
+                    source=source,
+                )
             if tool is AnalysisTool.PROFILE:
                 resolved_parameters["points"] = profile_points
             request = self.image_analysis_task_controller.start(
@@ -6013,10 +6912,14 @@ class MainWindow(QMainWindow):
             roi_names=roi_names,
             measurement_names=measurement_names,
         )
-        if self._project_path is not None:
-            center.set_asset_root(project_assets_root(self._project_path))
-        else:
-            center.set_asset_root(self._session_analysis_root)
+        center.set_asset_locations(
+            asset_root=(
+                project_assets_root(self._project_path)
+                if self._project_path is not None
+                else self._session_analysis_root
+            ),
+            asset_source_paths=self._session_analysis_assets,
+        )
 
     def _open_analysis_results_center(self) -> None:
         center = self._analysis_results_center
@@ -6034,6 +6937,7 @@ class MainWindow(QMainWindow):
                     if self._project_path is not None
                     else self._session_analysis_root
                 ),
+                asset_source_paths=self._session_analysis_assets,
                 parent=self,
             )
             center.recalculateRequested.connect(
@@ -6477,30 +7381,78 @@ class MainWindow(QMainWindow):
         source_document: ImageDocument,
         result: WorkbenchTaskResult,
     ) -> Calibration | None | object:
-        calibration = source_document.calibration
-        if calibration is None:
-            return None
         context = self._image_processing_source_context
         if context is None:
-            return calibration.clone()
-        current_width = float(context.plane.width)
-        current_height = float(context.plane.height)
+            calibration = source_document.calibration
+            return None if calibration is None else calibration.clone()
+        recipe = result.recipe
+        calibration = self._calibration_for_derived_recipe(
+            source_document,
+            context.plane,
+            recipe,
+            clear_non_uniform=False,
+        )
+        if calibration is not ...:
+            return calibration
+        # A single-image workbench asks at commit time.  Batch processing
+        # performs the same decision once before any worker starts.
+        dialog = QMessageBox(self)
+        dialog.setWindowTitle("非等比例缩放")
+        dialog.setIcon(QMessageBox.Icon.Warning)
+        dialog.setText(
+            "当前处理配方包含非等比例缩放，无法保留一个统一的像素标尺。"
+        )
+        dialog.setInformativeText(
+            "可以明确清除派生图片的标定后继续；源图片及其标定不会改变。"
+        )
+        clear_button = dialog.addButton(
+            "清除标定并继续",
+            QMessageBox.ButtonRole.AcceptRole,
+        )
+        cancel_button = dialog.addButton(
+            "取消",
+            QMessageBox.ButtonRole.RejectRole,
+        )
+        dialog.setDefaultButton(cancel_button)
+        dialog.exec()
+        if dialog.clickedButton() is not clear_button:
+            return ...
+        return None
+
+    @staticmethod
+    def _recipe_calibration_scale(
+        source_plane: RasterPlane,
+        recipe: ImageProcessingRecipe,
+    ) -> tuple[float, bool]:
+        current_width = float(source_plane.width)
+        current_height = float(source_plane.height)
         scale = 1.0
         non_uniform = False
-        for step in result.recipe.operations:
+        for step in recipe.operations:
             parameters = step.parameters
             operation_id = step.operation_id
             if operation_id in {
                 ImageOperation.ROTATE_90_CLOCKWISE.value,
                 ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value,
             }:
-                current_width, current_height = current_height, current_width
+                current_width, current_height = (
+                    current_height,
+                    current_width,
+                )
             elif operation_id == ImageOperation.CROP.value:
-                current_width = float(parameters.get("width", current_width))
-                current_height = float(parameters.get("height", current_height))
+                current_width = float(
+                    parameters.get("width", current_width)
+                )
+                current_height = float(
+                    parameters.get("height", current_height)
+                )
             elif operation_id == ImageOperation.RESIZE.value:
-                target_width = float(parameters.get("width", current_width))
-                target_height = float(parameters.get("height", current_height))
+                target_width = float(
+                    parameters.get("width", current_width)
+                )
+                target_height = float(
+                    parameters.get("height", current_height)
+                )
                 scale_x = target_width / max(1.0, current_width)
                 scale_y = target_height / max(1.0, current_height)
                 if not math.isclose(
@@ -6520,31 +7472,40 @@ class MainWindow(QMainWindow):
                     current_width = math.floor(current_width / factor)
                     current_height = math.floor(current_height / factor)
             elif operation_id == ImageOperation.RESIZE_CANVAS.value:
-                current_width = float(parameters.get("width", current_width))
-                current_height = float(parameters.get("height", current_height))
-        if non_uniform:
-            dialog = QMessageBox(self)
-            dialog.setWindowTitle("非等比例缩放")
-            dialog.setIcon(QMessageBox.Icon.Warning)
-            dialog.setText(
-                "当前处理配方包含非等比例缩放，无法保留一个统一的像素标尺。"
-            )
-            dialog.setInformativeText(
-                "可以明确清除派生图片的标定后继续；源图片及其标定不会改变。"
-            )
-            clear_button = dialog.addButton(
-                "清除标定并继续",
-                QMessageBox.ButtonRole.AcceptRole,
-            )
-            cancel_button = dialog.addButton(
-                "取消",
-                QMessageBox.ButtonRole.RejectRole,
-            )
-            dialog.setDefaultButton(cancel_button)
-            dialog.exec()
-            if dialog.clickedButton() is not clear_button:
-                return ...
+                current_width = float(
+                    parameters.get("width", current_width)
+                )
+                current_height = float(
+                    parameters.get("height", current_height)
+                )
+        return scale, non_uniform
+
+    @classmethod
+    def _recipe_has_non_uniform_scaling(
+        cls,
+        source_plane: RasterPlane,
+        recipe: ImageProcessingRecipe,
+    ) -> bool:
+        return cls._recipe_calibration_scale(source_plane, recipe)[1]
+
+    @classmethod
+    def _calibration_for_derived_recipe(
+        cls,
+        source_document: ImageDocument,
+        source_plane: RasterPlane,
+        recipe: ImageProcessingRecipe,
+        *,
+        clear_non_uniform: bool,
+    ) -> Calibration | None | object:
+        calibration = source_document.calibration
+        if calibration is None:
             return None
+        scale, non_uniform = cls._recipe_calibration_scale(
+            source_plane,
+            recipe,
+        )
+        if non_uniform:
+            return None if clear_non_uniform else ...
         derived = calibration.clone(
             mode=(
                 calibration.mode
@@ -6647,6 +7608,160 @@ class MainWindow(QMainWindow):
             photometric_applied=False,
         )
 
+    def _commit_derived_image(
+        self,
+        *,
+        source_document: ImageDocument,
+        source_plane: RasterPlane,
+        result_raster: RasterPlane,
+        recipe: ImageProcessingRecipe,
+        calibration: Calibration | None,
+        source_path: str | None = None,
+        library_versions: tuple[tuple[str, str], ...] = (),
+    ) -> DerivedImageCommitResult:
+        """Write one session asset and mount one metadata-safe derived document."""
+
+        context = ImageProcessingSourceContext(
+            document_id=source_document.id,
+            plane=source_plane,
+            source_path=source_path or source_document.path,
+            source_signature=(
+                source_document.id,
+                "raster",
+                source_plane.sha256(),
+            ),
+        )
+        synthetic_result = WorkbenchTaskResult(
+            kind=WorkbenchTaskKind.FINAL,
+            request_id="derived-commit",
+            generation=0,
+            source_document_id=source_document.id,
+            raster=result_raster,
+            recipe=recipe,
+        )
+        relative_path = self._next_project_processed_relative_path(
+            pixel_type=result_raster.pixel_type,
+        )
+        try:
+            if self._session_processed_root is None:
+                self._session_processed_root = Path(
+                    tempfile.mkdtemp(prefix="fdm-processed-")
+                )
+            session_path = self._session_processed_root / relative_path
+            session_path.parent.mkdir(parents=True, exist_ok=True)
+        except OSError as exc:
+            return DerivedImageCommitResult(
+                None,
+                f"无法创建受管会话资产目录：{exc}",
+            )
+        derived_metadata = self._derived_raster_metadata(
+            context,
+            synthetic_result,
+        )
+        try:
+            encoded = write_native_raster_asset(
+                result_raster,
+                session_path,
+                metadata=derived_metadata,
+            )
+        except Exception as exc:  # noqa: BLE001 - encoder boundary
+            return DerivedImageCommitResult(
+                None,
+                f"无法写入受管会话资产：{exc}",
+            )
+        if not encoded:
+            failure = encoded.failure
+            detail = (
+                failure.message
+                if failure is not None
+                else "未知编码错误"
+            )
+            if failure is not None and failure.detail:
+                detail = f"{detail}：{failure.detail}"
+            return DerivedImageCommitResult(
+                None,
+                f"无法写入受管会话资产：{detail}",
+            )
+        try:
+            display_image = raster_plane_to_qimage(result_raster)
+        except Exception as exc:  # noqa: BLE001 - display-cache boundary
+            session_path.unlink(missing_ok=True)
+            return DerivedImageCommitResult(
+                None,
+                f"处理结果无法创建显示缓存：{exc}",
+            )
+
+        derived_id = new_id("image")
+        groups = [
+            FiberGroup(
+                id=new_id("group"),
+                image_id=derived_id,
+                number=group.number,
+                color=group.color,
+                label=group.label,
+            )
+            for group in source_document.sorted_groups()
+        ]
+        derivation = ImageDerivation(
+            source_document_id=source_document.id,
+            source_path=source_path or source_document.path,
+            source_sha256=source_plane.sha256(),
+            source_image_size=(source_plane.width, source_plane.height),
+            source_pixel_revision=0,
+            source_pixel_type=source_plane.pixel_type,
+            recipe=recipe,
+            result_pixel_type=result_raster.pixel_type,
+            result_image_size=(result_raster.width, result_raster.height),
+            result_sha256=result_raster.sha256(),
+            library_versions=(
+                library_versions
+                if library_versions
+                else self._image_processing_library_versions()
+            ),
+        )
+        document = ImageDocument(
+            id=derived_id,
+            path=relative_path,
+            image_size=(result_raster.width, result_raster.height),
+            source_type="project_asset",
+            calibration=calibration,
+            fiber_groups=groups,
+            active_group_id=(groups[0].id if groups else None),
+            metadata={
+                "derived_image": {
+                    "source_document_id": source_document.id,
+                }
+            },
+            raster_pixel_type=result_raster.pixel_type,
+            derivation=derivation,
+        )
+        document.initialize_runtime_state()
+        document.mark_session_saved()
+        document.mark_calibration_saved()
+        self._session_processed_assets[document.id] = session_path
+        try:
+            self._mount_document(
+                document,
+                display_image,
+                tooltip=(
+                    "派生图片（项目保存时写入 processed/）\n"
+                    f"来源：{self._document_display_name(source_document)}"
+                ),
+                raster_plane=result_raster,
+                raster_metadata=derived_metadata,
+            )
+        except Exception as exc:  # noqa: BLE001 - isolate one batch item
+            self._session_processed_assets.pop(document.id, None)
+            session_path.unlink(missing_ok=True)
+            return DerivedImageCommitResult(
+                None,
+                f"派生图片无法加入工作区：{exc}",
+            )
+        return DerivedImageCommitResult(
+            document,
+            "派生图片已写入受管会话资产并加入当前项目。",
+        )
+
     def _on_derived_image_ready(self, payload: object) -> None:
         if (
             not isinstance(payload, WorkbenchTaskResult)
@@ -6673,101 +7788,23 @@ class MainWindow(QMainWindow):
             return
         operations = context.derivation_prefix + payload.recipe.operations
         recipe = ImageProcessingRecipe.from_operations(operations)
-        relative_path = self._next_project_processed_relative_path(
-            pixel_type=payload.raster.pixel_type,
-        )
-        if self._session_processed_root is None:
-            self._session_processed_root = Path(
-                tempfile.mkdtemp(prefix="fdm-processed-")
-            )
-        session_path = self._session_processed_root / relative_path
-        session_path.parent.mkdir(parents=True, exist_ok=True)
-        derived_metadata = self._derived_raster_metadata(context, payload)
-        encoded = write_native_raster_asset(
-            payload.raster,
-            session_path,
-            metadata=derived_metadata,
-        )
-        if not encoded:
-            failure = encoded.failure
-            detail = (
-                failure.message
-                if failure is not None
-                else "未知编码错误"
-            )
-            if failure is not None and failure.detail:
-                detail = f"{detail}：{failure.detail}"
-            QMessageBox.warning(
-                self,
-                "生成派生图片",
-                f"无法写入受管会话资产：\n{session_path}\n\n{detail}",
-            )
-            return
-        try:
-            display_image = raster_plane_to_qimage(payload.raster)
-        except Exception as exc:  # noqa: BLE001
-            session_path.unlink(missing_ok=True)
-            QMessageBox.warning(
-                self,
-                "生成派生图片",
-                f"处理结果无法创建显示缓存：\n{exc}",
-            )
-            return
-
-        derived_id = new_id("image")
-        groups = [
-            FiberGroup(
-                id=new_id("group"),
-                image_id=derived_id,
-                number=group.number,
-                color=group.color,
-                label=group.label,
-            )
-            for group in source_document.sorted_groups()
-        ]
-        derivation = ImageDerivation(
-            source_document_id=source_document.id,
-            source_path=context.source_path,
-            source_sha256=context.plane.sha256(),
-            source_image_size=(context.plane.width, context.plane.height),
-            source_pixel_revision=0,
-            source_pixel_type=context.plane.pixel_type,
+        outcome = self._commit_derived_image(
+            source_document=source_document,
+            source_plane=context.plane,
+            result_raster=payload.raster,
             recipe=recipe,
-            result_pixel_type=payload.raster.pixel_type,
-            result_image_size=(payload.raster.width, payload.raster.height),
-            result_sha256=payload.raster.sha256(),
-            library_versions=self._image_processing_library_versions(),
-        )
-        document = ImageDocument(
-            id=derived_id,
-            path=relative_path,
-            image_size=(payload.raster.width, payload.raster.height),
-            source_type="project_asset",
-            calibration=calibration if isinstance(calibration, Calibration) else None,
-            fiber_groups=groups,
-            active_group_id=(groups[0].id if groups else None),
-            metadata={
-                "derived_image": {
-                    "source_document_id": source_document.id,
-                }
-            },
-            raster_pixel_type=payload.raster.pixel_type,
-            derivation=derivation,
-        )
-        document.initialize_runtime_state()
-        document.mark_session_saved()
-        document.mark_calibration_saved()
-        self._session_processed_assets[document.id] = session_path
-        self._mount_document(
-            document,
-            display_image,
-            tooltip=(
-                "派生图片（项目保存时写入 processed/）\n"
-                f"来源：{self._document_display_name(source_document)}"
+            calibration=(
+                calibration if isinstance(calibration, Calibration) else None
             ),
-            raster_plane=payload.raster,
-            raster_metadata=derived_metadata,
+            source_path=context.source_path,
         )
+        if not outcome.success:
+            QMessageBox.warning(
+                self,
+                "生成派生图片",
+                outcome.message,
+            )
+            return
         self.statusBar().showMessage(
             "已生成派生图片；原图片、测量对象、标注和 ROI 未被修改。",
             5000,
@@ -13733,6 +14770,8 @@ class MainWindow(QMainWindow):
         self._close_display_adjustment_dialog()
         if not self._close_image_processing_workbench(wait=True):
             raise RuntimeError("图像处理任务尚未安全退出，工作区重置已阻止。")
+        if not self._close_image_batch_dialog(wait=True):
+            raise RuntimeError("图像批处理任务尚未安全退出，工作区重置已阻止。")
         if not self._stop_image_analysis_tasks(wait=True):
             raise RuntimeError("图像分析任务尚未安全退出，工作区重置已阻止。")
         if (
@@ -13808,6 +14847,17 @@ class MainWindow(QMainWindow):
             and self._image_processing_source_context.document_id == document_id
             and not self._close_image_processing_workbench(wait=True)
         ):
+            return
+        batch_context = self._image_batch_run_context
+        if (
+            batch_context is not None
+            and batch_context.source_sha_for(document_id) is not None
+            and not self._stop_image_batch_tasks(wait=True)
+        ):
+            self.statusBar().showMessage(
+                "图像批处理任务尚未安全退出，已阻止关闭当前图片。",
+                6000,
+            )
             return
         if any(
             context.source.document_id == document_id
@@ -13978,6 +15028,7 @@ class MainWindow(QMainWindow):
 
         if self.project.documents or self.project_session_controller.unresolved_documents():
             return False
+        self._close_image_batch_dialog(wait=True)
         self.project = ProjectState.empty()
         self._project_path = None
         self._pending_project_load_snapshot = False
@@ -15471,6 +16522,18 @@ class MainWindow(QMainWindow):
         self.export_current_image_action.setEnabled(has_document and not preview_active)
         can_process_image = has_document and not preview_active
         self.image_processing_workbench_action.setEnabled(can_process_image)
+        self.image_batch_processing_action.setEnabled(
+            any(
+                document_id in self._rasters
+                and (
+                    self.project.get_document(document_id) is not None
+                    and not self.project.get_document(document_id).is_digital_slide()
+                )
+                for document_id in self._document_order
+            )
+            and not preview_active
+            and not self.image_batch_task_controller.is_busy()
+        )
         for action in self._image_operation_actions.values():
             action.setEnabled(can_process_image)
         analysis_busy = self.image_analysis_task_controller.is_busy()
@@ -17221,6 +18284,14 @@ class MainWindow(QMainWindow):
             self._slide_jog_single_shot_timer.stop()
             self._slide_jog_timer.stop()
             self._slide_jog_request = None
+            if not self._stop_image_batch_tasks(wait=True):
+                return TransitionResult(
+                    intent=intent,
+                    completed=False,
+                    timed_out=True,
+                    reason="图像批处理任务未能在时限内退出，转换已阻止。",
+                    task_results=tuple(task_results),
+                )
             if not self._stop_image_analysis_tasks(wait=True):
                 return TransitionResult(
                     intent=intent,
@@ -17301,6 +18372,9 @@ class MainWindow(QMainWindow):
         if not self._close_image_processing_workbench(wait=True):
             event.ignore()
             return
+        if not self._close_image_batch_dialog(wait=True):
+            event.ignore()
+            return
         try:
             self._close_document_slide_stores()
         except RuntimeError as exc:
@@ -17313,6 +18387,10 @@ class MainWindow(QMainWindow):
         for canvas in self._canvases.values():
             self._release_document_canvas(canvas)
         self._cleanup_session_processed_assets()
+        self.image_batch_task_controller.close()
+        if not self.image_batch_task_controller.wait_for_done(5_000):
+            event.ignore()
+            return
         self.image_analysis_task_controller.close()
         if not self.image_analysis_task_controller.wait_for_done(5_000):
             event.ignore()
