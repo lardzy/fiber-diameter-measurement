@@ -20,6 +20,8 @@ from fdm.geometry import (
     polyline_centroid,
     polyline_length,
 )
+from fdm.image_processing_models import DisplayTransform, ImageDerivation
+from fdm.raster import RasterPixelType
 from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
@@ -40,6 +42,10 @@ def project_assets_root(project_path: str | Path) -> Path:
 
 def project_capture_root(project_path: str | Path) -> Path:
     return project_assets_root(project_path) / "captures"
+
+
+def project_processed_root(project_path: str | Path) -> Path:
+    return project_assets_root(project_path) / "processed"
 
 
 def project_slide_root(project_path: str | Path) -> Path:
@@ -982,6 +988,9 @@ class ImageDocument:
     calibration_load_payload: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
+    raster_pixel_type: RasterPixelType | None = None
+    display_transform: DisplayTransform | None = None
+    derivation: ImageDerivation | None = None
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1791,11 +1800,29 @@ class ImageDocument:
         }
         if self.source_type == "filesystem" and self.absolute_path:
             payload["absolute_path"] = self.absolute_path
+        if self.raster_pixel_type is not None:
+            payload["raster_pixel_type"] = self.raster_pixel_type.value
+        if self.display_transform is not None:
+            payload["display_transform"] = self.display_transform.to_dict()
+        if self.derivation is not None:
+            payload["derivation"] = self.derivation.to_dict()
         return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
         overlay_payload = payload.get("overlay_annotations")
+        display_transform_payload = payload.get("display_transform")
+        if (
+            display_transform_payload is not None
+            and not isinstance(display_transform_payload, dict)
+        ):
+            raise TypeError("display_transform 必须是对象")
+        derivation_payload = payload.get("derivation")
+        if (
+            derivation_payload is not None
+            and not isinstance(derivation_payload, dict)
+        ):
+            raise TypeError("derivation 必须是对象")
         overlay_annotations = [
             OverlayAnnotation.from_dict(item)
             for item in overlay_payload
@@ -1811,6 +1838,21 @@ class ImageDocument:
             source_type=str(payload.get("source_type", "filesystem")),
             document_kind=str(payload.get("document_kind", "image")),
             absolute_path=str(payload["absolute_path"]) if payload.get("absolute_path") else None,
+            raster_pixel_type=(
+                RasterPixelType.parse(payload["raster_pixel_type"])
+                if payload.get("raster_pixel_type") is not None
+                else None
+            ),
+            display_transform=(
+                DisplayTransform.from_dict(display_transform_payload)
+                if isinstance(display_transform_payload, dict)
+                else None
+            ),
+            derivation=(
+                ImageDerivation.from_dict(derivation_payload)
+                if isinstance(derivation_payload, dict)
+                else None
+            ),
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,
             fiber_groups=[

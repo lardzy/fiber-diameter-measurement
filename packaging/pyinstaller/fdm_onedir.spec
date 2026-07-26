@@ -8,6 +8,7 @@ from PyInstaller.utils.hooks import (
     collect_data_files,
     collect_dynamic_libs,
     collect_submodules,
+    copy_metadata,
 )
 
 
@@ -71,21 +72,39 @@ hiddenimports = [
     "fdm.microview_helper",
 ]
 
-optional_packages = ["cv2", "PIL"]
+optional_packages = ["cv2", "PIL", "tifffile"]
+required_packages = {"cv2", "PIL"}
 if build_profile == "full":
     optional_packages += ["torch", "torchvision"]
+    required_packages.update({"tifffile", "torch", "torchvision"})
 
 for optional_pkg in optional_packages:
     try:
         binaries += collect_dynamic_libs(optional_pkg)
     except Exception as exc:
-        if build_profile == "full":
-            raise RuntimeError(f"full profile failed to collect dynamic libraries for {optional_pkg}: {exc}") from exc
+        if optional_pkg in required_packages:
+            raise RuntimeError(
+                f"{build_profile} profile failed to collect dynamic libraries for "
+                f"{optional_pkg}: {exc}"
+            ) from exc
     try:
         hiddenimports += collect_submodules(optional_pkg)
     except Exception as exc:
-        if build_profile == "full":
-            raise RuntimeError(f"full profile failed to collect submodules for {optional_pkg}: {exc}") from exc
+        if optional_pkg in required_packages:
+            raise RuntimeError(
+                f"{build_profile} profile failed to collect submodules for "
+                f"{optional_pkg}: {exc}"
+            ) from exc
+
+try:
+    # Runtime self-check records the bundled tifffile version through
+    # importlib.metadata; preserve the distribution metadata in frozen builds.
+    datas += copy_metadata("tifffile")
+except Exception as exc:
+    if build_profile == "full":
+        raise RuntimeError(
+            f"full profile failed to collect tifffile metadata: {exc}"
+        ) from exc
 
 try:
     datas += collect_data_files("qtawesome", include_py_files=False)

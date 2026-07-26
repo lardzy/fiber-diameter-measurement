@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 import copy
 import hashlib
 import math
@@ -14,6 +14,11 @@ from fdm.models import ImageDocument, ProjectState, project_assets_root
 from fdm.lifecycle import TransitionIntent
 from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.services.digital_slide_store import copy_slide_file
+from fdm.services.raster_io import (
+    qimage_to_raster_plane,
+    recommended_native_asset_suffix,
+    write_native_raster_asset,
+)
 from fdm.settings import AppSettings
 
 
@@ -184,6 +189,7 @@ class ProjectSessionHost(Protocol):
     def _remember_recent_directory(self, *, setting_name: str, directory: Path, context: str) -> None: ...
     def _document_display_name(self, document: ImageDocument) -> str: ...
     def _project_asset_image_for_save(self, document: ImageDocument): ...
+    def _project_asset_raster_for_save(self, document: ImageDocument): ...
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool: ...
     def _merge_legacy_calibration_presets(self, presets: list[object]) -> int: ...
     def _reset_workspace(self) -> None: ...
@@ -650,7 +656,20 @@ class ProjectSessionController:
         for operation in operations:
             snapshot = operation.snapshot
             source_document = operation.source_document
-            document_path = str(snapshot.payload.get("path", ""))
+            try:
+                document_path = _validated_project_asset_path_token(
+                    snapshot.payload.get("path", "")
+                )
+            except ValueError as exc:
+                host._show_project_warning(
+                    "保存项目",
+                    f"项目资产路径无效: "
+                    f"{host._document_display_name(source_document)}\n{exc}",
+                )
+                return _failed_asset_stage_result(
+                    created_paths,
+                    str(exc),
+                )
             document_kind = str(snapshot.payload.get("document_kind", "image"))
             document_metadata = (
                 copy.deepcopy(snapshot.payload.get("metadata", {}))
@@ -712,8 +731,26 @@ class ProjectSessionController:
                 )
                 continue
 
+            raster_provider = getattr(
+                host,
+                "_project_asset_raster_for_save",
+                None,
+            )
             image = host._project_asset_image_for_save(source_document)
-            if image is None or image.isNull():
+            try:
+                raster_asset = (
+                    raster_provider(source_document)
+                    if callable(raster_provider)
+                    else None
+                )
+            except Exception as exc:  # noqa: BLE001 - normalize provider failures
+                host._show_project_warning(
+                    "保存项目",
+                    f"读取项目内图片像素失败: "
+                    f"{host._document_display_name(source_document)}\n{exc}",
+                )
+                return _failed_asset_stage_result(created_paths, str(exc))
+            if raster_asset is None and (image is None or image.isNull()):
                 host._show_project_warning(
                     "保存项目",
                     f"无法找到项目内图片数据: {host._document_display_name(source_document)}",
@@ -722,13 +759,78 @@ class ProjectSessionController:
                     created_paths,
                     "项目内图片数据不可用。",
                 )
+            if raster_asset is None:
+                plane = qimage_to_raster_plane(image)
+                raster_metadata = None
+            else:
+                plane, raster_metadata = raster_asset
+            expected_pixel_type = source_document.raster_pixel_type
+            if (
+                expected_pixel_type is not None
+                and plane.pixel_type is not expected_pixel_type
+            ):
+                reason = (
+                    "项目文档声明的像素类型与待保存像素不一致："
+                    f"期望 {expected_pixel_type.value}，实际 "
+                    f"{plane.pixel_type.value}。"
+                )
+                host._show_project_warning("保存项目", reason)
+                return _failed_asset_stage_result(created_paths, reason)
+            expected_size = tuple(source_document.image_size)
+            actual_size = (plane.width, plane.height)
+            if expected_size != actual_size:
+                reason = (
+                    "项目文档声明的图片尺寸与待保存像素不一致："
+                    f"期望 {expected_size[0]}×{expected_size[1]}，实际 "
+                    f"{actual_size[0]}×{actual_size[1]}。"
+                )
+                host._show_project_warning("保存项目", reason)
+                return _failed_asset_stage_result(created_paths, reason)
+            required_suffix = recommended_native_asset_suffix(
+                plane.pixel_type
+            )
+            current_suffix = Path(document_path).suffix.casefold()
+            if plane.pixel_type.value == "gray32_float":
+                allowed_suffixes = {".tif", ".tiff"}
+            elif plane.pixel_type.value == "gray16":
+                allowed_suffixes = {".png", ".tif", ".tiff"}
+            else:
+                allowed_suffixes = {".png"}
+            if current_suffix not in allowed_suffixes:
+                document_path = str(
+                    Path(document_path).with_suffix(required_suffix)
+                ).replace("\\", "/")
             original_target = project_assets_root(target_path) / document_path
             output_path = original_target
             original_target.parent.mkdir(parents=True, exist_ok=True)
             try:
-                with staged_path_for(original_target, suffix=".png") as staged_path:
-                    if not image.save(str(staged_path), "PNG") or staged_path.stat().st_size <= 0:
-                        raise OSError("QImage 未生成有效 PNG")
+                staged_suffix = (
+                    original_target.suffix
+                    if original_target.suffix.casefold()
+                    in {".png", ".tif", ".tiff"}
+                    else ".png"
+                )
+                with staged_path_for(
+                    original_target,
+                    suffix=staged_suffix,
+                ) as staged_path:
+                    encoded = write_native_raster_asset(
+                        plane,
+                        staged_path,
+                        metadata=raster_metadata,
+                    )
+                    if not encoded:
+                        failure = encoded.failure
+                        detail = (
+                            f"{failure.message}: {failure.detail}"
+                            if failure is not None and failure.detail
+                            else (
+                                failure.message
+                                if failure is not None
+                                else "未知编码错误"
+                            )
+                        )
+                        raise OSError(detail)
                     digest = _file_sha256(staged_path)
                     revised_relative = _revisioned_asset_path(document_path, digest)
                     output_path = project_assets_root(target_path) / revised_relative
@@ -806,6 +908,22 @@ def _failed_asset_stage_result(
         except OSError:
             pass
     return ProjectAssetStageResult(False, message=message)
+
+
+def _validated_project_asset_path_token(value: object) -> str:
+    token = str(value or "").replace("\\", "/").strip()
+    path = PurePosixPath(token)
+    if (
+        not token
+        or path.is_absolute()
+        or ".." in path.parts
+        or any(part.endswith(":") for part in path.parts)
+    ):
+        raise ValueError("项目资产路径必须是资产目录内的安全相对路径。")
+    normalized = path.as_posix()
+    if normalized in {".", ""}:
+        raise ValueError("项目资产路径不能为空。")
+    return normalized
 
 
 def _revisioned_asset_path(path_token: str, digest: str) -> str:

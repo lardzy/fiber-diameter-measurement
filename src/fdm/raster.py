@@ -1,9 +1,176 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from enum import Enum
+import hashlib
 import math
 
 from fdm.geometry import Line, Point, direction, midpoint, normal
+
+
+class RasterPixelType(str, Enum):
+    """Canonical pixel layouts supported by the image-processing boundary.
+
+    ``RasterImage`` below remains the mutable 8-bit grayscale helper used by
+    the existing edge-snap pipeline.  This enum and :class:`RasterPlane` add a
+    typed, immutable boundary without changing that legacy call path.
+
+    Multi-byte scalar samples use little-endian byte order.  RGB(A) samples
+    are tightly packed in channel order.
+    """
+
+    GRAY8 = "gray8"
+    GRAY16 = "gray16"
+    GRAY32_FLOAT = "gray32_float"
+    RGB8 = "rgb8"
+    RGBA8 = "rgba8"
+
+    @property
+    def channel_count(self) -> int:
+        return {
+            RasterPixelType.GRAY8: 1,
+            RasterPixelType.GRAY16: 1,
+            RasterPixelType.GRAY32_FLOAT: 1,
+            RasterPixelType.RGB8: 3,
+            RasterPixelType.RGBA8: 4,
+        }[self]
+
+    @property
+    def bytes_per_channel(self) -> int:
+        if self is RasterPixelType.GRAY16:
+            return 2
+        if self is RasterPixelType.GRAY32_FLOAT:
+            return 4
+        return 1
+
+    @property
+    def bytes_per_pixel(self) -> int:
+        return self.channel_count * self.bytes_per_channel
+
+    @property
+    def sample_maximum(self) -> int | None:
+        if self is RasterPixelType.GRAY16:
+            return 65_535
+        if self is RasterPixelType.GRAY32_FLOAT:
+            return None
+        return 255
+
+    @property
+    def is_grayscale(self) -> bool:
+        return self in {
+            RasterPixelType.GRAY8,
+            RasterPixelType.GRAY16,
+            RasterPixelType.GRAY32_FLOAT,
+        }
+
+    @property
+    def has_alpha(self) -> bool:
+        return self is RasterPixelType.RGBA8
+
+    @classmethod
+    def parse(cls, value: object) -> "RasterPixelType":
+        if isinstance(value, cls):
+            return value
+        token = str(value or "").strip().lower()
+        try:
+            return cls(token)
+        except ValueError as exc:
+            supported = "、".join(item.value for item in cls)
+            raise ValueError(f"不支持的栅格像素类型: {value!r}；支持 {supported}") from exc
+
+
+@dataclass(frozen=True, slots=True)
+class RasterPlane:
+    """An immutable, tightly packed raster snapshot.
+
+    Pixel bytes deliberately stay out of project JSON.  Project persistence
+    stores a lossless image asset plus the small pixel-type/derivation
+    descriptors on ``ImageDocument``.  Keeping this value object byte-backed
+    makes it safe to hand to worker threads and prevents a mutable NumPy view
+    from changing beneath a generation-checked request.
+    """
+
+    width: int
+    height: int
+    pixel_type: RasterPixelType
+    data: bytes
+
+    def __post_init__(self) -> None:
+        width = _dimension_value(self.width, field_name="width")
+        height = _dimension_value(self.height, field_name="height")
+        if (width == 0) != (height == 0):
+            raise ValueError("空栅格的 width 和 height 必须同时为 0")
+        pixel_type = RasterPixelType.parse(self.pixel_type)
+        try:
+            data = bytes(self.data)
+        except (TypeError, ValueError) as exc:
+            raise TypeError("RasterPlane.data 必须是 bytes-like 对象") from exc
+        expected = width * height * pixel_type.bytes_per_pixel
+        if len(data) != expected:
+            raise ValueError(
+                f"栅格字节数不匹配: 期望 {expected}，实际 {len(data)}"
+            )
+        object.__setattr__(self, "width", width)
+        object.__setattr__(self, "height", height)
+        object.__setattr__(self, "pixel_type", pixel_type)
+        object.__setattr__(self, "data", data)
+
+    @property
+    def byte_count(self) -> int:
+        return len(self.data)
+
+    @property
+    def row_bytes(self) -> int:
+        return self.width * self.pixel_type.bytes_per_pixel
+
+    @property
+    def is_empty(self) -> bool:
+        return self.width == 0
+
+    def sha256(self) -> str:
+        """Return a content identity including layout and dimensions."""
+
+        digest = hashlib.sha256()
+        digest.update(b"fdm-raster-plane-v1\0")
+        digest.update(self.pixel_type.value.encode("ascii"))
+        digest.update(b"\0")
+        digest.update(self.width.to_bytes(8, "little", signed=False))
+        digest.update(self.height.to_bytes(8, "little", signed=False))
+        digest.update(self.data)
+        return digest.hexdigest()
+
+    @classmethod
+    def from_raster_image(cls, image: "RasterImage") -> "RasterPlane":
+        pixels = tuple(int(value) for value in image.pixels)
+        if any(value < 0 or value > 255 for value in pixels):
+            raise ValueError("RasterImage 包含超出 8 位范围的像素")
+        return cls(
+            width=image.width,
+            height=image.height,
+            pixel_type=RasterPixelType.GRAY8,
+            data=bytes(pixels),
+        )
+
+    def to_raster_image(self) -> "RasterImage":
+        if self.pixel_type is not RasterPixelType.GRAY8:
+            raise ValueError("只有 gray8 RasterPlane 可转换为旧版 RasterImage")
+        return RasterImage(
+            width=self.width,
+            height=self.height,
+            pixels=list(self.data),
+        )
+
+
+def _dimension_value(value: object, *, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise TypeError(f"{field_name} 必须是非负整数")
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise TypeError(f"{field_name} 必须是非负整数") from exc
+    if normalized != value or normalized < 0:
+        raise ValueError(f"{field_name} 必须是非负整数")
+    return normalized
 
 
 @dataclass(slots=True)

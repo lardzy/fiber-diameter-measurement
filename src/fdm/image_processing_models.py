@@ -1,0 +1,591 @@
+from __future__ import annotations
+
+from collections.abc import Iterable, Mapping
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
+import json
+import math
+import re
+from typing import Any
+
+from fdm.raster import RasterPixelType
+
+
+IMAGE_PROCESSING_SCHEMA_VERSION = 1
+_OPERATION_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
+_SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+@dataclass(frozen=True, slots=True)
+class DisplayTransform:
+    """A non-destructive mapping from stored samples to screen intensity.
+
+    The transform describes presentation only.  It must never be used as a
+    substitute for a committed image operation, nor may it change measurement
+    geometry or calibrated values.
+    """
+
+    black_point: float | None = None
+    white_point: float | None = None
+    gamma: float = 1.0
+    inverted: bool = False
+    schema_version: int = field(
+        default=IMAGE_PROCESSING_SCHEMA_VERSION,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        _require_supported_schema(self.schema_version, type_name="DisplayTransform")
+        black_point = _optional_finite(self.black_point, field_name="black_point")
+        white_point = _optional_finite(self.white_point, field_name="white_point")
+        if (black_point is None) != (white_point is None):
+            raise ValueError("black_point 和 white_point 必须同时提供")
+        if (
+            black_point is not None
+            and white_point is not None
+            and black_point >= white_point
+        ):
+            raise ValueError("white_point 必须大于 black_point")
+        gamma = _positive_finite(self.gamma, field_name="gamma")
+        if not isinstance(self.inverted, bool):
+            raise TypeError("inverted 必须是布尔值")
+        object.__setattr__(self, "black_point", black_point)
+        object.__setattr__(self, "white_point", white_point)
+        object.__setattr__(self, "gamma", gamma)
+        object.__setattr__(self, "schema_version", IMAGE_PROCESSING_SCHEMA_VERSION)
+
+    @property
+    def is_identity(self) -> bool:
+        return (
+            self.black_point is None
+            and self.white_point is None
+            and self.gamma == 1.0
+            and not self.inverted
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "schema_version": IMAGE_PROCESSING_SCHEMA_VERSION,
+            "gamma": self.gamma,
+            "inverted": self.inverted,
+        }
+        if self.black_point is not None and self.white_point is not None:
+            payload["black_point"] = self.black_point
+            payload["white_point"] = self.white_point
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "DisplayTransform":
+        if not isinstance(payload, Mapping):
+            raise TypeError("DisplayTransform payload 必须是对象")
+        return cls(
+            black_point=payload.get("black_point"),
+            white_point=payload.get("white_point"),
+            gamma=payload.get("gamma", 1.0),
+            inverted=payload.get("inverted", False),
+            schema_version=payload.get(
+                "schema_version",
+                IMAGE_PROCESSING_SCHEMA_VERSION,
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class ImageOperationSpec:
+    """One deterministic, versioned image-processing operation.
+
+    Parameters are stored internally as canonical JSON.  Callers receive a new
+    dictionary from :attr:`parameters`, so neither a caller-owned mapping nor a
+    nested list can mutate an in-flight recipe after it is handed to a worker.
+    """
+
+    operation_id: str
+    implementation: str
+    implementation_version: str
+    _parameters_json: str = field(repr=False)
+
+    def __init__(
+        self,
+        operation_id: str,
+        parameters: Mapping[str, object] | None = None,
+        *,
+        implementation: str = "fdm",
+        implementation_version: str = "1",
+    ) -> None:
+        normalized_operation_id = str(operation_id or "").strip().lower()
+        if not _OPERATION_ID_PATTERN.fullmatch(normalized_operation_id):
+            raise ValueError(
+                "operation_id 必须是小写字母或数字开头，且仅包含 "
+                "a-z、0-9、点、下划线或连字符"
+            )
+        normalized_implementation = _required_text(
+            implementation,
+            field_name="implementation",
+            maximum_length=128,
+        )
+        normalized_version = _required_text(
+            implementation_version,
+            field_name="implementation_version",
+            maximum_length=128,
+        )
+        normalized_parameters = _normalize_json_object(
+            parameters if parameters is not None else {},
+            field_name="parameters",
+        )
+        parameters_json = json.dumps(
+            normalized_parameters,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        object.__setattr__(self, "operation_id", normalized_operation_id)
+        object.__setattr__(self, "implementation", normalized_implementation)
+        object.__setattr__(self, "implementation_version", normalized_version)
+        object.__setattr__(self, "_parameters_json", parameters_json)
+
+    @property
+    def parameters(self) -> dict[str, object]:
+        return json.loads(self._parameters_json)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "operation_id": self.operation_id,
+            "parameters": self.parameters,
+            "implementation": self.implementation,
+            "implementation_version": self.implementation_version,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "ImageOperationSpec":
+        if not isinstance(payload, Mapping):
+            raise TypeError("ImageOperationSpec payload 必须是对象")
+        parameters = payload.get("parameters", {})
+        if not isinstance(parameters, Mapping):
+            raise TypeError("ImageOperationSpec.parameters 必须是对象")
+        return cls(
+            operation_id=payload.get("operation_id", ""),  # type: ignore[arg-type]
+            parameters=parameters,
+            implementation=payload.get(  # type: ignore[arg-type]
+                "implementation",
+                "fdm",
+            ),
+            implementation_version=payload.get(  # type: ignore[arg-type]
+                "implementation_version",
+                "1",
+            ),
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ImageProcessingRecipe:
+    """An ordered, immutable list of operations applied to one source raster."""
+
+    operations: tuple[ImageOperationSpec, ...]
+    schema_version: int = field(
+        default=IMAGE_PROCESSING_SCHEMA_VERSION,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        _require_supported_schema(
+            self.schema_version,
+            type_name="ImageProcessingRecipe",
+        )
+        operations = tuple(self.operations)
+        if not operations:
+            raise ValueError("图像处理配方至少需要一个操作")
+        if not all(isinstance(item, ImageOperationSpec) for item in operations):
+            raise TypeError("operations 必须全部是 ImageOperationSpec")
+        object.__setattr__(self, "operations", operations)
+        object.__setattr__(self, "schema_version", IMAGE_PROCESSING_SCHEMA_VERSION)
+
+    @classmethod
+    def from_operations(
+        cls,
+        operations: Iterable[ImageOperationSpec],
+    ) -> "ImageProcessingRecipe":
+        return cls(operations=tuple(operations))
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "schema_version": IMAGE_PROCESSING_SCHEMA_VERSION,
+            "operations": [operation.to_dict() for operation in self.operations],
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "ImageProcessingRecipe":
+        if not isinstance(payload, Mapping):
+            raise TypeError("ImageProcessingRecipe payload 必须是对象")
+        schema_version = payload.get(
+            "schema_version",
+            IMAGE_PROCESSING_SCHEMA_VERSION,
+        )
+        _require_supported_schema(
+            schema_version,
+            type_name="ImageProcessingRecipe",
+        )
+        operations_payload = payload.get("operations")
+        if not isinstance(operations_payload, list):
+            raise TypeError("ImageProcessingRecipe.operations 必须是列表")
+        if not all(isinstance(item, Mapping) for item in operations_payload):
+            raise TypeError(
+                "ImageProcessingRecipe.operations 必须全部是对象"
+            )
+        return cls(
+            operations=tuple(
+                ImageOperationSpec.from_dict(item)
+                for item in operations_payload
+            ),
+            schema_version=IMAGE_PROCESSING_SCHEMA_VERSION,
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class ImageDerivation:
+    """Audit metadata for an authoritative, persisted derived raster.
+
+    The recipe documents how the result was produced, while the stored project
+    asset remains authoritative.  Reopening a project therefore never depends
+    on replaying an operation with a potentially different library version.
+    """
+
+    source_document_id: str
+    recipe: ImageProcessingRecipe
+    source_path: str | None = None
+    source_sha256: str | None = None
+    source_image_size: tuple[int, int] | None = None
+    source_pixel_revision: int = 0
+    source_pixel_type: RasterPixelType | None = None
+    result_pixel_type: RasterPixelType | None = None
+    result_image_size: tuple[int, int] | None = None
+    result_sha256: str | None = None
+    library_versions: tuple[tuple[str, str], ...] = ()
+    created_at: str = field(
+        default_factory=lambda: datetime.now(tz=timezone.utc).isoformat()
+    )
+    schema_version: int = field(
+        default=IMAGE_PROCESSING_SCHEMA_VERSION,
+        repr=False,
+        compare=False,
+    )
+
+    def __post_init__(self) -> None:
+        _require_supported_schema(
+            self.schema_version,
+            type_name="ImageDerivation",
+        )
+        source_document_id = _required_text(
+            self.source_document_id,
+            field_name="source_document_id",
+            maximum_length=256,
+        )
+        if not isinstance(self.recipe, ImageProcessingRecipe):
+            raise TypeError("recipe 必须是 ImageProcessingRecipe")
+        source_path = _optional_text(self.source_path, maximum_length=32_768)
+        source_sha256 = _optional_sha256(
+            self.source_sha256,
+            field_name="source_sha256",
+        )
+        result_sha256 = _optional_sha256(
+            self.result_sha256,
+            field_name="result_sha256",
+        )
+        source_image_size = _optional_image_size(self.source_image_size)
+        source_pixel_revision = _nonnegative_int(
+            self.source_pixel_revision,
+            field_name="source_pixel_revision",
+        )
+        source_pixel_type = _optional_pixel_type(self.source_pixel_type)
+        result_pixel_type = _optional_pixel_type(self.result_pixel_type)
+        result_image_size = _optional_image_size(
+            self.result_image_size,
+            field_name="result_image_size",
+        )
+        library_versions = _normalize_version_pairs(self.library_versions)
+        created_at = _required_text(
+            self.created_at,
+            field_name="created_at",
+            maximum_length=128,
+        )
+        object.__setattr__(self, "source_document_id", source_document_id)
+        object.__setattr__(self, "source_path", source_path)
+        object.__setattr__(self, "source_sha256", source_sha256)
+        object.__setattr__(self, "source_image_size", source_image_size)
+        object.__setattr__(self, "source_pixel_revision", source_pixel_revision)
+        object.__setattr__(self, "source_pixel_type", source_pixel_type)
+        object.__setattr__(self, "result_pixel_type", result_pixel_type)
+        object.__setattr__(self, "result_image_size", result_image_size)
+        object.__setattr__(self, "result_sha256", result_sha256)
+        object.__setattr__(self, "library_versions", library_versions)
+        object.__setattr__(self, "created_at", created_at)
+        object.__setattr__(self, "schema_version", IMAGE_PROCESSING_SCHEMA_VERSION)
+
+    def to_dict(self) -> dict[str, object]:
+        source: dict[str, object] = {
+            "document_id": self.source_document_id,
+        }
+        if self.source_path is not None:
+            source["path"] = self.source_path
+        if self.source_sha256 is not None:
+            source["sha256"] = self.source_sha256
+        if self.source_image_size is not None:
+            source["image_size"] = list(self.source_image_size)
+        source["pixel_revision"] = self.source_pixel_revision
+        if self.source_pixel_type is not None:
+            source["pixel_type"] = self.source_pixel_type.value
+
+        result: dict[str, object] = {}
+        if self.result_pixel_type is not None:
+            result["pixel_type"] = self.result_pixel_type.value
+        if self.result_image_size is not None:
+            result["image_size"] = list(self.result_image_size)
+        if self.result_sha256 is not None:
+            result["sha256"] = self.result_sha256
+
+        payload: dict[str, object] = {
+            "schema_version": IMAGE_PROCESSING_SCHEMA_VERSION,
+            "source": source,
+            "recipe": self.recipe.to_dict(),
+            "created_at": self.created_at,
+            "library_versions": dict(self.library_versions),
+        }
+        if result:
+            payload["result"] = result
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "ImageDerivation":
+        if not isinstance(payload, Mapping):
+            raise TypeError("ImageDerivation payload 必须是对象")
+        _require_supported_schema(
+            payload.get("schema_version", IMAGE_PROCESSING_SCHEMA_VERSION),
+            type_name="ImageDerivation",
+        )
+        source = payload.get("source")
+        if not isinstance(source, Mapping):
+            raise TypeError("ImageDerivation.source 必须是对象")
+        recipe_payload = payload.get("recipe")
+        if not isinstance(recipe_payload, Mapping):
+            raise TypeError("ImageDerivation.recipe 必须是对象")
+        result = payload.get("result", {})
+        if not isinstance(result, Mapping):
+            raise TypeError("ImageDerivation.result 必须是对象")
+        source_size_payload = source.get("image_size")
+        source_size = (
+            tuple(source_size_payload)
+            if isinstance(source_size_payload, (list, tuple))
+            else None
+        )
+        result_size_payload = result.get("image_size")
+        result_size = (
+            tuple(result_size_payload)
+            if isinstance(result_size_payload, (list, tuple))
+            else None
+        )
+        versions_payload = payload.get("library_versions", {})
+        if not isinstance(versions_payload, Mapping):
+            raise TypeError("ImageDerivation.library_versions 必须是对象")
+        return cls(
+            source_document_id=source.get("document_id", ""),  # type: ignore[arg-type]
+            source_path=(
+                str(source["path"])
+                if source.get("path") is not None
+                else None
+            ),
+            source_sha256=(
+                str(source["sha256"])
+                if source.get("sha256") is not None
+                else None
+            ),
+            source_image_size=source_size,
+            source_pixel_revision=source.get("pixel_revision", 0),  # type: ignore[arg-type]
+            source_pixel_type=source.get("pixel_type"),
+            recipe=ImageProcessingRecipe.from_dict(recipe_payload),
+            result_pixel_type=result.get("pixel_type"),
+            result_image_size=result_size,
+            result_sha256=(
+                str(result["sha256"])
+                if result.get("sha256") is not None
+                else None
+            ),
+            library_versions=tuple(
+                (str(key), str(value))
+                for key, value in versions_payload.items()
+            ),
+            created_at=payload.get("created_at", ""),  # type: ignore[arg-type]
+            schema_version=IMAGE_PROCESSING_SCHEMA_VERSION,
+        )
+
+
+def _require_supported_schema(value: object, *, type_name: str) -> None:
+    if isinstance(value, bool):
+        raise ValueError(f"{type_name}.schema_version 无效")
+    try:
+        version = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{type_name}.schema_version 无效") from exc
+    if version != IMAGE_PROCESSING_SCHEMA_VERSION:
+        raise ValueError(f"不支持的 {type_name} schema_version: {version}")
+
+
+def _optional_finite(value: object, *, field_name: str) -> float | None:
+    if value is None:
+        return None
+    try:
+        normalized = float(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{field_name} 必须是有限数值") from exc
+    if not math.isfinite(normalized):
+        raise ValueError(f"{field_name} 必须是有限数值")
+    return normalized
+
+
+def _positive_finite(value: object, *, field_name: str) -> float:
+    normalized = _optional_finite(value, field_name=field_name)
+    if normalized is None or normalized <= 0.0:
+        raise ValueError(f"{field_name} 必须是大于 0 的有限数值")
+    return normalized
+
+
+def _required_text(
+    value: object,
+    *,
+    field_name: str,
+    maximum_length: int,
+) -> str:
+    token = str(value or "").strip()
+    if not token:
+        raise ValueError(f"{field_name} 不能为空")
+    if len(token) > maximum_length:
+        raise ValueError(f"{field_name} 超过 {maximum_length} 字符上限")
+    return token
+
+
+def _optional_text(value: object, *, maximum_length: int) -> str | None:
+    if value is None:
+        return None
+    token = str(value).strip()
+    if not token:
+        return None
+    if len(token) > maximum_length:
+        raise ValueError(f"文本超过 {maximum_length} 字符上限")
+    return token
+
+
+def _optional_sha256(value: object, *, field_name: str) -> str | None:
+    if value is None:
+        return None
+    token = str(value).strip().lower()
+    if not _SHA256_PATTERN.fullmatch(token):
+        raise ValueError(f"{field_name} 必须是 64 位 SHA256 十六进制字符串")
+    return token
+
+
+def _optional_image_size(
+    value: object,
+    *,
+    field_name: str = "source_image_size",
+) -> tuple[int, int] | None:
+    if value is None:
+        return None
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        raise ValueError(f"{field_name} 必须包含宽度和高度")
+    width = _positive_dimension(value[0], field_name=f"{field_name}.width")
+    height = _positive_dimension(value[1], field_name=f"{field_name}.height")
+    return (width, height)
+
+
+def _positive_dimension(value: object, *, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} 必须是正整数")
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{field_name} 必须是正整数") from exc
+    if normalized != value or normalized <= 0:
+        raise ValueError(f"{field_name} 必须是正整数")
+    return normalized
+
+
+def _nonnegative_int(value: object, *, field_name: str) -> int:
+    if isinstance(value, bool):
+        raise ValueError(f"{field_name} 必须是非负整数")
+    try:
+        normalized = int(value)
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ValueError(f"{field_name} 必须是非负整数") from exc
+    if normalized != value or normalized < 0:
+        raise ValueError(f"{field_name} 必须是非负整数")
+    return normalized
+
+
+def _normalize_version_pairs(
+    value: Iterable[tuple[object, object]],
+) -> tuple[tuple[str, str], ...]:
+    try:
+        pairs = tuple(value)
+    except TypeError as exc:
+        raise TypeError("library_versions 必须是键值对序列") from exc
+    normalized: dict[str, str] = {}
+    for item in pairs:
+        if not isinstance(item, (tuple, list)) or len(item) != 2:
+            raise TypeError("library_versions 必须是键值对序列")
+        key = _required_text(
+            item[0],
+            field_name="library_versions.name",
+            maximum_length=128,
+        )
+        version = _required_text(
+            item[1],
+            field_name=f"library_versions.{key}",
+            maximum_length=128,
+        )
+        normalized[key] = version
+    return tuple(sorted(normalized.items()))
+
+
+def _optional_pixel_type(value: object) -> RasterPixelType | None:
+    if value is None:
+        return None
+    return RasterPixelType.parse(value)
+
+
+def _normalize_json_object(
+    value: Mapping[str, object],
+    *,
+    field_name: str,
+) -> dict[str, object]:
+    if not isinstance(value, Mapping):
+        raise TypeError(f"{field_name} 必须是对象")
+    normalized = _normalize_json_value(value, path=field_name)
+    if not isinstance(normalized, dict):  # pragma: no cover - guarded above
+        raise TypeError(f"{field_name} 必须是对象")
+    return normalized
+
+
+def _normalize_json_value(value: object, *, path: str) -> Any:
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        if not math.isfinite(value):
+            raise ValueError(f"{path} 不允许 NaN 或 Inf")
+        return value
+    if isinstance(value, Mapping):
+        normalized: dict[str, object] = {}
+        for key, item in value.items():
+            if not isinstance(key, str):
+                raise TypeError(f"{path} 的键必须是字符串")
+            normalized[key] = _normalize_json_value(
+                item,
+                path=f"{path}.{key}",
+            )
+        return normalized
+    if isinstance(value, (list, tuple)):
+        return [
+            _normalize_json_value(item, path=f"{path}[{index}]")
+            for index, item in enumerate(value)
+        ]
+    raise TypeError(f"{path} 包含不可序列化的值: {type(value).__name__}")

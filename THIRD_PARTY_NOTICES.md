@@ -10,6 +10,7 @@ files included by those components.
 | NumPy | BSD-3-Clause; <https://github.com/numpy/numpy/blob/main/LICENSE.txt> |
 | OpenCV | Apache-2.0; <https://github.com/opencv/opencv/blob/4.x/LICENSE> |
 | Pillow | HPND; <https://github.com/python-pillow/Pillow/blob/main/LICENSE> |
+| tifffile | BSD-3-Clause; <https://github.com/cgohlke/tifffile/blob/master/LICENSE> |
 | PyTorch | BSD-3-Clause; <https://github.com/pytorch/pytorch/blob/main/LICENSE> |
 | TorchVision | BSD-3-Clause; <https://github.com/pytorch/vision/blob/main/LICENSE> |
 | ONNX Runtime | MIT; <https://github.com/microsoft/onnxruntime/blob/main/LICENSE> |

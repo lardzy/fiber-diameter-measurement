@@ -23,6 +23,11 @@ from fdm.services.raw_record_export import (
     raw_record_output_suffix,
     write_raw_record_template,
 )
+from fdm.services.raster_export import (
+    RasterEncodingOptions,
+    RasterExportError,
+    RasterExportWriter,
+)
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.measurement_statistics import (
     MeasurementMetric,
@@ -63,6 +68,9 @@ class ExportSelection:
     scope: str = ExportScope.CURRENT
     render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
     raw_record_template_path: str = ""
+    image_encoding: RasterEncodingOptions = field(
+        default_factory=RasterEncodingOptions
+    )
 
     @classmethod
     def all_enabled(cls, *, scope: str = ExportScope.CURRENT) -> "ExportSelection":
@@ -101,6 +109,9 @@ class ExportOptionsSnapshot:
     scope: str = ExportScope.CURRENT
     render_mode: str = ExportImageRenderMode.FULL_RESOLUTION
     raw_record_template_path: str = ""
+    image_encoding: RasterEncodingOptions = field(
+        default_factory=RasterEncodingOptions
+    )
 
     @classmethod
     def from_selection(cls, selection: ExportSelection) -> "ExportOptionsSnapshot":
@@ -114,6 +125,7 @@ class ExportOptionsSnapshot:
             scope=str(selection.scope),
             render_mode=str(selection.render_mode),
             raw_record_template_path=str(selection.raw_record_template_path or ""),
+            image_encoding=selection.image_encoding,
         )
 
     def to_selection(self) -> ExportSelection:
@@ -127,6 +139,7 @@ class ExportOptionsSnapshot:
             scope=self.scope,
             render_mode=self.render_mode,
             raw_record_template_path=self.raw_record_template_path,
+            image_encoding=self.image_encoding,
         )
 
 
@@ -239,6 +252,7 @@ class ExportService:
             planned.append(PlannedExportFile("xlsx", self._excel_export_filename(selection)))
 
         render_suffix = self._render_mode_suffix(selection.render_mode)
+        image_suffix = options.image_encoding.canonical_suffix
         for document in target_documents:
             base_name = Path(document.path).stem or document.id
             if document.is_digital_slide() and any(
@@ -298,7 +312,7 @@ class ExportService:
                 planned.append(
                     PlannedExportFile(
                         "measurement_overlay",
-                        f"{base_name}_measurements_{render_suffix}.png",
+                        f"{base_name}_measurements_{render_suffix}{image_suffix}",
                         document.id,
                     )
                 )
@@ -306,7 +320,7 @@ class ExportService:
                 planned.append(
                     PlannedExportFile(
                         "scale_overlay",
-                        f"{base_name}_scale_{render_suffix}.png",
+                        f"{base_name}_scale_{render_suffix}{image_suffix}",
                         document.id,
                     )
                 )
@@ -314,7 +328,7 @@ class ExportService:
                 planned.append(
                     PlannedExportFile(
                         "combined_overlay",
-                        f"{base_name}_measurements_scale_{render_suffix}.png",
+                        f"{base_name}_measurements_scale_{render_suffix}{image_suffix}",
                         document.id,
                     )
                 )
@@ -512,6 +526,7 @@ class ExportService:
                     include_scale=False,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
+                    encoding=active_plan.options.image_encoding,
                 )
                 finish_step()
                 measurement_overlays.append(rendered.path)
@@ -533,6 +548,7 @@ class ExportService:
                     include_scale=True,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
+                    encoding=active_plan.options.image_encoding,
                 )
                 finish_step()
                 scale_overlays.append(rendered.path)
@@ -554,6 +570,7 @@ class ExportService:
                     include_scale=True,
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
+                    encoding=active_plan.options.image_encoding,
                 )
                 finish_step()
                 combined_overlays.append(rendered.path)
@@ -717,11 +734,12 @@ class ExportService:
         include_scale: bool,
         render_mode: str,
         render_context: ExportRenderContext | None,
+        encoding: RasterEncodingOptions,
     ) -> RenderedExport:
         output_path.parent.mkdir(parents=True, exist_ok=True)
         file_descriptor, temporary_name = tempfile.mkstemp(
             prefix=".fdm-render-",
-            suffix=output_path.suffix or ".png",
+            suffix=".png",
             dir=output_path.parent,
         )
         os.close(file_descriptor)
@@ -742,8 +760,33 @@ class ExportService:
                 raise ValueError("叠加图渲染器必须写入服务提供的临时目标路径。")
             if not rendered_path.is_file() or rendered_path.stat().st_size <= 0:
                 raise OSError(f"叠加图渲染未生成有效文件：{output_path}")
-            atomic_replace_file(rendered_path, output_path)
-            return RenderedExport(path=output_path, width=result.width, height=result.height)
+            # Keep the long-standing renderer contract for the default PNG
+            # profile: the renderer already produced the final encoding and
+            # the service only publishes it atomically.  Non-default PNG
+            # compression and every other format go through the verified
+            # Pillow transcode path below.
+            if encoding == RasterEncodingOptions():
+                atomic_replace_file(rendered_path, output_path)
+                return RenderedExport(
+                    path=output_path,
+                    width=result.width,
+                    height=result.height,
+                )
+            encoded = RasterExportWriter().write_file(
+                rendered_path,
+                output_path,
+                encoding,
+            )
+            if not encoded:
+                failure = encoded.failure
+                if failure is None:
+                    raise OSError(f"叠加图转码失败：{output_path}")
+                raise RasterExportError(failure)
+            return RenderedExport(
+                path=output_path,
+                width=encoded.width,
+                height=encoded.height,
+            )
         finally:
             temporary_path.unlink(missing_ok=True)
 

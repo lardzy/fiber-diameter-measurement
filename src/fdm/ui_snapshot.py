@@ -24,10 +24,12 @@ from fdm.models import (  # noqa: E402
     OverlayTextSizeSpace,
     new_id,
 )
+from fdm.services.export_service import ExportSelection  # noqa: E402
 from fdm.settings import AppSettings  # noqa: E402
-from fdm.ui.dialogs import SettingsDialog  # noqa: E402
+from fdm.ui.dialogs import ExportOptionsDialog, SettingsDialog  # noqa: E402
 from fdm.ui.image_loader import ImageLoadRequest  # noqa: E402
 from fdm.ui.main_window import MainWindow  # noqa: E402
+from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
 
 
@@ -44,6 +46,8 @@ UI_SNAPSHOT_SCENARIOS = (
     "acquisition",
     "digital-slide",
     "settings",
+    "current-image-export",
+    "measurement-export",
 )
 
 
@@ -265,6 +269,15 @@ def main() -> int:
             widget = SettingsDialog(settings, document=document)
             page_order = ("general", "measurement", "annotation", "analysis", "area", "acquisition", "export")
             widget._settings_navigation.setCurrentRow(page_order.index(args.settings_page))
+        elif args.scenario == "current-image-export":
+            widget = CurrentImageExportDialog(
+                "/tmp/显微图像导出.png",
+            )
+        elif args.scenario == "measurement-export":
+            widget = ExportOptionsDialog(
+                ExportSelection.all_enabled(),
+                allow_all_scope=True,
+            )
         else:
             widget = MainWindow()
             if args.scenario != "empty":

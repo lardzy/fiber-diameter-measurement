@@ -8,6 +8,7 @@ from pathlib import Path
 import subprocess
 from tempfile import TemporaryDirectory
 import sys
+from types import ModuleType
 import unittest
 from unittest.mock import patch
 
@@ -20,7 +21,9 @@ from build_support import write_release_manifest
 from fdm import app
 from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.release_manifest import (
+    _probe_pillow_raster_encoders,
     _probe_area_worker,
+    _probe_tifffile_precision,
     packaged_runtime_features,
     run_release_self_check,
     runtime_capability_hint,
@@ -70,10 +73,67 @@ features = ["area-inference", "magic-segmentation"]
         source_commit="deadbeef",
         source_dirty_entries=[],
     )
+    manifest_path = app_dir / "release-manifest.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    manifest["dependency_versions"]["tifffile"] = "test"
+    manifest_path.write_text(
+        json.dumps(manifest, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     return app_dir
 
 
+def _successful_tifffile_probe() -> dict[str, object]:
+    return {
+        "ok": True,
+        "backend": "tifffile",
+        "backend_version": "test",
+        "cases": {
+            "uint16": {"ok": True},
+            "float32": {"ok": True},
+        },
+    }
+
+
 class ReleaseSelfCheckTests(unittest.TestCase):
+    def test_pillow_raster_encoder_probe_exercises_all_export_formats(self) -> None:
+        report = _probe_pillow_raster_encoders()
+
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(
+            set(report["formats"]),
+            {"png", "jpeg", "tiff", "bmp", "webp"},
+        )
+        self.assertTrue(
+            all(result["ok"] for result in report["formats"].values())
+        )
+
+    def test_tifffile_precision_probe_requires_bit_exact_uint16_and_float32(self) -> None:
+        import numpy as np
+
+        stored: dict[str, object] = {}
+        fake_tifffile = ModuleType("tifffile")
+        fake_tifffile.__version__ = "test"
+
+        def imwrite(path, data, **_kwargs) -> None:
+            stored[str(path)] = np.asarray(data).copy()
+            Path(path).write_bytes(b"II-test-tiff")
+
+        def imread(path):
+            return stored[str(path)].copy()
+
+        fake_tifffile.imwrite = imwrite
+        fake_tifffile.imread = imread
+        with patch.dict(sys.modules, {"tifffile": fake_tifffile}):
+            report = _probe_tifffile_precision()
+
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(report["backend_version"], "test")
+        self.assertTrue(report["cases"]["uint16"]["ok"])
+        self.assertEqual(report["cases"]["uint16"]["dtype"], "uint16")
+        self.assertTrue(report["cases"]["float32"]["ok"])
+        self.assertEqual(report["cases"]["float32"]["dtype"], "float32")
+
     def test_packaged_area_worker_probe_uses_shared_protocol(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)
@@ -127,7 +187,11 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             app_dir = _create_minimal_release(Path(tmpdir))
             (app_dir / "unins000.exe").write_bytes(b"installer-added file")
 
-            report = run_release_self_check(app_dir)
+            with patch(
+                "fdm.release_manifest._probe_tifffile_precision",
+                return_value=_successful_tifffile_probe(),
+            ):
+                report = run_release_self_check(app_dir)
 
             self.assertTrue(report["ok"], report["errors"])
             self.assertEqual(report["profile"], "full")
@@ -136,6 +200,63 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertTrue(report["functional_checks"]["core_measurement"])
             self.assertTrue(report["functional_checks"]["qt_local_ipc"])
             self.assertTrue(report["functional_checks"]["pe:FiberDiameterMeasurement.exe"])
+
+    def test_self_check_blocks_a_missing_pillow_export_encoder(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir))
+            format_results = {
+                format_name: {
+                    "ok": format_name != "webp",
+                    "available": format_name != "webp",
+                    "message": (
+                        "当前 Pillow 运行时没有 WEBP 编码器。"
+                        if format_name == "webp"
+                        else ""
+                    ),
+                }
+                for format_name in ("png", "jpeg", "tiff", "bmp", "webp")
+            }
+            with (
+                patch(
+                    "fdm.release_manifest._probe_pillow_raster_encoders",
+                    return_value={
+                        "ok": False,
+                        "backend": "Pillow",
+                        "backend_version": "test",
+                        "formats": format_results,
+                    },
+                ),
+                patch(
+                    "fdm.release_manifest._probe_tifffile_precision",
+                    return_value=_successful_tifffile_probe(),
+                ),
+            ):
+                report = run_release_self_check(app_dir)
+
+        self.assertFalse(report["ok"])
+        self.assertFalse(report["functional_checks"]["raster_encoder:webp"])
+        self.assertTrue(
+            any("WEBP encoder is unavailable" in error for error in report["errors"])
+        )
+
+    def test_self_check_blocks_tifffile_precision_failure(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir))
+            with patch(
+                "fdm.release_manifest._probe_tifffile_precision",
+                side_effect=RuntimeError("uint16 samples changed"),
+            ):
+                report = run_release_self_check(app_dir)
+
+        self.assertFalse(report["ok"])
+        self.assertFalse(report["functional_checks"]["tifffile:uint16"])
+        self.assertFalse(report["functional_checks"]["tifffile:float32"])
+        self.assertTrue(
+            any(
+                "16-bit/float32 TIFF self-check failed" in error
+                for error in report["errors"]
+            )
+        )
 
     def test_self_check_rejects_hash_valid_non_pe_executables(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -182,7 +303,14 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             app_dir = _create_minimal_release(Path(tmpdir))
             output = StringIO()
 
-            with patch.dict(os.environ, {"FDM_SELF_CHECK_ROOT": str(app_dir)}), redirect_stdout(output):
+            with (
+                patch.dict(os.environ, {"FDM_SELF_CHECK_ROOT": str(app_dir)}),
+                patch(
+                    "fdm.release_manifest._probe_tifffile_precision",
+                    return_value=_successful_tifffile_probe(),
+                ),
+                redirect_stdout(output),
+            ):
                 result = app.main(["fdm", "--self-check", "--json"])
 
             payload = json.loads(output.getvalue())

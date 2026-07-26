@@ -409,6 +409,7 @@ license = "LicenseRef-Test"
             self.assertEqual(set(valid["features"]), {"measurement", "capture", "digital-slide"})
             self.assertEqual(packaged_runtime_features(app_dir), frozenset(valid["features"]))
             self.assertIn("python", valid["dependency_versions"])
+            self.assertIn("tifffile", valid["dependency_versions"])
 
             first_asset = app_dir / required[0]
             first_asset.write_bytes(b"tampered")

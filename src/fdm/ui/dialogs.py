@@ -73,6 +73,11 @@ from fdm.settings import (
     to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.raster_export import (
+    RasterEncodingOptions,
+    RasterExportFormat,
+    TiffCompression,
+)
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
@@ -739,11 +744,11 @@ class ExportOptionsDialog(QDialog):
             int(legacy_overlay_text_count_all),
         )
 
-        self._measurement_overlay = QCheckBox("测量叠加图 PNG")
+        self._measurement_overlay = QCheckBox("测量叠加图")
         self._measurement_overlay.setChecked(selection.include_measurement_overlay)
-        self._scale_overlay = QCheckBox("比例尺图 PNG")
+        self._scale_overlay = QCheckBox("比例尺图")
         self._scale_overlay.setChecked(selection.include_scale_overlay)
-        self._combined_overlay = QCheckBox("测量 + 比例尺叠加图 PNG")
+        self._combined_overlay = QCheckBox("测量 + 比例尺叠加图")
         self._combined_overlay.setChecked(selection.include_combined_overlay)
         self._scale_json = QCheckBox("比例尺 JSON")
         self._scale_json.setChecked(selection.include_scale_json)
@@ -790,6 +795,69 @@ class ExportOptionsDialog(QDialog):
         render_layout.addRow("", self._render_mode_hint)
         render_layout.addRow("", self._legacy_overlay_text_warning)
 
+        encoding = selection.image_encoding
+        self._image_format_group = QGroupBox("图片格式与编码")
+        format_layout = QFormLayout(self._image_format_group)
+        self._image_format_combo = NoWheelComboBox()
+        for label, value in (
+            ("PNG（无损）", RasterExportFormat.PNG),
+            ("JPEG（有损）", RasterExportFormat.JPEG),
+            ("TIFF（无损）", RasterExportFormat.TIFF),
+            ("BMP", RasterExportFormat.BMP),
+            ("WebP", RasterExportFormat.WEBP),
+        ):
+            self._image_format_combo.addItem(label, value)
+        format_index = self._image_format_combo.findData(encoding.format)
+        self._image_format_combo.setCurrentIndex(max(0, format_index))
+
+        self._image_quality_spin = NoWheelSpinBox()
+        self._image_quality_spin.setRange(1, 100)
+        self._image_quality_spin.setValue(int(encoding.resolved_quality or 95))
+        self._image_quality_spin.setSuffix("%")
+
+        self._jpeg_progressive_checkbox = QCheckBox("渐进式 JPEG")
+        self._jpeg_progressive_checkbox.setChecked(
+            encoding.jpeg_progressive
+        )
+
+        self._png_compression_spin = NoWheelSpinBox()
+        self._png_compression_spin.setRange(0, 9)
+        self._png_compression_spin.setValue(encoding.png_compression)
+
+        self._tiff_compression_combo = NoWheelComboBox()
+        self._tiff_compression_combo.addItem("Deflate", TiffCompression.DEFLATE)
+        self._tiff_compression_combo.addItem("LZW", TiffCompression.LZW)
+        self._tiff_compression_combo.addItem("无压缩", TiffCompression.NONE)
+        tiff_index = self._tiff_compression_combo.findData(
+            encoding.tiff_compression
+        )
+        self._tiff_compression_combo.setCurrentIndex(max(0, tiff_index))
+
+        self._webp_lossless_checkbox = QCheckBox("使用无损 WebP")
+        self._webp_lossless_checkbox.setChecked(encoding.webp_lossless)
+        self._webp_method_spin = NoWheelSpinBox()
+        self._webp_method_spin.setRange(0, 6)
+        self._webp_method_spin.setValue(encoding.webp_method)
+
+        self._flatten_background = tuple(encoding.jpeg_background)
+        self._flatten_background_button = QPushButton()
+        self._apply_flatten_background_button()
+        self._flatten_background_button.clicked.connect(
+            self._choose_flatten_background
+        )
+
+        self._image_encoding_hint = QLabel()
+        self._image_encoding_hint.setWordWrap(True)
+        format_layout.addRow("格式", self._image_format_combo)
+        format_layout.addRow("质量", self._image_quality_spin)
+        format_layout.addRow("", self._jpeg_progressive_checkbox)
+        format_layout.addRow("PNG 压缩级别", self._png_compression_spin)
+        format_layout.addRow("TIFF 压缩", self._tiff_compression_combo)
+        format_layout.addRow("", self._webp_lossless_checkbox)
+        format_layout.addRow("WebP 编码强度", self._webp_method_spin)
+        format_layout.addRow("透明区域背景", self._flatten_background_button)
+        format_layout.addRow("", self._image_encoding_hint)
+
         raw_record_group = QGroupBox("原始记录模板")
         raw_record_layout = QFormLayout(raw_record_group)
         self._raw_record_template_combo = QComboBox()
@@ -817,19 +885,42 @@ class ExportOptionsDialog(QDialog):
         self._render_mode_combo.currentIndexChanged.connect(
             self._update_legacy_overlay_text_warning
         )
+        self._image_format_combo.currentIndexChanged.connect(
+            self._update_image_encoding_state
+        )
+        self._webp_lossless_checkbox.toggled.connect(
+            self._update_image_encoding_state
+        )
         self._excel.toggled.connect(self._update_raw_record_template_state)
 
         buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
+        buttons.button(QDialogButtonBox.StandardButton.Ok).setText("确定")
+        buttons.button(QDialogButtonBox.StandardButton.Cancel).setText("取消")
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
 
+        content = QWidget(self)
+        content_layout = QVBoxLayout(content)
+        content_layout.setContentsMargins(0, 0, 0, 0)
+        content_layout.addWidget(export_group)
+        content_layout.addWidget(scope_group)
+        content_layout.addWidget(render_group)
+        content_layout.addWidget(self._image_format_group)
+        content_layout.addWidget(raw_record_group)
+        content_layout.addStretch(1)
+        scroll = QScrollArea(self)
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        scroll.setWidget(content)
+
         layout = QVBoxLayout(self)
-        layout.addWidget(export_group)
-        layout.addWidget(scope_group)
-        layout.addWidget(render_group)
-        layout.addWidget(raw_record_group)
+        layout.addWidget(scroll, 1)
         layout.addWidget(buttons)
         self._update_render_mode_state()
+        self._update_image_encoding_state()
         self._update_raw_record_template_state()
 
     def _update_render_mode_state(self) -> None:
@@ -840,7 +931,70 @@ class ExportOptionsDialog(QDialog):
         )
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
+        self._image_format_group.setEnabled(enabled)
         self._update_legacy_overlay_text_warning()
+
+    def _update_image_encoding_state(self) -> None:
+        export_format = self._image_format_combo.currentData()
+        is_jpeg = export_format == RasterExportFormat.JPEG
+        is_png = export_format == RasterExportFormat.PNG
+        is_tiff = export_format == RasterExportFormat.TIFF
+        is_webp = export_format == RasterExportFormat.WEBP
+        is_bmp = export_format == RasterExportFormat.BMP
+        webp_lossless = is_webp and self._webp_lossless_checkbox.isChecked()
+
+        self._image_quality_spin.setEnabled(is_jpeg or (is_webp and not webp_lossless))
+        self._jpeg_progressive_checkbox.setEnabled(is_jpeg)
+        self._png_compression_spin.setEnabled(is_png)
+        self._tiff_compression_combo.setEnabled(is_tiff)
+        self._webp_lossless_checkbox.setEnabled(is_webp)
+        self._webp_method_spin.setEnabled(is_webp)
+        self._flatten_background_button.setEnabled(is_jpeg or is_bmp)
+
+        if is_jpeg:
+            self._image_encoding_hint.setText(
+                "JPEG 是有损格式，不建议将导出文件再次用于定量测量或面积识别。"
+            )
+        elif is_png:
+            self._image_encoding_hint.setText(
+                "PNG 压缩级别只影响编码时间和文件大小，不影响图像质量。"
+            )
+        elif is_tiff:
+            self._image_encoding_hint.setText(
+                "当前叠加图是 8 位视觉合成；选择 TIFF 不会恢复源图片的高位深。"
+            )
+        elif is_webp and webp_lossless:
+            self._image_encoding_hint.setText("无损 WebP 会保留叠加图像素和透明度。")
+        elif is_webp:
+            self._image_encoding_hint.setText("WebP 当前使用有损质量设置。")
+        else:
+            self._image_encoding_hint.setText("BMP 不提供质量或压缩选项。")
+
+    def _apply_flatten_background_button(self) -> None:
+        red, green, blue = self._flatten_background
+        color = QColor(red, green, blue)
+        text_color = "#111111" if color.lightness() > 160 else "#FFFFFF"
+        self._flatten_background_button.setText(
+            f"RGB({red}, {green}, {blue})"
+        )
+        self._flatten_background_button.setStyleSheet(
+            "QPushButton {"
+            f"background-color: rgb({red}, {green}, {blue});"
+            f"color: {text_color};"
+            "}"
+        )
+
+    def _choose_flatten_background(self) -> None:
+        color = QColor(*self._flatten_background)
+        selected = QColorDialog.getColor(color, self, "选择透明区域背景色")
+        if not selected.isValid():
+            return
+        self._flatten_background = (
+            selected.red(),
+            selected.green(),
+            selected.blue(),
+        )
+        self._apply_flatten_background_button()
 
     def _update_legacy_overlay_text_warning(self) -> None:
         image_overlay_selected = (
@@ -874,6 +1028,24 @@ class ExportOptionsDialog(QDialog):
         self._raw_record_template_hint.setEnabled(enabled)
 
     def selection(self) -> ExportSelection:
+        export_format = self._image_format_combo.currentData()
+        image_encoding = RasterEncodingOptions(
+            format=export_format,
+            quality=(
+                self._image_quality_spin.value()
+                if export_format in {
+                    RasterExportFormat.JPEG,
+                    RasterExportFormat.WEBP,
+                }
+                else None
+            ),
+            jpeg_progressive=self._jpeg_progressive_checkbox.isChecked(),
+            png_compression=self._png_compression_spin.value(),
+            tiff_compression=self._tiff_compression_combo.currentData(),
+            webp_lossless=self._webp_lossless_checkbox.isChecked(),
+            webp_method=self._webp_method_spin.value(),
+            jpeg_background=self._flatten_background,
+        )
         return ExportSelection(
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
@@ -884,6 +1056,7 @@ class ExportOptionsDialog(QDialog):
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
             render_mode=self._render_mode_combo.currentData(),
             raw_record_template_path=str(self._raw_record_template_combo.currentData() or "") if self._excel.isChecked() else "",
+            image_encoding=image_encoding,
         )
 
 

@@ -114,8 +114,8 @@ target = "THIRD_PARTY_NOTICES.md"
 profile = "core"
 feature = "release-compliance"
 required = true
-size = 1418
-sha256 = "aefaada9c1cd05e0a4ac711d37f670b72675c5d71800df9639614c0b36152878"
+size = 1505
+sha256 = "f42e8056292ebbbcdcc4b3db5693faa0d600b008990e974f1180b63d4e06948e"
 license = "GPL-3.0-only"
 
 [[assets]]

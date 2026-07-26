@@ -12,7 +12,7 @@ import shutil
 import tempfile
 
 from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QImageReader, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -64,6 +64,7 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
+from fdm.atomic_io import staged_path_for
 from fdm.application_launch import ApplicationOpenRequest
 from fdm.area_display import (
     AREA_GEOMETRY_RAW,
@@ -105,6 +106,7 @@ from fdm.models import (
     project_capture_root,
     project_slide_root,
 )
+from fdm.raster import RasterPlane
 from fdm.release_manifest import packaged_runtime_features, runtime_capability_hint
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
@@ -178,6 +180,19 @@ from fdm.services.reference_instance_propagation import (
     ReferenceInstancePropagationResult,
     area_geometry_iou,
 )
+from fdm.services.raster_export import (
+    RasterExportFormat,
+    RasterExportError,
+    RasterExportWriter,
+)
+from fdm.services.raster_io import (
+    RasterMetadata,
+    qimage_to_raster_plane,
+    raster_plane_to_qimage,
+    read_raster_file,
+    recommended_native_asset_suffix,
+    write_native_raster_asset,
+)
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
 from fdm.ui.canvas import (
@@ -207,7 +222,7 @@ from fdm.ui.background_task_controller import AreaInferenceBatchState, Backgroun
 from fdm.ui.export_controller import ExportController
 from fdm.ui.fullscreen import FullscreenMeasurementController
 from fdm.ui.icons import application_icon, themed_icon
-from fdm.ui.image_loader import ImageLoadRequest
+from fdm.ui.image_loader import ImageLoadRequest, raster_document_contract_error
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.measurement_results_model import (
     MEASUREMENT_ID_ROLE,
@@ -223,6 +238,10 @@ from fdm.ui.measurement_records import MeasurementRecordsController, Measurement
 from fdm.ui.object_inspector import CurrentObjectInspector
 from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
+from fdm.ui.raster_export_dialog import (
+    CurrentImageExportDialog,
+    CurrentImageExportMode,
+)
 from fdm.ui.project_session_controller import (
     ProjectDirtySnapshot,
     ProjectAssetPersistResult,
@@ -867,9 +886,17 @@ class SmallObjectEnhancementPreviewWindow(QWidget):
 
 
 class MainWindow(QMainWindow):
-    IMAGE_FILTER = "图像与数字化切片 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff *.fdmslide);;图像文件 (*.png *.jpg *.jpeg *.bmp *.tif *.tiff);;数字化切片 (*.fdmslide)"
+    IMAGE_FILTER = "图像与数字化切片 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff *.fdmslide);;图像文件 (*.png *.jpg *.jpeg *.bmp *.webp *.tif *.tiff);;数字化切片 (*.fdmslide)"
     PROJECT_FILTER = "Fiber 项目 (*.fdmproj)"
-    IMAGE_SUFFIXES = {".png", ".jpg", ".jpeg", ".bmp", ".tif", ".tiff"}
+    IMAGE_SUFFIXES = {
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".bmp",
+        ".webp",
+        ".tif",
+        ".tiff",
+    }
     DIGITAL_SLIDE_SUFFIXES = {DIGITAL_SLIDE_SUFFIX}
     SUPPORTED_SUFFIXES = IMAGE_SUFFIXES | DIGITAL_SLIDE_SUFFIXES
     MAP_BUILD_AVAILABLE = True
@@ -904,6 +931,8 @@ class MainWindow(QMainWindow):
         self._document_order: list[str] = []
         self._workspace_history_budget = WorkspaceHistoryBudget()
         self._images: dict[str, QImage] = {}
+        self._rasters: dict[str, RasterPlane] = {}
+        self._raster_metadata: dict[str, RasterMetadata] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
         self._canvas_navigators: dict[str, CanvasNavigatorWidget] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
@@ -1498,6 +1527,14 @@ class MainWindow(QMainWindow):
         self.save_project_action.setShortcut("Ctrl+S")
         self.save_project_action.triggered.connect(lambda: self.save_project())
 
+        self.export_current_image_action = QAction("导出当前图像…", self)
+        self.export_current_image_action.setIcon(
+            themed_icon("export", color="#D7E3FC")
+        )
+        self.export_current_image_action.triggered.connect(
+            self.export_current_image
+        )
+
         self.close_current_action = QAction("关闭当前图片", self)
         self.close_current_action.setIcon(themed_icon("close_current", color="#F2B5A7"))
         self.close_current_action.setShortcut("Ctrl+W")
@@ -1734,6 +1771,8 @@ class MainWindow(QMainWindow):
         file_menu.addAction(self.close_current_action)
         file_menu.addAction(self.close_all_action)
         export_menu = file_menu.addMenu("导出")
+        export_menu.addAction(self.export_current_image_action)
+        export_menu.addSeparator()
         for action in self.export_actions:
             export_menu.addAction(action)
 
@@ -1803,6 +1842,8 @@ class MainWindow(QMainWindow):
         export_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         export_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         export_menu = QMenu(export_button)
+        export_menu.addAction(self.export_current_image_action)
+        export_menu.addSeparator()
         for action in self.export_actions:
             export_menu.addAction(action)
         export_button.setMenu(export_menu)
@@ -4495,6 +4536,12 @@ class MainWindow(QMainWindow):
         suffix = Path(filename).suffix.lower()
         return {
             ".png": "PNG 图片 (*.png)",
+            ".jpg": "JPEG 图片 (*.jpg *.jpeg)",
+            ".jpeg": "JPEG 图片 (*.jpg *.jpeg)",
+            ".tif": "TIFF 图片 (*.tif *.tiff)",
+            ".tiff": "TIFF 图片 (*.tif *.tiff)",
+            ".bmp": "BMP 图片 (*.bmp)",
+            ".webp": "WebP 图片 (*.webp)",
             ".json": "JSON 文件 (*.json)",
             ".xlsx": "Excel 工作簿 (*.xlsx)",
             ".xlsm": "启用宏的 Excel 工作簿 (*.xlsm)",
@@ -4531,6 +4578,188 @@ class MainWindow(QMainWindow):
             raw_record_templates=self._app_settings.raw_record_templates,
             last_raw_record_template_path=self._app_settings.last_raw_record_template_path,
             parent=self,
+        )
+
+    def export_current_image(self) -> None:
+        document = self.current_document()
+        if document is None:
+            QMessageBox.information(self, "导出当前图像", "请先打开一张图片。")
+            return
+        default_dir = self._preferred_dialog_directory(
+            recent_dir=self._app_settings.recent_export_dir,
+        )
+        default_name = f"{Path(document.path).stem or document.id}_image.png"
+        dialog = CurrentImageExportDialog(
+            default_dir / default_name,
+            digital_slide_viewport=document.is_digital_slide(),
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        output_path = dialog.export_path()
+        protected_paths: list[Path] = []
+        if document.source_type == "filesystem":
+            for token in (document.path, document.absolute_path):
+                if not str(token or "").strip():
+                    continue
+                try:
+                    protected_paths.append(Path(str(token)).expanduser().resolve())
+                except OSError:
+                    protected_paths.append(Path(str(token)).expanduser())
+        elif document.is_project_asset() and self._project_path is not None:
+            protected_paths.append(
+                self._resolved_document_path(document)
+            )
+        if document.is_digital_slide():
+            slide_meta = (
+                document.metadata.get("digital_slide", {})
+                if isinstance(document.metadata.get("digital_slide"), dict)
+                else {}
+            )
+            working_path = str(slide_meta.get("working_path", "") or "").strip()
+            if working_path:
+                protected_paths.append(Path(working_path).expanduser())
+        try:
+            resolved_output = output_path.resolve()
+        except OSError:
+            resolved_output = output_path
+        if any(
+            resolved_output == path.resolve(strict=False)
+            for path in protected_paths
+        ):
+            QMessageBox.warning(
+                self,
+                "导出当前图像",
+                f"导出目标与源图片相同，已拒绝覆盖：\n{output_path}",
+            )
+            return
+        if output_path.exists():
+            answer = QMessageBox.question(
+                self,
+                "覆盖导出文件",
+                f"输出文件已存在，是否覆盖？\n{output_path}",
+                QMessageBox.StandardButton.Yes
+                | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if answer != QMessageBox.StandardButton.Yes:
+                return
+
+        options = dialog.encoding_options()
+        try:
+            raw_plane = (
+                self._rasters.get(document.id)
+                if (
+                    not document.is_digital_slide()
+                    and dialog.export_mode()
+                    == CurrentImageExportMode.RAW_PIXELS
+                )
+                else None
+            )
+            if raw_plane is not None:
+                if (
+                    raw_plane.pixel_type.value == "gray32_float"
+                    and options.format is not RasterExportFormat.TIFF
+                ):
+                    raise ValueError(
+                        "32 位浮点原始像素只能导出为 TIFF，不能静默降为 8 位。"
+                    )
+                if (
+                    raw_plane.pixel_type.value == "gray16"
+                    and options.format
+                    not in {
+                        RasterExportFormat.PNG,
+                        RasterExportFormat.TIFF,
+                    }
+                ):
+                    raise ValueError(
+                        "16 位灰度原始像素只能导出为 PNG 或 TIFF，不能静默降为 8 位。"
+                    )
+                if options.format in {
+                    RasterExportFormat.PNG,
+                    RasterExportFormat.TIFF,
+                }:
+                    native_result = write_native_raster_asset(
+                        raw_plane,
+                        output_path,
+                        metadata=self._raster_metadata.get(document.id),
+                        png_compression=options.png_compression,
+                        tiff_compression=options.tiff_compression.value,
+                    )
+                    native_result.require_success()
+                else:
+                    with staged_path_for(
+                        output_path,
+                        suffix=recommended_native_asset_suffix(
+                            raw_plane.pixel_type
+                        ),
+                    ) as raster_source:
+                        native_result = write_native_raster_asset(
+                            raw_plane,
+                            raster_source,
+                            metadata=self._raster_metadata.get(document.id),
+                            png_compression=options.png_compression,
+                            tiff_compression=options.tiff_compression.value,
+                        )
+                        native_result.require_success()
+                        result = RasterExportWriter().write_file(
+                            raster_source,
+                            output_path,
+                            options,
+                        )
+                        result.require_success()
+            else:
+                with staged_path_for(output_path, suffix=".png") as raster_source:
+                    if document.is_digital_slide():
+                        rendered = self._render_overlay_image(
+                            document,
+                            raster_source,
+                            include_measurements=False,
+                            include_scale=False,
+                            render_mode=ExportImageRenderMode.CURRENT_VIEWPORT,
+                        )
+                        if rendered.width <= 0 or rendered.height <= 0:
+                            raise OSError("数字切片当前视窗为空。")
+                    else:
+                        image = self._images.get(document.id)
+                        if image is None or image.isNull():
+                            raise OSError("当前图片像素尚未加载。")
+                        if not image.save(str(raster_source), "PNG"):
+                            raise OSError("无法生成待编码的无损像素快照。")
+                    result = RasterExportWriter().write_file(
+                        raster_source,
+                        output_path,
+                        options,
+                    )
+                    result.require_success()
+        except RasterExportError as exc:
+            detail = f"\n\n{exc.failure.detail}" if exc.failure.detail else ""
+            QMessageBox.warning(
+                self,
+                "导出当前图像失败",
+                f"{exc.failure.message}{detail}",
+            )
+            return
+        except Exception as exc:  # noqa: BLE001 - normalize encoder/storage failures
+            QMessageBox.warning(
+                self,
+                "导出当前图像失败",
+                f"无法写入导出文件：\n{output_path}\n\n{exc}",
+            )
+            return
+        self._remember_recent_directory(
+            setting_name="recent_export_dir",
+            directory=output_path.parent,
+            context="导出当前图像",
+        )
+        source_label = (
+            "原始像素"
+            if dialog.export_mode() == CurrentImageExportMode.RAW_PIXELS
+            else "当前显示效果"
+        )
+        self.statusBar().showMessage(
+            f"已导出当前图像（{source_label}）：{output_path}",
+            5000,
         )
 
     def _select_export_save_path(self, default_path: Path, file_filter: str) -> str:
@@ -4832,6 +5061,15 @@ class MainWindow(QMainWindow):
 
     def _project_asset_image_for_save(self, document: ImageDocument) -> QImage | None:
         return self._images.get(document.id)
+
+    def _project_asset_raster_for_save(
+        self,
+        document: ImageDocument,
+    ) -> tuple[RasterPlane, RasterMetadata | None] | None:
+        plane = self._rasters.get(document.id)
+        if plane is None:
+            return None
+        return plane, self._raster_metadata.get(document.id)
 
     def _show_project_information(self, title: str, message: str) -> None:
         QMessageBox.information(self, title, message)
@@ -8093,16 +8331,56 @@ class MainWindow(QMainWindow):
         if is_digital_slide_path(request.path):
             self._load_digital_slide_request_sync(request, state)
             return
-        reader = QImageReader(request.path)
-        reader.setAutoTransform(True)
-        image = reader.read()
-        if image.isNull():
-            reason = reader.errorString() or "无法读取图片"
+        loaded = read_raster_file(request.path)
+        if (
+            not loaded.success
+            or loaded.plane is None
+            or loaded.metadata is None
+        ):
+            failure = loaded.failure
+            reason = (
+                f"{failure.message}{': ' + failure.detail if failure and failure.detail else ''}"
+                if failure is not None
+                else "无法读取图片"
+            )
             state.failed_count += 1
             if state.failures is not None:
                 state.failures.append(f"{Path(request.path).name}: {reason}")
             self._register_unresolved_project_document(request, reason)
             return
+        contract_error = raster_document_contract_error(
+            request.document,
+            loaded.plane,
+        )
+        if contract_error:
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(
+                    f"{Path(request.path).name}: {contract_error}"
+                )
+            self._register_unresolved_project_document(
+                request,
+                contract_error,
+            )
+            return
+        try:
+            image = raster_plane_to_qimage(loaded.plane)
+        except Exception as exc:  # noqa: BLE001 - normalize display-cache failures
+            image = QImage()
+            display_error = str(exc)
+        else:
+            display_error = ""
+        if image.isNull():
+            reason = "图片像素已解码，但无法创建画布显示缓存"
+            if display_error:
+                reason = f"{reason}：{display_error}"
+            state.failed_count += 1
+            if state.failures is not None:
+                state.failures.append(f"{Path(request.path).name}: {reason}")
+            self._register_unresolved_project_document(request, reason)
+            return
+        request.raster_plane = loaded.plane
+        request.raster_metadata = loaded.metadata
         self._add_loaded_document(request, image)
         state.completed_count += 1
         state.loaded_count += 1
@@ -8242,21 +8520,64 @@ class MainWindow(QMainWindow):
                 tooltip=str(source_path),
             )
             return
-        reader = QImageReader(str(source_path))
-        reader.setAutoTransform(True)
-        image = reader.read()
+        loaded = read_raster_file(source_path)
+        if (
+            not loaded.success
+            or loaded.plane is None
+            or loaded.metadata is None
+        ):
+            failure = loaded.failure
+            detail = (
+                f"{failure.message}{': ' + failure.detail if failure.detail else ''}"
+                if failure is not None
+                else "未知错误"
+            )
+            QMessageBox.warning(
+                self,
+                "重新定位项目文档",
+                f"图片无法读取：{detail}",
+            )
+            return
+        contract_error = raster_document_contract_error(
+            document,
+            loaded.plane,
+        )
+        if contract_error:
+            QMessageBox.warning(
+                self,
+                "重新定位项目文档",
+                f"所选图片与项目记录不一致：\n{contract_error}。",
+            )
+            return
+        try:
+            image = raster_plane_to_qimage(loaded.plane)
+        except Exception as exc:  # noqa: BLE001 - external pixels are untrusted
+            QMessageBox.warning(
+                self,
+                "重新定位项目文档",
+                f"图片像素已解码，但无法创建画布显示缓存：\n{exc}",
+            )
+            return
         if image.isNull():
             QMessageBox.warning(
                 self,
                 "重新定位项目文档",
-                f"图片无法读取：{reader.errorString() or '未知错误'}",
+                "图片像素已解码，但无法创建画布显示缓存。",
             )
             return
         if document.source_type == "filesystem":
             document.path = str(source_path)
             document.absolute_path = str(source_path)
         self._remove_unresolved_placeholder_ui(document_id)
-        self._add_loaded_document(ImageLoadRequest(str(source_path), document), image)
+        self._add_loaded_document(
+            ImageLoadRequest(
+                str(source_path),
+                document,
+                raster_plane=loaded.plane,
+                raster_metadata=loaded.metadata,
+            ),
+            image,
+        )
 
     def _remove_unresolved_project_document(self, document_id: str) -> None:
         unresolved = self.project_session_controller.unresolved_document(document_id)
@@ -8483,6 +8804,8 @@ class MainWindow(QMainWindow):
             target_document,
             image,
             tooltip=absolute_path if request.document is None else self._document_tooltip(target_document),
+            raster_plane=request.raster_plane,
+            raster_metadata=request.raster_metadata,
         )
         self.project_session_controller.mark_document_resolved(target_document.id)
 
@@ -8514,6 +8837,8 @@ class MainWindow(QMainWindow):
         image: QImage,
         *,
         tooltip: str,
+        raster_plane: RasterPlane | None = None,
+        raster_metadata: RasterMetadata | None = None,
     ) -> None:
         if document.history is not None:
             document.history.set_workspace_budget(self._workspace_history_budget)
@@ -8551,6 +8876,13 @@ class MainWindow(QMainWindow):
         self.project.documents.insert(insert_index, document)
         self._document_order.insert(insert_index, document.id)
         self._images[document.id] = image
+        authoritative_plane = raster_plane or qimage_to_raster_plane(image)
+        self._rasters[document.id] = authoritative_plane
+        if raster_metadata is not None:
+            self._raster_metadata[document.id] = raster_metadata
+        else:
+            self._raster_metadata.pop(document.id, None)
+        document.raster_pixel_type = authoritative_plane.pixel_type
         self._canvases[document.id] = canvas
         self._attach_canvas_navigator(document.id, canvas, source_image=image)
 
@@ -10407,6 +10739,8 @@ class MainWindow(QMainWindow):
         self.project_session_controller.clear_unresolved_documents()
         self._document_order.clear()
         self._images.clear()
+        self._rasters.clear()
+        self._raster_metadata.clear()
         self._canvases.clear()
         for navigator in self._canvas_navigators.values():
             navigator.clear()
@@ -10463,6 +10797,8 @@ class MainWindow(QMainWindow):
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
         self.project_session_controller.remove_document(document_id)
         self._images.pop(document_id, None)
+        self._rasters.pop(document_id, None)
+        self._raster_metadata.pop(document_id, None)
         navigator = self._canvas_navigators.pop(document_id, None)
         if navigator is not None:
             navigator.clear()
@@ -11980,6 +12316,7 @@ class MainWindow(QMainWindow):
         )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
+        self.export_current_image_action.setEnabled(has_document and not preview_active)
         self.fit_action.setEnabled(has_document and not preview_active)
         self.actual_size_action.setEnabled(has_document and not preview_active)
         fullscreen_active = bool(

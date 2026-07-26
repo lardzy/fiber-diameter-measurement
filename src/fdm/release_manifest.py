@@ -298,14 +298,67 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
     if not ipc_ok and not any("Qt local IPC" in str(item) for item in errors):
         errors.append("Qt local IPC self-check is unavailable")
 
+    try:
+        raster_probe = _probe_pillow_raster_encoders()
+    except Exception as exc:  # noqa: BLE001
+        functional_checks["raster_encoders"] = False
+        errors.append(f"Pillow raster encoder self-check failed: {exc}")
+    else:
+        functional_checks["raster_encoders"] = raster_probe
+        format_results = raster_probe.get("formats", {})
+        if not isinstance(format_results, dict):
+            format_results = {}
+        for format_name in ("png", "jpeg", "tiff", "bmp", "webp"):
+            format_result = format_results.get(format_name, {})
+            ok = isinstance(format_result, dict) and format_result.get("ok") is True
+            functional_checks[f"raster_encoder:{format_name}"] = ok
+            if not ok:
+                reason = (
+                    str(format_result.get("message", "")).strip()
+                    if isinstance(format_result, dict)
+                    else ""
+                )
+                errors.append(
+                    f"Pillow {format_name.upper()} encoder is unavailable"
+                    + (f": {reason}" if reason else "")
+                )
+
     if report.get("profile") == "full":
         versions = report.get("dependency_versions", {})
-        for distribution in ("Pillow", "torch", "torchvision"):
+        for distribution in ("Pillow", "tifffile", "torch", "torchvision"):
             version = str(versions.get(distribution, "")).strip()
             ok = bool(version and version != "not-installed")
             functional_checks[f"dependency:{distribution}"] = ok
             if not ok:
                 errors.append(f"full profile dependency is unavailable: {distribution}")
+        try:
+            tifffile_probe = _probe_tifffile_precision()
+        except Exception as exc:  # noqa: BLE001
+            functional_checks["tifffile_precision"] = False
+            functional_checks["tifffile:uint16"] = False
+            functional_checks["tifffile:float32"] = False
+            errors.append(
+                "tifffile 16-bit/float32 TIFF self-check failed: "
+                f"{exc}"
+            )
+        else:
+            functional_checks["tifffile_precision"] = tifffile_probe
+            case_results = tifffile_probe.get("cases", {})
+            for case_name in ("uint16", "float32"):
+                case_result = (
+                    case_results.get(case_name, {})
+                    if isinstance(case_results, dict)
+                    else {}
+                )
+                ok = (
+                    isinstance(case_result, dict)
+                    and case_result.get("ok") is True
+                )
+                functional_checks[f"tifffile:{case_name}"] = ok
+                if not ok:
+                    errors.append(
+                        f"tifffile {case_name} TIFF round-trip is unavailable"
+                    )
 
     features = set(str(item) for item in report.get("features", []))
     execute_runtime_probe = bool(
@@ -329,6 +382,149 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
 
     report["ok"] = not errors
     return report
+
+
+def _probe_pillow_raster_encoders() -> dict[str, Any]:
+    """Exercise every format exposed by the raster export dialog.
+
+    A PPM source keeps the probe independent from the PNG encoder under test.
+    The production writer performs decode, encode, reopen/verify, fsync and
+    atomic replacement, so this check also catches missing frozen plugins.
+    """
+
+    from fdm.services.raster_export import (
+        RasterEncodingOptions,
+        RasterExportFormat,
+        RasterExportWriter,
+    )
+
+    writer = RasterExportWriter()
+    format_results: dict[str, dict[str, Any]] = {}
+    backend_version = ""
+    with tempfile.TemporaryDirectory(prefix="fdm-栅格编码-self-check-") as tmpdir:
+        root = Path(tmpdir)
+        source = root / "编码源.ppm"
+        width, height = 4, 3
+        pixels = bytes(
+            channel
+            for y in range(height)
+            for x in range(width)
+            for channel in (
+                (x * 67 + y * 19) % 256,
+                (x * 29 + y * 83) % 256,
+                (x * 101 + y * 7) % 256,
+            )
+        )
+        source.write_bytes(f"P6\n{width} {height}\n255\n".encode("ascii") + pixels)
+
+        for export_format in RasterExportFormat:
+            capability = writer.capability(export_format)
+            if not backend_version:
+                backend_version = capability.backend_version
+            if not capability.available:
+                format_results[export_format.value] = {
+                    "ok": False,
+                    "available": False,
+                    "message": capability.reason,
+                }
+                continue
+            target = root / f"编码结果{export_format.canonical_suffix}"
+            result = writer.write_file(
+                source,
+                target,
+                RasterEncodingOptions(format=export_format),
+            )
+            if result:
+                format_results[export_format.value] = {
+                    "ok": True,
+                    "available": True,
+                    "width": result.width,
+                    "height": result.height,
+                    "bytes": result.bytes_written,
+                }
+            else:
+                failure = result.failure
+                format_results[export_format.value] = {
+                    "ok": False,
+                    "available": True,
+                    "code": failure.code.value if failure is not None else "",
+                    "message": failure.message if failure is not None else "",
+                    "detail": failure.detail if failure is not None else "",
+                }
+
+    return {
+        "ok": all(
+            result.get("ok") is True
+            for result in format_results.values()
+        )
+        and len(format_results) == len(RasterExportFormat),
+        "backend": "Pillow",
+        "backend_version": backend_version,
+        "formats": format_results,
+    }
+
+
+def _probe_tifffile_precision() -> dict[str, Any]:
+    """Verify that the frozen runtime preserves 16-bit and float32 samples."""
+
+    import numpy as np
+    import tifffile
+
+    cases = {
+        "uint16": np.asarray(
+            [
+                [0, 1, 255, 256],
+                [1024, 32768, 65534, 65535],
+                [7, 4095, 50000, 42],
+            ],
+            dtype=np.uint16,
+        ),
+        "float32": np.asarray(
+            [
+                [-12.5, -0.0, 0.0, 0.125],
+                [1.0 / 3.0, 1.5, 65535.25, 1.0e8],
+                [-1.0e-6, 42.75, -32768.5, 9.0],
+            ],
+            dtype=np.float32,
+        ),
+    }
+    results: dict[str, dict[str, Any]] = {}
+    with tempfile.TemporaryDirectory(prefix="fdm-TIFF位深-self-check-") as tmpdir:
+        root = Path(tmpdir)
+        for case_name, expected in cases.items():
+            path = root / f"{case_name}-中文路径.tif"
+            tifffile.imwrite(
+                path,
+                expected,
+                photometric="minisblack",
+                metadata=None,
+                compression=None,
+            )
+            actual = np.asarray(tifffile.imread(path))
+            dtype_ok = actual.dtype == expected.dtype
+            shape_ok = actual.shape == expected.shape
+            samples_ok = (
+                dtype_ok
+                and shape_ok
+                and actual.tobytes(order="C") == expected.tobytes(order="C")
+            )
+            result = {
+                "ok": bool(dtype_ok and shape_ok and samples_ok),
+                "dtype": str(actual.dtype),
+                "shape": [int(value) for value in actual.shape],
+                "bytes": int(path.stat().st_size),
+            }
+            results[case_name] = result
+            if not result["ok"]:
+                raise RuntimeError(
+                    f"{case_name} round-trip changed dtype, shape or sample bits"
+                )
+    return {
+        "ok": all(result["ok"] for result in results.values()),
+        "backend": "tifffile",
+        "backend_version": str(getattr(tifffile, "__version__", "")),
+        "cases": results,
+    }
 
 
 def _validate_pe_executable(path: Path) -> tuple[bool, str]:

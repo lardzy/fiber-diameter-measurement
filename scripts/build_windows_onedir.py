@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import shutil
@@ -23,16 +24,37 @@ from build_support import (
 )
 
 
-def check_area_runtime_dependencies() -> list[str]:
+def check_windows_build_dependencies(profile: str) -> list[str]:
+    """Return image-codec dependencies required before starting PyInstaller."""
+
+    normalized_profile = str(profile or "").strip().lower()
+    dependencies = [("PIL", "Pillow")]
+    if normalized_profile == "full":
+        dependencies.append(("tifffile", "tifffile"))
     missing: list[str] = []
+    for module_name, package_name in dependencies:
+        try:
+            available = importlib.util.find_spec(module_name) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            available = False
+        if not available:
+            missing.append(package_name)
+    return missing
+
+
+def check_area_runtime_dependencies() -> list[str]:
+    """Backward-compatible full-build dependency probe."""
+
+    missing = check_windows_build_dependencies("full")
     for module_name, package_name in (
-        ("PIL", "Pillow"),
         ("torch", "torch"),
         ("torchvision", "torchvision"),
     ):
         try:
-            __import__(module_name)
-        except ImportError:
+            available = importlib.util.find_spec(module_name) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            available = False
+        if not available:
             missing.append(package_name)
     return missing
 
@@ -131,6 +153,15 @@ def build(
         print(
             "PyInstaller is not installed in the current environment.\n"
             "Please run: pip install pyinstaller",
+            file=sys.stderr,
+        )
+        return 1
+
+    missing_image_dependencies = check_windows_build_dependencies(profile)
+    if missing_image_dependencies:
+        print(
+            "Windows image export build dependencies are missing: "
+            + ", ".join(missing_image_dependencies),
             file=sys.stderr,
         )
         return 1
