@@ -4,11 +4,16 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Mapping
 import math
 import statistics
 import uuid
 
+from fdm.analysis_artifacts import (
+    AnalysisArtifact,
+    calibration_signature_from_values,
+    refresh_artifacts_validity,
+)
 from fdm.geometry import (
     Line,
     Point,
@@ -21,6 +26,7 @@ from fdm.geometry import (
     polyline_length,
 )
 from fdm.image_processing_models import DisplayTransform, ImageDerivation
+from fdm.project_roi import ProjectRoi
 from fdm.raster import RasterPixelType
 from fdm.version import __version__
 
@@ -1879,14 +1885,124 @@ class ProjectState:
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
     project_default_calibration: Calibration | None = None
     project_group_templates: list[ProjectGroupTemplate] = field(default_factory=list)
+    project_rois: list[ProjectRoi] = field(default_factory=list)
+    analysis_artifacts: list[AnalysisArtifact] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     load_issues: list[dict[str, Any]] = field(default_factory=list, repr=False, compare=False)
+    _extension_state_id: int = field(
+        default=0,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _next_extension_state_id: int = field(
+        default=1,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     def get_document(self, document_id: str) -> ImageDocument | None:
         for document in self.documents:
             if document.id == document_id:
                 return document
         return None
+
+    def get_project_roi(self, roi_id: str) -> ProjectRoi | None:
+        for roi in self.project_rois:
+            if roi.id == roi_id:
+                return roi
+        return None
+
+    def get_analysis_artifact(self, artifact_id: str) -> AnalysisArtifact | None:
+        for artifact in self.analysis_artifacts:
+            if artifact.id == artifact_id:
+                return artifact
+        return None
+
+    @property
+    def extension_state_id(self) -> int:
+        """O(1) dirty identity for ROI and independent analysis branches."""
+
+        return self._extension_state_id
+
+    def mark_extension_changed(self) -> int:
+        state_id = self._next_extension_state_id
+        self._next_extension_state_id += 1
+        self._extension_state_id = state_id
+        return state_id
+
+    def refresh_analysis_validity(
+        self,
+        document_id: str,
+        *,
+        source_document_exists: bool | None = None,
+        current_pixel_revision: int | None = None,
+        current_calibration_signature: str | None | object = ...,
+        roi_revisions: Mapping[str, int] | None = None,
+        measurement_revisions: Mapping[str, int] | None = None,
+    ) -> int:
+        """Mark outdated analysis results stale without deleting audit data.
+
+        The caller should pass ``current_pixel_revision`` whenever authoritative
+        pixels may have changed.  ROI and measurement revision registries
+        default to the currently mounted project objects.  A previously stale
+        artifact is never revived; recalculation must append a new artifact.
+        """
+
+        normalized_document_id = str(document_id or "").strip()
+        if not normalized_document_id:
+            raise ValueError("document_id 不能为空")
+        document = self.get_document(normalized_document_id)
+        document_exists = (
+            document is not None
+            if source_document_exists is None
+            else source_document_exists
+        )
+        if not isinstance(document_exists, bool):
+            raise TypeError("source_document_exists 必须是布尔值")
+        if roi_revisions is None:
+            roi_revisions = {
+                roi.id: roi.revision
+                for roi in self.project_rois
+                if roi.document_id == normalized_document_id
+            }
+        if measurement_revisions is None:
+            measurement_revisions = (
+                {}
+                if document is None
+                else {
+                    measurement.id: measurement.geometry_revision
+                    for measurement in document.measurements
+                }
+            )
+        if current_calibration_signature is ...:
+            calibration = None if document is None else document.calibration
+            calibration_signature = (
+                None
+                if calibration is None
+                else calibration_signature_from_values(
+                    pixels_per_unit=calibration.pixels_per_unit,
+                    unit=calibration.unit,
+                )
+            )
+        else:
+            calibration_signature = current_calibration_signature
+        before = tuple(self.analysis_artifacts)
+        refreshed = refresh_artifacts_validity(
+            before,
+            document_id=normalized_document_id,
+            source_document_exists=document_exists,
+            current_pixel_revision=current_pixel_revision,
+            current_calibration_signature=calibration_signature,
+            roi_revisions=roi_revisions,
+            measurement_revisions=measurement_revisions,
+        )
+        self.analysis_artifacts = list(refreshed)
+        return sum(
+            previous is not current
+            for previous, current in zip(before, refreshed, strict=True)
+        )
 
     def to_dict(self) -> dict[str, Any]:
         seen_template_labels: set[str] = set()
@@ -1897,13 +2013,22 @@ class ProjectState:
                 continue
             seen_template_labels.add(token)
             serialized_templates.append(template.to_dict())
-        return {
+        payload = {
             "version": self.version,
             "documents": [document.to_dict() for document in self.documents],
             "project_default_calibration": self.project_default_calibration.to_dict() if self.project_default_calibration else None,
             "project_group_templates": serialized_templates,
             "metadata": self.metadata,
         }
+        serialized_rois = _serialize_project_rois(self.project_rois)
+        if serialized_rois:
+            payload["project_rois"] = serialized_rois
+        serialized_artifacts = _serialize_analysis_artifacts(
+            self.analysis_artifacts
+        )
+        if serialized_artifacts:
+            payload["analysis_artifacts"] = serialized_artifacts
+        return payload
 
     @classmethod
     def empty(cls) -> "ProjectState":
@@ -1911,6 +2036,8 @@ class ProjectState:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ProjectState":
+        if not isinstance(payload, dict):
+            raise TypeError("ProjectState 必须是对象")
         seen_template_labels: set[str] = set()
         project_group_templates: list[ProjectGroupTemplate] = []
         for item in payload.get("project_group_templates", []):
@@ -1920,6 +2047,29 @@ class ProjectState:
                 continue
             seen_template_labels.add(token)
             project_group_templates.append(template)
+        project_rois_payload = payload.get("project_rois", [])
+        if not isinstance(project_rois_payload, list) or any(
+            not isinstance(item, dict) for item in project_rois_payload
+        ):
+            raise TypeError("project_rois 必须是对象列表")
+        analysis_artifacts_payload = payload.get("analysis_artifacts", [])
+        if not isinstance(analysis_artifacts_payload, list) or any(
+            not isinstance(item, dict) for item in analysis_artifacts_payload
+        ):
+            raise TypeError("analysis_artifacts 必须是对象列表")
+        project_rois = [
+            ProjectRoi.from_dict(item)
+            for item in project_rois_payload
+        ]
+        analysis_artifacts = [
+            AnalysisArtifact.from_dict(item)
+            for item in analysis_artifacts_payload
+        ]
+        _ensure_unique_ids(project_rois, field_name="project_rois")
+        _ensure_unique_ids(
+            analysis_artifacts,
+            field_name="analysis_artifacts",
+        )
         return cls(
             version=str(payload.get("version", __version__)),
             documents=[ImageDocument.from_dict(item) for item in payload.get("documents", [])],
@@ -1929,5 +2079,37 @@ class ProjectState:
             ],
             project_default_calibration=Calibration.from_dict(payload["project_default_calibration"]) if payload.get("project_default_calibration") else None,
             project_group_templates=project_group_templates,
+            project_rois=project_rois,
+            analysis_artifacts=analysis_artifacts,
             metadata=dict(payload.get("metadata", {})),
         )
+
+
+def _ensure_unique_ids(
+    items: list[ProjectRoi] | list[AnalysisArtifact],
+    *,
+    field_name: str,
+) -> None:
+    seen: set[str] = set()
+    for item in items:
+        if item.id in seen:
+            raise ValueError(f"{field_name} 包含重复 ID: {item.id}")
+        seen.add(item.id)
+
+
+def _serialize_project_rois(
+    rois: list[ProjectRoi],
+) -> list[dict[str, object]]:
+    if any(not isinstance(roi, ProjectRoi) for roi in rois):
+        raise TypeError("project_rois 必须全部是 ProjectRoi")
+    _ensure_unique_ids(rois, field_name="project_rois")
+    return [roi.to_dict() for roi in rois]
+
+
+def _serialize_analysis_artifacts(
+    artifacts: list[AnalysisArtifact],
+) -> list[dict[str, object]]:
+    if any(not isinstance(artifact, AnalysisArtifact) for artifact in artifacts):
+        raise TypeError("analysis_artifacts 必须全部是 AnalysisArtifact")
+    _ensure_unique_ids(artifacts, field_name="analysis_artifacts")
+    return [artifact.to_dict() for artifact in artifacts]

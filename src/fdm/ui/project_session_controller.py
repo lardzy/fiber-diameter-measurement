@@ -71,6 +71,7 @@ class ProjectDirtySnapshot:
     project_default_document_ids: tuple[str, ...]
     project_asset_documents: tuple[tuple[str, str], ...]
     project_group_templates: tuple[tuple[str, str], ...]
+    project_extension_state_id: int
     document_persistence: ProjectPersistenceSnapshot
 
 
@@ -558,6 +559,8 @@ class ProjectSessionController:
             documents=[],
             project_default_calibration=project.project_default_calibration,
             project_group_templates=list(project.project_group_templates),
+            project_rois=list(project.project_rois),
+            analysis_artifacts=list(project.analysis_artifacts),
             load_issues=list(project.load_issues),
         )
         host.project.metadata = project.metadata

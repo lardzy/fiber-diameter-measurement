@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 import math
 import os
 import time
+from uuid import uuid4
 
 import cv2
 import numpy as np
@@ -14,6 +16,7 @@ from PySide6.QtGui import (
     QImage,
     QMouseEvent,
     QPainter,
+    QPainterPath,
     QPalette,
     QPen,
     QPicture,
@@ -48,6 +51,17 @@ from fdm.models import (
     OverlayAnnotation,
     OverlayAnnotationKind,
     OverlayTextSizeSpace,
+)
+from fdm.project_roi import (
+    EllipseRoiGeometry,
+    FreehandRoiGeometry,
+    PolygonRoiGeometry,
+    ProjectRoi,
+    ProjectRoiKind,
+    RectangleRoiGeometry,
+    RoiBooleanExpression,
+    RoiBooleanOperator,
+    RoiPoint,
 )
 from fdm.services.prompt_segmentation import (
     finalize_magic_subtraction_mask,
@@ -122,6 +136,42 @@ def _bounded_view_zoom(value: float) -> float:
     return max(MIN_VIEW_ZOOM, min(MAX_VIEW_ZOOM, zoom))
 
 
+def _normalized_capture_roi_kind(
+    value: ProjectRoiKind | str,
+) -> ProjectRoiKind | None:
+    aliases = {
+        "rectangle": ProjectRoiKind.RECTANGLE,
+        "rect": ProjectRoiKind.RECTANGLE,
+        "ellipse": ProjectRoiKind.ELLIPSE,
+        "polygon": ProjectRoiKind.POLYGON,
+        "freehand": ProjectRoiKind.FREEHAND,
+        "free": ProjectRoiKind.FREEHAND,
+    }
+    if isinstance(value, ProjectRoiKind):
+        normalized = value
+    else:
+        normalized = aliases.get(str(value).strip().lower())
+    if normalized is ProjectRoiKind.COMPOSITE:
+        return None
+    return normalized
+
+
+def _normalized_roi_capture_points(points: list[Point]) -> list[Point]:
+    normalized: list[Point] = []
+    for point in points:
+        if normalized and distance(normalized[-1], point) <= 1e-6:
+            continue
+        normalized.append(Point(float(point.x), float(point.y)))
+    if (
+        len(normalized) >= 2
+        and distance(normalized[0], normalized[-1]) <= 1e-6
+    ):
+        normalized.pop()
+    if len({(point.x, point.y) for point in normalized}) < 3:
+        return []
+    return normalized
+
+
 @dataclass(frozen=True, slots=True)
 class CanvasSelectionRef:
     """The canvas' single, mutually-exclusive object selection."""
@@ -141,6 +191,34 @@ class CanvasSelectionRef:
     @classmethod
     def overlay(cls, overlay_id: str, overlay_kind: str) -> "CanvasSelectionRef":
         return cls(kind="overlay", object_id=overlay_id, overlay_kind=overlay_kind)
+
+
+@dataclass(frozen=True, slots=True)
+class RoiGeometryCommit:
+    """One exact ROI geometry captured in original image-pixel coordinates."""
+
+    request_id: str
+    document_id: str
+    kind: ProjectRoiKind
+    geometry: (
+        RectangleRoiGeometry
+        | EllipseRoiGeometry
+        | PolygonRoiGeometry
+        | FreehandRoiGeometry
+    )
+
+
+@dataclass(slots=True)
+class _RoiCaptureSession:
+    request_id: str
+    kind: ProjectRoiKind
+    restore_tool_mode: str
+    restore_overlay_kind: str
+    points: list[Point] = field(default_factory=list)
+    hover_point: Point | None = None
+    drag_start: Point | None = None
+    drag_end: Point | None = None
+    dragging: bool = False
 
 
 @dataclass(frozen=True, slots=True)
@@ -749,6 +827,7 @@ class DocumentCanvas(QWidget):
     areaEditRejected = Signal(str, str)
     viewZoomChanged = Signal(float)
     viewTransformChanged = Signal(object)
+    roiGeometryCommitted = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -813,6 +892,10 @@ class DocumentCanvas(QWidget):
         )
         self._scale_anchor_pick_active = False
         self._scale_anchor_preview_point: Point | None = None
+        self._roi_capture: _RoiCaptureSession | None = None
+        self._project_rois: tuple[ProjectRoi, ...] = ()
+        self._project_roi_lookup: dict[str, ProjectRoi] = {}
+        self._project_roi_paths: tuple[tuple[ProjectRoi, QPainterPath], ...] = ()
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
@@ -891,7 +974,138 @@ class DocumentCanvas(QWidget):
     def document_id(self) -> str | None:
         return self._document.id if self._document else None
 
+    def begin_roi_capture(
+        self,
+        kind: ProjectRoiKind | str,
+        *,
+        request_id: str | None = None,
+    ) -> bool:
+        """Begin a temporary ROI capture without changing the document model.
+
+        The existing measurement/overlay draft is cancelled so pointer events
+        cannot be consumed by two tools at once.  The selected measurement tool
+        itself is only suspended and is restored after commit or cancellation.
+        """
+
+        if self._document is None or self._image is None or self._read_only:
+            return False
+        normalized_kind = _normalized_capture_roi_kind(kind)
+        if normalized_kind is None:
+            return False
+        if self._roi_capture is not None:
+            self._clear_roi_capture(restore_tool=True)
+        self._cancel_area_drawing()
+        self._cancel_line_drawing()
+        self._cancel_overlay_interaction()
+        if self.has_magic_segment_session():
+            self.clear_magic_segment_session()
+        if self._reference_instance.has_session():
+            self.clear_reference_instance_session()
+        if self.has_fiber_quick_session():
+            self.clear_fiber_quick_session()
+        self._scale_anchor_pick_active = False
+        self._scale_anchor_preview_point = None
+        capture_request_id = str(request_id or "").strip() or uuid4().hex
+        self._roi_capture = _RoiCaptureSession(
+            request_id=capture_request_id,
+            kind=normalized_kind,
+            restore_tool_mode=self._tool_mode,
+            restore_overlay_kind=self._overlay_tool_kind,
+        )
+        self._temporary_grab_active = False
+        self._update_cursor()
+        self.update()
+        return True
+
+    def cancel_roi_capture(self) -> bool:
+        """Cancel the current ROI draft and restore the suspended tool."""
+
+        if self._roi_capture is None:
+            return False
+        self._clear_roi_capture(restore_tool=True)
+        return True
+
+    def set_project_rois(
+        self,
+        rois: Iterable[ProjectRoi],
+        lookup: Mapping[str, ProjectRoi] | None = None,
+    ) -> None:
+        """Set project ROI display state for this canvas.
+
+        Only visible ROI objects belonging to the mounted document are drawn.
+        The lookup may include invisible operand ROI objects used by a composite
+        expression.  All paths are built from authoritative image coordinates;
+        no screen simplification is used.
+        """
+
+        normalized_rois = tuple(
+            roi for roi in rois if isinstance(roi, ProjectRoi)
+        )
+        normalized_lookup: dict[str, ProjectRoi] = {
+            roi.id: roi for roi in normalized_rois
+        }
+        if lookup is not None:
+            for roi_id, roi in lookup.items():
+                if isinstance(roi, ProjectRoi):
+                    normalized_lookup[str(roi_id)] = roi
+        signature = tuple(
+            (
+                roi.id,
+                roi.document_id,
+                roi.visible,
+                roi.locked,
+                roi.color,
+                roi.revision,
+                id(roi.geometry),
+            )
+            for roi in normalized_rois
+        )
+        previous_signature = tuple(
+            (
+                roi.id,
+                roi.document_id,
+                roi.visible,
+                roi.locked,
+                roi.color,
+                roi.revision,
+                id(roi.geometry),
+            )
+            for roi in self._project_rois
+        )
+        lookup_signature = tuple(
+            sorted(
+                (
+                    roi_id,
+                    roi.document_id,
+                    roi.revision,
+                    id(roi.geometry),
+                )
+                for roi_id, roi in normalized_lookup.items()
+            )
+        )
+        previous_lookup_signature = tuple(
+            sorted(
+                (
+                    roi_id,
+                    roi.document_id,
+                    roi.revision,
+                    id(roi.geometry),
+                )
+                for roi_id, roi in self._project_roi_lookup.items()
+            )
+        )
+        if (
+            signature == previous_signature
+            and lookup_signature == previous_lookup_signature
+        ):
+            return
+        self._project_rois = normalized_rois
+        self._project_roi_lookup = normalized_lookup
+        self._rebuild_project_roi_paths()
+        self.update()
+
     def set_document(self, document: ImageDocument, image: QImage) -> None:
+        self._clear_roi_capture(restore_tool=True)
         self._end_canvas_pan()
         canvas_overlay_tile_cache.protect(id(self), ())
         previous_document = self._document
@@ -924,6 +1138,7 @@ class DocumentCanvas(QWidget):
         self._zoom_mode = CanvasZoomMode.CUSTOM
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
         self._last_view_transform_snapshot = None
+        self._rebuild_project_roi_paths()
         self._publish_view_transform()
         self.update()
 
@@ -935,6 +1150,7 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        self._clear_roi_capture(restore_tool=True)
         self._end_canvas_pan()
         canvas_overlay_tile_cache.protect(id(self), ())
         previous_document = self._document
@@ -970,6 +1186,9 @@ class DocumentCanvas(QWidget):
         self._measurement_display_index = None
         self._measurement_display_index_signature = None
         self._overlay_max_object_font_size = 0.0
+        self._project_rois = ()
+        self._project_roi_lookup = {}
+        self._project_roi_paths = ()
         self._reset_proxy_warming()
         if document_token is not None:
             canvas_overlay_tile_cache.invalidate_document(document_token)
@@ -988,6 +1207,7 @@ class DocumentCanvas(QWidget):
     def set_read_only(self, read_only: bool) -> None:
         self._read_only = read_only
         if read_only:
+            self._clear_roi_capture(restore_tool=True)
             self._cancel_area_drawing()
             self._cancel_line_drawing()
             self._dragging_handle = None
@@ -1008,6 +1228,8 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
+        if self._roi_capture is not None:
+            self._clear_roi_capture(restore_tool=False)
         next_overlay_kind = (
             overlay_kind
             if overlay_kind
@@ -2354,6 +2576,19 @@ class DocumentCanvas(QWidget):
             self.set_temporary_grab_pressed(True)
             event.accept()
             return
+        if self._roi_capture is not None:
+            if event.key() == Qt.Key.Key_Escape:
+                self.cancel_roi_capture()
+                event.accept()
+                return
+            if (
+                self._roi_capture.kind is ProjectRoiKind.POLYGON
+                and event.modifiers() == Qt.KeyboardModifier.NoModifier
+                and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+            ):
+                self._commit_roi_capture()
+                event.accept()
+                return
         if (
             event.modifiers() == Qt.KeyboardModifier.NoModifier
             and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F)
@@ -2423,6 +2658,7 @@ class DocumentCanvas(QWidget):
         painter.drawRect(target)
         painter.restore()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self._draw_project_rois(painter, target)
         self._draw_annotations(painter, paint_context)
         self._draw_preview(painter)
 
@@ -2563,6 +2799,9 @@ class DocumentCanvas(QWidget):
             return
 
         image_point = self.widget_to_image(event.position())
+        if self._roi_capture is not None:
+            self._roi_capture_mouse_press(image_point)
+            return
 
         if self._scale_anchor_pick_active:
             if self._point_in_image(image_point):
@@ -2899,6 +3138,9 @@ class DocumentCanvas(QWidget):
             return
 
         image_point = self.widget_to_image(event.position())
+        if self._roi_capture is not None:
+            self._roi_capture_mouse_move(image_point)
+            return
 
         if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
             self._reference_instance.drag_end = self._clamp_to_image(image_point, pixel_center=False)
@@ -3175,6 +3417,11 @@ class DocumentCanvas(QWidget):
         if self._read_only:
             self._update_cursor()
             return
+        if self._roi_capture is not None:
+            self._roi_capture_mouse_release(
+                self.widget_to_image(event.position())
+            )
+            return
 
         if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
             start = self._reference_instance.drag_start
@@ -3358,6 +3605,22 @@ class DocumentCanvas(QWidget):
         if self._image is None or self._document is None:
             return
         if self._read_only:
+            return
+        if (
+            self._roi_capture is not None
+            and self._roi_capture.kind is ProjectRoiKind.POLYGON
+            and event.button() == Qt.MouseButton.LeftButton
+        ):
+            point = self.widget_to_image(event.position())
+            if self._point_in_image(point):
+                point = self._clamp_roi_point(point)
+                if (
+                    not self._roi_capture.points
+                    or distance(self._roi_capture.points[-1], point) > 1e-6
+                ):
+                    self._roi_capture.points.append(point)
+            self._commit_roi_capture()
+            event.accept()
             return
         if (
             event.button() == Qt.MouseButton.LeftButton
@@ -5293,6 +5556,182 @@ class DocumentCanvas(QWidget):
             if len(self._drawing_polygon_points) >= 2:
                 painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
 
+    def _rebuild_project_roi_paths(self) -> None:
+        document_id = self.document_id
+        if document_id is None:
+            self._project_roi_paths = ()
+            return
+        paths: list[tuple[ProjectRoi, QPainterPath]] = []
+        for roi in self._project_rois:
+            if not roi.visible or roi.document_id != document_id:
+                continue
+            try:
+                path = self._project_roi_path(roi, stack=())
+            except (KeyError, TypeError, ValueError):
+                continue
+            if not path.isEmpty():
+                paths.append((roi, path))
+        self._project_roi_paths = tuple(paths)
+
+    def _project_roi_path(
+        self,
+        roi: ProjectRoi,
+        *,
+        stack: tuple[str, ...],
+    ) -> QPainterPath:
+        if roi.id in stack:
+            raise ValueError("ROI 布尔表达式存在循环引用")
+        geometry = roi.geometry
+        path = QPainterPath()
+        path.setFillRule(Qt.FillRule.OddEvenFill)
+        if isinstance(geometry, RectangleRoiGeometry):
+            path.addRect(
+                QRectF(
+                    geometry.x,
+                    geometry.y,
+                    geometry.width,
+                    geometry.height,
+                )
+            )
+            return path
+        if isinstance(geometry, EllipseRoiGeometry):
+            path.addEllipse(
+                QRectF(
+                    geometry.x,
+                    geometry.y,
+                    geometry.width,
+                    geometry.height,
+                )
+            )
+            return path
+        if isinstance(geometry, (PolygonRoiGeometry, FreehandRoiGeometry)):
+            for ring in geometry.rings:
+                first = ring[0]
+                path.moveTo(first.x, first.y)
+                for point in ring[1:]:
+                    path.lineTo(point.x, point.y)
+                path.closeSubpath()
+            return path
+        if not isinstance(geometry, RoiBooleanExpression):
+            return path
+
+        operands: list[QPainterPath] = []
+        for operand_id in geometry.operand_ids:
+            operand = self._project_roi_lookup.get(operand_id)
+            if operand is None:
+                raise KeyError(operand_id)
+            if operand.document_id != roi.document_id:
+                raise ValueError("组合 ROI 不能引用其他文档")
+            operands.append(
+                self._project_roi_path(
+                    operand,
+                    stack=(*stack, roi.id),
+                )
+            )
+        if not operands:
+            return path
+        result = QPainterPath(operands[0])
+        for operand_path in operands[1:]:
+            if geometry.operator is RoiBooleanOperator.UNION:
+                result = result.united(operand_path)
+            elif geometry.operator is RoiBooleanOperator.INTERSECTION:
+                result = result.intersected(operand_path)
+            elif geometry.operator is RoiBooleanOperator.DIFFERENCE:
+                result = result.subtracted(operand_path)
+            else:
+                result = result.united(operand_path).subtracted(
+                    result.intersected(operand_path)
+                )
+        result.setFillRule(Qt.FillRule.OddEvenFill)
+        return result
+
+    def _draw_project_rois(self, painter: QPainter, image_target: QRectF) -> None:
+        if not self._project_roi_paths:
+            return
+        origin = self.image_to_widget(Point(0.0, 0.0))
+        x_unit = self.image_to_widget(Point(1.0, 0.0))
+        y_unit = self.image_to_widget(Point(0.0, 1.0))
+        transform = QTransform(
+            x_unit.x() - origin.x(),
+            x_unit.y() - origin.y(),
+            y_unit.x() - origin.x(),
+            y_unit.y() - origin.y(),
+            origin.x(),
+            origin.y(),
+        )
+        painter.save()
+        try:
+            painter.setClipRect(image_target, Qt.ClipOperation.IntersectClip)
+            painter.setTransform(transform, True)
+            for roi, path in self._project_roi_paths:
+                stroke = QColor(roi.color)
+                fill = QColor(stroke)
+                fill.setAlpha(36)
+                pen = QPen(stroke, 1.6, Qt.PenStyle.DashLine)
+                pen.setCosmetic(True)
+                painter.setPen(pen)
+                painter.setBrush(fill)
+                painter.drawPath(path)
+        finally:
+            painter.restore()
+
+    def _draw_roi_capture_preview(self, painter: QPainter) -> None:
+        session = self._roi_capture
+        if session is None:
+            return
+        stroke = QColor(self.palette().color(QPalette.ColorRole.Highlight))
+        if not stroke.isValid():
+            stroke = QColor("#2A9D8F")
+        fill = QColor(stroke)
+        fill.setAlpha(46)
+        pen = QPen(stroke, 1.8, Qt.PenStyle.DashLine)
+        pen.setCosmetic(True)
+        painter.save()
+        try:
+            painter.setPen(pen)
+            painter.setBrush(fill)
+            if (
+                session.kind
+                in {ProjectRoiKind.RECTANGLE, ProjectRoiKind.ELLIPSE}
+                and session.drag_start is not None
+                and session.drag_end is not None
+            ):
+                rect = QRectF(
+                    self.image_to_widget(session.drag_start),
+                    self.image_to_widget(session.drag_end),
+                ).normalized()
+                if session.kind is ProjectRoiKind.ELLIPSE:
+                    painter.drawEllipse(rect)
+                else:
+                    painter.drawRect(rect)
+                return
+            if not session.points:
+                return
+            polygon = QPolygonF(
+                [self.image_to_widget(point) for point in session.points]
+            )
+            if len(session.points) >= 3:
+                painter.drawPolygon(polygon, Qt.FillRule.OddEvenFill)
+            else:
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawPolyline(polygon)
+            if (
+                session.kind is ProjectRoiKind.POLYGON
+                and session.hover_point is not None
+            ):
+                painter.setBrush(Qt.BrushStyle.NoBrush)
+                painter.drawLine(
+                    self.image_to_widget(session.points[-1]),
+                    self.image_to_widget(session.hover_point),
+                )
+                if len(session.points) >= 2:
+                    painter.drawLine(
+                        self.image_to_widget(session.hover_point),
+                        self.image_to_widget(session.points[0]),
+                    )
+        finally:
+            painter.restore()
+
     def _draw_preview(self, painter: QPainter) -> None:
         preview_line = self._drag_preview_line or self._drawing_line
         if preview_line is not None:
@@ -5386,6 +5825,8 @@ class DocumentCanvas(QWidget):
         if self._scale_anchor_pick_active:
             preview_point = self._scale_anchor_preview_point or Point(self._image.width() * 0.15, self._image.height() * 0.2)
             draw_preview_scale_anchor(painter, self.image_to_widget(preview_point))
+
+        self._draw_roi_capture_preview(painter)
 
     def _hit_test_selected_endpoint(self, image_point: Point) -> tuple[str, str] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
@@ -5887,6 +6328,24 @@ class DocumentCanvas(QWidget):
     def _clamp_to_image(self, point: Point, *, pixel_center: bool) -> Point:
         return clamp_point_to_image(point, self._image_size(), pixel_center=pixel_center)
 
+    def _clamp_roi_point(self, point: Point) -> Point:
+        """Clamp ROI boundary coordinates without dropping the last pixel.
+
+        Measurement control points are clamped to ``width - 1``/``height - 1``.
+        ROI coordinates describe pixel boundaries, so the valid right and
+        bottom edges are exactly ``width`` and ``height`` under the
+        pixel-centre mask rule.
+        """
+
+        image_size = self._image_size()
+        if image_size is None:
+            return point
+        width, height = image_size
+        return Point(
+            clamp(float(point.x), 0.0, float(width)),
+            clamp(float(point.y), 0.0, float(height)),
+        )
+
     def _persist_view_state(self) -> None:
         if self._document is None:
             return
@@ -5895,7 +6354,8 @@ class DocumentCanvas(QWidget):
 
     def _has_pointer_edit_operation(self) -> bool:
         return (
-            self._drawing_anchor_raw is not None
+            self._roi_capture is not None
+            or self._drawing_anchor_raw is not None
             or bool(self._drawing_polygon_points)
             or self._drawing_freehand_active
             or self._dragging_handle is not None
@@ -5906,6 +6366,136 @@ class DocumentCanvas(QWidget):
             or self._scale_anchor_pick_active
             or self._reference_instance.dragging
         )
+
+    def _roi_capture_mouse_press(self, image_point: Point) -> None:
+        session = self._roi_capture
+        if session is None or not self._point_in_image(image_point):
+            return
+        point = self._clamp_roi_point(image_point)
+        if session.kind in {
+            ProjectRoiKind.RECTANGLE,
+            ProjectRoiKind.ELLIPSE,
+        }:
+            session.drag_start = point
+            session.drag_end = point
+            session.dragging = True
+        elif session.kind is ProjectRoiKind.POLYGON:
+            if (
+                len(session.points) >= 3
+                and distance(point, session.points[0])
+                <= self._polygon_close_tolerance()
+            ):
+                self._commit_roi_capture()
+                return
+            if not session.points or distance(session.points[-1], point) > 1e-6:
+                session.points.append(point)
+            session.hover_point = point
+        else:
+            session.points = [point]
+            session.hover_point = point
+            session.dragging = True
+        self.update()
+
+    def _roi_capture_mouse_move(self, image_point: Point) -> None:
+        session = self._roi_capture
+        if session is None:
+            return
+        point = self._clamp_roi_point(image_point)
+        if (
+            session.kind
+            in {ProjectRoiKind.RECTANGLE, ProjectRoiKind.ELLIPSE}
+            and session.dragging
+        ):
+            session.drag_end = point
+        elif session.kind is ProjectRoiKind.POLYGON and session.points:
+            session.hover_point = point
+        elif (
+            session.kind is ProjectRoiKind.FREEHAND
+            and session.dragging
+            and session.points
+        ):
+            minimum_distance = max(0.25, 1.0 / max(self._zoom, 1e-6))
+            if distance(session.points[-1], point) >= minimum_distance:
+                session.points.append(point)
+            session.hover_point = point
+        self.update()
+
+    def _roi_capture_mouse_release(self, image_point: Point) -> None:
+        session = self._roi_capture
+        if session is None:
+            return
+        point = self._clamp_roi_point(image_point)
+        if session.kind in {
+            ProjectRoiKind.RECTANGLE,
+            ProjectRoiKind.ELLIPSE,
+        }:
+            if not session.dragging:
+                return
+            session.drag_end = point
+            session.dragging = False
+            if not self._commit_roi_capture():
+                self._clear_roi_capture(restore_tool=True)
+            return
+        if session.kind is ProjectRoiKind.FREEHAND and session.dragging:
+            if not session.points or distance(session.points[-1], point) > 1e-6:
+                session.points.append(point)
+            session.dragging = False
+            if not self._commit_roi_capture():
+                self._clear_roi_capture(restore_tool=True)
+
+    def _commit_roi_capture(self) -> bool:
+        session = self._roi_capture
+        document_id = self.document_id
+        if session is None or document_id is None:
+            return False
+        geometry = None
+        if session.kind in {
+            ProjectRoiKind.RECTANGLE,
+            ProjectRoiKind.ELLIPSE,
+        }:
+            if session.drag_start is None or session.drag_end is None:
+                return False
+            left = min(session.drag_start.x, session.drag_end.x)
+            top = min(session.drag_start.y, session.drag_end.y)
+            width = abs(session.drag_end.x - session.drag_start.x)
+            height = abs(session.drag_end.y - session.drag_start.y)
+            if width <= 1e-6 or height <= 1e-6:
+                return False
+            if session.kind is ProjectRoiKind.RECTANGLE:
+                geometry = RectangleRoiGeometry(left, top, width, height)
+            else:
+                geometry = EllipseRoiGeometry(left, top, width, height)
+        else:
+            points = _normalized_roi_capture_points(session.points)
+            if len(points) < 3:
+                return False
+            rings = (
+                tuple(RoiPoint(point.x, point.y) for point in points),
+            )
+            if session.kind is ProjectRoiKind.POLYGON:
+                geometry = PolygonRoiGeometry(rings)
+            else:
+                geometry = FreehandRoiGeometry(rings)
+        commit = RoiGeometryCommit(
+            request_id=session.request_id,
+            document_id=document_id,
+            kind=session.kind,
+            geometry=geometry,
+        )
+        self._clear_roi_capture(restore_tool=True)
+        self.roiGeometryCommitted.emit(commit)
+        return True
+
+    def _clear_roi_capture(self, *, restore_tool: bool) -> None:
+        session = self._roi_capture
+        if session is None:
+            return
+        self._roi_capture = None
+        if restore_tool:
+            self._tool_mode = session.restore_tool_mode
+            self._overlay_tool_kind = session.restore_overlay_kind
+        self._update_cursor()
+        self.update()
 
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
@@ -6322,6 +6912,8 @@ class DocumentCanvas(QWidget):
     def _update_cursor(self) -> None:
         if self._panning:
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
+        elif self._roi_capture is not None:
+            self.setCursor(Qt.CursorShape.CrossCursor)
         elif self._scale_anchor_pick_active:
             self.setCursor(Qt.CursorShape.CrossCursor)
         elif self._read_only:

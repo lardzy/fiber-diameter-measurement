@@ -6425,7 +6425,14 @@ class CanvasAndExportTests(unittest.TestCase):
             window.resize(1280, 860)
             window.show()
             self.app.processEvents()
-            self.assertGreaterEqual(window._left_panel_splitter.sizes()[1], 340)
+            # In compact mode the dock can be hidden temporarily.  Qt then
+            # leaves QSplitter.sizes() at its last visible allocation even
+            # though the child keeps its enforced usable geometry inside the
+            # enclosing scroll area.  Assert the actual category editor
+            # geometry so adding the ROI section cannot squeeze it.
+            category_panel = window._left_panel_splitter.widget(1)
+            self.assertGreaterEqual(category_panel.minimumHeight(), 340)
+            self.assertGreaterEqual(category_panel.height(), 340)
         finally:
             window.close()
 

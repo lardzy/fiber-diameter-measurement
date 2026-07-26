@@ -6,6 +6,7 @@ import json
 from typing import Any, Iterable
 
 from fdm.geometry import Line, Point
+from fdm.image_processing_models import DisplayTransform
 from fdm.models import (
     Calibration,
     DirtyDomain,
@@ -175,6 +176,7 @@ class DocumentHistoryState:
     groups_payload: bytes
     overlay_payload: bytes
     metadata_payload: bytes
+    display_transform_payload: bytes
     measurement_order: tuple[str, ...]
     measurement_states: tuple[MeasurementRuntimeState, ...]
     geometry_payloads: tuple[tuple[str, bytes], ...]
@@ -213,6 +215,11 @@ class DocumentHistoryState:
                 [annotation.to_dict() for annotation in document.overlay_annotations]
             ),
             metadata_payload=_json_bytes(document.metadata),
+            display_transform_payload=_json_bytes(
+                document.display_transform.to_dict()
+                if document.display_transform is not None
+                else None
+            ),
             measurement_order=tuple(
                 measurement.id for measurement in document.measurements
             ),
@@ -250,6 +257,7 @@ class DocumentHistoryState:
             groups_payload=self.groups_payload,
             overlay_payload=self.overlay_payload,
             metadata_payload=self.metadata_payload,
+            display_transform_payload=self.display_transform_payload,
             measurement_order=self.measurement_order,
             measurement_states=self.measurement_states,
             geometry_payloads=self.geometry_payloads,
@@ -273,6 +281,7 @@ class DocumentHistoryState:
             + len(self.groups_payload)
             + len(self.overlay_payload)
             + len(self.metadata_payload)
+            + len(self.display_transform_payload)
             + sum(len(state.appearance_payload) + 128 for state in self.measurement_states)
             + sum(len(payload) for _measurement_id, payload in self.geometry_payloads)
             + sum(
@@ -312,6 +321,14 @@ class DocumentHistoryState:
             for item in _decode_json(self.overlay_payload)
         ]
         document.metadata = dict(_decode_json(self.metadata_payload))
+        display_transform_payload = _decode_json(
+            self.display_transform_payload
+        )
+        document.display_transform = (
+            DisplayTransform.from_dict(display_transform_payload)
+            if isinstance(display_transform_payload, dict)
+            else None
+        )
 
         measurement_map = {
             measurement.id: measurement for measurement in document.measurements

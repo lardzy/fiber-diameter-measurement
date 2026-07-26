@@ -136,7 +136,19 @@ class ImageBatchLoaderWorker(QObject):
                         self.failed.emit(request.path, contract_error)
                         self.failedRequest.emit(request, contract_error)
                         continue
-                    image = raster_plane_to_qimage(loaded.plane)
+                    display_transform = getattr(
+                        request.document,
+                        "display_transform",
+                        None,
+                    )
+                    image = (
+                        raster_plane_to_qimage(loaded.plane)
+                        if display_transform is None
+                        else raster_plane_to_qimage(
+                            loaded.plane,
+                            display_transform=display_transform,
+                        )
+                    )
                     if image.isNull():
                         raise ValueError(
                             "图片像素已解码，但无法创建画布显示缓存"

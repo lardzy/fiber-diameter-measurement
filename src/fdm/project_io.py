@@ -192,6 +192,8 @@ class ProjectIO:
             calibration_presets=list(getattr(project, "calibration_presets", [])),
             project_default_calibration=getattr(project, "project_default_calibration", None),
             project_group_templates=list(getattr(project, "project_group_templates", [])),
+            project_rois=list(getattr(project, "project_rois", [])),
+            analysis_artifacts=list(getattr(project, "analysis_artifacts", [])),
             metadata=getattr(project, "metadata", {}),
             load_issues=list(getattr(project, "load_issues", [])),
         )

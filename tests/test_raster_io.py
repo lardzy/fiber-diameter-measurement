@@ -11,6 +11,7 @@ from PySide6.QtGui import QImage
 import pytest
 import tifffile
 
+from fdm.image_processing_models import DisplayTransform
 from fdm.raster import RasterPixelType
 from fdm.services.raster_io import (
     RasterIoError,
@@ -720,6 +721,135 @@ def test_gray16_and_float_display_mapping_does_not_modify_source() -> None:
     assert raster_plane_to_numpy(gray16).tobytes() == np.array(
         [[0, 32_768, 65_535]], dtype=np.uint16
     ).tobytes()
+
+
+def test_display_transform_maps_gray16_gamma_without_changing_pixels() -> None:
+    source = np.array([[0, 2_500, 10_000]], dtype=np.uint16)
+    plane = numpy_to_raster_plane(source)
+
+    image = raster_plane_to_qimage(
+        plane,
+        display_transform=DisplayTransform(
+            channel_ranges=((0.0, 10_000.0),),
+            gamma=2.0,
+        ),
+    )
+
+    assert list(qimage_to_raster_plane(image).data) == [0, 128, 255]
+    assert raster_plane_to_numpy(plane).tobytes() == source.tobytes()
+
+
+def test_display_transform_window_maps_float_nan_and_inf_stably() -> None:
+    source = np.array(
+        [[-1.0, 0.0, 1.0, np.nan, np.inf, -np.inf]],
+        dtype=np.float32,
+    )
+    plane = numpy_to_raster_plane(source)
+
+    image = raster_plane_to_qimage(
+        plane,
+        display_transform=DisplayTransform(
+            window_center=0.0,
+            window_width=2.0,
+        ),
+    )
+
+    assert list(qimage_to_raster_plane(image).data) == [
+        0,
+        128,
+        255,
+        0,
+        255,
+        0,
+    ]
+    assert raster_plane_to_numpy(plane).tobytes() == source.tobytes()
+
+
+def test_display_transform_maps_rgb_channels_independently() -> None:
+    source = np.array(
+        [[[50, 100, 150], [100, 200, 200]]],
+        dtype=np.uint8,
+    )
+    plane = numpy_to_raster_plane(source)
+
+    image = raster_plane_to_qimage(
+        plane,
+        display_transform=DisplayTransform(
+            channel_ranges=(
+                (0.0, 100.0),
+                (0.0, 200.0),
+                (100.0, 200.0),
+            ),
+        ),
+    )
+
+    restored = raster_plane_to_numpy(qimage_to_raster_plane(image))
+    assert restored.tolist() == [[[128, 128, 128], [255, 255, 255]]]
+    assert raster_plane_to_numpy(plane).tobytes() == source.tobytes()
+
+
+def test_rgba_display_transform_preserves_alpha_exactly() -> None:
+    source = np.array(
+        [[[0, 64, 255, 17], [255, 128, 0, 231]]],
+        dtype=np.uint8,
+    )
+    plane = numpy_to_raster_plane(source)
+
+    image = raster_plane_to_qimage(
+        plane,
+        display_transform=DisplayTransform(
+            gamma=2.0,
+            inverted=True,
+        ),
+    )
+
+    restored = raster_plane_to_numpy(qimage_to_raster_plane(image))
+    assert restored[:, :, 3].tolist() == [[17, 231]]
+    assert restored[0, 0, 0] == 255
+    assert restored[0, 1, 0] == 0
+    assert raster_plane_to_numpy(plane).tobytes() == source.tobytes()
+
+
+def test_grayscale_display_lut_builds_rgb_cache() -> None:
+    plane = numpy_to_raster_plane(
+        np.array([[0, 128, 255]], dtype=np.uint8)
+    )
+
+    image = raster_plane_to_qimage(
+        plane,
+        display_transform=DisplayTransform(lut_id="red"),
+    )
+
+    assert image.format() == QImage.Format.Format_RGB888
+    restored = raster_plane_to_numpy(qimage_to_raster_plane(image))
+    assert restored.tolist() == [[[0, 0, 0], [128, 0, 0], [255, 0, 0]]]
+
+
+def test_display_transform_rejects_layout_mismatch_and_ambiguous_arguments() -> None:
+    gray = numpy_to_raster_plane(np.zeros((2, 2), dtype=np.uint16))
+    rgb = numpy_to_raster_plane(np.zeros((2, 2, 3), dtype=np.uint8))
+
+    with pytest.raises(ValueError, match="灰度图片"):
+        raster_plane_to_qimage(
+            gray,
+            display_transform=DisplayTransform(
+                channel_ranges=((0.0, 1.0),) * 3,
+            ),
+        )
+    with pytest.raises(ValueError, match="只适用于灰度"):
+        raster_plane_to_qimage(
+            rgb,
+            display_transform=DisplayTransform(
+                window_center=128.0,
+                window_width=256.0,
+            ),
+        )
+    with pytest.raises(ValueError, match="不能同时提供"):
+        raster_plane_to_qimage(
+            gray,
+            display_range=(0.0, 65_535.0),
+            display_transform=DisplayTransform(),
+        )
 
 
 def test_recommended_native_suffix_is_scientifically_safe() -> None:

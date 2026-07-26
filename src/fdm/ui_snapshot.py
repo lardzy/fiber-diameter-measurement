@@ -13,6 +13,9 @@ from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter  # noqa: E40
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from fdm.geometry import Line, Point  # noqa: E402
+from fdm.image_processing_models import (  # noqa: E402
+    DisplayTransform,
+)
 from fdm.models import (  # noqa: E402
     Calibration,
     ImageDocument,
@@ -24,10 +27,23 @@ from fdm.models import (  # noqa: E402
     OverlayTextSizeSpace,
     new_id,
 )
+from fdm.project_roi import (  # noqa: E402
+    EllipseRoiGeometry,
+    PolygonRoiGeometry,
+    ProjectRoi,
+    RectangleRoiGeometry,
+    RoiPoint,
+)
 from fdm.services.export_service import ExportSelection  # noqa: E402
+from fdm.services.raster_io import qimage_to_raster_plane  # noqa: E402
 from fdm.settings import AppSettings  # noqa: E402
 from fdm.ui.dialogs import ExportOptionsDialog, SettingsDialog  # noqa: E402
+from fdm.ui.display_adjustment_dialog import DisplayAdjustmentDialog  # noqa: E402
 from fdm.ui.image_loader import ImageLoadRequest  # noqa: E402
+from fdm.ui.image_processing_workbench import (  # noqa: E402
+    ImageProcessingWorkbench,
+    default_operation_spec,
+)
 from fdm.ui.main_window import MainWindow  # noqa: E402
 from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
@@ -48,6 +64,9 @@ UI_SNAPSHOT_SCENARIOS = (
     "settings",
     "current-image-export",
     "measurement-export",
+    "display-adjustment",
+    "image-processing",
+    "roi-workspace",
 )
 
 
@@ -278,8 +297,82 @@ def main() -> int:
                 ExportSelection.all_enabled(),
                 allow_all_scope=True,
             )
+        elif args.scenario == "display-adjustment":
+            widget = DisplayAdjustmentDialog(
+                qimage_to_raster_plane(image),
+                DisplayTransform(
+                    channel_ranges=(
+                        (18.0, 232.0),
+                        (20.0, 236.0),
+                        (16.0, 228.0),
+                    ),
+                    gamma=1.15,
+                ),
+                source_name="激光共聚焦 RGB 示例",
+            )
+        elif args.scenario == "image-processing":
+            widget = ImageProcessingWorkbench(
+                qimage_to_raster_plane(image),
+                source_document_id=document.id,
+                source_name="显微图像处理示例",
+                roi_summary="整张图片",
+            )
+            widget.set_operation_steps(
+                (
+                    default_operation_spec(
+                        "gaussian_blur",
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=qimage_to_raster_plane(image).pixel_type,
+                    ),
+                )
+            )
         else:
             widget = MainWindow()
+            if args.scenario == "roi-workspace":
+                widget.project.project_rois.extend(
+                    (
+                        ProjectRoi(
+                            id="roi_review_rect",
+                            document_id=document.id,
+                            name="纤维密集区域",
+                            geometry=RectangleRoiGeometry(
+                                120.0,
+                                140.0,
+                                360.0,
+                                250.0,
+                            ),
+                        ),
+                        ProjectRoi(
+                            id="roi_review_ellipse",
+                            document_id=document.id,
+                            name="孔洞复核区域",
+                            geometry=EllipseRoiGeometry(
+                                610.0,
+                                260.0,
+                                240.0,
+                                190.0,
+                            ),
+                            color="#F4D35E",
+                        ),
+                        ProjectRoi(
+                            id="roi_review_polygon",
+                            document_id=document.id,
+                            name="批次 07 自由区域",
+                            geometry=PolygonRoiGeometry(
+                                rings=(
+                                    (
+                                        RoiPoint(780.0, 470.0),
+                                        RoiPoint(1080.0, 450.0),
+                                        RoiPoint(1120.0, 700.0),
+                                        RoiPoint(820.0, 690.0),
+                                    ),
+                                )
+                            ),
+                            color="#1C9ECB",
+                        ),
+                    )
+                )
             if args.scenario != "empty":
                 widget._add_loaded_document(
                     ImageLoadRequest(path=document.path, document=document),

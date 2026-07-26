@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, fields
 from datetime import datetime, timedelta
+from importlib import metadata as importlib_metadata
 from pathlib import Path
 from queue import Empty, Full, Queue
 from threading import Lock, Thread, current_thread
@@ -106,7 +107,22 @@ from fdm.models import (
     project_capture_root,
     project_slide_root,
 )
-from fdm.raster import RasterPlane
+from fdm.image_processing_models import (
+    DisplayTransform,
+    ImageDerivation,
+    ImageOperationSpec,
+    ImageProcessingRecipe,
+)
+from fdm.project_roi import (
+    RoiBooleanExpression,
+    RoiBooleanOperator,
+    PolygonRoiGeometry,
+    ProjectRoi,
+    ProjectRoiKind,
+    RoiPoint,
+    rasterize_roi_mask,
+)
+from fdm.raster import RasterPixelType, RasterPlane
 from fdm.release_manifest import packaged_runtime_features, runtime_capability_hint
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
@@ -193,6 +209,7 @@ from fdm.services.raster_io import (
     recommended_native_asset_suffix,
     write_native_raster_asset,
 )
+from fdm.services.image_processing import ImageOperation
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
 from fdm.ui.canvas import (
@@ -223,6 +240,17 @@ from fdm.ui.export_controller import ExportController
 from fdm.ui.fullscreen import FullscreenMeasurementController
 from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageLoadRequest, raster_document_contract_error
+from fdm.ui.display_adjustment_dialog import (
+    DisplayAdjustmentAction,
+    DisplayAdjustmentDialog,
+    DisplayAdjustmentResult,
+)
+from fdm.ui.image_processing_workbench import (
+    ImageProcessingWorkbench,
+    WorkbenchTaskKind,
+    WorkbenchTaskResult,
+    default_operation_spec,
+)
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
 from fdm.ui.measurement_results_model import (
     MEASUREMENT_ID_ROLE,
@@ -235,6 +263,15 @@ from fdm.ui.measurement_results_model import (
     format_measurement_status as _format_measurement_status_label,
 )
 from fdm.ui.measurement_records import MeasurementRecordsController, MeasurementRecordsPane
+from fdm.ui.roi_manager import (
+    RoiBooleanRequest,
+    RoiCreateFromAreaRequest,
+    RoiCreateRequest,
+    RoiDeleteRequest,
+    RoiManagerPanel,
+    RoiMetadataChangeRequest,
+    RoiSelectionRequest,
+)
 from fdm.ui.object_inspector import CurrentObjectInspector
 from fdm.ui.preview_analysis_task_controller import PreviewAnalysisTaskController
 from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
@@ -754,6 +791,15 @@ class DigitalSlideReadiness:
     has_output_path: bool
 
 
+@dataclass(frozen=True, slots=True)
+class ImageProcessingSourceContext:
+    document_id: str
+    plane: RasterPlane
+    source_path: str
+    derivation_prefix: tuple[ImageOperationSpec, ...] = ()
+    source_signature: tuple[object, ...] = ()
+
+
 class SmallObjectEnhancementPreviewWindow(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
@@ -933,6 +979,18 @@ class MainWindow(QMainWindow):
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterPlane] = {}
         self._raster_metadata: dict[str, RasterMetadata] = {}
+        self._display_cache_transforms: dict[
+            str,
+            DisplayTransform | None,
+        ] = {}
+        self._display_adjustment_dialog: DisplayAdjustmentDialog | None = None
+        self._display_adjustment_document_id: str | None = None
+        self._image_processing_workbench: ImageProcessingWorkbench | None = None
+        self._image_processing_source_context: ImageProcessingSourceContext | None = None
+        self._image_operation_actions: dict[str, QAction] = {}
+        self._session_processed_root: Path | None = None
+        self._session_processed_assets: dict[str, Path] = {}
+        self._cleanup_abandoned_processed_sessions()
         self._canvases: dict[str, DocumentCanvas] = {}
         self._canvas_navigators: dict[str, CanvasNavigatorWidget] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
@@ -969,6 +1027,8 @@ class MainWindow(QMainWindow):
         self._overlay_subtool_actions: dict[str, QAction] = {}
         self._left_panel: QWidget | None = None
         self._left_panel_splitter: QSplitter | None = None
+        self._roi_manager: RoiManagerPanel | None = None
+        self._selected_project_roi_ids: tuple[str, ...] = ()
         self._right_panel: QWidget | None = None
         self._project_dock: WorkspaceDockWidget | None = None
         self._inspector_dock: WorkspaceDockWidget | None = None
@@ -1760,6 +1820,104 @@ class MainWindow(QMainWindow):
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
 
+        self.image_processing_workbench_action = QAction(
+            "图像处理工作台…",
+            self,
+        )
+        self.image_processing_workbench_action.setToolTip(
+            "以原始像素为输入，预览有序处理步骤并生成新的派生图片"
+        )
+        self.image_processing_workbench_action.triggered.connect(
+            self._open_image_processing_workbench
+        )
+        self._create_image_operation_actions()
+
+    def _create_image_operation_actions(self) -> None:
+        labels = {
+            ImageOperation.CONVERT_TYPE: "转换像素类型…",
+            ImageOperation.CONVERT_COLOR: "转换颜色模型…",
+            ImageOperation.COLOR_BALANCE: "色彩平衡…",
+            ImageOperation.BRIGHTNESS_CONTRAST: "亮度 / 对比度…",
+            ImageOperation.ADJUST_LEVELS: "窗宽 / 窗位与色阶…",
+            ImageOperation.THRESHOLD: "阈值…",
+            ImageOperation.FLIP_HORIZONTAL: "水平翻转",
+            ImageOperation.FLIP_VERTICAL: "垂直翻转",
+            ImageOperation.ROTATE_90_COUNTERCLOCKWISE: "左转 90°",
+            ImageOperation.ROTATE_90_CLOCKWISE: "右转 90°",
+            ImageOperation.ROTATE_180: "旋转 180°",
+            ImageOperation.ROTATE: "任意角度旋转…",
+            ImageOperation.CROP: "裁剪…",
+            ImageOperation.RESIZE: "调整图像大小…",
+            ImageOperation.TRANSLATE: "平移…",
+            ImageOperation.RESIZE_CANVAS: "调整画布大小…",
+            ImageOperation.PIXEL_BIN: "像素合并…",
+            ImageOperation.MEAN_FILTER: "均值 / 方框滤波…",
+            ImageOperation.GAUSSIAN_BLUR: "高斯滤波…",
+            ImageOperation.MEDIAN_FILTER: "中值滤波 / 去斑…",
+            ImageOperation.BILATERAL_FILTER: "双边滤波…",
+            ImageOperation.UNSHARP_MASK: "锐化 / 反锐化遮罩…",
+            ImageOperation.SOBEL_EDGES: "Sobel 边缘…",
+            ImageOperation.LAPLACIAN_EDGES: "Laplacian 边缘…",
+            ImageOperation.CANNY_EDGES: "Canny 边缘…",
+            ImageOperation.NORMALIZE: "归一化…",
+            ImageOperation.HISTOGRAM_EQUALIZATION: "直方图均衡",
+            ImageOperation.CLAHE: "CLAHE…",
+            ImageOperation.REMOVE_OUTLIERS: "热点 / 坏点剔除…",
+            ImageOperation.REPAIR_NONFINITE: "修复 NaN / Inf…",
+            ImageOperation.AUTO_THRESHOLD: "自动阈值…",
+            ImageOperation.BINARIZE: "二值化…",
+            ImageOperation.ERODE: "腐蚀…",
+            ImageOperation.DILATE: "膨胀…",
+            ImageOperation.MORPHOLOGY_OPEN: "开运算…",
+            ImageOperation.MORPHOLOGY_CLOSE: "闭运算…",
+            ImageOperation.FILL_HOLES: "填充孔洞",
+            ImageOperation.CONTOUR_EXTRACT: "轮廓提取",
+            ImageOperation.TOP_HAT: "顶帽…",
+            ImageOperation.BLACK_HAT: "黑帽…",
+            ImageOperation.REMOVE_SMALL_OBJECTS: "删除小对象…",
+            ImageOperation.FILL_SMALL_HOLES: "填充小孔洞…",
+            ImageOperation.DISTANCE_TRANSFORM: "距离变换…",
+            ImageOperation.SKELETONIZE: "骨架化",
+            ImageOperation.WATERSHED: "分水岭分割…",
+            ImageOperation.BACKGROUND_SUBTRACT: "背景扣除…",
+            ImageOperation.CUSTOM_CONVOLUTION: "自定义卷积核…",
+            ImageOperation.INVERT: "反相",
+            ImageOperation.ADD: "加…",
+            ImageOperation.SUBTRACT: "减…",
+            ImageOperation.MULTIPLY: "乘…",
+            ImageOperation.DIVIDE: "除…",
+            ImageOperation.GAMMA: "Gamma…",
+            ImageOperation.LOG: "Log",
+            ImageOperation.EXP: "Exp",
+            ImageOperation.SQRT: "Sqrt",
+            ImageOperation.ABS: "Abs",
+            ImageOperation.CLAMP: "Clamp…",
+            ImageOperation.IMAGE_CALCULATOR: "图像计算器…",
+            ImageOperation.FFT_FILTER: "FFT / 带通滤波…",
+            ImageOperation.STRIPE_SUPPRESSION: "条纹抑制…",
+        }
+        for operation, label in labels.items():
+            action = QAction(label, self)
+            action.triggered.connect(
+                lambda _checked=False, selected=operation: (
+                    self._open_registered_image_operation(selected)
+                )
+            )
+            self._image_operation_actions[operation.value] = action
+
+    def _open_registered_image_operation(
+        self,
+        operation: ImageOperation,
+    ) -> None:
+        if operation in {
+            ImageOperation.BRIGHTNESS_CONTRAST,
+            ImageOperation.ADJUST_LEVELS,
+            ImageOperation.COLOR_BALANCE,
+        }:
+            self._open_display_adjustment_dialog()
+            return
+        self._open_image_processing_workbench(operation)
+
     def _build_menus(self) -> None:
         file_menu = self.menuBar().addMenu("文件")
         file_menu.addAction(self.open_images_action)
@@ -1785,6 +1943,111 @@ class MainWindow(QMainWindow):
         edit_menu.addAction(self.add_group_action)
         edit_menu.addAction(self.rename_group_action)
         edit_menu.addAction(self.delete_group_action)
+
+        image_menu = self.menuBar().addMenu("图像")
+        image_menu.addAction(self.image_processing_workbench_action)
+        image_menu.addSeparator()
+        image_type_menu = image_menu.addMenu("类型")
+        for operation in (
+            ImageOperation.CONVERT_TYPE,
+            ImageOperation.CONVERT_COLOR,
+        ):
+            image_type_menu.addAction(self._image_operation_actions[operation.value])
+        image_adjust_menu = image_menu.addMenu("调整")
+        for operation in (
+            ImageOperation.BRIGHTNESS_CONTRAST,
+            ImageOperation.ADJUST_LEVELS,
+            ImageOperation.COLOR_BALANCE,
+            ImageOperation.THRESHOLD,
+        ):
+            image_adjust_menu.addAction(self._image_operation_actions[operation.value])
+        image_transform_menu = image_menu.addMenu("变换")
+        for operation in (
+            ImageOperation.FLIP_HORIZONTAL,
+            ImageOperation.FLIP_VERTICAL,
+            ImageOperation.ROTATE_90_COUNTERCLOCKWISE,
+            ImageOperation.ROTATE_90_CLOCKWISE,
+            ImageOperation.ROTATE,
+            ImageOperation.TRANSLATE,
+            ImageOperation.CROP,
+            ImageOperation.RESIZE,
+            ImageOperation.RESIZE_CANVAS,
+            ImageOperation.PIXEL_BIN,
+        ):
+            image_transform_menu.addAction(
+                self._image_operation_actions[operation.value]
+            )
+
+        process_menu = self.menuBar().addMenu("处理")
+        process_menu.addAction(self.image_processing_workbench_action)
+        process_menu.addSeparator()
+        process_groups: tuple[tuple[str, tuple[ImageOperation, ...]], ...] = (
+            (
+                "滤波与增强",
+                (
+                    ImageOperation.MEAN_FILTER,
+                    ImageOperation.GAUSSIAN_BLUR,
+                    ImageOperation.MEDIAN_FILTER,
+                    ImageOperation.BILATERAL_FILTER,
+                    ImageOperation.UNSHARP_MASK,
+                    ImageOperation.SOBEL_EDGES,
+                    ImageOperation.LAPLACIAN_EDGES,
+                    ImageOperation.CANNY_EDGES,
+                    ImageOperation.NORMALIZE,
+                    ImageOperation.HISTOGRAM_EQUALIZATION,
+                    ImageOperation.CLAHE,
+                    ImageOperation.REMOVE_OUTLIERS,
+                    ImageOperation.REPAIR_NONFINITE,
+                ),
+            ),
+            (
+                "二值与形态学",
+                (
+                    ImageOperation.AUTO_THRESHOLD,
+                    ImageOperation.BINARIZE,
+                    ImageOperation.ERODE,
+                    ImageOperation.DILATE,
+                    ImageOperation.MORPHOLOGY_OPEN,
+                    ImageOperation.MORPHOLOGY_CLOSE,
+                    ImageOperation.FILL_HOLES,
+                    ImageOperation.CONTOUR_EXTRACT,
+                    ImageOperation.TOP_HAT,
+                    ImageOperation.BLACK_HAT,
+                    ImageOperation.REMOVE_SMALL_OBJECTS,
+                    ImageOperation.FILL_SMALL_HOLES,
+                    ImageOperation.DISTANCE_TRANSFORM,
+                    ImageOperation.SKELETONIZE,
+                    ImageOperation.WATERSHED,
+                ),
+            ),
+            (
+                "背景、数学与频域",
+                (
+                    ImageOperation.BACKGROUND_SUBTRACT,
+                    ImageOperation.CUSTOM_CONVOLUTION,
+                    ImageOperation.INVERT,
+                    ImageOperation.ADD,
+                    ImageOperation.SUBTRACT,
+                    ImageOperation.MULTIPLY,
+                    ImageOperation.DIVIDE,
+                    ImageOperation.GAMMA,
+                    ImageOperation.LOG,
+                    ImageOperation.EXP,
+                    ImageOperation.SQRT,
+                    ImageOperation.ABS,
+                    ImageOperation.CLAMP,
+                    ImageOperation.IMAGE_CALCULATOR,
+                    ImageOperation.FFT_FILTER,
+                    ImageOperation.STRIPE_SUPPRESSION,
+                ),
+            ),
+        )
+        for group_label, operations in process_groups:
+            submenu = process_menu.addMenu(group_label)
+            for operation in operations:
+                submenu.addAction(
+                    self._image_operation_actions[operation.value]
+                )
 
         tool_menu = self.menuBar().addMenu("工具")
         for action in self._mode_actions.values():
@@ -2449,6 +2712,11 @@ class MainWindow(QMainWindow):
         image_layout.addWidget(self.image_list)
 
         group_box = QGroupBox("纤维类别", standard_content)
+        # The ROI manager is a third splitter child.  Keep the high-frequency
+        # category editor at its established usable height instead of letting
+        # QSplitter divide the available height equally and squeeze it.  The
+        # enclosing scroll area provides the small-screen fallback.
+        group_box.setMinimumHeight(340)
         group_layout = QVBoxLayout(group_box)
         header_row = QHBoxLayout()
         header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
@@ -2518,14 +2786,39 @@ class MainWindow(QMainWindow):
         group_button_row.addWidget(self.delete_group_button)
         group_layout.addWidget(group_button_host)
 
+        self._roi_manager = RoiManagerPanel(standard_content)
+        self._roi_manager.createRequested.connect(
+            self._on_roi_create_requested
+        )
+        self._roi_manager.createFromAreaRequested.connect(
+            self._on_roi_create_from_area_requested
+        )
+        self._roi_manager.metadataChangeRequested.connect(
+            self._on_roi_metadata_change_requested
+        )
+        self._roi_manager.deleteRequested.connect(
+            self._on_roi_delete_requested
+        )
+        self._roi_manager.booleanOperationRequested.connect(
+            self._on_roi_boolean_requested
+        )
+        self._roi_manager.selectionChanged.connect(
+            self._on_roi_selection_changed
+        )
+        self._roi_manager.locateRequested.connect(
+            self._on_roi_locate_requested
+        )
+
         splitter = QSplitter(Qt.Orientation.Vertical)
         self._left_panel_splitter = splitter
         splitter.setChildrenCollapsible(False)
         splitter.addWidget(image_box)
         splitter.addWidget(group_box)
+        splitter.addWidget(self._roi_manager)
         splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 0)
-        splitter.setSizes([280, 420])
+        splitter.setStretchFactor(1, 2)
+        splitter.setStretchFactor(2, 1)
+        splitter.setSizes([260, 680, 260])
         standard_layout.addWidget(splitter, 1)
         standard_scroll.setWidget(standard_content)
         self._left_standard_splitter = standard_scroll
@@ -3795,6 +4088,1373 @@ class MainWindow(QMainWindow):
         if document is None:
             return None
         return self._canvases.get(document.id)
+
+    def _open_display_adjustment_dialog(self) -> None:
+        document = self.current_document()
+        if document is None:
+            QMessageBox.information(
+                self,
+                "显示调整",
+                "请先打开一张普通图片。",
+            )
+            return
+        if document.is_digital_slide():
+            QMessageBox.information(
+                self,
+                "显示调整",
+                "数字化切片不会整体载入内存。请先在“图像处理工作台”"
+                "冻结当前焦层和当前原始像素视窗，再生成普通派生图片。",
+            )
+            return
+        plane = self._rasters.get(document.id)
+        if plane is None:
+            QMessageBox.warning(
+                self,
+                "显示调整",
+                "当前图片没有可用的原始像素数据。",
+            )
+            return
+        if self._image_processing_workbench is not None:
+            QMessageBox.information(
+                self,
+                "显示调整",
+                "请先完成或取消当前图像处理任务。",
+            )
+            return
+        existing = self._display_adjustment_dialog
+        if existing is not None:
+            if self._display_adjustment_document_id == document.id:
+                existing.showNormal()
+                existing.raise_()
+                existing.activateWindow()
+                return
+            self._close_display_adjustment_dialog()
+
+        dialog = DisplayAdjustmentDialog(
+            plane,
+            document.display_transform,
+            source_name=self._document_display_name(document),
+            parent=self,
+        )
+        dialog.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        document_id = document.id
+        source_sha256 = plane.sha256()
+        self._display_adjustment_dialog = dialog
+        self._display_adjustment_document_id = document_id
+        dialog.previewTransformChanged.connect(
+            lambda transform, target_id=document_id, source_sha=source_sha256: (
+                self._preview_document_display_transform(
+                    target_id,
+                    source_sha,
+                    transform,
+                )
+            )
+        )
+        dialog.resultReady.connect(
+            lambda result, target=dialog, target_id=document_id: (
+                self._on_display_adjustment_result(
+                    target,
+                    target_id,
+                    result,
+                )
+            )
+        )
+        dialog.destroyed.connect(
+            lambda _object=None, target=dialog: (
+                self._clear_display_adjustment_dialog(target)
+            )
+        )
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _clear_display_adjustment_dialog(
+        self,
+        dialog: DisplayAdjustmentDialog,
+    ) -> None:
+        if self._display_adjustment_dialog is dialog:
+            self._display_adjustment_dialog = None
+            self._display_adjustment_document_id = None
+
+    def _close_display_adjustment_dialog(self) -> None:
+        dialog = self._display_adjustment_dialog
+        if dialog is None:
+            return
+        dialog.reject()
+        dialog.deleteLater()
+        if self._display_adjustment_dialog is dialog:
+            self._display_adjustment_dialog = None
+            self._display_adjustment_document_id = None
+
+    def _display_source_matches(
+        self,
+        document_id: str,
+        source_sha256: str,
+    ) -> bool:
+        plane = self._rasters.get(document_id)
+        return (
+            plane is not None
+            and plane.sha256() == str(source_sha256)
+            and self.project.get_document(document_id) is not None
+        )
+
+    def _render_document_display_transform(
+        self,
+        document_id: str,
+        transform: DisplayTransform | None,
+        *,
+        commit_cache: bool,
+    ) -> bool:
+        plane = self._rasters.get(document_id)
+        document = self.project.get_document(document_id)
+        if plane is None or document is None:
+            return False
+        try:
+            image = (
+                raster_plane_to_qimage(plane)
+                if transform is None
+                else raster_plane_to_qimage(
+                    plane,
+                    display_transform=transform,
+                )
+            )
+        except (TypeError, ValueError, RuntimeError) as exc:
+            self.statusBar().showMessage(
+                f"无法应用显示设置：{exc}",
+                5000,
+            )
+            return False
+        if image.isNull():
+            self.statusBar().showMessage(
+                "无法应用显示设置：显示缓存为空。",
+                5000,
+            )
+            return False
+        canvas = self._canvases.get(document_id)
+        if canvas is not None:
+            canvas.set_image(image)
+        navigator = self._canvas_navigators.get(document_id)
+        if navigator is not None:
+            navigator.set_source_image(image)
+        if commit_cache:
+            self._images[document_id] = image
+            self._display_cache_transforms[document_id] = transform
+        return True
+
+    def _preview_document_display_transform(
+        self,
+        document_id: str,
+        source_sha256: str,
+        transform: object,
+    ) -> None:
+        if (
+            not isinstance(transform, DisplayTransform)
+            or not self._display_source_matches(document_id, source_sha256)
+        ):
+            return
+        self._render_document_display_transform(
+            document_id,
+            transform,
+            commit_cache=False,
+        )
+
+    def _restore_committed_document_display(self, document_id: str) -> None:
+        image = self._images.get(document_id)
+        if image is None or image.isNull():
+            document = self.project.get_document(document_id)
+            if document is not None:
+                self._render_document_display_transform(
+                    document_id,
+                    document.display_transform,
+                    commit_cache=True,
+                )
+            return
+        canvas = self._canvases.get(document_id)
+        if canvas is not None:
+            canvas.set_image(image)
+        navigator = self._canvas_navigators.get(document_id)
+        if navigator is not None:
+            navigator.set_source_image(image)
+
+    def _ensure_document_display_cache(
+        self,
+        document: ImageDocument | None,
+    ) -> None:
+        if document is None or document.is_digital_slide():
+            return
+        if (
+            document.id in self._display_cache_transforms
+            and self._display_cache_transforms[document.id]
+            == document.display_transform
+        ):
+            return
+        self._render_document_display_transform(
+            document.id,
+            document.display_transform,
+            commit_cache=True,
+        )
+
+    def _on_display_adjustment_result(
+        self,
+        dialog: DisplayAdjustmentDialog,
+        document_id: str,
+        payload: object,
+    ) -> None:
+        if not isinstance(payload, DisplayAdjustmentResult):
+            return
+        is_current_source = self._display_source_matches(
+            document_id,
+            payload.source_sha256,
+        )
+        document = self.project.get_document(document_id)
+        if not is_current_source or document is None:
+            self._restore_committed_document_display(document_id)
+            if payload.action is not DisplayAdjustmentAction.CANCEL:
+                QMessageBox.warning(
+                    self,
+                    "显示调整",
+                    "源图片已经关闭或像素版本已变化，已丢弃晚到设置。",
+                )
+            self._clear_display_adjustment_dialog(dialog)
+            dialog.deleteLater()
+            return
+
+        if payload.action is DisplayAdjustmentAction.CANCEL:
+            self._restore_committed_document_display(document_id)
+        elif payload.action is DisplayAdjustmentAction.APPLY_DISPLAY:
+            stored_transform = (
+                None
+                if payload.transform.is_identity
+                else payload.transform
+            )
+            changed = self._apply_document_change(
+                document,
+                "调整图片显示",
+                lambda: setattr(
+                    document,
+                    "display_transform",
+                    stored_transform,
+                ),
+            )
+            if not changed:
+                self._restore_committed_document_display(document_id)
+            self.statusBar().showMessage(
+                "显示设置已应用；原始像素和测量值未改变。",
+                5000,
+            )
+        else:
+            self._restore_committed_document_display(document_id)
+            operations = payload.bake_operations
+            self._clear_display_adjustment_dialog(dialog)
+            dialog.deleteLater()
+            self._open_image_processing_workbench()
+            workbench = self._image_processing_workbench
+            if workbench is not None:
+                try:
+                    workbench.set_operation_steps(operations)
+                    workbench.generate_derived_image()
+                except (TypeError, ValueError) as exc:
+                    QMessageBox.warning(
+                        self,
+                        "生成派生图片",
+                        f"无法提交显示烘焙步骤：\n{exc}",
+                    )
+            return
+
+        self._clear_display_adjustment_dialog(dialog)
+        dialog.deleteLater()
+
+    def _create_processing_source_context(
+        self,
+    ) -> tuple[ImageProcessingSourceContext, object | None, str] | None:
+        document = self.current_document()
+        if document is None:
+            QMessageBox.information(
+                self,
+                "图像处理",
+                "请先打开一张图片或数字化切片。",
+            )
+            return None
+        derivation_prefix: tuple[ImageOperationSpec, ...] = ()
+        frozen_slide_viewport = False
+        if document.is_digital_slide():
+            canvas = self._canvases.get(document.id)
+            store = self._slide_stores.get(document.id)
+            if not isinstance(canvas, DigitalSlideCanvas) or store is None:
+                QMessageBox.warning(
+                    self,
+                    "图像处理",
+                    "当前数字化切片的视窗资源不可用。",
+                )
+                return None
+            try:
+                manifest = store.read_manifest()
+                origin = canvas.viewport_origin()
+                focus_index = canvas.focus_index()
+                x = int(round(origin.x))
+                y = int(round(origin.y))
+                width = int(manifest.viewport_width)
+                height = int(manifest.viewport_height)
+                image = store.render_viewport(
+                    x=x,
+                    y=y,
+                    width=width,
+                    height=height,
+                    z_index=focus_index,
+                )
+                if image.isNull():
+                    raise ValueError("数字化切片返回了空视窗")
+                plane = qimage_to_raster_plane(image)
+            except Exception as exc:  # noqa: BLE001 - one Chinese UI boundary
+                QMessageBox.warning(
+                    self,
+                    "图像处理",
+                    f"无法冻结当前数字化切片视窗：\n{exc}",
+                )
+                return None
+            signature: tuple[object, ...] = (
+                document.id,
+                "digital_slide_viewport",
+                focus_index,
+                x,
+                y,
+                width,
+                height,
+            )
+            derivation_prefix = (
+                ImageOperationSpec(
+                    "freeze_digital_slide_viewport",
+                    {
+                        "focus_index": focus_index,
+                        "viewport_origin_x": x,
+                        "viewport_origin_y": y,
+                        "viewport_width": width,
+                        "viewport_height": height,
+                    },
+                    implementation="fdm",
+                    implementation_version="1",
+                ),
+            )
+            frozen_slide_viewport = True
+        else:
+            plane = self._rasters.get(document.id)
+            if plane is None:
+                QMessageBox.warning(
+                    self,
+                    "图像处理",
+                    "当前图片没有可用的原始像素数据。",
+                )
+                return None
+            signature = (document.id, "raster", plane.sha256())
+
+        if frozen_slide_viewport:
+            roi_mask, roi_summary = (
+                None,
+                "当前焦层、当前原始像素视窗",
+            )
+        else:
+            try:
+                roi_mask, roi_summary = self._processing_roi_snapshot(
+                    document,
+                    plane,
+                )
+            except (KeyError, TypeError, ValueError) as exc:
+                QMessageBox.warning(
+                    self,
+                    "图像处理",
+                    "当前 ROI 无法生成精确的原始像素掩膜，"
+                    f"已取消本次处理：\n{exc}",
+                )
+                return None
+        return (
+            ImageProcessingSourceContext(
+                document_id=document.id,
+                plane=plane,
+                source_path=document.path,
+                derivation_prefix=derivation_prefix,
+                source_signature=signature,
+            ),
+            roi_mask,
+            roi_summary,
+        )
+
+    def _processing_roi_snapshot(
+        self,
+        document: ImageDocument,
+        plane: RasterPlane,
+    ) -> tuple[object | None, str]:
+        selected_roi_id: str | None = None
+        roi_manager = getattr(self, "_roi_manager", None)
+        if roi_manager is not None:
+            selected_ids = getattr(roi_manager, "selected_roi_ids", None)
+            if callable(selected_ids):
+                try:
+                    selected = tuple(selected_ids())
+                except Exception:
+                    selected = ()
+                if selected:
+                    selected_roi_id = str(selected[0])
+            for accessor_name in (
+                "selected_roi_id",
+                "current_roi_id",
+            ):
+                if selected_roi_id is not None:
+                    break
+                accessor = getattr(roi_manager, accessor_name, None)
+                try:
+                    candidate = accessor() if callable(accessor) else accessor
+                except Exception:
+                    candidate = None
+                if candidate:
+                    selected_roi_id = str(candidate)
+                    break
+        roi = self.project.get_project_roi(selected_roi_id) if selected_roi_id else None
+        if roi is not None and roi.document_id == document.id:
+            lookup = {
+                item.id: item
+                for item in self.project.project_rois
+                if item.document_id == document.id
+            }
+            return (
+                rasterize_roi_mask(
+                    roi,
+                    plane.width,
+                    plane.height,
+                    roi_lookup=lookup,
+                ),
+                f"ROI：{roi.name}",
+            )
+
+        measurement = document.get_measurement(
+            document.view_state.selected_measurement_id
+        )
+        if measurement is not None and measurement.measurement_kind == "area":
+            rings = measurement.area_rings_px or (
+                [measurement.polygon_px] if measurement.polygon_px else []
+            )
+            if rings:
+                temporary_roi = ProjectRoi(
+                    id=f"temporary_{measurement.id}",
+                    document_id=document.id,
+                    name="当前面积对象",
+                    geometry=PolygonRoiGeometry(
+                        rings=tuple(
+                            tuple(RoiPoint(point.x, point.y) for point in ring)
+                            for ring in rings
+                        )
+                    ),
+                )
+                return (
+                    rasterize_roi_mask(
+                        temporary_roi,
+                        plane.width,
+                        plane.height,
+                    ),
+                    "当前选中的面积对象（临时 ROI）",
+                )
+        return None, "整张图片"
+
+    def _refresh_project_roi_ui(self) -> None:
+        document = self.current_document()
+        document_id = document.id if document is not None else None
+        if self._roi_manager is not None:
+            self._roi_manager.set_current_document(document_id)
+            self._roi_manager.set_rois(self.project.project_rois)
+            selected_area_id: str | None = None
+            if document is not None:
+                measurement = document.get_measurement(
+                    document.view_state.selected_measurement_id
+                )
+                if (
+                    measurement is not None
+                    and measurement.measurement_kind == "area"
+                ):
+                    selected_area_id = measurement.id
+            self._roi_manager.set_current_area_measurement(
+                selected_area_id
+            )
+            valid_selection = tuple(
+                roi_id
+                for roi_id in self._selected_project_roi_ids
+                if (
+                    (roi := self.project.get_project_roi(roi_id)) is not None
+                    and roi.document_id == document_id
+                )
+            )
+            self._selected_project_roi_ids = valid_selection
+            self._roi_manager.select_rois(valid_selection)
+        if document is not None:
+            canvas = self._canvases.get(document.id)
+            setter = getattr(canvas, "set_project_rois", None)
+            if callable(setter):
+                lookup = {
+                    roi.id: roi
+                    for roi in self.project.project_rois
+                    if roi.document_id == document.id
+                }
+                setter(tuple(lookup.values()), lookup)
+
+    def _roi_request_target_is_current(
+        self,
+        *,
+        document_id: str,
+        roi_id: str,
+        expected_revision: int,
+    ) -> ProjectRoi | None:
+        roi = self.project.get_project_roi(roi_id)
+        if (
+            roi is None
+            or roi.document_id != document_id
+            or roi.revision != expected_revision
+        ):
+            QMessageBox.warning(
+                self,
+                "ROI",
+                "ROI 已被其他操作修改，请刷新后重试。",
+            )
+            return None
+        return roi
+
+    def _append_project_roi(
+        self,
+        roi: ProjectRoi,
+        *,
+        status_message: str,
+    ) -> None:
+        if self.project.get_document(roi.document_id) is None:
+            return
+        if self.project.get_project_roi(roi.id) is not None:
+            QMessageBox.warning(self, "ROI", "ROI ID 冲突，未创建对象。")
+            return
+        self.project.project_rois.append(roi)
+        self.project.mark_extension_changed()
+        self._selected_project_roi_ids = (roi.id,)
+        self._refresh_project_roi_ui()
+        self._update_project_navigation_summary()
+        self.statusBar().showMessage(status_message, 4000)
+
+    def _on_roi_create_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiCreateRequest):
+            return
+        document = self.current_document()
+        canvas = self.current_canvas()
+        if (
+            document is None
+            or document.id != payload.document_id
+            or canvas is None
+        ):
+            return
+        starter = getattr(canvas, "begin_roi_capture", None)
+        if not callable(starter):
+            QMessageBox.information(
+                self,
+                "新建 ROI",
+                "当前画布暂不支持交互式 ROI 捕获。",
+            )
+            return
+        if starter(payload.kind, request_id=payload.request_id):
+            self.statusBar().showMessage(
+                "请在画布上绘制 ROI；Enter 或双击完成，Esc 取消。",
+                5000,
+            )
+            self._focus_current_canvas()
+
+    def _on_canvas_roi_geometry_committed(self, payload: object) -> None:
+        document_id = str(getattr(payload, "document_id", "") or "")
+        document = self.project.get_document(document_id)
+        geometry = getattr(payload, "geometry", None)
+        if document is None or geometry is None:
+            return
+        kind = getattr(payload, "kind", getattr(geometry, "kind", "roi"))
+        kind_label = {
+            ProjectRoiKind.RECTANGLE: "矩形",
+            ProjectRoiKind.ELLIPSE: "椭圆",
+            ProjectRoiKind.POLYGON: "多边形",
+            ProjectRoiKind.FREEHAND: "自由形状",
+        }.get(kind, "ROI")
+        existing_count = sum(
+            roi.document_id == document_id
+            for roi in self.project.project_rois
+        )
+        roi = ProjectRoi(
+            id=new_id("roi"),
+            document_id=document_id,
+            name=f"{kind_label} ROI {existing_count + 1}",
+            geometry=geometry,
+        )
+        self._append_project_roi(
+            roi,
+            status_message=f"已创建“{roi.name}”。",
+        )
+
+    def _on_roi_create_from_area_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiCreateFromAreaRequest):
+            return
+        document = self.project.get_document(payload.document_id)
+        measurement = (
+            document.get_measurement(payload.measurement_id)
+            if document is not None
+            else None
+        )
+        if (
+            document is None
+            or measurement is None
+            or measurement.measurement_kind != "area"
+        ):
+            QMessageBox.warning(
+                self,
+                "从面积创建 ROI",
+                "当前面积对象已不存在或类型不匹配。",
+            )
+            return
+        rings = measurement.area_rings_px or (
+            [measurement.polygon_px] if measurement.polygon_px else []
+        )
+        if not rings:
+            QMessageBox.warning(
+                self,
+                "从面积创建 ROI",
+                "当前面积对象没有有效的原始 rings。",
+            )
+            return
+        roi = ProjectRoi(
+            id=new_id("roi"),
+            document_id=document.id,
+            name=f"面积 ROI {len(self.project.project_rois) + 1}",
+            geometry=PolygonRoiGeometry(
+                rings=tuple(
+                    tuple(RoiPoint(point.x, point.y) for point in ring)
+                    for ring in rings
+                )
+            ),
+        )
+        self._append_project_roi(
+            roi,
+            status_message="已按原始面积 rings 创建 ROI。",
+        )
+
+    def _on_roi_metadata_change_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiMetadataChangeRequest):
+            return
+        roi = self._roi_request_target_is_current(
+            document_id=payload.document_id,
+            roi_id=payload.target.roi_id,
+            expected_revision=payload.target.expected_revision,
+        )
+        if roi is None:
+            self._refresh_project_roi_ui()
+            return
+        replacement = roi.with_metadata(
+            name=payload.name,
+            group=payload.group,
+            visible=payload.visible,
+            locked=payload.locked,
+            color=payload.color,
+        )
+        if replacement == roi:
+            return
+        self.project.project_rois = [
+            replacement if item.id == roi.id else item
+            for item in self.project.project_rois
+        ]
+        self.project.mark_extension_changed()
+        self._refresh_project_roi_ui()
+        self._update_project_navigation_summary()
+
+    def _on_roi_delete_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiDeleteRequest):
+            return
+        targets: list[ProjectRoi] = []
+        for reference in payload.targets:
+            roi = self._roi_request_target_is_current(
+                document_id=payload.document_id,
+                roi_id=reference.roi_id,
+                expected_revision=reference.expected_revision,
+            )
+            if roi is None:
+                self._refresh_project_roi_ui()
+                return
+            targets.append(roi)
+        target_ids = {roi.id for roi in targets}
+        dependent_ids = {
+            roi.id
+            for roi in self.project.project_rois
+            if (
+                roi.document_id == payload.document_id
+                and isinstance(roi.geometry, RoiBooleanExpression)
+                and target_ids.intersection(roi.geometry.operand_ids)
+            )
+        }
+        removed_ids = target_ids | dependent_ids
+        self.project.project_rois = [
+            roi
+            for roi in self.project.project_rois
+            if roi.id not in removed_ids
+        ]
+        self.project.mark_extension_changed()
+        self._selected_project_roi_ids = ()
+        self.project.refresh_analysis_validity(
+            payload.document_id,
+            roi_revisions={
+                roi.id: roi.revision
+                for roi in self.project.project_rois
+                if roi.document_id == payload.document_id
+            },
+        )
+        self._refresh_project_roi_ui()
+        self._update_project_navigation_summary()
+        suffix = (
+            f"，并移除 {len(dependent_ids)} 个依赖组合 ROI"
+            if dependent_ids
+            else ""
+        )
+        self.statusBar().showMessage(
+            f"已删除 {len(target_ids)} 个 ROI{suffix}。",
+            4000,
+        )
+
+    def _on_roi_boolean_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiBooleanRequest):
+            return
+        operands: list[ProjectRoi] = []
+        for reference in payload.operands:
+            roi = self._roi_request_target_is_current(
+                document_id=payload.document_id,
+                roi_id=reference.roi_id,
+                expected_revision=reference.expected_revision,
+            )
+            if roi is None:
+                self._refresh_project_roi_ui()
+                return
+            operands.append(roi)
+        operator_label = {
+            RoiBooleanOperator.UNION: "并集",
+            RoiBooleanOperator.INTERSECTION: "交集",
+            RoiBooleanOperator.DIFFERENCE: "差集",
+            RoiBooleanOperator.XOR: "异或",
+        }[payload.operator]
+        roi = ProjectRoi(
+            id=new_id("roi"),
+            document_id=payload.document_id,
+            name=f"ROI {operator_label} {len(self.project.project_rois) + 1}",
+            geometry=RoiBooleanExpression(
+                operator=payload.operator,
+                operand_ids=tuple(item.id for item in operands),
+            ),
+        )
+        self._append_project_roi(
+            roi,
+            status_message=f"已创建 ROI {operator_label}。",
+        )
+
+    def _on_roi_selection_changed(self, payload: object) -> None:
+        if not isinstance(payload, RoiSelectionRequest):
+            return
+        document = self.current_document()
+        if (
+            document is None
+            or payload.document_id != document.id
+        ):
+            self._selected_project_roi_ids = ()
+            return
+        self._selected_project_roi_ids = tuple(payload.roi_ids)
+
+    def _on_roi_locate_requested(self, payload: object) -> None:
+        if not isinstance(payload, RoiSelectionRequest) or not payload.roi_ids:
+            return
+        document = self.current_document()
+        canvas = self.current_canvas()
+        roi = self.project.get_project_roi(payload.roi_ids[0])
+        if (
+            document is None
+            or canvas is None
+            or roi is None
+            or roi.document_id != document.id
+        ):
+            return
+        lookup = {
+            item.id: item
+            for item in self.project.project_rois
+            if item.document_id == document.id
+        }
+        try:
+            left, top, right, bottom = roi.bounds(lookup)
+        except (KeyError, TypeError, ValueError):
+            return
+        canvas.center_on_image_point(
+            Point((left + right) / 2.0, (top + bottom) / 2.0)
+        )
+        self._selected_project_roi_ids = (roi.id,)
+        self._focus_current_canvas()
+
+    def _open_image_processing_workbench(
+        self,
+        operation: ImageOperation | bool | None = None,
+    ) -> None:
+        if self._display_adjustment_dialog is not None:
+            self._close_display_adjustment_dialog()
+        selected_operation = (
+            operation if isinstance(operation, ImageOperation) else None
+        )
+        existing = self._image_processing_workbench
+        if existing is not None and existing.isVisible():
+            same_document = bool(
+                self._image_processing_source_context
+                and self.current_document() is not None
+                and self._image_processing_source_context.document_id
+                == self.current_document().id
+            )
+            if same_document:
+                if selected_operation is not None and not existing.operation_steps():
+                    secondary_images, _secondary_names = (
+                        self._processing_secondary_images(
+                            self.current_document(),
+                            self._image_processing_source_context.plane,
+                        )
+                    )
+                    secondary_document_id = next(
+                        iter(secondary_images),
+                        None,
+                    )
+                    try:
+                        existing.set_operation_steps(
+                            (
+                                default_operation_spec(
+                                    selected_operation,
+                                    self._image_processing_source_context.plane.width,
+                                    self._image_processing_source_context.plane.height,
+                                    source_pixel_type=(
+                                        self._image_processing_source_context.plane.pixel_type
+                                    ),
+                                    secondary_document_id=secondary_document_id,
+                                ),
+                            )
+                        )
+                    except ValueError as exc:
+                        QMessageBox.information(
+                            self,
+                            "图像处理",
+                            str(exc),
+                        )
+                existing.showNormal()
+                existing.raise_()
+                existing.activateWindow()
+                return
+            if existing.operation_steps():
+                decision = QMessageBox.question(
+                    self,
+                    "切换处理源",
+                    "当前图像处理工作台中还有未生成的处理步骤。"
+                    "是否放弃这些步骤并切换到当前图片？",
+                    QMessageBox.StandardButton.Discard
+                    | QMessageBox.StandardButton.Cancel,
+                    QMessageBox.StandardButton.Cancel,
+                )
+                if decision != QMessageBox.StandardButton.Discard:
+                    return
+            self._close_image_processing_workbench(wait=True)
+
+        source = self._create_processing_source_context()
+        if source is None:
+            return
+        context, roi_mask, roi_summary = source
+        document = self.project.get_document(context.document_id)
+        if document is None:
+            return
+        secondary_images, secondary_names = self._processing_secondary_images(
+            document,
+            context.plane,
+        )
+        secondary_document_id = next(iter(secondary_images), None)
+        if (
+            selected_operation is ImageOperation.IMAGE_CALCULATOR
+            and secondary_document_id is None
+        ):
+            QMessageBox.information(
+                self,
+                "图像计算器",
+                "没有可用的第二幅图像。\n\n"
+                "候选图像必须是已打开的普通图片，并且与当前图片的"
+                "宽高、通道、位深和标定一致。",
+            )
+            return
+        workbench = ImageProcessingWorkbench(
+            context.plane,
+            source_document_id=context.document_id,
+            source_name=self._document_display_name(document),
+            roi_summary=roi_summary,
+            roi_mask=roi_mask,
+            secondary_images=secondary_images,
+            secondary_image_names=secondary_names,
+            parent=self,
+        )
+        self._image_processing_workbench = workbench
+        self._image_processing_source_context = context
+        workbench.derivedImageReady.connect(
+            self._on_derived_image_ready
+        )
+        workbench.destroyed.connect(
+            lambda _object=None, target=workbench: (
+                self._clear_image_processing_workbench(target)
+            )
+        )
+        if selected_operation is not None:
+            try:
+                workbench.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            selected_operation,
+                            context.plane.width,
+                            context.plane.height,
+                            source_pixel_type=context.plane.pixel_type,
+                            secondary_document_id=secondary_document_id,
+                        ),
+                    )
+                )
+            except ValueError as exc:
+                QMessageBox.warning(
+                    self,
+                    "图像处理",
+                    f"当前工作台尚未注册该操作：\n{exc}",
+                )
+        workbench.show()
+        workbench.raise_()
+        workbench.activateWindow()
+
+    def _processing_secondary_images(
+        self,
+        source_document: ImageDocument | None,
+        source_plane: RasterPlane,
+    ) -> tuple[dict[str, RasterPlane], dict[str, str]]:
+        """Return calculator candidates with explicit spatial/type compatibility.
+
+        The project currently has no registration transform between documents,
+        so equal dimensions and equal calibration are the only alignment
+        contract we can prove.  Images that do not satisfy it are not offered;
+        the processing service validates the pixel arrays again before use.
+        """
+
+        if source_document is None:
+            return {}, {}
+        source_calibration = (
+            None
+            if source_document.calibration is None
+            else (
+                source_document.calibration.unit,
+                float(source_document.calibration.pixels_per_unit),
+            )
+        )
+        candidates: dict[str, RasterPlane] = {}
+        names: dict[str, str] = {}
+        for document_id in self._document_order:
+            if document_id == source_document.id:
+                continue
+            document = self.project.get_document(document_id)
+            plane = self._rasters.get(document_id)
+            if document is None or plane is None or document.is_digital_slide():
+                continue
+            if (
+                plane.width != source_plane.width
+                or plane.height != source_plane.height
+                or plane.pixel_type is not source_plane.pixel_type
+            ):
+                continue
+            candidate_calibration = (
+                None
+                if document.calibration is None
+                else (
+                    document.calibration.unit,
+                    float(document.calibration.pixels_per_unit),
+                )
+            )
+            if candidate_calibration != source_calibration:
+                continue
+            candidates[document_id] = plane
+            names[document_id] = self._document_display_name(document)
+        return candidates, names
+
+    def _clear_image_processing_workbench(
+        self,
+        workbench: ImageProcessingWorkbench,
+    ) -> None:
+        if self._image_processing_workbench is workbench:
+            self._image_processing_workbench = None
+            self._image_processing_source_context = None
+
+    def _close_image_processing_workbench(self, *, wait: bool) -> bool:
+        workbench = self._image_processing_workbench
+        if workbench is None:
+            return True
+        workbench.cancel_tasks()
+        if wait and not workbench.task_controller.wait_for_done(5_000):
+            QMessageBox.warning(
+                self,
+                "图像处理",
+                "图像处理任务尚未安全退出，已阻止当前转换。",
+            )
+            return False
+        workbench.close()
+        workbench.deleteLater()
+        self._image_processing_workbench = None
+        self._image_processing_source_context = None
+        return True
+
+    def _processing_source_is_current(
+        self,
+        context: ImageProcessingSourceContext,
+    ) -> bool:
+        document = self.project.get_document(context.document_id)
+        if document is None:
+            return False
+        signature = context.source_signature
+        if len(signature) >= 2 and signature[1] == "raster":
+            plane = self._rasters.get(document.id)
+            return plane is not None and signature == (
+                document.id,
+                "raster",
+                plane.sha256(),
+            )
+        if len(signature) >= 7 and signature[1] == "digital_slide_viewport":
+            canvas = self._canvases.get(document.id)
+            if not isinstance(canvas, DigitalSlideCanvas):
+                return False
+            origin = canvas.viewport_origin()
+            return signature[:5] == (
+                document.id,
+                "digital_slide_viewport",
+                canvas.focus_index(),
+                int(round(origin.x)),
+                int(round(origin.y)),
+            )
+        return False
+
+    def _next_project_processed_relative_path(
+        self,
+        *,
+        pixel_type: RasterPixelType,
+    ) -> str:
+        existing = {
+            str(document.path)
+            for document in self.project.documents
+            if document.is_project_asset()
+        }
+        suffix = recommended_native_asset_suffix(pixel_type)
+        stamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        counter = 1
+        while True:
+            candidate = (
+                f"processed/derived_{stamp}_{counter:02d}{suffix}"
+            )
+            if candidate not in existing:
+                return candidate
+            counter += 1
+
+    def _derived_calibration(
+        self,
+        source_document: ImageDocument,
+        result: WorkbenchTaskResult,
+    ) -> Calibration | None | object:
+        calibration = source_document.calibration
+        if calibration is None:
+            return None
+        context = self._image_processing_source_context
+        if context is None:
+            return calibration.clone()
+        current_width = float(context.plane.width)
+        current_height = float(context.plane.height)
+        scale = 1.0
+        non_uniform = False
+        for step in result.recipe.operations:
+            parameters = step.parameters
+            operation_id = step.operation_id
+            if operation_id in {
+                ImageOperation.ROTATE_90_CLOCKWISE.value,
+                ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value,
+            }:
+                current_width, current_height = current_height, current_width
+            elif operation_id == ImageOperation.CROP.value:
+                current_width = float(parameters.get("width", current_width))
+                current_height = float(parameters.get("height", current_height))
+            elif operation_id == ImageOperation.RESIZE.value:
+                target_width = float(parameters.get("width", current_width))
+                target_height = float(parameters.get("height", current_height))
+                scale_x = target_width / max(1.0, current_width)
+                scale_y = target_height / max(1.0, current_height)
+                if not math.isclose(
+                    scale_x,
+                    scale_y,
+                    rel_tol=1e-9,
+                    abs_tol=1e-12,
+                ):
+                    non_uniform = True
+                else:
+                    scale *= scale_x
+                current_width, current_height = target_width, target_height
+            elif operation_id == ImageOperation.PIXEL_BIN.value:
+                factor = float(parameters.get("factor", 1))
+                if factor > 0:
+                    scale /= factor
+                    current_width = math.floor(current_width / factor)
+                    current_height = math.floor(current_height / factor)
+            elif operation_id == ImageOperation.RESIZE_CANVAS.value:
+                current_width = float(parameters.get("width", current_width))
+                current_height = float(parameters.get("height", current_height))
+        if non_uniform:
+            dialog = QMessageBox(self)
+            dialog.setWindowTitle("非等比例缩放")
+            dialog.setIcon(QMessageBox.Icon.Warning)
+            dialog.setText(
+                "当前处理配方包含非等比例缩放，无法保留一个统一的像素标尺。"
+            )
+            dialog.setInformativeText(
+                "可以明确清除派生图片的标定后继续；源图片及其标定不会改变。"
+            )
+            clear_button = dialog.addButton(
+                "清除标定并继续",
+                QMessageBox.ButtonRole.AcceptRole,
+            )
+            cancel_button = dialog.addButton(
+                "取消",
+                QMessageBox.ButtonRole.RejectRole,
+            )
+            dialog.setDefaultButton(cancel_button)
+            dialog.exec()
+            if dialog.clickedButton() is not clear_button:
+                return ...
+            return None
+        derived = calibration.clone(
+            mode=(
+                calibration.mode
+                if math.isclose(scale, 1.0, rel_tol=1e-12, abs_tol=1e-12)
+                else "derived"
+            ),
+            source_label=(
+                calibration.source_label
+                if math.isclose(scale, 1.0, rel_tol=1e-12, abs_tol=1e-12)
+                else f"{calibration.source_label} · 派生缩放"
+            ),
+        )
+        derived.pixels_per_unit *= scale
+        return derived
+
+    def _image_processing_library_versions(
+        self,
+    ) -> tuple[tuple[str, str], ...]:
+        versions: list[tuple[str, str]] = []
+        for display_name, distribution in (
+            ("NumPy", "numpy"),
+            ("Pillow", "Pillow"),
+            ("tifffile", "tifffile"),
+        ):
+            try:
+                version = importlib_metadata.version(distribution)
+            except importlib_metadata.PackageNotFoundError:
+                continue
+            versions.append((display_name, version))
+        try:
+            import cv2
+        except ImportError:
+            pass
+        else:
+            versions.append(("OpenCV", str(cv2.__version__)))
+        return tuple(versions)
+
+    def _derived_raster_metadata(
+        self,
+        context: ImageProcessingSourceContext,
+        result: WorkbenchTaskResult,
+    ) -> RasterMetadata | None:
+        """Preserve only metadata that remains valid after the explicit recipe."""
+
+        source_metadata = self._raster_metadata.get(context.document_id)
+        if source_metadata is None:
+            return None
+        dpi_x = source_metadata.dpi_x
+        dpi_y = source_metadata.dpi_y
+        width = float(context.plane.width)
+        height = float(context.plane.height)
+        for step in result.recipe.operations:
+            parameters = step.parameters
+            operation_id = step.operation_id
+            if operation_id in {
+                ImageOperation.ROTATE_90_CLOCKWISE.value,
+                ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value,
+            }:
+                width, height = height, width
+                dpi_x, dpi_y = dpi_y, dpi_x
+            elif operation_id == ImageOperation.CROP.value:
+                width = float(parameters.get("width", width))
+                height = float(parameters.get("height", height))
+            elif operation_id == ImageOperation.RESIZE.value:
+                target_width = float(parameters.get("width", width))
+                target_height = float(parameters.get("height", height))
+                if dpi_x is not None:
+                    dpi_x *= target_width / max(1.0, width)
+                if dpi_y is not None:
+                    dpi_y *= target_height / max(1.0, height)
+                width, height = target_width, target_height
+            elif operation_id == ImageOperation.PIXEL_BIN.value:
+                factor = float(parameters.get("factor", 1))
+                if factor > 0:
+                    if dpi_x is not None:
+                        dpi_x /= factor
+                    if dpi_y is not None:
+                        dpi_y /= factor
+                    width = math.floor(width / factor)
+                    height = math.floor(height / factor)
+            elif operation_id == ImageOperation.RESIZE_CANVAS.value:
+                width = float(parameters.get("width", width))
+                height = float(parameters.get("height", height))
+
+        source_is_color = not context.plane.pixel_type.is_grayscale
+        result_is_color = not result.raster.pixel_type.is_grayscale
+        return RasterMetadata(
+            source_format="",
+            source_mode=result.raster.pixel_type.value,
+            icc_profile=(
+                source_metadata.icc_profile
+                if source_is_color == result_is_color
+                else None
+            ),
+            dpi_x=dpi_x,
+            dpi_y=dpi_y,
+            source_orientation=1,
+            orientation_applied=False,
+            source_photometric="",
+            photometric_applied=False,
+        )
+
+    def _on_derived_image_ready(self, payload: object) -> None:
+        if (
+            not isinstance(payload, WorkbenchTaskResult)
+            or payload.kind is not WorkbenchTaskKind.FINAL
+        ):
+            return
+        context = self._image_processing_source_context
+        if (
+            context is None
+            or payload.source_document_id != context.document_id
+            or not self._processing_source_is_current(context)
+        ):
+            QMessageBox.warning(
+                self,
+                "生成派生图片",
+                "源图片、数字切片焦层或视窗已经变化，已丢弃晚到结果。",
+            )
+            return
+        source_document = self.project.get_document(context.document_id)
+        if source_document is None:
+            return
+        calibration = self._derived_calibration(source_document, payload)
+        if calibration is ...:
+            return
+        operations = context.derivation_prefix + payload.recipe.operations
+        recipe = ImageProcessingRecipe.from_operations(operations)
+        relative_path = self._next_project_processed_relative_path(
+            pixel_type=payload.raster.pixel_type,
+        )
+        if self._session_processed_root is None:
+            self._session_processed_root = Path(
+                tempfile.mkdtemp(prefix="fdm-processed-")
+            )
+        session_path = self._session_processed_root / relative_path
+        session_path.parent.mkdir(parents=True, exist_ok=True)
+        derived_metadata = self._derived_raster_metadata(context, payload)
+        encoded = write_native_raster_asset(
+            payload.raster,
+            session_path,
+            metadata=derived_metadata,
+        )
+        if not encoded:
+            failure = encoded.failure
+            detail = (
+                failure.message
+                if failure is not None
+                else "未知编码错误"
+            )
+            if failure is not None and failure.detail:
+                detail = f"{detail}：{failure.detail}"
+            QMessageBox.warning(
+                self,
+                "生成派生图片",
+                f"无法写入受管会话资产：\n{session_path}\n\n{detail}",
+            )
+            return
+        try:
+            display_image = raster_plane_to_qimage(payload.raster)
+        except Exception as exc:  # noqa: BLE001
+            session_path.unlink(missing_ok=True)
+            QMessageBox.warning(
+                self,
+                "生成派生图片",
+                f"处理结果无法创建显示缓存：\n{exc}",
+            )
+            return
+
+        derived_id = new_id("image")
+        groups = [
+            FiberGroup(
+                id=new_id("group"),
+                image_id=derived_id,
+                number=group.number,
+                color=group.color,
+                label=group.label,
+            )
+            for group in source_document.sorted_groups()
+        ]
+        derivation = ImageDerivation(
+            source_document_id=source_document.id,
+            source_path=context.source_path,
+            source_sha256=context.plane.sha256(),
+            source_image_size=(context.plane.width, context.plane.height),
+            source_pixel_revision=0,
+            source_pixel_type=context.plane.pixel_type,
+            recipe=recipe,
+            result_pixel_type=payload.raster.pixel_type,
+            result_image_size=(payload.raster.width, payload.raster.height),
+            result_sha256=payload.raster.sha256(),
+            library_versions=self._image_processing_library_versions(),
+        )
+        document = ImageDocument(
+            id=derived_id,
+            path=relative_path,
+            image_size=(payload.raster.width, payload.raster.height),
+            source_type="project_asset",
+            calibration=calibration if isinstance(calibration, Calibration) else None,
+            fiber_groups=groups,
+            active_group_id=(groups[0].id if groups else None),
+            metadata={
+                "derived_image": {
+                    "source_document_id": source_document.id,
+                }
+            },
+            raster_pixel_type=payload.raster.pixel_type,
+            derivation=derivation,
+        )
+        document.initialize_runtime_state()
+        document.mark_session_saved()
+        document.mark_calibration_saved()
+        self._session_processed_assets[document.id] = session_path
+        self._mount_document(
+            document,
+            display_image,
+            tooltip=(
+                "派生图片（项目保存时写入 processed/）\n"
+                f"来源：{self._document_display_name(source_document)}"
+            ),
+            raster_plane=payload.raster,
+            raster_metadata=derived_metadata,
+        )
+        self.statusBar().showMessage(
+            "已生成派生图片；原图片、测量对象、标注和 ROI 未被修改。",
+            5000,
+        )
+        workbench = self._image_processing_workbench
+        if workbench is not None:
+            workbench.accept()
+            workbench.deleteLater()
+        self._image_processing_workbench = None
+        self._image_processing_source_context = None
 
     def _preview_kind(self) -> str:
         return self._capture_manager.preview_kind()
@@ -7562,6 +9222,7 @@ class MainWindow(QMainWindow):
             project_default_document_ids=inherited_ids,
             project_asset_documents=project_assets,
             project_group_templates=project_group_templates,
+            project_extension_state_id=self.project.extension_state_id,
             document_persistence=persistence_snapshot,
         )
 
@@ -8364,7 +10025,19 @@ class MainWindow(QMainWindow):
             )
             return
         try:
-            image = raster_plane_to_qimage(loaded.plane)
+            display_transform = getattr(
+                request.document,
+                "display_transform",
+                None,
+            )
+            image = (
+                raster_plane_to_qimage(loaded.plane)
+                if display_transform is None
+                else raster_plane_to_qimage(
+                    loaded.plane,
+                    display_transform=display_transform,
+                )
+            )
         except Exception as exc:  # noqa: BLE001 - normalize display-cache failures
             image = QImage()
             display_error = str(exc)
@@ -8550,7 +10223,19 @@ class MainWindow(QMainWindow):
             )
             return
         try:
-            image = raster_plane_to_qimage(loaded.plane)
+            display_transform = getattr(
+                document,
+                "display_transform",
+                None,
+            )
+            image = (
+                raster_plane_to_qimage(loaded.plane)
+                if display_transform is None
+                else raster_plane_to_qimage(
+                    loaded.plane,
+                    display_transform=display_transform,
+                )
+            )
         except Exception as exc:  # noqa: BLE001 - external pixels are untrusted
             QMessageBox.warning(
                 self,
@@ -8831,6 +10516,12 @@ class MainWindow(QMainWindow):
         self._canvas_navigators[document_id] = navigator
         return navigator
 
+    def _connect_canvas_roi_signals(self, canvas: DocumentCanvas) -> None:
+        signal = getattr(canvas, "roiGeometryCommitted", None)
+        connect = getattr(signal, "connect", None)
+        if callable(connect):
+            connect(self._on_canvas_roi_geometry_committed)
+
     def _mount_document(
         self,
         document: ImageDocument,
@@ -8870,12 +10561,16 @@ class MainWindow(QMainWindow):
         )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
+        self._connect_canvas_roi_signals(canvas)
 
         self._remove_unresolved_placeholder_ui(document.id)
         insert_index = self.project_session_controller.ui_insert_index(document.id, self._document_order)
         self.project.documents.insert(insert_index, document)
         self._document_order.insert(insert_index, document.id)
         self._images[document.id] = image
+        self._display_cache_transforms[document.id] = (
+            document.display_transform
+        )
         authoritative_plane = raster_plane or qimage_to_raster_plane(image)
         self._rasters[document.id] = authoritative_plane
         if raster_metadata is not None:
@@ -8980,6 +10675,7 @@ class MainWindow(QMainWindow):
         )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
+        self._connect_canvas_roi_signals(canvas)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
 
@@ -10711,6 +12407,9 @@ class MainWindow(QMainWindow):
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        self._close_display_adjustment_dialog()
+        if not self._close_image_processing_workbench(wait=True):
+            raise RuntimeError("图像处理任务尚未安全退出，工作区重置已阻止。")
         if (
             self._fullscreen_controller is not None
             and self._fullscreen_controller.is_active
@@ -10741,6 +12440,8 @@ class MainWindow(QMainWindow):
         self._images.clear()
         self._rasters.clear()
         self._raster_metadata.clear()
+        self._display_cache_transforms.clear()
+        self._cleanup_session_processed_assets()
         self._canvases.clear()
         for navigator in self._canvas_navigators.values():
             navigator.clear()
@@ -10771,6 +12472,14 @@ class MainWindow(QMainWindow):
     def _remove_document(self, document_id: str) -> None:
         if document_id not in self._document_order:
             return
+        if self._display_adjustment_document_id == document_id:
+            self._close_display_adjustment_dialog()
+        if (
+            self._image_processing_source_context is not None
+            and self._image_processing_source_context.document_id == document_id
+            and not self._close_image_processing_workbench(wait=True)
+        ):
+            return
         if (
             len(self._document_order) == 1
             and self._fullscreen_controller is not None
@@ -10792,6 +12501,29 @@ class MainWindow(QMainWindow):
                     area_derived_geometry_service.discard_measurement(measurement)
         if document is not None and document.history is not None:
             document.history.set_workspace_budget(None)
+        if any(
+            artifact.source_document_id == document_id
+            for artifact in self.project.analysis_artifacts
+        ):
+            changed = self.project.refresh_analysis_validity(
+                document_id,
+                source_document_exists=False,
+            )
+            if changed:
+                self.project.mark_extension_changed()
+        retained_rois = [
+            roi
+            for roi in self.project.project_rois
+            if roi.document_id != document_id
+        ]
+        if len(retained_rois) != len(self.project.project_rois):
+            self.project.project_rois = retained_rois
+            self._selected_project_roi_ids = tuple(
+                roi_id
+                for roi_id in self._selected_project_roi_ids
+                if self.project.get_project_roi(roi_id) is not None
+            )
+            self.project.mark_extension_changed()
         index = self._document_order.index(document_id)
         self._document_order.pop(index)
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
@@ -10799,6 +12531,10 @@ class MainWindow(QMainWindow):
         self._images.pop(document_id, None)
         self._rasters.pop(document_id, None)
         self._raster_metadata.pop(document_id, None)
+        self._display_cache_transforms.pop(document_id, None)
+        session_asset = self._session_processed_assets.pop(document_id, None)
+        if session_asset is not None:
+            session_asset.unlink(missing_ok=True)
         navigator = self._canvas_navigators.pop(document_id, None)
         if navigator is not None:
             navigator.clear()
@@ -10818,6 +12554,40 @@ class MainWindow(QMainWindow):
         self._clear_prompt_segmentation_cache()
         self._end_project_session_if_empty()
         self._update_ui_for_current_document()
+
+    def _cleanup_session_processed_assets(self) -> None:
+        self._session_processed_assets.clear()
+        root = self._session_processed_root
+        self._session_processed_root = None
+        if root is not None:
+            shutil.rmtree(root, ignore_errors=True)
+
+    @staticmethod
+    def _cleanup_abandoned_processed_sessions() -> None:
+        """Best-effort cleanup for stale, application-owned session assets.
+
+        Fresh directories are left alone so a concurrently running developer
+        instance is never disturbed.  The production Windows build is
+        single-instance, but the age guard keeps this cleanup safe in tests and
+        source checkouts as well.
+        """
+
+        cutoff = datetime.now().timestamp() - timedelta(days=7).total_seconds()
+        try:
+            candidates = tuple(
+                Path(tempfile.gettempdir()).glob("fdm-processed-*")
+            )
+        except OSError:
+            return
+        for candidate in candidates:
+            try:
+                if (
+                    candidate.is_dir()
+                    and candidate.stat().st_mtime < cutoff
+                ):
+                    shutil.rmtree(candidate, ignore_errors=True)
+            except OSError:
+                continue
 
     @staticmethod
     def _release_document_canvas(canvas: DocumentCanvas) -> None:
@@ -10920,8 +12690,26 @@ class MainWindow(QMainWindow):
             self._save_calibration_sidecar(document, context=label)
         elif changed and sync_sidecar:
             document.mark_calibration_saved()
+        if changed:
+            self._refresh_document_analysis_validity(document)
         self._update_ui_for_current_document()
         return changed
+
+    def _refresh_document_analysis_validity(
+        self,
+        document: ImageDocument,
+    ) -> None:
+        if not any(
+            artifact.source_document_id == document.id
+            for artifact in self.project.analysis_artifacts
+        ):
+            return
+        changed = self.project.refresh_analysis_validity(
+            document.id,
+            current_pixel_revision=0,
+        )
+        if changed:
+            self.project.mark_extension_changed()
 
     def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
         before_stamp = document.state_stamp
@@ -11015,6 +12803,12 @@ class MainWindow(QMainWindow):
             return
         self.image_list.setCurrentRow(index)
         current_document = self.current_document()
+        if (
+            self._display_adjustment_dialog is not None
+            and self._display_adjustment_document_id
+            != (current_document.id if current_document is not None else None)
+        ):
+            self._close_display_adjustment_dialog()
         self._clear_magic_segment_sessions(except_document_id=current_document.id if current_document is not None else None)
         canvas = self.current_canvas()
         if canvas is not None:
@@ -11252,6 +13046,7 @@ class MainWindow(QMainWindow):
             document.select_measurement(None)
             document.select_overlay_annotation(None)
         self._sync_measurement_table_selection(document, scroll=True)
+        self._refresh_project_roi_ui()
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
@@ -11902,7 +13697,9 @@ class MainWindow(QMainWindow):
 
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
+        self._ensure_document_display_cache(document)
         self._populate_group_list(document)
+        self._refresh_project_roi_ui()
         self._update_calibration_panel(document)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
@@ -12317,6 +14114,10 @@ class MainWindow(QMainWindow):
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
         self.export_current_image_action.setEnabled(has_document and not preview_active)
+        can_process_image = has_document and not preview_active
+        self.image_processing_workbench_action.setEnabled(can_process_image)
+        for action in self._image_operation_actions.values():
+            action.setEnabled(can_process_image)
         self.fit_action.setEnabled(has_document and not preview_active)
         self.actual_size_action.setEnabled(has_document and not preview_active)
         fullscreen_active = bool(
@@ -14128,6 +15929,9 @@ class MainWindow(QMainWindow):
         if not self._confirm_close_documents(self.project.documents):
             event.ignore()
             return
+        if not self._close_image_processing_workbench(wait=True):
+            event.ignore()
+            return
         try:
             self._close_document_slide_stores()
         except RuntimeError as exc:
@@ -14139,4 +15943,5 @@ class MainWindow(QMainWindow):
         self._clear_prompt_segmentation_cache()
         for canvas in self._canvases.values():
             self._release_document_canvas(canvas)
+        self._cleanup_session_processed_assets()
         event.accept()

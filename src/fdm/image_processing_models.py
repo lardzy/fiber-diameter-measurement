@@ -27,7 +27,11 @@ class DisplayTransform:
 
     black_point: float | None = None
     white_point: float | None = None
+    channel_ranges: tuple[tuple[float, float], ...] = ()
     gamma: float = 1.0
+    lut_id: str | None = None
+    window_center: float | None = None
+    window_width: float | None = None
     inverted: bool = False
     schema_version: int = field(
         default=IMAGE_PROCESSING_SCHEMA_VERSION,
@@ -47,20 +51,96 @@ class DisplayTransform:
             and black_point >= white_point
         ):
             raise ValueError("white_point 必须大于 black_point")
+        channel_ranges = _normalize_display_channel_ranges(self.channel_ranges)
+        if black_point is not None and channel_ranges:
+            raise ValueError(
+                "旧版全局显示范围与各通道显示范围不能同时提供"
+            )
+        window_center = _optional_finite(
+            self.window_center,
+            field_name="window_center",
+        )
+        window_width = _optional_finite(
+            self.window_width,
+            field_name="window_width",
+        )
+        if (window_center is None) != (window_width is None):
+            raise ValueError("window_center 和 window_width 必须同时提供")
+        if window_width is not None and window_width <= 0.0:
+            raise ValueError("window_width 必须是正有限数值")
+        if window_center is not None and (
+            black_point is not None or channel_ranges
+        ):
+            raise ValueError("窗宽/窗位与显式显示范围不能同时提供")
         gamma = _positive_finite(self.gamma, field_name="gamma")
+        lut_id = _normalize_display_lut_id(self.lut_id)
         if not isinstance(self.inverted, bool):
             raise TypeError("inverted 必须是布尔值")
         object.__setattr__(self, "black_point", black_point)
         object.__setattr__(self, "white_point", white_point)
+        object.__setattr__(self, "channel_ranges", channel_ranges)
         object.__setattr__(self, "gamma", gamma)
+        object.__setattr__(self, "lut_id", lut_id)
+        object.__setattr__(self, "window_center", window_center)
+        object.__setattr__(self, "window_width", window_width)
         object.__setattr__(self, "schema_version", IMAGE_PROCESSING_SCHEMA_VERSION)
+
+    @property
+    def effective_channel_ranges(self) -> tuple[tuple[float, float], ...]:
+        """Return explicit ranges without guessing a raster's native domain."""
+
+        if self.channel_ranges:
+            return self.channel_ranges
+        if self.black_point is not None and self.white_point is not None:
+            return ((self.black_point, self.white_point),)
+        if self.window_center is not None and self.window_width is not None:
+            half_width = self.window_width / 2.0
+            return (
+                (
+                    self.window_center - half_width,
+                    self.window_center + half_width,
+                ),
+            )
+        return ()
+
+    def ranges_for_pixel_type(
+        self,
+        pixel_type: RasterPixelType | str,
+    ) -> tuple[tuple[float, float], ...]:
+        """Validate and expand presentation ranges for one raster layout.
+
+        A one-channel legacy range remains valid for RGB/RGBA and is broadcast
+        to the three colour channels.  Alpha is deliberately excluded.
+        """
+
+        parsed = RasterPixelType.parse(pixel_type)
+        ranges = self.effective_channel_ranges
+        if parsed.is_grayscale:
+            if len(ranges) > 1:
+                raise ValueError("灰度图片只能使用一个通道显示范围")
+            return ranges
+        if self.window_center is not None:
+            raise ValueError("窗宽/窗位只适用于灰度图片")
+        if self.lut_id not in {None, "grayscale"}:
+            raise ValueError("彩色图片不能应用灰度 LUT")
+        if not ranges:
+            return ()
+        if len(ranges) == 1:
+            return ranges * 3
+        if len(ranges) != 3:
+            raise ValueError("RGB/RGBA 图片必须提供一个或三个通道显示范围")
+        return ranges
 
     @property
     def is_identity(self) -> bool:
         return (
             self.black_point is None
             and self.white_point is None
+            and not self.channel_ranges
             and self.gamma == 1.0
+            and self.lut_id is None
+            and self.window_center is None
+            and self.window_width is None
             and not self.inverted
         )
 
@@ -73,6 +153,16 @@ class DisplayTransform:
         if self.black_point is not None and self.white_point is not None:
             payload["black_point"] = self.black_point
             payload["white_point"] = self.white_point
+        if self.channel_ranges:
+            payload["channel_ranges"] = [
+                [low, high]
+                for low, high in self.channel_ranges
+            ]
+        if self.lut_id is not None:
+            payload["lut_id"] = self.lut_id
+        if self.window_center is not None and self.window_width is not None:
+            payload["window_center"] = self.window_center
+            payload["window_width"] = self.window_width
         return payload
 
     @classmethod
@@ -82,13 +172,80 @@ class DisplayTransform:
         return cls(
             black_point=payload.get("black_point"),
             white_point=payload.get("white_point"),
+            channel_ranges=payload.get("channel_ranges", ()),  # type: ignore[arg-type]
             gamma=payload.get("gamma", 1.0),
+            lut_id=payload.get("lut_id"),  # type: ignore[arg-type]
+            window_center=payload.get("window_center"),
+            window_width=payload.get("window_width"),
             inverted=payload.get("inverted", False),
             schema_version=payload.get(
                 "schema_version",
                 IMAGE_PROCESSING_SCHEMA_VERSION,
             ),
         )
+
+
+_DISPLAY_LUT_ALIASES = {
+    "gray": "grayscale",
+    "grey": "grayscale",
+    "grayscale": "grayscale",
+    "red": "red",
+    "green": "green",
+    "blue": "blue",
+    "fire": "fire",
+    "ice": "ice",
+    "spectrum": "spectrum",
+}
+
+
+def _normalize_display_lut_id(value: object) -> str | None:
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise TypeError("lut_id 必须是字符串")
+    token = value.strip().casefold()
+    if not token:
+        return None
+    try:
+        return _DISPLAY_LUT_ALIASES[token]
+    except KeyError as exc:
+        supported = "、".join(sorted(set(_DISPLAY_LUT_ALIASES.values())))
+        raise ValueError(f"不支持的显示 LUT：{value}；可选 {supported}") from exc
+
+
+def _normalize_display_channel_ranges(
+    value: Iterable[tuple[float, float]],
+) -> tuple[tuple[float, float], ...]:
+    if value is None:  # type: ignore[comparison-overlap]
+        return ()
+    try:
+        items = tuple(value)
+    except TypeError as exc:
+        raise TypeError("channel_ranges 必须是通道范围序列") from exc
+    if len(items) not in {0, 1, 3}:
+        raise ValueError("channel_ranges 只能包含一个或三个通道范围")
+    normalized: list[tuple[float, float]] = []
+    for index, item in enumerate(items):
+        if not isinstance(item, (tuple, list)) or len(item) != 2:
+            raise TypeError(
+                f"channel_ranges[{index}] 必须是 [最小值, 最大值]"
+            )
+        low = _optional_finite(
+            item[0],
+            field_name=f"channel_ranges[{index}].minimum",
+        )
+        high = _optional_finite(
+            item[1],
+            field_name=f"channel_ranges[{index}].maximum",
+        )
+        if low is None or high is None:  # pragma: no cover - item values exist
+            raise TypeError("通道显示范围不能为 null")
+        if high <= low:
+            raise ValueError(
+                f"channel_ranges[{index}] 的最大值必须大于最小值"
+            )
+        normalized.append((low, high))
+    return tuple(normalized)
 
 
 @dataclass(frozen=True, slots=True, init=False)

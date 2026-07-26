@@ -13,6 +13,7 @@ import numpy as np
 from PySide6.QtGui import QImage
 
 from fdm.atomic_io import atomic_replace_file, staged_path_for
+from fdm.image_processing_models import DisplayTransform
 from fdm.raster import RasterPixelType, RasterPlane
 
 
@@ -316,27 +317,74 @@ def raster_plane_to_qimage(
     plane: RasterPlane,
     *,
     display_range: tuple[float, float] | None = None,
+    display_transform: DisplayTransform | None = None,
 ) -> QImage:
-    """Build an owned QImage display cache without mutating scientific pixels."""
+    """Build an owned presentation cache without mutating authoritative pixels.
+
+    ``display_range`` is retained for callers written before
+    :class:`DisplayTransform`; new code should pass ``display_transform``.
+    """
 
     if plane.is_empty:
         return QImage()
+    if display_range is not None and display_transform is not None:
+        raise ValueError("display_range 与 display_transform 不能同时提供")
+    if display_transform is not None and not isinstance(
+        display_transform,
+        DisplayTransform,
+    ):
+        raise TypeError("display_transform 必须是 DisplayTransform")
     array = raster_plane_to_numpy(plane)
     pixel_type = plane.pixel_type
-    if pixel_type is RasterPixelType.GRAY8:
+    if (
+        pixel_type is RasterPixelType.GRAY8
+        and display_range is None
+        and (
+            display_transform is None
+            or display_transform.is_identity
+        )
+    ):
         display = array
         image_format = QImage.Format.Format_Grayscale8
     elif pixel_type in {
+        RasterPixelType.GRAY8,
         RasterPixelType.GRAY16,
         RasterPixelType.GRAY32_FLOAT,
     }:
-        display = _scalar_display_uint8(array, pixel_type, display_range)
-        image_format = QImage.Format.Format_Grayscale8
+        transform = display_transform or DisplayTransform()
+        ranges = transform.ranges_for_pixel_type(pixel_type)
+        selected_range = ranges[0] if ranges else display_range
+        display = _display_channel_uint8(
+            array,
+            pixel_type=pixel_type,
+            display_range=selected_range,
+            gamma=transform.gamma,
+            inverted=transform.inverted,
+        )
+        if transform.lut_id not in {None, "grayscale"}:
+            display = _apply_display_lut(display, transform.lut_id)
+            image_format = QImage.Format.Format_RGB888
+        else:
+            image_format = QImage.Format.Format_Grayscale8
     elif pixel_type is RasterPixelType.RGB8:
-        display = array
+        if display_transform is None or display_transform.is_identity:
+            display = array
+        else:
+            display = _display_color_uint8(
+                array,
+                pixel_type=pixel_type,
+                transform=display_transform,
+            )
         image_format = QImage.Format.Format_RGB888
     else:
-        display = array
+        if display_transform is None or display_transform.is_identity:
+            display = array
+        else:
+            display = _display_color_uint8(
+                array,
+                pixel_type=pixel_type,
+                transform=display_transform,
+            )
         image_format = QImage.Format.Format_RGBA8888
     contiguous = np.ascontiguousarray(display)
     image = QImage(
@@ -850,11 +898,30 @@ def _scalar_display_uint8(
     pixel_type: RasterPixelType,
     display_range: tuple[float, float] | None,
 ) -> np.ndarray:
+    return _display_channel_uint8(
+        array,
+        pixel_type=pixel_type,
+        display_range=display_range,
+        gamma=1.0,
+        inverted=False,
+    )
+
+
+def _display_channel_uint8(
+    array: np.ndarray,
+    *,
+    pixel_type: RasterPixelType,
+    display_range: tuple[float, float] | None,
+    gamma: float,
+    inverted: bool,
+) -> np.ndarray:
     values = array.astype(np.float64, copy=False)
     finite = np.isfinite(values)
     automatic_range = display_range is None
     if automatic_range:
-        if pixel_type is RasterPixelType.GRAY16:
+        if pixel_type is RasterPixelType.GRAY8:
+            low, high = 0.0, 255.0
+        elif pixel_type is RasterPixelType.GRAY16:
             low, high = 0.0, 65_535.0
         elif finite.any():
             low = float(values[finite].min())
@@ -872,19 +939,106 @@ def _scalar_display_uint8(
         # A constant scientific plane is valid.  A mid-gray display keeps
         # finite samples distinguishable from NaN/Inf (rendered at the range
         # ends) without changing the authoritative float pixels.
-        output = np.zeros(values.shape, dtype=np.uint8)
-        output[finite] = 128
-        output[np.isposinf(values)] = 255
-        return output
-    if not math.isfinite(low) or not math.isfinite(high) or high <= low:
-        raise ValueError("显示范围必须由两个递增的有限数构成")
-    normalized = np.nan_to_num(
-        (values - low) * (255.0 / (high - low)),
-        nan=0.0,
-        posinf=255.0,
-        neginf=0.0,
-    )
-    return np.clip(np.rint(normalized), 0.0, 255.0).astype(np.uint8)
+        normalized = np.zeros(values.shape, dtype=np.float64)
+        normalized[finite] = 0.5
+        normalized[np.isposinf(values)] = 1.0
+    else:
+        if not math.isfinite(low) or not math.isfinite(high) or high <= low:
+            raise ValueError("显示范围必须由两个递增的有限数构成")
+        normalized = np.nan_to_num(
+            (values - low) / (high - low),
+            nan=0.0,
+            posinf=1.0,
+            neginf=0.0,
+        )
+        normalized = np.clip(normalized, 0.0, 1.0)
+    if gamma != 1.0:
+        normalized = np.power(normalized, 1.0 / gamma)
+    if inverted:
+        normalized = 1.0 - normalized
+    return np.clip(np.rint(normalized * 255.0), 0.0, 255.0).astype(np.uint8)
+
+
+def _display_color_uint8(
+    array: np.ndarray,
+    *,
+    pixel_type: RasterPixelType,
+    transform: DisplayTransform,
+) -> np.ndarray:
+    ranges = transform.ranges_for_pixel_type(pixel_type)
+    color = array[:, :, :3]
+    mapped_channels = [
+        _display_channel_uint8(
+            color[:, :, channel],
+            pixel_type=RasterPixelType.GRAY8,
+            display_range=ranges[channel] if ranges else None,
+            gamma=transform.gamma,
+            inverted=transform.inverted,
+        )
+        for channel in range(3)
+    ]
+    mapped = np.stack(mapped_channels, axis=2)
+    if pixel_type is RasterPixelType.RGBA8:
+        # Presentation controls never alter data transparency.
+        mapped = np.concatenate((mapped, array[:, :, 3:4]), axis=2)
+    return np.ascontiguousarray(mapped)
+
+
+def _apply_display_lut(values: np.ndarray, lut_id: str) -> np.ndarray:
+    indices = np.asarray(values, dtype=np.uint8)
+    value = np.arange(256, dtype=np.uint16)
+    if lut_id == "red":
+        table = np.stack((value, value * 0, value * 0), axis=1)
+    elif lut_id == "green":
+        table = np.stack((value * 0, value, value * 0), axis=1)
+    elif lut_id == "blue":
+        table = np.stack((value * 0, value * 0, value), axis=1)
+    elif lut_id == "fire":
+        table = np.stack(
+            (
+                np.clip(value * 3, 0, 255),
+                np.clip((value.astype(np.int16) - 85) * 3, 0, 255),
+                np.clip((value.astype(np.int16) - 170) * 3, 0, 255),
+            ),
+            axis=1,
+        )
+    elif lut_id == "ice":
+        table = np.stack(
+            (
+                value // 2,
+                value,
+                np.clip(96 + value, 0, 255),
+            ),
+            axis=1,
+        )
+    elif lut_id == "spectrum":
+        # Six linear colour ramps make a stable, dependency-free spectral LUT.
+        phase = value.astype(np.float64) * (5.0 / 255.0)
+        segment = np.floor(phase).astype(np.int16)
+        fraction = phase - segment
+        rgb = np.zeros((256, 3), dtype=np.float64)
+        anchors = np.asarray(
+            (
+                (0, 0, 255),
+                (0, 255, 255),
+                (0, 255, 0),
+                (255, 255, 0),
+                (255, 0, 0),
+                (255, 0, 255),
+            ),
+            dtype=np.float64,
+        )
+        for index in range(5):
+            selected = segment == index
+            rgb[selected] = (
+                anchors[index] * (1.0 - fraction[selected, None])
+                + anchors[index + 1] * fraction[selected, None]
+            )
+        rgb[segment >= 5] = anchors[-1]
+        table = rgb
+    else:  # pragma: no cover - DisplayTransform validates identifiers
+        raise ValueError(f"不支持的显示 LUT：{lut_id}")
+    return np.ascontiguousarray(table.astype(np.uint8)[indices])
 
 
 def _expand_tiff_palette(
