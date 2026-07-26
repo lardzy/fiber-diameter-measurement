@@ -71,6 +71,7 @@ class AdaptiveLayoutController(QObject):
         self._compact = False
         self._applying = False
         self._suppress_extent_capture = False
+        self._presentation_suspend_depth = 0
         self._pending_results_height: int | None = None
         self._programmatic_side_widths: dict[QDockWidget, int] = {}
         self._pending_side_extents: dict[QDockWidget, QSize] = {}
@@ -96,14 +97,60 @@ class AdaptiveLayoutController(QObject):
     def is_compact(self) -> bool:
         return self._compact
 
+    @property
+    def is_presentation_suspended(self) -> bool:
+        """Whether temporary presentation chrome changes are being ignored."""
+
+        return self._presentation_suspend_depth > 0
+
+    def begin_presentation_mode(self) -> None:
+        """Freeze responsive layout and preference capture for temporary chrome.
+
+        Full-screen measurement temporarily hides docks and changes the window
+        extent.  Neither operation represents a user layout preference.  The
+        depth counter makes the API safe for nested presentation surfaces and
+        keeps already queued resize callbacks from releasing the capture guard.
+        """
+
+        self._presentation_suspend_depth += 1
+        if self._presentation_suspend_depth != 1:
+            return
+        self._suppress_extent_capture = True
+        self._pending_results_height = None
+        self._pending_side_extents.clear()
+
+    def end_presentation_mode(self, *, reapply_layout: bool = False) -> None:
+        """Release a presentation freeze without capturing its temporary state.
+
+        ``reapply_layout`` is opt-in because a full-screen controller normally
+        restores an exact ``QMainWindow`` snapshot before releasing the guard.
+        Reapplying responsive rules in that path could overwrite the restored
+        visibility.  Other callers may request a fresh responsive pass.
+        """
+
+        if self._presentation_suspend_depth <= 0:
+            return
+        self._presentation_suspend_depth -= 1
+        if self._presentation_suspend_depth:
+            return
+        self._suppress_extent_capture = False
+        self._last_extent_window_size = QSize(self._window.size())
+        if reapply_layout:
+            self.apply_for_width(self._window.width(), force=True)
+            self.restore_preferred_extents()
+
     def set_workspace(self, workspace: WorkspaceMode | str) -> None:
         self._workspace = WorkspaceMode(workspace)
+        if self.is_presentation_suspended:
+            return
         self.apply_for_width(self._window.width(), force=True)
 
     def begin_window_resize(self) -> None:
         self._suppress_extent_capture = True
 
     def end_window_resize(self, width: int) -> None:
+        if self.is_presentation_suspended:
+            return
         self.apply_for_width(width)
         # Apply the saved dock widths in the same resize turn so a compact →
         # wide transition never exposes an oversized sidebar for one frame.
@@ -111,13 +158,18 @@ class AdaptiveLayoutController(QObject):
         QTimer.singleShot(0, self._finish_window_resize)
 
     def _finish_window_resize(self) -> None:
+        if self.is_presentation_suspended:
+            return
         self.restore_preferred_extents()
         QTimer.singleShot(0, self._release_extent_capture)
 
     def _release_extent_capture(self) -> None:
-        self._suppress_extent_capture = False
+        if not self.is_presentation_suspended:
+            self._suppress_extent_capture = False
 
     def apply_for_width(self, width: int, *, force: bool = False) -> None:
+        if self.is_presentation_suspended:
+            return
         compact = int(width) < self.COMPACT_WIDTH
         if not force and compact == self._compact:
             return
@@ -225,6 +277,8 @@ class AdaptiveLayoutController(QObject):
     def capture_restored_visibility(self) -> None:
         """Adopt QMainWindow.restoreState() visibility before responsive rules run."""
 
+        if self.is_presentation_suspended:
+            return
         self._wide_visibility = {
             "project": not self._project_dock.isHidden(),
             "inspector": not self._inspector_dock.isHidden(),
@@ -232,7 +286,11 @@ class AdaptiveLayoutController(QObject):
         }
 
     def restore_preferred_extents(self) -> None:
-        if self._applying or not self._window.isVisible():
+        if (
+            self.is_presentation_suspended
+            or self._applying
+            or not self._window.isVisible()
+        ):
             return
         self._applying = True
         try:
@@ -385,7 +443,7 @@ class AdaptiveLayoutController(QObject):
             self.layoutPreferencesChanged.emit()
 
     def note_visibility_change(self) -> None:
-        if self._applying or self._compact:
+        if self.is_presentation_suspended or self._applying or self._compact:
             return
         self._wide_visibility = {
             "project": not self._project_dock.isHidden(),

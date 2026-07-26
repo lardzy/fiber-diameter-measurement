@@ -868,6 +868,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             text_anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
             overlay_line_color="#FFAA00",
             overlay_line_width=3.5,
+            show_canvas_navigator=False,
             focus_stack_profile=FocusStackProfile.SHARP,
             focus_stack_sharpen_strength=60,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
@@ -933,6 +934,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         )
         self.assertEqual(loaded.overlay_line_color, "#FFAA00")
         self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
+        self.assertFalse(loaded.show_canvas_navigator)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
         self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
@@ -1111,6 +1113,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.scale_overlay_font_size, 18)
         self.assertEqual(settings.overlay_line_color, "#F7F4EA")
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)
+        self.assertTrue(settings.show_canvas_navigator)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)

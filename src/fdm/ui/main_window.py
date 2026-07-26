@@ -11,8 +11,8 @@ import math
 import shutil
 import tempfile
 
-from PySide6.QtCore import QByteArray, QBuffer, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QRect, QRectF, QSize, Qt, QTimer, Signal
-from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QImageReader, QPainter, QPalette, QPen, QPixmap, QPolygonF
+from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSize, Qt, QTimer, Signal
+from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QImageReader, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
     QApplication,
@@ -24,6 +24,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QFormLayout,
+    QGraphicsOpacityEffect,
     QGridLayout,
     QGroupBox,
     QHBoxLayout,
@@ -187,6 +188,7 @@ from fdm.ui.canvas import (
     MagicSegmentSubtractInputMode,
     magic_prompt_visual,
 )
+from fdm.ui.canvas_navigator import CanvasNavigatorWidget
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
@@ -203,6 +205,7 @@ from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.associated_file_controller import AssociatedFileOpenController
 from fdm.ui.background_task_controller import AreaInferenceBatchState, BackgroundTaskController, BatchLoadState
 from fdm.ui.export_controller import ExportController
+from fdm.ui.fullscreen import FullscreenMeasurementController
 from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageLoadRequest
 from fdm.ui.microview_preview_host import MicroviewPreviewHost
@@ -256,6 +259,8 @@ from fdm.ui.thread_task_manager import (
     TaskStopResult,
     ThreadTaskManager,
 )
+from fdm.ui.view_transform import MIN_VIEW_ZOOM, CanvasViewportSnapshot
+from fdm.ui.view_zoom_control import ViewZoomStatusButton
 from fdm.ui.widgets import (
     CollapsibleSection,
     FiberGroupListItemWidget,
@@ -900,6 +905,7 @@ class MainWindow(QMainWindow):
         self._workspace_history_budget = WorkspaceHistoryBudget()
         self._images: dict[str, QImage] = {}
         self._canvases: dict[str, DocumentCanvas] = {}
+        self._canvas_navigators: dict[str, CanvasNavigatorWidget] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
@@ -939,6 +945,21 @@ class MainWindow(QMainWindow):
         self._inspector_dock: WorkspaceDockWidget | None = None
         self._results_dock: WorkspaceDockWidget | None = None
         self._adaptive_layout: AdaptiveLayoutController | None = None
+        self._fullscreen_controller: FullscreenMeasurementController | None = None
+        self._fullscreen_hint_label: QLabel | None = None
+        self._fullscreen_hint_animation: QPropertyAnimation | None = None
+        self._fullscreen_hint_timer = QTimer(self)
+        self._fullscreen_hint_timer.setSingleShot(True)
+        self._fullscreen_hint_timer.timeout.connect(self._fade_fullscreen_hint)
+        self._navigator_center_timer = QTimer(self)
+        self._navigator_center_timer.setSingleShot(True)
+        self._navigator_center_timer.setInterval(75)
+        self._navigator_center_timer.timeout.connect(
+            self._apply_pending_navigator_center
+        )
+        self._pending_navigator_center: tuple[str, Point] | None = None
+        self._zoom_status_button: ViewZoomStatusButton | None = None
+        self._document_view_controls: QWidget | None = None
         self._workspace_mode = WorkspaceMode.MEASURE
         self._workspace_state_restored = False
         self._results_tabs: QTabWidget | None = None
@@ -1389,6 +1410,14 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._zoom_status_button = ViewZoomStatusButton(self.statusBar())
+        self._zoom_status_button.fitRequested.connect(self.fit_current_image)
+        self._zoom_status_button.actualRequested.connect(self.actual_size_current_image)
+        self._zoom_status_button.zoomRequested.connect(self._set_current_view_zoom)
+        self._zoom_status_button.customZoomRequested.connect(
+            self._prompt_current_view_zoom
+        )
+        self.statusBar().addPermanentWidget(self._zoom_status_button, 0)
         self._version_label = QLabel(f"v{__version__}")
         self._version_label.setToolTip(f"{self.windowTitle()} {__version__}")
         self._version_label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
@@ -1437,6 +1466,17 @@ class MainWindow(QMainWindow):
         )
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             dock.visibilityChanged.connect(self._on_workspace_dock_visibility_changed)
+        self._fullscreen_controller = FullscreenMeasurementController(
+            self,
+            adaptive_layout=self._adaptive_layout,
+            extra_chrome=(self._image_resolution_label, self._version_label),
+            preserved_widgets=(self._measure_toolbar, self.statusBar()),
+            state_version=2,
+            parent=self,
+        )
+        self._fullscreen_controller.activeChanged.connect(
+            self._on_fullscreen_active_changed
+        )
         QTimer.singleShot(0, lambda: self._adaptive_layout and self._adaptive_layout.apply_for_width(self.width(), force=True))
 
     def _create_actions(self) -> None:
@@ -1518,13 +1558,45 @@ class MainWindow(QMainWindow):
         self.delete_group_action.setIcon(themed_icon("delete", color="#F28482"))
         self.delete_group_action.triggered.connect(self.delete_active_group)
 
-        self.fit_action = QAction("适应窗口", self)
+        self.fit_action = QAction("适合窗口", self)
         self.fit_action.setIcon(themed_icon("fit", color="#E7ECEF"))
+        self.fit_action.setToolTip("将整张图片适合到当前画布")
         self.fit_action.triggered.connect(self.fit_current_image)
 
         self.actual_size_action = QAction("原始像素", self)
         self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
+        self.actual_size_action.setToolTip(
+            "按 100% 显示：1 个源图像像素对应 1 个界面逻辑像素"
+        )
         self.actual_size_action.triggered.connect(self.actual_size_current_image)
+
+        self.fullscreen_measurement_action = QAction("全屏测量", self)
+        self.fullscreen_measurement_action.setCheckable(True)
+        self.fullscreen_measurement_action.setIcon(
+            themed_icon("fullscreen", color="#E7ECEF")
+        )
+        self.fullscreen_measurement_action.setShortcut(QKeySequence("F11"))
+        self.fullscreen_measurement_action.setToolTip(
+            "进入沉浸式全屏测量（F11；Esc 在没有活动绘制时退出）"
+        )
+        self.fullscreen_measurement_action.triggered.connect(
+            self._toggle_fullscreen_measurement
+        )
+
+        self.toggle_canvas_navigator_action = QAction("导航概览", self)
+        self.toggle_canvas_navigator_action.setCheckable(True)
+        self.toggle_canvas_navigator_action.setChecked(
+            bool(self._app_settings.show_canvas_navigator)
+        )
+        self.toggle_canvas_navigator_action.setIcon(
+            themed_icon("navigator", color="#E7ECEF")
+        )
+        self.toggle_canvas_navigator_action.setToolTip(
+            "放大图片后，在画布右上角显示当前视场位置"
+        )
+        self.toggle_canvas_navigator_action.triggered.connect(
+            self._toggle_canvas_navigator
+        )
 
         self.digital_slide_smooth_navigation_action = QAction("平滑移动", self)
         self.digital_slide_smooth_navigation_action.setCheckable(True)
@@ -1687,7 +1759,9 @@ class MainWindow(QMainWindow):
         view_menu = self.menuBar().addMenu("视图")
         view_menu.addAction(self.fit_action)
         view_menu.addAction(self.actual_size_action)
+        view_menu.addAction(self.fullscreen_measurement_action)
         view_menu.addAction(self.digital_slide_smooth_navigation_action)
+        view_menu.addAction(self.toggle_canvas_navigator_action)
         view_menu.addSeparator()
         view_menu.addAction(self.toggle_project_panel_action)
         view_menu.addAction(self.toggle_inspector_panel_action)
@@ -2706,13 +2780,19 @@ class MainWindow(QMainWindow):
         view_controls_layout = QHBoxLayout(view_controls)
         view_controls_layout.setContentsMargins(4, 0, 4, 0)
         view_controls_layout.setSpacing(2)
-        for action in (self.fit_action, self.actual_size_action, self.digital_slide_smooth_navigation_action):
+        for action in (
+            self.fit_action,
+            self.actual_size_action,
+            self.fullscreen_measurement_action,
+            self.digital_slide_smooth_navigation_action,
+        ):
             button = QToolButton(view_controls)
             button.setDefaultAction(action)
             button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
             button.setAutoRaise(True)
             button.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
             view_controls_layout.addWidget(button)
+        self._document_view_controls = view_controls
         self.tab_widget.setCornerWidget(view_controls, Qt.Corner.TopRightCorner)
         self._center_stack.addWidget(self.tab_widget)
 
@@ -3800,6 +3880,35 @@ class MainWindow(QMainWindow):
         self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color=self._tool_icon_color("calibration")))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
+        if hasattr(self, "fit_action"):
+            self.fit_action.setIcon(
+                themed_icon("fit", color=self._tool_icon_color("fit"))
+            )
+        if hasattr(self, "actual_size_action"):
+            self.actual_size_action.setIcon(
+                themed_icon(
+                    "actual_size",
+                    color=self._tool_icon_color("actual_size"),
+                )
+            )
+        if hasattr(self, "fullscreen_measurement_action"):
+            active = bool(
+                self._fullscreen_controller is not None
+                and self._fullscreen_controller.is_active
+            )
+            self.fullscreen_measurement_action.setIcon(
+                themed_icon(
+                    "exit_fullscreen" if active else "fullscreen",
+                    color=self._tool_icon_color("fullscreen"),
+                )
+            )
+        if hasattr(self, "toggle_canvas_navigator_action"):
+            self.toggle_canvas_navigator_action.setIcon(
+                themed_icon(
+                    "navigator",
+                    color=self._tool_icon_color("navigator"),
+                )
+            )
         if self._manual_tool_button is not None:
             self._sync_manual_tool_button()
         if self._area_tool_button is not None:
@@ -3813,6 +3922,16 @@ class MainWindow(QMainWindow):
         if getattr(self, "_version_label", None) is None:
             return
         self._version_label.setStyleSheet(f"color: {self._status_color('muted')}; padding: 0 4px;")
+        if self._zoom_status_button is not None:
+            self._zoom_status_button.setStyleSheet(
+                "QToolButton {"
+                f" color: {self._status_color('muted')};"
+                " padding: 1px 7px; border: 1px solid transparent;"
+                " border-radius: 5px; }"
+                "QToolButton:hover {"
+                " border-color: palette(mid); background: palette(alternate-base);"
+                " }"
+            )
 
     def _update_group_list_header_styles(self) -> None:
         if not self._group_header_labels:
@@ -4063,6 +4182,12 @@ class MainWindow(QMainWindow):
             workspace = WorkspaceMode.ACQUIRE
         else:
             workspace = WorkspaceMode.MEASURE
+        if (
+            workspace is not WorkspaceMode.MEASURE
+            and self._fullscreen_controller is not None
+            and self._fullscreen_controller.is_active
+        ):
+            self._fullscreen_controller.exit()
         self._workspace_mode = workspace
         self.measure_workspace_action.blockSignals(True)
         self.measure_workspace_action.setChecked(workspace is WorkspaceMode.MEASURE)
@@ -7119,8 +7244,23 @@ class MainWindow(QMainWindow):
     def _persist_window_geometry(self) -> None:
         if self._adaptive_layout is not None:
             self._app_settings.workspace_layout = self._adaptive_layout.layout_settings
-        self._app_settings.main_window_geometry = bytes(self.saveGeometry().toBase64()).decode("ascii")
-        self._app_settings.main_window_state = bytes(self.saveState(2).toBase64()).decode("ascii")
+        if self._fullscreen_controller is not None:
+            persistence_state = (
+                self._fullscreen_controller.persistence_state_for_close()
+            )
+            geometry = QByteArray(persistence_state.geometry)
+            main_window_state = QByteArray(persistence_state.main_window_state)
+            window_state = persistence_state.window_state
+        else:
+            geometry = self.saveGeometry()
+            main_window_state = self.saveState(2)
+            window_state = self.windowState()
+        self._app_settings.main_window_geometry = bytes(
+            geometry.toBase64()
+        ).decode("ascii")
+        self._app_settings.main_window_state = bytes(
+            main_window_state.toBase64()
+        ).decode("ascii")
         if self._bottom_records_pane is not None:
             self._app_settings.measurement_results_header_state = (
                 self._bottom_records_pane.save_header_state()
@@ -7129,7 +7269,9 @@ class MainWindow(QMainWindow):
             self._app_settings.inspector_measurement_results_header_state = (
                 self._inspector_records_pane.save_header_state()
             )
-        self._app_settings.main_window_is_maximized = bool(self.windowState() & Qt.WindowState.WindowMaximized)
+        self._app_settings.main_window_is_maximized = bool(
+            window_state & Qt.WindowState.WindowMaximized
+        )
         try:
             AppSettingsIO.save(self._app_settings)
         except OSError:
@@ -8344,6 +8486,28 @@ class MainWindow(QMainWindow):
         )
         self.project_session_controller.mark_document_resolved(target_document.id)
 
+    def _attach_canvas_navigator(
+        self,
+        document_id: str,
+        canvas: DocumentCanvas,
+        *,
+        source_image: QImage | None,
+    ) -> CanvasNavigatorWidget:
+        navigator = CanvasNavigatorWidget(canvas)
+        navigator.set_navigator_enabled(
+            bool(self._app_settings.show_canvas_navigator)
+        )
+        navigator.set_source_image(source_image)
+        navigator.centerRequested.connect(
+            lambda point, target_id=document_id: self._on_canvas_navigator_center_requested(
+                target_id,
+                point,
+            )
+        )
+        navigator.set_viewport_snapshot(canvas.viewport_snapshot())
+        self._canvas_navigators[document_id] = navigator
+        return navigator
+
     def _mount_document(
         self,
         document: ImageDocument,
@@ -8373,6 +8537,12 @@ class MainWindow(QMainWindow):
                 document_id
             )
         )
+        canvas.viewTransformChanged.connect(
+            lambda snapshot, document_id=document.id: self._on_canvas_view_transform_changed(
+                document_id,
+                snapshot,
+            )
+        )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
 
@@ -8382,6 +8552,7 @@ class MainWindow(QMainWindow):
         self._document_order.insert(insert_index, document.id)
         self._images[document.id] = image
         self._canvases[document.id] = canvas
+        self._attach_canvas_navigator(document.id, canvas, source_image=image)
 
         tab_index = self.tab_widget.insertTab(insert_index, canvas, self._document_display_name(document))
         self.tab_widget.setTabToolTip(tab_index, tooltip)
@@ -8469,6 +8640,12 @@ class MainWindow(QMainWindow):
                 document_id
             )
         )
+        canvas.viewTransformChanged.connect(
+            lambda snapshot, document_id=target_document.id: self._on_canvas_view_transform_changed(
+                document_id,
+                snapshot,
+            )
+        )
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
@@ -8480,6 +8657,11 @@ class MainWindow(QMainWindow):
         self._document_order.insert(insert_index, target_document.id)
         self._canvases[target_document.id] = canvas
         self._slide_stores[target_document.id] = store
+        self._attach_canvas_navigator(
+            target_document.id,
+            canvas,
+            source_image=None,
+        )
 
         tab_index = self.tab_widget.insertTab(insert_index, canvas, self._document_display_name(target_document))
         self.tab_widget.setTabToolTip(tab_index, tooltip or str(source_path))
@@ -8581,6 +8763,216 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.actual_size()
+
+    def _set_current_view_zoom(self, zoom: float) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None:
+            canvas.set_view_zoom(float(zoom))
+
+    def _prompt_current_view_zoom(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None:
+            return
+        percentage, accepted = QInputDialog.getDouble(
+            self,
+            "自定义视图缩放",
+            "缩放比例（%）：",
+            float(canvas.view_zoom()) * 100.0,
+            0.01,
+            4000.0,
+            2,
+        )
+        if accepted:
+            canvas.set_view_zoom(float(percentage) / 100.0)
+
+    def _sync_current_view_transform(self) -> None:
+        canvas = self.current_canvas()
+        document = self.current_document()
+        if canvas is None or document is None:
+            if self._zoom_status_button is not None:
+                self._zoom_status_button.set_viewport_snapshot(None)
+            return
+        self._on_canvas_view_transform_changed(
+            document.id,
+            canvas.viewport_snapshot(),
+        )
+
+    def _toggle_canvas_navigator(self, checked: bool = False) -> None:
+        enabled = bool(checked)
+        self._app_settings.show_canvas_navigator = enabled
+        if not enabled:
+            self._navigator_center_timer.stop()
+            self._pending_navigator_center = None
+        for navigator in self._canvas_navigators.values():
+            navigator.set_navigator_enabled(enabled)
+        self._save_app_settings(context="导航概览")
+        self.statusBar().showMessage(
+            "放大时将显示导航概览" if enabled else "导航概览已隐藏",
+            2500,
+        )
+
+    def _on_canvas_navigator_center_requested(
+        self,
+        document_id: str,
+        point: Point,
+    ) -> None:
+        canvas = self._canvases.get(document_id)
+        if canvas is None:
+            return
+        if isinstance(canvas, DigitalSlideCanvas):
+            # Navigator drag events can arrive much faster than SQLite can
+            # compose a viewport. Debounce to the latest requested point so a
+            # drag performs one final exact load instead of blocking on every
+            # mouse-move event.
+            self._pending_navigator_center = (document_id, point)
+            self._navigator_center_timer.start()
+            return
+        canvas.center_on_image_point(point)
+
+    def _apply_pending_navigator_center(self) -> None:
+        pending = self._pending_navigator_center
+        self._pending_navigator_center = None
+        if pending is None:
+            return
+        document_id, point = pending
+        document = self.current_document()
+        canvas = self._canvases.get(document_id)
+        if (
+            document is None
+            or document.id != document_id
+            or not isinstance(canvas, DigitalSlideCanvas)
+        ):
+            return
+        canvas.center_on_image_point(point)
+
+    def _toggle_fullscreen_measurement(self, checked: bool = False) -> None:
+        controller = self._fullscreen_controller
+        if controller is None:
+            return
+        if not checked:
+            controller.exit()
+            return
+        if (
+            self.current_document() is None
+            or self._preview_active
+            or self._workspace_mode is not WorkspaceMode.MEASURE
+        ):
+            self.fullscreen_measurement_action.blockSignals(True)
+            self.fullscreen_measurement_action.setChecked(False)
+            self.fullscreen_measurement_action.blockSignals(False)
+            self.statusBar().showMessage(
+                "请先打开图片并切换到“测量分析”工作区。",
+                4000,
+            )
+            return
+        if not controller.enter() and not controller.is_active:
+            self.fullscreen_measurement_action.blockSignals(True)
+            self.fullscreen_measurement_action.setChecked(False)
+            self.fullscreen_measurement_action.blockSignals(False)
+
+    def _on_fullscreen_active_changed(self, active: bool) -> None:
+        action = self.fullscreen_measurement_action
+        action.blockSignals(True)
+        action.setChecked(bool(active))
+        action.setText("退出全屏" if active else "全屏测量")
+        action.setToolTip(
+            "退出全屏测量（F11）"
+            if active
+            else "进入沉浸式全屏测量（F11；Esc 在没有活动绘制时退出）"
+        )
+        action.setIcon(
+            themed_icon(
+                "exit_fullscreen" if active else "fullscreen",
+                color=self._tool_icon_color("fullscreen"),
+            )
+        )
+        action.blockSignals(False)
+        if active:
+            QTimer.singleShot(0, self._show_fullscreen_hint)
+            QTimer.singleShot(0, self._focus_current_canvas)
+        else:
+            self._hide_fullscreen_hint()
+        self._update_action_states()
+
+    def _show_fullscreen_hint(self) -> None:
+        canvas = self.current_canvas()
+        controller = self._fullscreen_controller
+        if canvas is None or controller is None or not controller.is_active:
+            return
+        self._hide_fullscreen_hint(delete=True)
+        label = QLabel(
+            "已进入全屏测量  ·  F11 退出  ·  Esc 会先取消当前绘制",
+            canvas,
+        )
+        label.setObjectName("fullscreenMeasurementHint")
+        label.setAttribute(Qt.WidgetAttribute.WA_TransparentForMouseEvents, True)
+        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        if self._is_dark_palette():
+            label.setStyleSheet(
+                "QLabel { color: #F4F7FA; background: rgba(16, 24, 32, 218);"
+                " border: 1px solid rgba(126, 148, 166, 180);"
+                " border-radius: 8px; padding: 9px 15px; font-weight: 600; }"
+            )
+        else:
+            label.setStyleSheet(
+                "QLabel { color: #24313D; background: rgba(250, 252, 253, 232);"
+                " border: 1px solid rgba(112, 130, 145, 170);"
+                " border-radius: 8px; padding: 9px 15px; font-weight: 600; }"
+            )
+        label.adjustSize()
+        self._fullscreen_hint_label = label
+        self._position_fullscreen_hint()
+        label.show()
+        label.raise_()
+        # Some Qt platform plugins settle the central-widget geometry one or
+        # two event turns after showFullScreen(). Re-center the transient hint
+        # after that layout pass so it cannot drift to the right on entry.
+        QTimer.singleShot(0, self._position_fullscreen_hint)
+        QTimer.singleShot(160, self._position_fullscreen_hint)
+        self._fullscreen_hint_timer.start(3200)
+
+    def _position_fullscreen_hint(self) -> None:
+        label = self._fullscreen_hint_label
+        canvas = self.current_canvas()
+        if label is None or canvas is None or label.parentWidget() is not canvas:
+            return
+        label.move(
+            max(12, (canvas.width() - label.width()) // 2),
+            16,
+        )
+        label.raise_()
+
+    def _fade_fullscreen_hint(self) -> None:
+        label = self._fullscreen_hint_label
+        if label is None or not label.isVisible():
+            return
+        effect = label.graphicsEffect()
+        if not isinstance(effect, QGraphicsOpacityEffect):
+            effect = QGraphicsOpacityEffect(label)
+            effect.setOpacity(1.0)
+            label.setGraphicsEffect(effect)
+        animation = QPropertyAnimation(effect, b"opacity", self)
+        animation.setDuration(350)
+        animation.setStartValue(float(effect.opacity()))
+        animation.setEndValue(0.0)
+        animation.setEasingCurve(QEasingCurve.Type.OutCubic)
+        animation.finished.connect(label.hide)
+        self._fullscreen_hint_animation = animation
+        animation.start()
+
+    def _hide_fullscreen_hint(self, *, delete: bool = False) -> None:
+        self._fullscreen_hint_timer.stop()
+        animation = self._fullscreen_hint_animation
+        if animation is not None:
+            animation.stop()
+        self._fullscreen_hint_animation = None
+        label = self._fullscreen_hint_label
+        if label is None:
+            return
+        label.hide()
+        if delete:
+            label.deleteLater()
+            self._fullscreen_hint_label = None
 
     def open_settings_dialog(self) -> None:
         dialog = SettingsDialog(
@@ -8707,6 +9099,12 @@ class MainWindow(QMainWindow):
         for canvas in self._canvases.values():
             canvas.set_settings(self._app_settings)
             canvas.set_show_area_fill(self._show_area_fill)
+        navigator_enabled = bool(self._app_settings.show_canvas_navigator)
+        for navigator in self._canvas_navigators.values():
+            navigator.set_navigator_enabled(navigator_enabled)
+        self.toggle_canvas_navigator_action.blockSignals(True)
+        self.toggle_canvas_navigator_action.setChecked(navigator_enabled)
+        self.toggle_canvas_navigator_action.blockSignals(False)
         if self._preview_canvas is not None:
             self._preview_canvas.set_settings(self._app_settings)
             self._preview_canvas.set_show_area_fill(False)
@@ -9981,6 +10379,13 @@ class MainWindow(QMainWindow):
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        if (
+            self._fullscreen_controller is not None
+            and self._fullscreen_controller.is_active
+        ):
+            self._fullscreen_controller.exit()
+        self._navigator_center_timer.stop()
+        self._pending_navigator_center = None
         self.stop_live_preview()
         if self._capture_manager.is_preview_active():
             raise RuntimeError("相机 backend 仍在运行，工作区重置已阻止。")
@@ -10003,6 +10408,9 @@ class MainWindow(QMainWindow):
         self._document_order.clear()
         self._images.clear()
         self._canvases.clear()
+        for navigator in self._canvas_navigators.values():
+            navigator.clear()
+        self._canvas_navigators.clear()
         self.image_list.clear()
         self.tab_widget.clear()
         for canvas in canvases:
@@ -10029,6 +10437,18 @@ class MainWindow(QMainWindow):
     def _remove_document(self, document_id: str) -> None:
         if document_id not in self._document_order:
             return
+        if (
+            len(self._document_order) == 1
+            and self._fullscreen_controller is not None
+            and self._fullscreen_controller.is_active
+        ):
+            self._fullscreen_controller.exit()
+        if (
+            self._pending_navigator_center is not None
+            and self._pending_navigator_center[0] == document_id
+        ):
+            self._navigator_center_timer.stop()
+            self._pending_navigator_center = None
         document = self.project.get_document(document_id)
         unresolved = self.project_session_controller.unresolved_document(document_id)
         cached_document = document or (unresolved.document if unresolved is not None else None)
@@ -10043,6 +10463,9 @@ class MainWindow(QMainWindow):
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
         self.project_session_controller.remove_document(document_id)
         self._images.pop(document_id, None)
+        navigator = self._canvas_navigators.pop(document_id, None)
+        if navigator is not None:
+            navigator.clear()
         store = self._slide_stores.pop(document_id, None)
         if store is not None:
             store.close()
@@ -10262,10 +10685,6 @@ class MainWindow(QMainWindow):
             canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
             if is_magic_segment_tool_mode(self._tool_mode):
                 self._sync_canvas_magic_subtract_input_mode(canvas)
-            if current_document is None or not current_document.is_digital_slide():
-                self._apply_open_view_mode(canvas)
-            elif isinstance(canvas, DigitalSlideCanvas):
-                canvas.schedule_initial_fit()
         self._update_ui_for_current_document()
 
     def _on_image_list_changed(self, row: int) -> None:
@@ -10575,17 +10994,20 @@ class MainWindow(QMainWindow):
                 self._focus_current_canvas()
                 return
             canvas = self._canvases.get(document.id)
+            persisted_zoom = float(document.view_state.zoom or 1.0)
+            if not math.isfinite(persisted_zoom) or persisted_zoom <= 0:
+                persisted_zoom = 1.0
             view_zoom = (
                 canvas.view_zoom()
                 if canvas is not None
-                else max(0.05, float(document.view_state.zoom or 1.0))
+                else max(MIN_VIEW_ZOOM, persisted_zoom)
             )
             text_size_space = OverlayTextSizeSpace.normalize(
                 self._app_settings.text_size_space
             )
             stored_font_size = float(self._app_settings.text_font_size)
             if text_size_space == OverlayTextSizeSpace.IMAGE_PX:
-                stored_font_size /= max(0.05, view_zoom)
+                stored_font_size /= max(MIN_VIEW_ZOOM, view_zoom)
             text_layout = OverlayTextLayoutSpec(
                 anchor_alignment=OverlayTextAnchorAlignment.normalize(
                     self._app_settings.text_anchor_alignment
@@ -10837,7 +11259,10 @@ class MainWindow(QMainWindow):
             render_mode="screen_scale_full_image",
         )
         output_font_size = max(1.0, float(previous_layout.font.pixelSize()))
-        image_font_size = output_font_size / max(0.05, canvas.view_zoom())
+        image_font_size = output_font_size / max(
+            MIN_VIEW_ZOOM,
+            canvas.view_zoom(),
+        )
         new_spec = OverlayTextLayoutSpec(
             anchor_alignment=OverlayTextAnchorAlignment.CENTER,
             size_space=OverlayTextSizeSpace.IMAGE_PX,
@@ -10946,6 +11371,23 @@ class MainWindow(QMainWindow):
         overlay = document.get_overlay_annotation(document.selected_overlay_id)
         if overlay is not None and overlay.is_text():
             self._refresh_object_inspector()
+
+    def _on_canvas_view_transform_changed(
+        self,
+        document_id: str,
+        snapshot: CanvasViewportSnapshot,
+    ) -> None:
+        navigator = self._canvas_navigators.get(document_id)
+        if navigator is not None:
+            navigator.set_viewport_snapshot(snapshot)
+        document = self.current_document()
+        if document is None or document.id != document_id:
+            return
+        if self._zoom_status_button is not None:
+            self._zoom_status_button.set_viewport_snapshot(
+                snapshot,
+                digital_slide=document.is_digital_slide(),
+            )
 
     def _on_canvas_scale_anchor_picked(self, document_id: str, anchor: Point) -> None:
         document = self.project.get_document(document_id)
@@ -11135,6 +11577,7 @@ class MainWindow(QMainWindow):
             canvas.set_tool_mode("select" if self._preview_active and canvas is self._preview_canvas else self._tool_mode)
             canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
             canvas.notify_document_visual_changed()
+        self._sync_current_view_transform()
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._show_pending_history_budget_notice()
@@ -11537,6 +11980,23 @@ class MainWindow(QMainWindow):
         )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
+        self.fit_action.setEnabled(has_document and not preview_active)
+        self.actual_size_action.setEnabled(has_document and not preview_active)
+        fullscreen_active = bool(
+            self._fullscreen_controller is not None
+            and self._fullscreen_controller.is_active
+        )
+        self.fullscreen_measurement_action.setEnabled(
+            fullscreen_active
+            or (
+                has_document
+                and not preview_active
+                and self._workspace_mode is WorkspaceMode.MEASURE
+            )
+        )
+        self.toggle_canvas_navigator_action.setEnabled(
+            has_document and not preview_active
+        )
         self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
         self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
         if self._delete_group_measurements_button is not None:
@@ -12842,7 +13302,14 @@ class MainWindow(QMainWindow):
             source_image = self._images.get(document.id, QImage())
             if source_image.isNull():
                 raise RuntimeError(f"图片尚未加载，无法导出：{document.path}")
-        screen_scale = max(0.05, document.view_state.zoom or 1.0)
+        mounted_canvas = self._canvases.get(document.id)
+        if mounted_canvas is not None:
+            screen_scale = mounted_canvas.view_zoom()
+        else:
+            persisted_zoom = float(document.view_state.zoom or 1.0)
+            if not math.isfinite(persisted_zoom) or persisted_zoom <= 0:
+                persisted_zoom = 1.0
+            screen_scale = max(MIN_VIEW_ZOOM, persisted_zoom)
 
         if document.is_digital_slide():
             image = self._create_export_surface(source_image.width(), source_image.height())
@@ -12858,7 +13325,7 @@ class MainWindow(QMainWindow):
             def image_to_output(point) -> QPointF:
                 return QPointF(point.x, point.y)
         elif render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
-            canvas = self._canvases.get(document.id)
+            canvas = mounted_canvas
             viewport_width = max(200, canvas.width()) if canvas is not None else max(400, min(1400, source_image.width()))
             viewport_height = max(160, canvas.height()) if canvas is not None else max(300, min(900, source_image.height()))
             image = self._create_export_surface(viewport_width, viewport_height)
@@ -13064,9 +13531,16 @@ class MainWindow(QMainWindow):
                     event.accept()
                     return
                 if event.key() == Qt.Key.Key_Escape:
-                    self._cancel_magic_segment_session()
-                    event.accept()
-                    return
+                    if (
+                        canvas is not None
+                        and (
+                            canvas.has_magic_segment_session()
+                            or canvas.has_magic_manual_subtract_draft()
+                        )
+                    ):
+                        self._cancel_magic_segment_session()
+                        event.accept()
+                        return
             elif is_fiber_quick_tool_mode(self._tool_mode):
                 if event.key() == Qt.Key.Key_R:
                     self._cycle_fiber_quick_prompt_type()
@@ -13081,18 +13555,32 @@ class MainWindow(QMainWindow):
                     event.accept()
                     return
                 if event.key() == Qt.Key.Key_Escape:
-                    self._cancel_fiber_quick_session()
-                    event.accept()
-                    return
+                    if canvas is not None and canvas.has_fiber_quick_session():
+                        self._cancel_fiber_quick_session()
+                        event.accept()
+                        return
             elif is_reference_propagation_tool_mode(self._tool_mode):
                 if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter, Qt.Key.Key_F):
                     self._commit_reference_instance_preview()
                     event.accept()
                     return
                 if event.key() == Qt.Key.Key_Escape:
-                    self._cancel_reference_instance_session()
-                    event.accept()
-                    return
+                    if (
+                        canvas is not None
+                        and canvas.has_reference_instance_session()
+                    ):
+                        self._cancel_reference_instance_session()
+                        event.accept()
+                        return
+        if (
+            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            and event.key() == Qt.Key.Key_Escape
+            and self._fullscreen_controller is not None
+            and self._fullscreen_controller.is_active
+        ):
+            self._fullscreen_controller.exit()
+            event.accept()
+            return
         if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_A:
             if self._tool_mode == "select":
                 if self._last_non_select_tool and self._last_non_select_tool != "select":

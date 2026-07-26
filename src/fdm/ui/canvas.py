@@ -80,6 +80,12 @@ from fdm.ui.canvas_overlay_cache import (
     canvas_overlay_tile_cache,
 )
 from fdm.ui.area_handle_cache import area_handle_display_cache
+from fdm.ui.view_transform import (
+    MAX_VIEW_ZOOM,
+    MIN_VIEW_ZOOM,
+    CanvasViewportSnapshot,
+    CanvasZoomMode,
+)
 from fdm.ui.rendering import (
     area_rings_path,
     annotation_rect,
@@ -104,6 +110,16 @@ class MagicSegmentOperationMode:
 
 OVERLAY_CACHE_MIN_MEASUREMENTS = 64
 OVERLAY_CACHE_MIN_AREA_VERTICES = 10_000
+
+
+def _bounded_view_zoom(value: float) -> float:
+    try:
+        zoom = float(value)
+    except (TypeError, ValueError):
+        return 1.0
+    if not math.isfinite(zoom):
+        return 1.0
+    return max(MIN_VIEW_ZOOM, min(MAX_VIEW_ZOOM, zoom))
 
 
 @dataclass(frozen=True, slots=True)
@@ -732,6 +748,7 @@ class DocumentCanvas(QWidget):
     magicSegmentSessionChanged = Signal(str)
     areaEditRejected = Signal(str, str)
     viewZoomChanged = Signal(float)
+    viewTransformChanged = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -742,7 +759,9 @@ class DocumentCanvas(QWidget):
         self._tool_mode = "select"
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
         self._zoom = 1.0
+        self._zoom_mode = CanvasZoomMode.CUSTOM
         self._pan = Point(20.0, 20.0)
+        self._last_view_transform_snapshot: CanvasViewportSnapshot | None = None
 
         self._drawing_anchor_raw: Point | None = None
         self._drawing_line: Line | None = None
@@ -852,6 +871,9 @@ class DocumentCanvas(QWidget):
 
     def changeEvent(self, event: QEvent) -> None:
         super().changeEvent(event)
+        if event.type() == QEvent.Type.DevicePixelRatioChange:
+            self._publish_view_transform()
+            return
         if event.type() not in {
             QEvent.Type.PaletteChange,
             QEvent.Type.ApplicationPaletteChange,
@@ -898,16 +920,18 @@ class DocumentCanvas(QWidget):
                 previous_document.measurements
             )
         self._reset_overlay_tracking(invalidate_document=False)
-        self._zoom = max(0.05, document.view_state.zoom or 1.0)
+        self._zoom = _bounded_view_zoom(document.view_state.zoom or 1.0)
+        self._zoom_mode = CanvasZoomMode.CUSTOM
         self._pan = Point(document.view_state.pan.x, document.view_state.pan.y)
-        if self._zoom == 1.0 and self._pan.x == 0.0 and self._pan.y == 0.0:
-            self.fit_to_view()
+        self._last_view_transform_snapshot = None
+        self._publish_view_transform()
         self.update()
 
     def set_image(self, image: QImage) -> None:
         self._image = image
         if self._document is not None:
             self._document.image_size = (image.width(), image.height())
+        self._publish_view_transform()
         self.update()
 
     def clear_document(self) -> None:
@@ -918,6 +942,7 @@ class DocumentCanvas(QWidget):
         document_token = id(self._document) if self._document is not None else None
         self._document = None
         self._image = None
+        self._last_view_transform_snapshot = None
         self._cancel_line_drawing()
         self._cancel_area_drawing()
         self._dragging_handle = None
@@ -2233,33 +2258,64 @@ class DocumentCanvas(QWidget):
     def view_zoom(self) -> float:
         """Return the current logical image-to-widget scale."""
 
-        return max(0.05, float(self._zoom))
+        return _bounded_view_zoom(self._zoom)
+
+    def zoom_mode(self) -> CanvasZoomMode:
+        return self._zoom_mode
+
+    def viewport_snapshot(self) -> CanvasViewportSnapshot | None:
+        if self._document is None or self._image is None:
+            return None
+        return CanvasViewportSnapshot(
+            document_id=self._document.id,
+            full_image_rect=QRectF(self._full_image_bounds()),
+            mounted_image_rect=QRectF(self._paint_image_bounds()),
+            visible_image_rect=QRectF(self._exact_visible_image_rect()),
+            zoom=self.view_zoom(),
+            mode=self._zoom_mode,
+            device_pixel_ratio=max(1.0, float(self.devicePixelRatioF())),
+            focus_index=self._viewport_focus_index(),
+        )
+
+    def set_view_zoom(self, zoom: float) -> None:
+        """Set a custom logical zoom while preserving the view center."""
+
+        if self._image is None:
+            return
+        center = QPointF(self.width() / 2.0, self.height() / 2.0)
+        self._set_zoom_at_widget_position(
+            _bounded_view_zoom(zoom),
+            center,
+            mode=CanvasZoomMode.CUSTOM,
+        )
 
     def center_on_image_point(self, point: Point) -> None:
         """Keep the current zoom while bringing an image point to view center."""
 
         if self._image is None:
             return
-        current = self.image_to_widget(point)
-        self._pan = Point(
-            self._pan.x + (self.width() / 2.0 - current.x()),
-            self._pan.y + (self.height() / 2.0 - current.y()),
-        )
+        self._center_image_point_in_widget(point)
+        if self._zoom_mode is CanvasZoomMode.FIT:
+            self._zoom_mode = CanvasZoomMode.CUSTOM
         self._persist_view_state()
+        self._publish_view_transform()
         self.update()
 
     def fit_to_view(self) -> None:
         if self._image is None:
             return
-        viewport_width = max(100, self.width() - 40)
-        viewport_height = max(100, self.height() - 40)
-        zoom_x = viewport_width / self._image.width()
-        zoom_y = viewport_height / self._image.height()
-        self._zoom = max(0.05, min(zoom_x, zoom_y))
+        image_width = max(1.0, float(self._image.width()))
+        image_height = max(1.0, float(self._image.height()))
+        viewport_width = max(1.0, float(self.width() - 40))
+        viewport_height = max(1.0, float(self.height() - 40))
+        zoom_x = viewport_width / image_width
+        zoom_y = viewport_height / image_height
+        self._zoom = _bounded_view_zoom(min(zoom_x, zoom_y))
+        self._zoom_mode = CanvasZoomMode.FIT
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
-        target_width = self._image.width() * self._zoom
-        target_height = self._image.height() * self._zoom
+        target_width = image_width * self._zoom
+        target_height = image_height * self._zoom
         if self._fit_alignment == "top_left":
             self._pan = Point(20.0, 20.0)
         else:
@@ -2268,16 +2324,21 @@ class DocumentCanvas(QWidget):
                 (self.height() - target_height) / 2.0,
             )
         self._persist_view_state()
-        self.viewZoomChanged.emit(self.view_zoom())
+        self._publish_view_transform(zoom_changed=True)
         self.update()
 
     def actual_size(self) -> None:
+        if self._image is None:
+            return
+        center = QPointF(self.width() / 2.0, self.height() / 2.0)
+        center_image_point = self.widget_to_image(center)
         self._zoom = 1.0
+        self._zoom_mode = CanvasZoomMode.ACTUAL
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
-        self._pan = Point(20.0, 20.0)
+        self._center_image_point_in_widget(center_image_point)
         self._persist_view_state()
-        self.viewZoomChanged.emit(self.view_zoom())
+        self._publish_view_transform(zoom_changed=True)
         self.update()
 
     def set_temporary_grab_pressed(self, pressed: bool) -> None:
@@ -2366,9 +2427,28 @@ class DocumentCanvas(QWidget):
         self._draw_preview(painter)
 
     def resizeEvent(self, event) -> None:
+        old_size = event.oldSize()
+        old_center: Point | None = None
+        if (
+            self._image is not None
+            and old_size.isValid()
+            and old_size.width() > 0
+            and old_size.height() > 0
+        ):
+            old_center = self.widget_to_image(
+                QPointF(old_size.width() / 2.0, old_size.height() / 2.0)
+            )
         super().resizeEvent(event)
-        if self._image is not None and self._document is not None and self._document.view_state.zoom == 1.0:
+        if self._image is None or self._document is None:
+            return
+        if self._zoom_mode is CanvasZoomMode.FIT:
             self.fit_to_view()
+            return
+        if old_center is not None:
+            self._center_image_point_in_widget(old_center)
+            self._persist_view_state()
+        self._publish_view_transform()
+        self.update()
 
     def hideEvent(self, event) -> None:
         """Stop producers owned by a canvas that is no longer visible."""
@@ -2388,18 +2468,13 @@ class DocumentCanvas(QWidget):
         if effective_delta == 0:
             return
         cursor_position = event.position()
-        image_before = self.widget_to_image(cursor_position)
         zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
-        self._zoom = max(0.05, min(40.0, self._zoom * zoom_factor))
-        self._reset_proxy_warming()
-        self._cancel_overlay_requests()
-        self._pan = Point(
-            cursor_position.x() - (image_before.x * self._zoom),
-            cursor_position.y() - (image_before.y * self._zoom),
+        self._set_zoom_at_widget_position(
+            _bounded_view_zoom(self._zoom * zoom_factor),
+            cursor_position,
+            mode=CanvasZoomMode.CUSTOM,
         )
-        self._persist_view_state()
-        self.viewZoomChanged.emit(self.view_zoom())
-        self.update()
+        event.accept()
 
     def _begin_canvas_pan(self, button: Qt.MouseButton) -> None:
         """Start one physical-pixel-aligned pan session.
@@ -2808,8 +2883,11 @@ class DocumentCanvas(QWidget):
             )
             self._pan_drag_unsnapped = unsnapped
             self._pan = self._pan_at_stable_device_phase(unsnapped)
+            if self._zoom_mode is CanvasZoomMode.FIT:
+                self._zoom_mode = CanvasZoomMode.CUSTOM
             self._last_mouse_pos = event.position()
             self._persist_view_state()
+            self._publish_view_transform()
             self.update()
             return
 
@@ -3343,6 +3421,36 @@ class DocumentCanvas(QWidget):
             self._pan.y + (point.y * self._zoom),
         )
 
+    def _center_image_point_in_widget(self, point: Point) -> None:
+        current = self.image_to_widget(point)
+        self._pan = Point(
+            self._pan.x + (self.width() / 2.0 - current.x()),
+            self._pan.y + (self.height() / 2.0 - current.y()),
+        )
+
+    def _set_zoom_at_widget_position(
+        self,
+        zoom: float,
+        position: QPointF,
+        *,
+        mode: CanvasZoomMode,
+    ) -> None:
+        if self._image is None:
+            return
+        image_before = self.widget_to_image(position)
+        self._zoom = _bounded_view_zoom(zoom)
+        self._zoom_mode = mode
+        self._reset_proxy_warming()
+        self._cancel_overlay_requests()
+        current = self.image_to_widget(image_before)
+        self._pan = Point(
+            self._pan.x + position.x() - current.x(),
+            self._pan.y + position.y() - current.y(),
+        )
+        self._persist_view_state()
+        self._publish_view_transform(zoom_changed=True)
+        self.update()
+
     def _point_in_image(self, point: Point) -> bool:
         if self._image is None:
             return False
@@ -3378,6 +3486,37 @@ class DocumentCanvas(QWidget):
             float(self._image.width()),
             float(self._image.height()),
         )
+
+    def _full_image_bounds(self) -> QRectF:
+        if self._document is not None:
+            width, height = self._document.image_size
+            return QRectF(0.0, 0.0, float(width), float(height))
+        return QRectF(self._paint_image_bounds())
+
+    def _viewport_focus_index(self) -> int | None:
+        return None
+
+    def _exact_visible_image_rect(self) -> QRectF:
+        if self._image is None:
+            return QRectF()
+        transform = QTransform()
+        overlay_origin = self._overlay_widget_origin()
+        transform.translate(float(overlay_origin.x()), float(overlay_origin.y()))
+        transform.scale(float(self._zoom), float(self._zoom))
+        inverse, invertible = transform.inverted()
+        if not invertible:
+            return QRectF()
+        visible = inverse.mapRect(QRectF(self.rect()))
+        return visible.intersected(self._paint_image_bounds())
+
+    def _publish_view_transform(self, *, zoom_changed: bool = False) -> None:
+        snapshot = self.viewport_snapshot()
+        if zoom_changed:
+            self.viewZoomChanged.emit(self.view_zoom())
+        if snapshot is None or snapshot == self._last_view_transform_snapshot:
+            return
+        self._last_view_transform_snapshot = snapshot
+        self.viewTransformChanged.emit(snapshot)
 
     def _paint_context(self, widget_rect: QRectF | None = None) -> CanvasPaintContext:
         overlay_origin = self._overlay_widget_origin()

@@ -14,6 +14,7 @@ from fdm.runtime_logging import append_runtime_log
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
+from fdm.ui.view_transform import CanvasZoomMode
 
 
 class DigitalSlideCanvas(DocumentCanvas):
@@ -106,6 +107,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def set_image(self, image: QImage) -> None:
         self._image = image
+        self._publish_view_transform()
         self.update()
 
     def focus_index(self) -> int:
@@ -166,15 +168,22 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self._slide_manifest is None:
             super().center_on_image_point(point)
             return
+        # Whole-slide navigation moves the global SQLite viewport without
+        # changing the local FIT/ACTUAL/CUSTOM transform.  Derive the image
+        # coordinate currently under the widget center using the base mapping,
+        # then place the requested global point at that same local coordinate.
+        local_center = DocumentCanvas.widget_to_image(
+            self,
+            QPointF(self.width() / 2.0, self.height() / 2.0),
+        )
         self._allow_viewport_buffer_retry()
         self._cancel_overlay_requests()
         self._viewport_origin = Point(
-            point.x - (self._slide_manifest.viewport_width / 2.0),
-            point.y - (self._slide_manifest.viewport_height / 2.0),
+            point.x - local_center.x,
+            point.y - local_center.y,
         )
         self._clamp_viewport()
         self._reload_viewport()
-        super().center_on_image_point(point)
 
     def set_focus_index(self, focus_index: int) -> None:
         focus_index = self._normalized_focus_index(focus_index)
@@ -217,6 +226,9 @@ class DigitalSlideCanvas(DocumentCanvas):
             return bounds
         width, height = self._document.image_size
         return bounds.intersected(QRectF(0.0, 0.0, float(width), float(height)))
+
+    def _viewport_focus_index(self) -> int | None:
+        return int(self._focus_index)
 
     def fit_to_view(self) -> None:
         self._initial_fit_pending = False
@@ -421,22 +433,12 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_pending = False
         self._initial_fit_done = True
         cursor_position = event.position()
-        local_before = DocumentCanvas.widget_to_image(self, cursor_position)
         zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
-        # Match DocumentCanvas.wheelEvent(): screen proxies and passive tiles
-        # are exact only for the zoom used to build them.  Digital-slide zoom
-        # has its own wheel handler, so it must explicitly end the old
-        # generation as well.
-        self._reset_proxy_warming()
-        self._cancel_overlay_requests()
-        self._zoom = max(0.05, min(40.0, self._zoom * zoom_factor))
-        self._pan = Point(
-            cursor_position.x() - (local_before.x * self._zoom),
-            cursor_position.y() - (local_before.y * self._zoom),
+        self._set_zoom_at_widget_position(
+            self._zoom * zoom_factor,
+            cursor_position,
+            mode=CanvasZoomMode.CUSTOM,
         )
-        self._persist_view_state()
-        self.viewZoomChanged.emit(self.view_zoom())
-        self.update()
         event.accept()
 
     def _overlay_navigation_is_transient(self) -> bool:
@@ -729,6 +731,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _publish_viewport_state(self, *, throttled: bool) -> None:
         now = perf_counter()
         if throttled and (now - self._viewport_last_publish_at) < 0.12:
+            self._publish_view_transform()
             return
         self._viewport_last_publish_at = now
         self._persist_view_state()
@@ -737,6 +740,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             int(round(self._viewport_origin.y)),
             int(self._focus_index),
         )
+        self._publish_view_transform()
 
     def _reload_viewport(self, *, throttled: bool = False) -> None:
         image = self._render_current_viewport()

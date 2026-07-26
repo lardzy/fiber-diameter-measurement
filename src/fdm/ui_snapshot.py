@@ -31,6 +31,22 @@ from fdm.ui.main_window import MainWindow  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
 
 
+UI_SNAPSHOT_SCENARIOS = (
+    "empty",
+    "measurement",
+    "measurement-fullscreen",
+    "measurement-zoomed",
+    "measurement-object",
+    "overlay-text-object",
+    "measurement-calibration-collapsed",
+    "measurement-records-collapsed",
+    "measurement-results",
+    "acquisition",
+    "digital-slide",
+    "settings",
+)
+
+
 def _settle_ui(milliseconds: int = 800) -> None:
     """Let deferred layout, timer and paint work finish before a review grab."""
 
@@ -147,18 +163,7 @@ def _parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate deterministic UI review screenshots.")
     parser.add_argument(
         "--scenario",
-        choices=(
-            "empty",
-            "measurement",
-            "measurement-object",
-            "overlay-text-object",
-            "measurement-calibration-collapsed",
-            "measurement-records-collapsed",
-            "measurement-results",
-            "acquisition",
-            "digital-slide",
-            "settings",
-        ),
+        choices=UI_SNAPSHOT_SCENARIOS,
         default="measurement",
     )
     parser.add_argument("--theme", choices=("dark", "light", "system"), default="dark")
@@ -195,6 +200,25 @@ def _parse_args() -> argparse.Namespace:
     parser.add_argument("--scale", type=float, default=1.0, help="Qt UI scale factor, for example 1.25 or 1.5")
     parser.add_argument("--output", type=Path)
     return parser.parse_args()
+
+
+def _apply_measurement_zoomed_scene(window: MainWindow) -> bool:
+    """Apply the deterministic zoom used to review canvas navigation chrome."""
+
+    canvas = window.current_canvas()
+    if canvas is None:
+        return False
+    canvas.set_view_zoom(2.4)
+    canvas.center_on_image_point(Point(760.0, 430.0))
+    return True
+
+
+def _apply_measurement_fullscreen_scene(window: MainWindow) -> bool:
+    """Enter the production full-screen path used by the review scene."""
+
+    window._toggle_fullscreen_measurement(True)
+    controller = window._fullscreen_controller
+    return bool(controller is not None and controller.is_active)
 
 
 def main() -> int:
@@ -281,6 +305,10 @@ def main() -> int:
             widget._calibration_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":
             widget._records_section.setExpanded(False)
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-fullscreen":
+            _apply_measurement_fullscreen_scene(widget)
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-zoomed":
+            _apply_measurement_zoomed_scene(widget)
         elif isinstance(widget, MainWindow) and args.scenario in {"acquisition", "digital-slide"}:
             widget._preview_active = True
             widget._digital_slide_mode = args.scenario == "digital-slide"
@@ -296,6 +324,12 @@ def main() -> int:
             widget._refresh_statistics_ui()
         for _ in range(3):
             app.processEvents()
+        if isinstance(widget, MainWindow) and args.scenario == "measurement-fullscreen":
+            # Recreate the real entry hint after the window-state transition,
+            # then freeze its production fade timer for a deterministic review
+            # capture.  The application itself still fades the hint normally.
+            widget._show_fullscreen_hint()
+            widget._fullscreen_hint_timer.stop()
         widget.ensurePolished()
         widget.update()
         _settle_ui()
@@ -323,6 +357,10 @@ def main() -> int:
                     "inspector_visible": bool(widget._inspector_dock and widget._inspector_dock.isVisible()),
                     "results_visible": bool(widget._results_dock and widget._results_dock.isVisible()),
                     "compact": bool(widget._adaptive_layout and widget._adaptive_layout.is_compact),
+                    "fullscreen_active": bool(
+                        widget._fullscreen_controller is not None
+                        and widget._fullscreen_controller.is_active
+                    ),
                 }
             )
         print(json.dumps(payload, ensure_ascii=False, allow_nan=False))

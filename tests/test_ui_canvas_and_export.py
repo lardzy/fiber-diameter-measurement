@@ -68,6 +68,7 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.main_window import DigitalSlideWriteWorker, MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
     from fdm.ui.rendering import annotation_rect, draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings, resolve_overlay_text_layout
+    from fdm.ui.view_transform import CanvasZoomMode
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     AreaEditOperationMode = object  # type: ignore[assignment]
@@ -89,6 +90,7 @@ else:
     DigitalSlideWriteWorker = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    CanvasZoomMode = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
     draw_measurements = object  # type: ignore[assignment]
     draw_scale_overlay = object  # type: ignore[assignment]
@@ -4402,7 +4404,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 [
                     window.fit_action,
                     window.actual_size_action,
+                    window.fullscreen_measurement_action,
                     window.digital_slide_smooth_navigation_action,
+                    window.toggle_canvas_navigator_action,
                     window.toggle_project_panel_action,
                     window.toggle_inspector_panel_action,
                     window.toggle_results_panel_action,
@@ -7934,8 +7938,13 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertIsNotNone(canvas)
             self.assertAlmostEqual(canvas._zoom, 1.0)
-            self.assertAlmostEqual(canvas._pan.x, 20.0)
-            self.assertAlmostEqual(canvas._pan.y, 20.0)
+            self.assertEqual(canvas.zoom_mode(), CanvasZoomMode.ACTUAL)
+            # Switching to 1:1 preserves the current view center instead of
+            # forcing the image back to the top-left corner.
+            widget_center = QPointF(canvas.width() / 2.0, canvas.height() / 2.0)
+            image_center = canvas.widget_to_image(widget_center)
+            self.assertAlmostEqual(image_center.x, widget_center.x())
+            self.assertAlmostEqual(image_center.y, widget_center.y())
         finally:
             window.close()
 

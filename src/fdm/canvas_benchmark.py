@@ -67,6 +67,7 @@ from fdm.ui.canvas_overlay_cache import (
 )
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.screen_label_sprite_cache import screen_label_sprite_cache
+from fdm.ui.view_transform import MAX_VIEW_ZOOM, MIN_VIEW_ZOOM
 from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.version import __version__
 
@@ -1718,7 +1719,10 @@ def _benchmark_interactions(
     )
 
     def zoom_action() -> None:
-        canvas._zoom = max(0.05, min(40.0, original_zoom * 1.15))
+        canvas._zoom = max(
+            MIN_VIEW_ZOOM,
+            min(MAX_VIEW_ZOOM, original_zoom * 1.15),
+        )
         canvas._reset_proxy_warming()
         canvas._cancel_overlay_requests()
         canvas._persist_view_state()
