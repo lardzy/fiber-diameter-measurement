@@ -9,14 +9,22 @@ ignored_untracked_prefixes = [
 
 [profiles.core]
 groups = ["microview"]
-required_python_modules = []
+required_python_modules = ["numpy", "cv2", "PIL", "openpyxl", "tifffile"]
 required_files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
-features = ["measurement", "capture", "digital-slide"]
+features = [
+  "measurement",
+  "capture",
+  "digital-slide",
+  "image-export",
+  "image-processing",
+  "image-analysis",
+  "batch-processing",
+]
 
 [profiles.full]
 extends = "core"
 groups = ["area-infer", "area-models", "segment-anything"]
-required_python_modules = ["PIL", "torch", "torchvision"]
+required_python_modules = ["onnxruntime", "torch", "torchvision"]
 features = ["area-inference", "magic-segmentation"]
 
 [groups.microview]
@@ -114,8 +122,8 @@ target = "THIRD_PARTY_NOTICES.md"
 profile = "core"
 feature = "release-compliance"
 required = true
-size = 1505
-sha256 = "f42e8056292ebbbcdcc4b3db5693faa0d600b008990e974f1180b63d4e06948e"
+size = 1705
+sha256 = "eb82ed6354c295fa912b48388caa28ada5e287d1bbaa1a083f7f1a02fbea4948"
 license = "GPL-3.0-only"
 
 [[assets]]

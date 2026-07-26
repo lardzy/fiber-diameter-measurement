@@ -11,6 +11,8 @@ files included by those components.
 | OpenCV | Apache-2.0; <https://github.com/opencv/opencv/blob/4.x/LICENSE> |
 | Pillow | HPND; <https://github.com/python-pillow/Pillow/blob/main/LICENSE> |
 | tifffile | BSD-3-Clause; <https://github.com/cgohlke/tifffile/blob/master/LICENSE> |
+| openpyxl | MIT; <https://foss.heptapod.net/openpyxl/openpyxl/-/blob/branch/3.1/LICENCE.rst> |
+| et_xmlfile | MIT; <https://foss.heptapod.net/openpyxl/et_xmlfile/-/blob/branch/default/LICENCE.rst> |
 | PyTorch | BSD-3-Clause; <https://github.com/pytorch/pytorch/blob/main/LICENSE> |
 | TorchVision | BSD-3-Clause; <https://github.com/pytorch/vision/blob/main/LICENSE> |
 | ONNX Runtime | MIT; <https://github.com/microsoft/onnxruntime/blob/main/LICENSE> |

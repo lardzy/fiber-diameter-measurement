@@ -1,6 +1,6 @@
 Metadata-Version: 2.4
 Name: fiber-diameter-measurement
-Version: 0.3.3
+Version: 0.3.8
 Summary: Offline desktop software for fiber diameter measurement.
 Requires-Python: >=3.11
 Description-Content-Type: text/markdown
@@ -13,6 +13,7 @@ Requires-Dist: pandas>=2.2
 Requires-Dist: openpyxl>=3.1
 Requires-Dist: onnxruntime>=1.18
 Requires-Dist: Pillow>=10.4
+Requires-Dist: tifffile>=2025.5.10
 Requires-Dist: pyserial>=3.5
 Provides-Extra: dev
 Requires-Dist: pytest>=8.2; extra == "dev"
@@ -46,7 +47,8 @@ Fiber Diameter Measurement 是一款面向显微图像的离线桌面软件，�
 
 ### 图片、项目与标定
 
-- 支持打开单张图片、多张图片、整个文件夹，也可以直接拖入图片、文件夹或 `.fdmproj` 项目文件。
+- 支持打开单张图片、多张图片、整个文件夹，也可以直接拖入图片、文件夹、`.fdmproj` 项目或 `.fdmslide` 数字化切片。
+- Windows 安装包可关联 `.fdmproj` 与 `.fdmslide`；双击文件会直接打开，已有实例时复用并激活当前工作台。
 - 多图片以工作区形式管理，每张图片保留自己的标定、类别、测量记录、画布视图和撤回 / 重做历史。
 - 支持图内比例尺标定、标定预设、项目统一比例尺和 CU 标尺导入。
 - 普通图片会在同目录读写 `*.fdm.json` 标尺侧车文件；完整会话可保存为 `.fdmproj` 项目。
@@ -110,6 +112,7 @@ Fiber Diameter Measurement 是一款面向显微图像的离线桌面软件，�
 | --- | --- |
 | `*.fdm.json` | 图片标尺侧车文件，只保存标定信息。 |
 | `*.fdmproj` | 项目文件，保存图片列表、测量记录、类别、标注、视图状态等。 |
+| `*.fdmslide` | 数字化切片 SQLite 文件，保存多焦层 tile、采集清单和切片状态。 |
 | `<project>.assets/` | 项目资产目录，用于保存抓拍导入等项目内图片。 |
 | `图片汇总.csv` | 按图片聚合的导出统计。 |
 | `纤维种类汇总.csv` | 按类别聚合的导出统计。 |
@@ -153,7 +156,8 @@ fdm
 ## 运行时资源
 
 - 魔棒分割模型位于 `runtime/segment-anything/edge_sam/` 和 `runtime/segment-anything/edge_sam_3x/`。
-- 面积自动识别使用 `runtime/area-infer/` 中的 worker 与参考引擎，模型权重通常放在 `runtime/area-models/` 并在设置中绑定名称。
+- 面积自动识别使用 `runtime/area-infer/` 中的 worker 与参考引擎；正式包只加载 `runtime/area-models/` 中经权威 SHA256 清单校验的模型，并始终使用 PyTorch `weights_only` 安全加载。
+- 源码开发环境中的自定义面积 checkpoint 默认拒绝。仅在确认文件来源可信且内容为兼容的纯 tensor `state_dict` 后，才可显式设置 `FDM_ALLOW_UNTRUSTED_AREA_MODELS=1` 并重启；该开关在 frozen/full 正式包中无效。
 - Microview 相关 DLL、驱动和控件位于 `runtime/camera/microview/`，主要面向 Windows 环境。
 - 项目打包脚本会从这些目录收集运行时资源，源码运行时也会按相同约定查找。
 
@@ -165,10 +169,52 @@ fdm
 python -m unittest discover -s tests
 ```
 
-Windows onedir 打包：
+Windows 安装器一键打包（默认先重新生成干净的 full onedir）：
+
+```bash
+python scripts/build_windows_installer.py
+```
+
+只生成 onedir，或确认现有 onedir 已有效后直接复用：
 
 ```bash
 python scripts/build_windows_onedir.py
+python scripts/build_windows_installer.py --reuse-onedir
+```
+
+默认内部包会同时包含公司内部的 `runtime/area-models/` 和
+`runtime/content-templates/`。模板目录作为未跟踪的私有构建覆盖层动态收集，
+不会把文件名、内容或哈希写入公开仓库的 `runtime_assets.toml`。生成不含私有资源的精简包：
+
+```bash
+# 只排除内部面积模型
+python scripts/build_windows_installer.py --exclude-area-models
+
+# 只排除内部原始记录模板
+python scripts/build_windows_installer.py --exclude-content-templates
+
+# 两者都排除，适合公开 release
+python scripts/build_windows_installer.py --exclude-area-models --exclude-content-templates
+```
+
+两个排除参数同样适用于 `build_windows_onedir.py`。复用已有 onedir 时必须传入与其
+构建时相同的排除参数，否则 manifest 校验会拒绝资源选择不一致的安装包。
+单项排除的安装器会带 `-no-area-models` 或 `-no-content-templates` 后缀；两项都排除
+时使用 `-public` 后缀，避免覆盖同版本的内部完整安装器。
+
+应用也支持直接传入关联文件路径：
+
+```bash
+FiberDiameterMeasurement.exe "C:\path\example.fdmproj"
+FiberDiameterMeasurement.exe "C:\path\example.fdmslide"
+```
+
+通过 Windows installer 安装时，`.fdmproj` 和 `.fdmslide` 文件关联默认勾选；通用图片格式不会被接管。
+
+内部打包默认允许脏工作区，并对 `runtime_assets.toml` 固定哈希差异给出警告后打包当前文件；缺失文件、依赖、无效元数据、损坏清单或包内文件不一致仍会阻断。需要恢复正式发布的干净工作区和严格哈希门禁时使用：
+
+```bash
+python scripts/build_windows_installer.py --strict-release --strict-asset-hashes
 ```
 
 同步安装器版本号：

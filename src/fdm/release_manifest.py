@@ -298,39 +298,79 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
     if not ipc_ok and not any("Qt local IPC" in str(item) for item in errors):
         errors.append("Qt local IPC self-check is unavailable")
 
-    try:
-        raster_probe = _probe_pillow_raster_encoders()
-    except Exception as exc:  # noqa: BLE001
-        functional_checks["raster_encoders"] = False
-        errors.append(f"Pillow raster encoder self-check failed: {exc}")
-    else:
-        functional_checks["raster_encoders"] = raster_probe
-        format_results = raster_probe.get("formats", {})
-        if not isinstance(format_results, dict):
-            format_results = {}
-        for format_name in ("png", "jpeg", "tiff", "bmp", "webp"):
-            format_result = format_results.get(format_name, {})
-            ok = isinstance(format_result, dict) and format_result.get("ok") is True
-            functional_checks[f"raster_encoder:{format_name}"] = ok
-            if not ok:
-                reason = (
-                    str(format_result.get("message", "")).strip()
-                    if isinstance(format_result, dict)
-                    else ""
-                )
-                errors.append(
-                    f"Pillow {format_name.upper()} encoder is unavailable"
-                    + (f": {reason}" if reason else "")
-                )
-
-    if report.get("profile") == "full":
-        versions = report.get("dependency_versions", {})
-        for distribution in ("Pillow", "tifffile", "torch", "torchvision"):
+    features = set(str(item) for item in report.get("features", []))
+    versions = report.get("dependency_versions", {})
+    raster_probe: dict[str, Any] = {}
+    if "image-export" in features:
+        for distribution in ("Pillow", "tifffile"):
             version = str(versions.get(distribution, "")).strip()
             ok = bool(version and version != "not-installed")
             functional_checks[f"dependency:{distribution}"] = ok
             if not ok:
-                errors.append(f"full profile dependency is unavailable: {distribution}")
+                errors.append(
+                    "image-export dependency is unavailable: "
+                    f"{distribution}"
+                )
+        try:
+            raster_probe = _probe_pillow_raster_encoders()
+        except Exception as exc:  # noqa: BLE001
+            functional_checks["raster_encoders"] = False
+            errors.append(f"Pillow raster encoder self-check failed: {exc}")
+        else:
+            functional_checks["raster_encoders"] = raster_probe
+            if raster_probe.get("ok") is not True:
+                errors.append("raster encoder production self-check returned a failure")
+            format_results = raster_probe.get("formats", {})
+            if not isinstance(format_results, dict):
+                format_results = {}
+            for format_name in ("png", "jpeg", "tiff", "bmp", "webp"):
+                format_result = format_results.get(format_name, {})
+                ok = (
+                    isinstance(format_result, dict)
+                    and format_result.get("ok") is True
+                )
+                functional_checks[f"raster_encoder:{format_name}"] = ok
+                if not ok:
+                    reason = (
+                        str(format_result.get("message", "")).strip()
+                        if isinstance(format_result, dict)
+                        else ""
+                    )
+                    errors.append(
+                        f"Pillow {format_name.upper()} encoder is unavailable"
+                        + (f": {reason}" if reason else "")
+                    )
+            production_cases = raster_probe.get("production_cases", {})
+            required_production_cases = (
+                "gray16_png",
+                "gray16_tiff_deflate",
+                "gray16_tiff_lzw",
+                "gray16_tiff_none",
+                "gray32_float_tiff_deflate",
+                "webp_lossy",
+                "webp_lossless",
+            )
+            for case_name in required_production_cases:
+                case_result = (
+                    production_cases.get(case_name, {})
+                    if isinstance(production_cases, dict)
+                    else {}
+                )
+                ok = (
+                    isinstance(case_result, dict)
+                    and case_result.get("ok") is True
+                )
+                functional_checks[f"raster_production:{case_name}"] = ok
+                if not ok:
+                    reason = (
+                        str(case_result.get("message", "")).strip()
+                        if isinstance(case_result, dict)
+                        else ""
+                    )
+                    errors.append(
+                        f"raster production path self-check failed: {case_name}"
+                        + (f": {reason}" if reason else "")
+                    )
         try:
             tifffile_probe = _probe_tifffile_precision()
         except Exception as exc:  # noqa: BLE001
@@ -360,7 +400,40 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
                         f"tifffile {case_name} TIFF round-trip is unavailable"
                     )
 
-    features = set(str(item) for item in report.get("features", []))
+    if "image-processing" in features:
+        try:
+            processing_probe = _probe_image_processing_pipeline()
+        except Exception as exc:  # noqa: BLE001
+            functional_checks["image_processing_pipeline"] = False
+            errors.append(f"image processing pipeline self-check failed: {exc}")
+        else:
+            processing_ok = processing_probe.get("ok") is True
+            functional_checks["image_processing_pipeline"] = processing_probe
+            if not processing_ok:
+                errors.append("image processing pipeline self-check returned a failure")
+
+    if {"image-analysis", "batch-processing"} & features:
+        try:
+            analysis_probe = _probe_analysis_pipeline()
+        except Exception as exc:  # noqa: BLE001
+            functional_checks["analysis_pipeline"] = False
+            errors.append(f"analysis pipeline self-check failed: {exc}")
+        else:
+            analysis_ok = analysis_probe.get("ok") is True
+            functional_checks["analysis_pipeline"] = analysis_probe
+            if not analysis_ok:
+                errors.append("analysis pipeline self-check returned a failure")
+
+    if report.get("profile") == "full":
+        for distribution in ("torch", "torchvision"):
+            version = str(versions.get(distribution, "")).strip()
+            ok = bool(version and version != "not-installed")
+            functional_checks[f"dependency:{distribution}"] = ok
+            if not ok:
+                errors.append(
+                    f"full profile dependency is unavailable: {distribution}"
+                )
+
     execute_runtime_probe = bool(
         (sys.platform.startswith("win") and getattr(sys, "frozen", False))
         or os.environ.get("FDM_SELF_CHECK_EXECUTE", "").strip() == "1"
@@ -392,14 +465,23 @@ def _probe_pillow_raster_encoders() -> dict[str, Any]:
     atomic replacement, so this check also catches missing frozen plugins.
     """
 
+    import numpy as np
+
     from fdm.services.raster_export import (
         RasterEncodingOptions,
         RasterExportFormat,
         RasterExportWriter,
     )
+    from fdm.services.raster_io import (
+        NativeTiffCompression,
+        numpy_to_raster_plane,
+        read_raster_file,
+        write_native_raster_asset,
+    )
 
     writer = RasterExportWriter()
     format_results: dict[str, dict[str, Any]] = {}
+    production_cases: dict[str, dict[str, Any]] = {}
     backend_version = ""
     with tempfile.TemporaryDirectory(prefix="fdm-栅格编码-self-check-") as tmpdir:
         root = Path(tmpdir)
@@ -452,16 +534,444 @@ def _probe_pillow_raster_encoders() -> dict[str, Any]:
                     "detail": failure.detail if failure is not None else "",
                 }
 
+        gray16 = np.asarray(
+            (
+                (0, 1, 255, 256),
+                (1024, 32768, 65534, 65535),
+                (7, 4095, 50000, 42),
+            ),
+            dtype=np.uint16,
+        )
+        gray32 = np.asarray(
+            (
+                (-12.5, -0.0, 0.0, 0.125),
+                (1.0 / 3.0, 1.5, 65535.25, 1.0e8),
+                (-1.0e-6, 42.75, -32768.5, 9.0),
+            ),
+            dtype=np.float32,
+        )
+        native_cases = (
+            (
+                "gray16_png",
+                numpy_to_raster_plane(gray16),
+                root / "16位灰度生产路径.png",
+                {},
+            ),
+            (
+                "gray16_tiff_deflate",
+                numpy_to_raster_plane(gray16),
+                root / "16位灰度-Deflate.tif",
+                {"tiff_compression": NativeTiffCompression.DEFLATE},
+            ),
+            (
+                "gray16_tiff_lzw",
+                numpy_to_raster_plane(gray16),
+                root / "16位灰度-LZW.tif",
+                {"tiff_compression": NativeTiffCompression.LZW},
+            ),
+            (
+                "gray16_tiff_none",
+                numpy_to_raster_plane(gray16),
+                root / "16位灰度-无压缩.tif",
+                {"tiff_compression": NativeTiffCompression.NONE},
+            ),
+            (
+                "gray32_float_tiff_deflate",
+                numpy_to_raster_plane(gray32),
+                root / "32位浮点-Deflate.tif",
+                {"tiff_compression": NativeTiffCompression.DEFLATE},
+            ),
+        )
+        for case_name, plane, target, options in native_cases:
+            write_result = write_native_raster_asset(plane, target, **options)
+            read_result = read_raster_file(target) if write_result else None
+            restored = None if read_result is None else read_result.plane
+            ok = bool(
+                write_result
+                and read_result
+                and restored is not None
+                and restored.pixel_type is plane.pixel_type
+                and restored.width == plane.width
+                and restored.height == plane.height
+                and restored.sha256() == plane.sha256()
+            )
+            production_cases[case_name] = {
+                "ok": ok,
+                "pixel_type": plane.pixel_type.value,
+                "width": plane.width,
+                "height": plane.height,
+                "bytes": int(write_result.bytes_written),
+                "sha256": plane.sha256(),
+                "message": (
+                    ""
+                    if ok
+                    else (
+                        write_result.failure.message
+                        if write_result.failure is not None
+                        else (
+                            read_result.failure.message
+                            if read_result is not None
+                            and read_result.failure is not None
+                            else "像素类型、尺寸或 SHA256 不一致"
+                        )
+                    )
+                ),
+            }
+
+        rgb_array = np.frombuffer(pixels, dtype=np.uint8).reshape(
+            height,
+            width,
+            3,
+        )
+        rgb_plane = numpy_to_raster_plane(rgb_array)
+        for case_name, lossless, quality in (
+            ("webp_lossy", False, 73),
+            ("webp_lossless", True, 100),
+        ):
+            target = root / f"{case_name}-中文.webp"
+            result = writer.write_file(
+                source,
+                target,
+                RasterEncodingOptions(
+                    format=RasterExportFormat.WEBP,
+                    quality=quality,
+                    webp_lossless=lossless,
+                ),
+            )
+            restored_result = read_raster_file(target) if result else None
+            restored = (
+                None
+                if restored_result is None
+                else restored_result.plane
+            )
+            exact_ok = (
+                restored is not None
+                and restored.sha256() == rgb_plane.sha256()
+            )
+            ok = bool(
+                result
+                and restored_result
+                and restored is not None
+                and restored.width == width
+                and restored.height == height
+                and (not lossless or exact_ok)
+            )
+            production_cases[case_name] = {
+                "ok": ok,
+                "lossless": lossless,
+                "quality": quality,
+                "width": int(result.width),
+                "height": int(result.height),
+                "bytes": int(result.bytes_written),
+                "exact_sha256": bool(exact_ok),
+                "message": (
+                    ""
+                    if ok
+                    else (
+                        result.failure.message
+                        if result.failure is not None
+                        else "WebP 解码尺寸或无损像素 SHA256 不一致"
+                    )
+                ),
+            }
+
     return {
         "ok": all(
             result.get("ok") is True
             for result in format_results.values()
         )
-        and len(format_results) == len(RasterExportFormat),
+        and len(format_results) == len(RasterExportFormat)
+        and all(
+            result.get("ok") is True
+            for result in production_cases.values()
+        ),
         "backend": "Pillow",
         "backend_version": backend_version,
         "formats": format_results,
+        "production_cases": production_cases,
     }
+
+
+def _probe_image_processing_pipeline() -> dict[str, Any]:
+    """Exercise OpenCV processing and authoritative native-asset round trips."""
+
+    import numpy as np
+
+    from fdm.services.image_processing import (
+        ImageOperation,
+        ImageOperationRequest,
+        execute_image_operation,
+    )
+    from fdm.services.raster_io import (
+        numpy_to_raster_plane,
+        read_raster_file,
+        write_native_raster_asset,
+    )
+
+    sources = {
+        "gray8": np.arange(48, dtype=np.uint8).reshape(6, 8),
+        "gray16": (
+            np.arange(48, dtype=np.uint16).reshape(6, 8) * 1201
+        ),
+        "gray32_float": (
+            np.arange(48, dtype=np.float32).reshape(6, 8) / 7.0 - 2.0
+        ),
+    }
+    cases: dict[str, dict[str, Any]] = {}
+    with tempfile.TemporaryDirectory(
+        prefix="fdm-图像处理管线-self-check-"
+    ) as tmpdir:
+        root = Path(tmpdir)
+        for index, (case_name, source) in enumerate(sources.items(), start=1):
+            request_id = f"self-check-processing-{case_name}"
+            generation = 40 + index
+            result = execute_image_operation(
+                ImageOperationRequest.create(
+                    ImageOperation.GAUSSIAN_BLUR,
+                    source,
+                    request_id=request_id,
+                    generation=generation,
+                    kernel_size=3,
+                    sigma=0.8,
+                )
+            )
+            if (
+                result.request_id != request_id
+                or result.generation != generation
+            ):
+                raise RuntimeError(
+                    f"{case_name} processing request identity changed"
+                )
+            if result.image.shape != source.shape or result.image.dtype != source.dtype:
+                raise RuntimeError(
+                    f"{case_name} processing changed dtype or dimensions"
+                )
+            plane = numpy_to_raster_plane(result.image)
+            suffix = ".tif" if case_name == "gray32_float" else ".png"
+            target = root / f"{case_name}-处理结果-中文{suffix}"
+            written = write_native_raster_asset(plane, target)
+            if not written:
+                failure = written.failure
+                raise RuntimeError(
+                    failure.message if failure is not None else "native write failed"
+                )
+            restored_result = read_raster_file(target)
+            restored = restored_result.plane
+            if (
+                not restored_result
+                or restored is None
+                or restored.pixel_type is not plane.pixel_type
+                or restored.width != plane.width
+                or restored.height != plane.height
+                or restored.sha256() != plane.sha256()
+            ):
+                raise RuntimeError(
+                    f"{case_name} native asset round-trip changed pixels"
+                )
+            cases[case_name] = {
+                "ok": True,
+                "request_id": result.request_id,
+                "generation": result.generation,
+                "pixel_type": plane.pixel_type.value,
+                "width": plane.width,
+                "height": plane.height,
+                "sha256": plane.sha256(),
+                "bytes": written.bytes_written,
+            }
+    return {
+        "ok": len(cases) == len(sources)
+        and all(item["ok"] is True for item in cases.values()),
+        "operation": ImageOperation.GAUSSIAN_BLUR.value,
+        "cases": cases,
+    }
+
+
+def _probe_analysis_pipeline() -> dict[str, Any]:
+    """Exercise safe assets, advanced registry, workbook and batch contracts."""
+
+    import numpy as np
+    from openpyxl import load_workbook
+
+    from fdm.analysis_artifacts import AnalysisArtifact, AnalysisTable
+    from fdm.image_processing_models import (
+        ImageOperationSpec,
+        ImageProcessingRecipe,
+    )
+    from fdm.services.advanced_analysis_registry import (
+        AdvancedAnalysisInvocation,
+        AdvancedAnalysisRegistry,
+    )
+    from fdm.services.advanced_image_analysis import AdvancedAnalysisKind
+    from fdm.services.analysis_asset_io import (
+        inspect_safe_analysis_npz,
+        write_safe_analysis_npz,
+    )
+    from fdm.services.analysis_export import export_analysis_workbook
+    from fdm.services.image_batch import (
+        BatchRasterInput,
+        BatchRecipeRequest,
+        execute_batch_recipe,
+    )
+    from fdm.services.raster_io import numpy_to_raster_plane
+
+    with tempfile.TemporaryDirectory(
+        prefix="fdm-分析管线-self-check-"
+    ) as tmpdir:
+        root = Path(tmpdir)
+        asset_path = root / "分析资产" / "安全数组.npz"
+        asset_info = write_safe_analysis_npz(
+            asset_path,
+            schema="fdm.self-check.analysis.v1",
+            arrays={
+                "values": np.asarray([[1, 2], [3, 4]], dtype=np.uint16),
+                "mask": np.asarray([[True, False], [False, True]], dtype=bool),
+            },
+            metadata={"来源": "发布自检", "request_id": "analysis-self-check"},
+        )
+        inspected = inspect_safe_analysis_npz(asset_path)
+        if (
+            inspected.sha256 != asset_info.sha256
+            or inspected.schema != "fdm.self-check.analysis.v1"
+            or {item[0] for item in inspected.members} != {"mask", "values"}
+        ):
+            raise RuntimeError("safe analysis NPZ verification failed")
+
+        artifact = AnalysisArtifact(
+            id="analysis-self-check",
+            source_document_id="中文来源图片",
+            source_pixel_revision=1,
+            tool_id="fdm.histogram",
+            tool_version="1",
+            parameters={"bins": 4, "channel": "亮度"},
+            scalars={"有效 N": 4, "均值": 2.5},
+            tables=(
+                AnalysisTable(
+                    name="自检明细",
+                    columns=("序号", "值"),
+                    rows=((1, 1.0), (2, 4.0)),
+                ),
+            ),
+            created_at="2026-07-27T00:00:00+00:00",
+        )
+        workbook_path = root / "中文目录" / "分析结果自检.xlsx"
+        workbook_result = export_analysis_workbook(
+            (artifact,),
+            workbook_path,
+            document_names={"中文来源图片": "中文来源图片"},
+        )
+        if not workbook_result.success or workbook_result.path is None:
+            raise RuntimeError(workbook_result.message)
+        workbook = load_workbook(workbook_result.path, read_only=True, data_only=False)
+        try:
+            required_sheets = {"分析摘要", "参数与来源"}
+            if not required_sheets.issubset(workbook.sheetnames):
+                raise RuntimeError("analysis workbook is missing required sheets")
+            if workbook["分析摘要"]["A1"].value != "分析结果ID":
+                raise RuntimeError("analysis workbook summary header is invalid")
+            workbook_sheets = list(workbook.sheetnames)
+        finally:
+            workbook.close()
+
+        direction_image = np.zeros((32, 40), dtype=np.uint8)
+        direction_image[14:18, 3:37] = 255
+        direction_plane = numpy_to_raster_plane(direction_image)
+        registry = AdvancedAnalysisRegistry()
+        advanced = registry.execute(
+            AdvancedAnalysisInvocation(
+                AdvancedAnalysisKind.DIRECTIONALITY,
+                request_id="analysis-advanced-self-check",
+                generation=7,
+                plane=direction_plane,
+                parameters={"bins": 18, "channel": "luminance"},
+            )
+        )
+        if (
+            advanced.request_id != "analysis-advanced-self-check"
+            or advanced.generation != 7
+            or float(advanced.result.total_weight) <= 0.0
+        ):
+            raise RuntimeError("advanced analysis registry contract failed")
+
+        recipe = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec("add", {"value": 2.0}),
+                ImageOperationSpec("invert", {}),
+            )
+        )
+        batch_request = BatchRecipeRequest(
+            request_id="analysis-batch-self-check",
+            generation=11,
+            recipe=recipe,
+            inputs=(
+                BatchRasterInput(
+                    document_id="batch-one",
+                    display_name="批处理一",
+                    raster=numpy_to_raster_plane(
+                        np.arange(16, dtype=np.uint8).reshape(4, 4)
+                    ),
+                    source_pixel_revision=1,
+                ),
+                BatchRasterInput(
+                    document_id="batch-two",
+                    display_name="批处理二",
+                    raster=numpy_to_raster_plane(
+                        np.arange(16, dtype=np.uint16).reshape(4, 4)
+                    ),
+                    source_pixel_revision=2,
+                ),
+            ),
+            available_disk_bytes=10 << 30,
+        )
+        batch_result = execute_batch_recipe(batch_request)
+        if (
+            batch_result.request_id != batch_request.request_id
+            or batch_result.generation != batch_request.generation
+            or batch_result.success_count != 2
+            or len(batch_result.commit_candidates) != 2
+            or "成功 2 张" not in batch_result.summary_text
+        ):
+            raise RuntimeError("batch request/generation/summary contract failed")
+        for candidate in batch_result.commit_candidates:
+            if (
+                candidate.raster.sha256()
+                != candidate.derivation.result_sha256
+            ):
+                raise RuntimeError("batch result digest contract failed")
+
+        return {
+            "ok": True,
+            "safe_npz": {
+                "ok": True,
+                "schema": inspected.schema,
+                "members": [item[0] for item in inspected.members],
+                "sha256": inspected.sha256,
+            },
+            "workbook": {
+                "ok": True,
+                "sheets": workbook_sheets,
+                "bytes": workbook_result.path.stat().st_size,
+                "unicode_path": True,
+            },
+            "advanced_analysis": {
+                "ok": True,
+                "kind": advanced.kind.value,
+                "request_id": advanced.request_id,
+                "generation": advanced.generation,
+                "registered_tools": len(registry.registrations()),
+            },
+            "batch": {
+                "ok": True,
+                "request_id": batch_result.request_id,
+                "generation": batch_result.generation,
+                "item_count": len(batch_result.items),
+                "success_count": batch_result.success_count,
+                "summary": batch_result.summary_text,
+                "result_sha256": [
+                    candidate.raster.sha256()
+                    for candidate in batch_result.commit_candidates
+                ],
+            },
+        }
 
 
 def _probe_tifffile_precision() -> dict[str, Any]:

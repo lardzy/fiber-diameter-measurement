@@ -21,6 +21,8 @@ from build_support import write_release_manifest
 from fdm import app
 from fdm.area_worker_protocol import AREA_WORKER_PROTOCOL, AREA_WORKER_PROTOCOL_VERSION
 from fdm.release_manifest import (
+    _probe_analysis_pipeline,
+    _probe_image_processing_pipeline,
     _probe_pillow_raster_encoders,
     _probe_area_worker,
     _probe_tifffile_precision,
@@ -39,7 +41,7 @@ def _minimal_pe_bytes() -> bytes:
     return bytes(payload)
 
 
-def _create_minimal_release(root: Path) -> Path:
+def _create_minimal_release(root: Path, *, profile: str = "full") -> Path:
     (root / "src" / "fdm").mkdir(parents=True, exist_ok=True)
     (root / "src" / "fdm" / "version.py").write_text('__version__ = "1.2.3"\n', encoding="utf-8")
     config = """\
@@ -50,7 +52,13 @@ ignored_untracked_prefixes = ["dist/", "build/"]
 [profiles.core]
 groups = []
 required_python_modules = []
-features = ["measurement"]
+features = [
+  "measurement",
+  "image-export",
+  "image-processing",
+  "image-analysis",
+  "batch-processing",
+]
 [profiles.full]
 extends = "core"
 groups = []
@@ -67,7 +75,7 @@ features = ["area-inference", "magic-segmentation"]
     write_release_manifest(
         app_dir,
         root,
-        profile="full",
+        profile=profile,
         clean_build=True,
         build_id="self-check-build",
         source_commit="deadbeef",
@@ -106,6 +114,86 @@ class ReleaseSelfCheckTests(unittest.TestCase):
         )
         self.assertTrue(
             all(result["ok"] for result in report["formats"].values())
+        )
+        self.assertEqual(
+            set(report["production_cases"]),
+            {
+                "gray16_png",
+                "gray16_tiff_deflate",
+                "gray16_tiff_lzw",
+                "gray16_tiff_none",
+                "gray32_float_tiff_deflate",
+                "webp_lossy",
+                "webp_lossless",
+            },
+        )
+        self.assertTrue(
+            all(
+                result["ok"]
+                for result in report["production_cases"].values()
+            )
+        )
+        self.assertTrue(
+            report["production_cases"]["webp_lossless"]["exact_sha256"]
+        )
+
+    def test_image_processing_pipeline_probe_covers_all_scientific_types(self) -> None:
+        report = _probe_image_processing_pipeline()
+
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(report["operation"], "gaussian_blur")
+        self.assertEqual(
+            {
+                item["pixel_type"]
+                for item in report["cases"].values()
+            },
+            {"gray8", "gray16", "gray32_float"},
+        )
+        for case in report["cases"].values():
+            self.assertTrue(case["ok"])
+            self.assertEqual(case["width"], 8)
+            self.assertEqual(case["height"], 6)
+            self.assertEqual(len(case["sha256"]), 64)
+            self.assertGreater(case["bytes"], 0)
+
+    def test_analysis_pipeline_probe_uses_safe_assets_registry_and_batch(self) -> None:
+        report = _probe_analysis_pipeline()
+
+        self.assertTrue(report["ok"], report)
+        self.assertEqual(
+            report["safe_npz"]["schema"],
+            "fdm.self-check.analysis.v1",
+        )
+        self.assertEqual(
+            set(report["safe_npz"]["members"]),
+            {"mask", "values"},
+        )
+        self.assertIn("分析摘要", report["workbook"]["sheets"])
+        self.assertIn("参数与来源", report["workbook"]["sheets"])
+        self.assertTrue(report["workbook"]["unicode_path"])
+        self.assertEqual(
+            report["advanced_analysis"]["kind"],
+            "directionality",
+        )
+        self.assertEqual(
+            report["advanced_analysis"]["request_id"],
+            "analysis-advanced-self-check",
+        )
+        self.assertEqual(report["advanced_analysis"]["generation"], 7)
+        self.assertGreaterEqual(
+            report["advanced_analysis"]["registered_tools"],
+            7,
+        )
+        self.assertEqual(
+            report["batch"]["request_id"],
+            "analysis-batch-self-check",
+        )
+        self.assertEqual(report["batch"]["generation"], 11)
+        self.assertEqual(report["batch"]["item_count"], 2)
+        self.assertEqual(report["batch"]["success_count"], 2)
+        self.assertIn("成功 2 张", report["batch"]["summary"])
+        self.assertTrue(
+            all(len(digest) == 64 for digest in report["batch"]["result_sha256"])
         )
 
     def test_tifffile_precision_probe_requires_bit_exact_uint16_and_float32(self) -> None:
@@ -201,6 +289,25 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertTrue(report["functional_checks"]["qt_local_ipc"])
             self.assertTrue(report["functional_checks"]["pe:FiberDiameterMeasurement.exe"])
 
+    def test_core_profile_runs_declared_image_feature_gates(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir), profile="core")
+            with patch(
+                "fdm.release_manifest._probe_tifffile_precision",
+                return_value=_successful_tifffile_probe(),
+            ):
+                report = run_release_self_check(app_dir)
+
+        self.assertTrue(report["ok"], report["errors"])
+        self.assertEqual(report["profile"], "core")
+        self.assertTrue(report["functional_checks"]["raster_encoders"]["ok"])
+        self.assertTrue(
+            report["functional_checks"]["image_processing_pipeline"]["ok"]
+        )
+        self.assertTrue(report["functional_checks"]["analysis_pipeline"]["ok"])
+        self.assertNotIn("dependency:torch", report["functional_checks"])
+        self.assertNotIn("dependency:torchvision", report["functional_checks"])
+
     def test_self_check_blocks_a_missing_pillow_export_encoder(self) -> None:
         with TemporaryDirectory() as tmpdir:
             app_dir = _create_minimal_release(Path(tmpdir))
@@ -257,6 +364,83 @@ class ReleaseSelfCheckTests(unittest.TestCase):
                 for error in report["errors"]
             )
         )
+
+    def test_full_self_check_blocks_extended_raster_production_failure(self) -> None:
+        raster_probe = _probe_pillow_raster_encoders()
+        raster_probe["production_cases"]["gray16_tiff_lzw"] = {
+            "ok": False,
+            "message": "LZW frozen encoder missing",
+        }
+        raster_probe["ok"] = False
+        with TemporaryDirectory() as tmpdir:
+            app_dir = _create_minimal_release(Path(tmpdir))
+            with (
+                patch(
+                    "fdm.release_manifest._probe_pillow_raster_encoders",
+                    return_value=raster_probe,
+                ),
+                patch(
+                    "fdm.release_manifest._probe_tifffile_precision",
+                    return_value=_successful_tifffile_probe(),
+                ),
+                patch(
+                    "fdm.release_manifest._probe_image_processing_pipeline",
+                    return_value={"ok": True},
+                ),
+                patch(
+                    "fdm.release_manifest._probe_analysis_pipeline",
+                    return_value={"ok": True},
+                ),
+            ):
+                report = run_release_self_check(app_dir)
+
+        self.assertFalse(report["ok"])
+        self.assertFalse(
+            report["functional_checks"][
+                "raster_production:gray16_tiff_lzw"
+            ]
+        )
+        self.assertTrue(
+            any(
+                "raster production path self-check failed: gray16_tiff_lzw"
+                in error
+                for error in report["errors"]
+            )
+        )
+
+    def test_full_self_check_blocks_processing_and_analysis_probe_errors(self) -> None:
+        scenarios = (
+            (
+                "_probe_image_processing_pipeline",
+                "image processing pipeline self-check failed",
+            ),
+            (
+                "_probe_analysis_pipeline",
+                "analysis pipeline self-check failed",
+            ),
+        )
+        for probe_name, expected_error in scenarios:
+            with self.subTest(probe=probe_name), TemporaryDirectory() as tmpdir:
+                app_dir = _create_minimal_release(Path(tmpdir))
+                with (
+                    patch(
+                        "fdm.release_manifest._probe_tifffile_precision",
+                        return_value=_successful_tifffile_probe(),
+                    ),
+                    patch(
+                        f"fdm.release_manifest.{probe_name}",
+                        side_effect=RuntimeError("frozen dependency missing"),
+                    ),
+                ):
+                    report = run_release_self_check(app_dir)
+
+                self.assertFalse(report["ok"])
+                self.assertTrue(
+                    any(
+                        expected_error in error
+                        for error in report["errors"]
+                    )
+                )
 
     def test_self_check_rejects_hash_valid_non_pe_executables(self) -> None:
         with TemporaryDirectory() as tmpdir:

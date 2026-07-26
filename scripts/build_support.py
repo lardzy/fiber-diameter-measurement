@@ -828,6 +828,8 @@ def _release_dependency_versions() -> dict[str, str]:
         "opencv-python",
         "Pillow",
         "tifffile",
+        "openpyxl",
+        "et_xmlfile",
         "torch",
         "torchvision",
         "onnxruntime",
