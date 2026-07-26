@@ -32,6 +32,7 @@ try:
         estimate_final_resources,
         execute_workbench_request,
         raster_plane_to_array,
+        validate_workbench_operation_sequence,
         validate_final_resources,
     )
 
@@ -235,6 +236,43 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             schemas["pixel_bin"],
             {"factor", "method", "remainder_policy"},
         )
+        self.assertEqual(
+            schemas["convert_type"],
+            {"target_type", "scale_mode", "nonfinite_policy"},
+        )
+
+    def test_catalog_only_offers_wrap_for_backends_that_support_it(self) -> None:
+        definitions = {
+            definition.operation: definition
+            for definition in workbench_module._OPERATION_CATALOG  # noqa: SLF001
+        }
+
+        def border_values(operation: ImageOperation) -> set[object]:
+            definition = definitions[operation]
+            field = next(
+                item
+                for item in definition.parameters
+                if item.key == "border_mode"
+            )
+            return {value for _label, value in field.choices}
+
+        for operation in (
+            ImageOperation.MEAN_FILTER,
+            ImageOperation.MORPHOLOGY_OPEN,
+            ImageOperation.BACKGROUND_SUBTRACT,
+            ImageOperation.CUSTOM_CONVOLUTION,
+        ):
+            with self.subTest(operation=operation.value):
+                self.assertNotIn("wrap", border_values(operation))
+
+        self.assertIn(
+            "wrap",
+            border_values(ImageOperation.GAUSSIAN_BLUR),
+        )
+        self.assertIn(
+            "wrap",
+            border_values(ImageOperation.BILATERAL_FILTER),
+        )
 
     def test_parameter_help_states_pixel_calibration_type_and_roi_behavior(self) -> None:
         dialog = ImageProcessingWorkbench(
@@ -256,6 +294,38 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             for heading in ("用途：", "像素：", "标定：", "适用类型：", "ROI："):
                 self.assertIn(heading, help_text)
             self.assertIn("pixels_per_unit", help_text)
+        finally:
+            dialog.close()
+
+    def test_whole_image_operation_help_explains_cancellation_boundary(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog.set_operation_steps(
+                (
+                    ImageOperationSpec(
+                        "bilateral_filter",
+                        {
+                            "diameter": 5,
+                            "sigma_color": 25.0,
+                            "sigma_space": 2.0,
+                            "border_mode": "reflect",
+                        },
+                    ),
+                )
+            )
+            self.app.processEvents()
+            help_text = next(
+                label.text()
+                for label in dialog.findChildren(QLabel)
+                if label.objectName() == "imageOperationHelp"
+            )
+            self.assertIn("整图执行", help_text)
+            self.assertIn("逐位一致", help_text)
+            self.assertIn("算法返回后立即确认", help_text)
+            self.assertIn("不会提交派生图片", help_text)
         finally:
             dialog.close()
 
@@ -592,6 +662,95 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
                 np.testing.assert_array_equal(restored, original)
                 self.assertFalse(restored.flags.writeable)
 
+    def test_final_result_persists_dynamic_operation_metadata_in_recipe(
+        self,
+    ) -> None:
+        source_array = np.linspace(
+            0.0,
+            1.0,
+            48,
+            dtype=np.float32,
+        ).reshape(6, 8)
+        source_array[1, 2] = np.nan
+        source_array[4, 6] = np.inf
+        source = array_to_raster_plane(source_array)
+        controller = ImageProcessingTaskController()
+        ready: list[WorkbenchTaskResult] = []
+        controller.finalReady.connect(ready.append)
+        try:
+            controller.start_final(
+                source_document_id="doc-float",
+                source=source,
+                operations=(
+                    ImageOperationSpec(
+                        "convert_type",
+                        {
+                            "target_type": "uint8",
+                            "scale_mode": "full_type_range",
+                            "nonfinite_policy": "zero",
+                        },
+                    ),
+                ),
+            )
+            self._wait_until(lambda: len(ready) == 1)
+
+            metadata = ready[0].recipe.operations[0].result_metadata
+            self.assertEqual(
+                metadata["nonfinite_replacement_count"],
+                2,
+            )
+        finally:
+            controller.close()
+            controller.wait_for_done()
+
+    def test_colored_high_depth_conversion_is_rejected_before_task_launch(
+        self,
+    ) -> None:
+        rgb = RasterPlane(
+            width=4,
+            height=3,
+            pixel_type=RasterPixelType.RGB8,
+            data=bytes(4 * 3 * 3),
+        )
+        operations = (
+            ImageOperationSpec(
+                "convert_type",
+                {
+                    "target_type": "uint16",
+                    "scale_mode": "full_type_range",
+                    "nonfinite_policy": "reject",
+                },
+            ),
+        )
+        executor = mock.Mock(return_value=rgb)
+        controller = ImageProcessingTaskController(executor=executor)
+        try:
+            with self.assertRaisesRegex(ValueError, "先添加.*灰度"):
+                controller.start_final(
+                    source_document_id="doc-rgb",
+                    source=rgb,
+                    operations=operations,
+                )
+            executor.assert_not_called()
+            with self.assertRaisesRegex(ValueError, "先添加.*灰度"):
+                validate_workbench_operation_sequence(rgb, operations)
+        finally:
+            controller.close()
+            controller.wait_for_done()
+
+        allowed = (
+            ImageOperationSpec(
+                "convert_color",
+                {
+                    "target_model": "grayscale",
+                    "grayscale_method": "rec601",
+                    "drop_alpha": False,
+                },
+            ),
+            *operations,
+        )
+        validate_workbench_operation_sequence(rgb, allowed)
+
     def test_final_resource_estimate_tracks_geometry_type_and_fft_peak(self) -> None:
         estimate = estimate_final_resources(
             self.source,
@@ -620,6 +779,38 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         self.assertEqual((estimate.output_width, estimate.output_height), (16, 12))
         self.assertEqual(estimate.output_bytes, 16 * 12 * 4)
         self.assertGreater(estimate.peak_working_set_bytes, estimate.output_bytes)
+
+    def test_large_canvas_resize_uses_high_memory_safety_family(self) -> None:
+        estimate = estimate_final_resources(
+            RasterPlane(
+                width=1,
+                height=1,
+                pixel_type=RasterPixelType.GRAY8,
+                data=b"\0",
+            ),
+            (
+                ImageOperationSpec(
+                    "resize_canvas",
+                    {
+                        "width": 7_000,
+                        "height": 7_000,
+                        "anchor": "center",
+                        "fill_value": 0.0,
+                    },
+                ),
+            ),
+        )
+
+        expected_pixels = 7_000 * 7_000
+        self.assertEqual(estimate.output_bytes, expected_pixels)
+        self.assertEqual(
+            estimate.peak_working_set_bytes,
+            1 + expected_pixels + expected_pixels * 24,
+        )
+        self.assertGreater(
+            estimate.peak_working_set_bytes,
+            workbench_module.MAX_FINAL_WORKING_SET_BYTES,
+        )
 
     def test_final_resource_preflight_blocks_memory_and_disk_in_chinese(self) -> None:
         operation = (ImageOperationSpec("flip_horizontal"),)

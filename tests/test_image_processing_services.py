@@ -10,6 +10,7 @@ from fdm.services.image_processing import (
     ImageOperation,
     ImageOperationRequest,
     InterpolationMode,
+    NonfiniteIntegerPolicy,
     PixelType,
     convert_pixel_type,
     execute_image_operation,
@@ -56,6 +57,104 @@ class ImageProcessingServiceTests(unittest.TestCase):
         np.testing.assert_array_equal(full_range, [[0, 32896, 65535]])
         np.testing.assert_array_equal(preserved, [[0, 128, 255]])
         self.assertEqual(full_range.dtype, np.uint16)
+
+    def test_float_to_integer_requires_explicit_nonfinite_policy_and_reports_count(
+        self,
+    ) -> None:
+        source = np.asarray(
+            [[np.nan, np.inf, -np.inf, 0.5]],
+            dtype=np.float32,
+        )
+
+        with self.assertRaisesRegex(ValueError, "必须明确选择"):
+            convert_pixel_type(source, PixelType.UINT8)
+
+        zeroed = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CONVERT_TYPE,
+                source,
+                target_type="uint8",
+                scale_mode="full_type_range",
+                nonfinite_policy=NonfiniteIntegerPolicy.ZERO.value,
+            )
+        )
+        bounded = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CONVERT_TYPE,
+                source,
+                target_type="uint8",
+                scale_mode="full_type_range",
+                nonfinite_policy=NonfiniteIntegerPolicy.RANGE_BOUNDS.value,
+            )
+        )
+
+        np.testing.assert_array_equal(zeroed.image, [[0, 0, 0, 128]])
+        np.testing.assert_array_equal(bounded.image, [[0, 255, 0, 128]])
+        self.assertEqual(
+            zeroed.metadata_map["nonfinite_replacement_count"],
+            3,
+        )
+        self.assertEqual(
+            zeroed.metadata_map["nonfinite_policy"],
+            "zero",
+        )
+        self.assertEqual(
+            bounded.metadata_map["nonfinite_replacement_count"],
+            3,
+        )
+
+    def test_float_output_preserves_nonfinite_samples(self) -> None:
+        source = np.asarray([[np.nan, np.inf, -np.inf, 0.5]], dtype=np.float32)
+
+        result = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CONVERT_TYPE,
+                source,
+                target_type="float32",
+            )
+        )
+
+        self.assertTrue(np.isnan(result.image[0, 0]))
+        self.assertTrue(np.isposinf(result.image[0, 1]))
+        self.assertTrue(np.isneginf(result.image[0, 2]))
+        self.assertEqual(
+            result.metadata_map["nonfinite_replacement_count"],
+            0,
+        )
+
+    def test_all_nonfinite_data_range_conversion_still_requires_policy(
+        self,
+    ) -> None:
+        source = np.asarray([[np.nan, np.inf, -np.inf]], dtype=np.float32)
+
+        with self.assertRaisesRegex(ValueError, "必须明确选择"):
+            convert_pixel_type(
+                source,
+                PixelType.UINT16,
+                mode=ConversionScaleMode.DATA_RANGE,
+            )
+        zeroed = convert_pixel_type(
+            source,
+            PixelType.UINT16,
+            mode=ConversionScaleMode.DATA_RANGE,
+            nonfinite_policy="zero",
+        )
+        np.testing.assert_array_equal(zeroed, [[0, 0, 0]])
+
+    def test_colored_raster_cannot_create_unrepresentable_high_depth_output(
+        self,
+    ) -> None:
+        rgb = np.zeros((2, 3, 3), dtype=np.uint8)
+
+        with self.assertRaisesRegex(ValueError, "先显式转换为灰度"):
+            execute_image_operation(
+                ImageOperationRequest.create(
+                    ImageOperation.CONVERT_TYPE,
+                    rgb,
+                    target_type="uint16",
+                    nonfinite_policy="reject",
+                )
+            )
 
     def test_color_conversion_uses_explicit_rec601_or_average_formula(self) -> None:
         rgb = np.asarray([[[100, 150, 200]]], dtype=np.uint8)

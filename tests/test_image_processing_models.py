@@ -203,6 +203,7 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
                 ImageOperationSpec(
                     "type.convert",
                     {"target": "gray16", "mapping": "full_range"},
+                    result_metadata={"nonfinite_replacement_count": 3},
                 ),
                 ImageOperationSpec(
                     "transform.flip_horizontal",
@@ -238,6 +239,10 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
         self.assertEqual(
             [item.operation_id for item in loaded.recipe.operations],
             ["type.convert", "transform.flip_horizontal"],
+        )
+        self.assertEqual(
+            loaded.recipe.operations[0].result_metadata,
+            {"nonfinite_replacement_count": 3},
         )
         self.assertEqual(loaded.source_pixel_revision, 7)
         self.assertEqual(loaded.result_image_size, (3072, 4096))

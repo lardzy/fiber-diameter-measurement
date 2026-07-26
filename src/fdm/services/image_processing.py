@@ -17,7 +17,7 @@ from dataclasses import dataclass
 from enum import Enum
 import math
 from types import MappingProxyType
-from typing import Any, Mapping, TypeAlias
+from typing import Any, Callable, Mapping, TypeAlias
 
 import cv2
 import numpy as np
@@ -44,6 +44,14 @@ class ConversionScaleMode(str, Enum):
     PRESERVE_VALUES = "preserve_values"
     FULL_TYPE_RANGE = "full_type_range"
     DATA_RANGE = "data_range"
+
+
+class NonfiniteIntegerPolicy(str, Enum):
+    """How float NaN/Inf samples are handled before an integer conversion."""
+
+    REJECT = "reject"
+    ZERO = "zero"
+    RANGE_BOUNDS = "range_bounds"
 
 
 class ColorTarget(str, Enum):
@@ -144,6 +152,273 @@ class ImageOperation(str, Enum):
     IMAGE_CALCULATOR = "image_calculator"
     FFT_FILTER = "fft_filter"
     STRIPE_SUPPRESSION = "stripe_suppression"
+
+
+@dataclass(frozen=True, slots=True)
+class ImageOperationCapability:
+    """Execution constraints for one resolved operation invocation.
+
+    ``halo_x``/``halo_y`` describe the maximum finite neighborhood dependency
+    in source-image pixels.  A tiled executor may only use operations whose
+    spatial extent is preserved and whose complete dependency is represented
+    by this halo.  Global histogram, connectivity, hysteresis, FFT and geometry
+    operations intentionally remain non-tileable.
+    """
+
+    tileable: bool
+    preserves_spatial_extent: bool
+    supports_roi: bool
+    halo_x: int = 0
+    halo_y: int = 0
+    requires_full_image_prescan: bool = False
+    reason: str = ""
+
+
+def resolve_image_operation_capability(
+    operation: ImageOperation | str,
+    parameters: Mapping[str, object] | None = None,
+) -> ImageOperationCapability:
+    """Resolve the safe execution capability for concrete parameters.
+
+    The declaration is deliberately conservative.  An operation is marked
+    tileable only when cropping a source patch with the declared halo produces
+    the exact same core pixels as running the operation over the complete
+    image.
+    """
+
+    resolved = (
+        operation
+        if isinstance(operation, ImageOperation)
+        else _coerce_enum(ImageOperation, operation, "图像操作")
+    )
+    params = dict(parameters or {})
+    border_mode = str(params.get("border_mode", BorderMode.REFLECT.value))
+    finite_neighborhood_with_border = {
+        ImageOperation.GAUSSIAN_BLUR,
+        ImageOperation.MEAN_FILTER,
+        ImageOperation.BILATERAL_FILTER,
+        ImageOperation.ERODE,
+        ImageOperation.DILATE,
+        ImageOperation.MORPHOLOGY_OPEN,
+        ImageOperation.MORPHOLOGY_CLOSE,
+        ImageOperation.TOP_HAT,
+        ImageOperation.BLACK_HAT,
+        ImageOperation.BACKGROUND_SUBTRACT,
+        ImageOperation.CUSTOM_CONVOLUTION,
+    }
+    if (
+        resolved in finite_neighborhood_with_border
+        and border_mode == BorderMode.WRAP.value
+    ):
+        return ImageOperationCapability(
+            False,
+            True,
+            True,
+            reason=(
+                "循环边界需要读取整幅图像对侧像素，"
+                "不能用局部图块保证逐位一致。"
+            ),
+        )
+    pointwise = {
+        ImageOperation.COLOR_BALANCE,
+        ImageOperation.BRIGHTNESS_CONTRAST,
+        ImageOperation.BINARIZE,
+        ImageOperation.ADD,
+        ImageOperation.SUBTRACT,
+        ImageOperation.MULTIPLY,
+        ImageOperation.DIVIDE,
+        ImageOperation.LOG,
+        ImageOperation.EXP,
+        ImageOperation.SQRT,
+        ImageOperation.ABS,
+        ImageOperation.IMAGE_CALCULATOR,
+    }
+    if resolved in pointwise:
+        return ImageOperationCapability(True, True, True)
+    if resolved is ImageOperation.CONVERT_COLOR:
+        return ImageOperationCapability(
+            True,
+            True,
+            False,
+            reason="颜色模型转换保持宽高，但不接受 ROI。",
+        )
+    if resolved is ImageOperation.CONVERT_TYPE:
+        scale_mode = str(
+            params.get("scale_mode", ConversionScaleMode.FULL_TYPE_RANGE.value)
+        )
+        if scale_mode == ConversionScaleMode.DATA_RANGE.value:
+            return ImageOperationCapability(
+                False,
+                True,
+                True,
+                requires_full_image_prescan=True,
+                reason="按数据范围转换需要扫描整幅图像的有限值范围。",
+            )
+        return ImageOperationCapability(True, True, True)
+    if resolved is ImageOperation.ADJUST_LEVELS:
+        explicit_range = "black_point" in params and "white_point" in params
+        return ImageOperationCapability(
+            explicit_range,
+            True,
+            True,
+            requires_full_image_prescan=not explicit_range,
+            reason=(
+                ""
+                if explicit_range
+                else "未指定黑白场时需要扫描整幅图像的有限值范围。"
+            ),
+        )
+    if resolved is ImageOperation.THRESHOLD:
+        explicit_range = "lower" in params and "upper" in params
+        return ImageOperationCapability(
+            explicit_range,
+            True,
+            True,
+            requires_full_image_prescan=not explicit_range,
+            reason=(
+                ""
+                if explicit_range
+                else "未指定阈值范围时需要扫描整幅图像。"
+            ),
+        )
+    if resolved in {ImageOperation.INVERT, ImageOperation.GAMMA}:
+        explicit_range = "minimum" in params and "maximum" in params
+        return ImageOperationCapability(
+            explicit_range,
+            True,
+            True,
+            requires_full_image_prescan=not explicit_range,
+            reason=(
+                ""
+                if explicit_range
+                else "未指定运算范围时需要扫描整幅图像。"
+            ),
+        )
+    if resolved is ImageOperation.CLAMP:
+        explicit_range = "minimum" in params and "maximum" in params
+        return ImageOperationCapability(
+            explicit_range,
+            True,
+            True,
+            requires_full_image_prescan=not explicit_range,
+            reason=(
+                ""
+                if explicit_range
+                else "未指定截断范围时需要扫描整幅图像。"
+            ),
+        )
+    if resolved is ImageOperation.GAUSSIAN_BLUR:
+        sigma_x = max(0.0, float(params.get("sigma_x", params.get("sigma", 1.0))))
+        sigma_y = max(0.0, float(params.get("sigma_y", sigma_x)))
+        # OpenCV derives a finite kernel for ksize=(0, 0).  Six sigma plus a
+        # two-pixel guard is intentionally wider than all supported kernels.
+        return ImageOperationCapability(
+            True,
+            True,
+            True,
+            halo_x=int(math.ceil(6.0 * sigma_x)) + 2,
+            halo_y=int(math.ceil(6.0 * sigma_y)) + 2,
+        )
+    if resolved in {
+        ImageOperation.MEDIAN_FILTER,
+        ImageOperation.MEAN_FILTER,
+        ImageOperation.REMOVE_OUTLIERS,
+        ImageOperation.REPAIR_NONFINITE,
+    }:
+        radius = max(0, int(params.get("radius", 1)))
+        return ImageOperationCapability(True, True, True, radius, radius)
+    if resolved is ImageOperation.BILATERAL_FILTER:
+        return ImageOperationCapability(
+            False,
+            True,
+            True,
+            reason=(
+                "OpenCV 双边滤波在不同图块尺寸下可能产生浮点归约差异，"
+                "为保证逐位一致而整图执行。"
+            ),
+        )
+    if resolved is ImageOperation.UNSHARP_MASK:
+        sigma = max(0.0, float(params.get("sigma", 1.0)))
+        halo = int(math.ceil(6.0 * sigma)) + 2
+        return ImageOperationCapability(True, True, True, halo, halo)
+    if resolved in {ImageOperation.SOBEL_EDGES, ImageOperation.LAPLACIAN_EDGES}:
+        kernel_size = max(1, int(params.get("kernel_size", 3)))
+        radius = max(1, kernel_size // 2)
+        return ImageOperationCapability(True, True, True, radius, radius)
+    if resolved in {
+        ImageOperation.ERODE,
+        ImageOperation.DILATE,
+        ImageOperation.MORPHOLOGY_OPEN,
+        ImageOperation.MORPHOLOGY_CLOSE,
+        ImageOperation.TOP_HAT,
+        ImageOperation.BLACK_HAT,
+    }:
+        radius = max(0, int(params.get("radius", 1)))
+        iterations = max(0, int(params.get("iterations", 1)))
+        passes = (
+            1
+            if resolved in {ImageOperation.ERODE, ImageOperation.DILATE}
+            else 2
+        )
+        halo = radius * iterations * passes
+        return ImageOperationCapability(True, True, True, halo, halo)
+    if resolved is ImageOperation.BACKGROUND_SUBTRACT:
+        if bool(params.get("preserve_offset", False)):
+            return ImageOperationCapability(
+                False,
+                True,
+                True,
+                requires_full_image_prescan=True,
+                reason="保留背景偏移需要整幅图像的背景中位数。",
+            )
+        halo = max(0, int(params.get("radius", 25))) * 2
+        return ImageOperationCapability(True, True, True, halo, halo)
+    if resolved is ImageOperation.CUSTOM_CONVOLUTION:
+        width = max(0, int(params.get("kernel_width", 0)))
+        height = max(0, int(params.get("kernel_height", 0)))
+        if width < 1 or height < 1 or width % 2 == 0 or height % 2 == 0:
+            return ImageOperationCapability(
+                False,
+                True,
+                True,
+                reason="卷积核宽高尚未形成有效的正奇数尺寸。",
+            )
+        return ImageOperationCapability(
+            True,
+            True,
+            True,
+            width // 2,
+            height // 2,
+        )
+
+    geometry_operations = {
+        ImageOperation.FLIP_HORIZONTAL,
+        ImageOperation.FLIP_VERTICAL,
+        ImageOperation.ROTATE_90_CLOCKWISE,
+        ImageOperation.ROTATE_90_COUNTERCLOCKWISE,
+        ImageOperation.ROTATE_180,
+        ImageOperation.ROTATE,
+        ImageOperation.CROP,
+        ImageOperation.RESIZE,
+        ImageOperation.TRANSLATE,
+        ImageOperation.RESIZE_CANVAS,
+        ImageOperation.PIXEL_BIN,
+    }
+    if resolved in geometry_operations:
+        return ImageOperationCapability(
+            False,
+            False,
+            False,
+            reason="几何操作改变坐标或输出尺寸，必须整图执行。",
+        )
+
+    return ImageOperationCapability(
+        False,
+        True,
+        True,
+        requires_full_image_prescan=True,
+        reason="该操作依赖全局直方图、连通关系、边缘追踪或频域信息。",
+    )
 
 
 class BorderMode(str, Enum):
@@ -282,15 +557,38 @@ def execute_image_operation(request: ImageOperationRequest) -> ImageOperationRes
             params.get("scale_mode", ConversionScaleMode.FULL_TYPE_RANGE.value),
             "位深转换缩放模式",
         )
-        processed = convert_pixel_type(image, target, mode=mode)
+        nonfinite_policy = _coerce_enum(
+            NonfiniteIntegerPolicy,
+            params.get(
+                "nonfinite_policy",
+                NonfiniteIntegerPolicy.REJECT.value,
+            ),
+            "非有限数替代规则",
+        )
+        replacement_count = _integer_conversion_nonfinite_count(
+            image,
+            target,
+        )
+        processed = convert_pixel_type(
+            image,
+            target,
+            mode=mode,
+            nonfinite_policy=nonfinite_policy,
+        )
         if request.roi_mask is not None:
             source_as_target = convert_pixel_type(
                 image,
                 target,
                 mode=ConversionScaleMode.PRESERVE_VALUES,
+                nonfinite_policy=nonfinite_policy,
             )
             processed = _blend_roi(source_as_target, processed, request.roi_mask)
-        metadata.update(target_type=target.value, scale_mode=mode.value)
+        metadata.update(
+            target_type=target.value,
+            scale_mode=mode.value,
+            nonfinite_policy=nonfinite_policy.value,
+            nonfinite_replacement_count=replacement_count,
+        )
     elif operation is ImageOperation.CONVERT_COLOR:
         _reject_roi_for_geometry(request)
         target_model = _coerce_enum(
@@ -879,11 +1177,177 @@ def execute_image_operation(request: ImageOperationRequest) -> ImageOperationRes
     )
 
 
+def execute_image_operation_tiled(
+    operation: ImageOperation | str,
+    image: NDArray[Any],
+    *,
+    parameters: Mapping[str, object] | None = None,
+    secondary_image: NDArray[Any] | None = None,
+    roi_mask: NDArray[np.bool_] | None = None,
+    request_id: str = "",
+    generation: int = 0,
+    tile_size: int = 1024,
+    cancellation_check: Callable[[], None] | None = None,
+) -> ImageOperationResult:
+    """Execute a safe operation in bounded source-image tiles.
+
+    Neighboring operations receive an expanded source patch and only their
+    exact core is committed to the destination.  Consequently ROI pixels can
+    read source samples outside the ROI, while pixels outside the ROI remain
+    byte-for-byte unchanged.  Operations with global or geometric dependencies
+    automatically use :func:`execute_image_operation`.
+    """
+
+    resolved = (
+        operation
+        if isinstance(operation, ImageOperation)
+        else _coerce_enum(ImageOperation, operation, "图像操作")
+    )
+    source = _validate_raster(image)
+    params = dict(parameters or {})
+    capability = resolve_image_operation_capability(resolved, params)
+    resolved_tile_size = int(tile_size)
+    if resolved_tile_size < 32:
+        raise ValueError("处理图块边长必须至少为 32 像素。")
+    if roi_mask is not None:
+        mask = np.asarray(roi_mask, dtype=bool)
+        if mask.shape != source.shape[:2]:
+            raise ValueError(
+                f"ROI 掩膜尺寸 {mask.shape!r} 与图像尺寸 "
+                f"{source.shape[:2]!r} 不一致。"
+            )
+    else:
+        mask = None
+    secondary = None
+    if secondary_image is not None:
+        secondary = _validate_raster(secondary_image)
+        if secondary.shape[:2] != source.shape[:2]:
+            raise ValueError("第二幅图像的宽高必须与源图像完全一致。")
+
+    def check_cancelled() -> None:
+        if cancellation_check is not None:
+            cancellation_check()
+
+    check_cancelled()
+    height, width = source.shape[:2]
+    if (
+        not capability.tileable
+        or not capability.preserves_spatial_extent
+        or (mask is not None and not capability.supports_roi)
+        or (height <= resolved_tile_size and width <= resolved_tile_size)
+    ):
+        full_request = ImageOperationRequest.create(
+            resolved,
+            source,
+            secondary_image=secondary,
+            roi_mask=mask,
+            request_id=request_id,
+            generation=generation,
+            **params,
+        )
+        result = execute_image_operation(full_request)
+        check_cancelled()
+        return result
+
+    output: NDArray[Any] | None = None
+    metadata: dict[str, ParameterValue] | None = None
+    warnings: list[str] = []
+    warning_set: set[str] = set()
+    halo_x = max(0, int(capability.halo_x))
+    halo_y = max(0, int(capability.halo_y))
+    for core_y0 in range(0, height, resolved_tile_size):
+        core_y1 = min(height, core_y0 + resolved_tile_size)
+        patch_y0 = max(0, core_y0 - halo_y)
+        patch_y1 = min(height, core_y1 + halo_y)
+        for core_x0 in range(0, width, resolved_tile_size):
+            check_cancelled()
+            core_x1 = min(width, core_x0 + resolved_tile_size)
+            patch_x0 = max(0, core_x0 - halo_x)
+            patch_x1 = min(width, core_x1 + halo_x)
+            patch = source[patch_y0:patch_y1, patch_x0:patch_x1]
+            secondary_patch = (
+                None
+                if secondary is None
+                else secondary[patch_y0:patch_y1, patch_x0:patch_x1]
+            )
+            mask_patch = (
+                None
+                if mask is None
+                else mask[patch_y0:patch_y1, patch_x0:patch_x1]
+            )
+            tile_request = ImageOperationRequest.create(
+                resolved,
+                patch,
+                secondary_image=secondary_patch,
+                roi_mask=mask_patch,
+                request_id=request_id,
+                generation=generation,
+                **params,
+            )
+            tile_result = execute_image_operation(tile_request)
+            tile_image = np.asarray(tile_result.image)
+            if tile_image.shape[:2] != patch.shape[:2]:
+                raise RuntimeError(
+                    f"操作 {resolved.value} 声明保持空间范围，"
+                    "但图块输出尺寸发生变化。"
+                )
+            local_y0 = core_y0 - patch_y0
+            local_y1 = local_y0 + (core_y1 - core_y0)
+            local_x0 = core_x0 - patch_x0
+            local_x1 = local_x0 + (core_x1 - core_x0)
+            core = tile_image[local_y0:local_y1, local_x0:local_x1]
+            if output is None:
+                output_shape = (height, width) + tuple(tile_image.shape[2:])
+                output = np.empty(output_shape, dtype=tile_image.dtype)
+                metadata = dict(tile_result.metadata)
+            elif (
+                output.dtype != tile_image.dtype
+                or output.shape[2:] != tile_image.shape[2:]
+            ):
+                raise RuntimeError(
+                    f"操作 {resolved.value} 的不同图块返回了不一致的"
+                    "位深或通道数。"
+                )
+            output[core_y0:core_y1, core_x0:core_x1] = core
+            for warning in tile_result.warnings:
+                if warning not in warning_set:
+                    warning_set.add(warning)
+                    warnings.append(warning)
+
+    check_cancelled()
+    if output is None:  # pragma: no cover - validated positive image dimensions
+        raise RuntimeError("分块图像处理未产生输出。")
+    if resolved is ImageOperation.REPAIR_NONFINITE and metadata is not None:
+        metadata["repaired_count"] = int(np.count_nonzero(~np.isfinite(source)))
+    if resolved is ImageOperation.CONVERT_TYPE and metadata is not None:
+        target = _coerce_enum(
+            PixelType,
+            params.get("target_type", PixelType.UINT8.value),
+            "目标位深",
+        )
+        metadata["nonfinite_replacement_count"] = (
+            _integer_conversion_nonfinite_count(source, target)
+        )
+    return ImageOperationResult(
+        operation=resolved,
+        image=np.ascontiguousarray(output),
+        source_dtype=str(source.dtype),
+        output_dtype=str(output.dtype),
+        warnings=tuple(warnings),
+        metadata=tuple(sorted((metadata or params).items())),
+        request_id=str(request_id),
+        generation=int(generation),
+    )
+
+
 def convert_pixel_type(
     image: NDArray[Any],
     target: PixelType | str,
     *,
     mode: ConversionScaleMode | str = ConversionScaleMode.FULL_TYPE_RANGE,
+    nonfinite_policy: NonfiniteIntegerPolicy | str = (
+        NonfiniteIntegerPolicy.REJECT
+    ),
 ) -> NDArray[Any]:
     source = _validate_raster(image)
     target_type = (
@@ -896,11 +1360,40 @@ def convert_pixel_type(
         if isinstance(mode, ConversionScaleMode)
         else _coerce_enum(ConversionScaleMode, mode, "位深转换缩放模式")
     )
+    resolved_nonfinite_policy = (
+        nonfinite_policy
+        if isinstance(nonfinite_policy, NonfiniteIntegerPolicy)
+        else _coerce_enum(
+            NonfiniteIntegerPolicy,
+            nonfinite_policy,
+            "非有限数替代规则",
+        )
+    )
     target_dtype = target_type.dtype
     if source.dtype == target_dtype:
         return source.copy()
+    if source.ndim == 3 and target_type is not PixelType.UINT8:
+        raise ValueError(
+            "RGB/RGBA 图像只能保持为 8 位；"
+            "请先显式转换为灰度，再转换为 16 位或 32 位浮点。"
+        )
 
     work = source.astype(np.float64)
+    source_nonfinite = (
+        ~np.isfinite(work)
+        if target_dtype.kind in {"u", "i"} and source.dtype.kind == "f"
+        else np.zeros(work.shape, dtype=bool)
+    )
+    replacement_count = int(np.count_nonzero(source_nonfinite))
+    if (
+        replacement_count
+        and resolved_nonfinite_policy is NonfiniteIntegerPolicy.REJECT
+    ):
+        raise ValueError(
+            "浮点图像包含 "
+            f"{replacement_count} 个 NaN/Inf；"
+            "转换为整数前必须明确选择“置零”或“按范围边界替代”。"
+        )
     if scale_mode is ConversionScaleMode.PRESERVE_VALUES:
         mapped = work
     elif scale_mode is ConversionScaleMode.DATA_RANGE:
@@ -929,7 +1422,26 @@ def convert_pixel_type(
             * ((target_high - target_low) / (source_high - source_low))
             + target_low
         )
+    if replacement_count:
+        mapped = mapped.copy()
+        if resolved_nonfinite_policy is NonfiniteIntegerPolicy.ZERO:
+            mapped[source_nonfinite] = 0.0
+        else:
+            target_low, target_high = _dtype_range(target_dtype)
+            positive_infinity = np.isposinf(work)
+            mapped[source_nonfinite] = target_low
+            mapped[positive_infinity] = target_high
     return _cast_like(mapped, target_dtype)
+
+
+def _integer_conversion_nonfinite_count(
+    image: NDArray[Any],
+    target: PixelType,
+) -> int:
+    source = np.asarray(image)
+    if source.dtype.kind != "f" or target.dtype.kind not in {"u", "i"}:
+        return 0
+    return int(np.count_nonzero(~np.isfinite(source)))
 
 
 def convert_color_model(
@@ -1468,6 +1980,11 @@ def mean_filter(
         if isinstance(border_mode, BorderMode)
         else _coerce_enum(BorderMode, border_mode, "边界模式")
     )
+    if border is BorderMode.WRAP:
+        raise ValueError(
+            "均值滤波不支持循环边界；"
+            "请选择 Reflect101、复制边缘或常量边界。"
+        )
     kernel_size = radius * 2 + 1
     return _apply_color_channels(
         source,
@@ -1886,6 +2403,11 @@ def morphology_filter(
         if isinstance(border_mode, BorderMode)
         else _coerce_enum(BorderMode, border_mode, "边界模式")
     )
+    if border is BorderMode.WRAP:
+        raise ValueError(
+            "形态学处理不支持循环边界；"
+            "请选择 Reflect101、复制边缘或常量边界。"
+        )
     shape_map = {
         MorphologyKernel.ELLIPSE: cv2.MORPH_ELLIPSE,
         MorphologyKernel.RECTANGLE: cv2.MORPH_RECT,
@@ -2164,6 +2686,11 @@ def subtract_background(
         if isinstance(border_mode, BorderMode)
         else _coerce_enum(BorderMode, border_mode, "边界模式")
     )
+    if border is BorderMode.WRAP:
+        raise ValueError(
+            "背景扣除不支持循环边界；"
+            "请选择 Reflect101、复制边缘或常量边界。"
+        )
     kernel = cv2.getStructuringElement(
         cv2.MORPH_ELLIPSE,
         (radius * 2 + 1, radius * 2 + 1),
@@ -2231,6 +2758,11 @@ def custom_convolution(
         if isinstance(border_mode, BorderMode)
         else _coerce_enum(BorderMode, border_mode, "边界模式")
     )
+    if border is BorderMode.WRAP:
+        raise ValueError(
+            "自定义卷积不支持循环边界；"
+            "请选择 Reflect101、复制边缘或常量边界。"
+        )
 
     def process_plane(plane: NDArray[Any]) -> NDArray[Any]:
         destination_depth = cv2.CV_32F if plane.dtype == np.float32 else cv2.CV_64F

@@ -261,6 +261,7 @@ class ImageOperationSpec:
     implementation: str
     implementation_version: str
     _parameters_json: str = field(repr=False)
+    _result_metadata_json: str = field(repr=False)
 
     def __init__(
         self,
@@ -269,6 +270,7 @@ class ImageOperationSpec:
         *,
         implementation: str = "fdm",
         implementation_version: str = "1",
+        result_metadata: Mapping[str, object] | None = None,
     ) -> None:
         normalized_operation_id = str(operation_id or "").strip().lower()
         if not _OPERATION_ID_PATTERN.fullmatch(normalized_operation_id):
@@ -290,8 +292,19 @@ class ImageOperationSpec:
             parameters if parameters is not None else {},
             field_name="parameters",
         )
+        normalized_result_metadata = _normalize_json_object(
+            result_metadata if result_metadata is not None else {},
+            field_name="result_metadata",
+        )
         parameters_json = json.dumps(
             normalized_parameters,
+            ensure_ascii=False,
+            allow_nan=False,
+            sort_keys=True,
+            separators=(",", ":"),
+        )
+        result_metadata_json = json.dumps(
+            normalized_result_metadata,
             ensure_ascii=False,
             allow_nan=False,
             sort_keys=True,
@@ -301,18 +314,32 @@ class ImageOperationSpec:
         object.__setattr__(self, "implementation", normalized_implementation)
         object.__setattr__(self, "implementation_version", normalized_version)
         object.__setattr__(self, "_parameters_json", parameters_json)
+        object.__setattr__(
+            self,
+            "_result_metadata_json",
+            result_metadata_json,
+        )
 
     @property
     def parameters(self) -> dict[str, object]:
         return json.loads(self._parameters_json)
 
+    @property
+    def result_metadata(self) -> dict[str, object]:
+        """Return immutable-at-rest audit facts produced by this operation."""
+
+        return json.loads(self._result_metadata_json)
+
     def to_dict(self) -> dict[str, object]:
-        return {
+        payload: dict[str, object] = {
             "operation_id": self.operation_id,
             "parameters": self.parameters,
             "implementation": self.implementation,
             "implementation_version": self.implementation_version,
         }
+        if self.result_metadata:
+            payload["result_metadata"] = self.result_metadata
+        return payload
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, object]) -> "ImageOperationSpec":
@@ -321,6 +348,9 @@ class ImageOperationSpec:
         parameters = payload.get("parameters", {})
         if not isinstance(parameters, Mapping):
             raise TypeError("ImageOperationSpec.parameters 必须是对象")
+        result_metadata = payload.get("result_metadata", {})
+        if not isinstance(result_metadata, Mapping):
+            raise TypeError("ImageOperationSpec.result_metadata 必须是对象")
         return cls(
             operation_id=payload.get("operation_id", ""),  # type: ignore[arg-type]
             parameters=parameters,
@@ -332,6 +362,7 @@ class ImageOperationSpec:
                 "implementation_version",
                 "1",
             ),
+            result_metadata=result_metadata,
         )
 
 

@@ -39,8 +39,8 @@ from fdm.image_processing_models import ImageOperationSpec, ImageProcessingRecip
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.services.image_processing import (
     ImageOperation,
-    ImageOperationRequest,
-    execute_image_operation,
+    execute_image_operation_tiled,
+    resolve_image_operation_capability,
 )
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelSpinBox
 
@@ -106,13 +106,20 @@ class WorkbenchTaskResult:
 class _TaskCompletion:
     request: WorkbenchTaskRequest
     raster: RasterPlane | None = None
+    recipe: ImageProcessingRecipe | None = None
     error: str | None = None
     cancelled: bool = False
 
 
+@dataclass(frozen=True, slots=True)
+class _WorkbenchExecutionOutput:
+    raster: RasterPlane
+    recipe: ImageProcessingRecipe
+
+
 ImageTaskExecutor = Callable[
     [WorkbenchTaskRequest, CancellationToken],
-    RasterPlane,
+    RasterPlane | _WorkbenchExecutionOutput,
 ]
 
 
@@ -139,9 +146,21 @@ class _ImageTaskRunnable(QRunnable):
     def run(self) -> None:
         try:
             self._token.raise_if_cancelled()
-            raster = self._executor(self._request, self._token)
+            execution = self._executor(self._request, self._token)
             self._token.raise_if_cancelled()
-            completion = _TaskCompletion(request=self._request, raster=raster)
+            if isinstance(execution, _WorkbenchExecutionOutput):
+                completion = _TaskCompletion(
+                    request=self._request,
+                    raster=execution.raster,
+                    recipe=execution.recipe,
+                )
+            elif isinstance(execution, RasterPlane):
+                completion = _TaskCompletion(
+                    request=self._request,
+                    raster=execution,
+                )
+            else:
+                raise TypeError("图像处理执行器必须返回 RasterPlane。")
         except CancellationError:
             completion = _TaskCompletion(request=self._request, cancelled=True)
         except Exception as exc:
@@ -179,7 +198,7 @@ class ImageProcessingTaskController(QObject):
         parent: QObject | None = None,
     ) -> None:
         super().__init__(parent)
-        self._executor = executor or execute_workbench_request
+        self._executor = executor or _execute_workbench_request_with_metadata
         self._signals = _TaskSignals(self)
         self._signals.completed.connect(self._on_completed)
         self._lanes = {
@@ -260,6 +279,7 @@ class ImageProcessingTaskController(QObject):
     ) -> WorkbenchTaskRequest:
         if self._closed:
             raise RuntimeError("图像处理任务控制器已经关闭")
+        validate_workbench_operation_sequence(source, operations)
         lane = self._lanes[kind]
         lane.generation += 1
         request = WorkbenchTaskRequest(
@@ -344,7 +364,7 @@ class ImageProcessingTaskController(QObject):
                     generation=request.generation,
                     source_document_id=request.source_document_id,
                     raster=completion.raster,
-                    recipe=request.recipe,
+                    recipe=completion.recipe or request.recipe,
                 )
                 if request.kind is WorkbenchTaskKind.PREVIEW:
                     self.previewReady.emit(result)
@@ -372,8 +392,26 @@ def execute_workbench_request(
     request: WorkbenchTaskRequest,
     token: CancellationToken,
 ) -> RasterPlane:
+    """Execute a request and return pixels for legacy direct callers."""
+
+    return _execute_workbench_request_with_metadata(request, token).raster
+
+
+def _execute_workbench_request_with_metadata(
+    request: WorkbenchTaskRequest,
+    token: CancellationToken,
+) -> _WorkbenchExecutionOutput:
+    validate_workbench_operation_sequence(request.source, request.operations)
     image = raster_plane_to_array(request.source)
     secondary_images = dict(request.secondary_images)
+    executed_operations: list[ImageOperationSpec] = []
+    dynamic_metadata_keys = {
+        "nonfinite_replacement_count",
+        "repaired_count",
+        "computed_threshold",
+        "cropped_right",
+        "cropped_bottom",
+    }
     for operation_spec in request.operations:
         token.raise_if_cancelled()
         parameters = operation_spec.parameters
@@ -387,20 +425,94 @@ def execute_workbench_request(
             except KeyError as exc:
                 raise ValueError("图像计算器选择的第二幅图像已不可用") from exc
             secondary_image = raster_plane_to_array(secondary_plane)
-        operation_request = ImageOperationRequest.create(
+        result = execute_image_operation_tiled(
             ImageOperation(operation_spec.operation_id),
             image,
+            parameters=parameters,
             secondary_image=secondary_image,
             roi_mask=request.roi_mask,
             request_id=request.request_id,
             generation=request.generation,
-            **parameters,
+            tile_size=PROCESSING_TILE_EDGE,
+            cancellation_check=token.raise_if_cancelled,
         )
-        result = execute_image_operation(operation_request)
         token.raise_if_cancelled()
         image = np.asarray(result.image)
+        dynamic_metadata = {
+            key: value
+            for key, value in result.metadata_map.items()
+            if key in dynamic_metadata_keys
+        }
+        merged_metadata = operation_spec.result_metadata
+        merged_metadata.update(dynamic_metadata)
+        executed_operations.append(
+            ImageOperationSpec(
+                operation_spec.operation_id,
+                parameters,
+                implementation=operation_spec.implementation,
+                implementation_version=operation_spec.implementation_version,
+                result_metadata=merged_metadata,
+            )
+        )
     token.raise_if_cancelled()
-    return array_to_raster_plane(image)
+    return _WorkbenchExecutionOutput(
+        raster=array_to_raster_plane(image),
+        recipe=ImageProcessingRecipe.from_operations(executed_operations),
+    )
+
+
+def validate_workbench_operation_sequence(
+    source: RasterPlane,
+    operations: tuple[ImageOperationSpec, ...],
+) -> None:
+    """Reject pixel-layout combinations that the authoritative model cannot store."""
+
+    channels = int(source.pixel_type.channel_count)
+    scalar_outputs = {
+        ImageOperation.THRESHOLD.value,
+        ImageOperation.SOBEL_EDGES.value,
+        ImageOperation.LAPLACIAN_EDGES.value,
+        ImageOperation.CANNY_EDGES.value,
+        ImageOperation.AUTO_THRESHOLD.value,
+        ImageOperation.BINARIZE.value,
+        ImageOperation.ERODE.value,
+        ImageOperation.DILATE.value,
+        ImageOperation.MORPHOLOGY_OPEN.value,
+        ImageOperation.MORPHOLOGY_CLOSE.value,
+        ImageOperation.FILL_HOLES.value,
+        ImageOperation.CONTOUR_EXTRACT.value,
+        ImageOperation.REMOVE_SMALL_OBJECTS.value,
+        ImageOperation.FILL_SMALL_HOLES.value,
+        ImageOperation.DISTANCE_TRANSFORM.value,
+        ImageOperation.SKELETONIZE.value,
+        ImageOperation.WATERSHED.value,
+        ImageOperation.TOP_HAT.value,
+        ImageOperation.BLACK_HAT.value,
+    }
+    for operation in operations:
+        parameters = operation.parameters
+        if operation.operation_id == ImageOperation.CONVERT_TYPE.value:
+            target = str(parameters.get("target_type", "uint8"))
+            if channels > 1 and target != "uint8":
+                raise ValueError(
+                    "RGB/RGBA 图像不能直接转换为 16 位或 32 位浮点；"
+                    "请先添加“转换颜色模型 → 灰度”步骤。"
+                )
+        elif operation.operation_id == ImageOperation.CONVERT_COLOR.value:
+            channels = (
+                1
+                if str(parameters.get("target_model", "grayscale"))
+                == "grayscale"
+                else 3
+            )
+        elif operation.operation_id in scalar_outputs:
+            channels = 1
+        elif (
+            operation.operation_id == ImageOperation.FFT_FILTER.value
+            and str(parameters.get("channel", "per_channel"))
+            != "per_channel"
+        ):
+            channels = 1
 
 
 def raster_plane_to_array(plane: RasterPlane) -> NDArray[np.generic]:
@@ -461,6 +573,7 @@ def array_to_raster_plane(image: NDArray[np.generic]) -> RasterPlane:
     )
 
 
+PROCESSING_TILE_EDGE = 1024
 MAX_FINAL_WORKING_SET_BYTES = 1 << 30
 MIN_FREE_DISK_RESERVE_BYTES = 2 << 30
 
@@ -601,7 +714,7 @@ def estimate_final_resources(
         elif operation_id in {
             "rotate",
             "resize",
-            "canvas_size",
+            "resize_canvas",
             "pixel_bin",
             "background_subtract",
             "custom_convolution",
@@ -742,6 +855,17 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
         choices=border_modes,
         help_text="邻域越过图片边缘时的取样规则；默认 Reflect101。",
     )
+    local_border = ParameterField(
+        "border_mode",
+        "边界",
+        "choice",
+        "reflect",
+        choices=border_modes[:-1],
+        help_text=(
+            "邻域越过图片边缘时的取样规则；默认 Reflect101。"
+            "该操作的 OpenCV 后端不支持循环边界。"
+        ),
+    )
     radius = ParameterField(
         "radius",
         "半径",
@@ -793,7 +917,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             value,
             "处理",
             label,
-            (radius, iterations, kernel, border, scalar_channel),
+            (radius, iterations, kernel, local_border, scalar_channel),
             purpose=purpose,
             supported_types=scalar_types,
         )
@@ -827,6 +951,21 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                     "choice",
                     "full_type_range",
                     choices=scale_modes,
+                ),
+                ParameterField(
+                    "nonfinite_policy",
+                    "NaN/Inf 转整数",
+                    "choice",
+                    "reject",
+                    choices=(
+                        ("拒绝并提示", "reject"),
+                        ("替代为零", "zero"),
+                        ("按输出范围边界替代", "range_bounds"),
+                    ),
+                    help_text=(
+                        "仅在 32 位浮点转 8/16 位整数时使用；"
+                        "默认拒绝，替代数量会写入派生记录。"
+                    ),
                 ),
             ),
             purpose="显式转换位深，并记录数值映射规则。",
@@ -1088,7 +1227,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             ImageOperation.MEAN_FILTER,
             "处理",
             "均值 / 方框滤波",
-            (radius, border),
+            (radius, local_border),
             purpose="使用方框邻域求均值以平滑图像。",
         ),
         define(
@@ -1309,7 +1448,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 ParameterField("radius", "背景半径", "int", 25, 1, 2048, suffix=" px"),
                 ParameterField("light_background", "亮背景", "bool", False),
                 ParameterField("preserve_offset", "保留背景中位偏移", "bool", False),
-                border,
+                local_border,
             ),
             purpose="用滑动形态学背景估计扣除缓慢变化背景。",
         ),
@@ -1329,7 +1468,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 ),
                 ParameterField("normalize_kernel", "归一化核", "bool", False),
                 ParameterField("offset", "结果偏移", "float", 0.0, -1e12, 1e12, 4),
-                border,
+                local_border,
             ),
             purpose="使用用户提供的奇数尺寸卷积核处理图像。",
         ),
@@ -1640,13 +1779,16 @@ class ImageProcessingWorkbench(QDialog):
             )
             return
         self._status_label.setText("正在计算 1:1 预览…")
-        self._controller.start_preview(
-            source_document_id=self._source_document_id,
-            source=self._source,
-            operations=self._steps,
-            roi_mask=self._roi_mask,
-            secondary_images=self._secondary_images,
-        )
+        try:
+            self._controller.start_preview(
+                source_document_id=self._source_document_id,
+                source=self._source,
+                operations=self._steps,
+                roi_mask=self._roi_mask,
+                secondary_images=self._secondary_images,
+            )
+        except ValueError as exc:
+            self._status_label.setText(f"无法开始预览：{exc}")
 
     def cancel_tasks(self) -> None:
         self._preview_timer.stop()
@@ -1959,6 +2101,28 @@ class ImageProcessingWorkbench(QDialog):
             return
         step = self._steps[row]
         definition = _DEFINITION_BY_ID[step.operation_id]
+        capability = resolve_image_operation_capability(
+            definition.operation,
+            step.parameters,
+        )
+        if capability.tileable:
+            execution_help = (
+                "可分块精确执行"
+                if capability.halo_x == capability.halo_y == 0
+                else (
+                    "可分块精确执行；从原图读取横向 ±"
+                    f"{capability.halo_x} px、纵向 ±"
+                    f"{capability.halo_y} px 邻域"
+                )
+            )
+        else:
+            execution_help = "整图执行"
+            if capability.reason:
+                execution_help += f"；{capability.reason}"
+            execution_help += (
+                "；取消请求会在当前整图算法返回后立即确认，"
+                "取消后不会提交派生图片。"
+            )
         title = QLabel(f"<b>{definition.category} · {definition.label}</b>", self._parameter_content)
         title.setTextFormat(Qt.TextFormat.RichText)
         self._parameter_form.addRow(title)
@@ -1970,6 +2134,7 @@ class ImageProcessingWorkbench(QDialog):
                     f"标定：{definition.calibration_effect}",
                     f"适用类型：{definition.supported_types}",
                     f"ROI：{definition.roi_behavior}",
+                    f"执行：{execution_help}",
                 )
             ),
             self._parameter_content,
@@ -2125,15 +2290,19 @@ class ImageProcessingWorkbench(QDialog):
         if not self._steps or self._final_in_progress:
             return
         try:
+            validate_workbench_operation_sequence(
+                self._source,
+                self._steps,
+            )
             estimate = validate_final_resources(
                 self._source,
                 self._steps,
                 storage_directory=self._resource_check_directory,
             )
-        except FinalResourcePreflightError as exc:
+        except (FinalResourcePreflightError, ValueError) as exc:
             message = str(exc)
             self._status_label.setText(f"无法开始最终处理：{message}")
-            QMessageBox.warning(self, "资源不足", message)
+            QMessageBox.warning(self, "无法开始处理", message)
             return
         self._preview_timer.stop()
         self._controller.cancel_preview()
@@ -2272,4 +2441,5 @@ __all__ = [
     "raster_plane_to_array",
     "raster_plane_to_display_image",
     "validate_final_resources",
+    "validate_workbench_operation_sequence",
 ]
