@@ -65,6 +65,13 @@ from PySide6.QtWidgets import (
 )
 
 from fdm import __version__
+from fdm.analysis_artifacts import (
+    AnalysisArtifact,
+    AnalysisAssetReference,
+    AnalysisObjectKind,
+    AnalysisObjectReference,
+    calibration_signature_from_values,
+)
 from fdm.atomic_io import staged_path_for
 from fdm.application_launch import ApplicationOpenRequest
 from fdm.area_display import (
@@ -104,6 +111,7 @@ from fdm.models import (
     UNCATEGORIZED_LABEL,
     normalize_group_label,
     new_id,
+    project_assets_root,
     project_capture_root,
     project_slide_root,
 )
@@ -114,6 +122,9 @@ from fdm.image_processing_models import (
     ImageProcessingRecipe,
 )
 from fdm.project_roi import (
+    EllipseRoiGeometry,
+    FreehandRoiGeometry,
+    RectangleRoiGeometry,
     RoiBooleanExpression,
     RoiBooleanOperator,
     PolygonRoiGeometry,
@@ -210,6 +221,12 @@ from fdm.services.raster_io import (
     write_native_raster_asset,
 )
 from fdm.services.image_processing import ImageOperation
+from fdm.services.analysis_asset_io import (
+    file_sha256 as analysis_asset_sha256,
+    validate_analysis_asset_reference,
+    write_safe_analysis_npz,
+)
+from fdm.services.analysis_export import AnalysisExportService
 from fdm.services.sidecar_io import CalibrationSidecarIO
 from fdm.services.snap_service import SnapResult, SnapService
 from fdm.ui.canvas import (
@@ -238,6 +255,21 @@ from fdm.ui.associated_file_controller import AssociatedFileOpenController
 from fdm.ui.background_task_controller import AreaInferenceBatchState, BackgroundTaskController, BatchLoadState
 from fdm.ui.export_controller import ExportController
 from fdm.ui.fullscreen import FullscreenMeasurementController
+from fdm.ui.analysis_results_center import (
+    AnalysisActionRequest,
+    AnalysisExportRequest,
+    AnalysisLocateRequest,
+    AnalysisResultsCenter,
+)
+from fdm.ui.image_analysis_controller import (
+    AnalysisCalibrationSnapshot,
+    AnalysisTaskPhaseUpdate,
+    AnalysisTool,
+    ImageAnalysisTaskController,
+    ImageAnalysisTaskResult,
+    MaximaConversionPayload,
+    ParticleConversionPayload,
+)
 from fdm.ui.icons import application_icon, themed_icon
 from fdm.ui.image_loader import ImageLoadRequest, raster_document_contract_error
 from fdm.ui.display_adjustment_dialog import (
@@ -800,6 +832,24 @@ class ImageProcessingSourceContext:
     source_signature: tuple[object, ...] = ()
 
 
+@dataclass(frozen=True, slots=True)
+class ImageAnalysisSourceContext:
+    document_id: str
+    plane_sha256: str
+    source_signature: tuple[object, ...]
+    plane_identity: int = 0
+    viewport_origin: tuple[int, int] = (0, 0)
+    scope_summary: str = "整张图片"
+
+
+@dataclass(frozen=True, slots=True)
+class ImageAnalysisRunContext:
+    request_id: str
+    generation: int
+    tool: AnalysisTool
+    source: ImageAnalysisSourceContext
+
+
 class SmallObjectEnhancementPreviewWindow(QWidget):
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(
@@ -991,6 +1041,16 @@ class MainWindow(QMainWindow):
         self._session_processed_root: Path | None = None
         self._session_processed_assets: dict[str, Path] = {}
         self._cleanup_abandoned_processed_sessions()
+        self._analysis_results_center: AnalysisResultsCenter | None = None
+        self._analysis_run_contexts: dict[str, ImageAnalysisRunContext] = {}
+        self._analysis_conversion_payloads: dict[
+            str,
+            ParticleConversionPayload | MaximaConversionPayload,
+        ] = {}
+        self._analysis_conversion_offsets: dict[str, tuple[int, int]] = {}
+        self._session_analysis_root: Path | None = None
+        self._session_analysis_assets: dict[str, Path] = {}
+        self._cleanup_abandoned_analysis_sessions()
         self._canvases: dict[str, DocumentCanvas] = {}
         self._canvas_navigators: dict[str, CanvasNavigatorWidget] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
@@ -1300,6 +1360,28 @@ class MainWindow(QMainWindow):
         ]
 
         self.export_service = ExportService()
+        self.analysis_export_service = AnalysisExportService()
+        self.image_analysis_task_controller = ImageAnalysisTaskController(
+            parent=self,
+        )
+        self.image_analysis_task_controller.analysisReady.connect(
+            self._on_image_analysis_ready
+        )
+        self.image_analysis_task_controller.taskFailed.connect(
+            self._on_image_analysis_failed
+        )
+        self.image_analysis_task_controller.taskCancelled.connect(
+            self._on_image_analysis_cancelled
+        )
+        self.image_analysis_task_controller.phaseChanged.connect(
+            self._on_image_analysis_phase_changed
+        )
+        self.image_analysis_task_controller.busyChanged.connect(
+            self._on_image_analysis_busy_changed
+        )
+        self.image_analysis_task_controller.staleResultDiscarded.connect(
+            self._on_image_analysis_stale_result
+        )
         self.area_inference_service = AreaInferenceService()
         self.snap_service = SnapService()
         self.thread_task_manager = ThreadTaskManager(parent=self)
@@ -1831,6 +1913,29 @@ class MainWindow(QMainWindow):
             self._open_image_processing_workbench
         )
         self._create_image_operation_actions()
+        self._analysis_actions: dict[AnalysisTool, QAction] = {}
+        for tool in (
+            AnalysisTool.SHAPE,
+            AnalysisTool.INTENSITY,
+            AnalysisTool.HISTOGRAM,
+            AnalysisTool.PROFILE,
+            AnalysisTool.PARTICLES,
+            AnalysisTool.MAXIMA,
+        ):
+            action = QAction(f"{tool.chinese_name}…", self)
+            action.triggered.connect(
+                lambda _checked=False, selected=tool: (
+                    self._start_image_analysis(selected)
+                )
+            )
+            self._analysis_actions[tool] = action
+        self.analysis_results_center_action = QAction(
+            "分析结果中心…",
+            self,
+        )
+        self.analysis_results_center_action.triggered.connect(
+            self._open_analysis_results_center
+        )
 
     def _create_image_operation_actions(self) -> None:
         labels = {
@@ -2048,6 +2153,19 @@ class MainWindow(QMainWindow):
                 submenu.addAction(
                     self._image_operation_actions[operation.value]
                 )
+
+        analysis_menu = self.menuBar().addMenu("分析")
+        for tool in (
+            AnalysisTool.SHAPE,
+            AnalysisTool.INTENSITY,
+            AnalysisTool.HISTOGRAM,
+            AnalysisTool.PROFILE,
+            AnalysisTool.PARTICLES,
+            AnalysisTool.MAXIMA,
+        ):
+            analysis_menu.addAction(self._analysis_actions[tool])
+        analysis_menu.addSeparator()
+        analysis_menu.addAction(self.analysis_results_center_action)
 
         tool_menu = self.menuBar().addMenu("工具")
         for action in self._mode_actions.values():
@@ -4759,6 +4877,7 @@ class MainWindow(QMainWindow):
         ]
         self.project.mark_extension_changed()
         self._refresh_project_roi_ui()
+        self._refresh_analysis_results_center()
         self._update_project_navigation_summary()
 
     def _on_roi_delete_requested(self, payload: object) -> None:
@@ -4802,6 +4921,7 @@ class MainWindow(QMainWindow):
             },
         )
         self._refresh_project_roi_ui()
+        self._refresh_analysis_results_center()
         self._update_project_navigation_summary()
         suffix = (
             f"，并移除 {len(dependent_ids)} 个依赖组合 ROI"
@@ -5104,7 +5224,12 @@ class MainWindow(QMainWindow):
         context: ImageProcessingSourceContext,
     ) -> bool:
         document = self.project.get_document(context.document_id)
-        if document is None:
+        current = self.current_document()
+        if (
+            document is None
+            or current is None
+            or current.id != context.document_id
+        ):
             return False
         signature = context.source_signature
         if len(signature) >= 2 and signature[1] == "raster":
@@ -5127,6 +5252,1204 @@ class MainWindow(QMainWindow):
                 int(round(origin.y)),
             )
         return False
+
+    def _create_analysis_source_context(
+        self,
+    ) -> tuple[ImageDocument, RasterPlane, ImageAnalysisSourceContext] | None:
+        document = self.current_document()
+        if document is None:
+            QMessageBox.information(
+                self,
+                "图像分析",
+                "请先打开一张图片或数字化切片。",
+            )
+            return None
+        if document.is_digital_slide():
+            canvas = self._canvases.get(document.id)
+            store = self._slide_stores.get(document.id)
+            if not isinstance(canvas, DigitalSlideCanvas) or store is None:
+                QMessageBox.warning(
+                    self,
+                    "图像分析",
+                    "当前数字化切片的原始视窗资源不可用。",
+                )
+                return None
+            try:
+                manifest = store.read_manifest()
+                origin = canvas.viewport_origin()
+                focus_index = canvas.focus_index()
+                x = int(round(origin.x))
+                y = int(round(origin.y))
+                width = int(manifest.viewport_width)
+                height = int(manifest.viewport_height)
+                image = store.render_viewport(
+                    x=x,
+                    y=y,
+                    width=width,
+                    height=height,
+                    z_index=focus_index,
+                )
+                if image.isNull():
+                    raise ValueError("数字化切片返回了空视窗")
+                plane = qimage_to_raster_plane(image)
+            except Exception as exc:  # noqa: BLE001 - one Chinese UI boundary
+                QMessageBox.warning(
+                    self,
+                    "图像分析",
+                    f"无法冻结当前数字化切片视窗：\n{exc}",
+                )
+                return None
+            signature: tuple[object, ...] = (
+                document.id,
+                "digital_slide_viewport",
+                focus_index,
+                x,
+                y,
+                width,
+                height,
+                plane.sha256(),
+            )
+            return (
+                document,
+                plane,
+                ImageAnalysisSourceContext(
+                    document_id=document.id,
+                    plane_sha256=plane.sha256(),
+                    source_signature=signature,
+                    plane_identity=id(plane),
+                    viewport_origin=(x, y),
+                    scope_summary="当前焦层、当前原始像素视窗",
+                ),
+            )
+        plane = self._rasters.get(document.id)
+        if plane is None:
+            QMessageBox.warning(
+                self,
+                "图像分析",
+                "当前图片没有可用的权威原始像素数据。",
+            )
+            return None
+        digest = plane.sha256()
+        return (
+            document,
+            plane,
+            ImageAnalysisSourceContext(
+                document_id=document.id,
+                plane_sha256=digest,
+                source_signature=(document.id, "raster", digest),
+                plane_identity=id(plane),
+            ),
+        )
+
+    def _analysis_source_is_current(
+        self,
+        context: ImageAnalysisSourceContext,
+    ) -> bool:
+        document = self.project.get_document(context.document_id)
+        if document is None:
+            return False
+        signature = context.source_signature
+        if len(signature) >= 3 and signature[1] == "raster":
+            plane = self._rasters.get(document.id)
+            return (
+                plane is not None
+                and (
+                    id(plane) == context.plane_identity
+                    if context.plane_identity
+                    else plane.sha256() == context.plane_sha256
+                )
+                and signature == (document.id, "raster", context.plane_sha256)
+            )
+        if len(signature) >= 8 and signature[1] == "digital_slide_viewport":
+            canvas = self._canvases.get(document.id)
+            if not isinstance(canvas, DigitalSlideCanvas):
+                return False
+            origin = canvas.viewport_origin()
+            return signature[:7] == (
+                document.id,
+                "digital_slide_viewport",
+                canvas.focus_index(),
+                int(round(origin.x)),
+                int(round(origin.y)),
+                signature[5],
+                signature[6],
+            )
+        return False
+
+    def _selected_project_roi(
+        self,
+        document_id: str,
+    ) -> ProjectRoi | None:
+        selected_ids = tuple(self._selected_project_roi_ids)
+        if not selected_ids and self._roi_manager is not None:
+            selected_getter = getattr(self._roi_manager, "selected_roi_ids", None)
+            if callable(selected_getter):
+                try:
+                    selected_ids = tuple(selected_getter())
+                except Exception:
+                    selected_ids = ()
+        for roi_id in selected_ids:
+            roi = self.project.get_project_roi(str(roi_id))
+            if roi is not None and roi.document_id == document_id:
+                return roi
+        return None
+
+    @staticmethod
+    def _shift_project_roi(
+        roi: ProjectRoi,
+        *,
+        dx: float,
+        dy: float,
+    ) -> ProjectRoi:
+        geometry = roi.geometry
+        if isinstance(geometry, RectangleRoiGeometry):
+            shifted_geometry = RectangleRoiGeometry(
+                geometry.x + dx,
+                geometry.y + dy,
+                geometry.width,
+                geometry.height,
+            )
+        elif isinstance(geometry, EllipseRoiGeometry):
+            shifted_geometry = EllipseRoiGeometry(
+                geometry.x + dx,
+                geometry.y + dy,
+                geometry.width,
+                geometry.height,
+            )
+        elif isinstance(geometry, (PolygonRoiGeometry, FreehandRoiGeometry)):
+            shifted_rings = tuple(
+                tuple(
+                    RoiPoint(point.x + dx, point.y + dy)
+                    for point in ring
+                )
+                for ring in geometry.rings
+            )
+            shifted_geometry = type(geometry)(rings=shifted_rings)
+        else:
+            shifted_geometry = geometry
+        return ProjectRoi(
+            id=roi.id,
+            document_id=roi.document_id,
+            name=roi.name,
+            geometry=shifted_geometry,
+            group=roi.group,
+            visible=roi.visible,
+            locked=roi.locked,
+            color=roi.color,
+            revision=roi.revision,
+        )
+
+    @staticmethod
+    def _mask_raw_rings(mask: object) -> tuple[tuple[tuple[float, float], ...], ...]:
+        """Derive exact pixel-boundary rings for ROI shape metrics."""
+
+        import cv2
+        import numpy as np
+
+        array = np.asarray(mask, dtype=np.uint8)
+        contours, _hierarchy = cv2.findContours(
+            array,
+            cv2.RETR_CCOMP,
+            cv2.CHAIN_APPROX_NONE,
+        )
+        rings = tuple(
+            tuple(
+                (float(point[0][0]), float(point[0][1]))
+                for point in contour
+            )
+            for contour in contours
+            if len(contour) >= 3
+        )
+        return rings
+
+    def _analysis_scope_snapshot(
+        self,
+        *,
+        tool: AnalysisTool,
+        document: ImageDocument,
+        plane: RasterPlane,
+        source: ImageAnalysisSourceContext,
+    ) -> tuple[
+        object | None,
+        tuple[tuple[tuple[float, float], ...], ...],
+        float | None,
+        AnalysisObjectReference | None,
+        str,
+        tuple[tuple[float, float], ...],
+    ]:
+        origin_x, origin_y = source.viewport_origin
+        measurement = document.get_measurement(
+            document.view_state.selected_measurement_id
+        )
+        if tool is AnalysisTool.PROFILE:
+            if measurement is None or measurement.measurement_kind not in {
+                "line",
+                "polyline",
+            }:
+                raise ValueError("强度剖面需要先用浏览工具选中一条线段或折线。")
+            if measurement.measurement_kind == "line":
+                line = measurement.effective_line()
+                points = (
+                    (line.start.x - origin_x, line.start.y - origin_y),
+                    (line.end.x - origin_x, line.end.y - origin_y),
+                )
+            else:
+                points = tuple(
+                    (point.x - origin_x, point.y - origin_y)
+                    for point in measurement.polyline_px
+                )
+            return (
+                None,
+                (),
+                None,
+                AnalysisObjectReference(
+                    kind=AnalysisObjectKind.MEASUREMENT,
+                    object_id=measurement.id,
+                    revision=measurement.geometry_revision,
+                ),
+                "当前选中的线段 / 折线",
+                points,
+            )
+
+        if (
+            tool is AnalysisTool.SHAPE
+            and measurement is not None
+            and measurement.measurement_kind == "area"
+        ):
+            rings_source = measurement.area_rings_px or (
+                [measurement.polygon_px] if measurement.polygon_px else []
+            )
+            rings = tuple(
+                tuple(
+                    (point.x - origin_x, point.y - origin_y)
+                    for point in ring
+                )
+                for ring in rings_source
+                if len(ring) >= 3
+            )
+            if not rings:
+                raise ValueError("当前面积对象没有有效的 RAW rings。")
+            return (
+                None,
+                rings,
+                measurement.exact_area_px,
+                AnalysisObjectReference(
+                    kind=AnalysisObjectKind.MEASUREMENT,
+                    object_id=measurement.id,
+                    revision=measurement.geometry_revision,
+                ),
+                "当前选中的面积对象",
+                (),
+            )
+
+        roi = self._selected_project_roi(document.id)
+        if roi is not None:
+            lookup = {
+                item.id: self._shift_project_roi(
+                    item,
+                    dx=-origin_x,
+                    dy=-origin_y,
+                )
+                for item in self.project.project_rois
+                if item.document_id == document.id
+            }
+            shifted_roi = lookup[roi.id]
+            mask = rasterize_roi_mask(
+                shifted_roi,
+                plane.width,
+                plane.height,
+                roi_lookup=lookup,
+            )
+            raw_rings: tuple[
+                tuple[tuple[float, float], ...],
+                ...,
+            ] = ()
+            if tool is AnalysisTool.SHAPE:
+                geometry = shifted_roi.geometry
+                if isinstance(
+                    geometry,
+                    (PolygonRoiGeometry, FreehandRoiGeometry),
+                ):
+                    raw_rings = tuple(
+                        tuple((point.x, point.y) for point in ring)
+                        for ring in geometry.rings
+                    )
+                elif isinstance(geometry, RectangleRoiGeometry):
+                    raw_rings = (
+                        (
+                            (geometry.x, geometry.y),
+                            (geometry.x + geometry.width, geometry.y),
+                            (
+                                geometry.x + geometry.width,
+                                geometry.y + geometry.height,
+                            ),
+                            (geometry.x, geometry.y + geometry.height),
+                        ),
+                    )
+                else:
+                    raw_rings = self._mask_raw_rings(mask)
+            if tool is AnalysisTool.SHAPE and not raw_rings:
+                raise ValueError("当前 ROI 在冻结视窗中没有可测量的有效像素。")
+            return (
+                mask,
+                raw_rings,
+                float(mask.sum()) if tool is AnalysisTool.SHAPE else None,
+                AnalysisObjectReference(
+                    kind=AnalysisObjectKind.ROI,
+                    object_id=roi.id,
+                    revision=roi.revision,
+                ),
+                f"ROI：{roi.name}",
+                (),
+            )
+
+        if measurement is not None and measurement.measurement_kind == "area":
+            rings_source = measurement.area_rings_px or (
+                [measurement.polygon_px] if measurement.polygon_px else []
+            )
+            rings = tuple(
+                tuple(
+                    (point.x - origin_x, point.y - origin_y)
+                    for point in ring
+                )
+                for ring in rings_source
+                if len(ring) >= 3
+            )
+            if not rings:
+                raise ValueError("当前面积对象没有有效的 RAW rings。")
+            return (
+                None,
+                rings,
+                measurement.exact_area_px,
+                AnalysisObjectReference(
+                    kind=AnalysisObjectKind.MEASUREMENT,
+                    object_id=measurement.id,
+                    revision=measurement.geometry_revision,
+                ),
+                "当前选中的面积对象",
+                (),
+            )
+        if tool is AnalysisTool.SHAPE:
+            raise ValueError("形状测量需要先选中面积对象或项目 ROI。")
+        return None, (), None, None, source.scope_summary, ()
+
+    def _analysis_calibration_snapshot(
+        self,
+        document: ImageDocument,
+    ) -> AnalysisCalibrationSnapshot:
+        calibration = document.calibration
+        if calibration is None:
+            return AnalysisCalibrationSnapshot()
+        pixel_size = 1.0 / calibration.pixels_per_unit
+        return AnalysisCalibrationSnapshot(
+            pixel_size_x=pixel_size,
+            pixel_size_y=pixel_size,
+            unit=calibration.unit,
+            signature=calibration_signature_from_values(
+                pixels_per_unit=calibration.pixels_per_unit,
+                unit=calibration.unit,
+            ),
+        )
+
+    def _prompt_analysis_parameters(
+        self,
+        tool: AnalysisTool,
+        plane: RasterPlane,
+    ) -> dict[str, object] | None:
+        if tool in {AnalysisTool.SHAPE, AnalysisTool.INTENSITY}:
+            return {}
+        if tool is AnalysisTool.HISTOGRAM:
+            bins, accepted = QInputDialog.getInt(
+                self,
+                "直方图",
+                "分箱数量：",
+                256,
+                2,
+                4096,
+                1,
+            )
+            return {"bins": bins, "channel": "luminance"} if accepted else None
+        if tool is AnalysisTool.PROFILE:
+            line_width, accepted = QInputDialog.getDouble(
+                self,
+                "强度剖面",
+                "平均宽度（像素）：",
+                1.0,
+                1.0,
+                4096.0,
+                2,
+            )
+            return (
+                {
+                    "line_width": line_width,
+                    "sample_spacing": 1.0,
+                    "channel": "luminance",
+                }
+                if accepted
+                else None
+            )
+        if tool is AnalysisTool.PARTICLES:
+            default_threshold = {
+                RasterPixelType.GRAY16: 32767.0,
+                RasterPixelType.GRAY32_FLOAT: 0.5,
+            }.get(plane.pixel_type, 127.0)
+            threshold, accepted = QInputDialog.getDouble(
+                self,
+                "粒子分析",
+                "前景阈值（大于等于该值）：",
+                default_threshold,
+                -1.0e12,
+                1.0e12,
+                4,
+            )
+            return (
+                {
+                    "threshold": threshold,
+                    "foreground": "bright",
+                    "channel": "luminance",
+                    "connectivity": 8,
+                    "min_area_px": 1,
+                    "min_circularity": 0.0,
+                    "max_circularity": 1.0,
+                    "include_holes": False,
+                    "exclude_edge": False,
+                }
+                if accepted
+                else None
+            )
+        if tool is AnalysisTool.MAXIMA:
+            prominence, accepted = QInputDialog.getDouble(
+                self,
+                "极值检测",
+                "prominence / 噪声容差：",
+                0.0,
+                0.0,
+                1.0e12,
+                4,
+            )
+            return (
+                {
+                    "channel": "luminance",
+                    "prominence": prominence,
+                    "neighborhood_radius": 1,
+                    "min_distance": 1.0,
+                    "exclude_edge": False,
+                }
+                if accepted
+                else None
+            )
+        return {}
+
+    def _start_image_analysis(
+        self,
+        tool: AnalysisTool,
+        *,
+        parameters: dict[str, object] | None = None,
+        prompt_for_parameters: bool = True,
+    ) -> None:
+        source_result = self._create_analysis_source_context()
+        if source_result is None:
+            return
+        document, plane, source = source_result
+        resolved_parameters = (
+            self._prompt_analysis_parameters(tool, plane)
+            if parameters is None and prompt_for_parameters
+            else dict(parameters or {})
+        )
+        if resolved_parameters is None:
+            return
+        try:
+            (
+                roi_mask,
+                raw_rings,
+                exact_area_px,
+                source_reference,
+                scope_summary,
+                profile_points,
+            ) = self._analysis_scope_snapshot(
+                tool=tool,
+                document=document,
+                plane=plane,
+                source=source,
+            )
+            if tool is AnalysisTool.PROFILE:
+                resolved_parameters["points"] = profile_points
+            request = self.image_analysis_task_controller.start(
+                tool=tool,
+                document_id=document.id,
+                source_pixel_revision=0,
+                plane=plane,
+                roi_mask=roi_mask,
+                raw_rings=raw_rings,
+                exact_area_px=exact_area_px,
+                source_reference=source_reference,
+                calibration=self._analysis_calibration_snapshot(document),
+                parameters=resolved_parameters,
+            )
+        except (MemoryError, OSError, TypeError, ValueError) as exc:
+            QMessageBox.warning(
+                self,
+                tool.chinese_name,
+                f"无法启动分析：\n{exc}",
+            )
+            return
+        scoped_source = ImageAnalysisSourceContext(
+            document_id=source.document_id,
+            plane_sha256=source.plane_sha256,
+            source_signature=source.source_signature,
+            plane_identity=source.plane_identity,
+            viewport_origin=source.viewport_origin,
+            scope_summary=scope_summary,
+        )
+        self._analysis_run_contexts[request.request_id] = (
+            ImageAnalysisRunContext(
+                request_id=request.request_id,
+                generation=request.generation,
+                tool=tool,
+                source=scoped_source,
+            )
+        )
+        self.statusBar().showMessage(
+            f"{tool.chinese_name}：已冻结 {scope_summary}，正在预扫描…",
+            0,
+        )
+
+    def _ensure_session_analysis_root(self) -> Path:
+        root = self._session_analysis_root
+        if root is None:
+            root = Path(tempfile.mkdtemp(prefix="fdm-analysis-"))
+            self._session_analysis_root = root
+        return root
+
+    @staticmethod
+    def _analysis_asset_relative_path(
+        artifact_id: str,
+        *,
+        index: int,
+        suggested_stem: str,
+    ) -> str:
+        stem = "".join(
+            character
+            for character in str(suggested_stem or "result")
+            if character.isalnum() or character in {"-", "_"}
+        ).strip("-_")
+        if not stem:
+            stem = "result"
+        return f"analysis/{artifact_id}/{index + 1:02d}-{stem}.npz"
+
+    def _on_image_analysis_ready(self, payload: object) -> None:
+        if not isinstance(payload, ImageAnalysisTaskResult):
+            return
+        context = self._analysis_run_contexts.pop(payload.request_id, None)
+        if (
+            context is None
+            or context.generation != payload.generation
+            or context.tool is not payload.tool
+            or context.source.document_id != payload.document_id
+            or not self._analysis_source_is_current(context.source)
+        ):
+            self.statusBar().showMessage(
+                "分析结果到达时源图片、视窗或项目已变化，结果已丢弃。",
+                5000,
+            )
+            return
+        artifact_id = new_id("analysis")
+        created_paths: list[Path] = []
+        references: list[AnalysisAssetReference] = []
+        try:
+            root = self._ensure_session_analysis_root()
+            for index, asset_payload in enumerate(payload.asset_payloads):
+                relative = self._analysis_asset_relative_path(
+                    artifact_id,
+                    index=index,
+                    suggested_stem=asset_payload.suggested_stem,
+                )
+                target = root / relative
+                info = write_safe_analysis_npz(
+                    target,
+                    schema=asset_payload.schema,
+                    arrays=asset_payload.array_mapping(),
+                    metadata=asset_payload.metadata,
+                )
+                created_paths.append(target)
+                references.append(
+                    AnalysisAssetReference(
+                        kind=asset_payload.kind,
+                        path=relative,
+                        sha256=info.sha256,
+                        media_type="application/x-npz",
+                        metadata=asset_payload.metadata,
+                    )
+                )
+            artifact = payload.to_analysis_artifact(
+                artifact_id=artifact_id,
+                asset_references=references,
+            )
+        except Exception as exc:  # noqa: BLE001 - storage is the commit boundary
+            for created_path in created_paths:
+                try:
+                    created_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            QMessageBox.warning(
+                self,
+                payload.tool.chinese_name,
+                "分析计算已经完成，但安全写入分析资产失败；"
+                f"本次结果未提交到项目：\n{exc}",
+            )
+            return
+        if not self._analysis_source_is_current(context.source):
+            for created_path in created_paths:
+                try:
+                    created_path.unlink(missing_ok=True)
+                except OSError:
+                    pass
+            self.statusBar().showMessage(
+                "分析资产写入期间源视窗已变化，本次结果未提交。",
+                5000,
+            )
+            return
+        for reference, created_path in zip(
+            references,
+            created_paths,
+            strict=True,
+        ):
+            self._session_analysis_assets[reference.path] = created_path
+        self.project.analysis_artifacts.append(artifact)
+        self.project.mark_extension_changed()
+        if payload.conversion_payload is not None:
+            self._analysis_conversion_payloads[artifact.id] = (
+                payload.conversion_payload
+            )
+            self._analysis_conversion_offsets[artifact.id] = (
+                context.source.viewport_origin
+            )
+        self._refresh_analysis_results_center()
+        self._open_analysis_results_center()
+        warning_suffix = (
+            f"；{len(payload.warnings)} 条提示详见结果中心"
+            if payload.warnings
+            else ""
+        )
+        self.statusBar().showMessage(
+            f"{payload.tool.chinese_name}完成，结果已加入当前项目"
+            f"{warning_suffix}。",
+            6000,
+        )
+        self._update_project_navigation_summary()
+
+    def _on_image_analysis_failed(
+        self,
+        request_id: str,
+        message: str,
+    ) -> None:
+        context = self._analysis_run_contexts.pop(str(request_id), None)
+        if context is None:
+            return
+        title = (
+            context.tool.chinese_name
+            if context is not None
+            else "图像分析"
+        )
+        QMessageBox.warning(
+            self,
+            title,
+            f"分析失败，项目未发生变化：\n{message}",
+        )
+
+    def _on_image_analysis_cancelled(self, request_id: str) -> None:
+        context = self._analysis_run_contexts.pop(str(request_id), None)
+        if context is None:
+            return
+        self.statusBar().showMessage("分析已取消，未提交任何结果。", 4000)
+
+    def _on_image_analysis_stale_result(
+        self,
+        request_id: str,
+        _generation: int,
+    ) -> None:
+        self._analysis_run_contexts.pop(str(request_id), None)
+
+    def _on_image_analysis_phase_changed(self, payload: object) -> None:
+        if isinstance(payload, AnalysisTaskPhaseUpdate):
+            self.statusBar().showMessage(payload.message, 0)
+
+    def _on_image_analysis_busy_changed(self, busy: bool) -> None:
+        for action in getattr(self, "_analysis_actions", {}).values():
+            action.setEnabled(not busy and self.current_document() is not None)
+
+    def _analysis_result_name_maps(
+        self,
+    ) -> tuple[dict[str, str], dict[str, str], dict[str, str]]:
+        document_names = {
+            document.id: self._document_display_name(document)
+            for document in self.project.documents
+        }
+        roi_names = {
+            roi.id: roi.name
+            for roi in self.project.project_rois
+        }
+        measurement_names: dict[str, str] = {}
+        for document in self.project.documents:
+            for index, measurement in enumerate(
+                document.measurements,
+                start=1,
+            ):
+                measurement_names[measurement.id] = (
+                    f"{self._format_measurement_kind(measurement)} #{index}"
+                )
+        return document_names, roi_names, measurement_names
+
+    def _refresh_analysis_results_center(self) -> None:
+        center = self._analysis_results_center
+        if center is None:
+            return
+        document_names, roi_names, measurement_names = (
+            self._analysis_result_name_maps()
+        )
+        center.set_artifacts(
+            self.project.analysis_artifacts,
+            document_names=document_names,
+            roi_names=roi_names,
+            measurement_names=measurement_names,
+        )
+        if self._project_path is not None:
+            center.set_asset_root(project_assets_root(self._project_path))
+        else:
+            center.set_asset_root(self._session_analysis_root)
+
+    def _open_analysis_results_center(self) -> None:
+        center = self._analysis_results_center
+        if center is None:
+            document_names, roi_names, measurement_names = (
+                self._analysis_result_name_maps()
+            )
+            center = AnalysisResultsCenter(
+                self.project.analysis_artifacts,
+                document_names=document_names,
+                roi_names=roi_names,
+                measurement_names=measurement_names,
+                asset_root=(
+                    project_assets_root(self._project_path)
+                    if self._project_path is not None
+                    else self._session_analysis_root
+                ),
+                parent=self,
+            )
+            center.recalculateRequested.connect(
+                self._on_analysis_recalculate_requested
+            )
+            center.convertToMeasurementRequested.connect(
+                self._on_analysis_convert_requested
+            )
+            center.exportRequested.connect(
+                self._on_analysis_export_requested
+            )
+            center.locateRequested.connect(
+                self._on_analysis_locate_requested
+            )
+            self._analysis_results_center = center
+        else:
+            self._refresh_analysis_results_center()
+        center.show()
+        center.raise_()
+        center.activateWindow()
+
+    def _on_analysis_recalculate_requested(self, payload: object) -> None:
+        if not isinstance(payload, AnalysisActionRequest):
+            return
+        if len(payload.artifact_ids) != 1:
+            QMessageBox.information(
+                self,
+                "重新计算",
+                "请一次选择一个分析结果进行重新计算。",
+            )
+            return
+        artifact = self.project.get_analysis_artifact(
+            payload.artifact_ids[0]
+        )
+        if artifact is None:
+            return
+        document = self.project.get_document(artifact.source_document_id)
+        if document is None:
+            QMessageBox.warning(
+                self,
+                "重新计算",
+                "来源图片已经关闭或缺失，无法重新计算。",
+            )
+            return
+        self._set_current_document(document.id)
+        reference = artifact.source_reference
+        if reference is not None:
+            if reference.kind is AnalysisObjectKind.ROI:
+                roi = self.project.get_project_roi(reference.object_id)
+                if roi is None or roi.document_id != document.id:
+                    QMessageBox.warning(
+                        self,
+                        "重新计算",
+                        "来源 ROI 已被删除，无法重新计算。",
+                    )
+                    return
+                document.select_measurement(None)
+                canvas = self._canvases.get(document.id)
+                if canvas is not None:
+                    canvas.set_selected_measurement(None)
+                self._selected_project_roi_ids = (roi.id,)
+                self._refresh_project_roi_ui()
+            else:
+                measurement = document.get_measurement(reference.object_id)
+                if measurement is None:
+                    QMessageBox.warning(
+                        self,
+                        "重新计算",
+                        "来源测量对象已被删除，无法重新计算。",
+                    )
+                    return
+                self._selected_project_roi_ids = ()
+                document.select_measurement(measurement.id)
+                canvas = self._canvases.get(document.id)
+                if canvas is not None:
+                    canvas.set_selected_measurement(measurement.id)
+                self._sync_measurement_table_selection(
+                    document,
+                    scroll=True,
+                )
+        else:
+            self._selected_project_roi_ids = ()
+            document.select_measurement(None)
+            canvas = self._canvases.get(document.id)
+            if canvas is not None:
+                canvas.set_selected_measurement(None)
+            self._refresh_project_roi_ui()
+        token = artifact.tool_id.rsplit(".", 1)[-1]
+        try:
+            tool = AnalysisTool(token)
+        except ValueError:
+            QMessageBox.warning(
+                self,
+                "重新计算",
+                f"当前版本不支持重新计算工具：{artifact.tool_id}",
+            )
+            return
+        self._start_image_analysis(
+            tool,
+            parameters=artifact.parameters,
+            prompt_for_parameters=False,
+        )
+
+    def _on_analysis_locate_requested(self, payload: object) -> None:
+        if not isinstance(payload, AnalysisLocateRequest):
+            return
+        document = self.project.get_document(payload.document_id)
+        if document is None:
+            self.statusBar().showMessage(
+                "分析结果的来源图片当前未挂载。",
+                5000,
+            )
+            return
+        self._set_current_document(document.id)
+        if (
+            payload.object_kind == AnalysisObjectKind.ROI.value
+            and payload.object_id
+        ):
+            roi = self.project.get_project_roi(payload.object_id)
+            if roi is not None:
+                request = RoiSelectionRequest(
+                    document_id=document.id,
+                    roi_ids=(roi.id,),
+                )
+                self._on_roi_selection_changed(request)
+                self._refresh_project_roi_ui()
+                self._on_roi_locate_requested(request)
+                return
+        if (
+            payload.object_kind == AnalysisObjectKind.MEASUREMENT.value
+            and payload.object_id
+        ):
+            self._activate_measurement_id(payload.object_id)
+            return
+        self._focus_current_canvas()
+
+    def _on_analysis_convert_requested(self, payload: object) -> None:
+        if not isinstance(payload, AnalysisActionRequest):
+            return
+        if len(payload.artifact_ids) != 1:
+            return
+        artifact_id = payload.artifact_ids[0]
+        artifact = self.project.get_analysis_artifact(artifact_id)
+        conversion = self._analysis_conversion_payloads.get(artifact_id)
+        if artifact is None or not artifact.is_current:
+            QMessageBox.warning(
+                self,
+                "转换为测量",
+                "该分析结果已经失效，必须先重新计算。",
+            )
+            return
+        if conversion is None:
+            QMessageBox.information(
+                self,
+                "转换为测量",
+                "该结果来自已保存项目，当前会话没有保留可转换的"
+                "精确几何；请先点击“重新计算”。",
+            )
+            return
+        document = self.project.get_document(artifact.source_document_id)
+        if document is None:
+            QMessageBox.warning(
+                self,
+                "转换为测量",
+                "来源图片当前未挂载。",
+            )
+            return
+        count = (
+            len(conversion.candidates)
+            if isinstance(conversion, ParticleConversionPayload)
+            else len(conversion.points)
+        )
+        if count <= 0:
+            QMessageBox.information(
+                self,
+                "转换为测量",
+                "当前分析结果没有可转换对象。",
+            )
+            return
+        object_label = (
+            "面积测量"
+            if isinstance(conversion, ParticleConversionPayload)
+            else "计数点"
+        )
+        answer = QMessageBox.question(
+            self,
+            "转换为测量",
+            f"将创建 {count} 个{object_label}，并加入当前图片的"
+            "当前类别。\n\n该操作可撤销，是否继续？",
+            QMessageBox.StandardButton.Yes
+            | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if answer != QMessageBox.StandardButton.Yes:
+            return
+        self._set_current_document(document.id)
+        origin_x, origin_y = self._analysis_conversion_offsets.get(
+            artifact_id,
+            (0, 0),
+        )
+        created: list[Measurement] = []
+
+        def mutate() -> None:
+            group = (
+                document.get_group(document.active_group_id)
+                or document.ensure_default_group()
+            )
+            if isinstance(conversion, ParticleConversionPayload):
+                for candidate in conversion.candidates:
+                    rings = [
+                        [
+                            Point(x + origin_x, y + origin_y)
+                            for x, y in ring
+                        ]
+                        for ring in candidate.rings
+                    ]
+                    if not rings or len(rings[0]) < 3:
+                        continue
+                    measurement = Measurement(
+                        id=new_id("meas"),
+                        image_id=document.id,
+                        fiber_group_id=group.id,
+                        mode="analysis_particle",
+                        measurement_kind="area",
+                        polygon_px=list(rings[0]),
+                        area_rings_px=rings,
+                        exact_area_px=float(candidate.exact_area_px),
+                        confidence=1.0,
+                        status="analysis_particle",
+                        debug_payload={
+                            "analysis_artifact_id": artifact.id,
+                            "particle_index": candidate.index,
+                        },
+                    )
+                    document.insert_measurement_incremental(
+                        measurement,
+                        select=False,
+                        mark_dirty=False,
+                    )
+                    created.append(measurement)
+            else:
+                for index, (x, y, intensity) in enumerate(
+                    conversion.points,
+                    start=1,
+                ):
+                    measurement = Measurement(
+                        id=new_id("meas"),
+                        image_id=document.id,
+                        fiber_group_id=group.id,
+                        mode="analysis_maxima",
+                        measurement_kind="count",
+                        point_px=Point(x + origin_x, y + origin_y),
+                        confidence=1.0,
+                        status="analysis_maxima",
+                        debug_payload={
+                            "analysis_artifact_id": artifact.id,
+                            "maximum_index": index,
+                            "intensity": intensity,
+                        },
+                    )
+                    document.insert_measurement_incremental(
+                        measurement,
+                        select=False,
+                        mark_dirty=False,
+                    )
+                    created.append(measurement)
+            if created:
+                document.select_measurement(created[-1].id)
+                document.select_overlay_annotation(None)
+
+        changed = self._apply_document_change(
+            document,
+            "转换分析结果为测量",
+            mutate,
+            impact=(
+                DocumentChangeImpact.SESSION
+                | DocumentChangeImpact.GEOMETRY
+            ),
+        )
+        if changed:
+            self._select_measurement_table_id(
+                created[-1].id if created else None,
+                scroll=True,
+            )
+            self.statusBar().showMessage(
+                f"已从分析结果创建 {len(created)} 个{object_label}。",
+                5000,
+            )
+
+    def _on_analysis_export_requested(self, payload: object) -> None:
+        if not isinstance(payload, AnalysisExportRequest):
+            return
+        artifacts = tuple(
+            artifact
+            for artifact_id in payload.artifact_ids
+            if (
+                artifact := self.project.get_analysis_artifact(artifact_id)
+            )
+            is not None
+        )
+        if not artifacts:
+            return
+        initial_dir = self._preferred_dialog_directory(
+            recent_dir=self._app_settings.recent_export_dir,
+        )
+        default_name = (
+            "analysis.csv"
+            if len(artifacts) == 1 and payload.selected_table_name
+            else "analysis-results.xlsx"
+        )
+        selected_path, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "导出分析结果",
+            str(initial_dir / default_name),
+            "Excel 工作簿 (*.xlsx);;CSV 表格 (*.csv)",
+        )
+        if not selected_path:
+            return
+        document_names, roi_names, measurement_names = (
+            self._analysis_result_name_maps()
+        )
+        if "CSV" in selected_filter or Path(selected_path).suffix.casefold() == ".csv":
+            if len(artifacts) != 1 or not payload.selected_table_name:
+                QMessageBox.warning(
+                    self,
+                    "导出分析结果",
+                    "CSV 只能导出当前单个分析结果中选中的一张详细表；"
+                    "若需导出多个结果，请选择 Excel 工作簿。",
+                )
+                return
+            result = self.analysis_export_service.export_table_csv(
+                artifacts[0],
+                payload.selected_table_name,
+                selected_path,
+            )
+        else:
+            result = self.analysis_export_service.export_workbook(
+                artifacts,
+                selected_path,
+                document_names=document_names,
+                roi_names=roi_names,
+                measurement_names=measurement_names,
+            )
+        if result.success and result.path is not None:
+            self._remember_recent_directory(
+                setting_name="recent_export_dir",
+                directory=result.path.parent,
+                context="导出分析结果",
+            )
+            self.statusBar().showMessage(result.message, 6000)
+        else:
+            QMessageBox.warning(
+                self,
+                "导出分析结果",
+                result.message,
+            )
+
+    def _stop_image_analysis_tasks(self, *, wait: bool) -> bool:
+        controller = self.image_analysis_task_controller
+        controller.cancel()
+        stopped = not wait or controller.wait_for_done(5_000)
+        if stopped:
+            self._analysis_run_contexts.clear()
+        return stopped
+
+    def _analysis_asset_source_for_save(
+        self,
+        reference: AnalysisAssetReference,
+    ) -> Path | None:
+        direct = self._session_analysis_assets.get(reference.path)
+        if direct is not None and direct.is_file():
+            validate_analysis_asset_reference(direct, reference)
+            return direct
+        for candidate in self._session_analysis_assets.values():
+            if (
+                candidate.is_file()
+                and analysis_asset_sha256(candidate) == reference.sha256
+            ):
+                validate_analysis_asset_reference(candidate, reference)
+                return candidate
+        if self._project_path is not None:
+            candidate = (
+                project_assets_root(self._project_path) / reference.path
+            )
+            if candidate.is_file():
+                validate_analysis_asset_reference(candidate, reference)
+                return candidate
+        return None
+
+    def _cleanup_session_analysis_assets(self) -> None:
+        self._session_analysis_assets.clear()
+        self._analysis_conversion_payloads.clear()
+        self._analysis_conversion_offsets.clear()
+        root = self._session_analysis_root
+        self._session_analysis_root = None
+        if root is not None:
+            shutil.rmtree(root, ignore_errors=True)
+
+    @staticmethod
+    def _cleanup_abandoned_analysis_sessions() -> None:
+        cutoff = datetime.now().timestamp() - timedelta(days=7).total_seconds()
+        try:
+            candidates = tuple(
+                Path(tempfile.gettempdir()).glob("fdm-analysis-*")
+            )
+        except OSError:
+            return
+        for candidate in candidates:
+            try:
+                if (
+                    candidate.is_dir()
+                    and candidate.stat().st_mtime < cutoff
+                ):
+                    shutil.rmtree(candidate, ignore_errors=True)
+            except OSError:
+                continue
 
     def _next_project_processed_relative_path(
         self,
@@ -12410,6 +13733,8 @@ class MainWindow(QMainWindow):
         self._close_display_adjustment_dialog()
         if not self._close_image_processing_workbench(wait=True):
             raise RuntimeError("图像处理任务尚未安全退出，工作区重置已阻止。")
+        if not self._stop_image_analysis_tasks(wait=True):
+            raise RuntimeError("图像分析任务尚未安全退出，工作区重置已阻止。")
         if (
             self._fullscreen_controller is not None
             and self._fullscreen_controller.is_active
@@ -12442,6 +13767,10 @@ class MainWindow(QMainWindow):
         self._raster_metadata.clear()
         self._display_cache_transforms.clear()
         self._cleanup_session_processed_assets()
+        self._cleanup_session_analysis_assets()
+        if self._analysis_results_center is not None:
+            self._analysis_results_center.close()
+            self._analysis_results_center.set_artifacts(())
         self._canvases.clear()
         for navigator in self._canvas_navigators.values():
             navigator.clear()
@@ -12480,6 +13809,16 @@ class MainWindow(QMainWindow):
             and not self._close_image_processing_workbench(wait=True)
         ):
             return
+        if any(
+            context.source.document_id == document_id
+            for context in self._analysis_run_contexts.values()
+        ):
+            if not self._stop_image_analysis_tasks(wait=True):
+                self.statusBar().showMessage(
+                    "图像分析任务尚未安全退出，已阻止关闭当前图片。",
+                    6000,
+                )
+                return
         if (
             len(self._document_order) == 1
             and self._fullscreen_controller is not None
@@ -12511,6 +13850,7 @@ class MainWindow(QMainWindow):
             )
             if changed:
                 self.project.mark_extension_changed()
+                self._refresh_analysis_results_center()
         retained_rois = [
             roi
             for roi in self.project.project_rois
@@ -12643,6 +13983,10 @@ class MainWindow(QMainWindow):
         self._pending_project_load_snapshot = False
         self.project_session_controller.clear_unresolved_documents()
         self._document_order.clear()
+        self._cleanup_session_analysis_assets()
+        if self._analysis_results_center is not None:
+            self._analysis_results_center.close()
+            self._analysis_results_center.set_artifacts(())
         self._mark_project_saved()
         return True
 
@@ -12710,6 +14054,7 @@ class MainWindow(QMainWindow):
         )
         if changed:
             self.project.mark_extension_changed()
+            self._refresh_analysis_results_center()
 
     def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
         before_stamp = document.state_stamp
@@ -12803,6 +14148,15 @@ class MainWindow(QMainWindow):
             return
         self.image_list.setCurrentRow(index)
         current_document = self.current_document()
+        active_analysis = self.image_analysis_task_controller.active_request
+        if (
+            active_analysis is not None
+            and (
+                current_document is None
+                or active_analysis.document_id != current_document.id
+            )
+        ):
+            self.image_analysis_task_controller.cancel()
         if (
             self._display_adjustment_dialog is not None
             and self._display_adjustment_document_id
@@ -13713,6 +15067,7 @@ class MainWindow(QMainWindow):
         self._sync_current_view_transform()
         self._update_action_states()
         self._schedule_statistics_refresh()
+        self._refresh_analysis_results_center()
         self._show_pending_history_budget_notice()
 
     def _show_pending_history_budget_notice(self) -> None:
@@ -14118,6 +15473,12 @@ class MainWindow(QMainWindow):
         self.image_processing_workbench_action.setEnabled(can_process_image)
         for action in self._image_operation_actions.values():
             action.setEnabled(can_process_image)
+        analysis_busy = self.image_analysis_task_controller.is_busy()
+        for action in self._analysis_actions.values():
+            action.setEnabled(can_process_image and not analysis_busy)
+        self.analysis_results_center_action.setEnabled(
+            bool(self.project.analysis_artifacts)
+        )
         self.fit_action.setEnabled(has_document and not preview_active)
         self.actual_size_action.setEnabled(has_document and not preview_active)
         fullscreen_active = bool(
@@ -15860,6 +17221,14 @@ class MainWindow(QMainWindow):
             self._slide_jog_single_shot_timer.stop()
             self._slide_jog_timer.stop()
             self._slide_jog_request = None
+            if not self._stop_image_analysis_tasks(wait=True):
+                return TransitionResult(
+                    intent=intent,
+                    completed=False,
+                    timed_out=True,
+                    reason="图像分析任务未能在时限内退出，转换已阻止。",
+                    task_results=tuple(task_results),
+                )
             if self._capture_manager.is_preview_active():
                 capture_result = self._capture_manager.stop_preview()
                 if not capture_result:
@@ -15944,4 +17313,11 @@ class MainWindow(QMainWindow):
         for canvas in self._canvases.values():
             self._release_document_canvas(canvas)
         self._cleanup_session_processed_assets()
+        self.image_analysis_task_controller.close()
+        if not self.image_analysis_task_controller.wait_for_done(5_000):
+            event.ignore()
+            return
+        if self._analysis_results_center is not None:
+            self._analysis_results_center.close()
+        self._cleanup_session_analysis_assets()
         event.accept()

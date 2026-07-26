@@ -12,6 +12,13 @@ from PySide6.QtCore import QEventLoop, QPoint, QTimer  # noqa: E402
 from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from fdm.analysis_artifacts import (  # noqa: E402
+    AnalysisArtifact,
+    AnalysisCurve,
+    AnalysisObjectKind,
+    AnalysisObjectReference,
+    AnalysisTable,
+)
 from fdm.geometry import Line, Point  # noqa: E402
 from fdm.image_processing_models import (  # noqa: E402
     DisplayTransform,
@@ -45,6 +52,7 @@ from fdm.ui.image_processing_workbench import (  # noqa: E402
     default_operation_spec,
 )
 from fdm.ui.main_window import MainWindow  # noqa: E402
+from fdm.ui.analysis_results_center import AnalysisResultsCenter  # noqa: E402
 from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
 
@@ -67,6 +75,7 @@ UI_SNAPSHOT_SCENARIOS = (
     "display-adjustment",
     "image-processing",
     "roi-workspace",
+    "analysis-results",
 )
 
 
@@ -180,6 +189,85 @@ def _demo_document() -> tuple[ImageDocument, QImage]:
     # live panel demonstrates a meaningful multi-sample summary.
     document.view_state.selected_measurement_id = document.measurements[4].id
     return document, image
+
+
+def _demo_analysis_artifacts(
+    document: ImageDocument,
+) -> tuple[AnalysisArtifact, ...]:
+    measurement = next(
+        item
+        for item in document.measurements
+        if item.measurement_kind == "area"
+    )
+    shape = AnalysisArtifact(
+        id="analysis_review_shape",
+        source_document_id=document.id,
+        source_pixel_revision=0,
+        source_reference=AnalysisObjectReference(
+            kind=AnalysisObjectKind.MEASUREMENT,
+            object_id=measurement.id,
+            revision=measurement.geometry_revision,
+        ),
+        tool_id="fdm.shape",
+        tool_version="1",
+        parameters={"scope": "当前面积对象"},
+        scalars={
+            "net_area": 12634.25,
+            "hole_area_px": 482.0,
+            "hole_count": 2,
+            "circularity": 0.83,
+        },
+        tables=(
+            AnalysisTable(
+                name="位置与边界",
+                columns=("项目", "X", "Y", "宽", "高"),
+                rows=(
+                    ("质心", 913.4, 561.2, None, None),
+                    ("边界框", 760.0, 450.0, 320.0, 230.0),
+                ),
+            ),
+        ),
+    )
+    histogram = AnalysisArtifact(
+        id="analysis_review_histogram",
+        source_document_id=document.id,
+        source_pixel_revision=0,
+        tool_id="fdm.histogram",
+        tool_version="1",
+        parameters={"channel": "luminance", "bins": 16},
+        scalars={
+            "included_pixel_count": 98420,
+            "non_finite_count": 0,
+            "channel": "luminance",
+        },
+        curves=(
+            AnalysisCurve(
+                name="直方图",
+                x=tuple(float(index * 16) for index in range(16)),
+                y=(
+                    320.0,
+                    860.0,
+                    1840.0,
+                    4260.0,
+                    7820.0,
+                    10600.0,
+                    13240.0,
+                    14260.0,
+                    13480.0,
+                    10820.0,
+                    7260.0,
+                    4380.0,
+                    2560.0,
+                    1220.0,
+                    540.0,
+                    160.0,
+                ),
+                x_unit="强度",
+                y_unit="频数",
+            ),
+        ),
+    )
+    return shape, histogram.mark_stale("ROI 几何已变化，建议重新计算")
 
 
 def _parse_args() -> argparse.Namespace:
@@ -326,6 +414,18 @@ def main() -> int:
                         source_pixel_type=qimage_to_raster_plane(image).pixel_type,
                     ),
                 )
+            )
+        elif args.scenario == "analysis-results":
+            artifacts = _demo_analysis_artifacts(document)
+            widget = AnalysisResultsCenter(
+                artifacts,
+                document_names={document.id: "激光共聚焦示例图像"},
+                measurement_names={
+                    measurement.id: f"面积对象 #{index + 1}"
+                    for index, measurement in enumerate(
+                        document.measurements
+                    )
+                },
             )
         else:
             widget = MainWindow()

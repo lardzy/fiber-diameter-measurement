@@ -9,10 +9,15 @@ import re
 from typing import Any, Protocol
 
 from fdm import __version__
+from fdm.analysis_artifacts import AnalysisArtifact, AnalysisAssetReference
 from fdm.atomic_io import atomic_replace_file, staged_path_for
 from fdm.models import ImageDocument, ProjectState, project_assets_root
 from fdm.lifecycle import TransitionIntent
 from fdm.project_io import ProjectIO, resolve_document_load_path
+from fdm.services.analysis_asset_io import (
+    copy_verified_analysis_asset,
+    validate_analysis_asset_reference,
+)
 from fdm.services.digital_slide_store import copy_slide_file
 from fdm.services.raster_io import (
     qimage_to_raster_plane,
@@ -130,6 +135,15 @@ class DocumentSaveOverride:
 
 
 @dataclass(frozen=True, slots=True)
+class AnalysisAssetSaveOverride:
+    """One verified analysis-asset reference published after JSON commit."""
+
+    artifact_id: str
+    asset_index: int
+    reference: AnalysisAssetReference
+
+
+@dataclass(frozen=True, slots=True)
 class AssetWriteOperation:
     """A project asset write derived from an immutable save plan."""
 
@@ -148,6 +162,10 @@ class ProjectSavePlan:
     def payload_with_overrides(
         self,
         overrides: tuple[DocumentSaveOverride, ...] | list[DocumentSaveOverride],
+        analysis_asset_overrides: (
+            tuple[AnalysisAssetSaveOverride, ...]
+            | list[AnalysisAssetSaveOverride]
+        ) = (),
     ) -> dict[str, Any]:
         override_by_id = {item.document_id: item for item in overrides}
         documents: list[dict[str, Any]] = []
@@ -161,6 +179,37 @@ class ProjectSavePlan:
             documents.append(document_payload)
         output = dict(self.payload)
         output["documents"] = documents
+        asset_override_by_key = {
+            (item.artifact_id, item.asset_index): item.reference
+            for item in analysis_asset_overrides
+        }
+        raw_artifacts = self.payload.get("analysis_artifacts", [])
+        if raw_artifacts:
+            artifacts: list[dict[str, Any]] = []
+            for raw_artifact in raw_artifacts:
+                if not isinstance(raw_artifact, dict):
+                    raise ValueError("分析结果持久化 payload 无效")
+                artifact_payload = copy.deepcopy(raw_artifact)
+                artifact_id = str(artifact_payload.get("id", ""))
+                raw_assets = artifact_payload.get("assets", [])
+                if not isinstance(raw_assets, list):
+                    raise ValueError(f"分析结果 {artifact_id} 的资产列表无效")
+                assets: list[dict[str, object]] = []
+                for asset_index, raw_asset in enumerate(raw_assets):
+                    reference = asset_override_by_key.get(
+                        (artifact_id, asset_index)
+                    )
+                    if reference is not None:
+                        assets.append(reference.to_dict())
+                    elif isinstance(raw_asset, dict):
+                        assets.append(copy.deepcopy(raw_asset))
+                    else:
+                        raise ValueError(
+                            f"分析结果 {artifact_id} 的资产引用无效"
+                        )
+                artifact_payload["assets"] = assets
+                artifacts.append(artifact_payload)
+            output["analysis_artifacts"] = artifacts
         return output
 
 
@@ -168,6 +217,7 @@ class ProjectSavePlan:
 class ProjectAssetStageResult:
     success: bool
     overrides: tuple[DocumentSaveOverride, ...] = ()
+    analysis_asset_overrides: tuple[AnalysisAssetSaveOverride, ...] = ()
     created_paths: tuple[Path, ...] = ()
     message: str = ""
 
@@ -191,6 +241,10 @@ class ProjectSessionHost(Protocol):
     def _document_display_name(self, document: ImageDocument) -> str: ...
     def _project_asset_image_for_save(self, document: ImageDocument): ...
     def _project_asset_raster_for_save(self, document: ImageDocument): ...
+    def _analysis_asset_source_for_save(
+        self,
+        reference: AnalysisAssetReference,
+    ) -> Path | None: ...
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool: ...
     def _merge_legacy_calibration_presets(self, presets: list[object]) -> int: ...
     def _reset_workspace(self) -> None: ...
@@ -421,7 +475,10 @@ class ProjectSessionController:
                 path=target_path,
                 message=asset_result.message or "项目资产写入失败。",
             )
-        committed_payload = save_plan.payload_with_overrides(asset_result.overrides)
+        committed_payload = save_plan.payload_with_overrides(
+            asset_result.overrides,
+            asset_result.analysis_asset_overrides,
+        )
         try:
             # The project JSON is the commit point and is always published last.
             ProjectIO.save_payload(
@@ -449,6 +506,13 @@ class ProjectSessionController:
                 continue
             document.path = override.path
             document.metadata = copy.deepcopy(override.metadata)
+        committed_artifacts = committed_payload.get("analysis_artifacts", [])
+        if isinstance(committed_artifacts, list):
+            host.project.analysis_artifacts = [
+                AnalysisArtifact.from_dict(item)
+                for item in committed_artifacts
+                if isinstance(item, dict)
+            ]
         host.project.version = __version__
         # The JSON replacement above is the save commit point.  Removing old
         # revision assets is deliberately post-commit housekeeping: a denied
@@ -624,7 +688,10 @@ class ProjectSessionController:
 
         plan = self._build_project_save_plan(project=project)
         result = self._stage_project_assets(target_path, plan)
-        payload = plan.payload_with_overrides(result.overrides)
+        payload = plan.payload_with_overrides(
+            result.overrides,
+            result.analysis_asset_overrides,
+        )
         compatibility_project = ProjectState.from_dict(payload)
         compatibility_project.calibration_presets = copy.deepcopy(
             getattr(project or self._host.project, "calibration_presets", [])
@@ -857,11 +924,117 @@ class ProjectSessionController:
                     metadata=document_metadata,
                 )
             )
+        try:
+            analysis_asset_overrides = self._stage_analysis_assets(
+                target_path,
+                plan,
+                created_paths=created_paths,
+            )
+        except Exception as exc:  # noqa: BLE001 - one storage contract for all assets
+            host._show_project_warning(
+                "保存项目",
+                f"写入分析结果资产失败，旧项目保持不变：\n{exc}",
+            )
+            return _failed_asset_stage_result(created_paths, str(exc))
         return ProjectAssetStageResult(
             True,
             overrides=tuple(overrides),
+            analysis_asset_overrides=analysis_asset_overrides,
             created_paths=tuple(created_paths),
         )
+
+    def _stage_analysis_assets(
+        self,
+        target_path: Path,
+        plan: ProjectSavePlan,
+        *,
+        created_paths: list[Path],
+    ) -> tuple[AnalysisAssetSaveOverride, ...]:
+        """Verify and stage every external array referenced by analysis data."""
+
+        raw_artifacts = plan.payload.get("analysis_artifacts", [])
+        if not raw_artifacts:
+            return ()
+        if not isinstance(raw_artifacts, list):
+            raise ValueError("项目中的分析结果列表无效")
+        host = self._host
+        provider = getattr(host, "_analysis_asset_source_for_save", None)
+        old_project_path = getattr(host, "_project_path", None)
+        target_root = project_assets_root(target_path)
+        overrides: list[AnalysisAssetSaveOverride] = []
+        for raw_artifact in raw_artifacts:
+            if not isinstance(raw_artifact, dict):
+                raise ValueError("项目中的分析结果记录无效")
+            artifact = AnalysisArtifact.from_dict(raw_artifact)
+            for asset_index, reference in enumerate(artifact.assets):
+                source_path: Path | None = None
+                if callable(provider):
+                    provided = provider(reference)
+                    if provided is not None:
+                        source_path = Path(provided)
+                if source_path is None and old_project_path is not None:
+                    candidate = (
+                        project_assets_root(old_project_path) / reference.path
+                    )
+                    if candidate.is_file():
+                        source_path = candidate
+                if source_path is None:
+                    candidate = target_root / reference.path
+                    if candidate.is_file():
+                        source_path = candidate
+                if source_path is None or not source_path.is_file():
+                    raise FileNotFoundError(
+                        f"分析结果 {artifact.id} 的资产不存在："
+                        f"{reference.path}"
+                    )
+                validate_analysis_asset_reference(source_path, reference)
+
+                original_token = _validated_project_asset_path_token(
+                    reference.path
+                )
+                original_parts = PurePosixPath(original_token).parts
+                if not original_parts or original_parts[0].casefold() != "analysis":
+                    original_token = (
+                        PurePosixPath("analysis")
+                        / artifact.id
+                        / PurePosixPath(original_token).name
+                    ).as_posix()
+                revised_relative = _revisioned_asset_path(
+                    original_token,
+                    reference.sha256,
+                )
+                output_path = target_root / revised_relative
+                if output_path.exists():
+                    validate_analysis_asset_reference(output_path, reference)
+                else:
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    try:
+                        copy_verified_analysis_asset(
+                            source_path,
+                            output_path,
+                            reference,
+                        )
+                    except Exception:
+                        try:
+                            output_path.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                        raise
+                    created_paths.append(output_path)
+                overrides.append(
+                    AnalysisAssetSaveOverride(
+                        artifact_id=artifact.id,
+                        asset_index=asset_index,
+                        reference=AnalysisAssetReference(
+                            kind=reference.kind,
+                            path=revised_relative,
+                            sha256=reference.sha256,
+                            media_type=reference.media_type,
+                            metadata=reference.metadata,
+                        ),
+                    )
+                )
+        return tuple(overrides)
 
     def _cleanup_unreferenced_revision_assets(self, target_path: Path, project: ProjectState) -> None:
         self._cleanup_unreferenced_revision_assets_payload(target_path, project.to_dict())
@@ -879,6 +1052,14 @@ class ProjectSessionController:
             for document in payload.get("documents", [])
             if isinstance(document, dict) and document.get("source_type") == "project_asset"
         }
+        for artifact in payload.get("analysis_artifacts", []):
+            if not isinstance(artifact, dict):
+                continue
+            for asset in artifact.get("assets", []):
+                if isinstance(asset, dict) and asset.get("path"):
+                    referenced.add(
+                        (asset_root / str(asset["path"])).resolve()
+                    )
         for candidate in asset_root.rglob("*"):
             if not candidate.is_file() or candidate.resolve() in referenced:
                 continue
