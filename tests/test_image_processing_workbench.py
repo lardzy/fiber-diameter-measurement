@@ -24,9 +24,15 @@ try:
     )
 
     from fdm.cancellation import CancellationToken
-    from fdm.image_processing_models import ImageOperationSpec
+    from fdm.image_processing_models import (
+        ImageOperationSpec,
+        RasterSemantic,
+    )
     from fdm.raster import RasterPixelType, RasterPlane
-    from fdm.services.image_processing import ImageOperation
+    from fdm.services.image_processing import (
+        IMAGE_OPERATION_REGISTRY,
+        ImageOperation,
+    )
     import fdm.ui.image_processing_workbench as workbench_module
     from fdm.ui.image_processing_workbench import (
         FinalResourcePreflightError,
@@ -76,6 +82,29 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             height=6,
             pixel_type=RasterPixelType.GRAY8,
             data=bytes(range(48)),
+        )
+
+    def test_task_semantic_fields_preserve_legacy_positional_order(self) -> None:
+        request = WorkbenchTaskRequest(
+            WorkbenchTaskKind.FINAL,
+            "legacy-order",
+            3,
+            "doc-1",
+            self.source,
+            (ImageOperationSpec("invert"),),
+            None,
+            (("doc-2", self.source),),
+            0,
+        )
+
+        self.assertEqual(request.capture_step_input_index, 0)
+        self.assertIs(
+            request.source_semantic,
+            RasterSemantic.INTENSITY,
+        )
+        self.assertEqual(
+            request.secondary_semantics,
+            (("doc-2", RasterSemantic.INTENSITY),),
         )
 
     def _wait_until(self, predicate, timeout: float = 3.0) -> None:
@@ -174,6 +203,82 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
                         ),
                     )
                 )
+        finally:
+            dialog.close()
+
+    def test_versioned_scientific_contracts_are_replay_only_in_workbench(
+        self,
+    ) -> None:
+        floating = array_to_raster_plane(
+            np.linspace(-5.0, 20.0, 48, dtype=np.float32).reshape(6, 8)
+        )
+        dialog = ImageProcessingWorkbench(
+            floating,
+            source_document_id="doc-float",
+        )
+        try:
+            for operation_id in (
+                ImageOperation.BRIGHTNESS_CONTRAST.value,
+                ImageOperation.HISTOGRAM_EQUALIZATION.value,
+            ):
+                with self.subTest(operation=operation_id):
+                    current = default_operation_spec(
+                        operation_id,
+                        floating.width,
+                        floating.height,
+                        source_pixel_type=floating.pixel_type,
+                    )
+                    self.assertEqual(current.implementation_version, "2")
+                    dialog.set_operation_steps(
+                        (
+                            ImageOperationSpec(
+                                operation_id,
+                                implementation_version="1",
+                            ),
+                        )
+                    )
+                    self.assertTrue(
+                        dialog._contains_replay_only_steps()  # noqa: SLF001
+                    )
+                    self.assertTrue(
+                        all(
+                            not widget.isEnabled()
+                            for widget in dialog._parameter_widgets.values()  # noqa: SLF001
+                        )
+                    )
+                    self.assertIn(
+                        "0–1 工作范围",
+                        dialog._parameter_content.findChild(  # noqa: SLF001
+                            QLabel,
+                            "imageParameterScientificWarning",
+                        ).text(),
+                    )
+                    dialog.set_operation_steps((current,))
+                    self.assertFalse(
+                        dialog._generate_button.isEnabled()  # noqa: SLF001
+                    )
+                    self.assertIn(
+                        "没有可安全推断的 0–1 工作范围",
+                        dialog._parameter_error_message,  # noqa: SLF001
+                    )
+
+            self.assertEqual(
+                default_operation_spec(
+                    ImageOperation.IMAGE_CALCULATOR,
+                    8,
+                    6,
+                    secondary_document_id="other",
+                ).implementation_version,
+                "2",
+            )
+            self.assertEqual(
+                default_operation_spec(
+                    ImageOperation.FLAT_FIELD_CORRECTION,
+                    8,
+                    6,
+                ).implementation_version,
+                "2",
+            )
         finally:
             dialog.close()
 
@@ -455,6 +560,111 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_resize_canvas_uses_anchor_grid_with_choice_proxy_sync(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            with mock.patch.object(dialog, "_schedule_preview"):
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "resize_canvas",
+                            self.source.width,
+                            self.source.height,
+                        ),
+                    )
+                )
+                editor = dialog._structured_parameter_editors["anchor"]  # noqa: SLF001
+                proxy = dialog._parameter_widgets["anchor"]  # noqa: SLF001
+                self.assertIsInstance(
+                    editor,
+                    workbench_module.AnchorGridEditor,
+                )
+                self.assertIsInstance(proxy, QComboBox)
+
+                editor.buttons["bottom_right"].click()
+                self.assertEqual(proxy.currentData(), "bottom_right")
+                self.assertEqual(
+                    dialog.operation_steps()[0].parameters["anchor"],
+                    "bottom_right",
+                )
+
+                proxy.setCurrentIndex(proxy.findData("top_left"))
+                self.assertEqual(editor.value(), "top_left")
+                self.assertEqual(
+                    dialog.operation_steps()[0].parameters["anchor"],
+                    "top_left",
+                )
+                self.assertIs(
+                    dialog._structured_parameter_editors["anchor"],  # noqa: SLF001
+                    editor,
+                )
+        finally:
+            dialog.close()
+
+    def test_custom_convolution_uses_matrix_editor_and_preserves_proxies(
+        self,
+    ) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            with mock.patch.object(dialog, "_schedule_preview"):
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "custom_convolution",
+                            self.source.width,
+                            self.source.height,
+                        ),
+                    )
+                )
+                editor = dialog._structured_parameter_editors["kernel"]  # noqa: SLF001
+                self.assertIsInstance(
+                    editor,
+                    workbench_module.KernelMatrixEditor,
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["kernel_width"],  # noqa: SLF001
+                    editor.widthSpin,
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["kernel_height"],  # noqa: SLF001
+                    editor.heightSpin,
+                )
+                self.assertIsInstance(
+                    dialog._parameter_widgets["kernel"],  # noqa: SLF001
+                    QLineEdit,
+                )
+
+                editor.applyPreset("sharpen")
+                parameters = dialog.operation_steps()[0].parameters
+                self.assertEqual(parameters["kernel_width"], 3)
+                self.assertEqual(parameters["kernel_height"], 3)
+                self.assertEqual(
+                    tuple(parameters["kernel"]),
+                    (0.0, -1.0, 0.0, -1.0, 5.0, -1.0, 0.0, -1.0, 0.0),
+                )
+
+                editor.table.item(0, 0).setText("not-a-number")
+                self.assertFalse(dialog._generate_button.isEnabled())  # noqa: SLF001
+                self.assertIn(
+                    "不是有效数字",
+                    dialog._parameter_error_message,  # noqa: SLF001
+                )
+
+                editor.table.item(0, 0).setText("1.25")
+                self.assertTrue(dialog._generate_button.isEnabled())  # noqa: SLF001
+                self.assertEqual(
+                    tuple(dialog.operation_steps()[0].parameters["kernel"])[0],
+                    1.25,
+                )
+        finally:
+            dialog.close()
+
     def test_every_catalog_parameter_widget_survives_its_native_signal(self) -> None:
         rgba = array_to_raster_plane(
             np.zeros((6, 8, 4), dtype=np.uint8)
@@ -472,84 +682,458 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         )
         exercised = 0
         expected = 0
+
+        def _seeded_step(definition) -> ImageOperationSpec:
+            base = default_operation_spec(
+                definition.operation.value,
+                8,
+                6,
+                source_pixel_type=RasterPixelType.RGBA8,
+                secondary_document_id="doc-2",
+            )
+            return ImageOperationSpec(
+                base.operation_id,
+                base.parameters,
+                implementation=base.implementation,
+                implementation_version=base.implementation_version,
+                result_metadata={
+                    "native_signal_matrix": {
+                        "operation": definition.operation.value,
+                    }
+                },
+            )
+
+        def _install(definition) -> tuple[ImageOperationSpec, dict[str, object]]:
+            step = _seeded_step(definition)
+            # An invalid QLineEdit edit leaves the immutable recipe unchanged
+            # while the line edit itself remains invalid.  Rebuild from an
+            # empty recipe so every native-signal case starts from the same
+            # valid controls and, critically, must reacquire its QWidget.
+            dialog.set_operation_steps(())
+            dialog.set_operation_steps((step,))
+            self.app.processEvents()
+            return step, step.parameters
+
+        def _assert_survived(
+            *,
+            definition,
+            field_key: str,
+            widget,
+            seeded: ImageOperationSpec,
+            initial_parameters: dict[str, object],
+        ) -> None:
+            self.app.processEvents()
+            current_widget = dialog._parameter_widgets[field_key]  # noqa: SLF001
+            self.assertIs(current_widget, widget)
+            # Accessing a C++-deleted wrapper raises RuntimeError.  Keep this
+            # explicit: it is the regression that previously terminated Qt
+            # after a checkbox/combo emitted its native signal.
+            current_widget.isEnabled()
+            current = dialog.operation_steps()[0]
+            self.assertEqual(
+                current.implementation_version,
+                seeded.implementation_version,
+            )
+            self.assertEqual(
+                current.result_metadata,
+                seeded.result_metadata,
+            )
+            self.assertTrue(
+                set(initial_parameters).issubset(current.parameters),
+            )
+
+            # Method switches hide irrelevant controls.  Their values must
+            # remain in the recipe instead of being silently discarded.
+            current_parameters = current.parameters
+            for other in definition.parameters:
+                if other.key == field_key:
+                    continue
+                row_widget = dialog._parameter_row_widgets[other.key]  # noqa: SLF001
+                if not dialog._parameter_form.isRowVisible(row_widget):  # noqa: SLF001
+                    self.assertIn(other.key, current_parameters)
+                    self.assertEqual(
+                        current_parameters[other.key],
+                        initial_parameters[other.key],
+                    )
+
+            error = dialog._parameter_error_message  # noqa: SLF001
+            if error:
+                self.assertTrue(
+                    any("\u3400" <= character <= "\u9fff" for character in error),
+                    msg=(
+                        f"{definition.operation.value}.{field_key} "
+                        f"返回了非中文验证信息：{error}"
+                    ),
+                )
+
         try:
             with mock.patch.object(dialog, "_schedule_preview"):
                 for definition in workbench_module._OPERATION_CATALOG:  # noqa: SLF001
                     if not definition.available_for_new_recipe:
                         continue
-                    expected += len(definition.parameters)
-                    step = default_operation_spec(
-                        definition.operation.value,
-                        8,
-                        6,
-                        source_pixel_type=RasterPixelType.RGBA8,
-                        secondary_document_id="doc-2",
-                    )
-                    dialog.set_operation_steps((step,))
                     for field in definition.parameters:
-                        widget = dialog._parameter_widgets[field.key]  # noqa: SLF001
-                        with self.subTest(
-                            operation=definition.operation.value,
-                            parameter=field.key,
-                            kind=field.kind,
-                        ):
-                            if isinstance(widget, QCheckBox):
-                                widget.click()
-                            elif isinstance(widget, QSpinBox):
-                                original = widget.value()
-                                candidate = (
-                                    original + 1
-                                    if original < widget.maximum()
-                                    else original - 1
-                                )
-                                widget.setValue(candidate)
-                                widget.editingFinished.emit()
-                            elif isinstance(widget, QDoubleSpinBox):
-                                original = widget.value()
-                                step_size = max(
-                                    float(widget.singleStep()),
-                                    10.0 ** (-widget.decimals()),
-                                )
-                                candidate = (
-                                    original + step_size
-                                    if original + step_size
-                                    <= widget.maximum()
-                                    else original - step_size
-                                )
-                                widget.setValue(candidate)
-                                widget.editingFinished.emit()
-                            elif isinstance(widget, QComboBox):
-                                if widget.count() > 1:
-                                    widget.setCurrentIndex(
-                                        (widget.currentIndex() + 1)
-                                        % widget.count()
-                                    )
-                                else:
-                                    widget.currentIndexChanged.emit(
-                                        widget.currentIndex()
-                                    )
-                            elif isinstance(widget, QLineEdit):
-                                tokens = (
-                                    widget.text()
-                                    .replace(";", " ")
-                                    .replace(",", " ")
-                                    .split()
-                                )
-                                self.assertTrue(tokens)
-                                tokens[0] = f"{float(tokens[0]) + 0.125:g}"
-                                widget.setText(", ".join(tokens))
-                                widget.editingFinished.emit()
-                            else:  # pragma: no cover - catalog is exhaustive
-                                self.fail(
-                                    f"未覆盖参数控件：{type(widget).__name__}"
-                                )
-                            self.assertIs(
-                                dialog._parameter_widgets[field.key],  # noqa: SLF001
-                                widget,
+                        probe_step, _initial = _install(definition)
+                        probe_widget = dialog._parameter_widgets[field.key]  # noqa: SLF001
+                        if isinstance(probe_widget, QCheckBox):
+                            candidates = (False, True)
+                        elif isinstance(probe_widget, QSpinBox):
+                            candidates = (
+                                probe_widget.minimum(),
+                                probe_widget.value(),
+                                probe_widget.maximum(),
                             )
-                            exercised += 1
+                        elif isinstance(probe_widget, QDoubleSpinBox):
+                            candidates = (
+                                probe_widget.minimum(),
+                                probe_widget.value(),
+                                probe_widget.maximum(),
+                            )
+                        elif isinstance(probe_widget, QComboBox):
+                            candidates = tuple(range(probe_widget.count()))
+                        elif isinstance(probe_widget, QLineEdit):
+                            tokens = (
+                                probe_widget.text()
+                                .replace(";", " ")
+                                .replace(",", " ")
+                                .split()
+                            )
+                            self.assertTrue(tokens)
+                            changed = list(tokens)
+                            changed[0] = f"{float(changed[0]) + 0.125:g}"
+                            candidates = (
+                                ("valid", ", ".join(changed)),
+                                ("invalid", "不是数字"),
+                            )
+                        else:  # pragma: no cover - catalog is exhaustive
+                            self.fail(
+                                f"未覆盖参数控件：{type(probe_widget).__name__}"
+                            )
+                        expected += len(candidates)
+
+                        for candidate in candidates:
+                            seeded, initial_parameters = _install(definition)
+                            # A condition-changing combo may have processed a
+                            # queued visibility update in the preceding case.
+                            # Never retain the old Python wrapper.
+                            widget = dialog._parameter_widgets[field.key]  # noqa: SLF001
+                            with self.subTest(
+                                operation=definition.operation.value,
+                                parameter=field.key,
+                                kind=field.kind,
+                                candidate=candidate,
+                            ):
+                                if isinstance(widget, QCheckBox):
+                                    value = bool(candidate)
+                                    if widget.isChecked() == value:
+                                        widget.toggled.emit(value)
+                                    else:
+                                        widget.setChecked(value)
+                                elif isinstance(widget, QSpinBox):
+                                    widget.setValue(int(candidate))
+                                    widget.editingFinished.emit()
+                                elif isinstance(widget, QDoubleSpinBox):
+                                    widget.setValue(float(candidate))
+                                    widget.editingFinished.emit()
+                                elif isinstance(widget, QComboBox):
+                                    index = int(candidate)
+                                    if widget.currentIndex() == index:
+                                        widget.currentIndexChanged.emit(index)
+                                    else:
+                                        widget.setCurrentIndex(index)
+                                elif isinstance(widget, QLineEdit):
+                                    _validity, text = candidate
+                                    widget.setText(str(text))
+                                    widget.editingFinished.emit()
+                                else:  # pragma: no cover
+                                    self.fail(
+                                        "参数控件在重建后改变了类型："
+                                        f"{type(widget).__name__}"
+                                    )
+
+                                _assert_survived(
+                                    definition=definition,
+                                    field_key=field.key,
+                                    widget=widget,
+                                    seeded=seeded,
+                                    initial_parameters=initial_parameters,
+                                )
+                                if (
+                                    isinstance(widget, QLineEdit)
+                                    and candidate[0] == "invalid"
+                                ):
+                                    self.assertTrue(
+                                        dialog._parameter_error_message  # noqa: SLF001
+                                    )
+                                    self.assertFalse(
+                                        dialog._generate_button.isEnabled()  # noqa: SLF001
+                                    )
+                                exercised += 1
             self.assertEqual(exercised, expected)
-            self.assertGreater(exercised, 200)
+            self.assertGreater(exercised, 500)
+        finally:
+            dialog.close()
+
+    def test_specialized_parameter_editors_survive_core_native_signals(self) -> None:
+        source = array_to_raster_plane(
+            np.arange(48, dtype=np.uint8).reshape(6, 8)
+        )
+        dialog = ImageProcessingWorkbench(
+            source,
+            source_document_id="doc-1",
+        )
+
+        def _install(operation_id: str) -> ImageOperationSpec:
+            base = default_operation_spec(operation_id, 8, 6)
+            step = ImageOperationSpec(
+                base.operation_id,
+                base.parameters,
+                implementation=base.implementation,
+                implementation_version=base.implementation_version,
+                result_metadata={
+                    "native_signal_matrix": {
+                        "operation": operation_id,
+                        "specialized": True,
+                    }
+                },
+            )
+            dialog.set_operation_steps(())
+            dialog.set_operation_steps((step,))
+            self.app.processEvents()
+            return step
+
+        def _drain_and_assert(
+            key: str,
+            editor,
+            seeded: ImageOperationSpec,
+        ) -> None:
+            self.app.processEvents()
+            current_editor = dialog._structured_parameter_editors[key]  # noqa: SLF001
+            self.assertIs(current_editor, editor)
+            current_editor.isEnabled()
+            current = dialog.operation_steps()[0]
+            self.assertEqual(
+                current.implementation_version,
+                seeded.implementation_version,
+            )
+            self.assertEqual(
+                current.result_metadata.get("native_signal_matrix"),
+                seeded.result_metadata["native_signal_matrix"],
+            )
+            error = dialog._parameter_error_message  # noqa: SLF001
+            if error:
+                self.assertTrue(
+                    any("\u3400" <= character <= "\u9fff" for character in error),
+                    msg=f"专用参数编辑器返回了非中文验证信息：{error}",
+                )
+
+        try:
+            with mock.patch.object(dialog, "_schedule_preview"):
+                seeded = _install("threshold")
+                histogram = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "histogram_range"
+                ]
+                self.assertIsInstance(
+                    histogram,
+                    workbench_module.HistogramRangeEditor,
+                )
+                histogram.autoButton.click()
+                _drain_and_assert("histogram_range", histogram, seeded)
+                histogram.resetButton.click()
+                _drain_and_assert("histogram_range", histogram, seeded)
+                for combo in (
+                    histogram.displayModeCombo,
+                    histogram.polarityCombo,
+                ):
+                    for index in range(combo.count()):
+                        combo.setCurrentIndex(index)
+                        _drain_and_assert(
+                            "histogram_range",
+                            histogram,
+                            seeded,
+                        )
+                histogram.lowerSpin.editingFinished.emit()
+                histogram.upperSpin.editingFinished.emit()
+                _drain_and_assert("histogram_range", histogram, seeded)
+
+                seeded = _install("percentile_saturation")
+                percentile = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "percentile_range"
+                ]
+                self.assertIsInstance(
+                    percentile,
+                    workbench_module.PercentileRangeEditor,
+                )
+                percentile.lowerSpin.setValue(99.0)
+                percentile.upperSpin.setValue(1.0)
+                percentile.lowerSpin.editingFinished.emit()
+                percentile.upperSpin.editingFinished.emit()
+                _drain_and_assert("percentile_range", percentile, seeded)
+                self.assertIn(
+                    "下百分位必须小于上百分位",
+                    dialog._parameter_error_message,  # noqa: SLF001
+                )
+                percentile.lowerSpin.setValue(0.5)
+                percentile.upperSpin.setValue(99.5)
+                percentile.lowerSpin.editingFinished.emit()
+                percentile.upperSpin.editingFinished.emit()
+                _drain_and_assert("percentile_range", percentile, seeded)
+
+                seeded = _install("brightness_contrast")
+                for key, slider in tuple(
+                    dialog._structured_parameter_editors.items()  # noqa: SLF001
+                ):
+                    self.assertTrue(key.startswith("slider:"))
+                    self.assertIsInstance(
+                        slider,
+                        workbench_module.SliderNumberEditor,
+                    )
+                    slider.slider.setValue(slider.slider.maximum())
+                    slider.slider.sliderReleased.emit()
+                    _drain_and_assert(key, slider, seeded)
+                    slider.spinBox.editingFinished.emit()
+                    _drain_and_assert(key, slider, seeded)
+
+                seeded = _install("fft_filter")
+                frequency = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "frequency_response"
+                ]
+                self.assertIsInstance(
+                    frequency,
+                    workbench_module.FrequencyResponseEditor,
+                )
+                for index in range(frequency.modeCombo.count()):
+                    frequency.modeCombo.setCurrentIndex(index)
+                    _drain_and_assert(
+                        "frequency_response",
+                        frequency,
+                        seeded,
+                    )
+                minimum, maximum = frequency.lowCutoffEditor.range()
+                frequency.lowCutoffSpin.setValue(maximum)
+                frequency.highCutoffSpin.setValue(minimum)
+                frequency.lowCutoffSpin.editingFinished.emit()
+                frequency.highCutoffSpin.editingFinished.emit()
+                _drain_and_assert(
+                    "frequency_response",
+                    frequency,
+                    seeded,
+                )
+                self.assertTrue(dialog._parameter_error_message)  # noqa: SLF001
+
+                seeded = _install("resize")
+                dimensions = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "linked_dimensions"
+                ]
+                self.assertIsInstance(
+                    dimensions,
+                    workbench_module.LinkedDimensionsEditor,
+                )
+                dimensions.lockAspectCheck.click()
+                _drain_and_assert(
+                    "linked_dimensions",
+                    dimensions,
+                    seeded,
+                )
+                dimensions.percentSpin.setValue(150.0)
+                dimensions.percentSpin.editingFinished.emit()
+                _drain_and_assert(
+                    "linked_dimensions",
+                    dimensions,
+                    seeded,
+                )
+                dimensions.widthSpin.editingFinished.emit()
+                dimensions.heightSpin.editingFinished.emit()
+                _drain_and_assert(
+                    "linked_dimensions",
+                    dimensions,
+                    seeded,
+                )
+
+                seeded = _install("crop")
+                crop = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "crop_bounds"
+                ]
+                self.assertIsInstance(
+                    crop,
+                    workbench_module.CropBoundsEditor,
+                )
+                crop.xSpin.setValue(crop.xSpin.maximum())
+                crop.xSpin.editingFinished.emit()
+                _drain_and_assert("crop_bounds", crop, seeded)
+                crop.fullImageButton.click()
+                _drain_and_assert("crop_bounds", crop, seeded)
+
+                seeded = _install("erode")
+                structure = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "structuring_element"
+                ]
+                self.assertIsInstance(
+                    structure,
+                    workbench_module.StructuringElementEditor,
+                )
+                for index in range(structure.shapeCombo.count()):
+                    structure.shapeCombo.setCurrentIndex(index)
+                    structure.shapeCombo.activated.emit(index)
+                    _drain_and_assert(
+                        "structuring_element",
+                        structure,
+                        seeded,
+                    )
+                structure.radiusSpin.editingFinished.emit()
+                structure.iterationsSpin.editingFinished.emit()
+                _drain_and_assert(
+                    "structuring_element",
+                    structure,
+                    seeded,
+                )
+
+                seeded = _install("resize_canvas")
+                anchor = dialog._structured_parameter_editors["anchor"]  # noqa: SLF001
+                self.assertIsInstance(
+                    anchor,
+                    workbench_module.AnchorGridEditor,
+                )
+                for button in anchor.buttons.values():
+                    button.click()
+                    _drain_and_assert("anchor", anchor, seeded)
+
+                seeded = _install("custom_convolution")
+                kernel = dialog._structured_parameter_editors["kernel"]  # noqa: SLF001
+                self.assertIsInstance(
+                    kernel,
+                    workbench_module.KernelMatrixEditor,
+                )
+                for preset in kernel.PRESETS:
+                    kernel.applyPreset(preset)
+                    _drain_and_assert("kernel", kernel, seeded)
+                kernel.table.item(0, 0).setText("非法数值")
+                _drain_and_assert("kernel", kernel, seeded)
+                self.assertTrue(dialog._parameter_error_message)  # noqa: SLF001
+                kernel.table.item(0, 0).setText("1.25")
+                _drain_and_assert("kernel", kernel, seeded)
+
+                seeded = _install("stripe_suppression")
+                stripe = dialog._structured_parameter_editors[  # noqa: SLF001
+                    "stripe_frequency"
+                ]
+                self.assertIsInstance(
+                    stripe,
+                    workbench_module.StripeSuppressionEditor,
+                )
+                for index in range(stripe.directionCombo.count()):
+                    stripe.directionCombo.setCurrentIndex(index)
+                    _drain_and_assert(
+                        "stripe_frequency",
+                        stripe,
+                        seeded,
+                    )
+                stripe.notchWidthSpin.editingFinished.emit()
+                stripe.protectRadiusSpin.editingFinished.emit()
+                _drain_and_assert(
+                    "stripe_frequency",
+                    stripe,
+                    seeded,
+                )
         finally:
             dialog.close()
 
@@ -641,6 +1225,10 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             source_pixel_type=RasterPixelType.GRAY16,
         )
         self.assertEqual(levels.parameters["white_point"], 65_535.0)
+        self.assertEqual(
+            resize.implementation_version,
+            IMAGE_OPERATION_REGISTRY["resize"].version,
+        )
 
         dialog = ImageProcessingWorkbench(
             self.source,
@@ -665,6 +1253,175 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             execute_workbench_request(
                 request,
                 CancellationTokenSource().token,
+            )
+        finally:
+            dialog.close()
+
+    def test_loaded_steps_reject_unknown_engine_and_algorithm_version(
+        self,
+    ) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            with self.assertRaisesRegex(ValueError, "不支持的图像处理实现"):
+                dialog.set_operation_steps(
+                    (
+                        ImageOperationSpec(
+                            "invert",
+                            implementation="other-engine",
+                        ),
+                    )
+                )
+            with self.assertRaisesRegex(ValueError, "不支持的算法版本.*v99"):
+                dialog.set_operation_steps(
+                    (
+                        ImageOperationSpec(
+                            "fill_holes",
+                            implementation_version="99",
+                        ),
+                    )
+                )
+        finally:
+            dialog.close()
+
+    def test_new_step_defaults_follow_the_preceding_recipe_output_state(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog.set_operation_steps(
+                (
+                    ImageOperationSpec(
+                        "convert_type",
+                        {
+                            "target_type": "uint16",
+                            "scale_mode": "full_type_range",
+                            "nonfinite_policy": "reject",
+                        },
+                    ),
+                )
+            )
+            threshold = dialog.make_default_operation_spec("threshold")
+            self.assertEqual(threshold.parameters["upper"], 65_535.0)
+
+            dialog.set_operation_steps(
+                (
+                    ImageOperationSpec(
+                        "crop",
+                        {
+                            "x": 1,
+                            "y": 1,
+                            "width": 4,
+                            "height": 3,
+                            "roi_mode": "bounds",
+                            "fill_value": 0.0,
+                            "transparent_outside": False,
+                        },
+                    ),
+                )
+            )
+            resize = dialog.make_default_operation_spec("resize")
+            self.assertEqual(resize.parameters["width"], 4)
+            self.assertEqual(resize.parameters["height"], 3)
+        finally:
+            dialog.close()
+
+    def test_missing_loaded_step_defaults_follow_each_step_input_state(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog.set_operation_steps(
+                (
+                    ImageOperationSpec(
+                        "convert_type",
+                        {
+                            "target_type": "uint16",
+                            "scale_mode": "full_type_range",
+                            "nonfinite_policy": "reject",
+                        },
+                    ),
+                    ImageOperationSpec("threshold"),
+                )
+            )
+            self.assertEqual(
+                dialog.operation_steps()[1].parameters["upper"],
+                65_535.0,
+            )
+        finally:
+            dialog.close()
+
+    def test_irrelevant_method_parameters_are_hidden_without_losing_values(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog.set_operation_steps(
+                (default_operation_spec("adaptive_threshold", 8, 6),)
+            )
+            method = dialog._parameter_widgets["method"]  # noqa: SLF001
+            self.assertIsInstance(method, QComboBox)
+            method.setCurrentIndex(method.findData("mean"))
+            self.app.processEvents()
+            for key in ("k", "r", "p", "q"):
+                widget = dialog._parameter_row_widgets[key]  # noqa: SLF001
+                self.assertFalse(
+                    dialog._parameter_form.isRowVisible(widget)  # noqa: SLF001
+                )
+
+            method.setCurrentIndex(method.findData("sauvola"))
+            self.app.processEvents()
+            self.assertTrue(
+                dialog._parameter_form.isRowVisible(  # noqa: SLF001
+                    dialog._parameter_row_widgets["k"]  # noqa: SLF001
+                )
+            )
+            self.assertTrue(
+                dialog._parameter_form.isRowVisible(  # noqa: SLF001
+                    dialog._parameter_row_widgets["r"]  # noqa: SLF001
+                )
+            )
+            self.assertFalse(
+                dialog._parameter_form.isRowVisible(  # noqa: SLF001
+                    dialog._parameter_row_widgets["p"]  # noqa: SLF001
+                )
+            )
+        finally:
+            dialog.close()
+
+    def test_histogram_range_editor_prevents_reversed_thresholds(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog.set_operation_steps(
+                (default_operation_spec("threshold", 8, 6),)
+            )
+            lower = dialog._parameter_widgets["lower"]  # noqa: SLF001
+            upper = dialog._parameter_widgets["upper"]  # noqa: SLF001
+            self.assertIsInstance(lower, QDoubleSpinBox)
+            self.assertIsInstance(upper, QDoubleSpinBox)
+            lower.setValue(300.0)
+            lower.editingFinished.emit()
+            self.assertLessEqual(lower.value(), upper.value())
+            self.assertTrue(dialog._generate_button.isEnabled())  # noqa: SLF001
+            self.assertLessEqual(
+                dialog.operation_steps()[0].parameters["lower"],
+                dialog.operation_steps()[0].parameters["upper"],
+            )
+
+            upper.setValue(200.0)
+            upper.editingFinished.emit()
+            self.assertTrue(dialog._generate_button.isEnabled())  # noqa: SLF001
+            self.assertLessEqual(
+                dialog.operation_steps()[0].parameters["lower"],
+                dialog.operation_steps()[0].parameters["upper"],
             )
         finally:
             dialog.close()
@@ -937,6 +1694,70 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         finally:
             without_secondary.close()
             with_secondary.close()
+
+    def test_secondary_semantic_controls_strict_binary_recipe_chain(
+        self,
+    ) -> None:
+        secondary = RasterPlane(
+            width=self.source.width,
+            height=self.source.height,
+            pixel_type=self.source.pixel_type,
+            data=self.source.data,
+        )
+        operations = (
+            ImageOperationSpec(
+                "image_calculator",
+                {
+                    "secondary_document_id": "binary-right",
+                    "calculator_operation": "copy",
+                    "result_mode": "preserve",
+                },
+                implementation_version="2",
+            ),
+            ImageOperationSpec(
+                "fill_holes",
+                implementation_version="2",
+            ),
+        )
+
+        with self.assertRaisesRegex(ValueError, "显式二值掩膜"):
+            validate_workbench_operation_sequence(
+                self.source,
+                operations,
+                source_semantic=RasterSemantic.INTENSITY,
+                secondary_images={"binary-right": secondary},
+            )
+
+        validation = validate_workbench_operation_sequence(
+            self.source,
+            operations,
+            source_semantic=RasterSemantic.INTENSITY,
+            secondary_images={"binary-right": secondary},
+            secondary_semantics={
+                "binary-right": RasterSemantic.BINARY_MASK,
+            },
+        )
+        self.assertIs(
+            validation.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        request = WorkbenchTaskRequest(
+            kind=WorkbenchTaskKind.FINAL,
+            request_id="secondary-semantic",
+            generation=1,
+            source_document_id="doc-1",
+            source=self.source,
+            operations=operations,
+            source_semantic=RasterSemantic.INTENSITY,
+            secondary_images=(("binary-right", secondary),),
+            secondary_semantics=(
+                ("binary-right", RasterSemantic.BINARY_MASK),
+            ),
+        )
+        self.assertEqual(
+            dict(request.secondary_semantics),
+            {"binary-right": RasterSemantic.BINARY_MASK},
+        )
 
     def test_reference_flat_field_freezes_reference_sha_and_full_levels(
         self,

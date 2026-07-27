@@ -128,6 +128,8 @@ from fdm.image_processing_models import (
     ImageOperationSpec,
     ImageProcessingRecipe,
     ProcessingRoiSnapshot,
+    RasterSemantic,
+    RasterTypeState,
 )
 from fdm.project_roi import (
     EllipseRoiGeometry,
@@ -921,6 +923,7 @@ class ImageProcessingSourceContext:
     document_id: str
     plane: RasterPlane
     source_path: str
+    semantic: RasterSemantic | None = None
     derivation_prefix: tuple[ImageOperationSpec, ...] = ()
     source_signature: tuple[object, ...] = ()
     roi_snapshot: ProcessingRoiSnapshot | None = None
@@ -4829,6 +4832,11 @@ class MainWindow(QMainWindow):
                 result_raster=result.plane,
                 recipe=recipe,
                 calibration=calibration,
+                result_semantic=(
+                    None
+                    if payload.transparent_outside
+                    else context.semantic
+                ),
                 source_path=context.source_path,
                 roi_snapshot=(
                     context.roi_snapshot
@@ -5577,6 +5585,13 @@ class MainWindow(QMainWindow):
                 document_id=document.id,
                 plane=plane,
                 source_path=document.path,
+                semantic=(
+                    document.raster_semantic
+                    if document.raster_semantic is not None
+                    else RasterTypeState(
+                        pixel_type=plane.pixel_type,
+                    ).semantic
+                ),
                 derivation_prefix=derivation_prefix,
                 source_signature=signature,
                 roi_snapshot=roi_snapshot,
@@ -6221,6 +6236,17 @@ class MainWindow(QMainWindow):
             document,
             context.plane,
         )
+        secondary_semantics: dict[str, RasterSemantic] = {}
+        for document_id, plane in secondary_images.items():
+            candidate = self.project.get_document(document_id)
+            secondary_semantics[document_id] = RasterTypeState(
+                pixel_type=plane.pixel_type,
+                semantic=(
+                    None
+                    if candidate is None
+                    else candidate.raster_semantic
+                ),
+            ).semantic
         preview_rect: tuple[float, float, float, float] | None = None
         if not document.is_digital_slide():
             canvas = self._canvases.get(document.id)
@@ -6243,11 +6269,13 @@ class MainWindow(QMainWindow):
             context.plane,
             source_document_id=context.document_id,
             source_name=self._document_display_name(document),
+            source_semantic=context.semantic,
             roi_summary=roi_summary,
             roi_mask=roi_mask,
             preview_rect=preview_rect,
             secondary_images=secondary_images,
             secondary_image_names=secondary_names,
+            secondary_image_semantics=secondary_semantics,
             parent=self,
         )
         self._image_processing_workbench = workbench
@@ -6617,6 +6645,7 @@ class MainWindow(QMainWindow):
                     document_id=document.id,
                     display_name=self._document_display_name(document),
                     raster=plane,
+                    semantic=document.raster_semantic,
                     source_pixel_revision=0,
                     source_path=document.path,
                 )
@@ -6882,6 +6911,7 @@ class MainWindow(QMainWindow):
                     if isinstance(calibration, Calibration)
                     else None
                 ),
+                result_semantic=candidate.derivation.result_semantic,
                 source_path=candidate.derivation.source_path,
                 roi_snapshot=candidate.derivation.roi_snapshot,
                 library_versions=candidate.derivation.library_versions,
@@ -11309,6 +11339,7 @@ class MainWindow(QMainWindow):
         result_raster: RasterPlane,
         recipe: ImageProcessingRecipe,
         calibration: Calibration | None,
+        result_semantic: RasterSemantic | None = None,
         source_path: str | None = None,
         roi_snapshot: ProcessingRoiSnapshot | None = None,
         library_versions: tuple[tuple[str, str], ...] = (),
@@ -11316,10 +11347,23 @@ class MainWindow(QMainWindow):
     ) -> DerivedImageCommitResult:
         """Write one session asset and mount one metadata-safe derived document."""
 
+        source_semantic = (
+            source_document.raster_semantic
+            if source_document.raster_semantic is not None
+            else RasterTypeState(
+                pixel_type=source_plane.pixel_type,
+            ).semantic
+        )
+        resolved_result_semantic = RasterTypeState(
+            pixel_type=result_raster.pixel_type,
+            semantic=result_semantic,
+        ).semantic
+
         context = ImageProcessingSourceContext(
             document_id=source_document.id,
             plane=source_plane,
             source_path=source_path or source_document.path,
+            semantic=source_semantic,
             source_signature=(
                 source_document.id,
                 "raster",
@@ -11406,8 +11450,10 @@ class MainWindow(QMainWindow):
             source_image_size=(source_plane.width, source_plane.height),
             source_pixel_revision=0,
             source_pixel_type=source_plane.pixel_type,
+            source_semantic=source_semantic,
             recipe=recipe,
             result_pixel_type=result_raster.pixel_type,
+            result_semantic=resolved_result_semantic,
             result_image_size=(result_raster.width, result_raster.height),
             result_sha256=result_raster.sha256(),
             roi_snapshot=roi_snapshot,
@@ -11431,6 +11477,7 @@ class MainWindow(QMainWindow):
                 }
             },
             raster_pixel_type=result_raster.pixel_type,
+            raster_semantic=resolved_result_semantic,
             derivation=derivation,
         )
         document.initialize_runtime_state()
@@ -11494,6 +11541,7 @@ class MainWindow(QMainWindow):
             calibration=(
                 calibration if isinstance(calibration, Calibration) else None
             ),
+            result_semantic=payload.output_semantic,
             source_path=context.source_path,
             roi_snapshot=context.roi_snapshot,
         )

@@ -10,6 +10,8 @@ from fdm.cancellation import CancellationTokenSource
 from fdm.image_processing_models import (
     ImageOperationSpec,
     ImageProcessingRecipe,
+    ImageDerivation,
+    RasterSemantic,
 )
 from fdm.services.image_batch import (
     BatchExecutionLimits,
@@ -40,16 +42,20 @@ def _input(
     image: np.ndarray,
     *,
     secondary: np.ndarray | None = None,
+    semantic: RasterSemantic | None = None,
+    secondary_semantic: RasterSemantic | None = None,
 ) -> BatchRasterInput:
     return BatchRasterInput(
         document_id=document_id,
         display_name=f"图片 {document_id}",
         raster=numpy_to_raster_plane(image),
+        semantic=semantic,
         source_pixel_revision=4,
         source_path=f"/images/{document_id}.png",
         secondary_raster=(
             None if secondary is None else numpy_to_raster_plane(secondary)
         ),
+        secondary_semantic=secondary_semantic,
     )
 
 
@@ -57,6 +63,29 @@ _PLENTY_OF_DISK = 10 << 30
 
 
 class ImageBatchExecutionTests(unittest.TestCase):
+    def test_semantic_fields_preserve_legacy_positional_input_order(self) -> None:
+        raster = numpy_to_raster_plane(
+            np.arange(9, dtype=np.uint8).reshape(3, 3)
+        )
+        item = BatchRasterInput(
+            "legacy",
+            "旧位置参数",
+            raster,
+            7,
+            "/images/legacy.png",
+            None,
+            raster,
+        )
+
+        self.assertEqual(item.source_pixel_revision, 7)
+        self.assertEqual(item.source_path, "/images/legacy.png")
+        self.assertIs(item.secondary_raster, raster)
+        self.assertIs(item.semantic, RasterSemantic.INTENSITY)
+        self.assertIs(
+            item.secondary_semantic,
+            RasterSemantic.INTENSITY,
+        )
+
     def test_copy_roi_propagates_frozen_mask_and_bounds_to_later_steps(
         self,
     ) -> None:
@@ -158,6 +187,67 @@ class ImageBatchExecutionTests(unittest.TestCase):
         np.testing.assert_array_equal(
             raster_plane_to_numpy(result.commit_candidates[0].raster),
             image + 1,
+        )
+
+    def test_batch_preserves_secondary_binary_semantic_through_strict_chain(
+        self,
+    ) -> None:
+        source = np.arange(25, dtype=np.uint8).reshape(5, 5)
+        secondary = np.zeros((5, 5), dtype=np.uint8)
+        secondary[1:4, 1:4] = 255
+        secondary[2, 2] = 0
+        recipe = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec(
+                    "image_calculator",
+                    {
+                        "secondary_document_id": "binary-reference",
+                        "calculator_operation": "copy",
+                        "result_mode": "preserve",
+                    },
+                    implementation_version="2",
+                ),
+                ImageOperationSpec(
+                    "fill_holes",
+                    implementation_version="2",
+                ),
+            )
+        )
+        item = _input(
+            "binary-chain",
+            source,
+            secondary=secondary,
+            semantic=RasterSemantic.INTENSITY,
+            secondary_semantic=RasterSemantic.BINARY_MASK,
+        )
+
+        result = execute_batch_recipe(
+            BatchRecipeRequest(
+                request_id="binary-chain",
+                generation=1,
+                recipe=recipe,
+                inputs=(item,),
+                available_disk_bytes=_PLENTY_OF_DISK,
+            )
+        )
+
+        self.assertTrue(result.commit_allowed)
+        candidate = result.commit_candidates[0]
+        self.assertIs(
+            candidate.derivation.result_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        self.assertIs(
+            ImageDerivation.from_dict(
+                candidate.derivation.to_dict()
+            ).result_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        expected = secondary.copy()
+        expected[2, 2] = 255
+        np.testing.assert_array_equal(
+            raster_plane_to_numpy(candidate.raster),
+            expected,
         )
 
     def test_reference_flat_field_batch_records_reference_provenance(
@@ -607,7 +697,7 @@ class ImageBatchExecutionTests(unittest.TestCase):
                 "nonfinite_policy": "zero",
             },
             implementation="fdm",
-            implementation_version="test-version",
+            implementation_version="1",
             result_metadata={"preset_note": "保留"},
         )
         recipe = ImageProcessingRecipe.from_operations((operation,))
@@ -642,7 +732,7 @@ class ImageBatchExecutionTests(unittest.TestCase):
             self.assertEqual(executed.implementation, "fdm")
             self.assertEqual(
                 executed.implementation_version,
-                "test-version",
+                "1",
             )
         self.assertEqual(
             request.recipe.operations[0].result_metadata,

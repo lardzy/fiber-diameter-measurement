@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
+    QSizePolicy,
     QSplitter,
     QVBoxLayout,
     QWidget,
@@ -39,6 +40,7 @@ from fdm.cancellation import CancellationError, CancellationToken, CancellationT
 from fdm.image_processing_models import (
     ImageOperationSpec,
     ImageProcessingRecipe,
+    RasterSemantic,
     RasterTypeState,
 )
 from fdm.raster import RasterPixelType, RasterPlane
@@ -46,12 +48,31 @@ from fdm.services.image_processing import (
     ImageOperation,
     InterpolationMode,
     RecipeValidationResult,
+    auto_threshold,
+    canny_gradient_magnitude,
     execute_image_operation_tiled,
     flat_field_reference_levels,
     get_image_operation_descriptor,
     resolve_resize_interpolation,
     resolve_image_operation_capability,
     validate_image_processing_recipe,
+)
+from fdm.ui.image_parameter_data import (
+    count_parameter_range,
+    parameter_histogram_snapshot,
+    scalar_parameter_samples,
+)
+from fdm.ui.image_parameter_widgets import (
+    AnchorGridEditor,
+    CropBoundsEditor,
+    FrequencyResponseEditor,
+    HistogramRangeEditor,
+    KernelMatrixEditor,
+    LinkedDimensionsEditor,
+    PercentileRangeEditor,
+    SliderNumberEditor,
+    StripeSuppressionEditor,
+    StructuringElementEditor,
 )
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelSpinBox
 
@@ -567,10 +588,31 @@ class WorkbenchTaskRequest:
         compare=False,
         repr=False,
     )
+    capture_step_input_index: int | None = None
+    source_semantic: RasterSemantic | None = None
+    secondary_semantics: tuple[tuple[str, RasterSemantic], ...] = field(
+        default=(),
+        compare=False,
+        repr=False,
+    )
 
     def __post_init__(self) -> None:
         if not self.operations:
             raise ValueError("图像处理任务至少需要一个步骤")
+        source_semantic = self.source_semantic
+        if source_semantic is None:
+            source_semantic = (
+                RasterSemantic.INTENSITY
+                if self.source.pixel_type.is_grayscale
+                else RasterSemantic.COLOR
+            )
+        elif not isinstance(source_semantic, RasterSemantic):
+            source_semantic = RasterSemantic(str(source_semantic))
+        RasterTypeState(
+            pixel_type=self.source.pixel_type,
+            semantic=source_semantic,
+        )
+        object.__setattr__(self, "source_semantic", source_semantic)
         mask = self.roi_mask
         if mask is not None:
             normalized = np.ascontiguousarray(mask, dtype=np.bool_)
@@ -589,6 +631,44 @@ class WorkbenchTaskRequest:
             seen_secondary_ids.add(document_id)
             secondary_images.append((document_id, plane))
         object.__setattr__(self, "secondary_images", tuple(secondary_images))
+        provided_secondary_semantics = {
+            str(raw_id).strip(): semantic
+            for raw_id, semantic in self.secondary_semantics
+        }
+        unknown_semantic_ids = (
+            set(provided_secondary_semantics) - seen_secondary_ids
+        )
+        if unknown_semantic_ids:
+            raise ValueError(
+                "第二幅图像语义引用了不存在的文档 ID："
+                + "、".join(sorted(unknown_semantic_ids))
+            )
+        normalized_secondary_semantics: list[
+            tuple[str, RasterSemantic]
+        ] = []
+        for document_id, plane in secondary_images:
+            semantic = RasterTypeState(
+                pixel_type=plane.pixel_type,
+                semantic=provided_secondary_semantics.get(document_id),
+            ).semantic
+            normalized_secondary_semantics.append(
+                (document_id, semantic)
+            )
+        object.__setattr__(
+            self,
+            "secondary_semantics",
+            tuple(normalized_secondary_semantics),
+        )
+        capture_index = self.capture_step_input_index
+        if capture_index is not None:
+            capture_index = int(capture_index)
+            if not 0 <= capture_index < len(self.operations):
+                raise ValueError("参数输入快照步骤超出处理配方范围")
+            object.__setattr__(
+                self,
+                "capture_step_input_index",
+                capture_index,
+            )
 
     @property
     def recipe(self) -> ImageProcessingRecipe:
@@ -603,6 +683,18 @@ class WorkbenchTaskResult:
     source_document_id: str
     raster: RasterPlane
     recipe: ImageProcessingRecipe
+    output_semantic: RasterSemantic | None = None
+    parameter_input_raster: RasterPlane | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
+    parameter_input_roi_mask: NDArray[np.bool_] | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
+    parameter_input_step_index: int | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -610,6 +702,13 @@ class _TaskCompletion:
     request: WorkbenchTaskRequest
     raster: RasterPlane | None = None
     recipe: ImageProcessingRecipe | None = None
+    output_semantic: RasterSemantic | None = None
+    parameter_input_raster: RasterPlane | None = None
+    parameter_input_roi_mask: NDArray[np.bool_] | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
     error: str | None = None
     cancelled: bool = False
 
@@ -618,6 +717,13 @@ class _TaskCompletion:
 class _WorkbenchExecutionOutput:
     raster: RasterPlane
     recipe: ImageProcessingRecipe
+    output_semantic: RasterSemantic
+    parameter_input_raster: RasterPlane | None = None
+    parameter_input_roi_mask: NDArray[np.bool_] | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
 
 
 ImageTaskExecutor = Callable[
@@ -656,6 +762,13 @@ class _ImageTaskRunnable(QRunnable):
                     request=self._request,
                     raster=execution.raster,
                     recipe=execution.recipe,
+                    output_semantic=execution.output_semantic,
+                    parameter_input_raster=(
+                        execution.parameter_input_raster
+                    ),
+                    parameter_input_roi_mask=(
+                        execution.parameter_input_roi_mask
+                    ),
                 )
             elif isinstance(execution, RasterPlane):
                 completion = _TaskCompletion(
@@ -716,16 +829,22 @@ class ImageProcessingTaskController(QObject):
         source_document_id: str,
         source: RasterPlane,
         operations: tuple[ImageOperationSpec, ...],
+        source_semantic: RasterSemantic | None = None,
         roi_mask: NDArray[np.bool_] | None = None,
         secondary_images: Mapping[str, RasterPlane] | None = None,
+        capture_step_input_index: int | None = None,
+        secondary_semantics: Mapping[str, RasterSemantic] | None = None,
     ) -> WorkbenchTaskRequest:
         return self._start(
             WorkbenchTaskKind.PREVIEW,
             source_document_id=source_document_id,
             source=source,
             operations=operations,
+            source_semantic=source_semantic,
             roi_mask=roi_mask,
             secondary_images=secondary_images,
+            capture_step_input_index=capture_step_input_index,
+            secondary_semantics=secondary_semantics,
         )
 
     def start_final(
@@ -734,16 +853,21 @@ class ImageProcessingTaskController(QObject):
         source_document_id: str,
         source: RasterPlane,
         operations: tuple[ImageOperationSpec, ...],
+        source_semantic: RasterSemantic | None = None,
         roi_mask: NDArray[np.bool_] | None = None,
         secondary_images: Mapping[str, RasterPlane] | None = None,
+        secondary_semantics: Mapping[str, RasterSemantic] | None = None,
     ) -> WorkbenchTaskRequest:
         return self._start(
             WorkbenchTaskKind.FINAL,
             source_document_id=source_document_id,
             source=source,
             operations=operations,
+            source_semantic=source_semantic,
             roi_mask=roi_mask,
             secondary_images=secondary_images,
+            capture_step_input_index=None,
+            secondary_semantics=secondary_semantics,
         )
 
     def cancel_preview(self) -> None:
@@ -777,16 +901,21 @@ class ImageProcessingTaskController(QObject):
         source_document_id: str,
         source: RasterPlane,
         operations: tuple[ImageOperationSpec, ...],
+        source_semantic: RasterSemantic | None,
         roi_mask: NDArray[np.bool_] | None,
         secondary_images: Mapping[str, RasterPlane] | None,
+        capture_step_input_index: int | None,
+        secondary_semantics: Mapping[str, RasterSemantic] | None,
     ) -> WorkbenchTaskRequest:
         if self._closed:
             raise RuntimeError("图像处理任务控制器已经关闭")
         validate_workbench_operation_sequence(
             source,
             operations,
+            source_semantic=source_semantic,
             roi_requested=roi_mask is not None,
             secondary_images=secondary_images,
+            secondary_semantics=secondary_semantics,
         )
         lane = self._lanes[kind]
         lane.generation += 1
@@ -797,8 +926,13 @@ class ImageProcessingTaskController(QObject):
             source_document_id=str(source_document_id),
             source=source,
             operations=tuple(operations),
+            source_semantic=source_semantic,
             roi_mask=roi_mask,
             secondary_images=tuple((secondary_images or {}).items()),
+            capture_step_input_index=capture_step_input_index,
+            secondary_semantics=tuple(
+                (secondary_semantics or {}).items()
+            ),
         )
         if lane.active is not None:
             if lane.active_cancellation is not None:
@@ -873,6 +1007,16 @@ class ImageProcessingTaskController(QObject):
                     source_document_id=request.source_document_id,
                     raster=completion.raster,
                     recipe=completion.recipe or request.recipe,
+                    output_semantic=completion.output_semantic,
+                    parameter_input_raster=(
+                        completion.parameter_input_raster
+                    ),
+                    parameter_input_roi_mask=(
+                        completion.parameter_input_roi_mask
+                    ),
+                    parameter_input_step_index=(
+                        request.capture_step_input_index
+                    ),
                 )
                 if request.kind is WorkbenchTaskKind.PREVIEW:
                     self.previewReady.emit(result)
@@ -912,13 +1056,17 @@ def _execute_workbench_request_with_metadata(
     validation = validate_workbench_operation_sequence(
         request.source,
         request.operations,
+        source_semantic=request.source_semantic,
         roi_requested=request.roi_mask is not None,
         secondary_images=dict(request.secondary_images),
+        secondary_semantics=dict(request.secondary_semantics),
     )
     image = raster_plane_to_array(request.source)
     working_roi_mask = request.roi_mask
     secondary_images = dict(request.secondary_images)
     executed_operations: list[ImageOperationSpec] = []
+    parameter_input_raster: RasterPlane | None = None
+    parameter_input_roi_mask: NDArray[np.bool_] | None = None
     dynamic_metadata_keys = {
         "nonfinite_replacement_count",
         "repaired_count",
@@ -929,6 +1077,16 @@ def _execute_workbench_request_with_metadata(
     }
     for operation_index, operation_spec in enumerate(request.operations):
         token.raise_if_cancelled()
+        if request.capture_step_input_index == operation_index:
+            parameter_input_raster = array_to_raster_plane(
+                np.ascontiguousarray(image)
+            )
+            if working_roi_mask is not None:
+                parameter_input_roi_mask = np.ascontiguousarray(
+                    working_roi_mask,
+                    dtype=np.bool_,
+                )
+                parameter_input_roi_mask.setflags(write=False)
         parameters = operation_spec.parameters
         if (
             operation_spec.operation_id == ImageOperation.RESIZE.value
@@ -1037,6 +1195,9 @@ def _execute_workbench_request_with_metadata(
     return _WorkbenchExecutionOutput(
         raster=array_to_raster_plane(image),
         recipe=ImageProcessingRecipe.from_operations(executed_operations),
+        output_semantic=validation.output_state.semantic,
+        parameter_input_raster=parameter_input_raster,
+        parameter_input_roi_mask=parameter_input_roi_mask,
     )
 
 
@@ -1044,19 +1205,23 @@ def validate_workbench_operation_sequence(
     source: RasterPlane,
     operations: tuple[ImageOperationSpec, ...],
     *,
+    source_semantic: RasterSemantic | None = None,
     roi_requested: bool = False,
     secondary_images: Mapping[str, RasterPlane] | None = None,
+    secondary_semantics: Mapping[str, RasterSemantic] | None = None,
 ) -> RecipeValidationResult:
     """Validate the complete pixel/semantic chain before allocating output."""
 
     source_state = RasterTypeState(
         pixel_type=source.pixel_type,
+        semantic=source_semantic,
         width=source.width,
         height=source.height,
     )
     secondary_states = {
         document_id: RasterTypeState(
             pixel_type=plane.pixel_type,
+            semantic=(secondary_semantics or {}).get(document_id),
             width=plane.width,
             height=plane.height,
         )
@@ -1571,7 +1736,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                     "scale_mode",
                     "数值映射",
                     "choice",
-                    "full_type_range",
+                    "preserve_values",
                     choices=scale_modes,
                 ),
                 ParameterField(
@@ -2086,7 +2251,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
         define(
             ImageOperation.WATERSHED,
             "处理",
-            "分水岭分割",
+            "分水岭分割 v1（兼容）",
             (
                 foreground,
                 ParameterField("seed_threshold", "种子阈值比例", "float", 0.45, 0.001, 0.999, 3),
@@ -2094,6 +2259,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             ),
             purpose="按距离峰值拆分相互接触的二值对象。",
             supported_types=scalar_types,
+            available_for_new_recipe=False,
         ),
         define(
             ImageOperation.WATERSHED_V2,
@@ -2213,9 +2379,27 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             (ParameterField("gamma", "Gamma", "float", 1.0, 0.001, 100, 4),),
             purpose="在当前类型的工作范围内应用幂律变换。",
         ),
-        define(ImageOperation.LOG, "处理", "Log 运算", purpose="对非负像素计算 log(1+x)。"),
-        define(ImageOperation.EXP, "处理", "Exp 运算", purpose="对像素计算指数；溢出时明确拒绝。"),
-        define(ImageOperation.SQRT, "处理", "Sqrt 运算", purpose="对非负像素计算平方根。"),
+        define(
+            ImageOperation.LOG,
+            "处理",
+            "Log 运算 v1（兼容）",
+            purpose="按旧版规则对非负像素计算 log(1+x)。",
+            available_for_new_recipe=False,
+        ),
+        define(
+            ImageOperation.EXP,
+            "处理",
+            "Exp 运算 v1（兼容）",
+            purpose="按旧版规则计算指数；溢出时明确拒绝。",
+            available_for_new_recipe=False,
+        ),
+        define(
+            ImageOperation.SQRT,
+            "处理",
+            "Sqrt 运算 v1（兼容）",
+            purpose="按旧版规则对非负像素计算平方根。",
+            available_for_new_recipe=False,
+        ),
         *tuple(
             define(
                 operation,
@@ -2333,7 +2517,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                     "boundary",
                     "边界策略",
                     "choice",
-                    "periodic",
+                    "mirror_pad",
                     choices=(
                         ("周期边界（旧版）", "periodic"),
                         ("镜像扩展", "mirror_pad"),
@@ -2639,6 +2823,43 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
     )
 
 
+def _default_parameter_suffix(
+    operation: ImageOperation,
+    parameter_key: str,
+) -> str:
+    """Return presentation-only units where the service contract is unambiguous."""
+
+    if parameter_key == "radius":
+        return " px"
+    if parameter_key in {
+        "sigma",
+        "sigma_x",
+        "sigma_y",
+        "sigma_space",
+        "diameter",
+    }:
+        return " px"
+    if parameter_key in {
+        "lower_percentile",
+        "upper_percentile",
+    }:
+        return " %"
+    if parameter_key == "pixel_size":
+        return " 单位/px"
+    if operation in {
+        ImageOperation.CROP,
+        ImageOperation.RESIZE,
+        ImageOperation.RESIZE_CANVAS,
+    } and parameter_key in {"x", "y", "width", "height"}:
+        return " px"
+    if (
+        operation is ImageOperation.CUSTOM_CONVOLUTION
+        and parameter_key in {"kernel_width", "kernel_height"}
+    ):
+        return " px"
+    return ""
+
+
 def _bind_descriptor_parameter_schemas(
     catalog: tuple[WorkbenchOperationDefinition, ...],
 ) -> tuple[WorkbenchOperationDefinition, ...]:
@@ -2677,6 +2898,13 @@ def _bind_descriptor_parameter_schemas(
                     minimum=schema.minimum,
                     maximum=schema.maximum,
                     choices=choices,
+                    suffix=(
+                        presentation.suffix
+                        or _default_parameter_suffix(
+                            definition.operation,
+                            presentation.key,
+                        )
+                    ),
                 )
             )
         bound.append(
@@ -2691,6 +2919,486 @@ _OPERATION_CATALOG = _bind_descriptor_parameter_schemas(
 _DEFINITION_BY_ID = {
     definition.operation.value: definition for definition in _OPERATION_CATALOG
 }
+
+_EXPLICIT_BINARY_RECOMMENDED_OPERATIONS = {
+    ImageOperation.FILL_HOLES.value,
+    ImageOperation.CONTOUR_EXTRACT.value,
+    ImageOperation.REMOVE_SMALL_OBJECTS.value,
+    ImageOperation.FILL_SMALL_HOLES.value,
+    ImageOperation.DISTANCE_TRANSFORM.value,
+    ImageOperation.SKELETONIZE.value,
+    ImageOperation.WATERSHED.value,
+    ImageOperation.WATERSHED_V2.value,
+    ImageOperation.CLEAR_BORDER.value,
+}
+_VERSIONED_REPLAY_OPERATIONS = (
+    _EXPLICIT_BINARY_RECOMMENDED_OPERATIONS
+    | {
+        ImageOperation.BRIGHTNESS_CONTRAST.value,
+        ImageOperation.HISTOGRAM_EQUALIZATION.value,
+        ImageOperation.IMAGE_CALCULATOR.value,
+        ImageOperation.FLAT_FIELD_CORRECTION.value,
+        ImageOperation.ROTATE.value,
+        ImageOperation.TRANSLATE.value,
+        ImageOperation.RESIZE.value,
+    }
+) - {ImageOperation.WATERSHED.value}
+
+
+def _operation_step_is_replay_only(step: ImageOperationSpec) -> bool:
+    definition = _DEFINITION_BY_ID[step.operation_id]
+    if step.implementation != "fdm":
+        return True
+    if not definition.available_for_new_recipe:
+        return True
+    if step.operation_id not in _VERSIONED_REPLAY_OPERATIONS:
+        return False
+    descriptor = get_image_operation_descriptor(step.operation_id)
+    return step.implementation_version != descriptor.version
+
+_HISTOGRAM_EDITOR_PARAMETERS: dict[str, tuple[str, ...]] = {
+    ImageOperation.ADJUST_LEVELS.value: ("black_point", "white_point"),
+    ImageOperation.THRESHOLD.value: ("lower", "upper"),
+    ImageOperation.BINARIZE.value: ("threshold",),
+    ImageOperation.CANNY_EDGES.value: (
+        "threshold_low",
+        "threshold_high",
+    ),
+}
+
+_PERCENTILE_RANGE_PARAMETERS: dict[str, tuple[str, ...]] = {
+    ImageOperation.PERCENTILE_SATURATION.value: (
+        "lower_percentile",
+        "upper_percentile",
+    ),
+}
+
+_CROP_BOUNDS_PARAMETERS: dict[str, tuple[str, ...]] = {
+    ImageOperation.CROP.value: ("x", "y", "width", "height"),
+}
+
+_LINKED_DIMENSION_OPERATIONS = {
+    ImageOperation.RESIZE,
+    ImageOperation.RESIZE_CANVAS,
+}
+
+_STRUCTURING_ELEMENT_OPERATIONS = {
+    ImageOperation.ERODE,
+    ImageOperation.DILATE,
+    ImageOperation.MORPHOLOGY_OPEN,
+    ImageOperation.MORPHOLOGY_CLOSE,
+    ImageOperation.TOP_HAT,
+    ImageOperation.BLACK_HAT,
+}
+
+_FREQUENCY_RESPONSE_PARAMETERS: dict[str, tuple[str, ...]] = {
+    ImageOperation.FFT_FILTER.value: (
+        "mode",
+        "low_cutoff",
+        "high_cutoff",
+        "order",
+    ),
+}
+
+_STRIPE_FREQUENCY_PARAMETERS: dict[str, tuple[str, ...]] = {
+    ImageOperation.STRIPE_SUPPRESSION.value: (
+        "direction",
+        "notch_width",
+        "protect_radius",
+    ),
+}
+
+_CONDITIONAL_PARAMETER_FIELDS: dict[str, tuple[str, ...]] = {
+    ImageOperation.CONVERT_TYPE.value: (
+        "target_type",
+        "scale_mode",
+        "nonfinite_policy",
+    ),
+    ImageOperation.CONVERT_COLOR.value: (
+        "target_model",
+        "grayscale_method",
+        "drop_alpha",
+    ),
+    ImageOperation.ROTATE.value: ("border_mode", "border_value"),
+    ImageOperation.TRANSLATE.value: ("border_mode", "border_value"),
+    ImageOperation.ADAPTIVE_THRESHOLD.value: (
+        "method",
+        "k",
+        "r",
+        "p",
+        "q",
+    ),
+    ImageOperation.LOG_V2.value: (
+        "result_mode",
+        "output_min",
+        "output_max",
+    ),
+    ImageOperation.EXP_V2.value: (
+        "result_mode",
+        "output_min",
+        "output_max",
+    ),
+    ImageOperation.SQRT_V2.value: (
+        "result_mode",
+        "output_min",
+        "output_max",
+    ),
+    ImageOperation.FFT_FILTER.value: (
+        "mode",
+        "low_cutoff",
+        "high_cutoff",
+        "boundary",
+        "tukey_alpha",
+        "frequency_unit",
+        "pixel_size",
+    ),
+    ImageOperation.FLAT_FIELD_CORRECTION.value: (
+        "flat_field_source",
+        "secondary_document_id",
+        "radius",
+        "method",
+    ),
+}
+
+_COMMON_PARAMETER_HELP: dict[str, str] = {
+    "channel": "彩色图必须明确选择参与计算的标量通道；灰度图忽略此项。",
+    "border_mode": "定义邻域越过图片边缘时的取样方式，并写入处理配方。",
+    "border_value": "仅在常量边界模式下使用，数值单位与当前像素强度一致。",
+    "interpolation": "定义重采样算法；自动模式会在执行前解析为确定算法。",
+    "radius": "以当前步骤输入的原始像素为单位；实际邻域直径通常为 2×半径+1。",
+    "iterations": "重复执行相同操作的次数；多次小核不等同于任意形状的大核。",
+    "kernel": "选择结构元素形状；形状会影响边缘、细线和角点的处理结果。",
+    "gamma": "无量纲 Gamma；1 保持线性，小于 1 与大于 1 会产生相反的非线性映射。",
+    "foreground_is_high": "明确二值前景位于高值端还是低值端，不依赖主题或 LUT 推断。",
+    "output_float": "开启后保留浮点计算结果；关闭时按输入类型的明确规则恢复。",
+    "tukey_alpha": "Tukey 窗过渡比例，仅在选择 Tukey 边界策略时参与计算。",
+    "pixel_size": "每个像素对应的物理长度；用于把物理频率换算为周期/像素。",
+    "nonfinite_policy": "从浮点转为整数前，明确指定 NaN/Inf 的替代规则。",
+    "secondary_document_id": "选择参与双图计算的第二幅图像；尺寸、类型和通道必须兼容。",
+}
+
+_OPERATION_PARAMETER_HELP: dict[tuple[str, str], str] = {
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "method",
+    ): "Mean、Gaussian、Sauvola 和 Phansalkar 使用不同的局部阈值公式。",
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "offset",
+    ): "从局部阈值中减去的原始强度值；不是百分比。",
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "k",
+    ): "Sauvola/Phansalkar 的无量纲对比度系数。",
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "r",
+    ): "Sauvola/Phansalkar 的动态范围尺度 R，单位与当前原始像素强度一致。",
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "p",
+    ): "Phansalkar 低亮度修正系数 p，仅该方法使用。",
+    (
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        "q",
+    ): "Phansalkar 指数衰减系数 q，仅该方法使用。",
+    (
+        ImageOperation.FFT_FILTER.value,
+        "low_cutoff",
+    ): "高通、带通和带阻的低截止频率；响应曲线仅作参数说明。",
+    (
+        ImageOperation.FFT_FILTER.value,
+        "high_cutoff",
+    ): "低通、带通和带阻的高截止频率，不得超过 Nyquist 频率。",
+    (
+        ImageOperation.FFT_FILTER.value,
+        "order",
+    ): "Butterworth 阶数；阶数越高，截止附近过渡越陡。",
+    (
+        ImageOperation.PERCENTILE_SATURATION.value,
+        "lower_percentile",
+    ): "低端累计百分位；实际解析出的强度值会由当前输入计算。",
+    (
+        ImageOperation.PERCENTILE_SATURATION.value,
+        "upper_percentile",
+    ): "高端累计百分位，必须大于低端百分位。",
+}
+
+
+def _parameter_help_text(
+    definition: WorkbenchOperationDefinition,
+    parameter: ParameterField,
+) -> str:
+    """Return useful Chinese guidance for every visible parameter."""
+
+    if parameter.help_text:
+        return parameter.help_text
+    specific = _OPERATION_PARAMETER_HELP.get(
+        (definition.operation.value, parameter.key)
+    )
+    if specific:
+        return specific
+    common = _COMMON_PARAMETER_HELP.get(parameter.key)
+    if common:
+        return common
+    if parameter.kind == "bool":
+        return f"切换“{parameter.label}”；最终状态会明确写入可追溯配方。"
+    if parameter.kind == "choice":
+        options = "、".join(
+            label for label, _value in parameter.choices
+        )
+        return (
+            f"选择{parameter.label}"
+            + (f"：{options}。" if options else "。")
+            + "所选枚举值会写入配方。"
+        )
+    if parameter.kind in {"int", "float"}:
+        range_text = ""
+        if (
+            parameter.minimum is not None
+            and parameter.maximum is not None
+        ):
+            range_text = (
+                f"允许范围 {parameter.minimum:g}–"
+                f"{parameter.maximum:g}{parameter.suffix}；"
+            )
+        return (
+            f"{range_text}{parameter.label}使用精确数值保存，"
+            "普通鼠标滚轮不会修改。"
+        )
+    return f"{parameter.label}会以显式值写入可追溯处理配方。"
+
+
+def _operation_parameter_context_message(
+    definition: WorkbenchOperationDefinition,
+    input_state: RasterTypeState,
+) -> str:
+    """Return operation-level scientific context that should remain visible."""
+
+    operation = definition.operation
+    if operation is ImageOperation.ADAPTIVE_THRESHOLD:
+        return (
+            f"局部阈值按当前 {input_state.pixel_type.value} 原始强度计算；"
+            "窗口尺寸为 2×半径+1。R=128 只天然对应常见 8 位尺度，"
+            "16 位或 float32 输入应显式核对 R，本版本不会静默归一化。"
+        )
+    if operation in _STRUCTURING_ELEMENT_OPERATIONS:
+        if input_state.semantic is RasterSemantic.BINARY_MASK:
+            return (
+                "当前输入语义为二值掩膜：结构元素作用于显式前景；"
+                "半径和迭代次数分别参与计算。"
+            )
+        return (
+            "当前输入语义为连续灰度/颜色：腐蚀、膨胀及顶帽按局部"
+            "最小/最大强度运算，不等同于二值形态学。"
+        )
+    if operation is ImageOperation.FFT_FILTER:
+        return (
+            "频率上限 0.5 周期/像素即 Nyquist；响应图只解释参数，"
+            "不会自动拉伸输出强度。边界策略、通道和输出类型仍显式保存。"
+        )
+    if operation is ImageOperation.CUSTOM_CONVOLUTION:
+        return (
+            "卷积核按二维矩阵逐元素计算；启用归一化时使用核元素和，"
+            "零和核会明确阻止归一化。宽和高必须为正奇数，"
+            "边界策略保持显式。"
+        )
+    return ""
+
+
+def _parameter_is_relevant(
+    operation_id: str,
+    parameter_key: str,
+    parameters: Mapping[str, object],
+    *,
+    input_state: RasterTypeState,
+    roi_available: bool,
+) -> bool:
+    """Return whether a parameter participates in the current algorithm branch.
+
+    Hidden values remain in the immutable recipe so switching a method back
+    restores the user's previous value.  Visibility therefore changes only the
+    editor, never persisted or execution semantics.
+    """
+
+    if parameter_key == "channel" and input_state.pixel_type.is_grayscale:
+        return False
+    if parameter_key == "per_channel" and input_state.pixel_type.is_grayscale:
+        return False
+    if parameter_key == "roi_mode":
+        return roi_available
+    if operation_id in {
+        ImageOperation.COPY.value,
+        ImageOperation.CROP.value,
+    } and parameter_key in {
+        "outside_value",
+        "fill_value",
+        "transparent_outside",
+    }:
+        return roi_available and parameters.get("roi_mode", "bounds") == "mask"
+    if (
+        operation_id == ImageOperation.CONVERT_TYPE.value
+        and parameter_key == "nonfinite_policy"
+    ):
+        return (
+            input_state.pixel_type is RasterPixelType.GRAY32_FLOAT
+            and parameters.get("target_type", "uint8") != "float32"
+        )
+    if operation_id == ImageOperation.CONVERT_COLOR.value:
+        if parameter_key == "grayscale_method":
+            return (
+                not input_state.pixel_type.is_grayscale
+                and parameters.get("target_model", "grayscale") == "grayscale"
+            )
+        if parameter_key == "drop_alpha":
+            return input_state.pixel_type is RasterPixelType.RGBA8
+    if (
+        operation_id
+        in {
+            ImageOperation.THRESHOLD.value,
+            ImageOperation.BINARIZE.value,
+        }
+        and parameter_key == "invert"
+    ):
+        return False
+    if (
+        operation_id
+        in {
+            ImageOperation.ROTATE.value,
+            ImageOperation.TRANSLATE.value,
+        }
+        and parameter_key == "border_value"
+    ):
+        return parameters.get("border_mode", "constant") == "constant"
+    if operation_id == ImageOperation.ADAPTIVE_THRESHOLD.value:
+        method = str(parameters.get("method", "gaussian"))
+        if parameter_key in {"k", "r"}:
+            return method in {"sauvola", "phansalkar"}
+        if parameter_key in {"p", "q"}:
+            return method == "phansalkar"
+    if (
+        operation_id
+        in {
+            ImageOperation.LOG_V2.value,
+            ImageOperation.EXP_V2.value,
+            ImageOperation.SQRT_V2.value,
+        }
+        and parameter_key in {"output_min", "output_max"}
+    ):
+        return parameters.get("result_mode", "float32") == "remap"
+    if operation_id == ImageOperation.FFT_FILTER.value:
+        mode = str(parameters.get("mode", "lowpass"))
+        if parameter_key == "low_cutoff":
+            return mode in {"highpass", "bandpass", "bandstop"}
+        if parameter_key == "high_cutoff":
+            return mode in {"lowpass", "bandpass", "bandstop"}
+        if parameter_key == "tukey_alpha":
+            return parameters.get("boundary", "periodic") == "tukey"
+        if parameter_key == "pixel_size":
+            return (
+                parameters.get("frequency_unit", "cycles_per_pixel")
+                == "cycles_per_unit"
+            )
+    if operation_id == ImageOperation.FLAT_FIELD_CORRECTION.value:
+        reference = parameters.get("flat_field_source", "estimated") == "reference"
+        if parameter_key == "secondary_document_id":
+            return reference
+        if parameter_key in {"radius", "method"}:
+            return not reference
+    return True
+
+
+def _parameter_relationship_error(
+    operation_id: str,
+    parameters: Mapping[str, object],
+    *,
+    input_state: RasterTypeState,
+) -> str:
+    """Validate relationships that cannot be expressed by scalar ranges."""
+
+    def number(key: str) -> float:
+        value = float(parameters[key])
+        if not math.isfinite(value):
+            raise ValueError(f"{key} 必须是有限数")
+        return value
+
+    try:
+        if operation_id == ImageOperation.ADJUST_LEVELS.value:
+            if number("black_point") >= number("white_point"):
+                return "黑场必须小于白场。"
+        elif operation_id == ImageOperation.THRESHOLD.value:
+            if number("lower") > number("upper"):
+                return "阈值下限不能大于上限。"
+        elif operation_id == ImageOperation.CANNY_EDGES.value:
+            if number("threshold_low") >= number("threshold_high"):
+                return "Canny 低阈值必须小于高阈值。"
+        elif operation_id in {
+            ImageOperation.NORMALIZE.value,
+            ImageOperation.CLAMP.value,
+        }:
+            low_key, high_key = (
+                ("output_min", "output_max")
+                if operation_id == ImageOperation.NORMALIZE.value
+                else ("minimum", "maximum")
+            )
+            if number(low_key) > number(high_key):
+                return "范围下限不能大于上限。"
+        elif operation_id == ImageOperation.PERCENTILE_SATURATION.value:
+            if number("lower_percentile") >= number("upper_percentile"):
+                return "下百分位必须小于上百分位。"
+        elif operation_id in {
+            ImageOperation.LOG_V2.value,
+            ImageOperation.EXP_V2.value,
+            ImageOperation.SQRT_V2.value,
+        }:
+            if (
+                parameters.get("result_mode") == "remap"
+                and number("output_min") > number("output_max")
+            ):
+                return "重映射输出下限不能大于上限。"
+        elif operation_id == ImageOperation.FFT_FILTER.value:
+            mode = str(parameters.get("mode", "lowpass"))
+            low = number("low_cutoff")
+            high = number("high_cutoff")
+            if mode in {"bandpass", "bandstop"} and high <= low:
+                return "带通/带阻的高截止频率必须大于低截止频率。"
+            if mode == "lowpass" and high <= 0:
+                return "低通滤波的高截止频率必须大于零。"
+            if mode == "highpass" and low <= 0:
+                return "高通滤波的低截止频率必须大于零。"
+        elif operation_id == ImageOperation.CUSTOM_CONVOLUTION.value:
+            width = int(parameters["kernel_width"])
+            height = int(parameters["kernel_height"])
+            if width % 2 == 0 or height % 2 == 0:
+                return "卷积核宽度和高度必须为正奇数。"
+            expected = width * height
+            values = tuple(parameters["kernel"])  # type: ignore[arg-type]
+            if len(values) != expected:
+                return f"卷积核需要 {expected} 个数值，当前为 {len(values)} 个。"
+            if bool(parameters.get("normalize_kernel", False)):
+                total = math.fsum(float(value) for value in values)
+                if math.isclose(total, 0.0, abs_tol=1e-15):
+                    return "卷积核系数和为零，不能启用归一化。"
+        elif operation_id == ImageOperation.CROP.value:
+            x = int(parameters["x"])
+            y = int(parameters["y"])
+            width = int(parameters["width"])
+            height = int(parameters["height"])
+            if (
+                input_state.width is not None
+                and input_state.height is not None
+                and (
+                    x + width > input_state.width
+                    or y + height > input_state.height
+                )
+            ):
+                return (
+                    "裁剪范围超出当前步骤输入尺寸 "
+                    f"{input_state.width}×{input_state.height}。"
+                )
+    except (KeyError, TypeError, ValueError) as exc:
+        return str(exc)
+    return ""
 
 
 def image_operation_display_name(operation_id: ImageOperation | str) -> str:
@@ -2794,11 +3502,13 @@ class ImageProcessingWorkbench(QDialog):
         *,
         source_document_id: str,
         source_name: str = "",
+        source_semantic: RasterSemantic | None = None,
         roi_summary: str = "整张图片",
         roi_mask: NDArray[np.bool_] | None = None,
         preview_rect: tuple[float, float, float, float] | None = None,
         secondary_images: Mapping[str, RasterPlane] | None = None,
         secondary_image_names: Mapping[str, str] | None = None,
+        secondary_image_semantics: Mapping[str, RasterSemantic] | None = None,
         executor: ImageTaskExecutor | None = None,
         resource_check_directory: Path | str | None = None,
         parent: QWidget | None = None,
@@ -2810,11 +3520,33 @@ class ImageProcessingWorkbench(QDialog):
         self.resize(1080, 720)
 
         self._source = source
+        self._source_semantic = RasterTypeState(
+            pixel_type=source.pixel_type,
+            semantic=source_semantic,
+        ).semantic
         self._source_document_id = str(source_document_id)
         self._source_name = source_name.strip() or "未命名图片"
         self._roi_summary = roi_summary.strip() or "整张图片"
         self._roi_mask = roi_mask
         self._secondary_images = dict(secondary_images or {})
+        provided_secondary_semantics = dict(
+            secondary_image_semantics or {}
+        )
+        unknown_secondary_semantics = (
+            set(provided_secondary_semantics) - set(self._secondary_images)
+        )
+        if unknown_secondary_semantics:
+            raise ValueError(
+                "第二幅图像语义引用了不存在的文档 ID："
+                + "、".join(sorted(unknown_secondary_semantics))
+            )
+        self._secondary_image_semantics = {
+            document_id: RasterTypeState(
+                pixel_type=plane.pixel_type,
+                semantic=provided_secondary_semantics.get(document_id),
+            ).semantic
+            for document_id, plane in self._secondary_images.items()
+        }
         self._secondary_sha256_cache: dict[str, str] = {}
         self._flat_field_level_cache: dict[
             tuple[str, bool],
@@ -2830,6 +3562,7 @@ class ImageProcessingWorkbench(QDialog):
         self._latest_preview_image = raster_plane_to_display_image(
             self._preview_snapshot.source
         )
+        self._latest_preview_raster = self._preview_snapshot.source
         self._processed_overview_image = self._overview_image.copy()
         self._overview_note_text = ""
         self._secondary_image_names = {
@@ -2849,6 +3582,24 @@ class ImageProcessingWorkbench(QDialog):
         self._undo_stack: list[tuple[ImageOperationSpec, ...]] = []
         self._redo_stack: list[tuple[ImageOperationSpec, ...]] = []
         self._parameter_widgets: dict[str, QWidget] = {}
+        self._parameter_row_widgets: dict[str, QWidget] = {}
+        self._structured_parameter_editors: dict[str, QWidget] = {}
+        self._structured_parameter_error_message = ""
+        self._histogram_parameter_editor: HistogramRangeEditor | None = None
+        self._histogram_parameter_keys: tuple[str, ...] = ()
+        self._percentile_parameter_editor: (
+            PercentileRangeEditor | None
+        ) = None
+        self._parameter_input_raster = self._preview_snapshot.source
+        self._parameter_input_roi_mask = (
+            self._preview_snapshot.roi_mask
+            if roi_mask is not None
+            else None
+        )
+        self._parameter_input_step_index: int | None = 0
+        self._parameter_validation_label: QLabel | None = None
+        self._parameter_error_message = ""
+        self._pending_parameter_result_metadata: dict[str, object] = {}
         self._updating_parameter_form = False
         self._final_in_progress = False
 
@@ -2886,18 +3637,24 @@ class ImageProcessingWorkbench(QDialog):
         self,
         operation_id: ImageOperation | str,
     ) -> ImageOperationSpec:
-        """Build a source-aware default, including frozen ROI crop bounds."""
+        """Build a prefix-aware default, including frozen ROI crop bounds.
+
+        A step consumes the output of the preceding recipe, not the original
+        source raster.  In particular, dimensions and integer sample ranges
+        may already have changed after crop, resize or type conversion.
+        """
 
         operation_value = (
             operation_id.value
             if isinstance(operation_id, ImageOperation)
             else str(operation_id)
         )
+        input_state = self._resolve_prefix_output_state(self._steps)
         step = default_operation_spec(
             operation_value,
-            self._source.width,
-            self._source.height,
-            source_pixel_type=self._source.pixel_type,
+            int(input_state.width or self._source.width),
+            int(input_state.height or self._source.height),
+            source_pixel_type=input_state.pixel_type,
             secondary_document_id=next(iter(self._secondary_images), None),
         )
         if operation_value == ImageOperation.CROP.value and self._roi_mask is not None:
@@ -2923,6 +3680,36 @@ class ImageProcessingWorkbench(QDialog):
                 )
         return step
 
+    def _source_type_state(self) -> RasterTypeState:
+        return RasterTypeState(
+            pixel_type=self._source.pixel_type,
+            semantic=self._source_semantic,
+            width=self._source.width,
+            height=self._source.height,
+        )
+
+    def _resolve_prefix_output_state(
+        self,
+        operations: tuple[ImageOperationSpec, ...],
+    ) -> RasterTypeState:
+        """Resolve a pixel-free prefix without executing or copying pixels."""
+
+        if not operations:
+            return self._source_type_state()
+        return validate_workbench_operation_sequence(
+            self._source,
+            operations,
+            source_semantic=self._source_semantic,
+            roi_requested=self._roi_is_active(),
+            secondary_images=self._secondary_images,
+            secondary_semantics=self._secondary_image_semantics,
+        ).output_state
+
+    def _input_state_for_step(self, row: int) -> RasterTypeState:
+        if row <= 0:
+            return self._source_type_state()
+        return self._resolve_prefix_output_state(self._steps[:row])
+
     def apply_loaded_recipe(self, recipe: ImageProcessingRecipe) -> None:
         """Apply a host-selected preset without giving the workbench file access."""
 
@@ -2940,6 +3727,7 @@ class ImageProcessingWorkbench(QDialog):
         for operation in operations:
             if operation.operation_id not in _DEFINITION_BY_ID:
                 raise ValueError(f"工作台不支持操作: {operation.operation_id}")
+            descriptor = get_image_operation_descriptor(operation.operation_id)
             if (
                 operation.operation_id
                 == ImageOperation.FFT_POWER_SPECTRUM.value
@@ -2949,15 +3737,34 @@ class ImageProcessingWorkbench(QDialog):
                 )
             ):
                 raise ValueError("旧版 FFT 功率谱只允许按 fdm v1 配方重放")
+            if operation.implementation != "fdm":
+                raise ValueError(
+                    "不支持的图像处理实现："
+                    f"{operation.implementation}；当前工作台只允许 fdm 实现"
+                )
+            supported_versions = {"1", descriptor.version}
+            if operation.implementation_version not in supported_versions:
+                raise ValueError(
+                    "不支持的算法版本："
+                    f"{operation.operation_id} "
+                    f"v{operation.implementation_version}；当前版本仅支持 "
+                    + "、".join(
+                        f"v{version}"
+                        for version in sorted(supported_versions, key=int)
+                    )
+                )
             secondary_document_id = (
                 str(operation.parameters.get("secondary_document_id", ""))
                 or next(iter(self._secondary_images), "")
             )
+            input_state = self._resolve_prefix_output_state(
+                tuple(normalized_operations)
+            )
             defaults = default_operation_spec(
                 operation.operation_id,
-                self._source.width,
-                self._source.height,
-                source_pixel_type=self._source.pixel_type,
+                int(input_state.width or self._source.width),
+                int(input_state.height or self._source.height),
+                source_pixel_type=input_state.pixel_type,
                 secondary_document_id=(
                     secondary_document_id
                     if operation.operation_id
@@ -2969,12 +3776,53 @@ class ImageProcessingWorkbench(QDialog):
                 ),
             )
             parameters = defaults.parameters
-            parameters.update(operation.parameters)
+            persisted_parameters = operation.parameters
+            # A loaded recipe must keep the service semantics that were in
+            # effect when it was saved.  Newly exposed UI fields may have safer
+            # defaults, but injecting those defaults over a legacy alias would
+            # silently change a replay result.
+            if (
+                operation.operation_id
+                == ImageOperation.GAUSSIAN_BLUR.value
+                and "sigma" in persisted_parameters
+            ):
+                persisted_sigma = persisted_parameters["sigma"]
+                persisted_parameters.setdefault("sigma_x", persisted_sigma)
+                persisted_parameters.setdefault("sigma_y", persisted_sigma)
+            if operation.operation_id == ImageOperation.COPY.value:
+                if (
+                    "fill_value" in persisted_parameters
+                    and "outside_value" not in persisted_parameters
+                ):
+                    persisted_parameters["outside_value"] = (
+                        persisted_parameters["fill_value"]
+                    )
+            elif operation.operation_id == ImageOperation.CROP.value:
+                if (
+                    "outside_value" in persisted_parameters
+                    and "fill_value" not in persisted_parameters
+                ):
+                    persisted_parameters["fill_value"] = (
+                        persisted_parameters["outside_value"]
+                    )
+            elif operation.operation_id == ImageOperation.FFT_FILTER.value:
+                # fdm v1 used periodic boundaries when the field was absent.
+                persisted_parameters.setdefault("boundary", "periodic")
+            elif operation.operation_id == ImageOperation.CONVERT_TYPE.value:
+                # The service's historical omission default was value
+                # preservation.  Keep it even though future UI defaults may
+                # become source-aware.
+                persisted_parameters.setdefault(
+                    "scale_mode",
+                    "preserve_values",
+                )
+            parameters.update(persisted_parameters)
             normalized_operation = ImageOperationSpec(
                 operation.operation_id,
                 parameters,
                 implementation=operation.implementation,
                 implementation_version=operation.implementation_version,
+                result_metadata=operation.result_metadata,
             )
             flat_field_source = str(
                 normalized_operation.parameters.get(
@@ -3098,7 +3946,7 @@ class ImageProcessingWorkbench(QDialog):
                     f"{estimate.peak_working_set_bytes / float(1 << 20):.1f} MiB，"
                     "超过 256 MiB 预览上限；请缩小画布视场后重新打开工作台。"
                 )
-        except ValueError as exc:
+        except (TypeError, ValueError) as exc:
             self._controller.cancel_preview()
             self._status_label.setText(f"自动预览已暂停：{exc}")
             return
@@ -3108,12 +3956,28 @@ class ImageProcessingWorkbench(QDialog):
                 source_document_id=self._source_document_id,
                 source=preview_snapshot.source,
                 operations=preview_operations,
+                source_semantic=self._source_semantic,
                 roi_mask=(
                     preview_snapshot.roi_mask
                     if self._roi_is_active()
                     else None
                 ),
                 secondary_images=dict(preview_snapshot.secondary_images),
+                secondary_semantics={
+                    document_id: self._secondary_image_semantics[
+                        document_id
+                    ]
+                    for document_id, _plane in (
+                        preview_snapshot.secondary_images
+                    )
+                },
+                capture_step_input_index=max(
+                    0,
+                    min(
+                        self._steps_list.currentRow(),
+                        len(preview_operations) - 1,
+                    ),
+                ),
             )
             self._preview_crop_by_request_id.clear()
             if preview_crop is not None:
@@ -3343,10 +4207,23 @@ class ImageProcessingWorkbench(QDialog):
         layout = QVBoxLayout(panel)
         self._parameter_scroll = QScrollArea(panel)
         self._parameter_scroll.setWidgetResizable(True)
+        self._parameter_scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
         self._parameter_content = QWidget(self._parameter_scroll)
+        self._parameter_content.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self._parameter_form = QFormLayout(self._parameter_content)
         self._parameter_form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        self._parameter_form.setRowWrapPolicy(
+            QFormLayout.RowWrapPolicy.WrapLongRows
+        )
+        self._parameter_form.setFormAlignment(
+            Qt.AlignmentFlag.AlignTop
         )
         self._parameter_scroll.setWidget(self._parameter_content)
         layout.addWidget(self._parameter_scroll)
@@ -3390,11 +4267,13 @@ class ImageProcessingWorkbench(QDialog):
         self._commit_steps(self._steps + (step,), selected_index=len(self._steps))
 
     def _resolved_default(self, parameter: ParameterField) -> object:
+        row = self._steps_list.currentRow()
+        input_state = self._input_state_for_step(row)
         return _resolved_parameter_default(
             parameter,
-            source_width=self._source.width,
-            source_height=self._source.height,
-            source_pixel_type=self._source.pixel_type,
+            source_width=int(input_state.width or self._source.width),
+            source_height=int(input_state.height or self._source.height),
+            source_pixel_type=input_state.pixel_type,
             secondary_document_id=next(iter(self._secondary_images), None),
         )
 
@@ -3474,11 +4353,24 @@ class ImageProcessingWorkbench(QDialog):
     def _on_step_selected(self, row: int) -> None:
         self._rebuild_parameter_form(row)
         self._update_actions()
+        if (
+            0 <= row < len(self._steps)
+            and row != self._parameter_input_step_index
+        ):
+            self._schedule_preview()
 
     def _clear_parameter_form(self) -> None:
         while self._parameter_form.rowCount():
             self._parameter_form.removeRow(0)
         self._parameter_widgets.clear()
+        self._parameter_row_widgets.clear()
+        self._structured_parameter_editors.clear()
+        self._structured_parameter_error_message = ""
+        self._histogram_parameter_editor = None
+        self._histogram_parameter_keys = ()
+        self._percentile_parameter_editor = None
+        self._parameter_validation_label = None
+        self._parameter_error_message = ""
 
     def _rebuild_parameter_form(self, row: int) -> None:
         self._updating_parameter_form = True
@@ -3489,6 +4381,7 @@ class ImageProcessingWorkbench(QDialog):
             return
         step = self._steps[row]
         definition = _DEFINITION_BY_ID[step.operation_id]
+        replay_only = _operation_step_is_replay_only(step)
         capability = resolve_image_operation_capability(
             definition.operation,
             step.parameters,
@@ -3528,7 +4421,7 @@ class ImageProcessingWorkbench(QDialog):
                             "兼容：该步骤仅用于完整重放旧版 fdm v1 配方；"
                             "参数和步骤顺序已锁定。",
                         )
-                        if not definition.available_for_new_recipe
+                        if replay_only
                         else ()
                     ),
                 )
@@ -3541,20 +4434,1640 @@ class ImageProcessingWorkbench(QDialog):
             Qt.TextInteractionFlag.TextSelectableByMouse
         )
         self._parameter_form.addRow(help_label)
+        input_state = self._input_state_for_step(row)
+        if (
+            definition.operation
+            in {
+                ImageOperation.BRIGHTNESS_CONTRAST,
+                ImageOperation.HISTOGRAM_EQUALIZATION,
+            }
+            and input_state.pixel_type
+            is RasterPixelType.GRAY32_FLOAT
+        ):
+            float_range_text = (
+                "兼容回放提醒：这是旧版 v1 步骤，将继续按历史"
+                "0–1 工作范围只读重放。若要修改，请先用“色阶”"
+                "或“归一化”显式限定范围并转换为 8 位或 16 位。"
+                if replay_only
+                else (
+                    "数据范围阻断：32 位浮点图像没有可安全推断的"
+                    "0–1 工作范围。请先用“色阶”或“归一化”显式"
+                    "限定输入/输出范围，并转换为 8 位或 16 位。"
+                )
+            )
+            float_range_warning = QLabel(
+                float_range_text,
+                self._parameter_content,
+            )
+            float_range_warning.setObjectName(
+                "imageParameterScientificWarning"
+            )
+            float_range_warning.setWordWrap(True)
+            float_range_warning.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._parameter_form.addRow(float_range_warning)
+        if (
+            definition.operation.value
+            in _EXPLICIT_BINARY_RECOMMENDED_OPERATIONS
+            and input_state.semantic is not RasterSemantic.BINARY_MASK
+        ):
+            if (
+                step.implementation_version
+                == get_image_operation_descriptor(
+                    step.operation_id
+                ).version
+            ):
+                semantic_text = (
+                    "数据语义阻断：当前步骤输入不是显式二值掩膜。"
+                    "请先添加“二值化”“自动阈值”或"
+                    "“局部自适应阈值”；本步骤不会再用中间灰度"
+                    "自动猜测前景。"
+                )
+            else:
+                semantic_text = (
+                    "兼容回放提醒：这是旧版 v1 步骤，输入不是显式"
+                    "二值掩膜，将按旧版中间灰度规则只读重放。"
+                    "若要修改，请用显式阈值和当前版本操作重建配方。"
+                )
+            semantic_warning = QLabel(
+                semantic_text,
+                self._parameter_content,
+            )
+            semantic_warning.setObjectName(
+                "imageParameterSemanticWarning"
+            )
+            semantic_warning.setWordWrap(True)
+            semantic_warning.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._parameter_form.addRow(semantic_warning)
+        context_message = _operation_parameter_context_message(
+            definition,
+            input_state,
+        )
+        if context_message:
+            context_label = QLabel(
+                context_message,
+                self._parameter_content,
+            )
+            context_label.setObjectName(
+                "imageParameterScientificContext"
+            )
+            context_label.setWordWrap(True)
+            context_label.setTextInteractionFlags(
+                Qt.TextInteractionFlag.TextSelectableByMouse
+            )
+            self._parameter_form.addRow(context_label)
         if not definition.parameters:
             self._parameter_form.addRow(QLabel("此操作没有可调参数。", self._parameter_content))
         values = step.parameters
+        structured_keys: set[str] = set()
+        histogram_keys = _HISTOGRAM_EDITOR_PARAMETERS.get(
+            definition.operation.value,
+            (),
+        )
+        if histogram_keys:
+            self._add_histogram_range_editor(
+                definition,
+                values,
+                histogram_keys,
+            )
+            structured_keys.update(histogram_keys)
+        percentile_keys = _PERCENTILE_RANGE_PARAMETERS.get(
+            definition.operation.value,
+            (),
+        )
+        if percentile_keys:
+            self._add_percentile_range_editor(
+                definition,
+                values,
+                percentile_keys,
+            )
+            structured_keys.update(percentile_keys)
+        crop_keys = _CROP_BOUNDS_PARAMETERS.get(
+            definition.operation.value,
+            (),
+        )
+        if crop_keys:
+            self._add_crop_bounds_editor(
+                definition,
+                values,
+                crop_keys,
+            )
+            structured_keys.update(crop_keys)
+        if definition.operation in _LINKED_DIMENSION_OPERATIONS:
+            self._add_linked_dimensions_editor(definition, values)
+            structured_keys.update({"width", "height"})
+        if definition.operation in _STRUCTURING_ELEMENT_OPERATIONS:
+            self._add_structuring_element_editor(definition, values)
+            structured_keys.update({"radius", "iterations", "kernel"})
+        frequency_keys = _FREQUENCY_RESPONSE_PARAMETERS.get(
+            definition.operation.value,
+            (),
+        )
+        if frequency_keys:
+            self._add_frequency_response_editor(
+                definition,
+                values,
+                frequency_keys,
+            )
+            structured_keys.update(frequency_keys)
+        stripe_frequency_keys = _STRIPE_FREQUENCY_PARAMETERS.get(
+            definition.operation.value,
+            (),
+        )
+        if stripe_frequency_keys:
+            self._add_stripe_frequency_editor(
+                definition,
+                values,
+                stripe_frequency_keys,
+            )
+            structured_keys.update(stripe_frequency_keys)
+        if definition.operation is ImageOperation.CUSTOM_CONVOLUTION:
+            self._add_kernel_matrix_editor(definition, values)
+            structured_keys.update(
+                {"kernel_width", "kernel_height", "kernel"}
+            )
         for parameter in definition.parameters:
+            if parameter.key in structured_keys:
+                continue
             value = values.get(parameter.key, self._resolved_default(parameter))
+            if (
+                definition.operation is ImageOperation.RESIZE_CANVAS
+                and parameter.key == "anchor"
+            ):
+                widget = self._add_anchor_grid_editor(
+                    parameter,
+                    value,
+                    enabled=definition.available_for_new_recipe,
+                )
+                continue
+            if parameter.kind == "secondary_image":
+                self._add_compatible_image_picker(
+                    definition,
+                    parameter,
+                    value,
+                    enabled=definition.available_for_new_recipe,
+                )
+                continue
+            if self._parameter_prefers_slider(
+                parameter,
+                definition.operation.value,
+            ):
+                self._add_slider_number_editor(
+                    parameter,
+                    value,
+                    enabled=definition.available_for_new_recipe,
+                )
+                continue
             widget = self._create_parameter_widget(parameter, value)
             widget.setEnabled(definition.available_for_new_recipe)
             self._parameter_widgets[parameter.key] = widget
+            self._parameter_row_widgets[parameter.key] = widget
             parameter_label = QLabel(parameter.label, self._parameter_content)
-            tooltip = parameter.help_text or f"{parameter.label}会写入可追溯的处理配方。"
+            tooltip = _parameter_help_text(definition, parameter)
             parameter_label.setToolTip(tooltip)
             widget.setToolTip(tooltip)
             self._parameter_form.addRow(parameter_label, widget)
+        self._parameter_validation_label = QLabel(self._parameter_content)
+        self._parameter_validation_label.setObjectName(
+            "imageParameterValidation"
+        )
+        self._parameter_validation_label.setWordWrap(True)
+        self._parameter_validation_label.setVisible(False)
+        self._parameter_form.addRow(self._parameter_validation_label)
+        if replay_only:
+            for widget in {
+                *self._parameter_widgets.values(),
+                *self._parameter_row_widgets.values(),
+                *self._structured_parameter_editors.values(),
+            }:
+                widget.setEnabled(False)
         self._updating_parameter_form = False
+        self._refresh_parameter_conditions()
+        self._refresh_parameter_validation()
+        self._update_specialized_parameter_data()
+
+    def _add_histogram_range_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+        parameter_keys: tuple[str, ...],
+    ) -> HistogramRangeEditor:
+        """Add a range-aware editor while keeping native spin-box proxies.
+
+        The editor is purely a parameter/preview surface. Final recipes retain
+        the existing exact floating-point values and operation IDs.
+        """
+
+        fields = {field.key: field for field in definition.parameters}
+        first = fields[parameter_keys[0]]
+        lower = float(
+            values.get(
+                first.key,
+                self._resolved_default(first),
+            )
+        )
+        single_threshold = len(parameter_keys) == 1
+        if single_threshold:
+            upper = lower
+        else:
+            second = fields[parameter_keys[1]]
+            upper = float(
+                values.get(
+                    second.key,
+                    self._resolved_default(second),
+                )
+            )
+        input_state = self._input_state_for_step(
+            self._steps_list.currentRow()
+        )
+        native_maximum = input_state.pixel_type.sample_maximum
+        minimum = min(0.0, lower, upper)
+        maximum = max(
+            1.0 if native_maximum is None else float(native_maximum),
+            lower,
+            upper,
+        )
+        if math.isclose(minimum, maximum):
+            maximum = minimum + 1.0
+        editor = HistogramRangeEditor(
+            self._parameter_content,
+            single_threshold=single_threshold,
+            minimum=minimum,
+            maximum=maximum,
+            lower=lower,
+            upper=None if single_threshold else upper,
+            decimals=max(
+                fields[key].decimals for key in parameter_keys
+            ),
+            suffix=first.suffix,
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        if definition.operation is ImageOperation.CANNY_EDGES:
+            editor.autoButton.setVisible(False)
+            editor.resetButton.setToolTip("恢复默认 Canny 双阈值")
+        elif definition.operation is ImageOperation.ADJUST_LEVELS:
+            editor.autoButton.setToolTip(
+                "按当前冻结的 1:1 输入样本及 ROI 统计有限像素的 "
+                "0.35% 和 99.65% 分位数；若样本覆盖完整源图则等同整图自动。"
+                "样本范围会写入配方来源信息"
+            )
+        else:
+            editor.autoButton.setToolTip(
+                "使用当前冻结的 1:1 输入样本及 ROI 计算 Otsu 阈值；"
+                "若样本覆盖完整源图则等同整图自动。"
+                "精确阈值和样本范围都会写入配方"
+            )
+
+        if definition.operation is ImageOperation.THRESHOLD:
+            editor.polarityCombo.setItemText(0, "区间内为前景")
+            editor.polarityCombo.setItemText(1, "区间外为前景")
+        elif definition.operation is ImageOperation.BINARIZE:
+            editor.polarityCombo.setItemText(0, "亮像素为前景")
+            editor.polarityCombo.setItemText(1, "暗像素为前景")
+        else:
+            editor.displayModeCombo.setVisible(False)
+            editor.displayModeLabel.setVisible(False)
+            editor.polarityCombo.setVisible(False)
+            editor.polarityLabel.setVisible(False)
+
+        for index, key in enumerate(parameter_keys):
+            field = fields[key]
+            proxy = (
+                editor.lowerSpin
+                if index == 0
+                else editor.upperSpin
+            )
+            proxy.setDecimals(field.decimals)
+            proxy.setSuffix(field.suffix)
+            self._parameter_widgets[key] = proxy
+            self._parameter_row_widgets[key] = editor
+        self._histogram_parameter_editor = editor
+        self._histogram_parameter_keys = parameter_keys
+        self._structured_parameter_editors["histogram_range"] = editor
+
+        title = {
+            ImageOperation.ADJUST_LEVELS: "输入色阶",
+            ImageOperation.THRESHOLD: "阈值范围",
+            ImageOperation.BINARIZE: "二值阈值",
+            ImageOperation.CANNY_EDGES: "Canny 梯度双阈值",
+        }.get(definition.operation, "强度范围")
+        label = QLabel(title, self._parameter_content)
+        if definition.operation is ImageOperation.CANNY_EDGES:
+            label.setToolTip(
+                "直方图显示当前 1:1 样本的 Sobel 梯度幅值，"
+                "与 Canny 低/高阈值使用同一数值域；"
+                "它不是原始像素强度直方图。"
+            )
+        else:
+            label.setToolTip(
+                "直方图来自当前步骤输入的冻结 1:1 样本；"
+                "最终处理仍使用完整原始分辨率。"
+            )
+        editor.setToolTip(label.toolTip())
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+
+        editor.thresholdsChanged.connect(
+            lambda _low, _high: self._histogram_preview_value_changed()
+        )
+        editor.editFinished.connect(self._parameter_value_changed)
+        editor.autoRequested.connect(self._auto_histogram_parameters)
+        editor.resetRequested.connect(self._reset_histogram_parameters)
+        editor.foregroundPolarityChanged.connect(
+            self._histogram_polarity_changed
+        )
+        editor.displayModeChanged.connect(
+            lambda _mode: self._update_preview_display()
+        )
+        return editor
+
+    def _histogram_preview_value_changed(self) -> None:
+        self._refresh_histogram_selection_statistics()
+        self._update_preview_display()
+
+    def _add_percentile_range_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+        parameter_keys: tuple[str, ...],
+    ) -> PercentileRangeEditor:
+        fields = {field.key: field for field in definition.parameters}
+        lower_key, upper_key = parameter_keys
+        editor = PercentileRangeEditor(
+            self._parameter_content,
+            lower=float(
+                values.get(
+                    lower_key,
+                    self._resolved_default(fields[lower_key]),
+                )
+            ),
+            upper=float(
+                values.get(
+                    upper_key,
+                    self._resolved_default(fields[upper_key]),
+                )
+            ),
+            decimals=max(
+                fields[lower_key].decimals,
+                fields[upper_key].decimals,
+            ),
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        self._parameter_widgets[lower_key] = editor.lowerSpin
+        self._parameter_widgets[upper_key] = editor.upperSpin
+        self._parameter_row_widgets[lower_key] = editor
+        self._parameter_row_widgets[upper_key] = editor
+        self._structured_parameter_editors[
+            "percentile_range"
+        ] = editor
+        self._percentile_parameter_editor = editor
+        tooltip = (
+            "两个百分位以 0–100% 精确保存；下方显示它们在当前步骤"
+            "冻结输入和当前 ROI 中解析出的实际强度值。"
+        )
+        label = QLabel("饱和百分位范围", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.validationChanged.connect(
+            self._percentile_editor_validation_changed
+        )
+        editor.valueChanged.connect(
+            lambda _lower, _upper: (
+                self._update_percentile_editor_data()
+            )
+        )
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _percentile_editor_validation_changed(
+        self,
+        valid: bool,
+        message: str,
+    ) -> None:
+        self._structured_parameter_error_message = (
+            "" if valid else message
+        )
+        if not self._updating_parameter_form:
+            self._refresh_parameter_validation()
+
+    @staticmethod
+    def _parameter_prefers_slider(
+        parameter: ParameterField,
+        operation_id: str = "",
+    ) -> bool:
+        if (
+            parameter.kind != "float"
+            or parameter.minimum is None
+            or parameter.maximum is None
+        ):
+            return False
+        minimum = float(parameter.minimum)
+        maximum = float(parameter.maximum)
+        if (
+            (
+                str(operation_id)
+                == ImageOperation.UNSHARP_MASK.value
+                and parameter.key == "threshold"
+            )
+            or (
+                str(operation_id)
+                == ImageOperation.BRIGHTNESS_CONTRAST.value
+                and parameter.key == "brightness"
+            )
+        ):
+            return True
+        return (
+            math.isfinite(minimum)
+            and math.isfinite(maximum)
+            and 0.0 < maximum - minimum <= 1_000.0
+        )
+
+    def _add_slider_number_editor(
+        self,
+        parameter: ParameterField,
+        value: object,
+        *,
+        enabled: bool,
+    ) -> SliderNumberEditor:
+        """Add a slider for bounded continuous parameters.
+
+        The paired spin box remains the authoritative exact value and private
+        compatibility proxy; the slider is only a linear interaction surface.
+        """
+
+        minimum = float(parameter.minimum)
+        maximum = float(parameter.maximum)
+        editor = SliderNumberEditor(
+            self._parameter_content,
+            minimum=minimum,
+            maximum=maximum,
+            value=float(value),
+            decimals=parameter.decimals,
+            suffix=parameter.suffix,
+            resolution=10_000,
+        )
+        exact_step = 10.0 ** (-max(0, parameter.decimals))
+        editor.setSingleStep(
+            max(
+                exact_step,
+                round(
+                    (maximum - minimum) / 1_000.0,
+                    max(0, parameter.decimals),
+                ),
+            )
+        )
+        editor.setEnabled(enabled)
+        proxy = editor.spinBox
+        self._parameter_widgets[parameter.key] = proxy
+        self._parameter_row_widgets[parameter.key] = editor
+        self._structured_parameter_editors[
+            f"slider:{parameter.key}"
+        ] = editor
+        tooltip = (
+            parameter.help_text
+            or (
+                f"拖动滑块快速调整{parameter.label}；"
+                "右侧数值框保存精确值，普通滚轮不会修改参数。"
+            )
+        )
+        label = QLabel(parameter.label, self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label, editor)
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _add_linked_dimensions_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+    ) -> LinkedDimensionsEditor:
+        """Add exact dimensions with source context and optional aspect lock."""
+
+        fields = {field.key: field for field in definition.parameters}
+        input_state = self._input_state_for_step(
+            self._steps_list.currentRow()
+        )
+        source_width = int(input_state.width or self._source.width)
+        source_height = int(input_state.height or self._source.height)
+        width = int(
+            values.get(
+                "width",
+                self._resolved_default(fields["width"]),
+            )
+        )
+        height = int(
+            values.get(
+                "height",
+                self._resolved_default(fields["height"]),
+            )
+        )
+        maximum = max(
+            int(fields["width"].maximum or 1_000_000),
+            int(fields["height"].maximum or 1_000_000),
+        )
+        resize_pixels = definition.operation is ImageOperation.RESIZE
+        editor = LinkedDimensionsEditor(
+            self._parameter_content,
+            source_width=source_width,
+            source_height=source_height,
+            width=width,
+            height=height,
+            lock_aspect=resize_pixels,
+            aspect_lock_available=resize_pixels,
+            maximum_dimension=maximum,
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        self._parameter_widgets["width"] = editor.widthSpin
+        self._parameter_widgets["height"] = editor.heightSpin
+        self._parameter_row_widgets["width"] = editor
+        self._parameter_row_widgets["height"] = editor
+        self._structured_parameter_editors[
+            "linked_dimensions"
+        ] = editor
+
+        title = (
+            "输出像素尺寸"
+            if resize_pixels
+            else "输出画布尺寸"
+        )
+        tooltip = (
+            "宽度和高度始终以最终精确像素值写入配方。"
+            + (
+                "比例锁定和百分比只是便捷输入，不会改变插值或标定规则。"
+                if resize_pixels
+                else (
+                    "画布扩展不会重采样原像素；百分比仅用于同时输入"
+                    "宽度和高度。"
+                )
+            )
+        )
+        label = QLabel(title, self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _add_crop_bounds_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+        parameter_keys: tuple[str, ...],
+    ) -> CropBoundsEditor:
+        fields = {field.key: field for field in definition.parameters}
+        input_state = self._input_state_for_step(
+            self._steps_list.currentRow()
+        )
+        editor = CropBoundsEditor(
+            self._parameter_content,
+            source_width=int(input_state.width or self._source.width),
+            source_height=int(
+                input_state.height or self._source.height
+            ),
+            x=int(
+                values.get(
+                    "x",
+                    self._resolved_default(fields["x"]),
+                )
+            ),
+            y=int(
+                values.get(
+                    "y",
+                    self._resolved_default(fields["y"]),
+                )
+            ),
+            width=int(
+                values.get(
+                    "width",
+                    self._resolved_default(fields["width"]),
+                )
+            ),
+            height=int(
+                values.get(
+                    "height",
+                    self._resolved_default(fields["height"]),
+                )
+            ),
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        proxies: dict[str, QWidget] = {
+            "x": editor.xSpin,
+            "y": editor.ySpin,
+            "width": editor.widthSpin,
+            "height": editor.heightSpin,
+        }
+        for key in parameter_keys:
+            self._parameter_widgets[key] = proxies[key]
+            self._parameter_row_widgets[key] = editor
+        self._structured_parameter_editors["crop_bounds"] = editor
+        tooltip = (
+            "坐标始终使用当前步骤输入的原始像素；右边界和下边界"
+            "会被限制在图片范围内。ROI 裁剪仍按下方模式决定"
+            "使用包围框还是掩膜。"
+        )
+        label = QLabel("裁剪像素范围", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _add_structuring_element_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+    ) -> StructuringElementEditor:
+        """Add one visual editor for morphology radius, passes and shape."""
+
+        fields = {field.key: field for field in definition.parameters}
+        editor = StructuringElementEditor(
+            self._parameter_content,
+            radius=int(
+                values.get(
+                    "radius",
+                    self._resolved_default(fields["radius"]),
+                )
+            ),
+            iterations=int(
+                values.get(
+                    "iterations",
+                    self._resolved_default(fields["iterations"]),
+                )
+            ),
+            shape=str(
+                values.get(
+                    "kernel",
+                    self._resolved_default(fields["kernel"]),
+                )
+            ),
+            maximum_radius=int(fields["radius"].maximum or 255),
+            maximum_iterations=int(
+                fields["iterations"].maximum or 100
+            ),
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        self._parameter_widgets["radius"] = editor.radiusSpin
+        self._parameter_widgets["iterations"] = editor.iterationsSpin
+        self._parameter_widgets["kernel"] = editor.shapeCombo
+        for key in ("radius", "iterations", "kernel"):
+            self._parameter_row_widgets[key] = editor
+        self._structured_parameter_editors[
+            "structuring_element"
+        ] = editor
+        tooltip = (
+            "预览显示结构元素形状及实际核尺寸 2×半径+1；"
+            "迭代次数单独记录，最终处理仍使用原始分辨率。"
+        )
+        label = QLabel("结构元素", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _add_frequency_response_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+        parameter_keys: tuple[str, ...],
+    ) -> FrequencyResponseEditor:
+        """Add a Butterworth response editor without changing FFT semantics."""
+
+        fields = {field.key: field for field in definition.parameters}
+        frequency_unit = str(
+            values.get("frequency_unit", "cycles_per_pixel")
+        )
+        pixel_size = float(values.get("pixel_size", 1.0))
+        nyquist = (
+            0.5 / pixel_size
+            if frequency_unit == "cycles_per_unit"
+            else 0.5
+        )
+        editor = FrequencyResponseEditor(
+            self._parameter_content,
+            mode=str(
+                values.get(
+                    "mode",
+                    self._resolved_default(fields["mode"]),
+                )
+            ),
+            low_cutoff=float(
+                values.get(
+                    "low_cutoff",
+                    self._resolved_default(fields["low_cutoff"]),
+                )
+            ),
+            high_cutoff=float(
+                values.get(
+                    "high_cutoff",
+                    self._resolved_default(fields["high_cutoff"]),
+                )
+            ),
+            order=int(
+                values.get(
+                    "order",
+                    self._resolved_default(fields["order"]),
+                )
+            ),
+            minimum=float(fields["low_cutoff"].minimum or 0.0),
+            maximum=nyquist,
+            decimals=max(
+                fields["low_cutoff"].decimals,
+                fields["high_cutoff"].decimals,
+            ),
+            suffix=(
+                " 周期/物理单位"
+                if frequency_unit == "cycles_per_unit"
+                else " 周期/像素"
+            ),
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        proxies: dict[str, QWidget] = {
+            "mode": editor.modeCombo,
+            "low_cutoff": editor.lowCutoffSpin,
+            "high_cutoff": editor.highCutoffSpin,
+            "order": editor.orderSpin,
+        }
+        for key in parameter_keys:
+            self._parameter_widgets[key] = proxies[key]
+            self._parameter_row_widgets[key] = editor
+        self._structured_parameter_editors[
+            "frequency_response"
+        ] = editor
+        tooltip = (
+            "曲线显示当前 Butterworth 幅频响应；截止频率和阶数"
+            "以精确数值写入配方。边界策略与频率单位在下方单独设置。"
+        )
+        label = QLabel("频率响应", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.validationChanged.connect(
+            self._frequency_editor_validation_changed
+        )
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _frequency_editor_validation_changed(
+        self,
+        valid: bool,
+        message: str,
+    ) -> None:
+        self._structured_parameter_error_message = (
+            "" if valid else message
+        )
+        if not self._updating_parameter_form:
+            self._refresh_parameter_validation()
+
+    def _add_stripe_frequency_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+        parameter_keys: tuple[str, ...],
+    ) -> StripeSuppressionEditor:
+        fields = {field.key: field for field in definition.parameters}
+        editor = StripeSuppressionEditor(
+            self._parameter_content,
+            direction=str(
+                values.get(
+                    "direction",
+                    self._resolved_default(fields["direction"]),
+                )
+            ),
+            notch_width=float(
+                values.get(
+                    "notch_width",
+                    self._resolved_default(fields["notch_width"]),
+                )
+            ),
+            protect_radius=float(
+                values.get(
+                    "protect_radius",
+                    self._resolved_default(fields["protect_radius"]),
+                )
+            ),
+            decimals=max(
+                fields["notch_width"].decimals,
+                fields["protect_radius"].decimals,
+            ),
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+        proxies: dict[str, QWidget] = {
+            "direction": editor.directionCombo,
+            "notch_width": editor.notchWidthSpin,
+            "protect_radius": editor.protectRadiusSpin,
+        }
+        for key in parameter_keys:
+            self._parameter_widgets[key] = proxies[key]
+            self._parameter_row_widgets[key] = editor
+        self._structured_parameter_editors[
+            "stripe_frequency"
+        ] = editor
+        tooltip = (
+            "频谱示意明确空间条纹方向、被抑制的频率轴、陷波宽度"
+            "与中心低频保护区；它不改变算法，只帮助核对参数。"
+        )
+        label = QLabel("方向频谱", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+        editor.editFinished.connect(self._parameter_value_changed)
+        return editor
+
+    def _add_compatible_image_picker(
+        self,
+        definition: WorkbenchOperationDefinition,
+        parameter: ParameterField,
+        value: object,
+        *,
+        enabled: bool,
+    ) -> QWidget:
+        """Show a second-image selector with explicit compatibility evidence."""
+
+        container = QWidget(self._parameter_content)
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(4)
+        combo = NoWheelComboBox(container)
+        input_state = self._input_state_for_step(
+            self._steps_list.currentRow()
+        )
+        for document_id, plane in self._secondary_images.items():
+            name = self._secondary_image_names.get(
+                document_id,
+                document_id,
+            )
+            compatible = (
+                plane.width == input_state.width
+                and plane.height == input_state.height
+                and plane.pixel_type is input_state.pixel_type
+            )
+            prefix = "✓" if compatible else "⚠"
+            combo.addItem(
+                f"{prefix} {name} · {plane.width}×{plane.height} · "
+                f"{plane.pixel_type.value}",
+                document_id,
+            )
+            combo.setItemData(
+                combo.count() - 1,
+                (
+                    "尺寸、通道和像素类型与当前步骤输入一致。"
+                    if compatible
+                    else (
+                        "与当前步骤输入 "
+                        f"{input_state.width}×{input_state.height} · "
+                        f"{input_state.pixel_type.value} 不兼容。"
+                    )
+                ),
+                Qt.ItemDataRole.ToolTipRole,
+            )
+        selected = combo.findData(value)
+        combo.setCurrentIndex(max(0, selected))
+        layout.addWidget(combo)
+        status = QLabel(container)
+        status.setObjectName("compatibleImageStatus")
+        status.setWordWrap(True)
+        layout.addWidget(status)
+        container.setEnabled(enabled)
+
+        self._parameter_widgets[parameter.key] = combo
+        self._parameter_row_widgets[parameter.key] = container
+        self._structured_parameter_editors[
+            f"compatible-image:{parameter.key}"
+        ] = container
+        label = QLabel(parameter.label, self._parameter_content)
+        tooltip = parameter.help_text or (
+            "仅尺寸、像素类型和通道与当前步骤输入一致的图片可用于计算；"
+            "项目入口还会校验标定。"
+        )
+        label.setToolTip(tooltip)
+        container.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(container)
+
+        def refresh_status() -> None:
+            document_id = str(combo.currentData() or "")
+            plane = self._secondary_images.get(document_id)
+            if plane is None:
+                status.setText("未选择仍然可用的第二幅图像。")
+                status.setProperty("compatible", False)
+            else:
+                compatible = (
+                    plane.width == input_state.width
+                    and plane.height == input_state.height
+                    and plane.pixel_type is input_state.pixel_type
+                )
+                status.setText(
+                    (
+                        "兼容：尺寸、通道和像素类型一致；"
+                        "像素摘要会在最终处理时冻结。"
+                    )
+                    if compatible
+                    else (
+                        "不兼容：当前步骤输入为 "
+                        f"{input_state.width}×{input_state.height} · "
+                        f"{input_state.pixel_type.value}。"
+                    )
+                )
+                status.setProperty("compatible", compatible)
+            style = status.style()
+            style.unpolish(status)
+            style.polish(status)
+
+        def selection_changed(_index: int) -> None:
+            refresh_status()
+            self._parameter_value_changed()
+
+        combo.currentIndexChanged.connect(selection_changed)
+        refresh_status()
+        return container
+
+    def _histogram_context(
+        self,
+    ) -> tuple[RasterPlane, NDArray[np.bool_] | None, str] | None:
+        row = self._steps_list.currentRow()
+        if (
+            self._histogram_parameter_editor is None
+            or row != self._parameter_input_step_index
+        ):
+            return None
+        channel = "luminance"
+        channel_widget = self._parameter_widgets.get("channel")
+        if isinstance(channel_widget, NoWheelComboBox):
+            channel = str(channel_widget.currentData() or "luminance")
+        elif (
+            0 <= row < len(self._steps)
+            and self._steps[row].operation_id
+            == ImageOperation.ADJUST_LEVELS.value
+            and not self._parameter_input_raster.pixel_type.is_grayscale
+        ):
+            channel = "all_channels"
+        mask = (
+            self._parameter_input_roi_mask
+            if self._roi_is_active()
+            else None
+        )
+        return self._parameter_input_raster, mask, channel
+
+    def _update_specialized_parameter_data(self) -> None:
+        self._update_histogram_editor_data()
+        self._update_percentile_editor_data()
+
+    def _update_histogram_editor_data(self) -> None:
+        editor = self._histogram_parameter_editor
+        if editor is None:
+            return
+        context = self._histogram_context()
+        if context is None:
+            editor.clearSelectionStatistics()
+            editor.selectionStatisticsLabel.setText(
+                "正在读取当前步骤输入的 1:1 样本…"
+            )
+            return
+        raster, roi_mask, channel = context
+        row = self._steps_list.currentRow()
+        is_canny = (
+            0 <= row < len(self._steps)
+            and self._steps[row].operation_id
+            == ImageOperation.CANNY_EDGES.value
+        )
+        lower, upper = editor.thresholds()
+        try:
+            histogram_raster = (
+                self._canny_gradient_raster(raster, channel=channel)
+                if is_canny
+                else raster
+            )
+            snapshot = parameter_histogram_snapshot(
+                histogram_raster,
+                channel=(
+                    "luminance"
+                    if is_canny
+                    else channel
+                ),
+                roi_mask=roi_mask,
+                range_hint=(lower, upper),
+            )
+        except (TypeError, ValueError) as exc:
+            editor.clearSelectionStatistics()
+            editor.selectionStatisticsLabel.setText(
+                f"直方图不可用：{exc}"
+            )
+            return
+        editor.setHistogram(
+            snapshot.counts,
+            value_range=(snapshot.minimum, snapshot.maximum),
+        )
+        invert_widget = self._parameter_widgets.get("invert")
+        if isinstance(invert_widget, QCheckBox):
+            editor.setForegroundPolarity(
+                "dark" if invert_widget.isChecked() else "bright",
+                emit_signal=False,
+            )
+        self._refresh_histogram_selection_statistics()
+        if snapshot.nonfinite_count:
+            editor.selectionStatisticsLabel.setText(
+                editor.selectionStatisticsLabel.text()
+                + f"；另有 {snapshot.nonfinite_count:,} 个 NaN/Inf 未参与统计"
+            )
+
+    def _update_percentile_editor_data(self) -> None:
+        editor = self._percentile_parameter_editor
+        row = self._steps_list.currentRow()
+        if editor is None:
+            return
+        if (
+            row != self._parameter_input_step_index
+            or not 0 <= row < len(self._steps)
+        ):
+            editor.setResolvedText(
+                "正在读取当前步骤输入的实际强度分位值…"
+            )
+            return
+        raster = self._parameter_input_raster
+        array = np.asarray(raster_plane_to_array(raster))
+        roi_mask = (
+            self._parameter_input_roi_mask
+            if self._roi_is_active()
+            else None
+        )
+        if roi_mask is not None and roi_mask.shape != array.shape[:2]:
+            editor.setResolvedText(
+                "当前 ROI 与步骤输入尺寸不一致，无法解析强度分位值。"
+            )
+            return
+        lower, upper = editor.value()
+
+        def finite_values(
+            values: NDArray[np.generic],
+        ) -> NDArray[np.float64]:
+            selected = (
+                values
+                if roi_mask is None
+                else values[np.asarray(roi_mask, dtype=np.bool_)]
+            )
+            normalized = np.asarray(selected, dtype=np.float64)
+            return normalized[np.isfinite(normalized)]
+
+        try:
+            per_channel_widget = self._parameter_widgets.get(
+                "per_channel"
+            )
+            per_channel = (
+                per_channel_widget.isChecked()
+                if isinstance(per_channel_widget, QCheckBox)
+                else True
+            )
+            if array.ndim == 3 and per_channel:
+                channel_names = ("R", "G", "B")
+                parts: list[str] = []
+                sample_count = 0
+                for channel_index, channel_name in enumerate(
+                    channel_names
+                ):
+                    values = finite_values(
+                        array[..., channel_index]
+                    )
+                    if not values.size:
+                        continue
+                    low_value, high_value = np.percentile(
+                        values,
+                        (lower, upper),
+                    )
+                    sample_count += int(values.size)
+                    parts.append(
+                        f"{channel_name} "
+                        f"{float(low_value):.6g}–"
+                        f"{float(high_value):.6g}"
+                    )
+                if not parts:
+                    raise ValueError("当前范围不含有限像素")
+                editor.setResolvedText(
+                    "按通道解析："
+                    + "；".join(parts)
+                    + f" · 共 {sample_count:,} 个通道样本"
+                )
+            else:
+                values = finite_values(
+                    array[..., :3]
+                    if array.ndim == 3
+                    else array
+                )
+                if not values.size:
+                    raise ValueError("当前范围不含有限像素")
+                low_value, high_value = np.percentile(
+                    values,
+                    (lower, upper),
+                )
+                label = (
+                    "合并 RGB 通道"
+                    if array.ndim == 3
+                    else "灰度"
+                )
+                editor.setResolvedText(
+                    f"{label}解析强度："
+                    f"{float(low_value):.6g}–"
+                    f"{float(high_value):.6g}"
+                    f" · {values.size:,} 个有限样本"
+                )
+        except (TypeError, ValueError) as exc:
+            editor.setResolvedText(f"无法解析强度分位值：{exc}")
+
+    def _refresh_histogram_selection_statistics(self) -> None:
+        editor = self._histogram_parameter_editor
+        context = self._histogram_context()
+        if editor is None or context is None:
+            return
+        raster, roi_mask, channel = context
+        row = self._steps_list.currentRow()
+        is_canny = (
+            0 <= row < len(self._steps)
+            and self._steps[row].operation_id
+            == ImageOperation.CANNY_EDGES.value
+        )
+        lower, upper = editor.thresholds()
+        invert_widget = self._parameter_widgets.get("invert")
+        invert = (
+            invert_widget.isChecked()
+            if isinstance(invert_widget, QCheckBox)
+            else False
+        )
+        try:
+            statistics_raster = (
+                self._canny_gradient_raster(raster, channel=channel)
+                if is_canny
+                else raster
+            )
+            statistics_channel = "luminance" if is_canny else channel
+            selected, total = count_parameter_range(
+                statistics_raster,
+                lower=lower,
+                upper=upper,
+                channel=statistics_channel,
+                roi_mask=roi_mask,
+                single_threshold=editor.isSingleThreshold(),
+                invert=invert,
+            )
+            scalar = np.asarray(
+                scalar_parameter_samples(
+                    statistics_raster,
+                    channel=statistics_channel,
+                ),
+                dtype=np.float64,
+            )
+            active = np.isfinite(scalar)
+            if roi_mask is not None:
+                if roi_mask.shape != scalar.shape[:2]:
+                    raise ValueError(
+                        "当前 ROI 与阈值统计输入尺寸不一致"
+                    )
+                normalized_roi = np.asarray(
+                    roi_mask,
+                    dtype=np.bool_,
+                )
+                active &= (
+                    normalized_roi
+                    if scalar.ndim == 2
+                    else normalized_roi[..., np.newaxis]
+                )
+            below = int(np.count_nonzero(active & (scalar < lower)))
+            if editor.isSingleThreshold():
+                within = int(
+                    np.count_nonzero(active & (scalar == lower))
+                )
+                above = int(
+                    np.count_nonzero(active & (scalar > lower))
+                )
+            else:
+                within = int(
+                    np.count_nonzero(
+                        active
+                        & (scalar >= lower)
+                        & (scalar <= upper)
+                    )
+                )
+                above = int(
+                    np.count_nonzero(active & (scalar > upper))
+                )
+        except (TypeError, ValueError):
+            editor.clearSelectionStatistics()
+            return
+        editor.setBandStatistics(
+            below_count=below,
+            within_count=within,
+            above_count=above,
+            total_count=total,
+            foreground_count=selected,
+        )
+        if is_canny:
+            editor.selectionStatisticsLabel.setText(
+                f"低于低阈值 {below:,} · "
+                f"弱梯度候选 {within:,} · "
+                f"强梯度候选 {above:,} · "
+                f"样本总数 {total:,}"
+            )
+            editor.selectionStatisticsLabel.setToolTip(
+                "这里统计的是阈值前的 Sobel 梯度候选；"
+                "Canny 还会执行非极大值抑制和滞后连接，"
+                "因此这些数量不等于最终边缘像素数。"
+            )
+
+    def _canny_gradient_raster(
+        self,
+        raster: RasterPlane,
+        *,
+        channel: str,
+    ) -> RasterPlane:
+        row = self._steps_list.currentRow()
+        if not 0 <= row < len(self._steps):
+            raise ValueError("当前没有可用的 Canny 步骤")
+        definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
+        parameters = self._steps[row].parameters
+        try:
+            parameters.update(
+                self._parameter_values_from_form(definition)
+            )
+        except (KeyError, TypeError, ValueError):
+            # During the first form population some dependent widgets may not
+            # exist yet.  Persisted values are still scientifically valid for
+            # constructing the first histogram.
+            pass
+        magnitude = canny_gradient_magnitude(
+            raster_plane_to_array(raster),
+            aperture_size=int(parameters.get("aperture_size", 3)),
+            l2_gradient=bool(parameters.get("l2_gradient", True)),
+            channel=channel,
+        )
+        return array_to_raster_plane(magnitude)
+
+    def _auto_histogram_parameters(self) -> None:
+        editor = self._histogram_parameter_editor
+        context = self._histogram_context()
+        row = self._steps_list.currentRow()
+        if editor is None or context is None or not 0 <= row < len(self._steps):
+            self._status_label.setText(
+                "当前步骤输入尚未准备好，暂时不能自动计算参数。"
+            )
+            return
+        raster, roi_mask, channel = context
+        operation_id = self._steps[row].operation_id
+        try:
+            if operation_id == ImageOperation.ADJUST_LEVELS.value:
+                samples = scalar_parameter_samples(
+                    raster,
+                    channel=channel,
+                )
+                active = np.isfinite(samples)
+                if roi_mask is not None:
+                    if roi_mask.shape != samples.shape[:2]:
+                        raise ValueError("当前 ROI 与色阶输入尺寸不一致")
+                    active &= (
+                        roi_mask
+                        if samples.ndim == 2
+                        else roi_mask[..., np.newaxis]
+                    )
+                finite = np.asarray(samples[active], dtype=np.float64)
+                if finite.size == 0:
+                    raise ValueError("当前输入不含可用于自动色阶的有限像素")
+                lower, upper = (
+                    float(value)
+                    for value in np.percentile(
+                        finite,
+                        (0.35, 99.65),
+                    )
+                )
+                if upper <= lower:
+                    lower = float(np.min(finite))
+                    upper = float(np.max(finite))
+                if upper <= lower:
+                    raise ValueError("当前输入是常量图像，无法自动设置黑白场")
+                editor.setThresholds(lower, upper, emit_signal=False)
+            elif operation_id in {
+                ImageOperation.THRESHOLD.value,
+                ImageOperation.BINARIZE.value,
+            }:
+                _binary, threshold = auto_threshold(
+                    raster_plane_to_array(raster),
+                    method="otsu",
+                    channel=channel,
+                    statistics_mask=roi_mask,
+                )
+                if editor.isSingleThreshold():
+                    editor.setThreshold(threshold, emit_signal=False)
+                else:
+                    _minimum, maximum = editor.range()
+                    editor.setThresholds(
+                        threshold,
+                        maximum,
+                        emit_signal=False,
+                    )
+            else:
+                return
+        except (TypeError, ValueError) as exc:
+            self._status_label.setText(f"自动参数计算失败：{exc}")
+            return
+        self._refresh_histogram_selection_statistics()
+        self._update_preview_display()
+        x, y, width, height = self._preview_snapshot.bounds
+        full_width, full_height = self._preview_snapshot.full_source_size
+        self._pending_parameter_result_metadata = {
+            "auto_parameter_source": {
+                "scope": (
+                    "full_source"
+                    if self._preview_snapshot.is_full_source
+                    else "preview_sample"
+                ),
+                "sample_bounds": [x, y, width, height],
+                "full_source_size": [full_width, full_height],
+                "roi_statistics": bool(roi_mask is not None),
+                "method": (
+                    "percentile_0.35_99.65"
+                    if operation_id
+                    == ImageOperation.ADJUST_LEVELS.value
+                    else "otsu"
+                ),
+            }
+        }
+        self._parameter_value_changed()
+        if self._preview_snapshot.is_full_source:
+            self._status_label.setText(
+                "自动参数已按完整源图统计并写入配方。"
+            )
+        else:
+            self._status_label.setText(
+                "自动参数已按当前 1:1 预览样本统计并写入配方；"
+                f"样本范围 x={x}、y={y}、{width}×{height}，"
+                "它不是整图自动统计。"
+            )
+
+    def _reset_histogram_parameters(self) -> None:
+        editor = self._histogram_parameter_editor
+        row = self._steps_list.currentRow()
+        if editor is None or not 0 <= row < len(self._steps):
+            return
+        definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
+        fields = {field.key: field for field in definition.parameters}
+        defaults = tuple(
+            float(self._resolved_default(fields[key]))
+            for key in self._histogram_parameter_keys
+        )
+        minimum, maximum = editor.range()
+        lower = min(maximum, max(minimum, defaults[0]))
+        upper = (
+            maximum
+            if editor.isSingleThreshold()
+            else min(maximum, max(lower, defaults[1]))
+        )
+        editor.setThresholds(lower, upper, emit_signal=False)
+        self._refresh_histogram_selection_statistics()
+        self._update_preview_display()
+        self._parameter_value_changed()
+
+    def _histogram_polarity_changed(self, polarity: str) -> None:
+        invert_widget = self._parameter_widgets.get("invert")
+        if not isinstance(invert_widget, QCheckBox):
+            return
+        inverted = str(polarity) == "dark"
+        blocked = invert_widget.blockSignals(True)
+        try:
+            invert_widget.setChecked(inverted)
+        finally:
+            invert_widget.blockSignals(blocked)
+        self._refresh_histogram_selection_statistics()
+        self._update_preview_display()
+        self._parameter_value_changed()
+
+    def _add_anchor_grid_editor(
+        self,
+        parameter: ParameterField,
+        value: object,
+        *,
+        enabled: bool,
+    ) -> AnchorGridEditor:
+        """Add a visual 3×3 anchor while preserving the choice-widget contract."""
+
+        editor = AnchorGridEditor(
+            self._parameter_content,
+            value=str(value),
+        )
+        editor.setEnabled(enabled)
+        proxy = NoWheelComboBox(editor)
+        for label, data in parameter.choices:
+            proxy.addItem(label, data)
+        selected = proxy.findData(value)
+        proxy.setCurrentIndex(max(0, selected))
+        proxy.hide()
+
+        self._parameter_widgets[parameter.key] = proxy
+        self._parameter_row_widgets[parameter.key] = editor
+        self._structured_parameter_editors[parameter.key] = editor
+
+        tooltip = (
+            parameter.help_text
+            or "选择原图在调整后画布中的固定锚点；该值会写入可追溯配方。"
+        )
+        label = QLabel(parameter.label, self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+
+        editor.valueChanged.connect(
+            lambda anchor, choice=proxy: self._anchor_editor_changed(
+                choice,
+                anchor,
+            )
+        )
+        proxy.currentIndexChanged.connect(
+            lambda _index, choice=proxy, grid=editor: (
+                self._anchor_proxy_changed(choice, grid)
+            )
+        )
+        return editor
+
+    def _anchor_editor_changed(
+        self,
+        proxy: NoWheelComboBox,
+        anchor: str,
+    ) -> None:
+        selected = proxy.findData(anchor)
+        if selected < 0:
+            return
+        blocked = proxy.blockSignals(True)
+        try:
+            proxy.setCurrentIndex(selected)
+        finally:
+            proxy.blockSignals(blocked)
+        self._parameter_value_changed()
+
+    def _anchor_proxy_changed(
+        self,
+        proxy: NoWheelComboBox,
+        editor: AnchorGridEditor,
+    ) -> None:
+        value = proxy.currentData()
+        if value is None:
+            return
+        editor.setValue(str(value), emit_signal=False)
+        self._parameter_value_changed()
+
+    def _add_kernel_matrix_editor(
+        self,
+        definition: WorkbenchOperationDefinition,
+        values: Mapping[str, object],
+    ) -> KernelMatrixEditor:
+        """Add one matrix editor backed by the three legacy parameter widgets."""
+
+        fields = {field.key: field for field in definition.parameters}
+        width = int(
+            values.get(
+                "kernel_width",
+                self._resolved_default(fields["kernel_width"]),
+            )
+        )
+        height = int(
+            values.get(
+                "kernel_height",
+                self._resolved_default(fields["kernel_height"]),
+            )
+        )
+        raw_values = values.get(
+            "kernel",
+            self._resolved_default(fields["kernel"]),
+        )
+        flat_values = tuple(
+            float(item)
+            for item in (
+                raw_values
+                if isinstance(raw_values, (tuple, list))
+                else (raw_values,)
+            )
+        )
+        padded_values = list(flat_values[: width * height])
+        padded_values.extend(
+            0.0 for _ in range(width * height - len(padded_values))
+        )
+        matrix = tuple(
+            tuple(padded_values[row * width : (row + 1) * width])
+            for row in range(height)
+        )
+        editor = KernelMatrixEditor(
+            self._parameter_content,
+            kernel=matrix,
+            maximum_dimension=99,
+        )
+        editor.setEnabled(definition.available_for_new_recipe)
+
+        # Keep the existing private mapping contract: external automation and
+        # the generic serializer still see two spin boxes and one line edit.
+        width_proxy = editor.widthSpin
+        height_proxy = editor.heightSpin
+        kernel_proxy = QLineEdit(editor)
+        kernel_proxy.setText(
+            ", ".join(f"{value:g}" for value in flat_values)
+        )
+        kernel_proxy.hide()
+        self._parameter_widgets["kernel_width"] = width_proxy
+        self._parameter_widgets["kernel_height"] = height_proxy
+        self._parameter_widgets["kernel"] = kernel_proxy
+        for key in ("kernel_width", "kernel_height", "kernel"):
+            self._parameter_row_widgets[key] = editor
+        self._structured_parameter_editors["kernel"] = editor
+
+        tooltip = (
+            "按二维矩阵编辑卷积核；宽高与元素数量会同步写入可追溯配方。"
+            "可使用预设后继续逐格调整。"
+        )
+        label = QLabel("卷积核", self._parameter_content)
+        label.setToolTip(tooltip)
+        editor.setToolTip(tooltip)
+        self._parameter_form.addRow(label)
+        self._parameter_form.addRow(editor)
+
+        editor.kernelChanged.connect(
+            lambda matrix_value, line=kernel_proxy: (
+                self._kernel_editor_changed(line, matrix_value)
+            )
+        )
+        editor.validationChanged.connect(
+            self._kernel_editor_validation_changed
+        )
+        kernel_proxy.editingFinished.connect(
+            lambda line=kernel_proxy, matrix_editor=editor: (
+                self._kernel_proxy_edited(line, matrix_editor)
+            )
+        )
+        return editor
+
+    def _kernel_editor_changed(
+        self,
+        proxy: QLineEdit,
+        matrix: object,
+    ) -> None:
+        rows = tuple(tuple(row) for row in matrix)  # type: ignore[arg-type]
+        flat_values = tuple(value for row in rows for value in row)
+        blocked = proxy.blockSignals(True)
+        try:
+            proxy.setText(", ".join(f"{float(value):g}" for value in flat_values))
+        finally:
+            proxy.blockSignals(blocked)
+        self._structured_parameter_error_message = ""
+        self._parameter_value_changed()
+
+    def _kernel_proxy_edited(
+        self,
+        proxy: QLineEdit,
+        editor: KernelMatrixEditor,
+    ) -> None:
+        field = next(
+            field
+            for field in _DEFINITION_BY_ID[
+                ImageOperation.CUSTOM_CONVOLUTION.value
+            ].parameters
+            if field.key == "kernel"
+        )
+        try:
+            values = tuple(
+                self._parameter_widget_value(field, proxy)  # type: ignore[arg-type]
+            )
+        except (TypeError, ValueError):
+            self._parameter_value_changed()
+            return
+        width, height = editor.dimensions()
+        if len(values) != width * height:
+            self._parameter_value_changed()
+            return
+        matrix = tuple(
+            tuple(values[row * width : (row + 1) * width])
+            for row in range(height)
+        )
+        try:
+            editor.setKernel(matrix)
+        except ValueError as exc:
+            self._structured_parameter_error_message = str(exc)
+            self._refresh_parameter_validation()
+
+    def _kernel_editor_validation_changed(
+        self,
+        valid: bool,
+        message: str,
+    ) -> None:
+        self._structured_parameter_error_message = (
+            "" if valid else message
+        )
+        if not self._updating_parameter_form:
+            self._refresh_parameter_validation()
 
     def _create_parameter_widget(self, parameter: ParameterField, value: object) -> QWidget:
         if parameter.kind == "bool":
@@ -3618,6 +6131,212 @@ class ImageProcessingWorkbench(QDialog):
             return widget
         raise ValueError(f"未知参数控件类型: {parameter.kind}")
 
+    def _parameter_widget_value(
+        self,
+        field: ParameterField,
+        widget: QWidget,
+    ) -> object:
+        if isinstance(widget, QCheckBox):
+            return widget.isChecked()
+        if isinstance(widget, NoWheelSpinBox):
+            return widget.value()
+        if isinstance(widget, NoWheelDoubleSpinBox):
+            return widget.value()
+        if isinstance(widget, NoWheelComboBox):
+            return widget.currentData()
+        if isinstance(widget, QLineEdit):
+            tokens = (
+                widget.text()
+                .replace(";", " ")
+                .replace(",", " ")
+                .split()
+            )
+            try:
+                numbers = tuple(float(token) for token in tokens)
+            except ValueError as exc:
+                raise ValueError(
+                    f"{field.label}只能包含以逗号或空格分隔的数值。"
+                ) from exc
+            if not numbers or not all(math.isfinite(item) for item in numbers):
+                raise ValueError(
+                    f"{field.label}必须包含至少一个有限数值。"
+                )
+            return numbers
+        raise TypeError(f"未知参数控件: {type(widget).__name__}")
+
+    def _parameter_values_from_form(
+        self,
+        definition: WorkbenchOperationDefinition,
+    ) -> dict[str, object]:
+        return {
+            field.key: self._parameter_widget_value(
+                field,
+                self._parameter_widgets[field.key],
+            )
+            for field in definition.parameters
+        }
+
+    def _refresh_parameter_conditions(self) -> None:
+        if self._updating_parameter_form:
+            return
+        row = self._steps_list.currentRow()
+        if not 0 <= row < len(self._steps):
+            return
+        definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
+        try:
+            parameters = self._parameter_values_from_form(definition)
+            input_state = self._input_state_for_step(row)
+        except (TypeError, ValueError):
+            return
+        for field in definition.parameters:
+            widget = self._parameter_widgets[field.key]
+            row_widget = self._parameter_row_widgets.get(
+                field.key,
+                widget,
+            )
+            visible = _parameter_is_relevant(
+                definition.operation.value,
+                field.key,
+                parameters,
+                input_state=input_state,
+                roi_available=self._roi_mask is not None,
+            )
+            self._parameter_form.setRowVisible(row_widget, visible)
+        frequency_editor = self._structured_parameter_editors.get(
+            "frequency_response"
+        )
+        frequency_unit = self._parameter_widgets.get("frequency_unit")
+        if (
+            isinstance(frequency_editor, FrequencyResponseEditor)
+            and isinstance(frequency_unit, NoWheelComboBox)
+        ):
+            unit_value = str(
+                frequency_unit.currentData()
+                or "cycles_per_pixel"
+            )
+            suffix = (
+                " 周期/物理单位"
+                if unit_value == "cycles_per_unit"
+                else " 周期/像素"
+            )
+            frequency_editor.lowCutoffEditor.setSuffix(suffix)
+            frequency_editor.highCutoffEditor.setSuffix(suffix)
+            pixel_size_widget = self._parameter_widgets.get(
+                "pixel_size"
+            )
+            pixel_size = (
+                float(pixel_size_widget.value())
+                if isinstance(
+                    pixel_size_widget,
+                    NoWheelDoubleSpinBox,
+                )
+                else 1.0
+            )
+            nyquist = (
+                0.5 / pixel_size
+                if unit_value == "cycles_per_unit"
+                else 0.5
+            )
+            frequency_editor.setFrequencyRange(0.0, nyquist)
+
+    def _refresh_parameter_validation(self) -> str:
+        row = self._steps_list.currentRow()
+        if not 0 <= row < len(self._steps):
+            self._parameter_error_message = ""
+            return ""
+        definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
+        message = self._structured_parameter_error_message
+        if not message:
+            try:
+                parameters = self._steps[row].parameters
+                parameters.update(
+                    self._parameter_values_from_form(definition)
+                )
+                input_state = self._input_state_for_step(row)
+                get_image_operation_descriptor(
+                    definition.operation
+                ).validate_parameters(parameters)
+                message = _parameter_relationship_error(
+                    definition.operation.value,
+                    parameters,
+                    input_state=input_state,
+                )
+                if not message:
+                    message = self._secondary_image_parameter_error(
+                        definition.operation,
+                        parameters,
+                        input_state=input_state,
+                    )
+                if not message:
+                    current = self._steps[row]
+                    replacement = ImageOperationSpec(
+                        current.operation_id,
+                        parameters,
+                        implementation=current.implementation,
+                        implementation_version=(
+                            current.implementation_version
+                        ),
+                        result_metadata=current.result_metadata,
+                    )
+                    candidate_steps = list(self._steps)
+                    candidate_steps[row] = replacement
+                    validate_workbench_operation_sequence(
+                        self._source,
+                        tuple(candidate_steps),
+                        source_semantic=self._source_semantic,
+                        roi_requested=self._roi_is_active(),
+                        secondary_images=self._secondary_images,
+                        secondary_semantics=(
+                            self._secondary_image_semantics
+                        ),
+                    )
+            except (TypeError, ValueError) as exc:
+                message = str(exc)
+        self._parameter_error_message = message
+        label = self._parameter_validation_label
+        if label is not None:
+            label.setText(f"参数需要调整：{message}" if message else "")
+            label.setVisible(bool(message))
+        self._update_actions()
+        return message
+
+    def _secondary_image_parameter_error(
+        self,
+        operation: ImageOperation,
+        parameters: Mapping[str, object],
+        *,
+        input_state: RasterTypeState,
+    ) -> str:
+        needs_secondary = operation is ImageOperation.IMAGE_CALCULATOR
+        if operation is ImageOperation.FLAT_FIELD_CORRECTION:
+            needs_secondary = (
+                str(
+                    parameters.get(
+                        "flat_field_source",
+                        "estimated",
+                    )
+                )
+                == "reference"
+            )
+        if not needs_secondary:
+            return ""
+        document_id = str(
+            parameters.get("secondary_document_id", "")
+        ).strip()
+        plane = self._secondary_images.get(document_id)
+        if plane is None:
+            return "请选择一幅仍然可用的兼容第二图像。"
+        if (
+            plane.pixel_type is not input_state.pixel_type
+            or plane.width != input_state.width
+            or plane.height != input_state.height
+        ):
+            return (
+                "第二图像必须与当前步骤输入的尺寸、通道和像素类型"
+                "完全一致。"
+            )
+        return ""
+
     def _parameter_value_changed(self, *_signal_values: object) -> None:
         if self._updating_parameter_form:
             return
@@ -3625,52 +6344,39 @@ class ImageProcessingWorkbench(QDialog):
         if not 0 <= row < len(self._steps):
             return
         definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
-        if not definition.available_for_new_recipe:
+        if _operation_step_is_replay_only(self._steps[row]):
+            self._pending_parameter_result_metadata.clear()
             return
-        parameters: dict[str, object] = {}
-        for field in definition.parameters:
-            widget = self._parameter_widgets[field.key]
-            if isinstance(widget, QCheckBox):
-                value: object = widget.isChecked()
-            elif isinstance(widget, NoWheelSpinBox):
-                value = widget.value()
-            elif isinstance(widget, NoWheelDoubleSpinBox):
-                value = widget.value()
-            elif isinstance(widget, NoWheelComboBox):
-                value = widget.currentData()
-            elif isinstance(widget, QLineEdit):
-                tokens = (
-                    widget.text()
-                    .replace(";", " ")
-                    .replace(",", " ")
-                    .split()
-                )
-                try:
-                    numbers = tuple(float(token) for token in tokens)
-                except ValueError:
-                    self._status_label.setText(
-                        f"{field.label}只能包含以逗号或空格分隔的数值。"
-                    )
-                    widget.setFocus()
-                    return
-                if not numbers or not all(math.isfinite(item) for item in numbers):
-                    self._status_label.setText(
-                        f"{field.label}必须包含至少一个有限数值。"
-                    )
-                    widget.setFocus()
-                    return
-                value = numbers
-            else:  # pragma: no cover - construction is exhaustive
-                continue
-            parameters[field.key] = value
+        pending_metadata = dict(
+            self._pending_parameter_result_metadata
+        )
+        self._pending_parameter_result_metadata.clear()
+        try:
+            parameters = self._steps[row].parameters
+            parameters.update(
+                self._parameter_values_from_form(definition)
+            )
+        except (TypeError, ValueError) as exc:
+            self._status_label.setText(str(exc))
+            self._refresh_parameter_validation()
+            return
+        QTimer.singleShot(0, self._refresh_parameter_conditions)
+        QTimer.singleShot(
+            0,
+            self._update_specialized_parameter_data,
+        )
+        if self._refresh_parameter_validation():
+            return
         current = self._steps[row]
         try:
+            result_metadata = current.result_metadata
+            result_metadata.update(pending_metadata)
             replacement = ImageOperationSpec(
                 current.operation_id,
                 parameters,
                 implementation=current.implementation,
                 implementation_version=current.implementation_version,
-                result_metadata=current.result_metadata,
+                result_metadata=result_metadata,
             )
         except (TypeError, ValueError) as exc:
             self._status_label.setText(f"参数无效：{exc}")
@@ -3715,6 +6421,18 @@ class ImageProcessingWorkbench(QDialog):
     def _on_preview_ready(self, result: object) -> None:
         if not isinstance(result, WorkbenchTaskResult):
             return
+        if (
+            result.parameter_input_raster is not None
+            and result.parameter_input_step_index
+            == self._steps_list.currentRow()
+        ):
+            self._parameter_input_raster = result.parameter_input_raster
+            self._parameter_input_roi_mask = (
+                result.parameter_input_roi_mask
+            )
+            self._parameter_input_step_index = (
+                result.parameter_input_step_index
+            )
         crop = self._preview_crop_by_request_id.pop(
             result.request_id,
             None,
@@ -3743,8 +6461,17 @@ class ImageProcessingWorkbench(QDialog):
                     )
                 ),
                 recipe=result.recipe,
+                output_semantic=result.output_semantic,
+                parameter_input_raster=result.parameter_input_raster,
+                parameter_input_roi_mask=(
+                    result.parameter_input_roi_mask
+                ),
+                parameter_input_step_index=(
+                    result.parameter_input_step_index
+                ),
             )
         self._show_preview_raster(result.raster)
+        self._update_specialized_parameter_data()
         self._status_label.setText(
             f"预览已更新 · {result.raster.width} × {result.raster.height}"
         )
@@ -3761,8 +6488,10 @@ class ImageProcessingWorkbench(QDialog):
             validate_workbench_operation_sequence(
                 self._source,
                 prepared_steps,
+                source_semantic=self._source_semantic,
                 roi_requested=self._roi_is_active(),
                 secondary_images=self._secondary_images,
+                secondary_semantics=self._secondary_image_semantics,
             )
             estimate = validate_final_resources(
                 self._source,
@@ -3787,8 +6516,10 @@ class ImageProcessingWorkbench(QDialog):
             source_document_id=self._source_document_id,
             source=self._source,
             operations=prepared_steps,
+            source_semantic=self._source_semantic,
             roi_mask=self._roi_mask if self._roi_is_active() else None,
             secondary_images=self._secondary_images,
+            secondary_semantics=self._secondary_image_semantics,
         )
 
     def _prepare_reference_flat_field_steps(
@@ -3947,10 +6678,7 @@ class ImageProcessingWorkbench(QDialog):
             self.batchApplyRequested.emit(self.current_recipe())
 
     def _contains_replay_only_steps(self) -> bool:
-        return any(
-            not _DEFINITION_BY_ID[step.operation_id].available_for_new_recipe
-            for step in self._steps
-        )
+        return any(_operation_step_is_replay_only(step) for step in self._steps)
 
     def _update_actions(self) -> None:
         row = self._steps_list.currentRow()
@@ -3967,17 +6695,26 @@ class ImageProcessingWorkbench(QDialog):
         self._reset_steps_button.setEnabled(bool(self._steps) and not replay_only)
         self._undo_button.setEnabled(bool(self._undo_stack) and not replay_only)
         self._redo_button.setEnabled(bool(self._redo_stack) and not replay_only)
-        self._generate_button.setEnabled(bool(self._steps) and not final_busy)
+        parameters_valid = not bool(self._parameter_error_message)
+        self._generate_button.setEnabled(
+            bool(self._steps) and not final_busy and parameters_valid
+        )
         self._save_recipe_button.setEnabled(
-            bool(self._steps) and not final_busy and not replay_only
+            bool(self._steps)
+            and not final_busy
+            and not replay_only
+            and parameters_valid
         )
         self._load_recipe_button.setEnabled(not final_busy)
         self._batch_apply_button.setEnabled(
-            bool(self._steps) and not final_busy and not replay_only
+            bool(self._steps)
+            and not final_busy
+            and not replay_only
+            and parameters_valid
         )
         replay_tooltip = (
-            "此配方包含仅供旧项目重放的 FFT 功率谱 v1；"
-            "请从“分析 > FFT 功率谱”生成可审计分析结果。"
+            "此配方包含仅供旧项目重放的兼容步骤；"
+            "旧版参数和步骤顺序已锁定，不能另存或批量应用。"
         )
         self._save_recipe_button.setToolTip(
             replay_tooltip
@@ -3996,11 +6733,98 @@ class ImageProcessingWorkbench(QDialog):
 
     def _show_preview_raster(self, raster: RasterPlane) -> None:
         image = raster_plane_to_display_image(raster)
+        self._latest_preview_raster = raster
         self._latest_preview_image = image
         self._processed_overview_image = (
             self._overview_image_for_processed_preview(raster, image)
         )
         self._update_preview_display()
+
+    def _threshold_parameter_preview_image(self) -> QImage | None:
+        """Build a display-only threshold overlay over the frozen step input."""
+
+        editor = self._histogram_parameter_editor
+        row = self._steps_list.currentRow()
+        if (
+            editor is None
+            or editor.displayMode() == "bw"
+            or not 0 <= row < len(self._steps)
+            or row != len(self._steps) - 1
+            or row != self._parameter_input_step_index
+        ):
+            return None
+        operation_id = self._steps[row].operation_id
+        if operation_id not in {
+            ImageOperation.THRESHOLD.value,
+            ImageOperation.BINARIZE.value,
+        }:
+            return None
+        raster = self._parameter_input_raster
+        if (
+            raster.width != self._latest_preview_raster.width
+            or raster.height != self._latest_preview_raster.height
+        ):
+            return None
+        context = self._histogram_context()
+        if context is None:
+            return None
+        _raster, roi_mask, channel = context
+        try:
+            scalar = np.asarray(
+                scalar_parameter_samples(raster, channel=channel),
+                dtype=np.float64,
+            )
+        except ValueError:
+            return None
+        active = np.isfinite(scalar)
+        if roi_mask is not None:
+            if roi_mask.shape != scalar.shape:
+                return None
+            active &= np.asarray(roi_mask, dtype=np.bool_)
+        lower, upper = editor.thresholds()
+        selected = (
+            scalar > lower
+            if editor.isSingleThreshold()
+            else (scalar >= lower) & (scalar <= upper)
+        )
+        selected &= active
+        invert_widget = self._parameter_widgets.get("invert")
+        if (
+            isinstance(invert_widget, QCheckBox)
+            and invert_widget.isChecked()
+        ):
+            selected = active & ~selected
+
+        overlay = np.zeros(
+            (raster.height, raster.width, 4),
+            dtype=np.uint8,
+        )
+        if editor.displayMode() == "red_overlay":
+            overlay[selected] = (239, 68, 68, 112)
+        elif editor.displayMode() == "over_under":
+            below = active & (scalar < lower)
+            over_limit = lower if editor.isSingleThreshold() else upper
+            above = active & (scalar > over_limit)
+            overlay[below] = (37, 99, 235, 116)
+            overlay[above] = (239, 68, 68, 116)
+        else:
+            return None
+        overlay_image = QImage(
+            overlay.data,
+            raster.width,
+            raster.height,
+            int(overlay.strides[0]),
+            QImage.Format.Format_RGBA8888,
+        ).copy()
+        image = raster_plane_to_display_image(raster).convertToFormat(
+            QImage.Format.Format_RGBA8888
+        )
+        painter = QPainter(image)
+        try:
+            painter.drawImage(0, 0, overlay_image)
+        finally:
+            painter.end()
+        return image
 
     def _overview_image_for_processed_preview(
         self,
@@ -4063,11 +6887,15 @@ class ImageProcessingWorkbench(QDialog):
 
     def _update_preview_display(self, *, force_fit: bool = False) -> None:
         overview = self._overview_checkbox.isChecked()
-        image = (
-            self._processed_overview_image
-            if overview
-            else self._latest_preview_image
-        )
+        if overview:
+            image = self._processed_overview_image
+        else:
+            threshold_image = self._threshold_parameter_preview_image()
+            image = (
+                threshold_image
+                if threshold_image is not None
+                else self._latest_preview_image
+            )
         self._overview_note.setText(self._overview_note_text)
         self._overview_note.setVisible(overview)
         self._preview_view.set_image(image, force_fit=force_fit)

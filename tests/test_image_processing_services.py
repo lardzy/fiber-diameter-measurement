@@ -432,6 +432,63 @@ class ImageProcessingServiceTests(unittest.TestCase):
         with self.assertRaises(TypeError):
             IMAGE_OPERATION_REGISTRY["new"] = descriptor  # type: ignore[index]
 
+    def test_recipe_validation_rejects_unknown_implementation_and_version(
+        self,
+    ) -> None:
+        state = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=32,
+            height=24,
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "不支持的图像处理实现",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (
+                        ImageOperationSpec(
+                            "invert",
+                            implementation="other-engine",
+                        ),
+                    )
+                ),
+                state,
+            )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "不支持的算法版本.*v99",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (
+                        ImageOperationSpec(
+                            "fill_holes",
+                            implementation_version="99",
+                        ),
+                    )
+                ),
+                state.replace(semantic=RasterSemantic.BINARY_MASK),
+            )
+
+        for version in ("1", IMAGE_OPERATION_REGISTRY["fill_holes"].version):
+            with self.subTest(version=version):
+                result = validate_image_processing_recipe(
+                    ImageProcessingRecipe.from_operations(
+                        (
+                            ImageOperationSpec(
+                                "fill_holes",
+                                implementation_version=version,
+                            ),
+                        )
+                    ),
+                    state.replace(semantic=RasterSemantic.BINARY_MASK),
+                )
+                self.assertIs(
+                    result.output_state.semantic,
+                    RasterSemantic.BINARY_MASK,
+                )
+
     def test_descriptor_parameter_schema_validates_recipe_values(self) -> None:
         state = RasterTypeState(
             RasterPixelType.GRAY8,
@@ -515,6 +572,901 @@ class ImageProcessingServiceTests(unittest.TestCase):
                 ImageProcessingRecipe.from_operations((operation,)),
                 state,
             )
+
+    def test_registry_rejects_canny_and_nonfinite_repair_type_mismatches(
+        self,
+    ) -> None:
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "Canny.*8 位",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec("canny_edges"),)
+                ),
+                RasterTypeState(
+                    RasterPixelType.GRAY16,
+                    width=32,
+                    height=24,
+                ),
+            )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "显式选择一个标量通道",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec("canny_edges"),)
+                ),
+                RasterTypeState(
+                    RasterPixelType.RGB8,
+                    width=32,
+                    height=24,
+                ),
+            )
+
+        canny = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec(
+                        "canny_edges",
+                        {"channel": "red"},
+                    ),
+                )
+            ),
+            RasterTypeState(
+                RasterPixelType.RGB8,
+                width=32,
+                height=24,
+            ),
+        )
+        self.assertIs(canny.output_state.pixel_type, RasterPixelType.GRAY8)
+        self.assertIs(
+            canny.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "32 位浮点单通道",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec("repair_nonfinite"),)
+                ),
+                RasterTypeState(
+                    RasterPixelType.GRAY8,
+                    width=32,
+                    height=24,
+                ),
+            )
+        repaired = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (ImageOperationSpec("repair_nonfinite"),)
+            ),
+            RasterTypeState(
+                RasterPixelType.GRAY32_FLOAT,
+                width=32,
+                height=24,
+            ),
+        )
+        self.assertIs(
+            repaired.output_state.pixel_type,
+            RasterPixelType.GRAY32_FLOAT,
+        )
+
+    def test_registry_blocks_runtime_only_parameter_failures(self) -> None:
+        gray16 = RasterTypeState(
+            RasterPixelType.GRAY16,
+            width=32,
+            height=24,
+        )
+        float32 = RasterTypeState(
+            RasterPixelType.GRAY32_FLOAT,
+            width=32,
+            height=24,
+        )
+        for operation in (
+            ImageOperationSpec("median_filter", {"radius": 3}),
+            ImageOperationSpec("remove_outliers", {"radius": 3}),
+        ):
+            with self.subTest(operation=operation.operation_id):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "半径最大为 2",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (operation,)
+                        ),
+                        gray16,
+                    )
+        for calculator_operation in ("and", "or", "xor"):
+            with self.subTest(operation=calculator_operation):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "仅支持.*整数图像",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (
+                                ImageOperationSpec(
+                                    "image_calculator",
+                                    {
+                                        "calculator_operation": (
+                                            calculator_operation
+                                        ),
+                                        "secondary_document_id": "other",
+                                    },
+                                ),
+                            )
+                        ),
+                        float32,
+                        secondary_states={"other": float32},
+                    )
+
+    def test_binary_v2_requires_explicit_binary_but_v1_replays(self) -> None:
+        intensity = RasterTypeState(
+            RasterPixelType.GRAY8,
+            semantic=RasterSemantic.INTENSITY,
+            width=32,
+            height=24,
+        )
+        binary = intensity.replace(
+            semantic=RasterSemantic.BINARY_MASK,
+        )
+        legacy = ImageOperationSpec(
+            "fill_holes",
+            implementation_version="1",
+        )
+        strict = ImageOperationSpec(
+            "fill_holes",
+            implementation_version="2",
+        )
+
+        replay = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations((legacy,)),
+            intensity,
+        )
+        self.assertIs(
+            replay.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "显式二值掩膜",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations((strict,)),
+                intensity,
+            )
+        current = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations((strict,)),
+            binary,
+        )
+        self.assertIs(
+            current.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        self.assertEqual(
+            IMAGE_OPERATION_REGISTRY["fill_holes"].version,
+            "2",
+        )
+
+    def test_image_calculator_uses_both_operand_semantics(self) -> None:
+        intensity = RasterTypeState(
+            RasterPixelType.GRAY8,
+            semantic=RasterSemantic.INTENSITY,
+            width=32,
+            height=24,
+        )
+        binary = intensity.replace(
+            semantic=RasterSemantic.BINARY_MASK,
+        )
+        labels = intensity.replace(
+            semantic=RasterSemantic.LABELS,
+        )
+
+        def validate(
+            calculator_operation: str,
+            *,
+            left: RasterTypeState,
+            right: RasterTypeState,
+            with_strict_morphology: bool = False,
+        ):
+            operations = [
+                ImageOperationSpec(
+                    "image_calculator",
+                    {
+                        "secondary_document_id": "right",
+                        "calculator_operation": calculator_operation,
+                    },
+                    implementation_version="2",
+                )
+            ]
+            if with_strict_morphology:
+                operations.append(
+                    ImageOperationSpec(
+                        "fill_holes",
+                        implementation_version="2",
+                    )
+                )
+            return validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(operations),
+                left,
+                secondary_states={"right": right},
+            )
+
+        copied = validate("copy", left=intensity, right=labels)
+        self.assertIs(
+            copied.output_state.semantic,
+            RasterSemantic.LABELS,
+        )
+
+        arithmetic = validate("add", left=binary, right=binary)
+        self.assertIs(
+            arithmetic.output_state.semantic,
+            RasterSemantic.INTENSITY,
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "显式二值掩膜",
+        ):
+            validate(
+                "add",
+                left=binary,
+                right=binary,
+                with_strict_morphology=True,
+            )
+
+        logical = validate(
+            "xor",
+            left=binary,
+            right=binary,
+            with_strict_morphology=True,
+        )
+        self.assertIs(
+            logical.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+
+        mixed_logical = validate(
+            "and",
+            left=binary,
+            right=intensity,
+        )
+        self.assertIs(
+            mixed_logical.output_state.semantic,
+            RasterSemantic.INTENSITY,
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "显式二值掩膜",
+        ):
+            validate(
+                "or",
+                left=binary,
+                right=intensity,
+                with_strict_morphology=True,
+            )
+    def test_float_photometric_v2_requires_explicit_range_but_v1_replays(
+        self,
+    ) -> None:
+        float_state = RasterTypeState(
+            RasterPixelType.GRAY32_FLOAT,
+            width=32,
+            height=24,
+        )
+        for operation_id in (
+            ImageOperation.BRIGHTNESS_CONTRAST.value,
+            ImageOperation.HISTOGRAM_EQUALIZATION.value,
+        ):
+            with self.subTest(operation=operation_id):
+                legacy = ImageOperationSpec(
+                    operation_id,
+                    implementation_version="1",
+                )
+                replay = validate_image_processing_recipe(
+                    ImageProcessingRecipe.from_operations((legacy,)),
+                    float_state,
+                )
+                self.assertIs(
+                    replay.output_state.pixel_type,
+                    RasterPixelType.GRAY32_FLOAT,
+                )
+
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "没有可安全推断的 0–1 工作范围.*显式限定",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (
+                                ImageOperationSpec(
+                                    operation_id,
+                                    implementation_version="2",
+                                ),
+                            )
+                        ),
+                        float_state,
+                    )
+                self.assertEqual(
+                    IMAGE_OPERATION_REGISTRY[operation_id].version,
+                    "2",
+                )
+
+    def test_v2_secondary_images_require_realignment_after_geometry(
+        self,
+    ) -> None:
+        source = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=12,
+            height=8,
+        )
+        geometry_cases = (
+            (ImageOperationSpec("flip_horizontal"), (12, 8)),
+            (ImageOperationSpec("flip_vertical"), (12, 8)),
+            (ImageOperationSpec("rotate_90_clockwise"), (8, 12)),
+            (ImageOperationSpec("rotate_90_counterclockwise"), (8, 12)),
+            (ImageOperationSpec("rotate_180"), (12, 8)),
+            (
+                ImageOperationSpec(
+                    "rotate",
+                    {"angle_degrees": 5.0, "expand": False},
+                ),
+                (12, 8),
+            ),
+            (
+                ImageOperationSpec(
+                    "crop",
+                    {"x": 1, "y": 1, "width": 10, "height": 6},
+                ),
+                (10, 6),
+            ),
+            (
+                ImageOperationSpec(
+                    "resize",
+                    {"width": 6, "height": 4},
+                ),
+                (6, 4),
+            ),
+            (
+                ImageOperationSpec(
+                    "translate",
+                    {"offset_x": 1.0, "offset_y": 0.0},
+                ),
+                (12, 8),
+            ),
+            (
+                ImageOperationSpec(
+                    "resize_canvas",
+                    {"width": 14, "height": 10},
+                ),
+                (14, 10),
+            ),
+            (
+                ImageOperationSpec(
+                    "pixel_bin",
+                    {"factor": 2, "method": "mean"},
+                ),
+                (6, 4),
+            ),
+        )
+        for geometry, (width, height) in geometry_cases:
+            with self.subTest(geometry=geometry.operation_id):
+                secondary = RasterTypeState(
+                    RasterPixelType.GRAY8,
+                    width=width,
+                    height=height,
+                )
+                calculator = ImageOperationSpec(
+                    "image_calculator",
+                    {
+                        "secondary_document_id": "other",
+                        "calculator_operation": "add",
+                    },
+                    implementation_version="2",
+                )
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "前序已执行空间几何变换.*重新对齐",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (geometry, calculator)
+                        ),
+                        source,
+                        secondary_states={"other": secondary},
+                    )
+
+        legacy = ImageOperationSpec(
+            "image_calculator",
+            {
+                "secondary_document_id": "other",
+                "calculator_operation": "add",
+            },
+            implementation_version="1",
+        )
+        replay = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (ImageOperationSpec("flip_horizontal"), legacy)
+            ),
+            source,
+            secondary_states={"other": source},
+        )
+        self.assertEqual(len(replay.steps), 2)
+
+        legacy_reference = ImageOperationSpec(
+            "flat_field_correction",
+            {
+                "flat_field_source": "reference",
+                "secondary_document_id": "flat",
+            },
+            implementation_version="1",
+        )
+        legacy_flat_replay = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec("flip_vertical"),
+                    legacy_reference,
+                )
+            ),
+            source,
+            secondary_states={"flat": source},
+        )
+        self.assertEqual(len(legacy_flat_replay.steps), 2)
+
+        reference = ImageOperationSpec(
+            "flat_field_correction",
+            {
+                "flat_field_source": "reference",
+                "secondary_document_id": "flat",
+            },
+            implementation_version="2",
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "前序已执行空间几何变换.*重新对齐",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec("flip_vertical"), reference)
+                ),
+                source,
+                secondary_states={"flat": source},
+            )
+        self.assertEqual(
+            IMAGE_OPERATION_REGISTRY["image_calculator"].version,
+            "2",
+        )
+        self.assertEqual(
+            IMAGE_OPERATION_REGISTRY["flat_field_correction"].version,
+            "2",
+        )
+
+    def test_high_bit_depth_transparent_roi_requires_explicit_mapping(
+        self,
+    ) -> None:
+        operation = ImageOperationSpec(
+            "crop",
+            {
+                "x": 0,
+                "y": 0,
+                "width": 4,
+                "height": 4,
+                "roi_mode": "mask",
+                "transparent_outside": True,
+            },
+            implementation_version=IMAGE_OPERATION_REGISTRY["crop"].version,
+        )
+        for pixel_type in (
+            RasterPixelType.GRAY16,
+            RasterPixelType.GRAY32_FLOAT,
+        ):
+            with self.subTest(pixel_type=pixel_type.value):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "透明 ROI 输出只支持 8 位",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (operation,)
+                        ),
+                        RasterTypeState(
+                            pixel_type,
+                            width=8,
+                            height=8,
+                        ),
+                        roi_requested=True,
+                    )
+        with self.assertRaisesRegex(ValueError, "透明 ROI 输出只支持 8 位"):
+            execute_image_operation(
+                ImageOperationRequest.create(
+                    ImageOperation.CROP,
+                    np.full((8, 8), 4_096, dtype=np.uint16),
+                    roi_mask=np.ones((8, 8), dtype=bool),
+                    x=0,
+                    y=0,
+                    width=4,
+                    height=4,
+                    roi_mode="mask",
+                    transparent_outside=True,
+                )
+            )
+
+    def test_canny_gradient_histogram_domain_matches_threshold_domain(
+        self,
+    ) -> None:
+        source = np.random.default_rng(20260727).integers(
+            0,
+            256,
+            size=(32, 32),
+            dtype=np.uint8,
+        )
+        for aperture_size in (3, 5, 7):
+            for l2_gradient in (False, True):
+                with self.subTest(
+                    aperture_size=aperture_size,
+                    l2_gradient=l2_gradient,
+                ):
+                    gradient = (
+                        image_processing_service.canny_gradient_magnitude(
+                            source,
+                            aperture_size=aperture_size,
+                            l2_gradient=l2_gradient,
+                        )
+                    )
+                    radius = aperture_size // 2
+                    padded = cv2.copyMakeBorder(
+                        source,
+                        radius,
+                        radius,
+                        radius,
+                        radius,
+                        cv2.BORDER_REFLECT_101,
+                    )
+                    derivative_scale = (
+                        1.0 / 16.0
+                        if aperture_size == 7
+                        else 1.0
+                    )
+                    dx = cv2.Sobel(
+                        padded,
+                        cv2.CV_16S,
+                        1,
+                        0,
+                        ksize=aperture_size,
+                        scale=derivative_scale,
+                        borderType=cv2.BORDER_CONSTANT,
+                    ).astype(np.float32)
+                    dy = cv2.Sobel(
+                        padded,
+                        cv2.CV_16S,
+                        0,
+                        1,
+                        ksize=aperture_size,
+                        scale=derivative_scale,
+                        borderType=cv2.BORDER_CONSTANT,
+                    ).astype(np.float32)
+                    expected = (
+                        cv2.magnitude(dx, dy)
+                        if l2_gradient
+                        else np.abs(dx) + np.abs(dy)
+                    )
+                    if aperture_size == 7:
+                        expected *= 16.0
+                    expected = expected[
+                        radius:-radius,
+                        radius:-radius,
+                    ]
+
+                    self.assertEqual(gradient.dtype, np.float32)
+                    self.assertEqual(gradient.shape, source.shape)
+                    np.testing.assert_allclose(
+                        gradient,
+                        expected,
+                        rtol=0.0,
+                        atol=1e-5,
+                    )
+
+        edge = np.zeros((32, 32), dtype=np.uint8)
+        edge[:, 16:] = 255
+        gradient = image_processing_service.canny_gradient_magnitude(edge)
+        self.assertGreater(float(gradient[:, 15:17].max()), 255.0)
+        self.assertEqual(float(gradient[:, :10].max()), 0.0)
+
+    def test_canny_threshold_order_is_a_registry_contract(self) -> None:
+        state = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=32,
+            height=24,
+        )
+        for low, high, message in (
+            (50.0, 50.0, "0 ≤ 低阈值 < 高阈值"),
+            (75.0, 25.0, "0 ≤ 低阈值 < 高阈值"),
+            (-1.0, 25.0, "threshold_low 不能小于 0"),
+        ):
+            with self.subTest(low=low, high=high):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    message,
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (
+                                ImageOperationSpec(
+                                    "canny_edges",
+                                    {
+                                        "threshold_low": low,
+                                        "threshold_high": high,
+                                    },
+                                ),
+                            )
+                        ),
+                        state,
+                    )
+
+    def test_pixel_bin_sum_contract_matches_authoritative_raster_layout(
+        self,
+    ) -> None:
+        summed = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec(
+                        "pixel_bin",
+                        {"factor": 2, "method": "sum"},
+                    ),
+                )
+            ),
+            RasterTypeState(
+                RasterPixelType.GRAY16,
+                semantic=RasterSemantic.BINARY_MASK,
+                width=8,
+                height=6,
+            ),
+        )
+
+        self.assertIs(
+            summed.output_state.pixel_type,
+            RasterPixelType.GRAY32_FLOAT,
+        )
+        self.assertIs(
+            summed.output_state.semantic,
+            RasterSemantic.INTENSITY,
+        )
+        self.assertEqual(
+            (summed.output_state.width, summed.output_state.height),
+            (4, 3),
+        )
+
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "RGB/RGBA.*不支持求和",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (
+                        ImageOperationSpec(
+                            "pixel_bin",
+                            {"factor": 2, "method": "sum"},
+                        ),
+                    )
+                ),
+                RasterTypeState(
+                    RasterPixelType.RGB8,
+                    width=8,
+                    height=6,
+                ),
+            )
+
+    def test_roi_binary_output_semantic_reflects_source_writeback(
+        self,
+    ) -> None:
+        operation = ImageOperationSpec(
+            "threshold",
+            {"lower": 10.0, "upper": 200.0},
+        )
+        continuous = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations((operation,)),
+            RasterTypeState(
+                RasterPixelType.GRAY8,
+                semantic=RasterSemantic.INTENSITY,
+                width=32,
+                height=24,
+            ),
+            roi_requested=True,
+        )
+        already_binary = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations((operation,)),
+            RasterTypeState(
+                RasterPixelType.GRAY8,
+                semantic=RasterSemantic.BINARY_MASK,
+                width=32,
+                height=24,
+            ),
+            roi_requested=True,
+        )
+
+        self.assertIs(
+            continuous.output_state.semantic,
+            RasterSemantic.INTENSITY,
+        )
+        self.assertIs(
+            already_binary.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+
+    def test_geometric_interpolation_updates_binary_and_label_semantics(
+        self,
+    ) -> None:
+        binary = RasterTypeState(
+            RasterPixelType.GRAY8,
+            semantic=RasterSemantic.BINARY_MASK,
+            width=20,
+            height=10,
+        )
+        labels = RasterTypeState(
+            RasterPixelType.GRAY16,
+            semantic=RasterSemantic.LABELS,
+            width=20,
+            height=10,
+        )
+
+        for interpolation, expected in (
+            ("auto", RasterSemantic.BINARY_MASK),
+            ("nearest", RasterSemantic.BINARY_MASK),
+            ("linear", RasterSemantic.INTENSITY),
+        ):
+            with self.subTest(operation="resize", interpolation=interpolation):
+                result = validate_image_processing_recipe(
+                    ImageProcessingRecipe.from_operations(
+                        (
+                            ImageOperationSpec(
+                                "resize",
+                                {
+                                    "width": 10,
+                                    "height": 5,
+                                    "interpolation": interpolation,
+                                },
+                            ),
+                        )
+                    ),
+                    binary,
+                )
+                self.assertIs(result.output_state.semantic, expected)
+
+        for operation_id in ("rotate", "translate"):
+            for interpolation, expected in (
+                ("nearest", RasterSemantic.LABELS),
+                ("linear", RasterSemantic.INTENSITY),
+            ):
+                with self.subTest(
+                    operation=operation_id,
+                    interpolation=interpolation,
+                ):
+                    result = validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (
+                                ImageOperationSpec(
+                                    operation_id,
+                                    {"interpolation": interpolation},
+                                ),
+                            )
+                        ),
+                        labels,
+                    )
+                    self.assertIs(result.output_state.semantic, expected)
+            with self.assertRaisesRegex(
+                ImageRecipeValidationError,
+                "不支持 auto 插值",
+            ):
+                validate_image_processing_recipe(
+                    ImageProcessingRecipe.from_operations(
+                        (
+                            ImageOperationSpec(
+                                operation_id,
+                                {"interpolation": "auto"},
+                            ),
+                        )
+                    ),
+                    labels,
+                )
+
+        for operation_id, parameters in (
+            (
+                "resize",
+                {
+                    "width": 10,
+                    "height": 5,
+                    "interpolation": "linear",
+                },
+            ),
+            ("rotate", {"interpolation": "linear"}),
+            ("translate", {"interpolation": "cubic"}),
+        ):
+            with self.subTest(
+                operation=operation_id,
+                contract="v2-nearest-only",
+            ):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "只允许最近邻插值",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations(
+                            (
+                                ImageOperationSpec(
+                                    operation_id,
+                                    parameters,
+                                    implementation_version="2",
+                                ),
+                            )
+                        ),
+                        binary,
+                    )
+
+    def test_fft_registry_uses_dynamic_nyquist_and_new_recipe_defaults(
+        self,
+    ) -> None:
+        fft_descriptor = IMAGE_OPERATION_REGISTRY["fft_filter"]
+        convert_descriptor = IMAGE_OPERATION_REGISTRY["convert_type"]
+        self.assertEqual(
+            fft_descriptor.parameter("boundary").default,
+            "mirror_pad",
+        )
+        self.assertEqual(
+            convert_descriptor.parameter("scale_mode").default,
+            "preserve_values",
+        )
+        state = RasterTypeState(
+            RasterPixelType.GRAY32_FLOAT,
+            width=32,
+            height=24,
+        )
+
+        valid_physical = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec(
+                        "fft_filter",
+                        {
+                            "mode": "lowpass",
+                            "high_cutoff": 2.5,
+                            "frequency_unit": "cycles_per_unit",
+                            "pixel_size": 0.2,
+                        },
+                    ),
+                )
+            ),
+            state,
+        )
+        self.assertIs(
+            valid_physical.output_state.pixel_type,
+            RasterPixelType.GRAY32_FLOAT,
+        )
+        for operation in (
+            ImageOperationSpec(
+                "fft_filter",
+                {
+                    "high_cutoff": 2.5001,
+                    "frequency_unit": "cycles_per_unit",
+                    "pixel_size": 0.2,
+                },
+            ),
+            ImageOperationSpec(
+                "fft_filter",
+                {"high_cutoff": 0.5001},
+            ),
+        ):
+            with self.subTest(parameters=operation.parameters):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    "Nyquist",
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations((operation,)),
+                        state,
+                    )
 
     def test_reference_flat_field_recipe_requires_matching_second_state(
         self,
@@ -1353,10 +2305,21 @@ class ImageProcessingServiceTests(unittest.TestCase):
                 output_float=True,
             )
         ).image
+        luminance_canny = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CANNY_EDGES,
+                rgb,
+                channel="luminance",
+                threshold_low=20.0,
+                threshold_high=80.0,
+            )
+        ).image
 
         self.assertEqual(canny.dtype, np.uint8)
         self.assertEqual(canny.ndim, 2)
         self.assertGreater(int(np.count_nonzero(canny)), 0)
+        self.assertEqual(luminance_canny.dtype, np.uint8)
+        self.assertGreater(int(np.count_nonzero(luminance_canny)), 0)
         self.assertEqual(laplacian.dtype, np.float32)
         self.assertGreater(float(np.max(np.abs(laplacian))), 0.0)
 

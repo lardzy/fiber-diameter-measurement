@@ -29,7 +29,12 @@ from fdm.geometry import (
     polyline_centroid,
     polyline_length,
 )
-from fdm.image_processing_models import DisplayTransform, ImageDerivation
+from fdm.image_processing_models import (
+    DisplayTransform,
+    ImageDerivation,
+    RasterSemantic,
+    RasterTypeState,
+)
 from fdm.project_roi import (
     ProjectRoi,
     ProjectRoiDeletionResult,
@@ -1050,6 +1055,8 @@ class ImageDocument:
     raster_pixel_type: RasterPixelType | None = None
     display_transform: DisplayTransform | None = None
     derivation: ImageDerivation | None = None
+    # Keep the legacy positional order through ``derivation`` intact.
+    raster_semantic: RasterSemantic | None = None
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1861,6 +1868,8 @@ class ImageDocument:
             payload["absolute_path"] = self.absolute_path
         if self.raster_pixel_type is not None:
             payload["raster_pixel_type"] = self.raster_pixel_type.value
+        if self.raster_semantic is not None:
+            payload["raster_semantic"] = self.raster_semantic.value
         if self.display_transform is not None:
             payload["display_transform"] = self.display_transform.to_dict()
         if self.derivation is not None:
@@ -1891,27 +1900,67 @@ class ImageDocument:
             for item in payload.get("text_annotations", [])
             if isinstance(item, dict)
         ]
+        parsed_pixel_type = (
+            RasterPixelType.parse(payload["raster_pixel_type"])
+            if payload.get("raster_pixel_type") is not None
+            else None
+        )
+        parsed_derivation = (
+            ImageDerivation.from_dict(derivation_payload)
+            if isinstance(derivation_payload, dict)
+            else None
+        )
+        semantic_payload = payload.get("raster_semantic")
+        derivation_semantic = (
+            parsed_derivation.result_semantic
+            if parsed_derivation is not None
+            else None
+        )
+        if semantic_payload is not None and derivation_semantic is not None:
+            root_semantic = (
+                semantic_payload
+                if isinstance(semantic_payload, RasterSemantic)
+                else RasterSemantic(str(semantic_payload))
+            )
+            if root_semantic is not derivation_semantic:
+                raise ValueError(
+                    "文档 raster_semantic 与 derivation.result.semantic "
+                    "不一致，已拒绝按不确定语义加载"
+                )
+        if semantic_payload is None:
+            semantic_payload = derivation_semantic
+        parsed_semantic = (
+            (
+                semantic_payload
+                if isinstance(semantic_payload, RasterSemantic)
+                else RasterSemantic(str(semantic_payload))
+            )
+            if semantic_payload is not None
+            else None
+        )
+        if parsed_semantic is not None:
+            if parsed_pixel_type is None:
+                raise ValueError(
+                    "raster_semantic 需要同时记录 raster_pixel_type"
+                )
+            RasterTypeState(
+                pixel_type=parsed_pixel_type,
+                semantic=parsed_semantic,
+            )
         image_document = cls(
             id=str(payload["id"]),
             path=str(payload["path"]),
             source_type=str(payload.get("source_type", "filesystem")),
             document_kind=str(payload.get("document_kind", "image")),
             absolute_path=str(payload["absolute_path"]) if payload.get("absolute_path") else None,
-            raster_pixel_type=(
-                RasterPixelType.parse(payload["raster_pixel_type"])
-                if payload.get("raster_pixel_type") is not None
-                else None
-            ),
+            raster_pixel_type=parsed_pixel_type,
+            raster_semantic=parsed_semantic,
             display_transform=(
                 DisplayTransform.from_dict(display_transform_payload)
                 if isinstance(display_transform_payload, dict)
                 else None
             ),
-            derivation=(
-                ImageDerivation.from_dict(derivation_payload)
-                if isinstance(derivation_payload, dict)
-                else None
-            ),
+            derivation=parsed_derivation,
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,
             fiber_groups=[

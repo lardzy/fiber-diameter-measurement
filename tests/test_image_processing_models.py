@@ -251,8 +251,10 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
             source_image_size=(4096, 3072),
             source_pixel_revision=7,
             source_pixel_type=RasterPixelType.GRAY8,
+            source_semantic=RasterSemantic.BINARY_MASK,
             recipe=recipe,
             result_pixel_type=RasterPixelType.GRAY16,
+            result_semantic=RasterSemantic.LABELS,
             result_image_size=(3072, 4096),
             result_sha256="b" * 64,
             roi_snapshot=ProcessingRoiSnapshot(
@@ -277,6 +279,14 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
         self.assertIs(
             loaded.result_pixel_type,
             RasterPixelType.GRAY16,
+        )
+        self.assertIs(
+            loaded.source_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        self.assertIs(
+            loaded.result_semantic,
+            RasterSemantic.LABELS,
         )
         self.assertEqual(
             [item.operation_id for item in loaded.recipe.operations],
@@ -325,6 +335,45 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
             19,
         )
 
+    def test_semantic_fields_preserve_legacy_positional_field_order(self) -> None:
+        recipe = ImageProcessingRecipe.from_operations(
+            (ImageOperationSpec("flip_horizontal"),)
+        )
+        created_at = "2026-07-27T12:34:56+00:00"
+        derivation = ImageDerivation(
+            "source",
+            recipe,
+            None,
+            None,
+            (8, 6),
+            3,
+            RasterPixelType.GRAY8,
+            RasterPixelType.GRAY16,
+            (8, 6),
+            None,
+            None,
+            (),
+            created_at,
+            1,
+        )
+
+        self.assertIs(
+            derivation.source_pixel_type,
+            RasterPixelType.GRAY8,
+        )
+        self.assertIs(
+            derivation.result_pixel_type,
+            RasterPixelType.GRAY16,
+        )
+        self.assertEqual(derivation.created_at, created_at)
+        self.assertIsNone(derivation.source_semantic)
+        self.assertIsNone(derivation.result_semantic)
+        document_fields = [item.name for item in fields(ImageDocument)]
+        self.assertGreater(
+            document_fields.index("raster_semantic"),
+            document_fields.index("derivation"),
+        )
+
     def test_old_document_payload_remains_sparse_and_safe(self) -> None:
         legacy_payload = {
             "id": "image_legacy",
@@ -338,9 +387,11 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
         serialized = document.to_dict()
 
         self.assertIsNone(document.raster_pixel_type)
+        self.assertIsNone(document.raster_semantic)
         self.assertIsNone(document.display_transform)
         self.assertIsNone(document.derivation)
         self.assertNotIn("raster_pixel_type", serialized)
+        self.assertNotIn("raster_semantic", serialized)
         self.assertNotIn("display_transform", serialized)
         self.assertNotIn("derivation", serialized)
 
@@ -354,6 +405,7 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
             image_size=(800, 600),
             source_type="project_asset",
             raster_pixel_type=RasterPixelType.GRAY16,
+            raster_semantic=RasterSemantic.BINARY_MASK,
             display_transform=DisplayTransform(
                 black_point=0.0,
                 white_point=65_535.0,
@@ -362,8 +414,10 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
                 source_document_id="image_source",
                 source_image_size=(800, 600),
                 source_pixel_type=RasterPixelType.GRAY16,
+                source_semantic=RasterSemantic.INTENSITY,
                 recipe=recipe,
                 result_pixel_type=RasterPixelType.GRAY16,
+                result_semantic=RasterSemantic.BINARY_MASK,
                 created_at="2026-07-27T12:34:56+00:00",
             ),
         )
@@ -378,6 +432,10 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
 
         document_payload = raw_payload["documents"][0]
         self.assertEqual(document_payload["raster_pixel_type"], "gray16")
+        self.assertEqual(
+            document_payload["raster_semantic"],
+            "binary_mask",
+        )
         self.assertNotIn("data", document_payload)
         self.assertEqual(
             document_payload["derivation"]["recipe"]["schema_version"],
@@ -388,11 +446,23 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
             loaded_document.raster_pixel_type,
             RasterPixelType.GRAY16,
         )
+        self.assertIs(
+            loaded_document.raster_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
         self.assertEqual(loaded_document.derivation, document.derivation)
         self.assertEqual(
             loaded_document.display_transform,
             document.display_transform,
         )
+
+        conflicting = document_payload.copy()
+        conflicting["raster_semantic"] = "intensity"
+        with self.assertRaisesRegex(
+            ValueError,
+            "raster_semantic.*derivation.result.semantic.*不一致",
+        ):
+            ImageDocument.from_dict(conflicting)
 
     def test_processed_asset_root_is_separate_from_capture_assets(self) -> None:
         project_path = Path("/tmp/demo.fdmproj")

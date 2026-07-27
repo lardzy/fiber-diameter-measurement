@@ -11,9 +11,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Point
 from fdm.ui_snapshot import (
+    IMAGE_PROCESSING_SNAPSHOT_OPERATIONS,
     UI_SNAPSHOT_SCENARIOS,
     _apply_measurement_fullscreen_scene,
     _apply_measurement_zoomed_scene,
+    _parse_args,
+    _processing_snapshot_operation_id,
 )
 
 
@@ -66,6 +69,63 @@ class UiSnapshotScenarioTests(unittest.TestCase):
         self.assertIn("image-batch", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("analysis-results", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("advanced-analysis", UI_SNAPSHOT_SCENARIOS)
+
+    def test_processing_snapshot_default_remains_gaussian_blur(self) -> None:
+        args = _parse_args(["--scenario", "image-processing"])
+
+        self.assertEqual(args.processing_operation, "gaussian_blur")
+        self.assertEqual(
+            _processing_snapshot_operation_id(args.processing_operation),
+            "gaussian_blur",
+        )
+
+    def test_processing_snapshot_exposes_professional_parameter_panels(self) -> None:
+        self.assertEqual(
+            IMAGE_PROCESSING_SNAPSHOT_OPERATIONS,
+            {
+                "gaussian_blur": "gaussian_blur",
+                "threshold": "threshold",
+                "binarize": "binarize",
+                "canny": "canny_edges",
+                "convolution": "custom_convolution",
+                "resize": "resize",
+                "fft": "fft_filter",
+                "morphology": "erode",
+                "brightness": "brightness_contrast",
+                "adaptive_threshold": "adaptive_threshold",
+                "stripe": "stripe_suppression",
+            },
+        )
+        for review_name, operation_id in (
+            ("threshold", "threshold"),
+            ("binarize", "binarize"),
+            ("canny", "canny_edges"),
+            ("convolution", "custom_convolution"),
+            ("resize", "resize"),
+            ("fft", "fft_filter"),
+            ("morphology", "erode"),
+            ("brightness", "brightness_contrast"),
+            ("adaptive_threshold", "adaptive_threshold"),
+            ("stripe", "stripe_suppression"),
+        ):
+            with self.subTest(review_name=review_name):
+                args = _parse_args(
+                    [
+                        "--scenario",
+                        "image-processing",
+                        "--processing-operation",
+                        review_name,
+                    ]
+                )
+                self.assertEqual(args.processing_operation, review_name)
+                self.assertEqual(
+                    _processing_snapshot_operation_id(review_name),
+                    operation_id,
+                )
+
+    def test_processing_snapshot_rejects_unknown_operation(self) -> None:
+        with self.assertRaisesRegex(ValueError, "未知的图像处理截图操作"):
+            _processing_snapshot_operation_id("not-a-review-operation")
 
     def test_zoomed_scene_applies_deterministic_zoom_and_center(self) -> None:
         canvas = _CanvasStub()

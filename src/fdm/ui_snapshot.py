@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 import json
 import os
 from pathlib import Path
@@ -92,6 +93,20 @@ UI_SNAPSHOT_SCENARIOS = (
     "analysis-results",
     "advanced-analysis",
 )
+
+IMAGE_PROCESSING_SNAPSHOT_OPERATIONS = {
+    "gaussian_blur": "gaussian_blur",
+    "threshold": "threshold",
+    "binarize": "binarize",
+    "canny": "canny_edges",
+    "convolution": "custom_convolution",
+    "resize": "resize",
+    "fft": "fft_filter",
+    "morphology": "erode",
+    "brightness": "brightness_contrast",
+    "adaptive_threshold": "adaptive_threshold",
+    "stripe": "stripe_suppression",
+}
 
 
 def _settle_ui(milliseconds: int = 800) -> None:
@@ -285,7 +300,7 @@ def _demo_analysis_artifacts(
     return shape, histogram.mark_stale("ROI 几何已变化，建议重新计算")
 
 
-def _parse_args() -> argparse.Namespace:
+def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate deterministic UI review screenshots.")
     parser.add_argument(
         "--scenario",
@@ -321,11 +336,28 @@ def _parse_args() -> argparse.Namespace:
         choices=("records", "statistics", "distribution"),
         default="records",
     )
+    parser.add_argument(
+        "--processing-operation",
+        choices=tuple(IMAGE_PROCESSING_SNAPSHOT_OPERATIONS),
+        default="gaussian_blur",
+        help=(
+            "右侧参数面板审查场景；仅在 --scenario image-processing 时生效。"
+        ),
+    )
     parser.add_argument("--width", type=int, default=1600)
     parser.add_argument("--height", type=int, default=900)
     parser.add_argument("--scale", type=float, default=1.0, help="Qt UI scale factor, for example 1.25 or 1.5")
     parser.add_argument("--output", type=Path)
-    return parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def _processing_snapshot_operation_id(operation: str) -> str:
+    """Resolve a stable review preset to the production operation identifier."""
+
+    try:
+        return IMAGE_PROCESSING_SNAPSHOT_OPERATIONS[str(operation)]
+    except KeyError as exc:
+        raise ValueError(f"未知的图像处理截图操作: {operation}") from exc
 
 
 def _apply_measurement_zoomed_scene(window: MainWindow) -> bool:
@@ -375,6 +407,11 @@ def main() -> int:
         scenario_name = f"settings-{args.settings_page}"
     elif args.scenario == "measurement-results":
         scenario_name = f"measurement-results-{args.results_tab}"
+    elif (
+        args.scenario == "image-processing"
+        and args.processing_operation != "gaussian_blur"
+    ):
+        scenario_name = f"image-processing-{args.processing_operation}"
     else:
         scenario_name = args.scenario
     output = args.output or (
@@ -414,8 +451,9 @@ def main() -> int:
                 source_name="激光共聚焦 RGB 示例",
             )
         elif args.scenario == "image-processing":
+            raster = qimage_to_raster_plane(image)
             widget = ImageProcessingWorkbench(
-                qimage_to_raster_plane(image),
+                raster,
                 source_document_id=document.id,
                 source_name="显微图像处理示例",
                 roi_summary="整张图片",
@@ -423,10 +461,12 @@ def main() -> int:
             widget.set_operation_steps(
                 (
                     default_operation_spec(
-                        "gaussian_blur",
+                        _processing_snapshot_operation_id(
+                            args.processing_operation
+                        ),
                         image.width(),
                         image.height(),
-                        source_pixel_type=qimage_to_raster_plane(image).pixel_type,
+                        source_pixel_type=raster.pixel_type,
                     ),
                 )
             )
@@ -641,6 +681,11 @@ def main() -> int:
             "tool_mode": args.tool_mode if args.scenario != "settings" else None,
             "settings_page": args.settings_page if args.scenario == "settings" else None,
             "results_tab": args.results_tab if args.scenario == "measurement-results" else None,
+            "processing_operation": (
+                args.processing_operation
+                if args.scenario == "image-processing"
+                else None
+            ),
             "scale": args.scale,
             "path": str(output.resolve()),
             "window": [widget.width(), widget.height()],

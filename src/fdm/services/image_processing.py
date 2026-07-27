@@ -3069,7 +3069,7 @@ def canny_edges(
         raise ValueError("Canny 阈值必须满足 0 ≤ 低阈值 < 高阈值。")
     if aperture_size not in {3, 5, 7}:
         raise ValueError("Canny 孔径大小必须是 3、5 或 7。")
-    scalar = _require_scalar_image(source, channel)
+    scalar = _canny_scalar_uint8(source, channel)
     radius = aperture_size // 2
     padded = cv2.copyMakeBorder(
         scalar,
@@ -3087,6 +3087,93 @@ def canny_edges(
         L2gradient=l2_gradient,
     )
     return result[radius:-radius, radius:-radius]
+
+
+def canny_gradient_magnitude(
+    image: NDArray[Any],
+    *,
+    aperture_size: int = 3,
+    l2_gradient: bool = True,
+    channel: str | None = None,
+) -> NDArray[np.float32]:
+    """Return the gradient domain to which Canny thresholds are applied.
+
+    This helper exists for the parameter editor and tests.  Showing an input
+    intensity histogram next to Canny thresholds is scientifically misleading:
+    the thresholds operate on Sobel gradient magnitude.  The 7×7 scale mirrors
+    OpenCV Canny's threshold normalization.
+    """
+
+    source = _validate_raster(image)
+    if source.dtype != np.uint8:
+        raise TypeError("Canny 梯度仅支持 8 位图像；请先显式转换位深。")
+    if aperture_size not in {3, 5, 7}:
+        raise ValueError("Canny 孔径大小必须是 3、5 或 7。")
+    scalar = _canny_scalar_uint8(source, channel)
+    radius = aperture_size // 2
+    padded = cv2.copyMakeBorder(
+        scalar,
+        radius,
+        radius,
+        radius,
+        radius,
+        cv2.BORDER_REFLECT_101,
+    )
+    # OpenCV's Canny computes CV_16S Sobel derivatives and, for a 7×7
+    # aperture, scales both the derivatives and the user thresholds by 1/16.
+    # The editor displays values in the *user threshold* domain, so recreate
+    # the same saturated integer derivatives and multiply the resulting
+    # magnitude back by 16 for aperture 7.
+    derivative_scale = 1.0 / 16.0 if aperture_size == 7 else 1.0
+    dx = cv2.Sobel(
+        padded,
+        cv2.CV_16S,
+        1,
+        0,
+        ksize=aperture_size,
+        scale=derivative_scale,
+        borderType=cv2.BORDER_CONSTANT,
+    )
+    dy = cv2.Sobel(
+        padded,
+        cv2.CV_16S,
+        0,
+        1,
+        ksize=aperture_size,
+        scale=derivative_scale,
+        borderType=cv2.BORDER_CONSTANT,
+    )
+    dx_float = dx.astype(np.float32)
+    dy_float = dy.astype(np.float32)
+    magnitude = (
+        cv2.magnitude(dx_float, dy_float)
+        if l2_gradient
+        else np.abs(dx_float) + np.abs(dy_float)
+    )
+    if aperture_size == 7:
+        magnitude *= 16.0
+    return np.ascontiguousarray(
+        magnitude[radius:-radius, radius:-radius],
+        dtype=np.float32,
+    )
+
+
+def _canny_scalar_uint8(
+    source: NDArray[Any],
+    channel: str | None,
+) -> NDArray[np.uint8]:
+    scalar = _require_scalar_image(source, channel)
+    if scalar.dtype != np.dtype(np.uint8):
+        # Selecting weighted luminance from an 8-bit RGB/RGBA source produces
+        # a float32 scalar plane.  Canny itself requires CV_8U, so materialise
+        # the explicitly selected scalar channel without changing the working
+        # red/green/blue paths.
+        scalar = np.clip(
+            np.rint(scalar),
+            0,
+            255,
+        ).astype(np.uint8)
+    return np.ascontiguousarray(scalar, dtype=np.uint8)
 
 
 def auto_threshold(
@@ -5062,11 +5149,9 @@ def _crop_with_transparent_outside(
     if mask.shape != source.shape[:2]:
         raise ValueError("裁剪后的 ROI 掩膜尺寸与输出图像不一致。")
     if source.dtype != np.dtype(np.uint8):
-        source = convert_pixel_type(
-            source,
-            PixelType.UINT8,
-            mode=ConversionScaleMode.PRESERVE_VALUES,
-            nonfinite_policy=NonfiniteIntegerPolicy.ZERO,
+        raise ValueError(
+            "透明 ROI 输出只支持 8 位图像；"
+            "请先显式选择数值映射并转换为 8 位，或使用数值填充。"
         )
     if source.ndim == 2:
         rgb = np.repeat(source[..., np.newaxis], 3, axis=2)
@@ -5430,6 +5515,25 @@ def validate_image_operation_spec(
     if not isinstance(input_state, RasterTypeState):
         raise TypeError("input_state 必须是 RasterTypeState")
     descriptor = get_image_operation_descriptor(operation.operation_id)
+    if operation.implementation != "fdm":
+        raise ImageRecipeValidationError(
+            "不支持的图像处理实现："
+            f"{operation.implementation}；当前版本只允许重放 fdm 实现",
+            operation_id=operation.operation_id,
+        )
+    supported_versions = {"1", descriptor.version}
+    if operation.implementation_version not in supported_versions:
+        raise ImageRecipeValidationError(
+            "不支持的算法版本："
+            f"{operation.operation_id} v{operation.implementation_version}；"
+            "当前版本仅支持 "
+            + "、".join(
+                f"v{version}"
+                for version in sorted(supported_versions, key=int)
+            ),
+            operation_id=operation.operation_id,
+        )
+    resolved_operation = ImageOperation(operation.operation_id)
     parameters = operation.parameters
     unknown_parameters = sorted(set(parameters) - set(descriptor.parameters))
     if unknown_parameters:
@@ -5461,6 +5565,77 @@ def validate_image_operation_spec(
         ):
             raise ImageRecipeValidationError(
                 "mask/transparent_outside 裁剪需要 ROI",
+                operation_id=operation.operation_id,
+            )
+        if (
+            bool(parameters.get("transparent_outside", False))
+            and input_state.pixel_type
+            not in {
+                RasterPixelType.GRAY8,
+                RasterPixelType.RGB8,
+                RasterPixelType.RGBA8,
+            }
+        ):
+            raise ImageRecipeValidationError(
+                "透明 ROI 输出只支持 8 位图像；"
+                "16 位或浮点图像请先显式选择数值映射并转换为 8 位，"
+                "或改用数值填充",
+                operation_id=operation.operation_id,
+            )
+    if (
+        resolved_operation in _VERSIONED_STRICT_BINARY_OPERATIONS
+        and operation.implementation_version != "1"
+        and input_state.semantic is not RasterSemantic.BINARY_MASK
+    ):
+        raise ImageRecipeValidationError(
+            "该操作要求显式二值掩膜输入；"
+            "请先添加“二值化”“自动阈值”或“局部自适应阈值”。"
+            "旧版 v1 配方仍可按原算法只读重放",
+            operation_id=operation.operation_id,
+        )
+    if (
+        resolved_operation in _VERSIONED_EXPLICIT_FLOAT_RANGE_OPERATIONS
+        and operation.implementation_version != "1"
+        and input_state.pixel_type is RasterPixelType.GRAY32_FLOAT
+    ):
+        raise ImageRecipeValidationError(
+            "32 位浮点图像没有可安全推断的 0–1 工作范围；"
+            "请先用“色阶”或“归一化”显式限定输入/输出范围，"
+            "并转换为 8 位或 16 位后再执行该操作。"
+            "旧版 v1 配方仍可按原 0–1 假设只读重放",
+            operation_id=operation.operation_id,
+        )
+    if (
+        resolved_operation in _VERSIONED_NEAREST_GEOMETRY_OPERATIONS
+        and operation.implementation_version != "1"
+        and input_state.semantic
+        in {
+            RasterSemantic.BINARY_MASK,
+            RasterSemantic.LABELS,
+        }
+    ):
+        interpolation = _coerce_enum(
+            InterpolationMode,
+            parameters.get(
+                "interpolation",
+                (
+                    InterpolationMode.AUTO.value
+                    if resolved_operation is ImageOperation.RESIZE
+                    else InterpolationMode.LINEAR.value
+                ),
+            ),
+            "插值模式",
+        )
+        if (
+            interpolation is not InterpolationMode.NEAREST
+            and not (
+                resolved_operation is ImageOperation.RESIZE
+                and interpolation is InterpolationMode.AUTO
+            )
+        ):
+            raise ImageRecipeValidationError(
+                "二值图和标签图只允许最近邻插值；"
+                "其他插值会产生不存在的中间类别值",
                 operation_id=operation.operation_id,
             )
     flat_field_source = str(
@@ -5508,10 +5683,69 @@ def validate_image_operation_spec(
     try:
         output_state = descriptor.resolve_output(input_state, parameters)
         if (
+            resolved_operation is ImageOperation.IMAGE_CALCULATOR
+            and secondary_state is not None
+        ):
+            calculator_operation = str(
+                parameters.get("calculator_operation", "add")
+            ).strip().lower()
+            if calculator_operation == "copy":
+                # ``copy`` is the sole calculator operation whose pixels and
+                # scientific meaning both come entirely from the right-hand
+                # raster.  Pixel type/dimensions have already been required to
+                # match above, so only its semantic needs to be transferred.
+                output_state = output_state.replace(
+                    semantic=secondary_state.semantic,
+                )
+            elif calculator_operation in {"and", "or", "xor"}:
+                # Integer bitwise arithmetic is still a valid intensity
+                # operation.  It is a binary-mask operation only when both
+                # operands explicitly carry that contract; otherwise allowing
+                # a following strict morphology step would silently reinterpret
+                # arbitrary sample bits as foreground/background.
+                output_state = output_state.replace(
+                    semantic=(
+                        RasterSemantic.COLOR
+                        if not output_state.is_grayscale
+                        else (
+                            RasterSemantic.BINARY_MASK
+                            if (
+                                input_state.semantic
+                                is RasterSemantic.BINARY_MASK
+                                and secondary_state.semantic
+                                is RasterSemantic.BINARY_MASK
+                            )
+                            else RasterSemantic.INTENSITY
+                        )
+                    ),
+                )
+            else:
+                # Add/subtract/multiply/etc. produce a new quantitative raster;
+                # even min/max/mean of masks are not authoritative masks.
+                output_state = output_state.replace(
+                    semantic=(
+                        RasterSemantic.INTENSITY
+                        if output_state.is_grayscale
+                        else RasterSemantic.COLOR
+                    ),
+                )
+        if (
             operation.operation_id == ImageOperation.COPY.value
             and not roi_requested
         ):
             output_state = input_state
+        if (
+            roi_requested
+            and output_state.is_grayscale
+            and output_state.semantic is not input_state.semantic
+        ):
+            # ROI operations are blended back into the original source.  When
+            # the inside and outside carry different meanings (binary, label,
+            # distance or intensity), the complete raster no longer satisfies
+            # either specialized global contract.
+            output_state = output_state.replace(
+                semantic=RasterSemantic.INTENSITY,
+            )
         capability = descriptor.tile(parameters)
     except (TypeError, ValueError) as exc:
         raise ImageRecipeValidationError(
@@ -5548,6 +5782,7 @@ def validate_image_processing_recipe(
     resolved_secondary_states = dict(secondary_states or {})
     state = input_state
     steps: list[RecipeValidationStep] = []
+    spatial_alignment_changed = False
     for index, operation in enumerate(recipe.operations):
         secondary_state = None
         flat_field_source = str(
@@ -5565,6 +5800,17 @@ def validate_image_processing_recipe(
                 operation.parameters.get("secondary_document_id", "")
             ).strip()
             secondary_state = resolved_secondary_states.get(secondary_id)
+            if (
+                spatial_alignment_changed
+                and operation.implementation_version != "1"
+            ):
+                raise ImageRecipeValidationError(
+                    "配方前序已执行空间几何变换，第二幅图像尚无可审计的"
+                    "同变换或重新对齐记录；请先生成派生图片并重新选择"
+                    "与其对齐的第二幅图像。旧版 v1 配方仍可只读重放",
+                    operation_index=index,
+                    operation_id=operation.operation_id,
+                )
         try:
             step = validate_image_operation_spec(
                 operation,
@@ -5588,6 +5834,11 @@ def validate_image_processing_recipe(
         )
         steps.append(step)
         state = step.output_state
+        if (
+            ImageOperation(operation.operation_id)
+            in _SPATIAL_ALIGNMENT_CHANGING_OPERATIONS
+        ):
+            spatial_alignment_changed = True
     return RecipeValidationResult(
         input_state=input_state,
         output_state=state,
@@ -5751,6 +6002,78 @@ def _authoritative_float_output_input(
     return None
 
 
+def _canny_input(
+    state: RasterTypeState,
+    parameters: Mapping[str, object],
+) -> str | None:
+    if state.pixel_type not in {
+        RasterPixelType.GRAY8,
+        RasterPixelType.RGB8,
+        RasterPixelType.RGBA8,
+    }:
+        return "Canny 边缘检测仅支持 8 位图像；请先显式转换位深"
+    return _scalar_channel_input(state, parameters)
+
+
+def _repair_nonfinite_input(
+    state: RasterTypeState,
+    _parameters: Mapping[str, object],
+) -> str | None:
+    if state.pixel_type is not RasterPixelType.GRAY32_FLOAT:
+        return "NaN/Inf 修复仅适用于 32 位浮点单通道图像"
+    return None
+
+
+def _pixel_bin_input(
+    state: RasterTypeState,
+    parameters: Mapping[str, object],
+) -> str | None:
+    method = str(
+        parameters.get("method", PixelBinMethod.MEAN.value)
+    ).strip().lower()
+    if method == PixelBinMethod.SUM.value and not state.is_grayscale:
+        return (
+            "RGB/RGBA 像素合并不支持求和；"
+            "请先显式转换为单通道图像，或选择均值、最小值、最大值"
+        )
+    return None
+
+
+def _median_filter_input(
+    state: RasterTypeState,
+    parameters: Mapping[str, object],
+) -> str | None:
+    radius = int(parameters.get("radius", 1))
+    if state.pixel_type is not RasterPixelType.GRAY8 and radius > 2:
+        return "16 位或浮点图像的中值滤波半径最大为 2"
+    return None
+
+
+def _remove_outliers_input(
+    state: RasterTypeState,
+    parameters: Mapping[str, object],
+) -> str | None:
+    radius = int(parameters.get("radius", 1))
+    if state.pixel_type is not RasterPixelType.GRAY8 and radius > 2:
+        return "16 位或浮点图像的热点/坏点剔除半径最大为 2"
+    return None
+
+
+def _image_calculator_input(
+    state: RasterTypeState,
+    parameters: Mapping[str, object],
+) -> str | None:
+    operation = str(
+        parameters.get("calculator_operation", "add")
+    ).strip().lower()
+    if (
+        operation in {"and", "or", "xor"}
+        and state.pixel_type is RasterPixelType.GRAY32_FLOAT
+    ):
+        return "AND、OR、XOR 仅支持 8 位或 16 位整数图像"
+    return _authoritative_float_output_input(state, parameters)
+
+
 def _geometry_output(
     operation: ImageOperation,
     state: RasterTypeState,
@@ -5806,7 +6129,76 @@ def _geometry_output(
                 raise ValueError("图片宽高不能被像素合并系数整除")
             width = width // factor
             height = height // factor
-    return state.replace(width=width, height=height)
+    semantic = state.semantic
+    pixel_type = state.pixel_type
+    if operation in {ImageOperation.ROTATE, ImageOperation.TRANSLATE}:
+        interpolation = _coerce_enum(
+            InterpolationMode,
+            parameters.get(
+                "interpolation",
+                InterpolationMode.LINEAR.value,
+            ),
+            "插值模式",
+        )
+        if interpolation is InterpolationMode.AUTO:
+            raise ValueError(
+                "任意角度旋转和平移不支持 auto 插值；"
+                "请显式选择 nearest、linear、cubic、area 或 lanczos"
+            )
+        if (
+            semantic in {
+                RasterSemantic.BINARY_MASK,
+                RasterSemantic.LABELS,
+            }
+            and interpolation is not InterpolationMode.NEAREST
+        ):
+            semantic = RasterSemantic.INTENSITY
+    elif operation is ImageOperation.RESIZE:
+        interpolation = _coerce_enum(
+            InterpolationMode,
+            parameters.get(
+                "interpolation",
+                InterpolationMode.AUTO.value,
+            ),
+            "插值模式",
+        )
+        if semantic in {
+            RasterSemantic.BINARY_MASK,
+            RasterSemantic.LABELS,
+        }:
+            resolved_interpolation = (
+                InterpolationMode.NEAREST
+                if interpolation is InterpolationMode.AUTO
+                else interpolation
+            )
+            if resolved_interpolation is not InterpolationMode.NEAREST:
+                semantic = RasterSemantic.INTENSITY
+    elif operation is ImageOperation.PIXEL_BIN:
+        method = _coerce_enum(
+            PixelBinMethod,
+            parameters.get("method", PixelBinMethod.MEAN.value),
+            "像素合并方式",
+        )
+        if method is PixelBinMethod.SUM:
+            pixel_type = RasterPixelType.GRAY32_FLOAT
+            semantic = RasterSemantic.INTENSITY
+        elif (
+            method is PixelBinMethod.MEAN
+            and semantic
+            in {
+                RasterSemantic.BINARY_MASK,
+                RasterSemantic.LABELS,
+            }
+        ):
+            # Averaging invents intermediate samples that are neither binary
+            # classes nor authoritative label identifiers.
+            semantic = RasterSemantic.INTENSITY
+    return state.replace(
+        pixel_type=pixel_type,
+        semantic=semantic,
+        width=width,
+        height=height,
+    )
 
 
 def _fft_output(
@@ -6370,6 +6762,10 @@ _PARAMETER_SCHEMA_OVERRIDES: dict[
     (ImageOperation.ADJUST_LEVELS, "gamma"): _with_parameter_schema(
         _COMMON_PARAMETER_SCHEMAS["gamma"], minimum=0.01, maximum=20
     ),
+    (ImageOperation.CONVERT_TYPE, "scale_mode"): _with_parameter_schema(
+        _COMMON_PARAMETER_SCHEMAS["scale_mode"],
+        default=ConversionScaleMode.PRESERVE_VALUES.value,
+    ),
     (ImageOperation.BRIGHTNESS_CONTRAST, "gamma"): _with_parameter_schema(
         _COMMON_PARAMETER_SCHEMAS["gamma"], minimum=0.01, maximum=20
     ),
@@ -6513,6 +6909,18 @@ _PARAMETER_SCHEMA_OVERRIDES: dict[
     ),
     (ImageOperation.FFT_FILTER, "output_float"): _with_parameter_schema(
         _COMMON_PARAMETER_SCHEMAS["output_float"], default=False
+    ),
+    (ImageOperation.FFT_FILTER, "boundary"): _with_parameter_schema(
+        _COMMON_PARAMETER_SCHEMAS["boundary"],
+        default="mirror_pad",
+    ),
+    (ImageOperation.FFT_FILTER, "low_cutoff"): _with_parameter_schema(
+        _COMMON_PARAMETER_SCHEMAS["low_cutoff"],
+        maximum=1e12,
+    ),
+    (ImageOperation.FFT_FILTER, "high_cutoff"): _with_parameter_schema(
+        _COMMON_PARAMETER_SCHEMAS["high_cutoff"],
+        maximum=1e12,
     ),
     (ImageOperation.FFT_FILTER, "pixel_size"): _with_parameter_schema(
         _COMMON_PARAMETER_SCHEMAS["pixel_size"],
@@ -6721,6 +7129,51 @@ _BINARY_INPUT_OPERATIONS = {
     ImageOperation.WATERSHED_V2,
     ImageOperation.CLEAR_BORDER,
 }
+# These operations historically accepted any scalar image and silently split
+# it at ``(minimum + maximum) / 2``.  Version 2 makes the scientific contract
+# explicit while retaining deterministic replay for persisted v1 recipes.
+_VERSIONED_STRICT_BINARY_OPERATIONS = _BINARY_INPUT_OPERATIONS - {
+    ImageOperation.WATERSHED,
+}
+_VERSIONED_NEAREST_GEOMETRY_OPERATIONS = {
+    ImageOperation.ROTATE,
+    ImageOperation.TRANSLATE,
+    ImageOperation.RESIZE,
+}
+_VERSIONED_EXPLICIT_FLOAT_RANGE_OPERATIONS = {
+    ImageOperation.BRIGHTNESS_CONTRAST,
+    ImageOperation.HISTOGRAM_EQUALIZATION,
+}
+_VERSIONED_SECONDARY_ALIGNMENT_OPERATIONS = {
+    ImageOperation.IMAGE_CALCULATOR,
+    ImageOperation.FLAT_FIELD_CORRECTION,
+}
+_SPATIAL_ALIGNMENT_CHANGING_OPERATIONS = {
+    ImageOperation.FLIP_HORIZONTAL,
+    ImageOperation.FLIP_VERTICAL,
+    ImageOperation.ROTATE_90_CLOCKWISE,
+    ImageOperation.ROTATE_90_COUNTERCLOCKWISE,
+    ImageOperation.ROTATE_180,
+    ImageOperation.ROTATE,
+    ImageOperation.CROP,
+    ImageOperation.RESIZE,
+    ImageOperation.TRANSLATE,
+    ImageOperation.RESIZE_CANVAS,
+    ImageOperation.PIXEL_BIN,
+}
+_VERSION_2_OPERATIONS = (
+    {
+        ImageOperation.WATERSHED_V2,
+        ImageOperation.ROLLING_BALL_BACKGROUND_SUBTRACT,
+        ImageOperation.LOG_V2,
+        ImageOperation.EXP_V2,
+        ImageOperation.SQRT_V2,
+    }
+    | _VERSIONED_STRICT_BINARY_OPERATIONS
+    | _VERSIONED_NEAREST_GEOMETRY_OPERATIONS
+    | _VERSIONED_EXPLICIT_FLOAT_RANGE_OPERATIONS
+    | _VERSIONED_SECONDARY_ALIGNMENT_OPERATIONS
+)
 _ROI_STATISTICS_OPERATIONS = {
     ImageOperation.CONVERT_TYPE,
     ImageOperation.ADJUST_LEVELS,
@@ -6876,8 +7329,42 @@ def _registered_parameter_condition(
         ).strip().lower()
         if unit not in {"cycles_per_pixel", "cycles_per_unit"}:
             return "FFT 频率单位不受支持"
-        if unit == "cycles_per_unit" and parameters.get("pixel_size") is None:
-            return "cycles_per_unit 需要显式 pixel_size"
+        pixel_size = parameters.get("pixel_size")
+        if unit == "cycles_per_unit":
+            if pixel_size is None:
+                return "cycles_per_unit 需要显式 pixel_size"
+            resolved_pixel_size = float(pixel_size)
+            nyquist = 0.5 / resolved_pixel_size
+            unit_label = "周期/物理单位"
+        else:
+            nyquist = 0.5
+            unit_label = "周期/像素"
+        low_cutoff = float(parameters.get("low_cutoff", 0.0))
+        high_cutoff = float(parameters.get("high_cutoff", 0.15))
+        if not 0.0 <= low_cutoff <= nyquist:
+            return (
+                f"FFT 低截止频率必须在 0 到 Nyquist 频率 "
+                f"{nyquist:g} {unit_label}之间"
+            )
+        if not 0.0 <= high_cutoff <= nyquist:
+            return (
+                f"FFT 高截止频率必须在 0 到 Nyquist 频率 "
+                f"{nyquist:g} {unit_label}之间"
+            )
+        mode = str(parameters.get("mode", "lowpass")).strip().lower()
+        if mode in {"bandpass", "bandstop"} and high_cutoff <= low_cutoff:
+            return "带通或带阻滤波的高截止频率必须大于低截止频率"
+        if mode == "lowpass" and high_cutoff <= 0:
+            return "低通滤波的高截止频率必须为正数"
+        if mode == "highpass" and low_cutoff <= 0:
+            return "高通滤波的低截止频率必须为正数"
+    if operation is ImageOperation.CANNY_EDGES:
+        low = float(parameters.get("threshold_low", 50.0))
+        high = float(parameters.get("threshold_high", 150.0))
+        if not math.isfinite(low) or not math.isfinite(high):
+            return "Canny 低阈值和高阈值必须是有限数"
+        if low < 0.0 or high <= low:
+            return "Canny 阈值必须满足 0 ≤ 低阈值 < 高阈值"
     return None
 
 
@@ -6892,6 +7379,18 @@ def _build_image_operation_registry() -> Mapping[str, ImageOperationDescriptor]:
             conditions = (_color_input,)
         elif operation is ImageOperation.CLAHE:
             conditions = (_integer_input,)
+        elif operation is ImageOperation.CANNY_EDGES:
+            conditions = (_canny_input,)
+        elif operation is ImageOperation.MEDIAN_FILTER:
+            conditions = (_median_filter_input,)
+        elif operation is ImageOperation.REMOVE_OUTLIERS:
+            conditions = (_remove_outliers_input,)
+        elif operation is ImageOperation.REPAIR_NONFINITE:
+            conditions = (_repair_nonfinite_input,)
+        elif operation is ImageOperation.PIXEL_BIN:
+            conditions = (_pixel_bin_input,)
+        elif operation is ImageOperation.IMAGE_CALCULATOR:
+            conditions = (_image_calculator_input,)
         elif operation in _BINARY_INPUT_OPERATIONS:
             conditions = (_scalar_channel_input,)
         elif operation in {
@@ -6905,7 +7404,6 @@ def _build_image_operation_registry() -> Mapping[str, ImageOperationDescriptor]:
             ImageOperation.LOG_V2,
             ImageOperation.EXP_V2,
             ImageOperation.SQRT_V2,
-            ImageOperation.IMAGE_CALCULATOR,
             ImageOperation.RANK_FILTER,
             ImageOperation.MORPHOLOGY_DERIVATIVE,
         }:
@@ -7074,18 +7572,7 @@ def _build_image_operation_registry() -> Mapping[str, ImageOperationDescriptor]:
                 )
             ),
             executor=execute_image_operation,
-            version=(
-                "2"
-                if operation
-                in {
-                    ImageOperation.WATERSHED_V2,
-                    ImageOperation.ROLLING_BALL_BACKGROUND_SUBTRACT,
-                    ImageOperation.LOG_V2,
-                    ImageOperation.EXP_V2,
-                    ImageOperation.SQRT_V2,
-                }
-                else "1"
-            ),
+            version="2" if operation in _VERSION_2_OPERATIONS else "1",
         )
     return MappingProxyType(descriptors)
 

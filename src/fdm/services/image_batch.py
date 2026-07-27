@@ -25,6 +25,7 @@ from fdm.image_processing_models import (
     ImageDerivation,
     ImageOperationSpec,
     ImageProcessingRecipe,
+    RasterSemantic,
     RasterTypeState,
 )
 from fdm.raster import RasterPlane
@@ -135,6 +136,8 @@ class BatchRasterInput:
     source_path: str | None = None
     roi_mask: np.ndarray | None = None
     secondary_raster: RasterPlane | None = None
+    semantic: RasterSemantic | None = None
+    secondary_semantic: RasterSemantic | None = None
 
     def __post_init__(self) -> None:
         document_id = str(self.document_id or "").strip()
@@ -143,6 +146,10 @@ class BatchRasterInput:
         display_name = str(self.display_name or "").strip() or document_id
         if not isinstance(self.raster, RasterPlane):
             raise TypeError("raster 必须是 RasterPlane")
+        semantic = RasterTypeState(
+            pixel_type=self.raster.pixel_type,
+            semantic=self.semantic,
+        ).semantic
         revision = int(self.source_pixel_revision)
         if revision < 0:
             raise ValueError("source_pixel_revision 不能为负数")
@@ -151,6 +158,19 @@ class BatchRasterInput:
             RasterPlane,
         ):
             raise TypeError("secondary_raster 必须是 RasterPlane")
+        if (
+            self.secondary_raster is None
+            and self.secondary_semantic is not None
+        ):
+            raise ValueError("没有第二幅图像时不能声明第二图像语义")
+        secondary_semantic = (
+            None
+            if self.secondary_raster is None
+            else RasterTypeState(
+                pixel_type=self.secondary_raster.pixel_type,
+                semantic=self.secondary_semantic,
+            ).semantic
+        )
         roi_mask = self.roi_mask
         if roi_mask is not None:
             normalized = np.array(roi_mask, dtype=bool, copy=True, order="C")
@@ -163,6 +183,7 @@ class BatchRasterInput:
             roi_mask = normalized
         object.__setattr__(self, "document_id", document_id)
         object.__setattr__(self, "display_name", display_name)
+        object.__setattr__(self, "semantic", semantic)
         object.__setattr__(self, "source_pixel_revision", revision)
         object.__setattr__(
             self,
@@ -170,6 +191,11 @@ class BatchRasterInput:
             None if self.source_path is None else str(self.source_path),
         )
         object.__setattr__(self, "roi_mask", roi_mask)
+        object.__setattr__(
+            self,
+            "secondary_semantic",
+            secondary_semantic,
+        )
 
 
 @dataclass(frozen=True, slots=True)
@@ -631,6 +657,14 @@ def _execute_item(
     generation_is_current: GenerationPredicate | None,
     progress_callback: BatchProgressCallback | None,
 ) -> tuple[DerivedRasterCandidate, int]:
+    output_state = _resolve_batch_output_state(
+        item.raster,
+        request.recipe.operations,
+        source_semantic=item.semantic,
+        roi_requested=item.roi_mask is not None,
+        secondary_raster=item.secondary_raster,
+        secondary_semantic=item.secondary_semantic,
+    )
     image = np.asarray(raster_plane_to_numpy(item.raster))
     working_roi_mask = item.roi_mask
     operation_reports: list[tuple[str, str]] = []
@@ -797,8 +831,10 @@ def _execute_item(
         source_image_size=(item.raster.width, item.raster.height),
         source_pixel_revision=item.source_pixel_revision,
         source_pixel_type=item.raster.pixel_type,
+        source_semantic=item.semantic,
         recipe=ImageProcessingRecipe.from_operations(executed_operations),
         result_pixel_type=raster.pixel_type,
+        result_semantic=output_state.semantic,
         result_image_size=(raster.width, raster.height),
         result_sha256=raster.sha256(),
         library_versions=(
@@ -828,8 +864,10 @@ def _validate_batch_inputs(
             _validate_batch_operation_sequence(
                 item.raster,
                 request.recipe.operations,
+                source_semantic=item.semantic,
                 roi_requested=item.roi_mask is not None,
                 secondary_raster=item.secondary_raster,
+                secondary_semantic=item.secondary_semantic,
             )
         except (TypeError, ValueError) as exc:
             errors[item.document_id] = (
@@ -842,13 +880,42 @@ def _validate_batch_operation_sequence(
     source: RasterPlane,
     operations: tuple[ImageOperationSpec, ...],
     *,
+    source_semantic: RasterSemantic | None = None,
     roi_requested: bool = False,
     secondary_raster: RasterPlane | None = None,
-) -> None:
+    secondary_semantic: RasterSemantic | None = None,
+) -> RasterTypeState:
     """Validate a batch recipe through the same registry as the workbench."""
+
+    return _resolve_batch_output_state(
+        source,
+        operations,
+        source_semantic=source_semantic,
+        roi_requested=roi_requested,
+        secondary_raster=secondary_raster,
+        secondary_semantic=secondary_semantic,
+    )
+
+
+def _resolve_batch_output_state(
+    source: RasterPlane,
+    operations: tuple[ImageOperationSpec, ...],
+    *,
+    source_semantic: RasterSemantic | None = None,
+    roi_requested: bool = False,
+    secondary_raster: RasterPlane | None = None,
+    secondary_semantic: RasterSemantic | None = None,
+) -> RasterTypeState:
+    """Resolve the already-preflighted batch output semantic.
+
+    Execution calls this directly so the public preflight hook remains exactly
+    once per input, while the commit candidate still carries the authoritative
+    semantic derived from the same registry contract.
+    """
 
     source_state = RasterTypeState(
         pixel_type=source.pixel_type,
+        semantic=source_semantic,
         width=source.width,
         height=source.height,
     )
@@ -856,6 +923,7 @@ def _validate_batch_operation_sequence(
     if secondary_raster is not None:
         secondary_state = RasterTypeState(
             pixel_type=secondary_raster.pixel_type,
+            semantic=secondary_semantic,
             width=secondary_raster.width,
             height=secondary_raster.height,
         )
@@ -879,12 +947,13 @@ def _validate_batch_operation_sequence(
                     operation.parameters.get("secondary_document_id", "")
                 )
                 secondary_states[document_id] = secondary_state
-    validate_image_processing_recipe(
+    validation = validate_image_processing_recipe(
         ImageProcessingRecipe.from_operations(operations),
         source_state,
         roi_requested=roi_requested,
         secondary_states=secondary_states,
     )
+    return validation.output_state
 
 
 def _estimate_item_resources(

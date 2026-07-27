@@ -1036,6 +1036,11 @@ class ImageDerivation:
         repr=False,
         compare=False,
     )
+    # Appended after the original positional field sequence so callers using
+    # the pre-semantic constructor order do not silently bind later arguments
+    # to a different field.
+    source_semantic: RasterSemantic | None = None
+    result_semantic: RasterSemantic | None = None
 
     def __post_init__(self) -> None:
         _require_supported_schema(
@@ -1069,7 +1074,17 @@ class ImageDerivation:
             field_name="source_pixel_revision",
         )
         source_pixel_type = _optional_pixel_type(self.source_pixel_type)
+        source_semantic = _optional_raster_semantic(
+            self.source_semantic,
+            pixel_type=source_pixel_type,
+            field_name="source_semantic",
+        )
         result_pixel_type = _optional_pixel_type(self.result_pixel_type)
+        result_semantic = _optional_raster_semantic(
+            self.result_semantic,
+            pixel_type=result_pixel_type,
+            field_name="result_semantic",
+        )
         result_image_size = _optional_image_size(
             self.result_image_size,
             field_name="result_image_size",
@@ -1086,7 +1101,9 @@ class ImageDerivation:
         object.__setattr__(self, "source_image_size", source_image_size)
         object.__setattr__(self, "source_pixel_revision", source_pixel_revision)
         object.__setattr__(self, "source_pixel_type", source_pixel_type)
+        object.__setattr__(self, "source_semantic", source_semantic)
         object.__setattr__(self, "result_pixel_type", result_pixel_type)
+        object.__setattr__(self, "result_semantic", result_semantic)
         object.__setattr__(self, "result_image_size", result_image_size)
         object.__setattr__(self, "result_sha256", result_sha256)
         object.__setattr__(self, "library_versions", library_versions)
@@ -1106,10 +1123,14 @@ class ImageDerivation:
         source["pixel_revision"] = self.source_pixel_revision
         if self.source_pixel_type is not None:
             source["pixel_type"] = self.source_pixel_type.value
+        if self.source_semantic is not None:
+            source["semantic"] = self.source_semantic.value
 
         result: dict[str, object] = {}
         if self.result_pixel_type is not None:
             result["pixel_type"] = self.result_pixel_type.value
+        if self.result_semantic is not None:
+            result["semantic"] = self.result_semantic.value
         if self.result_image_size is not None:
             result["image_size"] = list(self.result_image_size)
         if self.result_sha256 is not None:
@@ -1181,8 +1202,10 @@ class ImageDerivation:
             source_image_size=source_size,
             source_pixel_revision=source.get("pixel_revision", 0),  # type: ignore[arg-type]
             source_pixel_type=source.get("pixel_type"),
+            source_semantic=source.get("semantic"),
             recipe=ImageProcessingRecipe.from_dict(recipe_payload),
             result_pixel_type=result.get("pixel_type"),
+            result_semantic=result.get("semantic"),
             result_image_size=result_size,
             result_sha256=(
                 str(result["sha256"])
@@ -1344,6 +1367,29 @@ def _optional_pixel_type(value: object) -> RasterPixelType | None:
     if value is None:
         return None
     return RasterPixelType.parse(value)
+
+
+def _optional_raster_semantic(
+    value: object,
+    *,
+    pixel_type: RasterPixelType | None,
+    field_name: str,
+) -> RasterSemantic | None:
+    if value is None:
+        return None
+    try:
+        semantic = (
+            value
+            if isinstance(value, RasterSemantic)
+            else RasterSemantic(str(value))
+        )
+    except ValueError as exc:
+        raise ValueError(f"{field_name} 不是支持的栅格语义") from exc
+    if pixel_type is None:
+        raise ValueError(f"{field_name} 需要同时记录 pixel_type")
+    # Reuse the central channel/semantic compatibility contract.
+    RasterTypeState(pixel_type=pixel_type, semantic=semantic)
+    return semantic
 
 
 def _normalize_json_object(

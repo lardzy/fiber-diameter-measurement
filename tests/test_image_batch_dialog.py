@@ -44,7 +44,6 @@ def _recipe() -> "ImageProcessingRecipe":
                 "gaussian_blur",
                 {
                     "sigma": 1.2,
-                    "kernel_size": 5,
                     "border_mode": "reflect",
                 },
             ),

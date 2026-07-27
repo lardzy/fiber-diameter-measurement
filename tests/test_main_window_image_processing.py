@@ -18,6 +18,7 @@ from fdm.image_processing_models import (
     ImageOperationSpec,
     ImageProcessingRecipe,
     ProcessingRoiSnapshot,
+    RasterSemantic,
 )
 from fdm.models import (
     Calibration,
@@ -401,6 +402,7 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
     def test_roi_copy_commits_cropped_authoritative_pixels_only(self) -> None:
         window, _session_root = self._window()
         source, source_plane, roi = self._rich_source_document(window)
+        source.raster_semantic = RasterSemantic.BINARY_MASK
         window._selected_project_roi_ids = (roi.id,)
         window._refresh_project_roi_ui()
         window._roi_manager.select_rois((roi.id,))
@@ -423,6 +425,14 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         self.assertEqual(derived.image_size, (4, 3))
         self.assertEqual(source.image_size, (8, 6))
         self.assertEqual(derived.measurements, [])
+        self.assertIs(
+            derived.raster_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        self.assertIs(
+            derived.derivation.result_semantic,
+            RasterSemantic.BINARY_MASK,
+        )
         self.assertEqual(
             derived.derivation.recipe.operations[-1].operation_id,
             ImageOperation.COPY.value,
