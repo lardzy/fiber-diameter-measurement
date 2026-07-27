@@ -36,6 +36,26 @@ def _axial_distance(first: float, second: float) -> float:
 
 
 class DirectionalityAnalysisTests(unittest.TestCase):
+    def test_v2_reports_5x5_squared_gradient_fourier_map_and_peak_width(self) -> None:
+        image = np.zeros((96, 128), dtype=np.uint8)
+        image[43:53, 10:118] = 255
+
+        result = analyze_fiber_directionality(
+            DirectionalityRequest(
+                image=image,
+                bins=90,
+                algorithm_version=2,
+            )
+        )
+
+        self.assertEqual(result.algorithm_version, 2)
+        self.assertIsNotNone(result.gradient_magnitude_squared)
+        self.assertIsNotNone(result.fourier_power)
+        self.assertIsNotNone(result.orientation_map_degrees)
+        self.assertGreater(result.concentration or 0.0, 0.5)
+        self.assertGreater(result.peaks[0].width_degrees or 0.0, 0.0)
+        self.assertFalse(result.orientation_map_degrees.flags.writeable)
+
     def test_horizontal_fiber_reports_zero_degree_axis(self) -> None:
         image = np.zeros((96, 128), dtype=np.uint8)
         image[43:53, 10:118] = 255
@@ -92,6 +112,46 @@ class DirectionalityAnalysisTests(unittest.TestCase):
 
 
 class SkeletonNetworkAnalysisTests(unittest.TestCase):
+    def test_v2_reports_pixel_classes_junction_orders_and_branch_statistics(self) -> None:
+        mask = np.zeros((15, 15), dtype=bool)
+        mask[7, 2:13] = True
+        mask[3:8, 7] = True
+
+        result = analyze_skeleton_network(
+            SkeletonNetworkRequest(
+                mask=mask,
+                already_skeletonized=True,
+                algorithm_version=2,
+            )
+        )
+
+        self.assertEqual(result.triple_junction_count, 1)
+        self.assertEqual(result.quadruple_or_higher_junction_count, 0)
+        self.assertEqual(result.junction_pixel_count, 1)
+        self.assertEqual(result.slab_pixel_count, 11)
+        self.assertAlmostEqual(result.mean_branch_length or 0.0, 14.0 / 3.0)
+        self.assertAlmostEqual(result.maximum_branch_length or 0.0, 5.0)
+        self.assertEqual(int(result.classification_map[7, 7]), 4)
+        self.assertFalse(result.classification_map.flags.writeable)
+
+    def test_v2_pruning_has_audit_and_removes_short_terminal_branch(self) -> None:
+        mask = np.zeros((15, 15), dtype=bool)
+        mask[7, 2:13] = True
+        mask[5:8, 7] = True
+
+        result = analyze_skeleton_network(
+            SkeletonNetworkRequest(
+                mask=mask,
+                already_skeletonized=True,
+                algorithm_version=2,
+                prune_terminal_branches_below=3.0,
+            )
+        )
+
+        self.assertEqual(len(result.pruning_audit), 1)
+        self.assertFalse(result.skeleton[5, 7])
+        self.assertGreater(result.pruning_audit[0].removed_pixel_count, 0)
+
     def test_t_network_counts_nodes_lengths_and_geodesic_distance(self) -> None:
         mask = np.zeros((15, 15), dtype=bool)
         mask[7, 2:13] = True
@@ -316,6 +376,39 @@ class GlcmHaralickAnalysisTests(unittest.TestCase):
 
 
 class SpatialAndSurfaceAnalysisTests(unittest.TestCase):
+    def test_spatial_v2_reports_translation_corrected_ripley_k_and_l(self) -> None:
+        result = analyze_spatial_distribution(
+            SpatialDistributionRequest(
+                points=((1.0, 1.0), (3.0, 1.0), (1.0, 3.0), (3.0, 3.0)),
+                study_bounds=(0.0, 0.0, 4.0, 4.0),
+                ripley_radii=(1.0, 3.0),
+                algorithm_version=2,
+            )
+        )
+
+        self.assertEqual(result.algorithm_version, 2)
+        self.assertEqual(result.ripley_radii, (1.0, 3.0))
+        self.assertEqual(result.ripley_k[0], 0.0)
+        self.assertGreater(result.ripley_k[1], 0.0)
+        self.assertAlmostEqual(
+            result.ripley_l[1],
+            math.sqrt(result.ripley_k[1] / math.pi),
+        )
+        self.assertIn("边界校正", result.boundary_correction or "")
+
+    def test_spatial_v2_requires_complete_study_bounds(self) -> None:
+        with self.assertRaises(AdvancedAnalysisError) as raised:
+            SpatialDistributionRequest(
+                points=((0.0, 0.0), (1.0, 1.0)),
+                study_area=4.0,
+                algorithm_version=2,
+            )
+        self.assertEqual(
+            raised.exception.code,
+            AdvancedAnalysisErrorCode.INVALID_INPUT,
+        )
+        self.assertIn("边界", raised.exception.message)
+
     def test_square_points_have_exact_nearest_neighbor_and_density(self) -> None:
         result = analyze_spatial_distribution(
             SpatialDistributionRequest(

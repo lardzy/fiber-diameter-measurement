@@ -5,8 +5,9 @@ from enum import Enum
 import math
 
 import numpy as np
-from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QGuiApplication
+from numpy.typing import NDArray
+from PySide6.QtCore import QSize, Qt, Signal
+from PySide6.QtGui import QColor, QGuiApplication, QPainter, QPaintEvent, QPen
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -26,6 +27,118 @@ from PySide6.QtWidgets import (
 from fdm.image_processing_models import DisplayTransform, ImageOperationSpec
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox
+
+
+class IntensityHistogramWidget(QWidget):
+    """Small dependency-free histogram with live black/white-point markers."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._histograms: tuple[NDArray[np.float64], ...] = ()
+        self._colors: tuple[QColor, ...] = ()
+        self._range = (0.0, 1.0)
+        self._markers: tuple[tuple[float, float], ...] = ()
+        self.setMinimumHeight(132)
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+
+    def sizeHint(self) -> QSize:  # noqa: N802 - Qt API
+        return QSize(460, 150)
+
+    def set_histograms(
+        self,
+        histograms: tuple[NDArray[np.float64], ...],
+        *,
+        value_range: tuple[float, float],
+        colors: tuple[QColor, ...],
+    ) -> None:
+        self._histograms = tuple(
+            np.ascontiguousarray(item, dtype=np.float64)
+            for item in histograms
+        )
+        self._colors = tuple(colors)
+        self._range = (float(value_range[0]), float(value_range[1]))
+        self.update()
+
+    def set_markers(
+        self,
+        markers: tuple[tuple[float, float], ...],
+    ) -> None:
+        self._markers = tuple(
+            (float(low), float(high)) for low, high in markers
+        )
+        self.update()
+
+    def paintEvent(self, event: QPaintEvent) -> None:  # noqa: N802 - Qt API
+        super().paintEvent(event)
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+        palette = self.palette()
+        frame = self.rect().adjusted(1, 1, -2, -2)
+        painter.fillRect(frame, palette.base())
+        painter.setPen(QPen(palette.mid().color(), 1))
+        painter.drawRect(frame)
+        plot = frame.adjusted(7, 7, -7, -18)
+        if not self._histograms or plot.width() <= 1 or plot.height() <= 1:
+            painter.setPen(palette.placeholderText().color())
+            painter.drawText(plot, Qt.AlignmentFlag.AlignCenter, "无有效像素")
+            return
+        peak = max(
+            (float(np.max(histogram)) for histogram in self._histograms),
+            default=0.0,
+        )
+        if not math.isfinite(peak) or peak <= 0.0:
+            return
+        painter.save()
+        painter.setClipRect(plot)
+        for index, histogram in enumerate(self._histograms):
+            if histogram.size == 0:
+                continue
+            color = (
+                self._colors[index]
+                if index < len(self._colors)
+                else palette.text().color()
+            )
+            color.setAlpha(150 if len(self._histograms) > 1 else 205)
+            painter.setPen(QPen(color, 1))
+            count = int(histogram.size)
+            previous_x = plot.left()
+            previous_y = plot.bottom()
+            for bucket, value in enumerate(histogram):
+                x = plot.left() + int(
+                    round(bucket * max(1, plot.width() - 1) / max(1, count - 1))
+                )
+                y = plot.bottom() - int(
+                    round(float(value) * max(1, plot.height() - 1) / peak)
+                )
+                painter.drawLine(previous_x, previous_y, x, y)
+                previous_x, previous_y = x, y
+        painter.restore()
+        low_bound, high_bound = self._range
+        span = high_bound - low_bound
+        if span > 0.0 and math.isfinite(span):
+            marker_colors = self._colors or (palette.highlight().color(),)
+            for index, (low, high) in enumerate(self._markers):
+                color = marker_colors[min(index, len(marker_colors) - 1)]
+                color.setAlpha(230)
+                painter.setPen(QPen(color, 1, Qt.PenStyle.DashLine))
+                for value in (low, high):
+                    ratio = min(1.0, max(0.0, (value - low_bound) / span))
+                    x = plot.left() + int(round(ratio * plot.width()))
+                    painter.drawLine(x, plot.top(), x, plot.bottom())
+        painter.setPen(palette.placeholderText().color())
+        painter.drawText(
+            frame.adjusted(7, 0, -7, -2),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignBottom,
+            f"{low_bound:g}",
+        )
+        painter.drawText(
+            frame.adjusted(7, 0, -7, -2),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignBottom,
+            f"{high_bound:g}",
+        )
 
 
 class DisplayAdjustmentAction(str, Enum):
@@ -75,6 +188,7 @@ class DisplayAdjustmentDialog(QDialog):
         initial_transform: DisplayTransform | None = None,
         *,
         source_name: str = "",
+        roi_mask: NDArray[np.bool_] | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -88,6 +202,8 @@ class DisplayAdjustmentDialog(QDialog):
         self._source = source
         self._initial_transform = initial
         self._source_name = str(source_name or "").strip()
+        self._roi_mask = self._normalize_roi_mask(roi_mask)
+        self._statistics_channels = self._source_statistics_channels()
         self._changed = False
         self._updating = True
         self._completed = False
@@ -147,6 +263,35 @@ class DisplayAdjustmentDialog(QDialog):
         explanation.setWordWrap(True)
         explanation.setObjectName("displayAdjustmentExplanation")
         content_layout.addWidget(explanation)
+
+        histogram_group = QGroupBox("直方图与统计范围", content)
+        histogram_layout = QVBoxLayout(histogram_group)
+        histogram_layout.setSpacing(7)
+        scope_name = "当前 ROI" if self._roi_mask is not None else "整张图片"
+        valid_count = (
+            int(np.count_nonzero(self._roi_mask))
+            if self._roi_mask is not None
+            else int(source.width * source.height)
+        )
+        self.histogramScopeLabel = QLabel(
+            f"统计范围：{scope_name} · N={valid_count:,}；"
+            "Auto 采用每通道 0.35% 饱和裁剪。",
+            histogram_group,
+        )
+        self.histogramScopeLabel.setWordWrap(True)
+        histogram_layout.addWidget(self.histogramScopeLabel)
+        self.histogramWidget = IntensityHistogramWidget(histogram_group)
+        histogram_layout.addWidget(self.histogramWidget)
+        histogram_actions = QHBoxLayout()
+        self.autoButton = QPushButton("Auto", histogram_group)
+        self.resetButton = QPushButton("Reset", histogram_group)
+        self.setRangeButton = QPushButton("Set…", histogram_group)
+        histogram_actions.addWidget(self.autoButton)
+        histogram_actions.addWidget(self.resetButton)
+        histogram_actions.addWidget(self.setRangeButton)
+        histogram_actions.addStretch(1)
+        histogram_layout.addLayout(histogram_actions)
+        content_layout.addWidget(histogram_group)
 
         range_group = QGroupBox("显示范围", content)
         range_layout = QVBoxLayout(range_group)
@@ -265,6 +410,10 @@ class DisplayAdjustmentDialog(QDialog):
         self.applyDisplayButton.clicked.connect(self._apply_display)
         self.generateDerivedButton.clicked.connect(self._request_derived)
         self.cancelButton.clicked.connect(self.reject)
+        self.autoButton.clicked.connect(self._apply_auto_range)
+        self.resetButton.clicked.connect(self._reset_controls)
+        self.setRangeButton.clicked.connect(self._open_exact_range_dialog)
+        self._refresh_histogram()
 
     @property
     def source(self) -> RasterPlane:
@@ -327,6 +476,197 @@ class DisplayAdjustmentDialog(QDialog):
             return low, high
         padding = max(0.5, abs(low) * 1e-6)
         return low - padding, high + padding
+
+    def _normalize_roi_mask(
+        self,
+        roi_mask: NDArray[np.bool_] | None,
+    ) -> NDArray[np.bool_] | None:
+        if roi_mask is None:
+            return None
+        normalized = np.ascontiguousarray(roi_mask, dtype=np.bool_)
+        expected = (self._source.height, self._source.width)
+        if normalized.shape != expected:
+            raise ValueError(
+                f"ROI 掩膜尺寸 {normalized.shape!r} 与图片尺寸 {expected!r} 不一致。"
+            )
+        normalized.setflags(write=False)
+        return normalized
+
+    def _source_statistics_channels(self) -> tuple[NDArray[np.float64], ...]:
+        pixel_type = self._source.pixel_type
+        if pixel_type is RasterPixelType.GRAY8:
+            array = np.frombuffer(self._source.data, dtype=np.uint8).reshape(
+                self._source.height,
+                self._source.width,
+            )
+        elif pixel_type is RasterPixelType.GRAY16:
+            array = np.frombuffer(self._source.data, dtype="<u2").reshape(
+                self._source.height,
+                self._source.width,
+            )
+        elif pixel_type is RasterPixelType.GRAY32_FLOAT:
+            array = np.frombuffer(self._source.data, dtype="<f4").reshape(
+                self._source.height,
+                self._source.width,
+            )
+        else:
+            channel_count = pixel_type.channel_count
+            array = np.frombuffer(self._source.data, dtype=np.uint8).reshape(
+                self._source.height,
+                self._source.width,
+                channel_count,
+            )
+            array = array[..., :3]
+        mask = self._roi_mask
+        if array.ndim == 2:
+            values = array[mask] if mask is not None else array.reshape(-1)
+            finite = np.asarray(values, dtype=np.float64)
+            finite = finite[np.isfinite(finite)]
+            return (finite,)
+        channels: list[NDArray[np.float64]] = []
+        for index in range(3):
+            plane = array[..., index]
+            values = plane[mask] if mask is not None else plane.reshape(-1)
+            finite = np.asarray(values, dtype=np.float64)
+            finite = finite[np.isfinite(finite)]
+            channels.append(finite)
+        return tuple(channels)
+
+    def _refresh_histogram(self) -> None:
+        value_range = self._native_display_range()
+        histograms: list[NDArray[np.float64]] = []
+        for values in self._statistics_channels:
+            if values.size == 0:
+                histograms.append(np.zeros(256, dtype=np.float64))
+                continue
+            histogram, _edges = np.histogram(
+                values,
+                bins=256,
+                range=value_range,
+            )
+            histograms.append(np.asarray(histogram, dtype=np.float64))
+        colors = (
+            (QColor("#A7B0BA"),)
+            if len(histograms) == 1
+            else (
+                QColor("#E05252"),
+                QColor("#38A169"),
+                QColor("#3B82C4"),
+            )
+        )
+        self.histogramWidget.set_histograms(
+            tuple(histograms),
+            value_range=value_range,
+            colors=colors,
+        )
+        self._update_histogram_markers()
+
+    def _update_histogram_markers(self) -> None:
+        if not hasattr(self, "histogramWidget"):
+            return
+        if self.rangeModeCombo.currentData() == "window":
+            center = float(self.windowCenterSpin.value())
+            width = float(self.windowWidthSpin.value())
+            markers = ((center - width / 2.0, center + width / 2.0),)
+        else:
+            markers = tuple(
+                (float(low.value()), float(high.value()))
+                for low, high in zip(
+                    self.channelLowSpins,
+                    self.channelHighSpins,
+                    strict=True,
+                )
+            )
+        self.histogramWidget.set_markers(markers)
+
+    def _apply_auto_range(self) -> None:
+        ranges: list[tuple[float, float]] = []
+        native_low, native_high = self._native_display_range()
+        for values in self._statistics_channels:
+            if values.size == 0:
+                ranges.append((native_low, native_high))
+                continue
+            low, high = np.percentile(values, (0.35, 99.65))
+            if not math.isfinite(float(low)) or not math.isfinite(float(high)):
+                low, high = native_low, native_high
+            if high <= low:
+                padding = max(0.5, abs(float(low)) * 1e-6)
+                low, high = float(low) - padding, float(high) + padding
+            ranges.append((float(low), float(high)))
+        self._set_control_ranges(tuple(ranges), reset_mapping=False)
+
+    def _reset_controls(self) -> None:
+        native = self._native_display_range()
+        self._set_control_ranges(
+            tuple(native for _ in self.channelLowSpins),
+            reset_mapping=True,
+        )
+
+    def _set_control_ranges(
+        self,
+        ranges: tuple[tuple[float, float], ...],
+        *,
+        reset_mapping: bool,
+    ) -> None:
+        self._updating = True
+        try:
+            range_index = self.rangeModeCombo.findData("range")
+            if range_index >= 0:
+                self.rangeModeCombo.setCurrentIndex(range_index)
+            for low_spin, high_spin, values in zip(
+                self.channelLowSpins,
+                self.channelHighSpins,
+                ranges,
+                strict=True,
+            ):
+                low_spin.setValue(float(values[0]))
+                high_spin.setValue(float(values[1]))
+            if reset_mapping:
+                self.gammaSpin.setValue(1.0)
+                self.lutCombo.setCurrentIndex(max(0, self.lutCombo.findData(None)))
+                self.invertCheck.setChecked(False)
+        finally:
+            self._updating = False
+        self._changed = True
+        self._update_mode_visibility()
+        self._refresh_state(emit_preview=True)
+
+    def _open_exact_range_dialog(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("设置显示范围")
+        layout = QFormLayout(dialog)
+        low = self._new_value_spin(
+            self.channelLowSpins[0].value(),
+            minimum=self.channelLowSpins[0].minimum(),
+            maximum=self.channelLowSpins[0].maximum(),
+        )
+        high = self._new_value_spin(
+            self.channelHighSpins[0].value(),
+            minimum=self.channelHighSpins[0].minimum(),
+            maximum=self.channelHighSpins[0].maximum(),
+        )
+        layout.addRow("黑场 / 下限", low)
+        layout.addRow("白场 / 上限", high)
+        buttons = QHBoxLayout()
+        cancel = QPushButton("取消", dialog)
+        accept = QPushButton("确定", dialog)
+        cancel.clicked.connect(dialog.reject)
+        accept.clicked.connect(dialog.accept)
+        buttons.addStretch(1)
+        buttons.addWidget(cancel)
+        buttons.addWidget(accept)
+        layout.addRow(buttons)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        if high.value() <= low.value():
+            return
+        self._set_control_ranges(
+            tuple(
+                (float(low.value()), float(high.value()))
+                for _ in self.channelLowSpins
+            ),
+            reset_mapping=False,
+        )
 
     @staticmethod
     def _spin_limit(
@@ -403,6 +743,7 @@ class DisplayAdjustmentDialog(QDialog):
             return
         self._changed = True
         self._update_mode_visibility()
+        self._update_histogram_markers()
         self._refresh_state(emit_preview=True)
 
     def _update_mode_visibility(self) -> None:

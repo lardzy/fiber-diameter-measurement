@@ -11,11 +11,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QSpinBox
 
 from fdm.raster import RasterPixelType
+from fdm.services.analysis_profiles import analysis_output_field_schema
 from fdm.ui.advanced_analysis_dialog import (
     AdvancedAnalysisParametersDialog,
     SPATIAL_POINT_SCOPE_KEY,
     SPATIAL_STUDY_AREA_MODE_KEY,
 )
+from fdm.ui.analysis_parameters_dialog import analysis_parameter_schema
 from fdm.ui.image_analysis_controller import AnalysisTool
 
 
@@ -59,6 +61,7 @@ class AdvancedAnalysisParametersDialogTests(unittest.TestCase):
         expected_keys = {
             AnalysisTool.DIRECTIONALITY: {
                 "channel",
+                "algorithm_version",
                 "bins",
                 "gradient_sigma",
                 "minimum_gradient",
@@ -71,6 +74,8 @@ class AdvancedAnalysisParametersDialogTests(unittest.TestCase):
                 "foreground",
                 "threshold",
                 "already_skeletonized",
+                "algorithm_version",
+                "prune_terminal_branches_below",
             },
             AnalysisTool.LOCAL_THICKNESS: {
                 "channel",
@@ -91,6 +96,7 @@ class AdvancedAnalysisParametersDialogTests(unittest.TestCase):
                 "symmetric",
             },
             AnalysisTool.SPATIAL_DISTRIBUTION: {
+                "algorithm_version",
                 SPATIAL_POINT_SCOPE_KEY,
                 SPATIAL_STUDY_AREA_MODE_KEY,
             },
@@ -106,8 +112,28 @@ class AdvancedAnalysisParametersDialogTests(unittest.TestCase):
                     tool,
                     active_group_label="玻璃纤维",
                 )
-                self.assertEqual(set(dialog.parameters()), keys)
+                parameters = dialog.parameters()
+                self.assertEqual(set(parameters), keys)
+                if tool is AnalysisTool.DIRECTIONALITY:
+                    self.assertEqual(parameters["algorithm_version"], 2)
+                if tool is AnalysisTool.SKELETON:
+                    self.assertEqual(parameters["algorithm_version"], 2)
+                    self.assertEqual(
+                        parameters["prune_terminal_branches_below"],
+                        0.0,
+                    )
+                if tool is AnalysisTool.SPATIAL_DISTRIBUTION:
+                    self.assertEqual(parameters["algorithm_version"], 2)
                 dialog.close()
+
+        spatial_schema = analysis_parameter_schema(
+            AnalysisTool.SPATIAL_DISTRIBUTION
+        )
+        self.assertEqual(spatial_schema.version, "2")
+        self.assertIn(
+            "ripley_radii",
+            {field.key for field in spatial_schema.fields},
+        )
 
     def test_masked_binary_analysis_can_use_roi_without_threshold(self) -> None:
         dialog = self._dialog(
@@ -134,6 +160,25 @@ class AdvancedAnalysisParametersDialogTests(unittest.TestCase):
         self.assertEqual(parameters["directions_degrees"], (0.0, 90.0))
         self.assertEqual(parameters["value_range"], (100.0, 5000.0))
         self.assertFalse(parameters["symmetric"])
+        dialog.close()
+
+    def test_glcm_output_field_selection_does_not_change_kernel_parameters(
+        self,
+    ) -> None:
+        dialog = self._dialog(AnalysisTool.GLCM)
+        schema = analysis_output_field_schema("fdm.glcm")
+        self.assertIsNotNone(schema)
+        assert schema is not None
+        parameters = dialog.parameters()
+
+        self.assertEqual(dialog.output_fields(), schema.default_fields)
+        dialog.set_output_fields(("contrast", "glcm_matrices"))
+
+        self.assertEqual(
+            dialog.output_fields(),
+            ("contrast", "glcm_matrices"),
+        )
+        self.assertEqual(dialog.parameters(), parameters)
         dialog.close()
 
     def test_all_numeric_and_dropdown_editors_ignore_wheel(self) -> None:

@@ -17,6 +17,7 @@ from fdm.project_roi import (
     RoiBooleanOperator,
     RoiPoint,
     rasterize_roi_mask,
+    remove_rois_with_dependents,
     roi_bounds,
 )
 
@@ -209,6 +210,49 @@ def test_composite_rejects_missing_cross_document_and_cycle_references() -> None
             2,
             roi_lookup={"member": member, "a": a, "b": b},
         )
+
+
+def test_roi_deletion_removes_transitive_composite_dependency_closure() -> None:
+    left = _roi("left", RectangleRoiGeometry(0, 0, 2, 2))
+    right = _roi("right", RectangleRoiGeometry(1, 1, 2, 2))
+    third = _roi("third", RectangleRoiGeometry(2, 2, 2, 2))
+    first_level = _roi(
+        "first_level",
+        RoiBooleanExpression(RoiBooleanOperator.UNION, ("left", "right")),
+    )
+    second_level = _roi(
+        "second_level",
+        RoiBooleanExpression(
+            RoiBooleanOperator.INTERSECTION,
+            ("first_level", "third"),
+        ),
+    )
+    independent = _roi(
+        "independent",
+        RoiBooleanExpression(RoiBooleanOperator.XOR, ("right", "third")),
+    )
+
+    result = remove_rois_with_dependents(
+        (left, right, third, first_level, second_level, independent),
+        ("left",),
+    )
+
+    assert result.requested_ids == frozenset({"left"})
+    assert result.dependent_ids == frozenset({"first_level", "second_level"})
+    assert [roi.id for roi in result.remaining_rois] == [
+        "right",
+        "third",
+        "independent",
+    ]
+
+
+def test_roi_deletion_validation_is_non_mutating() -> None:
+    rois = [_roi("left", RectangleRoiGeometry(0, 0, 2, 2))]
+
+    with pytest.raises(KeyError, match="不存在"):
+        remove_rois_with_dependents(rois, ("missing",))
+
+    assert [roi.id for roi in rois] == ["left"]
 
 
 def test_roundtrip_preserves_all_roi_kinds_and_strict_json() -> None:

@@ -27,10 +27,13 @@ try:
         WorkbenchTaskKind,
         WorkbenchTaskRequest,
         WorkbenchTaskResult,
+        adapt_operations_for_preview,
         array_to_raster_plane,
+        build_processing_preview_snapshot,
         default_operation_spec,
         estimate_final_resources,
         execute_workbench_request,
+        expand_processing_preview_snapshot_for_halo,
         raster_plane_to_array,
         validate_workbench_operation_sequence,
         validate_final_resources,
@@ -101,6 +104,195 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_fft_power_spectrum_is_replay_only_in_workbench(self) -> None:
+        dialog = ImageProcessingWorkbench(
+            self.source,
+            source_document_id="doc-1",
+        )
+        try:
+            process_index = dialog._category_combo.findData("处理")  # noqa: SLF001
+            self.assertGreaterEqual(process_index, 0)
+            dialog._category_combo.setCurrentIndex(process_index)  # noqa: SLF001
+            self.app.processEvents()
+            available = {
+                str(dialog._operation_combo.itemData(index))  # noqa: SLF001
+                for index in range(dialog._operation_combo.count())  # noqa: SLF001
+            }
+            self.assertNotIn(ImageOperation.FFT_POWER_SPECTRUM.value, available)
+
+            dialog.set_operation_steps(
+                (
+                    ImageOperationSpec(
+                        ImageOperation.FFT_POWER_SPECTRUM.value,
+                        {
+                            "channel": "luminance",
+                            "logarithmic": True,
+                            "centered": True,
+                            "window": "none",
+                            "tukey_alpha": 0.25,
+                        },
+                        implementation="fdm",
+                        implementation_version="1",
+                    ),
+                )
+            )
+            self.assertEqual(
+                dialog.operation_steps()[0].operation_id,
+                ImageOperation.FFT_POWER_SPECTRUM.value,
+            )
+            self.assertTrue(dialog._generate_button.isEnabled())  # noqa: SLF001
+            self.assertTrue(dialog._parameter_widgets)  # noqa: SLF001
+            self.assertTrue(
+                all(
+                    not widget.isEnabled()
+                    for widget in dialog._parameter_widgets.values()  # noqa: SLF001
+                )
+            )
+            self.assertFalse(dialog._add_step_button.isEnabled())  # noqa: SLF001
+            self.assertFalse(dialog._remove_step_button.isEnabled())  # noqa: SLF001
+            self.assertFalse(dialog._save_recipe_button.isEnabled())  # noqa: SLF001
+            self.assertFalse(dialog._batch_apply_button.isEnabled())  # noqa: SLF001
+            self.assertIn(
+                "仅供旧项目重放",
+                dialog._save_recipe_button.toolTip(),  # noqa: SLF001
+            )
+            with self.assertRaisesRegex(ValueError, "只允许按 fdm v1"):
+                dialog.set_operation_steps(
+                    (
+                        ImageOperationSpec(
+                            ImageOperation.FFT_POWER_SPECTRUM.value,
+                            {},
+                            implementation_version="2",
+                        ),
+                    )
+                )
+        finally:
+            dialog.close()
+
+    def test_preview_snapshot_is_bounded_unscaled_and_crops_roi_and_secondary(
+        self,
+    ) -> None:
+        image = np.arange(3_000 * 4_000, dtype=np.uint16).reshape(3_000, 4_000)
+        source = array_to_raster_plane(image)
+        roi = np.zeros((3_000, 4_000), dtype=bool)
+        roi[700:900, 1_200:1_500] = True
+        secondary = array_to_raster_plane(image + 1)
+
+        snapshot = build_processing_preview_snapshot(
+            source,
+            visible_rect=(900.25, 400.5, 2_800.0, 2_400.0),
+            roi_mask=roi,
+            secondary_images={"secondary": secondary},
+        )
+
+        self.assertLessEqual(snapshot.source.width, 2_048)
+        self.assertLessEqual(snapshot.source.height, 2_048)
+        self.assertLessEqual(
+            snapshot.source.width * snapshot.source.height,
+            workbench_module.PREVIEW_MAX_PIXELS,
+        )
+        self.assertFalse(snapshot.is_full_source)
+        x, y, width, height = snapshot.bounds
+        np.testing.assert_array_equal(
+            raster_plane_to_array(snapshot.source),
+            image[y : y + height, x : x + width],
+        )
+        np.testing.assert_array_equal(
+            snapshot.roi_mask,
+            roi[y : y + height, x : x + width],
+        )
+        secondary_sample = dict(snapshot.secondary_images)["secondary"]
+        np.testing.assert_array_equal(
+            raster_plane_to_array(secondary_sample),
+            image[y : y + height, x : x + width] + 1,
+        )
+
+    def test_preview_crop_coordinates_are_local_but_persisted_recipe_is_not_changed(
+        self,
+    ) -> None:
+        snapshot = build_processing_preview_snapshot(
+            array_to_raster_plane(
+                np.arange(100 * 120, dtype=np.uint8).reshape(100, 120)
+            ),
+            visible_rect=(40.0, 20.0, 50.0, 40.0),
+        )
+        original = ImageOperationSpec(
+            "crop",
+            {"x": 50, "y": 30, "width": 25, "height": 20},
+        )
+
+        adapted = adapt_operations_for_preview(snapshot, (original,))
+
+        self.assertEqual(
+            adapted[0].parameters,
+            {"x": 10, "y": 10, "width": 25, "height": 20},
+        )
+        self.assertEqual(
+            original.parameters,
+            {"x": 50, "y": 30, "width": 25, "height": 20},
+        )
+
+    def test_preview_halo_reads_real_neighbours_and_crops_back_to_sample(
+        self,
+    ) -> None:
+        source_array = np.arange(20 * 20, dtype=np.uint16).reshape(20, 20)
+        source = array_to_raster_plane(source_array)
+        base = build_processing_preview_snapshot(
+            source,
+            visible_rect=(5.0, 6.0, 8.0, 7.0),
+        )
+
+        expanded, crop = expand_processing_preview_snapshot_for_halo(
+            base,
+            full_source=source,
+            full_roi_mask=None,
+            full_secondary_images={},
+            halo_x=2,
+            halo_y=2,
+        )
+
+        self.assertEqual(expanded.bounds, (3, 4, 12, 11))
+        self.assertEqual(crop, (2, 2, 8, 7))
+        expanded_array = raster_plane_to_array(expanded.source)
+        np.testing.assert_array_equal(
+            expanded_array[2:9, 2:10],
+            raster_plane_to_array(base.source),
+        )
+
+    def test_workbench_preview_uses_visible_source_sample_not_full_raster(
+        self,
+    ) -> None:
+        source = array_to_raster_plane(
+            np.arange(200 * 300, dtype=np.uint8).reshape(200, 300)
+        )
+        seen_sizes: list[tuple[int, int]] = []
+
+        def executor(
+            request: WorkbenchTaskRequest,
+            _token: CancellationToken,
+        ) -> RasterPlane:
+            seen_sizes.append((request.source.width, request.source.height))
+            return request.source
+
+        dialog = ImageProcessingWorkbench(
+            source,
+            source_document_id="doc-preview",
+            preview_rect=(80.0, 50.0, 60.0, 40.0),
+            executor=executor,
+        )
+        try:
+            dialog.set_operation_steps((ImageOperationSpec("invert"),))
+            dialog.request_preview()
+            self._wait_until(lambda: bool(seen_sizes))
+            self.assertEqual(seen_sizes[-1], (60, 40))
+            self.assertEqual(
+                dialog._preview_snapshot.full_source_size,  # noqa: SLF001
+                (300, 200),
+            )
+        finally:
+            dialog.close()
+            dialog.task_controller.wait_for_done()
+
     def test_step_reset_undo_redo_and_parameter_form_are_ordered(self) -> None:
         dialog = ImageProcessingWorkbench(
             self.source,
@@ -142,7 +334,7 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         )
         self.assertEqual(resize.parameters["width"], 640)
         self.assertEqual(resize.parameters["height"], 480)
-        self.assertEqual(resize.parameters["interpolation"], "area")
+        self.assertEqual(resize.parameters["interpolation"], "auto")
 
         levels = default_operation_spec(
             "adjust_levels",
@@ -236,10 +428,67 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             schemas["pixel_bin"],
             {"factor", "method", "remainder_policy"},
         )
+
         self.assertEqual(
             schemas["convert_type"],
             {"target_type", "scale_mode", "nonfinite_policy"},
         )
+        self.assertEqual(
+            schemas["adaptive_threshold"],
+            {
+                "method",
+                "radius",
+                "offset",
+                "k",
+                "r",
+                "p",
+                "q",
+                "foreground_is_high",
+                "channel",
+            },
+        )
+        self.assertEqual(
+            schemas["log_v2"],
+            {"result_mode", "output_min", "output_max"},
+        )
+        labels = {
+            definition.operation.value: definition.label
+            for definition in definitions
+        }
+        self.assertEqual(
+            labels["background_subtract"],
+            "形态学背景扣除",
+        )
+        self.assertEqual(
+            labels["rolling_ball_background_subtract"],
+            "滑动抛物面背景扣除",
+        )
+
+        log_v2 = default_operation_spec(
+            "log_v2",
+            640,
+            480,
+            source_pixel_type=RasterPixelType.GRAY16,
+        )
+        self.assertEqual(log_v2.parameters["result_mode"], "float32")
+        self.assertEqual(log_v2.implementation_version, "2")
+
+    def test_workbench_parameter_constraints_come_from_descriptors(self) -> None:
+        from fdm.services.image_processing import get_image_operation_descriptor
+
+        for definition in workbench_module._OPERATION_CATALOG:  # noqa: SLF001
+            descriptor = get_image_operation_descriptor(definition.operation)
+            with self.subTest(operation=definition.operation.value):
+                for field in definition.parameters:
+                    schema = descriptor.parameter(field.key)
+                    self.assertEqual(field.kind, schema.kind)
+                    self.assertEqual(field.default, schema.default)
+                    self.assertEqual(field.minimum, schema.minimum)
+                    self.assertEqual(field.maximum, schema.maximum)
+                    self.assertEqual(
+                        tuple(value for _label, value in field.choices),
+                        schema.choices,
+                    )
 
     def test_catalog_only_offers_wrap_for_backends_that_support_it(self) -> None:
         definitions = {
@@ -390,6 +639,131 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
         finally:
             without_secondary.close()
             with_secondary.close()
+
+    def test_reference_flat_field_freezes_reference_sha_and_full_levels(
+        self,
+    ) -> None:
+        source_values = np.arange(48, dtype=np.uint8).reshape(6, 8) + 20
+        reference_values = (
+            np.arange(48, dtype=np.uint8).reshape(6, 8) * 3 + 10
+        )
+        source = array_to_raster_plane(source_values)
+        reference = array_to_raster_plane(reference_values)
+        dialog = ImageProcessingWorkbench(
+            source,
+            source_document_id="doc-1",
+            secondary_images={"flat-reference": reference},
+            secondary_image_names={"flat-reference": "白场参考"},
+        )
+        operation = ImageOperationSpec(
+            ImageOperation.FLAT_FIELD_CORRECTION.value,
+            {
+                "flat_field_source": "reference",
+                "secondary_document_id": "flat-reference",
+                "radius": 25.0,
+                "method": "gaussian",
+                "preserve_mean": True,
+            },
+        )
+        from fdm.cancellation import CancellationTokenSource
+
+        try:
+            dialog.set_operation_steps((operation,))
+            prepared = dialog._prepare_reference_flat_field_steps(  # noqa: SLF001
+                dialog.operation_steps()
+            )
+            parameters = prepared[0].parameters
+            self.assertEqual(parameters["secondary_sha256"], reference.sha256())
+            self.assertEqual(
+                parameters["reference_levels"],
+                [float(np.mean(reference_values, dtype=np.float64))],
+            )
+
+            final_execution = (
+                workbench_module._execute_workbench_request_with_metadata(  # noqa: SLF001
+                    WorkbenchTaskRequest(
+                        kind=WorkbenchTaskKind.FINAL,
+                        request_id="flat-final",
+                        generation=1,
+                        source_document_id="doc-1",
+                        source=source,
+                        operations=prepared,
+                        secondary_images=(("flat-reference", reference),),
+                    ),
+                    CancellationTokenSource().token,
+                )
+            )
+            final_parameters = (
+                final_execution.recipe.operations[0].parameters
+            )
+            self.assertEqual(
+                final_parameters["secondary_sha256"],
+                reference.sha256(),
+            )
+            self.assertEqual(
+                final_parameters["secondary_document_id"],
+                "flat-reference",
+            )
+
+            snapshot = build_processing_preview_snapshot(
+                source,
+                visible_rect=(2.0, 1.0, 3.0, 3.0),
+                secondary_images={"flat-reference": reference},
+            )
+            preview_execution = (
+                workbench_module._execute_workbench_request_with_metadata(  # noqa: SLF001
+                    WorkbenchTaskRequest(
+                        kind=WorkbenchTaskKind.PREVIEW,
+                        request_id="flat-preview",
+                        generation=1,
+                        source_document_id="doc-1",
+                        source=snapshot.source,
+                        operations=prepared,
+                        secondary_images=snapshot.secondary_images,
+                    ),
+                    CancellationTokenSource().token,
+                )
+            )
+            final_array = raster_plane_to_array(final_execution.raster)
+            preview_array = raster_plane_to_array(preview_execution.raster)
+            np.testing.assert_array_equal(
+                preview_array,
+                final_array[1:4, 2:5],
+            )
+
+            stale_parameters = operation.parameters
+            stale_parameters["secondary_sha256"] = "c" * 64
+            with self.assertRaisesRegex(ValueError, "摘要"):
+                dialog.set_operation_steps(
+                    (
+                        ImageOperationSpec(
+                            ImageOperation.FLAT_FIELD_CORRECTION.value,
+                            stale_parameters,
+                        ),
+                    )
+                )
+        finally:
+            dialog.close()
+
+    def test_estimated_flat_field_remains_available_without_reference(self) -> None:
+        operation = default_operation_spec(
+            ImageOperation.FLAT_FIELD_CORRECTION,
+            self.source.width,
+            self.source.height,
+        )
+
+        self.assertEqual(
+            operation.parameters["flat_field_source"],
+            "estimated",
+        )
+        validation = validate_workbench_operation_sequence(
+            self.source,
+            (operation,),
+        )
+        self.assertEqual(
+            validation.steps[0].operation.operation_id,
+            ImageOperation.FLAT_FIELD_CORRECTION.value,
+        )
 
     def test_every_catalog_default_is_accepted_by_the_service(self) -> None:
         gray = self.source

@@ -9,8 +9,10 @@ from fdm.cancellation import CancellationError, CancellationTokenSource
 from fdm.image_processing_models import ImageOperationSpec
 from fdm.services import image_processing as processing
 from fdm.services.image_processing import (
+    ImageExecutionMode,
     ImageOperation,
     ImageOperationRequest,
+    estimate_tiled_execution,
     execute_image_operation,
     execute_image_operation_tiled,
     resolve_image_operation_capability,
@@ -57,6 +59,14 @@ class ImageOperationCapabilityTests(unittest.TestCase):
         self.assertTrue(data_range.requires_full_image_prescan)
         self.assertFalse(background.tileable)
         self.assertIn("中位数", background.reason)
+
+        reference_flat = resolve_image_operation_capability(
+            ImageOperation.FLAT_FIELD_CORRECTION,
+            {"flat_field_source": "reference"},
+        )
+        self.assertFalse(reference_flat.tileable)
+        self.assertTrue(reference_flat.requires_full_image_prescan)
+        self.assertIn("完整参考图像", reference_flat.reason)
 
     def test_wrap_border_and_bilateral_fall_back_to_exact_whole_image(self) -> None:
         wrapped = resolve_image_operation_capability(
@@ -203,6 +213,18 @@ class TiledImageProcessingTests(unittest.TestCase):
                     "offset": 0.0,
                     "border_mode": "reflect",
                 },
+            ),
+            (
+                ImageOperation.ADAPTIVE_THRESHOLD,
+                {"method": "sauvola", "radius": 2, "k": 0.2, "r": 128.0},
+            ),
+            (
+                ImageOperation.RANK_FILTER,
+                {"method": "variance", "radius": 2},
+            ),
+            (
+                ImageOperation.MORPHOLOGY_DERIVATIVE,
+                {"method": "gradient", "radius": 2},
             ),
         )
         for operation, parameters in cases:
@@ -372,6 +394,28 @@ class TiledImageProcessingTests(unittest.TestCase):
         request = execute.call_args.args[0]
         self.assertEqual(request.image.shape, self.source.shape)
 
+    def test_second_image_requires_exact_shape_channels_and_dtype(self) -> None:
+        with self.assertRaisesRegex(ValueError, "尺寸和通道"):
+            execute_image_operation_tiled(
+                ImageOperation.FLAT_FIELD_CORRECTION,
+                self.source,
+                secondary_image=np.ones(
+                    (*self.source.shape, 3),
+                    dtype=np.uint8,
+                ),
+                parameters={"flat_field_source": "reference"},
+            )
+        with self.assertRaisesRegex(ValueError, "像素类型"):
+            execute_image_operation_tiled(
+                ImageOperation.FLAT_FIELD_CORRECTION,
+                self.source,
+                secondary_image=np.ones(
+                    self.source.shape,
+                    dtype=np.uint16,
+                ),
+                parameters={"flat_field_source": "reference"},
+            )
+
     def test_wrap_gaussian_uses_whole_image_instead_of_patch_local_wrap(self) -> None:
         parameters = {
             "sigma_x": 1.7,
@@ -494,6 +538,97 @@ class TiledImageProcessingTests(unittest.TestCase):
         self.assertLessEqual(max(height for height, _width in patch_shapes), 36)
         self.assertLessEqual(max(width for _height, width in patch_shapes), 36)
 
+    def test_halo_boundary_and_overlap_cpu_gate_choose_stable_mode(self) -> None:
+        boundary = estimate_tiled_execution(
+            ImageOperation.CUSTOM_CONVOLUTION,
+            (32, 64),
+            parameters={
+                "kernel_width": 17,
+                "kernel_height": 1,
+            },
+            tile_size=32,
+        )
+        over_halo = estimate_tiled_execution(
+            ImageOperation.CUSTOM_CONVOLUTION,
+            (32, 64),
+            parameters={
+                "kernel_width": 19,
+                "kernel_height": 1,
+            },
+            tile_size=32,
+        )
+        overlap = estimate_tiled_execution(
+            ImageOperation.CUSTOM_CONVOLUTION,
+            (1024, 1024),
+            parameters={
+                "kernel_width": 15,
+                "kernel_height": 15,
+            },
+            tile_size=32,
+        )
+
+        self.assertEqual(boundary.mode, ImageExecutionMode.TILED)
+        self.assertEqual(boundary.halo_x, 8)
+        self.assertLess(boundary.overlap_multiplier, 2.0)
+        self.assertEqual(over_halo.mode, ImageExecutionMode.WHOLE_IMAGE)
+        self.assertIn("halo", over_halo.reason)
+        self.assertEqual(overlap.mode, ImageExecutionMode.WHOLE_IMAGE)
+        self.assertLess(overlap.halo_x / 32, 0.25)
+        self.assertGreater(overlap.overlap_multiplier, 2.0)
+        self.assertIn("CPU", overlap.reason)
+        self.assertGreater(
+            overlap.estimated_tiled_cpu_work_units,
+            overlap.estimated_whole_cpu_work_units * 2,
+        )
+        self.assertEqual(
+            overlap.estimated_cpu_work_units,
+            overlap.estimated_whole_cpu_work_units,
+        )
+
+    def test_large_halo_fallback_is_one_exact_whole_image_execution(self) -> None:
+        parameters = {
+            "kernel": (0.0,) * 9 + (1.0,) + (0.0,) * 9,
+            "kernel_width": 19,
+            "kernel_height": 1,
+            "normalize_kernel": False,
+            "offset": 0.0,
+            "border_mode": "reflect",
+        }
+        expected = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CUSTOM_CONVOLUTION,
+                self.source,
+                roi_mask=self.roi,
+                **parameters,
+            )
+        )
+        original = processing.execute_image_operation
+        with mock.patch.object(
+            processing,
+            "execute_image_operation",
+            wraps=original,
+        ) as execute:
+            actual = execute_image_operation_tiled(
+                ImageOperation.CUSTOM_CONVOLUTION,
+                self.source,
+                roi_mask=self.roi,
+                parameters=parameters,
+                tile_size=32,
+            )
+
+        execute.assert_called_once()
+        request = execute.call_args.args[0]
+        self.assertEqual(request.image.shape, self.source.shape)
+        self.assertEqual(
+            actual.metadata_map["execution_mode"],
+            ImageExecutionMode.WHOLE_IMAGE.value,
+        )
+        self.assertIn(
+            "halo",
+            str(actual.metadata_map["execution_decision_reason"]),
+        )
+        np.testing.assert_array_equal(actual.image, expected.image)
+
     def test_cancellation_is_checked_between_tiles_without_partial_result(self) -> None:
         cancellation = CancellationTokenSource()
         checks = 0
@@ -514,6 +649,43 @@ class TiledImageProcessingTests(unittest.TestCase):
                 cancellation_check=check,
             )
         self.assertGreaterEqual(checks, 3)
+
+    def test_cancellation_after_whole_image_fallback_discards_result(self) -> None:
+        cancellation = CancellationTokenSource()
+        original = processing.execute_image_operation
+        parameters = {
+            "kernel": (0.0,) * 9 + (1.0,) + (0.0,) * 9,
+            "kernel_width": 19,
+            "kernel_height": 1,
+            "normalize_kernel": False,
+            "offset": 0.0,
+            "border_mode": "reflect",
+        }
+
+        def finish_native_stage_then_cancel(request, **kwargs):
+            result = original(request, **kwargs)
+            cancellation.cancel()
+            return result
+
+        with (
+            mock.patch.object(
+                processing,
+                "execute_image_operation",
+                side_effect=finish_native_stage_then_cancel,
+            ) as execute,
+            self.assertRaises(CancellationError),
+        ):
+            execute_image_operation_tiled(
+                ImageOperation.CUSTOM_CONVOLUTION,
+                self.source,
+                parameters=parameters,
+                tile_size=32,
+                cancellation_check=(
+                    cancellation.token.raise_if_cancelled
+                ),
+            )
+
+        execute.assert_called_once()
 
     def test_workbench_pipeline_uses_exact_tiled_executor(self) -> None:
         source_plane = workbench.array_to_raster_plane(self.source)

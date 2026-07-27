@@ -19,6 +19,8 @@ from fdm.geometry import (
     polygon_centroid,
 )
 from fdm.models import (
+    PROJECT_MIN_READER_VERSION,
+    PROJECT_SCHEMA_VERSION,
     Calibration,
     CalibrationPreset,
     ImageDocument,
@@ -34,7 +36,12 @@ from fdm.models import (
     new_id,
     project_assets_root,
 )
-from fdm.project_io import ProjectIO, resolve_document_load_path
+from fdm.project_io import (
+    ProjectCompatibilityError,
+    ProjectIO,
+    resolve_document_load_path,
+)
+from fdm.project_roi import ProjectRoi, RectangleRoiGeometry
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
@@ -61,6 +68,112 @@ from fdm.settings import (
 
 
 class ModelsProjectIOTests(unittest.TestCase):
+    def test_project_schema_v2_roundtrip_and_schema1_compatibility(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            current_path = root / "current.fdmproj"
+            legacy_path = root / "legacy.fdmproj"
+            project = ProjectState(version="test", documents=[])
+
+            ProjectIO.save(project, current_path)
+            current_payload = json.loads(current_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                current_payload["project_schema_version"],
+                PROJECT_SCHEMA_VERSION,
+            )
+            self.assertEqual(
+                current_payload["min_reader_version"],
+                PROJECT_MIN_READER_VERSION,
+            )
+            self.assertEqual(current_payload["required_features"], [])
+
+            legacy_path.write_text(
+                json.dumps({"version": "legacy", "documents": []}),
+                encoding="utf-8",
+            )
+            legacy = ProjectIO.load(legacy_path)
+            self.assertEqual(legacy.project_schema_version, 1)
+            self.assertTrue(legacy.compatibility.requires_upgrade)
+            self.assertFalse(legacy.compatibility.read_only)
+
+    def test_required_features_are_derived_from_persisted_extensions(self) -> None:
+        project = ProjectState(version="test", documents=[])
+        project.project_rois.append(
+            ProjectRoi(
+                id="roi_feature",
+                document_id="image_feature",
+                name="范围",
+                geometry=RectangleRoiGeometry(1.0, 2.0, 3.0, 4.0),
+            )
+        )
+
+        payload = project.to_dict()
+
+        self.assertEqual(payload["required_features"], ["project-rois/v1"])
+
+    def test_project_rejects_newer_schema_and_reader_requirement(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "future.fdmproj"
+            for field, value in (
+                ("project_schema_version", PROJECT_SCHEMA_VERSION + 1),
+                ("min_reader_version", PROJECT_SCHEMA_VERSION + 1),
+            ):
+                with self.subTest(field=field):
+                    payload = {
+                        "project_schema_version": PROJECT_SCHEMA_VERSION,
+                        "min_reader_version": 1,
+                        "required_features": [],
+                        "version": "future",
+                        "documents": [],
+                    }
+                    payload[field] = value
+                    path.write_text(json.dumps(payload), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "版本|读取器"):
+                        ProjectIO.load(path)
+
+    def test_unknown_required_feature_loads_read_only_and_blocks_overwrite(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            source = root / "future-feature.fdmproj"
+            save_as = root / "copy.fdmproj"
+            payload = ProjectState(version="test", documents=[]).to_dict()
+            payload["required_features"] = ["future-segmentation/v9"]
+            source.write_text(json.dumps(payload), encoding="utf-8")
+
+            loaded = ProjectIO.load(source)
+
+            self.assertTrue(loaded.is_read_only_compatible)
+            self.assertEqual(
+                loaded.compatibility.unknown_required_features,
+                ("future-segmentation/v9",),
+            )
+            self.assertFalse(loaded.compatibility.can_overwrite(source))
+            self.assertTrue(loaded.compatibility.can_overwrite(save_as))
+            with self.assertRaises(ProjectCompatibilityError):
+                ProjectIO.save(loaded, source)
+            ProjectIO.save(loaded, save_as)
+            self.assertTrue(save_as.exists())
+
+    def test_pre_upgrade_backup_is_created_once_for_schema1(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            source = Path(tmp_dir) / "legacy.fdmproj"
+            original = json.dumps(
+                {"version": "legacy", "documents": []},
+                ensure_ascii=False,
+            )
+            source.write_text(original, encoding="utf-8")
+
+            first = ProjectIO.create_pre_upgrade_backup(source)
+            second = ProjectIO.create_pre_upgrade_backup(source)
+
+            self.assertTrue(first.required)
+            self.assertTrue(first.created)
+            self.assertIsNotNone(first.backup_path)
+            assert first.backup_path is not None
+            self.assertEqual(first.backup_path.read_text(encoding="utf-8"), original)
+            self.assertFalse(second.created)
+            self.assertEqual(second.backup_path, first.backup_path)
+
     def test_calibration_conversion(self) -> None:
         calibration = Calibration(
             mode="image_scale",

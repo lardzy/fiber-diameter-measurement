@@ -11,6 +11,9 @@ from fdm.image_processing_models import (
     ImageDerivation,
     ImageOperationSpec,
     ImageProcessingRecipe,
+    ProcessingRoiSnapshot,
+    RasterSemantic,
+    RasterTypeState,
 )
 from fdm.models import ImageDocument, ProjectState, project_processed_root
 from fdm.project_io import ProjectIO
@@ -73,6 +76,36 @@ class RasterPlaneTests(unittest.TestCase):
 
 
 class ImageProcessingPersistenceModelTests(unittest.TestCase):
+    def test_raster_type_state_tracks_layout_semantics_and_dimensions(self) -> None:
+        state = RasterTypeState(
+            RasterPixelType.GRAY16,
+            semantic=RasterSemantic.BINARY_MASK,
+            width=640,
+            height=480,
+        )
+
+        self.assertEqual(state.channel_count, 1)
+        self.assertTrue(state.is_grayscale)
+        self.assertIs(state.semantic, RasterSemantic.BINARY_MASK)
+        self.assertEqual(
+            state.replace(
+                pixel_type=RasterPixelType.GRAY32_FLOAT,
+                semantic=RasterSemantic.DISTANCE,
+            ).width,
+            640,
+        )
+        self.assertIs(
+            RasterTypeState(RasterPixelType.RGB8).semantic,
+            RasterSemantic.COLOR,
+        )
+        with self.assertRaisesRegex(ValueError, "同时提供"):
+            RasterTypeState(RasterPixelType.GRAY8, width=10)
+        with self.assertRaisesRegex(ValueError, "语义必须"):
+            RasterTypeState(
+                RasterPixelType.RGB8,
+                semantic=RasterSemantic.BINARY_MASK,
+            )
+
     def test_display_transform_roundtrip_and_finite_validation(self) -> None:
         transform = DisplayTransform(
             black_point=128.0,
@@ -222,6 +255,15 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
             result_pixel_type=RasterPixelType.GRAY16,
             result_image_size=(3072, 4096),
             result_sha256="b" * 64,
+            roi_snapshot=ProcessingRoiSnapshot(
+                source_kind="project_roi",
+                source_id="roi-1",
+                revision=4,
+                bounds=(12, 20, 80, 60),
+                mask_sha256="c" * 64,
+                dependency_revisions=(("roi-1", 4), ("roi-child", 2)),
+                source_label="ROI：纤维区域",
+            ),
             library_versions=(
                 ("opencv", "4.13.0"),
                 ("numpy", "2.4.0"),
@@ -246,6 +288,7 @@ class ImageProcessingPersistenceModelTests(unittest.TestCase):
         )
         self.assertEqual(loaded.source_pixel_revision, 7)
         self.assertEqual(loaded.result_image_size, (3072, 4096))
+        self.assertEqual(loaded.roi_snapshot, derivation.roi_snapshot)
         self.assertEqual(dict(loaded.library_versions)["opencv"], "4.13.0")
         with self.assertRaisesRegex(ValueError, "至少需要一个"):
             ImageProcessingRecipe(operations=())

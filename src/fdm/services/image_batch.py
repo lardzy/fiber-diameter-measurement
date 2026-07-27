@@ -25,12 +25,15 @@ from fdm.image_processing_models import (
     ImageDerivation,
     ImageOperationSpec,
     ImageProcessingRecipe,
+    RasterTypeState,
 )
 from fdm.raster import RasterPlane
 from fdm.services.image_processing import (
     ImageOperation,
     execute_image_operation_tiled,
+    flat_field_reference_levels,
     resolve_image_operation_capability,
+    validate_image_processing_recipe,
 )
 from fdm.services.raster_io import numpy_to_raster_plane, raster_plane_to_numpy
 
@@ -43,6 +46,7 @@ _DYNAMIC_OPERATION_METADATA_KEYS = frozenset(
         "computed_threshold",
         "cropped_right",
         "cropped_bottom",
+        "roi_bounds",
     }
 )
 
@@ -628,6 +632,7 @@ def _execute_item(
     progress_callback: BatchProgressCallback | None,
 ) -> tuple[DerivedRasterCandidate, int]:
     image = np.asarray(raster_plane_to_numpy(item.raster))
+    working_roi_mask = item.roi_mask
     operation_reports: list[tuple[str, str]] = []
     executed_operations: list[ImageOperationSpec] = []
     completed = 0
@@ -639,13 +644,53 @@ def _execute_item(
         )
         parameters = operation_spec.parameters
         secondary_image = None
-        if operation_spec.operation_id == ImageOperation.IMAGE_CALCULATOR.value:
+        flat_field_source = str(
+            parameters.get("flat_field_source", "estimated")
+        ).strip().lower()
+        uses_secondary_image = (
+            operation_spec.operation_id
+            == ImageOperation.IMAGE_CALCULATOR.value
+            or (
+                operation_spec.operation_id
+                == ImageOperation.FLAT_FIELD_CORRECTION.value
+                and flat_field_source == "reference"
+            )
+        )
+        if uses_secondary_image:
             if item.secondary_raster is None:
-                raise ValueError("图像计算器缺少与当前图片对齐的第二幅图像")
+                message = (
+                    "参考图平场校正缺少与当前图片严格兼容的参考图像"
+                    if operation_spec.operation_id
+                    == ImageOperation.FLAT_FIELD_CORRECTION.value
+                    else "图像计算器缺少与当前图片对齐的第二幅图像"
+                )
+                raise ValueError(message)
             secondary_image = np.asarray(
                 raster_plane_to_numpy(item.secondary_raster)
             )
-            parameters.pop("secondary_document_id", None)
+            if (
+                operation_spec.operation_id
+                == ImageOperation.FLAT_FIELD_CORRECTION.value
+            ):
+                actual_sha256 = item.secondary_raster.sha256()
+                expected_sha256 = str(
+                    parameters.get("secondary_sha256", "")
+                ).strip()
+                if expected_sha256 and expected_sha256 != actual_sha256:
+                    raise ValueError(
+                        "参考平场像素摘要与当前批处理参考图像不一致"
+                    )
+                parameters["secondary_sha256"] = actual_sha256
+                parameters["reference_levels"] = (
+                    flat_field_reference_levels(
+                        secondary_image,
+                        preserve_mean=bool(
+                            parameters.get("preserve_mean", True)
+                        ),
+                    )
+                )
+            else:
+                parameters.pop("secondary_document_id", None)
         _emit_progress(
             progress_callback,
             BatchProgressUpdate(
@@ -677,7 +722,7 @@ def _execute_item(
             image,
             parameters=parameters,
             secondary_image=secondary_image,
-            roi_mask=item.roi_mask,
+            roi_mask=working_roi_mask,
             request_id=request.request_id,
             generation=request.generation,
             tile_size=BATCH_PROCESSING_TILE_EDGE,
@@ -694,6 +739,8 @@ def _execute_item(
         ):
             raise RuntimeError("图像处理结果的 request_id/generation 与请求不一致")
         image = np.asarray(operation_result.image)
+        if operation_result.roi_mask is not None:
+            working_roi_mask = operation_result.roi_mask
         dynamic_metadata = {
             key: value
             for key, value in operation_result.metadata_map.items()
@@ -781,6 +828,8 @@ def _validate_batch_inputs(
             _validate_batch_operation_sequence(
                 item.raster,
                 request.recipe.operations,
+                roi_requested=item.roi_mask is not None,
+                secondary_raster=item.secondary_raster,
             )
         except (TypeError, ValueError) as exc:
             errors[item.document_id] = (
@@ -792,61 +841,50 @@ def _validate_batch_inputs(
 def _validate_batch_operation_sequence(
     source: RasterPlane,
     operations: tuple[ImageOperationSpec, ...],
+    *,
+    roi_requested: bool = False,
+    secondary_raster: RasterPlane | None = None,
 ) -> None:
-    """Reject output layouts that cannot be represented by ``RasterPlane``."""
+    """Validate a batch recipe through the same registry as the workbench."""
 
-    channels = int(source.pixel_type.channel_count)
-    scalar_outputs = {
-        ImageOperation.THRESHOLD,
-        ImageOperation.SOBEL_EDGES,
-        ImageOperation.LAPLACIAN_EDGES,
-        ImageOperation.CANNY_EDGES,
-        ImageOperation.AUTO_THRESHOLD,
-        ImageOperation.BINARIZE,
-        ImageOperation.ERODE,
-        ImageOperation.DILATE,
-        ImageOperation.MORPHOLOGY_OPEN,
-        ImageOperation.MORPHOLOGY_CLOSE,
-        ImageOperation.FILL_HOLES,
-        ImageOperation.CONTOUR_EXTRACT,
-        ImageOperation.REMOVE_SMALL_OBJECTS,
-        ImageOperation.FILL_SMALL_HOLES,
-        ImageOperation.DISTANCE_TRANSFORM,
-        ImageOperation.SKELETONIZE,
-        ImageOperation.WATERSHED,
-        ImageOperation.TOP_HAT,
-        ImageOperation.BLACK_HAT,
-    }
-    for operation_spec in operations:
-        try:
-            operation = ImageOperation(operation_spec.operation_id)
-        except ValueError as exc:
-            raise ValueError(
-                f"不支持的图像处理操作：{operation_spec.operation_id}"
-            ) from exc
-        parameters = operation_spec.parameters
-        if operation is ImageOperation.CONVERT_TYPE:
-            target = str(parameters.get("target_type", "uint8"))
-            if channels > 1 and target != "uint8":
-                raise ValueError(
-                    "RGB/RGBA 图像不能直接转换为 16 位或 32 位浮点；"
-                    "请先添加“转换颜色模型 → 灰度”步骤。"
+    source_state = RasterTypeState(
+        pixel_type=source.pixel_type,
+        width=source.width,
+        height=source.height,
+    )
+    secondary_states: dict[str, RasterTypeState] = {}
+    if secondary_raster is not None:
+        secondary_state = RasterTypeState(
+            pixel_type=secondary_raster.pixel_type,
+            width=secondary_raster.width,
+            height=secondary_raster.height,
+        )
+        for operation in operations:
+            flat_field_source = str(
+                operation.parameters.get(
+                    "flat_field_source",
+                    "estimated",
                 )
-        elif operation is ImageOperation.CONVERT_COLOR:
-            channels = (
-                1
-                if str(parameters.get("target_model", "grayscale"))
-                == "grayscale"
-                else 3
-            )
-        elif operation in scalar_outputs:
-            channels = 1
-        elif (
-            operation is ImageOperation.FFT_FILTER
-            and str(parameters.get("channel", "per_channel"))
-            != "per_channel"
-        ):
-            channels = 1
+            ).strip().lower()
+            if (
+                operation.operation_id
+                == ImageOperation.IMAGE_CALCULATOR.value
+                or (
+                    operation.operation_id
+                    == ImageOperation.FLAT_FIELD_CORRECTION.value
+                    and flat_field_source == "reference"
+                )
+            ):
+                document_id = str(
+                    operation.parameters.get("secondary_document_id", "")
+                )
+                secondary_states[document_id] = secondary_state
+    validate_image_processing_recipe(
+        ImageProcessingRecipe.from_operations(operations),
+        source_state,
+        roi_requested=roi_requested,
+        secondary_states=secondary_states,
+    )
 
 
 def _estimate_item_resources(
@@ -998,6 +1036,36 @@ def _estimated_output_layout(
         channels = 1 if target == "grayscale" else 3
         if target != "grayscale":
             bytes_per_channel = 1
+    elif operation == ImageOperation.COPY.value and bool(
+        params.get("transparent_outside", False)
+    ):
+        channels = 4
+        bytes_per_channel = 1
+    elif operation in {
+        ImageOperation.LOG_V2.value,
+        ImageOperation.EXP_V2.value,
+        ImageOperation.SQRT_V2.value,
+    } and str(params.get("result_mode", "float32")) == "float32":
+        channels = 1
+        bytes_per_channel = 4
+    elif operation == ImageOperation.IMAGE_CALCULATOR.value and str(
+        params.get("result_mode", "preserve")
+    ) == "float32":
+        channels = 1
+        bytes_per_channel = 4
+    elif operation == ImageOperation.RANK_FILTER.value and str(
+        params.get("method", "minimum")
+    ) == "variance":
+        channels = 1
+        bytes_per_channel = 4
+    elif operation == ImageOperation.MORPHOLOGY_DERIVATIVE.value and str(
+        params.get("method", "gradient")
+    ) == "laplacian":
+        channels = 1
+        bytes_per_channel = 4
+    elif operation == ImageOperation.FFT_POWER_SPECTRUM.value:
+        channels = 1
+        bytes_per_channel = 4
     elif operation in {
         ImageOperation.SOBEL_EDGES.value,
         ImageOperation.LAPLACIAN_EDGES.value,
@@ -1020,6 +1088,10 @@ def _estimated_output_layout(
         ImageOperation.FILL_SMALL_HOLES.value,
         ImageOperation.SKELETONIZE.value,
         ImageOperation.WATERSHED.value,
+        ImageOperation.WATERSHED_V2.value,
+        ImageOperation.ADAPTIVE_THRESHOLD.value,
+        ImageOperation.REGIONAL_EXTREMA.value,
+        ImageOperation.CLEAR_BORDER.value,
         ImageOperation.TOP_HAT.value,
         ImageOperation.BLACK_HAT.value,
     }:
@@ -1030,11 +1102,14 @@ def _estimated_output_layout(
 def _operation_working_multiplier(operation_id: str) -> int:
     if operation_id in {
         ImageOperation.FFT_FILTER.value,
+        ImageOperation.FFT_POWER_SPECTRUM.value,
         ImageOperation.STRIPE_SUPPRESSION.value,
     }:
         return 24
     if operation_id in {
         ImageOperation.WATERSHED.value,
+        ImageOperation.WATERSHED_V2.value,
+        ImageOperation.MORPHOLOGICAL_RECONSTRUCTION.value,
         ImageOperation.DISTANCE_TRANSFORM.value,
         ImageOperation.SKELETONIZE.value,
     }:

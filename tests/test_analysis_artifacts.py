@@ -11,9 +11,13 @@ from fdm.analysis_artifacts import (
     AnalysisAssetKind,
     AnalysisAssetReference,
     AnalysisCurve,
+    AnalysisDependencySignature,
     AnalysisObjectKind,
     AnalysisObjectReference,
+    AnalysisRegionSnapshot,
+    AnalysisSourceDescriptor,
     AnalysisTable,
+    AnalysisToolSpec,
     calibration_signature_from_values,
     refresh_artifact_validity,
     refresh_artifacts_validity,
@@ -83,6 +87,193 @@ def test_full_artifact_roundtrip_is_finite_and_lossless() -> None:
     assert restored.scalars == {"mean": 12.5, "n": 100}
     assert restored.is_current
     assert restored.stale_reason is None
+
+
+def test_artifact_warnings_roundtrip_and_survive_status_change() -> None:
+    artifact = _artifact(
+        warnings=("精确掩膜面积与矢量描述符来自不同来源，请复核。",),
+    )
+
+    restored = AnalysisArtifact.from_dict(artifact.to_dict())
+    stale = restored.mark_stale("来源像素已变化")
+
+    assert restored.warnings == artifact.warnings
+    assert stale.warnings == artifact.warnings
+    with pytest.raises(TypeError, match="字符串列表"):
+        _artifact(warnings="不是列表")
+
+
+def test_scientific_provenance_value_objects_roundtrip_and_hash_dependencies() -> None:
+    region = AnalysisRegionSnapshot(
+        mask_sha256="1" * 64,
+        pixel_center_rule="integer-coordinate-is-pixel-center",
+        components=2,
+        holes=1,
+        rings=(
+            ((0.0, 0.0), (5.0, 0.0), (5.0, 5.0)),
+            ((1.0, 1.0), (2.0, 1.0), (2.0, 2.0)),
+        ),
+        source="measurement:m-1@revision-4",
+    )
+    source = AnalysisSourceDescriptor(
+        kind="digital_slide_viewport",
+        pixel_sha256="2" * 64,
+        store_id="slide-1",
+        focus=3,
+        origin=(-20, 40),
+        viewport_size=(1024, 768),
+    )
+    dependency = AnalysisDependencySignature(
+        calibration={"signature": "sha256:" + ("3" * 64)},
+        roi_transitive_refs={"roi-1": {"revision": 4, "parents": ["roi-root"]}},
+        measurement_revisions={"m-1": 7},
+        point_set={"sha256": "4" * 64, "count": 12},
+        group={"id": "g-1", "revision": 2},
+        study_region=region.to_dict(),
+    )
+    spec = AnalysisToolSpec(
+        tool_id="fdm.shape",
+        version="2",
+        chinese_name="形状分析",
+        parameter_schema={"type": "object", "properties": {}},
+        output_schema={"type": "object", "required": ["component_count"]},
+        convertible_kinds=("measurement", "roi"),
+    )
+
+    assert AnalysisRegionSnapshot.from_dict(region.to_dict()) == region
+    assert AnalysisSourceDescriptor.from_dict(source.to_dict()) == source
+    assert AnalysisDependencySignature.from_dict(dependency.to_dict()) == dependency
+    assert AnalysisToolSpec.from_dict(spec.to_dict()) == spec
+    assert dependency.sha256 == AnalysisDependencySignature(
+        calibration={"signature": "sha256:" + ("3" * 64)},
+        roi_transitive_refs={"roi-1": {"parents": ["roi-root"], "revision": 4}},
+        measurement_revisions={"m-1": 7},
+        point_set={"count": 12, "sha256": "4" * 64},
+        group={"revision": 2, "id": "g-1"},
+        study_region=region.to_dict(),
+    ).sha256
+
+    artifact = _artifact(
+        region_snapshot=region,
+        source_descriptor=source,
+        dependency_signature=dependency,
+        tool_version=spec.version,
+    )
+    assert AnalysisArtifact.from_dict(artifact.to_dict()) == artifact
+
+
+def test_dependency_signature_rejects_tampered_payload() -> None:
+    dependency = AnalysisDependencySignature(
+        measurement_revisions={"m-1": 1},
+    )
+    payload = dependency.to_dict()
+    payload["dependencies"]["measurement_revisions"]["m-1"] = 2
+
+    with pytest.raises(ValueError, match="不一致"):
+        AnalysisDependencySignature.from_dict(payload)
+
+
+def test_dependency_signature_change_or_missing_dependency_marks_stale() -> None:
+    dependency = AnalysisDependencySignature(
+        measurement_revisions={"count-1": 2},
+        point_set={"measurement_ids": ["count-1"], "sha256": "a" * 64},
+    )
+    artifact = _artifact(
+        source_reference=None,
+        dependency_signature=dependency,
+    )
+
+    current = refresh_artifact_validity(
+        artifact,
+        current_dependency_signatures={artifact.id: dependency.sha256},
+    )
+    changed = refresh_artifact_validity(
+        artifact,
+        current_dependency_signatures={artifact.id: "b" * 64},
+    )
+    missing = refresh_artifact_validity(
+        artifact,
+        current_dependency_signatures={artifact.id: None},
+    )
+
+    assert current is artifact
+    assert changed.stale_reason == "分析依赖已变化"
+    assert missing.stale_reason == "分析依赖已不存在或无法验证"
+
+
+def test_source_descriptor_sha_or_viewport_change_marks_stale() -> None:
+    frozen = AnalysisSourceDescriptor(
+        kind="digital_slide_viewport",
+        pixel_sha256="1" * 64,
+        store_id="slide-1",
+        focus=2,
+        origin=(100, 200),
+        viewport_size=(1024, 768),
+    )
+    artifact = _artifact(
+        source_reference=None,
+        source_descriptor=frozen,
+    )
+
+    assert (
+        refresh_artifact_validity(
+            artifact,
+            current_source_descriptor=frozen,
+        )
+        is artifact
+    )
+    changed_pixels = refresh_artifact_validity(
+        artifact,
+        current_source_descriptor=AnalysisSourceDescriptor(
+            kind="digital_slide_viewport",
+            pixel_sha256="2" * 64,
+            store_id="slide-1",
+            focus=2,
+            origin=(100, 200),
+            viewport_size=(1024, 768),
+        ),
+    )
+    changed_viewport = refresh_artifact_validity(
+        artifact,
+        current_source_descriptor=AnalysisSourceDescriptor(
+            kind="digital_slide_viewport",
+            pixel_sha256="1" * 64,
+            store_id="slide-1",
+            focus=2,
+            origin=(101, 200),
+            viewport_size=(1024, 768),
+        ),
+    )
+
+    assert changed_pixels.stale_reason == "来源图片内容或冻结视窗已变化"
+    assert changed_viewport.stale_reason == "来源图片内容或冻结视窗已变化"
+
+
+def test_legacy_artifact_without_source_descriptor_skips_new_sha_check() -> None:
+    artifact = _artifact(source_reference=None, source_descriptor=None)
+
+    assert (
+        refresh_artifact_validity(
+            artifact,
+            current_source_descriptor=AnalysisSourceDescriptor(
+                kind="raster",
+                pixel_sha256="3" * 64,
+            ),
+        )
+        is artifact
+    )
+
+
+def test_schema_v1_artifact_remains_readable() -> None:
+    payload = _artifact().to_dict()
+    payload["schema_version"] = 1
+
+    restored = AnalysisArtifact.from_dict(payload)
+
+    assert restored.tool_version == "1"
+    assert restored.region_snapshot is None
+    assert restored.source_descriptor is None
+    assert restored.dependency_signature is None
 
 
 def test_parameters_scalars_and_asset_metadata_are_defensive_copies() -> None:

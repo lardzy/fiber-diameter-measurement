@@ -5,19 +5,362 @@ import unittest
 import cv2
 import numpy as np
 
+from fdm.services import image_processing as image_processing_service
+from fdm.image_processing_models import (
+    ImageOperationSpec,
+    ImageProcessingRecipe,
+    RasterSemantic,
+    RasterTypeState,
+    RoiProcessingSemantics,
+)
+from fdm.raster import RasterPixelType
 from fdm.services.image_processing import (
     ConversionScaleMode,
+    IMAGE_OPERATION_REGISTRY,
     ImageOperation,
     ImageOperationRequest,
+    ImageRecipeValidationError,
     InterpolationMode,
     NonfiniteIntegerPolicy,
     PixelType,
     convert_pixel_type,
     execute_image_operation,
+    validate_image_processing_recipe,
 )
 
 
 class ImageProcessingServiceTests(unittest.TestCase):
+    def test_scientific_v2_operations_do_not_change_legacy_ids(self) -> None:
+        source = np.asarray([[0, 1, 3, 8]], dtype=np.uint8)
+
+        legacy = execute_image_operation(
+            ImageOperationRequest.create(ImageOperation.LOG, source)
+        )
+        scientific = execute_image_operation(
+            ImageOperationRequest.create(ImageOperation.LOG_V2, source)
+        )
+        preserved = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.LOG_V2,
+                source,
+                result_mode="preserve",
+            )
+        )
+        remapped = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.SQRT_V2,
+                source,
+                result_mode="remap",
+                output_min=10.0,
+                output_max=200.0,
+            )
+        )
+
+        self.assertEqual(legacy.image.dtype, np.uint8)
+        self.assertEqual(scientific.image.dtype, np.float32)
+        np.testing.assert_allclose(
+            scientific.image,
+            np.log1p(source.astype(np.float64)),
+            rtol=1e-6,
+        )
+        np.testing.assert_array_equal(preserved.image, legacy.image)
+        self.assertEqual(remapped.image.dtype, np.uint8)
+        self.assertEqual(int(remapped.image.min()), 10)
+        self.assertEqual(int(remapped.image.max()), 200)
+
+        validation = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec("log_v2"),
+                    ImageOperationSpec(
+                        "adaptive_threshold",
+                        {"method": "sauvola", "radius": 2},
+                    ),
+                )
+            ),
+            RasterTypeState(RasterPixelType.GRAY16, width=4, height=1),
+        )
+        self.assertIs(
+            validation.steps[0].output_state.pixel_type,
+            RasterPixelType.GRAY32_FLOAT,
+        )
+        self.assertIs(
+            validation.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+
+    def test_background_v1_is_stable_and_v2_is_independently_registered(self) -> None:
+        y, x = np.mgrid[:25, :25]
+        source = np.clip(20 + x + y, 0, 255).astype(np.uint8)
+        source[10:15, 10:15] = 220
+
+        legacy = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.BACKGROUND_SUBTRACT,
+                source,
+                radius=3,
+            )
+        )
+        expected_legacy = image_processing_service.subtract_background(
+            source,
+            radius=3,
+        )
+        rolling = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.ROLLING_BALL_BACKGROUND_SUBTRACT,
+                source,
+                radius=4.0,
+                ball_height=80.0,
+            )
+        )
+
+        np.testing.assert_array_equal(legacy.image, expected_legacy)
+        self.assertEqual(
+            IMAGE_OPERATION_REGISTRY["background_subtract"].chinese_name,
+            "形态学背景扣除",
+        )
+        self.assertEqual(rolling.image.dtype, source.dtype)
+        self.assertGreater(float(np.mean(rolling.image[10:15, 10:15])), 0.0)
+
+    def test_fft_boundary_units_and_power_spectrum_are_explicit(self) -> None:
+        source = np.zeros((32, 32), dtype=np.float32)
+        source[:, ::4] = 1.0
+
+        implicit_periodic = image_processing_service.fft_filter(
+            source,
+            mode="lowpass",
+            high_cutoff=0.2,
+        )
+        explicit_periodic = image_processing_service.fft_filter(
+            source,
+            mode="lowpass",
+            high_cutoff=0.2,
+            boundary="periodic",
+        )
+        mirror = image_processing_service.fft_filter(
+            source,
+            mode="lowpass",
+            high_cutoff=0.2,
+            boundary="mirror_pad",
+        )
+        tukey = image_processing_service.fft_filter(
+            source,
+            mode="lowpass",
+            high_cutoff=0.2,
+            boundary="tukey",
+            tukey_alpha=0.5,
+        )
+
+        np.testing.assert_array_equal(implicit_periodic, explicit_periodic)
+        self.assertEqual(mirror.shape, source.shape)
+        self.assertEqual(tukey.shape, source.shape)
+        with self.assertRaisesRegex(ValueError, "pixel_size"):
+            image_processing_service.fft_filter(
+                source,
+                high_cutoff=1.0,
+                frequency_unit="cycles_per_unit",
+            )
+        physical = image_processing_service.fft_filter(
+            source,
+            high_cutoff=1.0,
+            frequency_unit="cycles_per_unit",
+            pixel_size=0.2,
+        )
+        np.testing.assert_allclose(physical, explicit_periodic)
+
+        spectrum = image_processing_service.fft_power_spectrum(
+            source,
+            window="tukey",
+        )
+        self.assertEqual(spectrum.dtype, np.float32)
+        self.assertEqual(spectrum.shape, source.shape)
+        self.assertTrue(np.all(spectrum >= 0))
+
+    def test_vectorized_fill_holes_and_copy_rgb_services(self) -> None:
+        binary = np.zeros((8, 8), dtype=np.uint8)
+        binary[1:7, 1:7] = 255
+        binary[3:5, 3:5] = 0
+        checks: list[int] = []
+
+        filled = image_processing_service.fill_binary_holes(
+            binary,
+            cancellation_check=lambda: checks.append(1),
+        )
+
+        self.assertEqual(len(checks), 3)
+        self.assertTrue(np.all(filled[3:5, 3:5] == 255))
+
+        rgb = np.dstack((binary, binary // 2, 255 - binary))
+        red, green, blue = image_processing_service.split_rgb_channels(rgb)
+        np.testing.assert_array_equal(
+            image_processing_service.merge_rgb_channels(red, green, blue),
+            rgb,
+        )
+
+        roi = np.zeros(binary.shape, dtype=bool)
+        roi[2:6, 3:7] = True
+        copied = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.COPY,
+                binary,
+                roi_mask=roi,
+                roi_mode="mask",
+                outside_value=17.0,
+            )
+        )
+        self.assertEqual(copied.image.shape, (4, 4))
+        np.testing.assert_array_equal(copied.roi_mask, roi[2:6, 3:7])
+        self.assertTrue(copied.image.flags.writeable is False)
+
+    def test_new_local_morphology_and_flat_field_operations(self) -> None:
+        source = np.full((25, 25), 40, dtype=np.uint8)
+        source[8:17, 8:17] = 180
+        binary = np.zeros_like(source)
+        binary[0:4, 0:4] = 255
+        binary[8:17, 8:17] = 255
+
+        for method in ("mean", "gaussian", "sauvola", "phansalkar"):
+            thresholded = image_processing_service.adaptive_threshold(
+                source,
+                method=method,
+                radius=2,
+            )
+            self.assertEqual(thresholded.dtype, source.dtype)
+            self.assertEqual(set(np.unique(thresholded)).issubset({0, 255}), True)
+
+        variance = image_processing_service.rank_filter(
+            source,
+            method="variance",
+            radius=1,
+        )
+        self.assertEqual(variance.dtype, np.float32)
+        enhanced = image_processing_service.percentile_saturation_enhance(
+            source,
+            lower_percentile=1.0,
+            upper_percentile=99.0,
+        )
+        self.assertEqual(enhanced.dtype, source.dtype)
+        gradient = image_processing_service.morphology_derivative(
+            source,
+            method="gradient",
+            radius=1,
+        )
+        laplacian = image_processing_service.morphology_derivative(
+            source,
+            method="laplacian",
+            radius=1,
+        )
+        self.assertEqual(gradient.dtype, source.dtype)
+        self.assertEqual(laplacian.dtype, np.float32)
+        reconstruction = image_processing_service.morphological_reconstruction(
+            source,
+            method="opening",
+            radius=1,
+        )
+        self.assertEqual(reconstruction.shape, source.shape)
+        extrema = image_processing_service.regional_extrema(
+            source,
+            kind="maxima",
+            h=5.0,
+        )
+        self.assertEqual(set(np.unique(extrema)).issubset({0, 255}), True)
+        cleared = image_processing_service.clear_border_objects(binary)
+        self.assertTrue(np.all(cleared[:4, :4] == 0))
+        self.assertTrue(np.all(cleared[8:17, 8:17] == 255))
+        watershed_v2 = image_processing_service.watershed_split_v2(
+            binary,
+            seed_threshold=0.25,
+        )
+        self.assertEqual(watershed_v2.dtype, binary.dtype)
+        corrected = image_processing_service.flat_field_correction(
+            source,
+            radius=2.0,
+        )
+        self.assertEqual(corrected.dtype, source.dtype)
+
+    def test_image_calculator_copy_and_float32_result(self) -> None:
+        left = np.asarray([[1, 2], [3, 4]], dtype=np.uint16)
+        right = np.asarray([[5, 6], [7, 8]], dtype=np.uint16)
+
+        copied = image_processing_service.image_calculator(
+            left,
+            right,
+            operation="copy",
+        )
+        floated = image_processing_service.image_calculator(
+            left,
+            right,
+            operation="mean",
+            result_mode="float32",
+        )
+
+        np.testing.assert_array_equal(copied, right)
+        self.assertEqual(floated.dtype, np.float32)
+        np.testing.assert_allclose(floated, (left + right) / 2.0)
+
+    def test_reference_flat_field_is_exact_auditable_and_preserves_alpha(
+        self,
+    ) -> None:
+        source = np.asarray(
+            [
+                [[100, 120, 140, 11], [80, 90, 100, 22]],
+                [[60, 70, 80, 33], [40, 50, 60, 44]],
+            ],
+            dtype=np.uint8,
+        )
+        reference = np.asarray(
+            [
+                [[50, 60, 70, 0], [100, 90, 80, 0]],
+                [[150, 120, 100, 0], [200, 150, 120, 0]],
+            ],
+            dtype=np.uint8,
+        )
+        levels = image_processing_service.flat_field_reference_levels(
+            reference
+        )
+
+        result = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.FLAT_FIELD_CORRECTION,
+                source,
+                secondary_image=reference,
+                flat_field_source="reference",
+                secondary_document_id="reference-document",
+                secondary_sha256="a" * 64,
+                reference_levels=levels,
+                preserve_mean=True,
+            )
+        ).image
+
+        expected = source.copy()
+        for channel, level in enumerate(levels):
+            expected[..., channel] = np.rint(
+                np.clip(
+                    source[..., channel].astype(np.float32)
+                    * level
+                    / reference[..., channel].astype(np.float32),
+                    0,
+                    255,
+                )
+            ).astype(np.uint8)
+        np.testing.assert_array_equal(result, expected)
+        np.testing.assert_array_equal(result[..., 3], source[..., 3])
+
+        with self.assertRaisesRegex(ValueError, "尺寸和通道"):
+            image_processing_service.flat_field_correction(
+                source,
+                reference_image=reference[:, :1],
+            )
+        with self.assertRaisesRegex(ValueError, "像素类型"):
+            image_processing_service.flat_field_correction(
+                source,
+                reference_image=reference.astype(np.uint16),
+            )
+        invalid = reference.copy()
+        invalid[0, 0, 0] = 0
+        with self.assertRaisesRegex(ValueError, "正有限值"):
+            image_processing_service.flat_field_reference_levels(invalid)
+
     def test_request_and_result_are_detached_read_only_snapshots(self) -> None:
         source = np.arange(25, dtype=np.uint8).reshape(5, 5)
         request = ImageOperationRequest.create(
@@ -43,6 +386,7 @@ class ImageProcessingServiceTests(unittest.TestCase):
     def test_type_conversion_has_explicit_preserve_and_full_range_rules(self) -> None:
         eight_bit = np.asarray([[0, 128, 255]], dtype=np.uint8)
 
+        default_conversion = convert_pixel_type(eight_bit, PixelType.UINT16)
         full_range = convert_pixel_type(
             eight_bit,
             PixelType.UINT16,
@@ -56,7 +400,391 @@ class ImageProcessingServiceTests(unittest.TestCase):
 
         np.testing.assert_array_equal(full_range, [[0, 32896, 65535]])
         np.testing.assert_array_equal(preserved, [[0, 128, 255]])
+        np.testing.assert_array_equal(default_conversion, preserved)
         self.assertEqual(full_range.dtype, np.uint16)
+
+        request_result = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CONVERT_TYPE,
+                eight_bit,
+                target_type="uint16",
+            )
+        )
+        np.testing.assert_array_equal(request_result.image, preserved)
+        self.assertEqual(
+            request_result.metadata_map["scale_mode"],
+            "preserve_values",
+        )
+
+    def test_registry_is_complete_and_exposes_non_ui_contract(self) -> None:
+        self.assertEqual(
+            set(IMAGE_OPERATION_REGISTRY),
+            {operation.value for operation in ImageOperation},
+        )
+        descriptor = IMAGE_OPERATION_REGISTRY["convert_type"]
+        self.assertEqual(descriptor.chinese_name, "转换像素类型")
+        self.assertEqual(descriptor.category, "类型")
+        self.assertIn("scale_mode", descriptor.parameters)
+        self.assertEqual(descriptor.version, "1")
+        self.assertTrue(callable(descriptor.output_resolver))
+        self.assertTrue(callable(descriptor.tile))
+        self.assertTrue(callable(descriptor.executor))
+        with self.assertRaises(TypeError):
+            IMAGE_OPERATION_REGISTRY["new"] = descriptor  # type: ignore[index]
+
+    def test_descriptor_parameter_schema_validates_recipe_values(self) -> None:
+        state = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=32,
+            height=24,
+        )
+        cases = (
+            (
+                ImageOperationSpec("resize", {"width": "32", "height": 24}),
+                "width",
+            ),
+            (
+                ImageOperationSpec(
+                    "resize",
+                    {"width": 32, "height": 24, "interpolation": "magic"},
+                ),
+                "interpolation",
+            ),
+            (
+                ImageOperationSpec("median_filter", {"radius": 0}),
+                "radius",
+            ),
+            (
+                ImageOperationSpec("brightness_contrast", {"contrast": True}),
+                "contrast",
+            ),
+        )
+        for operation, parameter_name in cases:
+            with self.subTest(
+                operation=operation.operation_id,
+                parameter=parameter_name,
+            ):
+                with self.assertRaisesRegex(
+                    ImageRecipeValidationError,
+                    parameter_name,
+                ):
+                    validate_image_processing_recipe(
+                        ImageProcessingRecipe.from_operations((operation,)),
+                        state,
+                    )
+
+    def test_legacy_recipe_can_omit_optional_descriptor_defaults(self) -> None:
+        result = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec("brightness_contrast"),
+                    ImageOperationSpec("median_filter"),
+                )
+            ),
+            RasterTypeState(
+                RasterPixelType.GRAY8,
+                width=32,
+                height=24,
+            ),
+        )
+
+        self.assertEqual(len(result.steps), 2)
+        self.assertIs(
+            result.output_state.pixel_type,
+            RasterPixelType.GRAY8,
+        )
+
+    def test_descriptor_schema_enforces_conditional_required_parameters(
+        self,
+    ) -> None:
+        state = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=32,
+            height=24,
+        )
+        operation = ImageOperationSpec(
+            "fft_filter",
+            {"frequency_unit": "cycles_per_unit"},
+        )
+
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "pixel_size",
+        ):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations((operation,)),
+                state,
+            )
+
+    def test_reference_flat_field_recipe_requires_matching_second_state(
+        self,
+    ) -> None:
+        operation = ImageOperationSpec(
+            ImageOperation.FLAT_FIELD_CORRECTION.value,
+            {
+                "flat_field_source": "reference",
+                "secondary_document_id": "flat-reference",
+                "secondary_sha256": "b" * 64,
+                "reference_levels": [120.0],
+                "preserve_mean": True,
+                "radius": 25.0,
+                "method": "gaussian",
+            },
+        )
+        recipe = ImageProcessingRecipe.from_operations((operation,))
+        source_state = RasterTypeState(
+            RasterPixelType.GRAY8,
+            width=12,
+            height=8,
+        )
+
+        validated = validate_image_processing_recipe(
+            recipe,
+            source_state,
+            secondary_states={"flat-reference": source_state},
+        )
+
+        self.assertIs(validated.output_state.pixel_type, RasterPixelType.GRAY8)
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "缺少第二幅参考图像",
+        ):
+            validate_image_processing_recipe(recipe, source_state)
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "尺寸、通道和像素类型",
+        ):
+            validate_image_processing_recipe(
+                recipe,
+                source_state,
+                secondary_states={
+                    "flat-reference": RasterTypeState(
+                        RasterPixelType.GRAY16,
+                        width=12,
+                        height=8,
+                    )
+                },
+            )
+        invalid_sha_recipe = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec(
+                    ImageOperation.FLAT_FIELD_CORRECTION.value,
+                    {
+                        **operation.parameters,
+                        "secondary_sha256": "not-a-sha",
+                    },
+                ),
+            )
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "64 位 SHA256",
+        ):
+            validate_image_processing_recipe(
+                invalid_sha_recipe,
+                source_state,
+                secondary_states={"flat-reference": source_state},
+            )
+
+    def test_recipe_validation_resolves_the_complete_type_chain(self) -> None:
+        recipe = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec(
+                    "convert_color",
+                    {"target_model": "grayscale"},
+                ),
+                ImageOperationSpec(
+                    "convert_type",
+                    {"target_type": "uint16"},
+                ),
+                ImageOperationSpec(
+                    "threshold",
+                    {"lower": 10, "upper": 200},
+                ),
+            )
+        )
+
+        validation = validate_image_processing_recipe(
+            recipe,
+            RasterTypeState(
+                RasterPixelType.RGB8,
+                width=640,
+                height=480,
+            ),
+        )
+
+        self.assertEqual(len(validation.steps), 3)
+        self.assertIs(
+            validation.steps[0].output_state.pixel_type,
+            RasterPixelType.GRAY8,
+        )
+        self.assertIs(
+            validation.steps[1].output_state.pixel_type,
+            RasterPixelType.GRAY16,
+        )
+        self.assertIs(
+            validation.output_state.semantic,
+            RasterSemantic.BINARY_MASK,
+        )
+        self.assertEqual(
+            (validation.output_state.width, validation.output_state.height),
+            (640, 480),
+        )
+
+        invalid = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec(
+                    "convert_type",
+                    {"target_type": "uint16"},
+                ),
+            )
+        )
+        with self.assertRaisesRegex(
+            ImageRecipeValidationError,
+            "配方步骤 1.*请先转换为灰度",
+        ):
+            validate_image_processing_recipe(
+                invalid,
+                RasterTypeState(RasterPixelType.RGB8),
+            )
+
+    def test_crop_roi_bounds_mask_fill_and_transparency_contract(self) -> None:
+        source = np.arange(30, dtype=np.uint8).reshape(5, 6)
+        roi = np.zeros((5, 6), dtype=bool)
+        roi[1:4, 2:5] = True
+
+        bounded = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CROP,
+                source,
+                roi_mask=roi,
+                x=1,
+                y=1,
+                width=4,
+                height=3,
+                roi_mode="bounds",
+            )
+        )
+        np.testing.assert_array_equal(bounded.image, source[1:4, 1:5])
+        np.testing.assert_array_equal(bounded.roi_mask, roi[1:4, 1:5])
+
+        masked = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CROP,
+                source,
+                roi_mask=roi,
+                x=1,
+                y=1,
+                width=4,
+                height=3,
+                roi_mode="mask",
+                fill_value=99,
+            )
+        )
+        expected_mask = roi[1:4, 1:5]
+        expected = source[1:4, 1:5].copy()
+        expected[~expected_mask] = 99
+        np.testing.assert_array_equal(masked.image, expected)
+        np.testing.assert_array_equal(masked.roi_mask, expected_mask)
+        with self.assertRaises(ValueError):
+            masked.roi_mask[0, 0] = True  # type: ignore[index]
+
+        transparent = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.CROP,
+                source,
+                roi_mask=roi,
+                x=1,
+                y=1,
+                width=4,
+                height=3,
+                roi_mode="mask",
+                transparent_outside=True,
+            )
+        )
+        self.assertEqual(transparent.image.shape, (3, 4, 4))
+        np.testing.assert_array_equal(
+            transparent.image[..., 3],
+            expected_mask.astype(np.uint8) * 255,
+        )
+
+        validation = validate_image_processing_recipe(
+            ImageProcessingRecipe.from_operations(
+                (
+                    ImageOperationSpec(
+                        "crop",
+                        {
+                            "x": 1,
+                            "y": 1,
+                            "width": 4,
+                            "height": 3,
+                            "roi_mode": "mask",
+                            "transparent_outside": True,
+                        },
+                    ),
+                )
+            ),
+            RasterTypeState(
+                RasterPixelType.GRAY8,
+                width=6,
+                height=5,
+            ),
+            roi_requested=True,
+        )
+        self.assertIs(
+            validation.output_state.pixel_type,
+            RasterPixelType.RGBA8,
+        )
+        self.assertIs(
+            validation.steps[0].descriptor.roi_semantics,
+            RoiProcessingSemantics.CROP_BOUNDS_OR_MASK,
+        )
+
+        with self.assertRaisesRegex(ImageRecipeValidationError, "不支持 ROI"):
+            validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec("resize", {"width": 2, "height": 2}),)
+                ),
+                RasterTypeState(RasterPixelType.GRAY8, width=6, height=5),
+                roi_requested=True,
+            )
+
+    def test_registry_exposes_scientific_roi_semantics(self) -> None:
+        state = RasterTypeState(RasterPixelType.GRAY8, width=8, height=8)
+
+        def semantics(
+            operation_id: str,
+            input_state: RasterTypeState = state,
+        ) -> RoiProcessingSemantics:
+            result = validate_image_processing_recipe(
+                ImageProcessingRecipe.from_operations(
+                    (ImageOperationSpec(operation_id, {}),)
+                ),
+                input_state,
+                roi_requested=True,
+            )
+            return result.steps[0].descriptor.roi_semantics
+
+        self.assertIs(
+            semantics("normalize"),
+            RoiProcessingSemantics.ROI_STATISTICS,
+        )
+        self.assertIs(
+            semantics(
+                "remove_small_objects",
+                RasterTypeState(
+                    RasterPixelType.GRAY8,
+                    semantic=RasterSemantic.BINARY_MASK,
+                    width=8,
+                    height=8,
+                ),
+            ),
+            RoiProcessingSemantics.ISOLATED_DOMAIN,
+        )
+        self.assertIs(
+            semantics("gaussian_blur"),
+            RoiProcessingSemantics.WRITE_MASK_WITH_HALO,
+        )
 
     def test_float_to_integer_requires_explicit_nonfinite_policy_and_reports_count(
         self,
@@ -354,6 +1082,35 @@ class ImageProcessingServiceTests(unittest.TestCase):
         np.testing.assert_array_equal(cropped, [[5, 6], [9, 10]])
         np.testing.assert_array_equal(rotated, np.rot90(source, k=3))
         self.assertEqual(resized.shape, (2, 2))
+
+    def test_resize_auto_resolves_without_changing_legacy_explicit_modes(self) -> None:
+        source = np.arange(64, dtype=np.uint8).reshape(8, 8)
+
+        downscaled = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.RESIZE,
+                source,
+                width=4,
+                height=4,
+                interpolation="auto",
+            )
+        )
+        enlarged = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.RESIZE,
+                source,
+                width=16,
+                height=16,
+                interpolation="auto",
+            )
+        )
+
+        self.assertEqual(downscaled.metadata_map["interpolation"], "area")
+        self.assertEqual(enlarged.metadata_map["interpolation"], "linear")
+        np.testing.assert_array_equal(
+            downscaled.image,
+            cv2.resize(source, (4, 4), interpolation=cv2.INTER_AREA),
+        )
 
     def test_translation_moves_rgba_and_uses_explicit_border_value(self) -> None:
         source = np.zeros((2, 3, 4), dtype=np.uint8)
@@ -690,6 +1447,59 @@ class ImageProcessingServiceTests(unittest.TestCase):
                 self.assertTrue(
                     0.0 <= float(result.metadata_map["computed_threshold"]) <= 65535.0
                 )
+
+    def test_roi_global_statistics_ignore_pixels_outside_the_roi(self) -> None:
+        source = np.zeros((6, 6), dtype=np.uint8)
+        source[2:4, 2:4] = np.asarray([[100, 100], [200, 200]], dtype=np.uint8)
+        roi = np.zeros(source.shape, dtype=bool)
+        roi[2:4, 2:4] = True
+
+        normalized = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.NORMALIZE,
+                source,
+                roi_mask=roi,
+                output_min=0,
+                output_max=255,
+                per_channel=True,
+            )
+        )
+        thresholded = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.AUTO_THRESHOLD,
+                source,
+                roi_mask=roi,
+                method="otsu",
+            )
+        )
+
+        self.assertEqual(set(np.unique(normalized.image[roi])), {0, 255})
+        np.testing.assert_array_equal(normalized.image[~roi], source[~roi])
+        self.assertGreater(
+            float(thresholded.metadata_map["computed_threshold"]),
+            50.0,
+        )
+
+    def test_roi_connected_components_treat_roi_boundary_as_background(self) -> None:
+        source = np.zeros((7, 9), dtype=np.uint8)
+        source[2, 1:8] = 255
+        roi = np.zeros(source.shape, dtype=bool)
+        roi[2, 1:3] = True
+        roi[2, 6:8] = True
+
+        result = execute_image_operation(
+            ImageOperationRequest.create(
+                ImageOperation.REMOVE_SMALL_OBJECTS,
+                source,
+                roi_mask=roi,
+                minimum_area=3,
+                connectivity=8,
+                foreground_is_high=True,
+            )
+        )
+
+        self.assertEqual(int(np.count_nonzero(result.image[roi])), 0)
+        np.testing.assert_array_equal(result.image[~roi], source[~roi])
 
     def test_binary_operations_require_explicit_channel_for_rgb(self) -> None:
         rgb = np.zeros((5, 5, 3), dtype=np.uint8)

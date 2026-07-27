@@ -5,6 +5,7 @@ import unittest
 
 import numpy as np
 
+from fdm.analysis_artifacts import AnalysisToolSpec
 from fdm.cancellation import CancellationError, CancellationTokenSource
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.services.advanced_image_analysis import AdvancedAnalysisKind
@@ -28,7 +29,44 @@ class AdvancedAnalysisRegistryTests(unittest.TestCase):
             set(AdvancedAnalysisKind),
         )
         self.assertTrue(all(item.chinese_name for item in registrations))
-        self.assertTrue(all(item.algorithm_version == "1" for item in registrations))
+        versions = {item.kind: item.algorithm_version for item in registrations}
+        self.assertEqual(versions[AdvancedAnalysisKind.DIRECTIONALITY], "2")
+        self.assertEqual(versions[AdvancedAnalysisKind.SKELETON_NETWORK], "2")
+        self.assertEqual(versions[AdvancedAnalysisKind.SPATIAL_DISTRIBUTION], "2")
+        self.assertTrue(
+            all(
+                version == "1"
+                for kind, version in versions.items()
+                if kind
+                not in {
+                    AdvancedAnalysisKind.DIRECTIONALITY,
+                    AdvancedAnalysisKind.SKELETON_NETWORK,
+                    AdvancedAnalysisKind.SPATIAL_DISTRIBUTION,
+                }
+            )
+        )
+        self.assertEqual(
+            {item.tool_spec.tool_id for item in registrations},
+            {f"fdm.{kind.value}" for kind in AdvancedAnalysisKind},
+        )
+        self.assertEqual(
+            len({id(item.tool_spec) for item in registrations}),
+            len(AdvancedAnalysisKind),
+        )
+        self.assertTrue(all(item.tool_spec.version == item.algorithm_version for item in registrations))
+
+    def test_registration_uses_one_serializable_tool_contract(self) -> None:
+        registration = self.registry.registration(
+            AdvancedAnalysisKind.SPATIAL_DISTRIBUTION
+        )
+
+        restored = AnalysisToolSpec.from_dict(registration.tool_spec.to_dict())
+
+        self.assertEqual(restored, registration.tool_spec)
+        self.assertEqual(
+            restored.convertible_kinds,
+            ("point_set", "measurement_group"),
+        )
 
     def test_directionality_preserves_request_contract_and_reports_arrays(self) -> None:
         image = np.zeros((48, 64), dtype=np.uint8)
@@ -144,7 +182,10 @@ class AdvancedAnalysisRegistryTests(unittest.TestCase):
                 request_id="space",
                 generation=2,
                 points=((0.0, 0.0), (3.0, 4.0), (6.0, 0.0)),
-                parameters={"study_area": 36.0},
+                parameters={
+                    "study_bounds": [0.0, 0.0, 6.0, 6.0],
+                    "ripley_radii": [1.0, 3.0],
+                },
             ),
             AdvancedAnalysisInvocation(
                 AdvancedAnalysisKind.INTENSITY_SURFACE,

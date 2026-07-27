@@ -8,6 +8,7 @@ import pytest
 from fdm.analysis_artifacts import (
     AnalysisArtifact,
     AnalysisArtifactStatus,
+    AnalysisDependencySignature,
     AnalysisObjectKind,
     AnalysisObjectReference,
     calibration_signature_from_values,
@@ -234,6 +235,42 @@ def test_project_level_refresh_uses_roi_and_measurement_geometry_revisions() -> 
     assert (
         project.analysis_artifacts[1].stale_reason
         == "引用的测量对象几何已变化"
+    )
+
+
+def test_project_dependency_probe_detects_transitive_roi_change() -> None:
+    document = _document()
+    roi = _roi(revision=3)
+    calibration = document.calibration
+    assert calibration is not None
+    dependency = AnalysisDependencySignature(
+        calibration={
+            "signature": calibration_signature_from_values(
+                pixels_per_unit=calibration.pixels_per_unit,
+                unit=calibration.unit,
+            ),
+            "pixel_size_x": 1.0 / calibration.pixels_per_unit,
+            "pixel_size_y": 1.0 / calibration.pixels_per_unit,
+            "unit": calibration.unit,
+        },
+        roi_transitive_refs={
+            roi.id: {
+                "revision": roi.revision,
+                "kind": roi.kind.value,
+            }
+        },
+    )
+    project = ProjectState(
+        version="0.3.8",
+        documents=[document],
+        project_rois=[roi],
+    )
+
+    assert project.analysis_dependency_is_current(document.id, dependency)
+    project.project_rois = [_roi(revision=4)]
+    assert not project.analysis_dependency_is_current(
+        document.id,
+        dependency,
     )
 
 

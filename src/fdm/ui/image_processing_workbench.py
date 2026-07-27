@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from enum import Enum
 import math
 from pathlib import Path
@@ -11,8 +11,8 @@ from uuid import uuid4
 
 import numpy as np
 from numpy.typing import NDArray
-from PySide6.QtCore import QObject, QRunnable, Qt, QThreadPool, QTimer, Signal, Slot
-from PySide6.QtGui import QCloseEvent, QImage, QPixmap
+from PySide6.QtCore import QObject, QRunnable, QRectF, Qt, QThreadPool, QTimer, Signal, Slot
+from PySide6.QtGui import QColor, QCloseEvent, QImage, QPainter, QPen, QPixmap
 from PySide6.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -35,12 +35,22 @@ from PySide6.QtWidgets import (
 )
 
 from fdm.cancellation import CancellationError, CancellationToken, CancellationTokenSource
-from fdm.image_processing_models import ImageOperationSpec, ImageProcessingRecipe
+from fdm.image_processing_models import (
+    ImageOperationSpec,
+    ImageProcessingRecipe,
+    RasterTypeState,
+)
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.services.image_processing import (
     ImageOperation,
+    InterpolationMode,
+    RecipeValidationResult,
     execute_image_operation_tiled,
+    flat_field_reference_levels,
+    get_image_operation_descriptor,
+    resolve_resize_interpolation,
     resolve_image_operation_capability,
+    validate_image_processing_recipe,
 )
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelSpinBox
 
@@ -48,6 +58,392 @@ from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelSpinBox
 class WorkbenchTaskKind(str, Enum):
     PREVIEW = "preview"
     FINAL = "final"
+
+
+PREVIEW_MAX_EDGE = 2_048
+PREVIEW_MAX_PIXELS = 4_000_000
+PREVIEW_MAX_WORKING_SET_BYTES = 256 << 20
+OVERVIEW_MAX_EDGE = 2_048
+OVERVIEW_MAX_PIXELS = 2_000_000
+
+
+@dataclass(frozen=True, slots=True)
+class ProcessingPreviewSnapshot:
+    """Bounded, immutable source material for an exact 1:1 preview.
+
+    ``origin`` is expressed in full-source image pixels.  The preview raster is
+    never resampled: one sample pixel always represents one authoritative
+    source pixel.  Geometry operations may adapt their full-image coordinates
+    to this local origin, but the persisted recipe remains unchanged.
+    """
+
+    source: RasterPlane
+    origin: tuple[int, int]
+    full_source_size: tuple[int, int]
+    roi_mask: NDArray[np.bool_] | None = field(
+        default=None,
+        compare=False,
+        repr=False,
+    )
+    secondary_images: tuple[tuple[str, RasterPlane], ...] = field(
+        default=(),
+        compare=False,
+        repr=False,
+    )
+
+    def __post_init__(self) -> None:
+        origin_x, origin_y = (int(self.origin[0]), int(self.origin[1]))
+        full_width, full_height = (
+            int(self.full_source_size[0]),
+            int(self.full_source_size[1]),
+        )
+        if origin_x < 0 or origin_y < 0:
+            raise ValueError("预览原点不能为负数")
+        if full_width <= 0 or full_height <= 0:
+            raise ValueError("预览完整源尺寸必须为正数")
+        if (
+            origin_x + self.source.width > full_width
+            or origin_y + self.source.height > full_height
+        ):
+            raise ValueError("预览样本超出完整源图片范围")
+        mask = self.roi_mask
+        if mask is not None:
+            normalized = np.ascontiguousarray(mask, dtype=np.bool_)
+            if normalized.shape != (self.source.height, self.source.width):
+                raise ValueError("预览 ROI 掩膜尺寸必须与预览样本一致")
+            normalized.setflags(write=False)
+            object.__setattr__(self, "roi_mask", normalized)
+        object.__setattr__(self, "origin", (origin_x, origin_y))
+        object.__setattr__(self, "full_source_size", (full_width, full_height))
+        object.__setattr__(self, "secondary_images", tuple(self.secondary_images))
+
+    @property
+    def bounds(self) -> tuple[int, int, int, int]:
+        x, y = self.origin
+        return x, y, self.source.width, self.source.height
+
+    @property
+    def is_full_source(self) -> bool:
+        return (
+            self.origin == (0, 0)
+            and (self.source.width, self.source.height) == self.full_source_size
+        )
+
+
+def build_processing_preview_snapshot(
+    source: RasterPlane,
+    *,
+    visible_rect: tuple[float, float, float, float] | None = None,
+    roi_mask: NDArray[np.bool_] | None = None,
+    secondary_images: Mapping[str, RasterPlane] | None = None,
+) -> ProcessingPreviewSnapshot:
+    """Freeze a bounded, non-resampled sample for workbench preview.
+
+    ``visible_rect`` uses ``(x, y, width, height)`` in source-pixel
+    coordinates.  If the visible field is larger than the safety budget, a
+    centred subset is selected; the overview explicitly shows that sample.
+    """
+
+    full_width = int(source.width)
+    full_height = int(source.height)
+    if visible_rect is None:
+        left = 0
+        top = 0
+        requested_width = full_width
+        requested_height = full_height
+    else:
+        raw_x, raw_y, raw_width, raw_height = (
+            float(visible_rect[0]),
+            float(visible_rect[1]),
+            float(visible_rect[2]),
+            float(visible_rect[3]),
+        )
+        if not all(
+            math.isfinite(value)
+            for value in (raw_x, raw_y, raw_width, raw_height)
+        ):
+            raise ValueError("预览视场必须使用有限像素坐标")
+        if raw_width <= 0.0 or raw_height <= 0.0:
+            raise ValueError("预览视场宽高必须为正数")
+        left = max(0, min(full_width - 1, int(math.floor(raw_x))))
+        top = max(0, min(full_height - 1, int(math.floor(raw_y))))
+        right = max(
+            left + 1,
+            min(full_width, int(math.ceil(raw_x + raw_width))),
+        )
+        bottom = max(
+            top + 1,
+            min(full_height, int(math.ceil(raw_y + raw_height))),
+        )
+        requested_width = right - left
+        requested_height = bottom - top
+
+    sample_width = min(requested_width, PREVIEW_MAX_EDGE)
+    sample_height = min(requested_height, PREVIEW_MAX_EDGE)
+    if sample_width * sample_height > PREVIEW_MAX_PIXELS:
+        scale = math.sqrt(
+            PREVIEW_MAX_PIXELS / float(sample_width * sample_height)
+        )
+        sample_width = max(1, min(sample_width, int(math.floor(sample_width * scale))))
+        sample_height = max(
+            1,
+            min(sample_height, int(math.floor(sample_height * scale))),
+        )
+    left += max(0, (requested_width - sample_width) // 2)
+    top += max(0, (requested_height - sample_height) // 2)
+    left = min(left, full_width - sample_width)
+    top = min(top, full_height - sample_height)
+
+    source_array = raster_plane_to_array(source)
+    sample_array = np.ascontiguousarray(
+        source_array[
+            top : top + sample_height,
+            left : left + sample_width,
+            ...,
+        ]
+    )
+    sample_plane = array_to_raster_plane(sample_array)
+
+    sample_mask: NDArray[np.bool_] | None = None
+    if roi_mask is not None:
+        normalized_mask = np.asarray(roi_mask, dtype=np.bool_)
+        if normalized_mask.shape != (full_height, full_width):
+            raise ValueError("ROI 掩膜尺寸必须与完整源图片一致")
+        sample_mask = np.ascontiguousarray(
+            normalized_mask[
+                top : top + sample_height,
+                left : left + sample_width,
+            ],
+            dtype=np.bool_,
+        )
+
+    sampled_secondary: list[tuple[str, RasterPlane]] = []
+    for document_id, plane in (secondary_images or {}).items():
+        if (plane.width, plane.height) != (full_width, full_height):
+            raise ValueError("第二幅图像必须与源图片尺寸一致")
+        array = raster_plane_to_array(plane)
+        sampled_secondary.append(
+            (
+                str(document_id),
+                array_to_raster_plane(
+                    np.ascontiguousarray(
+                        array[
+                            top : top + sample_height,
+                            left : left + sample_width,
+                            ...,
+                        ]
+                    )
+                ),
+            )
+        )
+    return ProcessingPreviewSnapshot(
+        source=sample_plane,
+        origin=(left, top),
+        full_source_size=(full_width, full_height),
+        roi_mask=sample_mask,
+        secondary_images=tuple(sampled_secondary),
+    )
+
+
+def expand_processing_preview_snapshot_for_halo(
+    snapshot: ProcessingPreviewSnapshot,
+    *,
+    full_source: RasterPlane,
+    full_roi_mask: NDArray[np.bool_] | None,
+    full_secondary_images: Mapping[str, RasterPlane],
+    halo_x: int,
+    halo_y: int,
+) -> tuple[ProcessingPreviewSnapshot, tuple[int, int, int, int] | None]:
+    """Read real neighbour pixels around a bounded 1:1 preview sample.
+
+    The returned crop is expressed in the expanded result.  Callers must crop
+    the processed output back to that rectangle before displaying it.  This is
+    intentionally refused when the exact expanded sample would exceed the
+    preview safety budget; silently clipping the halo would make filter edges
+    disagree with final full-resolution processing.
+    """
+
+    hx = max(0, int(halo_x))
+    hy = max(0, int(halo_y))
+    if (hx == 0 and hy == 0) or snapshot.is_full_source:
+        return snapshot, None
+    base_x, base_y, base_width, base_height = snapshot.bounds
+    left = max(0, base_x - hx)
+    top = max(0, base_y - hy)
+    right = min(full_source.width, base_x + base_width + hx)
+    bottom = min(full_source.height, base_y + base_height + hy)
+    expanded_width = right - left
+    expanded_height = bottom - top
+    if (
+        expanded_width > PREVIEW_MAX_EDGE
+        or expanded_height > PREVIEW_MAX_EDGE
+        or expanded_width * expanded_height > PREVIEW_MAX_PIXELS
+    ):
+        raise ValueError(
+            "当前视场加上处理邻域后超过 2048×2048 / 4MP 的精确预览上限；"
+            "请缩小画布视场后重新打开工作台。"
+        )
+    source_array = raster_plane_to_array(full_source)
+    expanded_source = array_to_raster_plane(
+        np.ascontiguousarray(
+            source_array[top:bottom, left:right, ...]
+        )
+    )
+    expanded_mask: NDArray[np.bool_] | None = None
+    if full_roi_mask is not None:
+        normalized_mask = np.asarray(full_roi_mask, dtype=np.bool_)
+        if normalized_mask.shape != (full_source.height, full_source.width):
+            raise ValueError("ROI 掩膜尺寸必须与完整源图片一致")
+        expanded_mask = np.ascontiguousarray(
+            normalized_mask[top:bottom, left:right],
+            dtype=np.bool_,
+        )
+    expanded_secondary: list[tuple[str, RasterPlane]] = []
+    for document_id, plane in full_secondary_images.items():
+        if (plane.width, plane.height) != (
+            full_source.width,
+            full_source.height,
+        ):
+            raise ValueError("第二幅图像必须与源图片尺寸一致")
+        array = raster_plane_to_array(plane)
+        expanded_secondary.append(
+            (
+                str(document_id),
+                array_to_raster_plane(
+                    np.ascontiguousarray(
+                        array[top:bottom, left:right, ...]
+                    )
+                ),
+            )
+        )
+    expanded = ProcessingPreviewSnapshot(
+        source=expanded_source,
+        origin=(left, top),
+        full_source_size=(full_source.width, full_source.height),
+        roi_mask=expanded_mask,
+        secondary_images=tuple(expanded_secondary),
+    )
+    return expanded, (
+        base_x - left,
+        base_y - top,
+        base_width,
+        base_height,
+    )
+
+
+def adapt_operations_for_preview(
+    snapshot: ProcessingPreviewSnapshot,
+    operations: tuple[ImageOperationSpec, ...],
+) -> tuple[ImageOperationSpec, ...]:
+    """Translate full-image geometry parameters to a bounded preview sample.
+
+    The returned operations are ephemeral and are never persisted.  Pixel
+    values for point and neighbourhood operations are unchanged.  Coordinates
+    are adjusted only where the workbench exposes full-image positions.
+    """
+
+    origin_x, origin_y = snapshot.origin
+    full_width, full_height = snapshot.full_source_size
+    sample_width = snapshot.source.width
+    sample_height = snapshot.source.height
+    transformed: list[ImageOperationSpec] = []
+    coordinate_space_is_source = True
+    for operation in operations:
+        parameters = operation.parameters
+        operation_id = operation.operation_id
+        if operation_id == ImageOperation.CROP.value:
+            crop_x = int(parameters.get("x", 0))
+            crop_y = int(parameters.get("y", 0))
+            crop_width = int(parameters.get("width", full_width))
+            crop_height = int(parameters.get("height", full_height))
+            if coordinate_space_is_source:
+                intersection_left = max(origin_x, crop_x)
+                intersection_top = max(origin_y, crop_y)
+                intersection_right = min(
+                    origin_x + sample_width,
+                    crop_x + crop_width,
+                )
+                intersection_bottom = min(
+                    origin_y + sample_height,
+                    crop_y + crop_height,
+                )
+                if (
+                    intersection_right <= intersection_left
+                    or intersection_bottom <= intersection_top
+                ):
+                    raise ValueError(
+                        "当前 1:1 预览样本与裁剪区域不相交；"
+                        "请在画布中移动到裁剪区域后重开工作台。"
+                    )
+                parameters.update(
+                    {
+                        "x": intersection_left - origin_x,
+                        "y": intersection_top - origin_y,
+                        "width": intersection_right - intersection_left,
+                        "height": intersection_bottom - intersection_top,
+                    }
+                )
+                sample_width = int(parameters["width"])
+                sample_height = int(parameters["height"])
+                full_width = crop_width
+                full_height = crop_height
+                origin_x = 0
+                origin_y = 0
+            coordinate_space_is_source = False
+        elif operation_id == ImageOperation.RESIZE.value:
+            target_width = max(1, int(parameters.get("width", full_width)))
+            target_height = max(1, int(parameters.get("height", full_height)))
+            parameters["width"] = max(
+                1,
+                int(round(sample_width * target_width / max(1, full_width))),
+            )
+            parameters["height"] = max(
+                1,
+                int(round(sample_height * target_height / max(1, full_height))),
+            )
+            sample_width = int(parameters["width"])
+            sample_height = int(parameters["height"])
+            full_width = target_width
+            full_height = target_height
+            coordinate_space_is_source = False
+        elif operation_id == ImageOperation.PIXEL_BIN.value:
+            factor = max(1, int(parameters.get("factor", 1)))
+            if str(parameters.get("remainder_policy", "reject")) == "reject":
+                # A full image can be divisible while a centred preview is not.
+                # Cropping the sample edge affects preview only and is recorded
+                # nowhere in the authoritative recipe.
+                parameters["remainder_policy"] = "crop"
+            sample_width = max(1, sample_width // factor)
+            sample_height = max(1, sample_height // factor)
+            full_width = max(1, full_width // factor)
+            full_height = max(1, full_height // factor)
+            coordinate_space_is_source = False
+        elif operation_id in {
+            ImageOperation.ROTATE_90_CLOCKWISE.value,
+            ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value,
+        }:
+            sample_width, sample_height = sample_height, sample_width
+            full_width, full_height = full_height, full_width
+            coordinate_space_is_source = False
+        elif operation_id in {
+            ImageOperation.ROTATE.value,
+            ImageOperation.TRANSLATE.value,
+            ImageOperation.RESIZE_CANVAS.value,
+            ImageOperation.FLIP_HORIZONTAL.value,
+            ImageOperation.FLIP_VERTICAL.value,
+            ImageOperation.ROTATE_180.value,
+        }:
+            coordinate_space_is_source = False
+        transformed.append(
+            ImageOperationSpec(
+                operation_id,
+                parameters,
+                implementation=operation.implementation,
+                implementation_version=operation.implementation_version,
+                result_metadata=operation.result_metadata,
+            )
+        )
+    return tuple(transformed)
 
 
 @dataclass(frozen=True, slots=True)
@@ -279,7 +675,12 @@ class ImageProcessingTaskController(QObject):
     ) -> WorkbenchTaskRequest:
         if self._closed:
             raise RuntimeError("图像处理任务控制器已经关闭")
-        validate_workbench_operation_sequence(source, operations)
+        validate_workbench_operation_sequence(
+            source,
+            operations,
+            roi_requested=roi_mask is not None,
+            secondary_images=secondary_images,
+        )
         lane = self._lanes[kind]
         lane.generation += 1
         request = WorkbenchTaskRequest(
@@ -401,8 +802,14 @@ def _execute_workbench_request_with_metadata(
     request: WorkbenchTaskRequest,
     token: CancellationToken,
 ) -> _WorkbenchExecutionOutput:
-    validate_workbench_operation_sequence(request.source, request.operations)
+    validation = validate_workbench_operation_sequence(
+        request.source,
+        request.operations,
+        roi_requested=request.roi_mask is not None,
+        secondary_images=dict(request.secondary_images),
+    )
     image = raster_plane_to_array(request.source)
+    working_roi_mask = request.roi_mask
     secondary_images = dict(request.secondary_images)
     executed_operations: list[ImageOperationSpec] = []
     dynamic_metadata_keys = {
@@ -411,26 +818,86 @@ def _execute_workbench_request_with_metadata(
         "computed_threshold",
         "cropped_right",
         "cropped_bottom",
+        "roi_bounds",
     }
-    for operation_spec in request.operations:
+    for operation_index, operation_spec in enumerate(request.operations):
         token.raise_if_cancelled()
         parameters = operation_spec.parameters
+        if (
+            operation_spec.operation_id == ImageOperation.RESIZE.value
+            and str(parameters.get("interpolation", "auto")).strip().lower()
+            == InterpolationMode.AUTO.value
+        ):
+            validation_step = validation.steps[operation_index]
+            parameters["interpolation"] = resolve_resize_interpolation(
+                source_width=int(image.shape[1]),
+                source_height=int(image.shape[0]),
+                width=int(parameters.get("width", image.shape[1])),
+                height=int(parameters.get("height", image.shape[0])),
+                requested=InterpolationMode.AUTO,
+                semantic=validation_step.input_state.semantic,
+            ).value
         secondary_image = None
-        if operation_spec.operation_id == ImageOperation.IMAGE_CALCULATOR.value:
-            secondary_document_id = str(
-                parameters.pop("secondary_document_id", "")
+        flat_field_source = str(
+            parameters.get("flat_field_source", "estimated")
+        ).strip().lower()
+        uses_secondary_image = (
+            operation_spec.operation_id
+            == ImageOperation.IMAGE_CALCULATOR.value
+            or (
+                operation_spec.operation_id
+                == ImageOperation.FLAT_FIELD_CORRECTION.value
+                and flat_field_source == "reference"
             )
+        )
+        if uses_secondary_image:
+            secondary_document_id = str(
+                parameters.get("secondary_document_id", "")
+            ).strip()
             try:
                 secondary_plane = secondary_images[secondary_document_id]
             except KeyError as exc:
-                raise ValueError("图像计算器选择的第二幅图像已不可用") from exc
+                message = (
+                    "参考图平场校正选择的第二幅参考图像已不可用"
+                    if operation_spec.operation_id
+                    == ImageOperation.FLAT_FIELD_CORRECTION.value
+                    else "图像计算器选择的第二幅图像已不可用"
+                )
+                raise ValueError(message) from exc
+            if (
+                operation_spec.operation_id
+                == ImageOperation.FLAT_FIELD_CORRECTION.value
+            ):
+                actual_sha256 = secondary_plane.sha256()
+                expected_sha256 = str(
+                    parameters.get("secondary_sha256", "")
+                ).strip()
+                if (
+                    request.kind is WorkbenchTaskKind.FINAL
+                    and expected_sha256
+                    and expected_sha256 != actual_sha256
+                ):
+                    raise ValueError(
+                        "参考平场像素已变化，已拒绝使用过期的参考图执行最终处理"
+                    )
+                if request.kind is WorkbenchTaskKind.FINAL:
+                    parameters["secondary_sha256"] = actual_sha256
+                if not parameters.get("reference_levels"):
+                    parameters["reference_levels"] = (
+                        flat_field_reference_levels(
+                            raster_plane_to_array(secondary_plane),
+                            preserve_mean=bool(
+                                parameters.get("preserve_mean", True)
+                            ),
+                        )
+                    )
             secondary_image = raster_plane_to_array(secondary_plane)
         result = execute_image_operation_tiled(
             ImageOperation(operation_spec.operation_id),
             image,
             parameters=parameters,
             secondary_image=secondary_image,
-            roi_mask=request.roi_mask,
+            roi_mask=working_roi_mask,
             request_id=request.request_id,
             generation=request.generation,
             tile_size=PROCESSING_TILE_EDGE,
@@ -438,6 +905,11 @@ def _execute_workbench_request_with_metadata(
         )
         token.raise_if_cancelled()
         image = np.asarray(result.image)
+        if result.roi_mask is not None:
+            # Geometry-changing operations own the transformed ROI mask.  Do
+            # not repeat their clipping arithmetic here: the service result is
+            # the authoritative mask for the next step in the recipe.
+            working_roi_mask = result.roi_mask
         dynamic_metadata = {
             key: value
             for key, value in result.metadata_map.items()
@@ -464,55 +936,31 @@ def _execute_workbench_request_with_metadata(
 def validate_workbench_operation_sequence(
     source: RasterPlane,
     operations: tuple[ImageOperationSpec, ...],
-) -> None:
-    """Reject pixel-layout combinations that the authoritative model cannot store."""
+    *,
+    roi_requested: bool = False,
+    secondary_images: Mapping[str, RasterPlane] | None = None,
+) -> RecipeValidationResult:
+    """Validate the complete pixel/semantic chain before allocating output."""
 
-    channels = int(source.pixel_type.channel_count)
-    scalar_outputs = {
-        ImageOperation.THRESHOLD.value,
-        ImageOperation.SOBEL_EDGES.value,
-        ImageOperation.LAPLACIAN_EDGES.value,
-        ImageOperation.CANNY_EDGES.value,
-        ImageOperation.AUTO_THRESHOLD.value,
-        ImageOperation.BINARIZE.value,
-        ImageOperation.ERODE.value,
-        ImageOperation.DILATE.value,
-        ImageOperation.MORPHOLOGY_OPEN.value,
-        ImageOperation.MORPHOLOGY_CLOSE.value,
-        ImageOperation.FILL_HOLES.value,
-        ImageOperation.CONTOUR_EXTRACT.value,
-        ImageOperation.REMOVE_SMALL_OBJECTS.value,
-        ImageOperation.FILL_SMALL_HOLES.value,
-        ImageOperation.DISTANCE_TRANSFORM.value,
-        ImageOperation.SKELETONIZE.value,
-        ImageOperation.WATERSHED.value,
-        ImageOperation.TOP_HAT.value,
-        ImageOperation.BLACK_HAT.value,
+    source_state = RasterTypeState(
+        pixel_type=source.pixel_type,
+        width=source.width,
+        height=source.height,
+    )
+    secondary_states = {
+        document_id: RasterTypeState(
+            pixel_type=plane.pixel_type,
+            width=plane.width,
+            height=plane.height,
+        )
+        for document_id, plane in (secondary_images or {}).items()
     }
-    for operation in operations:
-        parameters = operation.parameters
-        if operation.operation_id == ImageOperation.CONVERT_TYPE.value:
-            target = str(parameters.get("target_type", "uint8"))
-            if channels > 1 and target != "uint8":
-                raise ValueError(
-                    "RGB/RGBA 图像不能直接转换为 16 位或 32 位浮点；"
-                    "请先添加“转换颜色模型 → 灰度”步骤。"
-                )
-        elif operation.operation_id == ImageOperation.CONVERT_COLOR.value:
-            channels = (
-                1
-                if str(parameters.get("target_model", "grayscale"))
-                == "grayscale"
-                else 3
-            )
-        elif operation.operation_id in scalar_outputs:
-            channels = 1
-        elif (
-            operation.operation_id == ImageOperation.FFT_FILTER.value
-            and str(parameters.get("channel", "per_channel"))
-            != "per_channel"
-        ):
-            channels = 1
+    return validate_image_processing_recipe(
+        ImageProcessingRecipe.from_operations(operations),
+        source_state,
+        roi_requested=roi_requested,
+        secondary_states=secondary_states,
+    )
 
 
 def raster_plane_to_array(plane: RasterPlane) -> NDArray[np.generic]:
@@ -627,16 +1075,30 @@ def estimate_final_resources(
         "distance_transform",
         "skeletonize",
         "watershed",
+        "watershed_v2",
+        "adaptive_threshold",
+        "morphological_reconstruction",
+        "regional_extrema",
+        "clear_border",
+        "fft_power_spectrum",
         "top_hat",
         "black_hat",
     }
-    float_outputs = {"distance_transform"}
+    float_outputs = {"distance_transform", "fft_power_spectrum"}
     optionally_float_outputs = {"sobel_edges", "laplacian_edges", "fft_filter"}
-    frequency_operations = {"fft_filter", "stripe_suppression"}
+    frequency_operations = {
+        "fft_filter",
+        "fft_power_spectrum",
+        "stripe_suppression",
+    }
     global_label_operations = {
         "remove_small_objects",
         "fill_small_holes",
         "watershed",
+        "watershed_v2",
+        "morphological_reconstruction",
+        "regional_extrema",
+        "clear_border",
     }
 
     for spec in operations:
@@ -659,6 +1121,8 @@ def estimate_final_resources(
                 peak_bytes,
                 previous_bytes * 4 + width * height * max(channels, 1) * 16,
             )
+            if str(parameters.get("result_mode", "preserve")) == "float32":
+                bytes_per_channel = 4
         elif operation_id == "crop":
             x = max(0, int(parameters.get("x", 0)))
             y = max(0, int(parameters.get("y", 0)))
@@ -696,6 +1160,19 @@ def estimate_final_resources(
             operation_id in optionally_float_outputs
             and bool(parameters.get("output_float", True))
         ):
+            bytes_per_channel = 4
+        elif operation_id in {"log_v2", "exp_v2", "sqrt_v2"} and (
+            str(parameters.get("result_mode", "float32")) == "float32"
+        ):
+            bytes_per_channel = 4
+        elif operation_id == "rank_filter" and (
+            str(parameters.get("method", "minimum")) == "variance"
+        ):
+            bytes_per_channel = 4
+        elif operation_id == "morphology_derivative" and (
+            str(parameters.get("method", "gradient")) == "laplacian"
+        ):
+            channels = 1
             bytes_per_channel = 4
         elif operation_id == "canny_edges":
             bytes_per_channel = 1
@@ -791,6 +1268,7 @@ class WorkbenchOperationDefinition:
     calibration_effect: str = "保持现有标定。"
     supported_types: str = "GRAY8、GRAY16、GRAY32_FLOAT、RGB8、RGBA8"
     roi_behavior: str = "支持 ROI；ROI 外像素保持不变。"
+    available_for_new_recipe: bool = True
 
 
 def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
@@ -813,6 +1291,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
         ("循环", "wrap"),
     )
     interpolation_modes = (
+        ("自动（缩小 Area／放大 Bilinear）", "auto"),
         ("最近邻", "nearest"),
         ("双线性", "linear"),
         ("双三次", "cubic"),
@@ -899,6 +1378,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             "GRAY8、GRAY16、GRAY32_FLOAT、RGB8、RGBA8"
         ),
         roi_behavior: str = "支持 ROI；ROI 外像素保持不变。",
+        available_for_new_recipe: bool = True,
     ) -> WorkbenchOperationDefinition:
         return WorkbenchOperationDefinition(
             operation=value,
@@ -910,6 +1390,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             calibration_effect=calibration_effect,
             supported_types=supported_types,
             roi_behavior=roi_behavior,
+            available_for_new_recipe=available_for_new_recipe,
         )
 
     morphology = tuple(
@@ -932,6 +1413,40 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
     )
 
     return (
+        define(
+            ImageOperation.COPY,
+            "类型",
+            "复制像素",
+            (
+                ParameterField(
+                    "roi_mode",
+                    "ROI 复制方式",
+                    "choice",
+                    "bounds",
+                    choices=(
+                        ("仅使用 ROI 包围框", "bounds"),
+                        ("按 ROI 掩膜", "mask"),
+                    ),
+                ),
+                ParameterField(
+                    "outside_value",
+                    "ROI 外填充值",
+                    "float",
+                    0.0,
+                    -1e12,
+                    1e12,
+                    4,
+                ),
+                ParameterField(
+                    "transparent_outside",
+                    "ROI 外透明",
+                    "bool",
+                    False,
+                ),
+            ),
+            purpose="冻结当前像素；有 ROI 时可复制包围框或精确掩膜。",
+            roi_behavior="支持 ROI bounds/mask；结果携带冻结后的 ROI 掩膜。",
+        ),
         define(
             ImageOperation.CONVERT_TYPE,
             "类型",
@@ -1112,9 +1627,42 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 ParameterField("y", "上", "int", 0, 0, 1_000_000),
                 ParameterField("width", "宽度", "int", -1, 1, 1_000_000),
                 ParameterField("height", "高度", "int", -1, 1, 1_000_000),
+                ParameterField(
+                    "roi_mode",
+                    "ROI 裁剪方式",
+                    "choice",
+                    "bounds",
+                    choices=(
+                        ("仅使用 ROI 包围框", "bounds"),
+                        ("按 ROI 掩膜", "mask"),
+                    ),
+                    help_text=(
+                        "仅在存在当前 ROI 时生效；按掩膜会把包围框内、"
+                        "ROI 外的像素设为指定填充值或透明。"
+                    ),
+                ),
+                ParameterField(
+                    "fill_value",
+                    "ROI 外填充值",
+                    "float",
+                    0.0,
+                    -1e12,
+                    1e12,
+                    4,
+                ),
+                ParameterField(
+                    "transparent_outside",
+                    "ROI 外透明",
+                    "bool",
+                    False,
+                    help_text="开启后输出 RGBA8；只适用于 8 位源图。",
+                ),
             ),
-            purpose="截取原始像素坐标中的矩形区域。",
-            roi_behavior=no_roi,
+            purpose="截取原始像素坐标中的矩形或精确 ROI 包围区域。",
+            roi_behavior=(
+                "有 ROI 时默认按包围框裁剪；可显式选择按精确掩膜填充"
+                " ROI 外区域。"
+            ),
         ),
         define(
             ImageOperation.RESIZE,
@@ -1123,7 +1671,7 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             (
                 ParameterField("width", "宽度", "int", -1, 1, 1_000_000),
                 ParameterField("height", "高度", "int", -1, 1, 1_000_000),
-                ParameterField("interpolation", "插值", "choice", "area", choices=interpolation_modes),
+                ParameterField("interpolation", "插值", "choice", "auto", choices=interpolation_modes),
             ),
             purpose="重采样为指定宽高。",
             calibration_effect=(
@@ -1441,9 +1989,38 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
             supported_types=scalar_types,
         ),
         define(
+            ImageOperation.WATERSHED_V2,
+            "处理",
+            "标记控制分水岭 v2",
+            (
+                foreground,
+                ParameterField(
+                    "seed_threshold",
+                    "种子阈值比例",
+                    "float",
+                    0.35,
+                    0.001,
+                    0.999,
+                    3,
+                ),
+                ParameterField(
+                    "minimum_seed_area",
+                    "最小种子面积",
+                    "int",
+                    1,
+                    1,
+                    2_147_483_647,
+                    suffix=" px²",
+                ),
+                scalar_channel,
+            ),
+            purpose="使用平台安全区域极大值标记拆分接触对象；不改变旧版分水岭。",
+            supported_types=scalar_types,
+        ),
+        define(
             ImageOperation.BACKGROUND_SUBTRACT,
             "处理",
-            "背景扣除",
+            "形态学背景扣除",
             (
                 ParameterField("radius", "背景半径", "int", 25, 1, 2048, suffix=" px"),
                 ParameterField("light_background", "亮背景", "bool", False),
@@ -1451,6 +2028,40 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 local_border,
             ),
             purpose="用滑动形态学背景估计扣除缓慢变化背景。",
+        ),
+        define(
+            ImageOperation.ROLLING_BALL_BACKGROUND_SUBTRACT,
+            "处理",
+            "滑动抛物面背景扣除",
+            (
+                ParameterField(
+                    "radius",
+                    "抛物面半径",
+                    "float",
+                    25.0,
+                    0.1,
+                    2048,
+                    2,
+                    suffix=" px",
+                ),
+                ParameterField(
+                    "ball_height",
+                    "抛物面高度",
+                    "float",
+                    255.0,
+                    0.001,
+                    1e12,
+                    3,
+                ),
+                ParameterField("light_background", "亮背景", "bool", False),
+                ParameterField(
+                    "preserve_offset",
+                    "保留背景中位偏移",
+                    "bool",
+                    False,
+                ),
+            ),
+            purpose="使用真正的灰度抛物面开/闭重建估计缓慢变化背景。",
         ),
         define(
             ImageOperation.CUSTOM_CONVOLUTION,
@@ -1498,6 +2109,51 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
         define(ImageOperation.LOG, "处理", "Log 运算", purpose="对非负像素计算 log(1+x)。"),
         define(ImageOperation.EXP, "处理", "Exp 运算", purpose="对像素计算指数；溢出时明确拒绝。"),
         define(ImageOperation.SQRT, "处理", "Sqrt 运算", purpose="对非负像素计算平方根。"),
+        *tuple(
+            define(
+                operation,
+                "处理",
+                label,
+                (
+                    ParameterField(
+                        "result_mode",
+                        "结果类型",
+                        "choice",
+                        "float32",
+                        choices=(
+                            ("32 位浮点", "float32"),
+                            ("保持输入类型", "preserve"),
+                            ("重映射到指定范围", "remap"),
+                        ),
+                    ),
+                    ParameterField(
+                        "output_min",
+                        "重映射下限",
+                        "float",
+                        0.0,
+                        -1e12,
+                        1e12,
+                        4,
+                    ),
+                    ParameterField(
+                        "output_max",
+                        "重映射上限",
+                        "float",
+                        1.0,
+                        -1e12,
+                        1e12,
+                        4,
+                    ),
+                ),
+                purpose=purpose,
+                supported_types="GRAY8、GRAY16、GRAY32_FLOAT；float32 输出仅单通道",
+            )
+            for operation, label, purpose in (
+                (ImageOperation.LOG_V2, "Log 变换 v2", "科学型 log(1+x)，默认输出 float32。"),
+                (ImageOperation.EXP_V2, "Exp 变换 v2", "科学型指数变换，默认输出 float32。"),
+                (ImageOperation.SQRT_V2, "Sqrt 变换 v2", "科学型平方根变换，默认输出 float32。"),
+            )
+        ),
         define(ImageOperation.ABS, "处理", "绝对值", purpose="对每个像素取绝对值。"),
         define(
             ImageOperation.CLAMP,
@@ -1538,6 +2194,17 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                         ("AND", "and"),
                         ("OR", "or"),
                         ("XOR", "xor"),
+                        ("复制第二幅图", "copy"),
+                    ),
+                ),
+                ParameterField(
+                    "result_mode",
+                    "结果类型",
+                    "choice",
+                    "preserve",
+                    choices=(
+                        ("保持输入类型", "preserve"),
+                        ("32 位浮点", "float32"),
                     ),
                 ),
             ),
@@ -1555,9 +2222,299 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
                 ParameterField("order", "阶数", "int", 2, 1, 16),
                 ParameterField("channel", "彩色图通道", "choice", "per_channel", choices=fft_channels),
                 ParameterField("output_float", "输出 32 位浮点", "bool", False),
+                ParameterField(
+                    "boundary",
+                    "边界策略",
+                    "choice",
+                    "periodic",
+                    choices=(
+                        ("周期边界（旧版）", "periodic"),
+                        ("镜像扩展", "mirror_pad"),
+                        ("Tukey 窗", "tukey"),
+                    ),
+                ),
+                ParameterField(
+                    "tukey_alpha",
+                    "Tukey alpha",
+                    "float",
+                    0.25,
+                    0.0,
+                    1.0,
+                    3,
+                ),
+                ParameterField(
+                    "frequency_unit",
+                    "频率单位",
+                    "choice",
+                    "cycles_per_pixel",
+                    choices=(
+                        ("周期/像素", "cycles_per_pixel"),
+                        ("周期/物理单位", "cycles_per_unit"),
+                    ),
+                ),
+                ParameterField(
+                    "pixel_size",
+                    "像素物理尺寸",
+                    "float",
+                    1.0,
+                    0.000000001,
+                    1e12,
+                    8,
+                    help_text="选择周期/物理单位时必须显式提供。",
+                ),
             ),
             purpose="使用 Butterworth 响应进行低通、高通、带通或带阻滤波。",
             roi_behavior="支持 ROI 写回；FFT 仍读取完整图像，ROI 外像素保持不变。",
+        ),
+        define(
+            ImageOperation.FFT_POWER_SPECTRUM,
+            "处理",
+            "FFT 功率谱",
+            (
+                scalar_channel,
+                ParameterField("logarithmic", "对数功率", "bool", True),
+                ParameterField("centered", "零频居中", "bool", True),
+                ParameterField(
+                    "window",
+                    "窗函数",
+                    "choice",
+                    "none",
+                    choices=(("无", "none"), ("Tukey", "tukey")),
+                ),
+                ParameterField(
+                    "tukey_alpha",
+                    "Tukey alpha",
+                    "float",
+                    0.25,
+                    0.0,
+                    1.0,
+                    3,
+                ),
+            ),
+            purpose="生成未归一化的 float32 频域功率谱。",
+            supported_types=scalar_types,
+            available_for_new_recipe=False,
+        ),
+        define(
+            ImageOperation.ADAPTIVE_THRESHOLD,
+            "处理",
+            "局部自适应阈值",
+            (
+                ParameterField(
+                    "method",
+                    "方法",
+                    "choice",
+                    "gaussian",
+                    choices=(
+                        ("Mean", "mean"),
+                        ("Gaussian", "gaussian"),
+                        ("Sauvola", "sauvola"),
+                        ("Phansalkar", "phansalkar"),
+                    ),
+                ),
+                ParameterField("radius", "半径", "int", 7, 1, 255),
+                ParameterField("offset", "阈值偏移", "float", 0.0, -1e12, 1e12, 4),
+                ParameterField("k", "k", "float", 0.2, -10.0, 10.0, 4),
+                ParameterField("r", "R", "float", 128.0, 0.000001, 1e12, 4),
+                ParameterField("p", "p", "float", 2.0, -100.0, 100.0, 4),
+                ParameterField("q", "q", "float", 10.0, -100.0, 100.0, 4),
+                foreground,
+                scalar_channel,
+            ),
+            purpose="执行 Mean/Gaussian/Sauvola/Phansalkar 局部阈值。",
+            supported_types=scalar_types,
+        ),
+        define(
+            ImageOperation.PERCENTILE_SATURATION,
+            "处理",
+            "百分位饱和增强",
+            (
+                ParameterField(
+                    "lower_percentile",
+                    "下百分位",
+                    "float",
+                    0.5,
+                    0.0,
+                    99.999,
+                    3,
+                ),
+                ParameterField(
+                    "upper_percentile",
+                    "上百分位",
+                    "float",
+                    99.5,
+                    0.001,
+                    100.0,
+                    3,
+                ),
+                ParameterField("per_channel", "逐通道", "bool", True),
+            ),
+            purpose="饱和直方图两端并映射到原生数值范围。",
+        ),
+        define(
+            ImageOperation.RANK_FILTER,
+            "处理",
+            "Rank 滤波",
+            (
+                ParameterField(
+                    "method",
+                    "方法",
+                    "choice",
+                    "minimum",
+                    choices=(
+                        ("Minimum", "minimum"),
+                        ("Maximum", "maximum"),
+                        ("Variance", "variance"),
+                    ),
+                ),
+                ParameterField("radius", "半径", "int", 1, 1, 255),
+            ),
+            purpose="执行最小值、最大值或局部总体方差 Rank 滤波。",
+        ),
+        define(
+            ImageOperation.MORPHOLOGY_DERIVATIVE,
+            "处理",
+            "形态学微分",
+            (
+                ParameterField(
+                    "method",
+                    "方法",
+                    "choice",
+                    "gradient",
+                    choices=(
+                        ("Gradient", "gradient"),
+                        ("Laplacian", "laplacian"),
+                    ),
+                ),
+                ParameterField("radius", "半径", "int", 1, 1, 255),
+                scalar_channel,
+            ),
+            purpose="计算形态学梯度或有符号 float32 Laplacian。",
+        ),
+        define(
+            ImageOperation.MORPHOLOGICAL_RECONSTRUCTION,
+            "处理",
+            "形态学重建",
+            (
+                ParameterField(
+                    "method",
+                    "方法",
+                    "choice",
+                    "opening",
+                    choices=(
+                        ("开重建", "opening"),
+                        ("闭重建", "closing"),
+                    ),
+                ),
+                ParameterField("radius", "种子半径", "int", 1, 1, 255),
+                ParameterField(
+                    "connectivity",
+                    "连通性",
+                    "choice",
+                    8,
+                    choices=connectivity_modes,
+                ),
+                scalar_channel,
+            ),
+            purpose="执行受掩膜约束的测地膨胀/腐蚀重建。",
+            supported_types=scalar_types,
+        ),
+        define(
+            ImageOperation.REGIONAL_EXTREMA,
+            "处理",
+            "区域/扩展极值",
+            (
+                ParameterField(
+                    "kind",
+                    "类型",
+                    "choice",
+                    "maxima",
+                    choices=(("极大值", "maxima"), ("极小值", "minima")),
+                ),
+                ParameterField("h", "扩展高度 h", "float", 0.0, 0.0, 1e12, 4),
+                ParameterField(
+                    "connectivity",
+                    "连通性",
+                    "choice",
+                    8,
+                    choices=connectivity_modes,
+                ),
+                scalar_channel,
+            ),
+            purpose="提取区域极值；h>0 时提取扩展极值。",
+            supported_types=scalar_types,
+        ),
+        define(
+            ImageOperation.CLEAR_BORDER,
+            "处理",
+            "清除边界对象",
+            (
+                foreground,
+                ParameterField(
+                    "connectivity",
+                    "连通性",
+                    "choice",
+                    8,
+                    choices=connectivity_modes,
+                ),
+                scalar_channel,
+            ),
+            purpose="删除与任一图像边界相连的前景对象。",
+            supported_types=scalar_types,
+        ),
+        define(
+            ImageOperation.FLAT_FIELD_CORRECTION,
+            "处理",
+            "平场校正",
+            (
+                ParameterField(
+                    "flat_field_source",
+                    "平场来源",
+                    "choice",
+                    "estimated",
+                    choices=(
+                        ("估算照明场", "estimated"),
+                        ("选择参考图像", "reference"),
+                    ),
+                    help_text=(
+                        "参考图像必须与源图像的尺寸、通道、像素类型和标定一致。"
+                    ),
+                ),
+                ParameterField(
+                    "secondary_document_id",
+                    "参考图像",
+                    "secondary_image",
+                    "",
+                    help_text=(
+                        "候选列表仅显示尺寸、通道、像素类型和标定完全兼容的图片。"
+                    ),
+                ),
+                ParameterField(
+                    "radius",
+                    "平场半径",
+                    "float",
+                    25.0,
+                    0.1,
+                    2048,
+                    2,
+                    suffix=" px",
+                ),
+                ParameterField(
+                    "method",
+                    "估计方法",
+                    "choice",
+                    "gaussian",
+                    choices=(
+                        ("Gaussian", "gaussian"),
+                        ("形态学开运算", "morphology"),
+                    ),
+                ),
+                ParameterField("preserve_mean", "保持平均亮度", "bool", True),
+            ),
+            purpose=(
+                "用估算照明场或用户选择的参考图像执行乘性平场校正；"
+                "参考图像内容摘要会写入派生配方。"
+            ),
         ),
         define(
             ImageOperation.STRIPE_SUPPRESSION,
@@ -1575,7 +2532,55 @@ def _operation_catalog() -> tuple[WorkbenchOperationDefinition, ...]:
     )
 
 
-_OPERATION_CATALOG = _operation_catalog()
+def _bind_descriptor_parameter_schemas(
+    catalog: tuple[WorkbenchOperationDefinition, ...],
+) -> tuple[WorkbenchOperationDefinition, ...]:
+    """Attach service-owned parameter constraints to UI presentation data.
+
+    Labels, suffixes and help text remain presentation-only.  Kind, defaults,
+    ranges and allowed values are taken from ``ImageOperationDescriptor`` so a
+    widget can never advertise a value that recipe validation rejects.
+    """
+
+    bound: list[WorkbenchOperationDefinition] = []
+    for definition in catalog:
+        descriptor = get_image_operation_descriptor(definition.operation)
+        schemas = {item.key: item for item in descriptor.parameter_schema}
+        parameters: list[ParameterField] = []
+        for presentation in definition.parameters:
+            try:
+                schema = schemas[presentation.key]
+            except KeyError as exc:
+                raise RuntimeError(
+                    f"工作台参数 {definition.operation.value}."
+                    f"{presentation.key} 未在服务注册表声明"
+                ) from exc
+            choice_labels = {
+                value: label for label, value in presentation.choices
+            }
+            choices = tuple(
+                (choice_labels.get(value, str(value)), value)
+                for value in schema.choices
+            )
+            parameters.append(
+                replace(
+                    presentation,
+                    kind=schema.kind,
+                    default=schema.default,
+                    minimum=schema.minimum,
+                    maximum=schema.maximum,
+                    choices=choices,
+                )
+            )
+        bound.append(
+            replace(definition, parameters=tuple(parameters))
+        )
+    return tuple(bound)
+
+
+_OPERATION_CATALOG = _bind_descriptor_parameter_schemas(
+    _operation_catalog()
+)
 _DEFINITION_BY_ID = {
     definition.operation.value: definition for definition in _OPERATION_CATALOG
 }
@@ -1656,7 +2661,12 @@ def default_operation_spec(
         and not parameters.get("secondary_document_id")
     ):
         raise ValueError("图像计算器默认参数需要第二幅图像文档 ID")
-    return ImageOperationSpec(definition.operation.value, parameters)
+    descriptor = get_image_operation_descriptor(definition.operation)
+    return ImageOperationSpec(
+        definition.operation.value,
+        parameters,
+        implementation_version=descriptor.version,
+    )
 
 
 class ImageProcessingWorkbench(QDialog):
@@ -1679,6 +2689,7 @@ class ImageProcessingWorkbench(QDialog):
         source_name: str = "",
         roi_summary: str = "整张图片",
         roi_mask: NDArray[np.bool_] | None = None,
+        preview_rect: tuple[float, float, float, float] | None = None,
         secondary_images: Mapping[str, RasterPlane] | None = None,
         secondary_image_names: Mapping[str, str] | None = None,
         executor: ImageTaskExecutor | None = None,
@@ -1697,6 +2708,18 @@ class ImageProcessingWorkbench(QDialog):
         self._roi_summary = roi_summary.strip() or "整张图片"
         self._roi_mask = roi_mask
         self._secondary_images = dict(secondary_images or {})
+        self._secondary_sha256_cache: dict[str, str] = {}
+        self._flat_field_level_cache: dict[
+            tuple[str, bool],
+            tuple[float, ...],
+        ] = {}
+        self._preview_snapshot = build_processing_preview_snapshot(
+            source,
+            visible_rect=preview_rect,
+            roi_mask=roi_mask,
+            secondary_images=self._secondary_images,
+        )
+        self._overview_image = raster_plane_to_bounded_overview_image(source)
         self._secondary_image_names = {
             document_id: str((secondary_image_names or {}).get(document_id) or document_id)
             for document_id in self._secondary_images
@@ -1707,6 +2730,10 @@ class ImageProcessingWorkbench(QDialog):
             else Path(resource_check_directory).expanduser()
         )
         self._steps: tuple[ImageOperationSpec, ...] = ()
+        self._preview_crop_by_request_id: dict[
+            str,
+            tuple[int, int, int, int],
+        ] = {}
         self._undo_stack: list[tuple[ImageOperationSpec, ...]] = []
         self._redo_stack: list[tuple[ImageOperationSpec, ...]] = []
         self._parameter_widgets: dict[str, QWidget] = {}
@@ -1730,7 +2757,7 @@ class ImageProcessingWorkbench(QDialog):
         self._build_ui()
         self._populate_operations()
         self._refresh_steps()
-        self._show_preview_raster(self._source)
+        self._show_preview_raster(self._preview_snapshot.source)
         self._update_actions()
 
     @property
@@ -1742,6 +2769,47 @@ class ImageProcessingWorkbench(QDialog):
 
     def current_recipe(self) -> ImageProcessingRecipe:
         return ImageProcessingRecipe.from_operations(self._steps)
+
+    def make_default_operation_spec(
+        self,
+        operation_id: ImageOperation | str,
+    ) -> ImageOperationSpec:
+        """Build a source-aware default, including frozen ROI crop bounds."""
+
+        operation_value = (
+            operation_id.value
+            if isinstance(operation_id, ImageOperation)
+            else str(operation_id)
+        )
+        step = default_operation_spec(
+            operation_value,
+            self._source.width,
+            self._source.height,
+            source_pixel_type=self._source.pixel_type,
+            secondary_document_id=next(iter(self._secondary_images), None),
+        )
+        if operation_value == ImageOperation.CROP.value and self._roi_mask is not None:
+            rows, columns = np.nonzero(self._roi_mask)
+            if rows.size and columns.size:
+                parameters = step.parameters
+                left = int(columns.min())
+                top = int(rows.min())
+                parameters.update(
+                    {
+                        "x": left,
+                        "y": top,
+                        "width": int(columns.max()) - left + 1,
+                        "height": int(rows.max()) - top + 1,
+                        "roi_mode": "bounds",
+                    }
+                )
+                step = ImageOperationSpec(
+                    step.operation_id,
+                    parameters,
+                    implementation=step.implementation,
+                    implementation_version=step.implementation_version,
+                )
+        return step
 
     def apply_loaded_recipe(self, recipe: ImageProcessingRecipe) -> None:
         """Apply a host-selected preset without giving the workbench file access."""
@@ -1760,6 +2828,15 @@ class ImageProcessingWorkbench(QDialog):
         for operation in operations:
             if operation.operation_id not in _DEFINITION_BY_ID:
                 raise ValueError(f"工作台不支持操作: {operation.operation_id}")
+            if (
+                operation.operation_id
+                == ImageOperation.FFT_POWER_SPECTRUM.value
+                and (
+                    operation.implementation != "fdm"
+                    or operation.implementation_version != "1"
+                )
+            ):
+                raise ValueError("旧版 FFT 功率谱只允许按 fdm v1 配方重放")
             secondary_document_id = (
                 str(operation.parameters.get("secondary_document_id", ""))
                 or next(iter(self._secondary_images), "")
@@ -1772,7 +2849,10 @@ class ImageProcessingWorkbench(QDialog):
                 secondary_document_id=(
                     secondary_document_id
                     if operation.operation_id
-                    == ImageOperation.IMAGE_CALCULATOR.value
+                    in {
+                        ImageOperation.IMAGE_CALCULATOR.value,
+                        ImageOperation.FLAT_FIELD_CORRECTION.value,
+                    }
                     else None
                 ),
             )
@@ -1784,12 +2864,53 @@ class ImageProcessingWorkbench(QDialog):
                 implementation=operation.implementation,
                 implementation_version=operation.implementation_version,
             )
-            if operation.operation_id == ImageOperation.IMAGE_CALCULATOR.value:
+            flat_field_source = str(
+                normalized_operation.parameters.get(
+                    "flat_field_source",
+                    "estimated",
+                )
+            ).strip().lower()
+            if (
+                operation.operation_id
+                == ImageOperation.IMAGE_CALCULATOR.value
+                or (
+                    operation.operation_id
+                    == ImageOperation.FLAT_FIELD_CORRECTION.value
+                    and flat_field_source == "reference"
+                )
+            ):
                 secondary_document_id = str(
                     normalized_operation.parameters.get("secondary_document_id", "")
                 )
                 if secondary_document_id not in self._secondary_images:
-                    raise ValueError("图像计算器选择的第二幅图像不在当前候选列表中")
+                    message = (
+                        "参考图平场校正选择的参考图像不在当前兼容候选列表中"
+                        if operation.operation_id
+                        == ImageOperation.FLAT_FIELD_CORRECTION.value
+                        else "图像计算器选择的第二幅图像不在当前候选列表中"
+                    )
+                    raise ValueError(message)
+                expected_sha256 = str(
+                    normalized_operation.parameters.get(
+                        "secondary_sha256",
+                        "",
+                    )
+                ).strip()
+                if (
+                    operation.operation_id
+                    == ImageOperation.FLAT_FIELD_CORRECTION.value
+                    and expected_sha256
+                    and (
+                        self._secondary_image_sha256(
+                            secondary_document_id
+                        )
+                        != expected_sha256
+                    )
+                ):
+                    raise ValueError(
+                        "参考平场像素摘要与当前候选图片不一致，"
+                        "请重新选择参考图像"
+                    )
             normalized_operations.append(normalized_operation)
         normalized = tuple(normalized_operations)
         self._commit_steps(normalized, selected_index=0 if normalized else -1)
@@ -1798,20 +2919,95 @@ class ImageProcessingWorkbench(QDialog):
         self._preview_timer.stop()
         if not self._steps or self._final_in_progress:
             self._controller.cancel_preview()
-            self._show_preview_raster(self._source)
+            self._show_preview_raster(self._preview_snapshot.source)
             self._status_label.setText(
                 "尚未添加处理步骤。" if not self._steps else "正在生成派生图片…"
             )
             return
+        try:
+            prepared_steps = self._prepare_reference_flat_field_steps(
+                self._steps
+            )
+            self._validate_active_roi_operations(prepared_steps)
+            preview_snapshot = self._preview_snapshot
+            halo_x = 0
+            halo_y = 0
+            geometry_operations = {
+                ImageOperation.CROP.value,
+                ImageOperation.RESIZE.value,
+                ImageOperation.TRANSLATE.value,
+                ImageOperation.RESIZE_CANVAS.value,
+                ImageOperation.PIXEL_BIN.value,
+                ImageOperation.ROTATE.value,
+                ImageOperation.ROTATE_90_CLOCKWISE.value,
+                ImageOperation.ROTATE_90_COUNTERCLOCKWISE.value,
+                ImageOperation.ROTATE_180.value,
+                ImageOperation.FLIP_HORIZONTAL.value,
+                ImageOperation.FLIP_VERTICAL.value,
+            }
+            for operation in prepared_steps:
+                capability = resolve_image_operation_capability(
+                    operation.operation_id,
+                    operation.parameters,
+                )
+                halo_x += int(capability.halo_x)
+                halo_y += int(capability.halo_y)
+            if (halo_x or halo_y) and any(
+                operation.operation_id in geometry_operations
+                for operation in prepared_steps
+            ):
+                raise ValueError(
+                    "当前配方同时包含邻域处理和几何变换，无法在有界样本中"
+                    "保证边缘完全等价；请拆分为两个派生步骤后预览。"
+                )
+            preview_snapshot, preview_crop = (
+                expand_processing_preview_snapshot_for_halo(
+                    self._preview_snapshot,
+                    full_source=self._source,
+                    full_roi_mask=(
+                        self._roi_mask if self._roi_is_active() else None
+                    ),
+                    full_secondary_images=self._secondary_images,
+                    halo_x=halo_x,
+                    halo_y=halo_y,
+                )
+            )
+            preview_operations = adapt_operations_for_preview(
+                preview_snapshot,
+                prepared_steps,
+            )
+            estimate = estimate_final_resources(
+                preview_snapshot.source,
+                preview_operations,
+            )
+            if estimate.peak_working_set_bytes > PREVIEW_MAX_WORKING_SET_BYTES:
+                raise ValueError(
+                    "当前预览步骤预计需要 "
+                    f"{estimate.peak_working_set_bytes / float(1 << 20):.1f} MiB，"
+                    "超过 256 MiB 预览上限；请缩小画布视场后重新打开工作台。"
+                )
+        except ValueError as exc:
+            self._controller.cancel_preview()
+            self._status_label.setText(f"自动预览已暂停：{exc}")
+            return
         self._status_label.setText("正在计算 1:1 预览…")
         try:
-            self._controller.start_preview(
+            request = self._controller.start_preview(
                 source_document_id=self._source_document_id,
-                source=self._source,
-                operations=self._steps,
-                roi_mask=self._roi_mask,
-                secondary_images=self._secondary_images,
+                source=preview_snapshot.source,
+                operations=preview_operations,
+                roi_mask=(
+                    preview_snapshot.roi_mask
+                    if self._roi_is_active()
+                    else None
+                ),
+                secondary_images=dict(preview_snapshot.secondary_images),
             )
+            self._preview_crop_by_request_id.clear()
+            if preview_crop is not None:
+                self._preview_crop_by_request_id[request.request_id] = (
+                    preview_crop
+                )
         except ValueError as exc:
             self._status_label.setText(f"无法开始预览：{exc}")
 
@@ -1839,6 +3035,17 @@ class ImageProcessingWorkbench(QDialog):
         self._roi_label.setTextFormat(Qt.TextFormat.RichText)
         source_layout.addWidget(self._source_label, 1)
         source_layout.addWidget(self._roi_label, 1)
+        self._use_roi_checkbox = QCheckBox("限制在当前 ROI", source_bar)
+        self._use_roi_checkbox.setVisible(self._roi_mask is not None)
+        self._use_roi_checkbox.setChecked(self._roi_mask is not None)
+        self._use_roi_checkbox.setToolTip(
+            "关闭后按整张图片处理。改变坐标或通道结构的操作"
+            "不允许隐式套用 ROI。"
+        )
+        self._use_roi_checkbox.toggled.connect(
+            lambda _checked: self._schedule_preview()
+        )
+        source_layout.addWidget(self._use_roi_checkbox)
 
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
         splitter.setChildrenCollapsible(False)
@@ -1941,8 +3148,21 @@ class ImageProcessingWorkbench(QDialog):
         panel = QGroupBox("预览", parent)
         layout = QVBoxLayout(panel)
 
+        sample_x, sample_y, sample_width, sample_height = (
+            self._preview_snapshot.bounds
+        )
+        sample_description = (
+            "完整图片"
+            if self._preview_snapshot.is_full_source
+            else (
+                f"原始像素样本 x={sample_x}, y={sample_y}, "
+                f"{sample_width} × {sample_height}"
+            )
+        )
         hint = QLabel(
-            "1:1 预览使用原始像素语义；最终处理始终以原始分辨率执行。",
+            "1:1 预览不缩放源像素；"
+            f"当前使用{sample_description}。"
+            "最终处理始终以完整原始分辨率执行。",
             panel,
         )
         hint.setWordWrap(True)
@@ -2009,7 +3229,10 @@ class ImageProcessingWorkbench(QDialog):
         category = str(self._category_combo.currentData() or "类型")
         self._operation_combo.clear()
         for definition in _OPERATION_CATALOG:
-            if definition.category == category:
+            if (
+                definition.category == category
+                and definition.available_for_new_recipe
+            ):
                 if (
                     definition.operation is ImageOperation.IMAGE_CALCULATOR
                     and not self._secondary_images
@@ -2035,13 +3258,7 @@ class ImageProcessingWorkbench(QDialog):
         definition = _DEFINITION_BY_ID.get(operation_id)
         if definition is None:
             return
-        step = default_operation_spec(
-            operation_id,
-            self._source.width,
-            self._source.height,
-            source_pixel_type=self._source.pixel_type,
-            secondary_document_id=next(iter(self._secondary_images), None),
-        )
+        step = self.make_default_operation_spec(operation_id)
         self._commit_steps(self._steps + (step,), selected_index=len(self._steps))
 
     def _resolved_default(self, parameter: ParameterField) -> object:
@@ -2178,6 +3395,14 @@ class ImageProcessingWorkbench(QDialog):
                     f"适用类型：{definition.supported_types}",
                     f"ROI：{definition.roi_behavior}",
                     f"执行：{execution_help}",
+                    *(
+                        (
+                            "兼容：该步骤仅用于完整重放旧版 fdm v1 配方；"
+                            "参数和步骤顺序已锁定。",
+                        )
+                        if not definition.available_for_new_recipe
+                        else ()
+                    ),
                 )
             ),
             self._parameter_content,
@@ -2194,6 +3419,7 @@ class ImageProcessingWorkbench(QDialog):
         for parameter in definition.parameters:
             value = values.get(parameter.key, self._resolved_default(parameter))
             widget = self._create_parameter_widget(parameter, value)
+            widget.setEnabled(definition.available_for_new_recipe)
             self._parameter_widgets[parameter.key] = widget
             parameter_label = QLabel(parameter.label, self._parameter_content)
             tooltip = parameter.help_text or f"{parameter.label}会写入可追溯的处理配方。"
@@ -2271,6 +3497,8 @@ class ImageProcessingWorkbench(QDialog):
         if not 0 <= row < len(self._steps):
             return
         definition = _DEFINITION_BY_ID[self._steps[row].operation_id]
+        if not definition.available_for_new_recipe:
+            return
         parameters: dict[str, object] = {}
         for field in definition.parameters:
             widget = self._parameter_widgets[field.key]
@@ -2323,6 +3551,35 @@ class ImageProcessingWorkbench(QDialog):
     def _on_preview_ready(self, result: object) -> None:
         if not isinstance(result, WorkbenchTaskResult):
             return
+        crop = self._preview_crop_by_request_id.pop(
+            result.request_id,
+            None,
+        )
+        if crop is not None:
+            x, y, width, height = crop
+            array = raster_plane_to_array(result.raster)
+            if (
+                x < 0
+                or y < 0
+                or x + width > result.raster.width
+                or y + height > result.raster.height
+            ):
+                self._status_label.setText(
+                    "预览结果尺寸与冻结邻域不一致，已拒绝显示。"
+                )
+                return
+            result = WorkbenchTaskResult(
+                kind=result.kind,
+                request_id=result.request_id,
+                generation=result.generation,
+                source_document_id=result.source_document_id,
+                raster=array_to_raster_plane(
+                    np.ascontiguousarray(
+                        array[y : y + height, x : x + width, ...]
+                    )
+                ),
+                recipe=result.recipe,
+            )
         self._show_preview_raster(result.raster)
         self._status_label.setText(
             f"预览已更新 · {result.raster.width} × {result.raster.height}"
@@ -2333,13 +3590,19 @@ class ImageProcessingWorkbench(QDialog):
         if not self._steps or self._final_in_progress:
             return
         try:
+            prepared_steps = self._prepare_reference_flat_field_steps(
+                self._steps
+            )
+            self._validate_active_roi_operations(prepared_steps)
             validate_workbench_operation_sequence(
                 self._source,
-                self._steps,
+                prepared_steps,
+                roi_requested=self._roi_is_active(),
+                secondary_images=self._secondary_images,
             )
             estimate = validate_final_resources(
                 self._source,
-                self._steps,
+                prepared_steps,
                 storage_directory=self._resource_check_directory,
             )
         except (FinalResourcePreflightError, ValueError) as exc:
@@ -2359,10 +3622,132 @@ class ImageProcessingWorkbench(QDialog):
         self._controller.start_final(
             source_document_id=self._source_document_id,
             source=self._source,
-            operations=self._steps,
-            roi_mask=self._roi_mask,
+            operations=prepared_steps,
+            roi_mask=self._roi_mask if self._roi_is_active() else None,
             secondary_images=self._secondary_images,
         )
+
+    def _prepare_reference_flat_field_steps(
+        self,
+        operations: tuple[ImageOperationSpec, ...],
+    ) -> tuple[ImageOperationSpec, ...]:
+        """Freeze the full reference identity and normalization levels.
+
+        A bounded 1:1 preview receives a cropped reference raster.  Freezing
+        levels from the complete compatible reference here keeps that preview
+        numerically consistent with final full-resolution processing.
+        """
+
+        prepared: list[ImageOperationSpec] = []
+        for operation in operations:
+            parameters = operation.parameters
+            is_reference_flat_field = (
+                operation.operation_id
+                == ImageOperation.FLAT_FIELD_CORRECTION.value
+                and str(
+                    parameters.get("flat_field_source", "estimated")
+                ).strip().lower()
+                == "reference"
+            )
+            if not is_reference_flat_field:
+                prepared.append(operation)
+                continue
+            secondary_document_id = str(
+                parameters.get("secondary_document_id", "")
+            ).strip()
+            if secondary_document_id not in self._secondary_images:
+                raise ValueError(
+                    "参考图平场校正需要选择一幅仍然可用的兼容参考图像"
+                )
+            actual_sha256 = self._secondary_image_sha256(
+                secondary_document_id
+            )
+            expected_sha256 = str(
+                parameters.get("secondary_sha256", "")
+            ).strip()
+            if expected_sha256 and expected_sha256 != actual_sha256:
+                raise ValueError(
+                    "参考平场像素已变化，当前配方的来源摘要已经过期"
+                )
+            parameters["secondary_sha256"] = actual_sha256
+            preserve_mean = bool(parameters.get("preserve_mean", True))
+            parameters["reference_levels"] = (
+                self._flat_field_reference_level_cache(
+                    secondary_document_id,
+                    preserve_mean=preserve_mean,
+                )
+            )
+            prepared.append(
+                ImageOperationSpec(
+                    operation.operation_id,
+                    parameters,
+                    implementation=operation.implementation,
+                    implementation_version=operation.implementation_version,
+                    result_metadata=operation.result_metadata,
+                )
+            )
+        return tuple(prepared)
+
+    def _secondary_image_sha256(self, document_id: str) -> str:
+        cached = self._secondary_sha256_cache.get(document_id)
+        if cached is not None:
+            return cached
+        try:
+            plane = self._secondary_images[document_id]
+        except KeyError as exc:
+            raise ValueError("第二幅图像已不在当前兼容候选列表中") from exc
+        digest = plane.sha256()
+        self._secondary_sha256_cache[document_id] = digest
+        return digest
+
+    def _flat_field_reference_level_cache(
+        self,
+        document_id: str,
+        *,
+        preserve_mean: bool,
+    ) -> tuple[float, ...]:
+        key = (document_id, bool(preserve_mean))
+        cached = self._flat_field_level_cache.get(key)
+        if cached is not None:
+            return cached
+        try:
+            plane = self._secondary_images[document_id]
+        except KeyError as exc:
+            raise ValueError("参考平场图像已不在当前兼容候选列表中") from exc
+        levels = flat_field_reference_levels(
+            raster_plane_to_array(plane),
+            preserve_mean=preserve_mean,
+        )
+        self._flat_field_level_cache[key] = levels
+        return levels
+
+    def _roi_is_active(self) -> bool:
+        return bool(
+            self._roi_mask is not None
+            and getattr(self, "_use_roi_checkbox", None) is not None
+            and self._use_roi_checkbox.isChecked()
+        )
+
+    def _validate_active_roi_operations(
+        self,
+        operations: tuple[ImageOperationSpec, ...],
+    ) -> None:
+        if not self._roi_is_active():
+            return
+        incompatible = [
+            image_operation_display_name(operation.operation_id)
+            for operation in operations
+            if not resolve_image_operation_capability(
+                operation.operation_id,
+                operation.parameters,
+            ).supports_roi
+        ]
+        if incompatible:
+            raise ValueError(
+                "以下操作不能隐式套用当前 ROI："
+                + "、".join(incompatible)
+                + "。请关闭“限制在当前 ROI”后按整图处理，或移除这些步骤。"
+            )
 
     def _on_final_ready(self, result: object) -> None:
         if not isinstance(result, WorkbenchTaskResult):
@@ -2390,40 +3775,96 @@ class ImageProcessingWorkbench(QDialog):
         self.reject()
 
     def _request_recipe_save(self) -> None:
-        if self._steps:
+        if self._steps and not self._contains_replay_only_steps():
             self.recipeSaveRequested.emit(self.current_recipe())
 
     def _request_batch_apply(self) -> None:
-        if self._steps:
+        if self._steps and not self._contains_replay_only_steps():
             self.batchApplyRequested.emit(self.current_recipe())
+
+    def _contains_replay_only_steps(self) -> bool:
+        return any(
+            not _DEFINITION_BY_ID[step.operation_id].available_for_new_recipe
+            for step in self._steps
+        )
 
     def _update_actions(self) -> None:
         row = self._steps_list.currentRow()
         count = len(self._steps)
         final_busy = self._controller.is_busy(WorkbenchTaskKind.FINAL)
-        self._move_up_button.setEnabled(0 < row < count)
-        self._move_down_button.setEnabled(0 <= row < count - 1)
-        self._remove_step_button.setEnabled(0 <= row < count)
-        self._reset_steps_button.setEnabled(bool(self._steps))
-        self._undo_button.setEnabled(bool(self._undo_stack))
-        self._redo_button.setEnabled(bool(self._redo_stack))
+        replay_only = self._contains_replay_only_steps()
+        self._move_up_button.setEnabled(0 < row < count and not replay_only)
+        self._move_down_button.setEnabled(
+            0 <= row < count - 1 and not replay_only
+        )
+        self._remove_step_button.setEnabled(
+            0 <= row < count and not replay_only
+        )
+        self._reset_steps_button.setEnabled(bool(self._steps) and not replay_only)
+        self._undo_button.setEnabled(bool(self._undo_stack) and not replay_only)
+        self._redo_button.setEnabled(bool(self._redo_stack) and not replay_only)
         self._generate_button.setEnabled(bool(self._steps) and not final_busy)
-        self._save_recipe_button.setEnabled(bool(self._steps) and not final_busy)
+        self._save_recipe_button.setEnabled(
+            bool(self._steps) and not final_busy and not replay_only
+        )
         self._load_recipe_button.setEnabled(not final_busy)
-        self._batch_apply_button.setEnabled(bool(self._steps) and not final_busy)
-        self._add_step_button.setEnabled(not final_busy)
+        self._batch_apply_button.setEnabled(
+            bool(self._steps) and not final_busy and not replay_only
+        )
+        replay_tooltip = (
+            "此配方包含仅供旧项目重放的 FFT 功率谱 v1；"
+            "请从“分析 > FFT 功率谱”生成可审计分析结果。"
+        )
+        self._save_recipe_button.setToolTip(
+            replay_tooltip
+            if replay_only
+            else "请求工作区保存当前有序步骤；工作台本身不直接写设置文件。"
+        )
+        self._batch_apply_button.setToolTip(
+            replay_tooltip
+            if replay_only
+            else (
+                "把当前配方交给批处理窗口；"
+                "成功结果仍需由项目工作区统一提交。"
+            )
+        )
+        self._add_step_button.setEnabled(not final_busy and not replay_only)
 
     def _show_preview_raster(self, raster: RasterPlane) -> None:
         image = raster_plane_to_display_image(raster)
         pixmap = QPixmap.fromImage(image)
         self._preview_image_label.setPixmap(pixmap)
         self._preview_image_label.resize(pixmap.size())
+        self._update_overview_pixmap()
+
+    def _update_overview_pixmap(self) -> None:
         overview_size = self._overview_image_label.size()
         if overview_size.width() < 2 or overview_size.height() < 2:
             overview_size.setWidth(320)
             overview_size.setHeight(240)
+        overview = self._overview_image.copy()
+        if not self._preview_snapshot.is_full_source:
+            painter = QPainter(overview)
+            try:
+                full_width, full_height = (
+                    self._preview_snapshot.full_source_size
+                )
+                x, y, width, height = self._preview_snapshot.bounds
+                scale_x = overview.width() / float(full_width)
+                scale_y = overview.height() / float(full_height)
+                sample_rect = QRectF(
+                    x * scale_x,
+                    y * scale_y,
+                    max(1.0, width * scale_x),
+                    max(1.0, height * scale_y),
+                )
+                painter.setPen(QPen(QColor("#2A9D8F"), 2.0))
+                painter.setBrush(QColor(42, 157, 143, 36))
+                painter.drawRect(sample_rect)
+            finally:
+                painter.end()
         self._overview_image_label.setPixmap(
-            pixmap.scaled(
+            QPixmap.fromImage(overview).scaled(
                 overview_size,
                 Qt.AspectRatioMode.KeepAspectRatio,
                 Qt.TransformationMode.SmoothTransformation,
@@ -2480,20 +3921,44 @@ def raster_plane_to_display_image(plane: RasterPlane) -> QImage:
     ).copy()
 
 
+def raster_plane_to_bounded_overview_image(plane: RasterPlane) -> QImage:
+    """Create an approximate overview without constructing a full-size QPixmap."""
+
+    width = int(plane.width)
+    height = int(plane.height)
+    edge_scale = max(
+        width / float(OVERVIEW_MAX_EDGE),
+        height / float(OVERVIEW_MAX_EDGE),
+        1.0,
+    )
+    pixel_scale = math.sqrt(
+        max(1.0, (width * height) / float(OVERVIEW_MAX_PIXELS))
+    )
+    stride = max(1, int(math.ceil(max(edge_scale, pixel_scale))))
+    array = raster_plane_to_array(plane)
+    sampled = np.ascontiguousarray(array[::stride, ::stride, ...])
+    return raster_plane_to_display_image(array_to_raster_plane(sampled))
+
+
 __all__ = [
     "FinalResourceEstimate",
     "FinalResourcePreflightError",
     "ImageProcessingTaskController",
     "ImageProcessingWorkbench",
+    "ProcessingPreviewSnapshot",
     "WorkbenchTaskKind",
     "WorkbenchTaskRequest",
     "WorkbenchTaskResult",
     "array_to_raster_plane",
+    "adapt_operations_for_preview",
+    "build_processing_preview_snapshot",
+    "expand_processing_preview_snapshot_for_halo",
     "default_operation_spec",
     "estimate_final_resources",
     "execute_workbench_request",
     "raster_plane_to_array",
     "raster_plane_to_display_image",
+    "raster_plane_to_bounded_overview_image",
     "validate_final_resources",
     "validate_workbench_operation_sequence",
 ]

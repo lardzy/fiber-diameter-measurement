@@ -21,6 +21,7 @@ from typing import Any, Callable, Iterable, Mapping, TypeAlias
 import numpy as np
 from numpy.typing import NDArray
 
+from fdm.analysis_artifacts import AnalysisToolSpec
 from fdm.cancellation import CancellationToken
 from fdm.raster import RasterPlane
 from fdm.services.advanced_image_analysis import (
@@ -51,6 +52,51 @@ AdvancedExecutor: TypeAlias = Callable[
     AdvancedResult,
 ]
 
+_ADVANCED_TOOL_VERSIONS: Mapping[AdvancedAnalysisKind, str] = MappingProxyType(
+    {
+        AdvancedAnalysisKind.DIRECTIONALITY: "2",
+        AdvancedAnalysisKind.SKELETON_NETWORK: "2",
+        AdvancedAnalysisKind.LOCAL_THICKNESS: "1",
+        AdvancedAnalysisKind.TUBENESS: "1",
+        AdvancedAnalysisKind.GLCM_HARALICK: "1",
+        AdvancedAnalysisKind.SPATIAL_DISTRIBUTION: "2",
+        AdvancedAnalysisKind.INTENSITY_SURFACE: "1",
+    }
+)
+
+
+def _analysis_tool_spec(
+    kind: AdvancedAnalysisKind,
+    *,
+    version: str,
+    chinese_name: str,
+) -> AnalysisToolSpec:
+    binary_kinds = {
+        AdvancedAnalysisKind.SKELETON_NETWORK,
+        AdvancedAnalysisKind.LOCAL_THICKNESS,
+    }
+    point_kinds = {AdvancedAnalysisKind.SPATIAL_DISTRIBUTION}
+    if kind in binary_kinds:
+        convertible_kinds = ("binary_mask",)
+    elif kind in point_kinds:
+        convertible_kinds = ("point_set", "measurement_group")
+    else:
+        convertible_kinds = ("image", "roi")
+    return AnalysisToolSpec(
+        tool_id=f"fdm.{kind.value}",
+        version=version,
+        chinese_name=chinese_name,
+        parameter_schema={
+            "type": "object",
+            "schema_id": f"fdm.{kind.value}.parameters.v{version}",
+        },
+        output_schema={
+            "type": "object",
+            "schema_id": f"fdm.{kind.value}.output.v{version}",
+        },
+        convertible_kinds=convertible_kinds,
+    )
+
 
 @dataclass(frozen=True, slots=True)
 class AdvancedAnalysisRegistration:
@@ -61,9 +107,11 @@ class AdvancedAnalysisRegistration:
     algorithm_version: str
     input_description: str
     executor: AdvancedExecutor
+    tool_spec: AnalysisToolSpec | None = None
 
     def __post_init__(self) -> None:
-        object.__setattr__(self, "kind", AdvancedAnalysisKind(self.kind))
+        normalized_kind = AdvancedAnalysisKind(self.kind)
+        object.__setattr__(self, "kind", normalized_kind)
         for field_name in ("chinese_name", "algorithm_version", "input_description"):
             value = str(getattr(self, field_name) or "").strip()
             if not value:
@@ -71,6 +119,25 @@ class AdvancedAnalysisRegistration:
             object.__setattr__(self, field_name, value)
         if not callable(self.executor):
             raise TypeError("executor 必须可调用")
+        spec = self.tool_spec
+        if spec is None:
+            spec = _analysis_tool_spec(
+                normalized_kind,
+                version=self.algorithm_version,
+                chinese_name=self.chinese_name,
+            )
+        elif not isinstance(spec, AnalysisToolSpec):
+            raise TypeError("tool_spec 必须是 AnalysisToolSpec")
+        expected_tool_id = f"fdm.{normalized_kind.value}"
+        if spec.tool_id != expected_tool_id:
+            raise ValueError(
+                f"tool_spec.tool_id 必须与分析类型一致: {expected_tool_id}"
+            )
+        if spec.version != self.algorithm_version:
+            raise ValueError("tool_spec.version 必须与 algorithm_version 一致")
+        if spec.chinese_name != self.chinese_name:
+            raise ValueError("tool_spec.chinese_name 必须与 chinese_name 一致")
+        object.__setattr__(self, "tool_spec", spec)
 
 
 @dataclass(frozen=True, slots=True, init=False)
@@ -167,6 +234,7 @@ class AdvancedAnalysisExecution:
     algorithm_version: str
     request_id: str
     generation: int
+    tool_spec: AnalysisToolSpec
     result: AdvancedResult
     scalar_report: tuple[tuple[str, str | int | float | bool | None], ...]
     arrays: tuple[AdvancedArrayDescriptor, ...]
@@ -246,6 +314,7 @@ class AdvancedAnalysisRegistry:
             algorithm_version=registration.algorithm_version,
             request_id=invocation.request_id,
             generation=invocation.generation,
+            tool_spec=registration.tool_spec,
             result=result,
             scalar_report=scalars,
             arrays=arrays,
@@ -258,51 +327,100 @@ def builtin_advanced_analysis_registrations(
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.DIRECTIONALITY,
             "纤维方向性",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.DIRECTIONALITY],
             "灰度图像，可选 ROI",
             _execute_directionality,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.DIRECTIONALITY,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.DIRECTIONALITY
+                ],
+                chinese_name="纤维方向性",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.SKELETON_NETWORK,
             "骨架网络",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.SKELETON_NETWORK],
             "显式二值掩膜",
             _execute_skeleton,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.SKELETON_NETWORK,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.SKELETON_NETWORK
+                ],
+                chinese_name="骨架网络",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.LOCAL_THICKNESS,
             "局部厚度",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.LOCAL_THICKNESS],
             "显式二值掩膜",
             _execute_local_thickness,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.LOCAL_THICKNESS,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.LOCAL_THICKNESS
+                ],
+                chinese_name="局部厚度",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.TUBENESS,
             "多尺度 Tubeness",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.TUBENESS],
             "灰度图像，可选 ROI",
             _execute_tubeness,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.TUBENESS,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.TUBENESS
+                ],
+                chinese_name="多尺度 Tubeness",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.GLCM_HARALICK,
             "Haralick GLCM 纹理",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.GLCM_HARALICK],
             "灰度图像，可选 ROI",
             _execute_glcm,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.GLCM_HARALICK,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.GLCM_HARALICK
+                ],
+                chinese_name="Haralick GLCM 纹理",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.SPATIAL_DISTRIBUTION,
-            "最近邻距离与空间密度",
-            "1",
+            "空间分布（最近邻 / Ripley K/L）",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.SPATIAL_DISTRIBUTION],
             "至少两个原始像素坐标点",
             _execute_spatial,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.SPATIAL_DISTRIBUTION,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.SPATIAL_DISTRIBUTION
+                ],
+                chinese_name="空间分布（最近邻 / Ripley K/L）",
+            ),
         ),
         AdvancedAnalysisRegistration(
             AdvancedAnalysisKind.INTENSITY_SURFACE,
             "二维强度表面",
-            "1",
+            _ADVANCED_TOOL_VERSIONS[AdvancedAnalysisKind.INTENSITY_SURFACE],
             "灰度图像，可选 ROI",
             _execute_surface,
+            tool_spec=_analysis_tool_spec(
+                AdvancedAnalysisKind.INTENSITY_SURFACE,
+                version=_ADVANCED_TOOL_VERSIONS[
+                    AdvancedAnalysisKind.INTENSITY_SURFACE
+                ],
+                chinese_name="二维强度表面",
+            ),
         ),
     )
 
@@ -322,9 +440,11 @@ def _execute_directionality(
             "histogram_smoothing_bins",
             "peak_min_fraction",
             "max_peaks",
+            "algorithm_version",
         },
     )
     channel = str(parameters.pop("channel", "luminance"))
+    parameters.setdefault("algorithm_version", 2)
     return analyze_fiber_directionality(
         DirectionalityRequest(
             image=_scalar_image(invocation, channel),
@@ -345,8 +465,13 @@ def _execute_skeleton(
 ) -> object:
     parameters = _selected_parameters(
         invocation.parameters,
-        {"already_skeletonized"},
+        {
+            "already_skeletonized",
+            "algorithm_version",
+            "prune_terminal_branches_below",
+        },
     )
+    parameters.setdefault("algorithm_version", 2)
     return analyze_skeleton_network(
         SkeletonNetworkRequest(
             mask=_required_binary_mask(invocation),
@@ -442,7 +567,19 @@ def _execute_spatial(
     token: CancellationToken | None,
     limits: AdvancedAnalysisLimits,
 ) -> object:
-    parameters = _selected_parameters(invocation.parameters, {"study_area"})
+    parameters = _selected_parameters(
+        invocation.parameters,
+        {
+            "study_area",
+            "study_bounds",
+            "ripley_radii",
+            "algorithm_version",
+        },
+    )
+    parameters.setdefault("algorithm_version", 2)
+    for sequence_name in ("study_bounds", "ripley_radii"):
+        if sequence_name in parameters and parameters[sequence_name] is not None:
+            parameters[sequence_name] = tuple(parameters[sequence_name])
     return analyze_spatial_distribution(
         SpatialDistributionRequest(
             points=invocation.points,
@@ -605,6 +742,7 @@ def _describe_analysis_result(
 
 
 __all__ = [
+    "AnalysisToolSpec",
     "AdvancedAnalysisExecution",
     "AdvancedAnalysisInvocation",
     "AdvancedAnalysisRegistration",

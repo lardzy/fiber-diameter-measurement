@@ -3,10 +3,11 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
+from enum import Enum
 import json
 import math
 import re
-from typing import Any
+from typing import Any, Callable
 
 from fdm.raster import RasterPixelType
 
@@ -14,6 +15,466 @@ from fdm.raster import RasterPixelType
 IMAGE_PROCESSING_SCHEMA_VERSION = 1
 _OPERATION_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
+
+
+class RasterSemantic(str, Enum):
+    """The meaning of samples carried through an image-processing recipe."""
+
+    INTENSITY = "intensity"
+    COLOR = "color"
+    BINARY_MASK = "binary_mask"
+    LABELS = "labels"
+    DISTANCE = "distance"
+
+
+@dataclass(frozen=True, slots=True)
+class RasterTypeState:
+    """Small, pixel-free state used to validate an operation type chain."""
+
+    pixel_type: RasterPixelType
+    semantic: RasterSemantic | None = None
+    width: int | None = None
+    height: int | None = None
+
+    def __post_init__(self) -> None:
+        pixel_type = RasterPixelType.parse(self.pixel_type)
+        semantic = self.semantic
+        if semantic is None:
+            semantic = (
+                RasterSemantic.INTENSITY
+                if pixel_type.is_grayscale
+                else RasterSemantic.COLOR
+            )
+        elif not isinstance(semantic, RasterSemantic):
+            try:
+                semantic = RasterSemantic(str(semantic))
+            except ValueError as exc:
+                raise ValueError(f"不支持的栅格语义: {self.semantic!r}") from exc
+        if pixel_type.channel_count > 1 and semantic is not RasterSemantic.COLOR:
+            raise ValueError("RGB/RGBA 栅格的语义必须是 color")
+        if semantic is RasterSemantic.COLOR and pixel_type.is_grayscale:
+            raise ValueError("color 语义必须使用 RGB8 或 RGBA8")
+        width = _optional_positive_dimension(self.width, field_name="width")
+        height = _optional_positive_dimension(self.height, field_name="height")
+        if (width is None) != (height is None):
+            raise ValueError("width 和 height 必须同时提供或同时省略")
+        object.__setattr__(self, "pixel_type", pixel_type)
+        object.__setattr__(self, "semantic", semantic)
+        object.__setattr__(self, "width", width)
+        object.__setattr__(self, "height", height)
+
+    @property
+    def channel_count(self) -> int:
+        return self.pixel_type.channel_count
+
+    @property
+    def is_grayscale(self) -> bool:
+        return self.pixel_type.is_grayscale
+
+    def replace(
+        self,
+        *,
+        pixel_type: RasterPixelType | str | None = None,
+        semantic: RasterSemantic | str | None = None,
+        width: int | None = None,
+        height: int | None = None,
+        preserve_dimensions: bool = True,
+    ) -> "RasterTypeState":
+        """Return a new state while retaining dimensions by default."""
+
+        resolved_pixel_type = (
+            self.pixel_type
+            if pixel_type is None
+            else RasterPixelType.parse(pixel_type)
+        )
+        resolved_semantic: RasterSemantic | None
+        if semantic is None:
+            resolved_semantic = self.semantic
+        elif isinstance(semantic, RasterSemantic):
+            resolved_semantic = semantic
+        else:
+            resolved_semantic = RasterSemantic(str(semantic))
+        return RasterTypeState(
+            pixel_type=resolved_pixel_type,
+            semantic=resolved_semantic,
+            width=self.width if preserve_dimensions and width is None else width,
+            height=(
+                self.height if preserve_dimensions and height is None else height
+            ),
+        )
+
+
+class RoiProcessingSemantics(str, Enum):
+    """How an operation treats an optional ROI mask."""
+
+    UNSUPPORTED = "unsupported"
+    WRITE_MASK_WITH_HALO = "write_mask_with_halo"
+    ROI_STATISTICS = "roi_statistics"
+    ISOLATED_DOMAIN = "isolated_domain"
+    CROP_BOUNDS_OR_MASK = "crop_bounds_or_mask"
+
+    # Source-compatible aliases for callers written before the scientific ROI
+    # contract was made explicit. These are internal enum names, not persisted
+    # recipe values.
+    BLEND_WITH_SOURCE = WRITE_MASK_WITH_HALO
+    BLEND_WITH_SCALAR_SOURCE = WRITE_MASK_WITH_HALO
+
+    @property
+    def supports_roi(self) -> bool:
+        return self is not RoiProcessingSemantics.UNSUPPORTED
+
+
+RasterInputCondition = Callable[
+    [RasterTypeState, Mapping[str, object]],
+    str | None,
+]
+RasterOutputResolver = Callable[
+    [RasterTypeState, Mapping[str, object]],
+    RasterTypeState,
+]
+TileCapabilityResolver = Callable[[Mapping[str, object]], object]
+ImageOperationExecutor = Callable[..., object]
+
+
+@dataclass(frozen=True, slots=True)
+class ImageOperationParameterSchema:
+    """Serializable, UI-independent contract for one operation parameter.
+
+    Parameters remain optional by default so recipes written before the
+    descriptor registry existed keep their executor-defined defaults.  New UI
+    recipes materialise ``default`` values explicitly, while validation uses
+    the same kind/choice/range contract in both paths.
+    """
+
+    key: str
+    kind: str
+    default: object = None
+    minimum: float | None = None
+    maximum: float | None = None
+    choices: tuple[object, ...] = ()
+    required: bool = False
+    required_when: tuple[tuple[str, object], ...] = ()
+
+    def __post_init__(self) -> None:
+        key = str(self.key or "").strip()
+        if not key:
+            raise ValueError("参数 schema 的 key 不能为空")
+        kind = str(self.kind or "").strip().lower()
+        if kind not in {
+            "bool",
+            "int",
+            "float",
+            "choice",
+            "number_list",
+            "secondary_image",
+            "string",
+        }:
+            raise ValueError(f"参数 {key} 使用了未知类型：{kind}")
+        minimum = self.minimum
+        maximum = self.maximum
+        for field_name, value in (("minimum", minimum), ("maximum", maximum)):
+            if value is not None and (
+                isinstance(value, bool)
+                or not isinstance(value, (int, float))
+                or not math.isfinite(float(value))
+            ):
+                raise ValueError(f"参数 {key} 的 {field_name} 必须是有限数")
+        if (
+            minimum is not None
+            and maximum is not None
+            and float(minimum) > float(maximum)
+        ):
+            raise ValueError(f"参数 {key} 的 minimum 不能大于 maximum")
+        choices = tuple(self.choices)
+        if kind == "choice":
+            if not choices:
+                raise ValueError(f"选项参数 {key} 必须声明 choices")
+            canonical_choices = {
+                json.dumps(
+                    _normalize_json_value(item, path=f"{key}.choices"),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                for item in choices
+            }
+            if len(canonical_choices) != len(choices):
+                raise ValueError(f"选项参数 {key} 不能包含重复值")
+        elif choices:
+            raise ValueError(f"非选项参数 {key} 不能声明 choices")
+        required_when = tuple(
+            (str(other_key or "").strip(), expected)
+            for other_key, expected in self.required_when
+        )
+        if any(not other_key for other_key, _expected in required_when):
+            raise ValueError(f"参数 {key} 的 required_when 键不能为空")
+        if len({other_key for other_key, _ in required_when}) != len(
+            required_when
+        ):
+            raise ValueError(f"参数 {key} 的 required_when 不能重复")
+        object.__setattr__(self, "key", key)
+        object.__setattr__(self, "kind", kind)
+        object.__setattr__(self, "minimum", minimum)
+        object.__setattr__(self, "maximum", maximum)
+        object.__setattr__(self, "choices", choices)
+        object.__setattr__(self, "required_when", required_when)
+        # Prove that persisted descriptor metadata is strict JSON even when a
+        # default is a tuple used by a number-list editor.
+        json.dumps(self.to_dict(), ensure_ascii=False, allow_nan=False)
+
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "key": self.key,
+            "kind": self.kind,
+            "default": _normalize_json_value(
+                self.default,
+                path=f"{self.key}.default",
+            ),
+            "required": bool(self.required),
+        }
+        if self.minimum is not None:
+            payload["minimum"] = self.minimum
+        if self.maximum is not None:
+            payload["maximum"] = self.maximum
+        if self.choices:
+            payload["choices"] = [
+                _normalize_json_value(item, path=f"{self.key}.choices")
+                for item in self.choices
+            ]
+        if self.required_when:
+            payload["required_when"] = {
+                key: _normalize_json_value(
+                    value,
+                    path=f"{self.key}.required_when.{key}",
+                )
+                for key, value in self.required_when
+            }
+        return payload
+
+    def validate_value(self, value: object) -> None:
+        """Validate a provided JSON-compatible value without coercing it."""
+
+        if self.kind == "bool":
+            if not isinstance(value, bool):
+                raise ValueError(f"参数 {self.key} 必须是布尔值")
+            return
+        if self.kind == "int":
+            if isinstance(value, bool) or not isinstance(value, int):
+                raise ValueError(f"参数 {self.key} 必须是整数")
+            numeric: int | float = value
+        elif self.kind == "float":
+            if isinstance(value, bool) or not isinstance(value, (int, float)):
+                raise ValueError(f"参数 {self.key} 必须是数值")
+            try:
+                numeric = float(value)
+            except OverflowError as exc:
+                raise ValueError(f"参数 {self.key} 必须是有限数") from exc
+            if not math.isfinite(numeric):
+                raise ValueError(f"参数 {self.key} 必须是有限数")
+        elif self.kind == "choice":
+            canonical_value = json.dumps(
+                _normalize_json_value(value, path=self.key),
+                ensure_ascii=False,
+                sort_keys=True,
+                separators=(",", ":"),
+                allow_nan=False,
+            )
+            canonical_choices = {
+                json.dumps(
+                    _normalize_json_value(choice, path=self.key),
+                    ensure_ascii=False,
+                    sort_keys=True,
+                    separators=(",", ":"),
+                    allow_nan=False,
+                )
+                for choice in self.choices
+            }
+            if canonical_value not in canonical_choices:
+                supported = "、".join(str(choice) for choice in self.choices)
+                raise ValueError(
+                    f"参数 {self.key} 的值不受支持：{value!r}；"
+                    f"可选值为 {supported}"
+                )
+            return
+        elif self.kind in {"secondary_image", "string"}:
+            if not isinstance(value, str):
+                raise ValueError(f"参数 {self.key} 必须是字符串")
+            return
+        elif self.kind == "number_list":
+            if not isinstance(value, (list, tuple)) or not value:
+                raise ValueError(f"参数 {self.key} 必须是非空数值列表")
+            for item in value:
+                if (
+                    isinstance(item, bool)
+                    or not isinstance(item, (int, float))
+                    or not math.isfinite(float(item))
+                ):
+                    raise ValueError(f"参数 {self.key} 必须是有限数值列表")
+            return
+        else:  # pragma: no cover - guarded by __post_init__
+            raise AssertionError(self.kind)
+        if self.minimum is not None and numeric < float(self.minimum):
+            raise ValueError(
+                f"参数 {self.key} 不能小于 {self.minimum}"
+            )
+        if self.maximum is not None and numeric > float(self.maximum):
+            raise ValueError(
+                f"参数 {self.key} 不能大于 {self.maximum}"
+            )
+
+
+@dataclass(frozen=True, slots=True)
+class ImageOperationDescriptor:
+    """Complete non-UI contract for a registered image operation."""
+
+    operation_id: str
+    chinese_name: str
+    category: str
+    parameter_schema: tuple[ImageOperationParameterSchema, ...]
+    input_conditions: tuple[RasterInputCondition, ...]
+    output_resolver: RasterOutputResolver
+    roi_semantics: RoiProcessingSemantics
+    resource: str
+    tile: TileCapabilityResolver
+    executor: ImageOperationExecutor
+    version: str = "1"
+
+    def __post_init__(self) -> None:
+        operation_id = str(self.operation_id or "").strip().lower()
+        if not _OPERATION_ID_PATTERN.fullmatch(operation_id):
+            raise ValueError(f"无效的图像操作 ID: {self.operation_id!r}")
+        chinese_name = _required_text(
+            self.chinese_name,
+            field_name="chinese_name",
+            maximum_length=128,
+        )
+        category = _required_text(
+            self.category,
+            field_name="category",
+            maximum_length=128,
+        )
+        parameter_schema = tuple(self.parameter_schema)
+        if not all(
+            isinstance(item, ImageOperationParameterSchema)
+            for item in parameter_schema
+        ):
+            raise TypeError(
+                "parameter_schema 必须全部是 ImageOperationParameterSchema"
+            )
+        parameter_names = tuple(item.key for item in parameter_schema)
+        if len(set(parameter_names)) != len(parameter_names):
+            raise ValueError("parameter_schema 不能包含重复名称")
+        conditions = tuple(self.input_conditions)
+        if not all(callable(item) for item in conditions):
+            raise TypeError("input_conditions 必须全部可调用")
+        if not callable(self.output_resolver):
+            raise TypeError("output_resolver 必须可调用")
+        if not isinstance(self.roi_semantics, RoiProcessingSemantics):
+            raise TypeError("roi_semantics 必须是 RoiProcessingSemantics")
+        resource = _required_text(
+            self.resource,
+            field_name="resource",
+            maximum_length=128,
+        )
+        if not callable(self.tile):
+            raise TypeError("tile 必须可调用")
+        if not callable(self.executor):
+            raise TypeError("executor 必须可调用")
+        version = _required_text(
+            self.version,
+            field_name="version",
+            maximum_length=128,
+        )
+        object.__setattr__(self, "operation_id", operation_id)
+        object.__setattr__(self, "chinese_name", chinese_name)
+        object.__setattr__(self, "category", category)
+        object.__setattr__(self, "parameter_schema", parameter_schema)
+        object.__setattr__(self, "input_conditions", conditions)
+        object.__setattr__(self, "resource", resource)
+        object.__setattr__(self, "version", version)
+
+    @property
+    def name(self) -> str:
+        """Chinese operation name used by non-UI catalog consumers."""
+
+        return self.chinese_name
+
+    @property
+    def parameters(self) -> tuple[str, ...]:
+        """Backward-compatible ordered parameter-name view."""
+
+        return tuple(item.key for item in self.parameter_schema)
+
+    def parameter(self, key: str) -> ImageOperationParameterSchema:
+        resolved = str(key)
+        for item in self.parameter_schema:
+            if item.key == resolved:
+                return item
+        raise KeyError(resolved)
+
+    def validate_parameters(
+        self,
+        parameters: Mapping[str, object],
+    ) -> None:
+        if not isinstance(parameters, Mapping):
+            raise TypeError("parameters 必须是对象")
+        schemas = {item.key: item for item in self.parameter_schema}
+        unknown = sorted(set(parameters) - set(schemas))
+        if unknown:
+            raise ValueError("包含未声明参数：" + "、".join(unknown))
+        resolved = {
+            item.key: parameters.get(item.key, item.default)
+            for item in self.parameter_schema
+        }
+        missing = []
+        for item in self.parameter_schema:
+            condition_matches = bool(item.required_when) and all(
+                resolved.get(other_key) == expected
+                for other_key, expected in item.required_when
+            )
+            if (
+                (item.required or condition_matches)
+                and (
+                    item.key not in parameters
+                    or parameters.get(item.key) is None
+                    or parameters.get(item.key) == ""
+                )
+            ):
+                missing.append(item.key)
+        if missing:
+            raise ValueError("缺少必填参数：" + "、".join(missing))
+        for key, value in parameters.items():
+            schemas[key].validate_value(value)
+
+    def validate_input(
+        self,
+        state: RasterTypeState,
+        parameters: Mapping[str, object],
+    ) -> None:
+        if not isinstance(state, RasterTypeState):
+            raise TypeError("state 必须是 RasterTypeState")
+        if not isinstance(parameters, Mapping):
+            raise TypeError("parameters 必须是对象")
+        self.validate_parameters(parameters)
+        for condition in self.input_conditions:
+            error = condition(state, parameters)
+            if error:
+                raise ValueError(str(error))
+
+    def resolve_output(
+        self,
+        state: RasterTypeState,
+        parameters: Mapping[str, object],
+    ) -> RasterTypeState:
+        self.validate_input(state, parameters)
+        output = self.output_resolver(state, parameters)
+        if not isinstance(output, RasterTypeState):
+            raise TypeError(
+                f"操作 {self.operation_id} 的 output_resolver "
+                "必须返回 RasterTypeState"
+            )
+        return output
 
 
 @dataclass(frozen=True, slots=True)
@@ -432,6 +893,121 @@ class ImageProcessingRecipe:
 
 
 @dataclass(frozen=True, slots=True)
+class ProcessingRoiSnapshot:
+    """Exact ROI dependency frozen when a processing session starts."""
+
+    source_kind: str
+    source_id: str
+    revision: int
+    bounds: tuple[int, int, int, int]
+    mask_sha256: str
+    dependency_revisions: tuple[tuple[str, int], ...] = ()
+    source_label: str = ""
+
+    def __post_init__(self) -> None:
+        kind = _required_text(
+            self.source_kind,
+            field_name="roi_snapshot.source_kind",
+            maximum_length=64,
+        )
+        if kind not in {"project_roi", "measurement_area"}:
+            raise ValueError("roi_snapshot.source_kind 不受支持")
+        source_id = _required_text(
+            self.source_id,
+            field_name="roi_snapshot.source_id",
+            maximum_length=256,
+        )
+        revision = _nonnegative_int(
+            self.revision,
+            field_name="roi_snapshot.revision",
+        )
+        if len(self.bounds) != 4:
+            raise ValueError("roi_snapshot.bounds 必须包含 x、y、width、height")
+        bounds = tuple(int(value) for value in self.bounds)
+        if (
+            bounds[0] < 0
+            or bounds[1] < 0
+            or bounds[2] <= 0
+            or bounds[3] <= 0
+        ):
+            raise ValueError("roi_snapshot.bounds 必须是非空的非负像素范围")
+        digest = str(self.mask_sha256 or "").strip().lower()
+        if not _SHA256_PATTERN.fullmatch(digest):
+            raise ValueError("roi_snapshot.mask_sha256 必须是 SHA256")
+        dependencies = tuple(
+            (
+                _required_text(
+                    item_id,
+                    field_name="roi_snapshot.dependency_id",
+                    maximum_length=256,
+                ),
+                _nonnegative_int(
+                    item_revision,
+                    field_name="roi_snapshot.dependency_revision",
+                ),
+            )
+            for item_id, item_revision in self.dependency_revisions
+        )
+        if len({item_id for item_id, _revision in dependencies}) != len(
+            dependencies
+        ):
+            raise ValueError("roi_snapshot.dependency_revisions 不能重复")
+        object.__setattr__(self, "source_kind", kind)
+        object.__setattr__(self, "source_id", source_id)
+        object.__setattr__(self, "revision", revision)
+        object.__setattr__(self, "bounds", bounds)
+        object.__setattr__(self, "mask_sha256", digest)
+        object.__setattr__(
+            self,
+            "dependency_revisions",
+            tuple(sorted(dependencies)),
+        )
+        object.__setattr__(
+            self,
+            "source_label",
+            str(self.source_label or "").strip(),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "source_kind": self.source_kind,
+            "source_id": self.source_id,
+            "revision": self.revision,
+            "bounds": list(self.bounds),
+            "mask_sha256": self.mask_sha256,
+            "dependency_revisions": {
+                item_id: revision
+                for item_id, revision in self.dependency_revisions
+            },
+            "source_label": self.source_label,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        payload: Mapping[str, object],
+    ) -> "ProcessingRoiSnapshot":
+        dependencies = payload.get("dependency_revisions", {})
+        if not isinstance(dependencies, Mapping):
+            raise TypeError("roi_snapshot.dependency_revisions 必须是对象")
+        bounds = payload.get("bounds")
+        if not isinstance(bounds, (list, tuple)):
+            raise TypeError("roi_snapshot.bounds 必须是列表")
+        return cls(
+            source_kind=payload.get("source_kind", ""),  # type: ignore[arg-type]
+            source_id=payload.get("source_id", ""),  # type: ignore[arg-type]
+            revision=payload.get("revision", 0),  # type: ignore[arg-type]
+            bounds=tuple(bounds),  # type: ignore[arg-type]
+            mask_sha256=payload.get("mask_sha256", ""),  # type: ignore[arg-type]
+            dependency_revisions=tuple(
+                (str(item_id), int(revision))
+                for item_id, revision in dependencies.items()
+            ),
+            source_label=payload.get("source_label", ""),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True, slots=True)
 class ImageDerivation:
     """Audit metadata for an authoritative, persisted derived raster.
 
@@ -450,6 +1026,7 @@ class ImageDerivation:
     result_pixel_type: RasterPixelType | None = None
     result_image_size: tuple[int, int] | None = None
     result_sha256: str | None = None
+    roi_snapshot: ProcessingRoiSnapshot | None = None
     library_versions: tuple[tuple[str, str], ...] = ()
     created_at: str = field(
         default_factory=lambda: datetime.now(tz=timezone.utc).isoformat()
@@ -481,6 +1058,11 @@ class ImageDerivation:
             self.result_sha256,
             field_name="result_sha256",
         )
+        if self.roi_snapshot is not None and not isinstance(
+            self.roi_snapshot,
+            ProcessingRoiSnapshot,
+        ):
+            raise TypeError("roi_snapshot 必须是 ProcessingRoiSnapshot")
         source_image_size = _optional_image_size(self.source_image_size)
         source_pixel_revision = _nonnegative_int(
             self.source_pixel_revision,
@@ -542,6 +1124,8 @@ class ImageDerivation:
         }
         if result:
             payload["result"] = result
+        if self.roi_snapshot is not None:
+            payload["roi_snapshot"] = self.roi_snapshot.to_dict()
         return payload
 
     @classmethod
@@ -576,6 +1160,12 @@ class ImageDerivation:
         versions_payload = payload.get("library_versions", {})
         if not isinstance(versions_payload, Mapping):
             raise TypeError("ImageDerivation.library_versions 必须是对象")
+        roi_snapshot_payload = payload.get("roi_snapshot")
+        if (
+            roi_snapshot_payload is not None
+            and not isinstance(roi_snapshot_payload, Mapping)
+        ):
+            raise TypeError("ImageDerivation.roi_snapshot 必须是对象")
         return cls(
             source_document_id=source.get("document_id", ""),  # type: ignore[arg-type]
             source_path=(
@@ -598,6 +1188,11 @@ class ImageDerivation:
                 str(result["sha256"])
                 if result.get("sha256") is not None
                 else None
+            ),
+            roi_snapshot=(
+                None
+                if roi_snapshot_payload is None
+                else ProcessingRoiSnapshot.from_dict(roi_snapshot_payload)
             ),
             library_versions=tuple(
                 (str(key), str(value))
@@ -696,6 +1291,16 @@ def _positive_dimension(value: object, *, field_name: str) -> int:
     if normalized != value or normalized <= 0:
         raise ValueError(f"{field_name} 必须是正整数")
     return normalized
+
+
+def _optional_positive_dimension(
+    value: object,
+    *,
+    field_name: str,
+) -> int | None:
+    if value is None:
+        return None
+    return _positive_dimension(value, field_name=field_name)
 
 
 def _nonnegative_int(value: object, *, field_name: str) -> int:

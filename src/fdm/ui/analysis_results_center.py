@@ -52,6 +52,10 @@ from fdm.analysis_artifacts import (
     AnalysisObjectKind,
 )
 from fdm.services.analysis_asset_io import validate_analysis_asset_reference
+from fdm.services.analysis_profiles import (
+    ANALYSIS_OUTPUT_FIELDS_PARAMETER,
+    analysis_output_field_schema,
+)
 from fdm.ui.widgets import NoWheelComboBox
 
 
@@ -63,9 +67,14 @@ _PREVIEW_MAX_SIDE = 640
 _PREVIEW_SCHEMA_MEMBERS = {
     "fdm.skeleton-network.v1": ("skeleton", "skeleton"),
     "fdm.local-thickness.v1": ("thickness_px", "heatmap"),
+    "fdm.local-thickness.v2": ("thickness", "heatmap"),
+    "fdm.particle-labels.v2": ("labels", "heatmap"),
+    "fdm.particle-contours.v2": ("contours", "skeleton"),
     "fdm.tubeness.v1": ("response", "heatmap"),
+    "fdm.tubeness-threshold-mask.v1": ("mask", "skeleton"),
     "fdm.glcm-matrices.v1": ("matrices", "heatmap"),
     "fdm.intensity-surface.v1": ("z", "heatmap"),
+    "fdm.fft-power-spectrum.v1": ("power", "heatmap"),
 }
 
 
@@ -86,6 +95,14 @@ class AnalysisActionRequest:
 class AnalysisExportRequest:
     artifact_ids: tuple[str, ...]
     selected_table_name: str | None
+    selected_curve_name: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisConversionPreview:
+    artifact_ids: tuple[str, ...]
+    estimated_item_count: int
+    summary: str
 
 
 @dataclass(frozen=True, slots=True)
@@ -204,14 +221,23 @@ def _load_bounded_asset_preview(
     sampled, sample_note = _downsample_preview_array(source)
     if render_mode == "skeleton":
         rgb = _render_skeleton_preview(sampled)
-        label = "骨架网络"
+        label = (
+            "粒子轮廓图"
+            if schema == "fdm.particle-contours.v2"
+            else "Tubeness 阈值掩膜"
+            if schema == "fdm.tubeness-threshold-mask.v1"
+            else "骨架网络"
+        )
     else:
         rgb = _render_heatmap_preview(sampled)
         label = {
             "fdm.local-thickness.v1": "局部厚度热力图",
+            "fdm.local-thickness.v2": "局部厚度热力图（物理单位）",
+            "fdm.particle-labels.v2": "粒子标签图",
             "fdm.tubeness.v1": "Tubeness 响应热力图",
             "fdm.glcm-matrices.v1": "第一组 GLCM 热力图",
             "fdm.intensity-surface.v1": "二维强度表面热力图",
+            "fdm.fft-power-spectrum.v1": "FFT 功率谱热力图",
         }[schema]
     rgb = np.ascontiguousarray(rgb, dtype=np.uint8)
     rgb.setflags(write=False)
@@ -294,6 +320,7 @@ _TOOL_NAMES = {
     "fdm.intensity": "灰度与颜色统计",
     "fdm.intensity_statistics": "灰度与颜色统计",
     "fdm.histogram": "直方图",
+    "fdm.fft_power_spectrum": "FFT 功率谱",
     "fdm.profile": "强度剖面",
     "fdm.intensity_profile": "强度剖面",
     "fdm.particles": "粒子分析",
@@ -304,14 +331,20 @@ _TOOL_NAMES = {
     "fdm.skeleton": "骨架网络",
     "fdm.local_thickness": "局部厚度",
     "fdm.tubeness": "Tubeness",
+    "fdm.tubeness_threshold_mask": "Tubeness 阈值掩膜",
     "fdm.glcm": "Haralick GLCM 纹理",
-    "fdm.spatial_distribution": "最近邻与空间密度",
+    "fdm.spatial_distribution": "空间分布（最近邻 / Ripley K/L）",
     "fdm.surface": "二维强度表面",
 }
 
 _FIELD_NAMES = {
+    ANALYSIS_OUTPUT_FIELDS_PARAMETER: "输出字段选择",
     "accepted_count": "接受数量",
+    "accepted_foreground_pixel_count": "接受粒子像素数",
+    "aggregation": "剖面采样方式",
+    "algorithm_version": "算法版本",
     "area": "净面积",
+    "area_fraction": "面积分数",
     "area_from_exact_mask": "使用精确掩膜面积",
     "area_px": "净面积（px²）",
     "area_source": "研究区域来源",
@@ -322,6 +355,7 @@ _FIELD_NAMES = {
     "channel": "通道",
     "circularity": "圆度",
     "connected_component_count": "连通分量数量",
+    "component_count": "组件数量",
     "connectivity": "连通性",
     "convention": "角度约定",
     "coordinate_unit": "坐标单位",
@@ -330,16 +364,21 @@ _FIELD_NAMES = {
     "ellipse_major": "拟合椭圆长轴",
     "ellipse_minor": "拟合椭圆短轴",
     "endpoint_count": "端点数量",
+    "euler_number": "Euler 数",
+    "excess_kurtosis": "超额峰度",
+    "extent": "Extent",
     "equivalent_circle_diameter": "等效圆直径",
     "feret_angle_degrees": "最大 Feret 方向（°）",
     "feret_max": "最大 Feret 直径",
     "feret_min": "最小 Feret 直径",
     "finite_sample_count": "有限样本数",
+    "finite_value_count": "有限频谱值数量",
     "foreground_pixel_count": "前景像素数",
     "hole_area_px": "孔洞面积（px²）",
     "hole_count": "孔洞数量",
     "hole_perimeter": "孔洞周长",
     "hole_perimeter_px": "孔洞周长（px）",
+    "height": "高度",
     "include_holes": "包含孔洞",
     "included_pixel_count": "纳入像素数",
     "integrated_density": "积分密度",
@@ -355,16 +394,21 @@ _FIELD_NAMES = {
     "maximum_nearest_neighbor_distance": "最大最近邻距离",
     "maximum_response": "最大响应",
     "maximum_thickness_px": "最大局部厚度（px）",
+    "maximum_thickness": "最大局部厚度",
     "mean": "均值",
     "mean_nearest_neighbor_distance": "平均最近邻距离",
     "mean_thickness_px": "平均局部厚度（px）",
+    "mean_thickness": "平均局部厚度",
     "median": "中位数",
     "median_nearest_neighbor_distance": "最近邻距离中位数",
     "minimum": "最小值",
     "minimum_nearest_neighbor_distance": "最小最近邻距离",
+    "mode": "众数",
+    "mask_policy": "ROI 掩膜策略",
     "non_finite_count": "非有限像素数",
     "non_finite_pixel_count": "非有限像素数",
     "non_finite_sample_count": "非有限样本数",
+    "non_finite_value_count": "非有限频谱值数量",
     "net_area": "净面积",
     "outer_perimeter": "外轮廓周长",
     "outer_perimeter_px": "外轮廓周长（px）",
@@ -379,11 +423,14 @@ _FIELD_NAMES = {
     "rejected_by_circularity_count": "因圆度剔除数量",
     "rejected_edge_count": "边缘对象剔除数量",
     "roundness": "Roundness",
+    "roi_applied": "已应用 ROI",
     "sample_count": "样本总数",
     "scale_count": "尺度数量",
+    "skewness": "偏度",
     "solidity": "Solidity",
     "spatial_density": "空间密度",
     "stddev": "总体标准差",
+    "threshold_area_fraction": "阈值面积分数",
     "study_area": "研究区域面积",
     "study_area_mode": "研究区域面积来源",
     "suppressed_count": "抑制数量",
@@ -393,11 +440,17 @@ _FIELD_NAMES = {
     "total_perimeter": "总边界周长",
     "total_perimeter_px": "总边界周长（px）",
     "total_weight": "梯度总权重",
+    "tukey_alpha": "Tukey alpha",
     "unit": "单位",
     "valid_gradient_pixels": "有效梯度像素数",
     "valid_pixel_count": "有效像素数",
     "valid_sample_count": "有效样本数",
     "vector_area_px": "矢量面积（px²）",
+    "watershed": "Watershed 分离",
+    "width": "宽度",
+    "window": "窗函数",
+    "centered": "零频居中",
+    "logarithmic": "对数功率",
     "z_maximum": "强度最大值",
     "z_minimum": "强度最小值",
 }
@@ -406,7 +459,17 @@ _VALUE_NAMES = {
     "bright": "亮前景",
     "dark": "暗前景",
     "full_image": "整张图片",
+    "tight_bounds_zero_outside_exact_mask": "精确 ROI 紧边界，区域外置零",
+    "none": "无",
+    "tukey": "Tukey",
     "luminance": "加权亮度",
+    "rgb": "RGB 三通道",
+    "red": "红色",
+    "green": "绿色",
+    "blue": "蓝色",
+    "line": "沿线宽度平均",
+    "rectangle_rows": "矩形逐行平均",
+    "rectangle_columns": "矩形逐列平均",
     "mask": "掩膜",
     "measurement": "测量对象",
     "roi": "ROI",
@@ -507,7 +570,12 @@ class AnalysisResultsCenter(QDialog):
     recalculateRequested = Signal(object)
     convertToMeasurementRequested = Signal(object)
     exportRequested = Signal(object)
+    deleteRequested = Signal(object)
+    cleanupRequested = Signal(object)
+    clearRequested = Signal(object)
+    conversionPreviewRequested = Signal(object)
     locateRequested = Signal(object)
+    tubenessChainRequested = Signal(object)
 
     def __init__(
         self,
@@ -659,7 +727,7 @@ class AnalysisResultsCenter(QDialog):
             QAbstractItemView.SelectionBehavior.SelectRows
         )
         self._artifact_table.setSelectionMode(
-            QAbstractItemView.SelectionMode.SingleSelection
+            QAbstractItemView.SelectionMode.ExtendedSelection
         )
         self._artifact_table.setEditTriggers(
             QAbstractItemView.EditTrigger.NoEditTriggers
@@ -693,6 +761,12 @@ class AnalysisResultsCenter(QDialog):
         self._tabs.addTab(self._create_table_tab(), "详细表格")
         self._tabs.addTab(self._create_curve_tab(), "曲线 / 直方图")
         self._tabs.addTab(self._create_asset_tab(), "标签图 / 资产")
+        self._comparison_tab_index = self._tabs.addTab(
+            self._create_comparison_tab(),
+            "比较摘要",
+        )
+        self._tabs.setTabEnabled(self._comparison_tab_index, False)
+        self._last_selection_count = 0
         detail_layout.addWidget(self._tabs, 1)
         splitter.addWidget(self._artifact_table)
         splitter.addWidget(detail)
@@ -708,16 +782,25 @@ class AnalysisResultsCenter(QDialog):
         self._locate_button = QPushButton("在画布中定位", self)
         self._recalculate_button = QPushButton("重新计算", self)
         self._convert_button = QPushButton("转换为测量", self)
+        self._delete_button = QPushButton("删除所选", self)
+        self._cleanup_button = QPushButton("清理失效", self)
+        self._clear_button = QPushButton("清空全部", self)
         self._export_button = QPushButton("导出分析结果…", self)
         self._close_button = QPushButton("关闭", self)
         self._locate_button.clicked.connect(self._locate_selection)
         self._recalculate_button.clicked.connect(self._request_recalculation)
         self._convert_button.clicked.connect(self._request_conversion)
+        self._delete_button.clicked.connect(self._request_delete)
+        self._cleanup_button.clicked.connect(self._request_cleanup)
+        self._clear_button.clicked.connect(self._request_clear)
         self._export_button.clicked.connect(self._request_export)
         self._close_button.clicked.connect(self.close)
         footer.addWidget(self._locate_button)
         footer.addWidget(self._recalculate_button)
         footer.addWidget(self._convert_button)
+        footer.addWidget(self._delete_button)
+        footer.addWidget(self._cleanup_button)
+        footer.addWidget(self._clear_button)
         footer.addStretch(1)
         footer.addWidget(self._export_button)
         footer.addWidget(self._close_button)
@@ -791,13 +874,34 @@ class AnalysisResultsCenter(QDialog):
         return self._filtered_artifacts
 
     def current_artifact(self) -> AnalysisArtifact | None:
-        selected = self._artifact_table.selectionModel().selectedRows()
+        selection_model = self._artifact_table.selectionModel()
+        selected = selection_model.selectedRows()
         if not selected:
             return None
-        artifact_id = selected[0].data(Qt.ItemDataRole.UserRole)
+        current = selection_model.currentIndex()
+        if current.isValid() and current.row() in {
+            index.row() for index in selected
+        }:
+            artifact_id = self._artifact_table.item(
+                current.row(),
+                0,
+            ).data(Qt.ItemDataRole.UserRole)
+        else:
+            artifact_id = selected[0].data(Qt.ItemDataRole.UserRole)
         return next(
             (artifact for artifact in self._filtered_artifacts if artifact.id == artifact_id),
             None,
+        )
+
+    def selected_artifacts(self) -> tuple[AnalysisArtifact, ...]:
+        selected_ids = {
+            index.data(Qt.ItemDataRole.UserRole)
+            for index in self._artifact_table.selectionModel().selectedRows()
+        }
+        return tuple(
+            artifact
+            for artifact in self._filtered_artifacts
+            if artifact.id in selected_ids
         )
 
     def current_artifact_id(self) -> str | None:
@@ -898,6 +1002,9 @@ class AnalysisResultsCenter(QDialog):
         )
         self._curve_selector.currentIndexChanged.connect(self._show_current_curve)
         header.addWidget(self._curve_selector, 1)
+        self._curve_csv_button = QPushButton("导出当前曲线 CSV…", page)
+        self._curve_csv_button.clicked.connect(self._request_curve_export)
+        header.addWidget(self._curve_csv_button)
         layout.addLayout(header)
         self._curve_canvas = _CurveCanvas(page)
         layout.addWidget(self._curve_canvas, 1)
@@ -907,6 +1014,22 @@ class AnalysisResultsCenter(QDialog):
         page = QWidget(self._tabs)
         layout = QVBoxLayout(page)
         layout.setContentsMargins(6, 6, 6, 6)
+        header = QHBoxLayout()
+        header.addWidget(QLabel("分析资产", page))
+        header.addStretch(1)
+        self._tubeness_chain_button = QPushButton(
+            "生成阈值掩膜 / 骨架…",
+            page,
+        )
+        self._tubeness_chain_button.setToolTip(
+            "从当前 Tubeness 响应安全资产生成可审计的二值掩膜，"
+            "并可继续执行 Skeleton v2；不会直接创建正式测量。"
+        )
+        self._tubeness_chain_button.clicked.connect(
+            self._request_tubeness_chain
+        )
+        header.addWidget(self._tubeness_chain_button)
+        layout.addLayout(header)
         self._asset_list = QListWidget(page)
         self._asset_list.currentRowChanged.connect(self._show_current_asset)
         layout.addWidget(self._asset_list, 1)
@@ -922,6 +1045,52 @@ class AnalysisResultsCenter(QDialog):
         )
         self._asset_preview_description.setWordWrap(True)
         layout.addWidget(self._asset_preview_description)
+        return page
+
+    def _create_comparison_tab(self) -> QWidget:
+        page = QWidget(self._tabs)
+        layout = QVBoxLayout(page)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(6)
+        self._comparison_summary = QLabel(
+            "请在左侧选择至少两项分析结果进行比较。",
+            page,
+        )
+        self._comparison_summary.setWordWrap(True)
+        self._comparison_summary.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        layout.addWidget(self._comparison_summary)
+        self._comparison_table = QTableWidget(0, 7, page)
+        self._comparison_table.setObjectName("analysisComparisonTable")
+        self._comparison_table.setHorizontalHeaderLabels(
+            (
+                "状态",
+                "来源文档",
+                "ROI / 对象",
+                "分析工具",
+                "版本",
+                "标量摘要",
+                "生成时间",
+            )
+        )
+        self._comparison_table.setEditTriggers(
+            QAbstractItemView.EditTrigger.NoEditTriggers
+        )
+        self._comparison_table.setSelectionBehavior(
+            QAbstractItemView.SelectionBehavior.SelectRows
+        )
+        self._comparison_table.setAlternatingRowColors(True)
+        self._comparison_table.verticalHeader().setVisible(False)
+        header = self._comparison_table.horizontalHeader()
+        header.setMinimumSectionSize(36)
+        for column in (0, 1, 2, 3, 4, 6):
+            header.setSectionResizeMode(
+                column,
+                QHeaderView.ResizeMode.ResizeToContents,
+            )
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
+        layout.addWidget(self._comparison_table, 1)
         return page
 
     def _rebuild_filter_choices(self) -> None:
@@ -1023,20 +1192,41 @@ class AnalysisResultsCenter(QDialog):
             self._artifact_table.selectRow(0)
         else:
             self._clear_details()
+            return
+        # Replacing the table model while signals are blocked can retain row 0
+        # as the current selection without emitting itemSelectionChanged.
+        # Refresh only action state here; rebuilding all details would enqueue
+        # the same asynchronous asset preview twice.
+        self._set_action_states(self.current_artifact())
 
     def _show_selection(self) -> None:
         artifact = self.current_artifact()
         if artifact is None:
             self._clear_details()
             return
+        selected = self.selected_artifacts()
+        selection_count = len(selected)
+        self._update_comparison(selected)
         status_text = "当前" if artifact.is_current else "已失效"
         self._selection_status.setText(
-            status_text
-            if artifact.is_current
-            else f"{status_text} · {artifact.stale_reason or '来源已变化'}"
+            (
+                f"已选择 {selection_count} 项 · {status_text}"
+                if selection_count > 1
+                else (
+                    status_text
+                    if artifact.is_current
+                    else f"{status_text} · {artifact.stale_reason or '来源已变化'}"
+                )
+            )
         )
         self._detail_header.setText(
-            f"{self._tool_label(artifact)} · {self._document_label(artifact)}"
+            (
+                f"当前详情：{self._tool_label(artifact)} · "
+                f"{self._document_label(artifact)}"
+                if selection_count > 1
+                else f"{self._tool_label(artifact)} · "
+                f"{self._document_label(artifact)}"
+            )
         )
         self._summary_labels["status"].setText(status_text)
         self._summary_labels["document"].setText(self._document_label(artifact))
@@ -1066,11 +1256,84 @@ class AnalysisResultsCenter(QDialog):
         self._detail_table.setColumnCount(0)
         self._curve_selector.clear()
         self._curve_canvas.setCurve(None)
+        self._curve_csv_button.setEnabled(False)
         self._asset_list.clear()
         self._asset_preview.setPixmap(QPixmap())
         self._asset_preview.setText("没有标签图或分析资产。")
         self._asset_preview_description.clear()
+        self._update_comparison(())
         self._set_action_states(None)
+
+    def _update_comparison(
+        self,
+        artifacts: tuple[AnalysisArtifact, ...],
+    ) -> None:
+        count = len(artifacts)
+        enabled = count > 1
+        comparison_was_current = (
+            self._tabs.currentIndex() == self._comparison_tab_index
+        )
+        self._tabs.setTabEnabled(self._comparison_tab_index, enabled)
+        self._tabs.setTabText(
+            self._comparison_tab_index,
+            f"比较摘要 ({count})" if enabled else "比较摘要",
+        )
+        self._comparison_table.setRowCount(count if enabled else 0)
+        if not enabled:
+            self._comparison_summary.setText(
+                "请在左侧选择至少两项分析结果进行比较。"
+            )
+            if comparison_was_current:
+                self._tabs.setCurrentIndex(0)
+            self._last_selection_count = count
+            return
+
+        current_count = sum(item.is_current for item in artifacts)
+        document_count = len(
+            {item.source_document_id for item in artifacts}
+        )
+        tool_count = len({item.tool_id for item in artifacts})
+        calibration_count = len(
+            {
+                item.calibration_signature or "未标定"
+                for item in artifacts
+            }
+        )
+        self._comparison_summary.setText(
+            f"已选择 {count} 项 · {document_count} 张来源图片 · "
+            f"{tool_count} 种分析工具 · 当前 {current_count} 项 / "
+            f"已失效 {count - current_count} 项 · "
+            f"{calibration_count} 种标定口径。"
+        )
+        for row, item in enumerate(artifacts):
+            values = (
+                "当前" if item.is_current else "已失效",
+                self._document_label(item),
+                self._reference_label(item),
+                self._tool_label(item),
+                item.tool_version,
+                self._scalar_summary(item),
+                self._display_timestamp(item.created_at),
+            )
+            for column, value in enumerate(values):
+                cell = QTableWidgetItem(str(value))
+                cell.setData(Qt.ItemDataRole.UserRole, item.id)
+                if column == 5:
+                    cell.setToolTip(self._scalar_summary(item))
+                elif column == 6:
+                    cell.setToolTip(item.created_at)
+                else:
+                    cell.setToolTip(f"分析结果 ID：{item.id}")
+                if not item.is_current:
+                    cell.setForeground(
+                        self.palette().color(
+                            QPalette.ColorRole.PlaceholderText
+                        )
+                    )
+                self._comparison_table.setItem(row, column, cell)
+        if self._last_selection_count <= 1:
+            self._tabs.setCurrentIndex(self._comparison_tab_index)
+        self._last_selection_count = count
 
     def _populate_parameters(self, artifact: AnalysisArtifact) -> None:
         rows = [
@@ -1079,14 +1342,25 @@ class AnalysisResultsCenter(QDialog):
             ("来源", "ROI / 对象", self._reference_label(artifact)),
             ("来源", "标定签名", artifact.calibration_signature or "未标定"),
         ]
-        rows.extend(
-            (
-                "参数",
-                _display_field_name(name),
-                _display_field_value(value),
+        for name, value in artifact.parameters.items():
+            display_value = _display_field_value(value)
+            if name == ANALYSIS_OUTPUT_FIELDS_PARAMETER:
+                schema = analysis_output_field_schema(artifact.tool_id)
+                if schema is not None and isinstance(value, list):
+                    field_names = {
+                        field.key: field.chinese_name for field in schema.fields
+                    }
+                    display_value = "、".join(
+                        field_names.get(str(item), str(item)) for item in value
+                    ) or "仅必要审计字段"
+            rows.append(
+                (
+                    "参数",
+                    _display_field_name(name),
+                    display_value,
+                )
             )
-            for name, value in artifact.parameters.items()
-        )
+        rows.extend(("提示", "分析提示", warning) for warning in artifact.warnings)
         self._parameters_table.setRowCount(len(rows))
         for row, values in enumerate(rows):
             for column, value in enumerate(values):
@@ -1138,6 +1412,7 @@ class AnalysisResultsCenter(QDialog):
             else None
         )
         self._curve_canvas.setCurve(curve)
+        self._curve_csv_button.setEnabled(curve is not None)
 
     def _populate_assets(self, artifact: AnalysisArtifact) -> None:
         self._asset_list.blockSignals(True)
@@ -1357,17 +1632,39 @@ class AnalysisResultsCenter(QDialog):
 
     def _set_action_states(self, artifact: AnalysisArtifact | None) -> None:
         available = artifact is not None
+        selected = self.selected_artifacts()
         self._locate_button.setEnabled(available)
-        self._recalculate_button.setEnabled(available)
+        self._recalculate_button.setEnabled(len(selected) == 1)
         self._convert_button.setEnabled(
-            artifact is not None
-            and artifact.is_current
-            and self._is_convertible(artifact)
+            bool(selected)
+            and all(item.is_current and self._is_convertible(item) for item in selected)
         )
+        self._delete_button.setEnabled(bool(selected))
+        self._cleanup_button.setEnabled(
+            any(not item.is_current for item in self._artifacts)
+        )
+        self._clear_button.setEnabled(bool(self._artifacts))
         self._export_button.setEnabled(bool(self._filtered_artifacts))
+        self._tubeness_chain_button.setEnabled(
+            len(selected) == 1
+            and selected[0].is_current
+            and selected[0].tool_id == "fdm.tubeness"
+        )
 
     def _locate_selection(self, *_args) -> None:
-        artifact = self.current_artifact()
+        artifact = None
+        if _args and isinstance(_args[0], QTableWidgetItem):
+            artifact_id = _args[0].data(Qt.ItemDataRole.UserRole)
+            artifact = next(
+                (
+                    item
+                    for item in self._filtered_artifacts
+                    if item.id == artifact_id
+                ),
+                None,
+            )
+        if artifact is None:
+            artifact = self.current_artifact()
         if artifact is None:
             return
         reference = artifact.source_reference
@@ -1381,16 +1678,76 @@ class AnalysisResultsCenter(QDialog):
         )
 
     def _request_recalculation(self) -> None:
-        artifact = self.current_artifact()
-        if artifact is not None:
-            self.recalculateRequested.emit(AnalysisActionRequest((artifact.id,)))
+        selected = self.selected_artifacts()
+        if selected:
+            self.recalculateRequested.emit(
+                AnalysisActionRequest(tuple(item.id for item in selected))
+            )
 
     def _request_conversion(self) -> None:
-        artifact = self.current_artifact()
-        if artifact is not None and artifact.is_current and self._is_convertible(artifact):
-            self.convertToMeasurementRequested.emit(
-                AnalysisActionRequest((artifact.id,))
+        selected = self.selected_artifacts()
+        if not selected or not all(
+            item.is_current and self._is_convertible(item)
+            for item in selected
+        ):
+            return
+        item_count = sum(
+            max((len(table.rows) for table in artifact.tables), default=0)
+            for artifact in selected
+        )
+        preview = AnalysisConversionPreview(
+            artifact_ids=tuple(item.id for item in selected),
+            estimated_item_count=item_count,
+            summary=(
+                f"将转换 {len(selected)} 项分析结果，"
+                f"预计生成 {item_count} 个测量对象。"
+            ),
+        )
+        self.conversionPreviewRequested.emit(preview)
+        self.convertToMeasurementRequested.emit(
+            AnalysisActionRequest(preview.artifact_ids)
+        )
+
+    def _request_delete(self) -> None:
+        selected = self.selected_artifacts()
+        if selected:
+            self.deleteRequested.emit(
+                AnalysisActionRequest(tuple(item.id for item in selected))
             )
+
+    def _request_tubeness_chain(self) -> None:
+        selected = self.selected_artifacts()
+        if (
+            len(selected) == 1
+            and selected[0].is_current
+            and selected[0].tool_id == "fdm.tubeness"
+        ):
+            self.tubenessChainRequested.emit(
+                AnalysisActionRequest((selected[0].id,))
+            )
+
+    def _request_cleanup(self) -> None:
+        stale_ids = tuple(item.id for item in self._artifacts if not item.is_current)
+        if stale_ids:
+            self.cleanupRequested.emit(AnalysisActionRequest(stale_ids))
+
+    def _request_clear(self) -> None:
+        artifact_ids = tuple(item.id for item in self._artifacts)
+        if artifact_ids:
+            self.clearRequested.emit(AnalysisActionRequest(artifact_ids))
+
+    def _request_curve_export(self) -> None:
+        artifact = self.current_artifact()
+        curve_name = self._curve_selector.currentText().strip()
+        if artifact is None or not curve_name:
+            return
+        self.exportRequested.emit(
+            AnalysisExportRequest(
+                artifact_ids=(artifact.id,),
+                selected_table_name=None,
+                selected_curve_name=curve_name,
+            )
+        )
 
     def _request_export(self) -> None:
         artifact_ids = tuple(artifact.id for artifact in self._filtered_artifacts)
@@ -1405,6 +1762,7 @@ class AnalysisResultsCenter(QDialog):
             AnalysisExportRequest(
                 artifact_ids=artifact_ids,
                 selected_table_name=table_name or None,
+                selected_curve_name=None,
             )
         )
 
@@ -1477,6 +1835,7 @@ class AnalysisResultsCenter(QDialog):
 __all__ = [
     "AnalysisActionRequest",
     "AnalysisExportRequest",
+    "AnalysisConversionPreview",
     "AnalysisLocateRequest",
     "AnalysisResultsCenter",
 ]

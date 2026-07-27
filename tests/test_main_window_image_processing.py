@@ -10,12 +10,14 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+import numpy as np
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from fdm.geometry import Line, Point
 from fdm.image_processing_models import (
     ImageOperationSpec,
     ImageProcessingRecipe,
+    ProcessingRoiSnapshot,
 )
 from fdm.models import (
     Calibration,
@@ -25,16 +27,27 @@ from fdm.models import (
     OverlayAnnotationKind,
     new_id,
 )
-from fdm.project_roi import ProjectRoi, RectangleRoiGeometry
+from fdm.project_roi import (
+    ProjectRoi,
+    RectangleRoiGeometry,
+    RoiBooleanExpression,
+    RoiBooleanOperator,
+)
 from fdm.raster import RasterPixelType, RasterPlane
-from fdm.services.image_processing import ImageOperation
-from fdm.services.raster_io import raster_plane_to_qimage
+from fdm.services.image_processing import ImageOperation, image_operation_registry
+from fdm.services.raster_io import numpy_to_raster_plane, raster_plane_to_numpy, raster_plane_to_qimage
 from fdm.settings import AppSettings
 from fdm.ui.image_processing_workbench import (
     WorkbenchTaskKind,
     WorkbenchTaskResult,
 )
 from fdm.ui.main_window import MainWindow
+from fdm.ui.raster_derivation_dialogs import (
+    Gray8RasterDocumentDescriptor,
+    RasterChannelMergeRequest,
+    RasterCopyDerivationRequest,
+    RasterCopyScope,
+)
 
 
 class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
@@ -125,6 +138,17 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         )
         self._process_events()
         return document
+
+    def test_rgb_color_balance_uses_pixel_processing_workbench(self) -> None:
+        window, _session_root = self._window()
+        with (
+            patch.object(window, "_open_image_processing_workbench") as workbench,
+            patch.object(window, "_open_display_adjustment_dialog") as display,
+        ):
+            window._open_registered_image_operation(ImageOperation.COLOR_BALANCE)
+
+        workbench.assert_called_once_with(ImageOperation.COLOR_BALANCE)
+        display.assert_not_called()
 
     @staticmethod
     def _result(
@@ -218,6 +242,9 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         source_overlay = source.overlay_annotations[0]
         source_group_ids = {group.id for group in source.fiber_groups}
 
+        window._selected_project_roi_ids = (source_roi.id,)
+        window._refresh_project_roi_ui()
+        window._roi_manager.select_rois((source_roi.id,))
         context_result = window._create_processing_source_context()
         self.assertIsNotNone(context_result)
         context, _roi_mask, _roi_summary = context_result
@@ -297,7 +324,33 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
             derived.derivation.recipe.operations,
             (operation,),
         )
+        self.assertIsNotNone(derived.derivation.roi_snapshot)
+        self.assertEqual(
+            derived.derivation.roi_snapshot.source_id,
+            source_roi.id,
+        )
         self.assertTrue(window._session_processed_assets[derived.id].is_file())
+
+    def test_every_registered_workbench_operation_has_a_main_window_action(
+        self,
+    ) -> None:
+        window, _session_root = self._window()
+
+        expected = set(image_operation_registry()) - {
+            ImageOperation.COPY.value
+        }
+        self.assertEqual(set(window._image_operation_actions), expected)
+        for operation in (
+            ImageOperation.ADAPTIVE_THRESHOLD,
+            ImageOperation.ROLLING_BALL_BACKGROUND_SUBTRACT,
+            ImageOperation.WATERSHED_V2,
+            ImageOperation.LOG_V2,
+            ImageOperation.MORPHOLOGICAL_RECONSTRUCTION,
+            ImageOperation.FLAT_FIELD_CORRECTION,
+            ImageOperation.FFT_POWER_SPECTRUM,
+        ):
+            action = window._image_operation_actions[operation.value]
+            self.assertTrue(action.text().strip())
 
     def test_changed_source_discards_late_result_without_writing_asset(
         self,
@@ -344,6 +397,256 @@ class MainWindowImageProcessingIntegrationTests(unittest.TestCase):
         asset_writer.assert_not_called()
         warning.assert_called_once()
         self.assertIn("已丢弃晚到结果", warning.call_args.args[2])
+
+    def test_roi_copy_commits_cropped_authoritative_pixels_only(self) -> None:
+        window, _session_root = self._window()
+        source, source_plane, roi = self._rich_source_document(window)
+        window._selected_project_roi_ids = (roi.id,)
+        window._refresh_project_roi_ui()
+        window._roi_manager.select_rois((roi.id,))
+        context_result = window._create_processing_source_context()
+        self.assertIsNotNone(context_result)
+        context, roi_mask, _summary = context_result
+        frozen_roi = window._frozen_raster_roi(roi_mask)
+        request = RasterCopyDerivationRequest(
+            source=source_plane,
+            source_sha256=source_plane.sha256(),
+            scope=RasterCopyScope.ROI_BOUNDS,
+            bounds=frozen_roi.bounds,
+        )
+
+        window._commit_raster_copy_request(request, context)
+
+        self.assertEqual(len(window.project.documents), 2)
+        derived = window.current_document()
+        self.assertIsNotNone(derived)
+        self.assertEqual(derived.image_size, (4, 3))
+        self.assertEqual(source.image_size, (8, 6))
+        self.assertEqual(derived.measurements, [])
+        self.assertEqual(
+            derived.derivation.recipe.operations[-1].operation_id,
+            ImageOperation.COPY.value,
+        )
+        self.assertIsInstance(
+            derived.derivation.roi_snapshot,
+            ProcessingRoiSnapshot,
+        )
+        self.assertEqual(
+            derived.derivation.roi_snapshot.source_id,
+            roi.id,
+        )
+
+    def test_processing_snapshot_freezes_composite_roi_dependencies(
+        self,
+    ) -> None:
+        window, _session_root = self._window()
+        source, source_plane, first = self._rich_source_document(window)
+        second = ProjectRoi(
+            id=new_id("roi"),
+            document_id=source.id,
+            name="第二块",
+            geometry=RectangleRoiGeometry(5, 1, 2, 2),
+            revision=3,
+        )
+        composite = ProjectRoi(
+            id=new_id("roi"),
+            document_id=source.id,
+            name="组合区域",
+            geometry=RoiBooleanExpression(
+                RoiBooleanOperator.UNION,
+                (first.id, second.id),
+            ),
+            revision=4,
+        )
+        window.project.project_rois.extend((second, composite))
+        window._selected_project_roi_ids = (composite.id,)
+        window._refresh_project_roi_ui()
+        window._roi_manager.select_rois((composite.id,))
+
+        context_result = window._create_processing_source_context()
+
+        self.assertIsNotNone(context_result)
+        context, roi_mask, summary = context_result
+        self.assertIsNotNone(roi_mask)
+        self.assertEqual(summary, "ROI：组合区域")
+        snapshot = context.roi_snapshot
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.source_kind, "project_roi")
+        self.assertEqual(snapshot.source_id, composite.id)
+        self.assertEqual(snapshot.revision, 4)
+        self.assertEqual(snapshot.bounds, (1, 1, 6, 3))
+        self.assertEqual(
+            snapshot.dependency_revisions,
+            tuple(sorted(((first.id, 0), (second.id, 3)))),
+        )
+        self.assertEqual(len(snapshot.mask_sha256), 64)
+        self.assertTrue(window._processing_source_is_current(context))
+
+        replacement = second.replace_geometry(
+            RectangleRoiGeometry(4, 1, 3, 2)
+        )
+        window.project.project_rois[
+            window.project.project_rois.index(second)
+        ] = replacement
+        self.assertFalse(window._processing_source_is_current(context))
+
+        # Full-image copy does not consume the selected ROI and therefore
+        # remains valid even when that ROI changes while the dialog is open.
+        self.assertTrue(
+            window._processing_source_is_current(
+                context,
+                require_roi_current=False,
+            )
+        )
+
+    def test_processing_snapshot_freezes_selected_area_geometry(self) -> None:
+        window, _session_root = self._window()
+        source = self._mount_document(
+            window,
+            name="area-source",
+            plane=self._plane(width=8, height=6),
+        )
+        area = Measurement(
+            id=new_id("measurement"),
+            image_id=source.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="area",
+            polygon_px=[
+                Point(1, 1),
+                Point(6, 1),
+                Point(6, 5),
+                Point(1, 5),
+            ],
+        )
+        source.add_measurement(area)
+        source.view_state.selected_measurement_id = area.id
+
+        context_result = window._create_processing_source_context()
+
+        self.assertIsNotNone(context_result)
+        context, roi_mask, _summary = context_result
+        self.assertIsNotNone(roi_mask)
+        snapshot = context.roi_snapshot
+        self.assertIsNotNone(snapshot)
+        self.assertEqual(snapshot.source_kind, "measurement_area")
+        self.assertEqual(snapshot.source_id, area.id)
+        self.assertEqual(snapshot.revision, area.geometry_revision)
+        self.assertEqual(snapshot.bounds, (1, 1, 5, 4))
+        self.assertEqual(snapshot.dependency_revisions, ())
+
+        area.replace_area_geometry(
+            polygon_px=[
+                Point(2, 1),
+                Point(6, 1),
+                Point(6, 5),
+                Point(2, 5),
+            ],
+        )
+        self.assertFalse(window._processing_source_is_current(context))
+
+    def test_split_and_merge_channels_create_new_documents(self) -> None:
+        window, _session_root = self._window()
+        rgb = np.zeros((3, 4, 3), dtype=np.uint8)
+        rgb[..., 0] = 10
+        rgb[..., 1] = 20
+        rgb[..., 2] = 30
+        source = self._mount_document(
+            window,
+            name="rgb-source",
+            plane=numpy_to_raster_plane(rgb),
+        )
+        ignored_roi = ProjectRoi(
+            id=new_id("roi"),
+            document_id=source.id,
+            name="不应进入通道派生来源",
+            geometry=RectangleRoiGeometry(0, 0, 2, 2),
+        )
+        window.project.project_rois.append(ignored_roi)
+        window._selected_project_roi_ids = (ignored_roi.id,)
+        window._refresh_project_roi_ui()
+        window._roi_manager.select_rois((ignored_roi.id,))
+        with patch(
+            "fdm.ui.main_window.QMessageBox.question",
+            return_value=QMessageBox.StandardButton.Yes,
+        ):
+            window._split_current_rgb_channels()
+
+        self.assertEqual(len(window.project.documents), 4)
+        split_documents = [
+            document
+            for document in window.project.documents
+            if document.id != source.id
+        ]
+        self.assertEqual(
+            sorted(
+                int(raster_plane_to_numpy(window._rasters[item.id])[0, 0])
+                for item in split_documents
+            ),
+            [10, 20, 30],
+        )
+        descriptors = tuple(
+            Gray8RasterDocumentDescriptor(
+                document_id=document.id,
+                display_name=window._document_display_name(document),
+                width=window._rasters[document.id].width,
+                height=window._rasters[document.id].height,
+                pixel_sha256=window._rasters[document.id].sha256(),
+                calibration_signature="uncalibrated",
+            )
+            for document in split_documents
+        )
+
+        window._commit_rgb_channel_merge(
+            RasterChannelMergeRequest(
+                red=next(
+                    item
+                    for item in descriptors
+                    if int(
+                        raster_plane_to_numpy(
+                            window._rasters[item.document_id]
+                        )[0, 0]
+                    )
+                    == 10
+                ),
+                green=next(
+                    item
+                    for item in descriptors
+                    if int(
+                        raster_plane_to_numpy(
+                            window._rasters[item.document_id]
+                        )[0, 0]
+                    )
+                    == 20
+                ),
+                blue=next(
+                    item
+                    for item in descriptors
+                    if int(
+                        raster_plane_to_numpy(
+                            window._rasters[item.document_id]
+                        )[0, 0]
+                    )
+                    == 30
+                ),
+            )
+        )
+
+        self.assertEqual(len(window.project.documents), 5)
+        merged = window.current_document()
+        self.assertIsNotNone(merged)
+        np.testing.assert_array_equal(
+            raster_plane_to_numpy(window._rasters[merged.id]),
+            rgb,
+        )
+        self.assertTrue(
+            all(
+                document.derivation is not None
+                and document.derivation.roi_snapshot is None
+                for document in window.project.documents
+                if document.id != source.id
+            )
+        )
 
     def test_non_uniform_resize_requires_explicit_calibration_clear(
         self,

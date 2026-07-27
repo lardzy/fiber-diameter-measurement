@@ -13,7 +13,13 @@ from PySide6.QtGui import QColor, QImage
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fdm.models import CalibrationPreset, ImageDocument, ProjectState, new_id
+from fdm.models import (
+    CalibrationPreset,
+    ImageDocument,
+    ProjectCompatibilityState,
+    ProjectState,
+    new_id,
+)
 from fdm.project_io import ProjectIO
 from fdm.raster import RasterPixelType
 from fdm.settings import AppSettings, RawRecordTemplate
@@ -321,6 +327,54 @@ class _ExportHost:
 
 
 class ProjectAndExportControllerTests(unittest.TestCase):
+    def test_legacy_in_place_upgrade_can_be_cancelled_before_asset_staging(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "legacy.fdmproj"
+            original = b'{"version":"0.1.0","documents":[]}'
+            project_path.write_bytes(original)
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self._project_path = project_path
+                    self.project.compatibility = ProjectCompatibilityState(
+                        source_schema_version=1,
+                        min_reader_version=1,
+                        source_path=str(project_path),
+                    )
+                    self.confirmed: tuple[Path, Path, int] | None = None
+
+                def _confirm_project_schema_upgrade(
+                    self,
+                    source_path: Path,
+                    backup_path: Path,
+                    source_schema_version: int,
+                ) -> bool:
+                    self.confirmed = (
+                        source_path,
+                        backup_path,
+                        source_schema_version,
+                    )
+                    return False
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertFalse(result)
+            self.assertTrue(result.cancelled)
+            self.assertEqual(project_path.read_bytes(), original)
+            self.assertIsNotNone(host.confirmed)
+            self.assertFalse(
+                project_path.with_name(
+                    f"{project_path.name}.pre-v2.bak"
+                ).exists()
+            )
+
     def test_save_project_uses_first_default_path_and_remembers_directory(self) -> None:
         with TemporaryDirectory() as tmp:
             host = _ProjectHost(Path(tmp))

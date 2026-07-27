@@ -20,7 +20,7 @@ import re
 from typing import TypeAlias
 
 
-ANALYSIS_ARTIFACT_SCHEMA_VERSION = 1
+ANALYSIS_ARTIFACT_SCHEMA_VERSION = 2
 _ID_PATTERN = re.compile(r"^[^\x00-\x1f\x7f]{1,256}$")
 _TOOL_ID_PATTERN = re.compile(r"^[a-z0-9][a-z0-9._-]{0,127}$")
 _SHA256_PATTERN = re.compile(r"^[0-9a-f]{64}$")
@@ -98,6 +98,437 @@ class AnalysisObjectReference:
             kind=payload["kind"],  # type: ignore[arg-type]
             object_id=payload["object_id"],  # type: ignore[arg-type]
             revision=payload["revision"],  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisRegionSnapshot:
+    """Immutable geometry provenance for the pixels included in an analysis."""
+
+    mask_sha256: str
+    pixel_center_rule: str
+    components: int
+    holes: int
+    rings: tuple[tuple[tuple[float, float], ...], ...]
+    source: str
+
+    def __post_init__(self) -> None:
+        normalized_sha = str(self.mask_sha256 or "").strip().lower()
+        if not _SHA256_PATTERN.fullmatch(normalized_sha):
+            raise ValueError("region_snapshot.mask_sha256 必须是 64 位小写十六进制")
+        normalized_rings: list[tuple[tuple[float, float], ...]] = []
+        for ring_index, ring in enumerate(self.rings):
+            normalized_ring: list[tuple[float, float]] = []
+            for point_index, point in enumerate(ring):
+                if not isinstance(point, Sequence) or len(point) != 2:
+                    raise TypeError(
+                        "region_snapshot.rings"
+                        f"[{ring_index}][{point_index}] 必须是二维坐标"
+                    )
+                normalized_ring.append(
+                    (
+                        _finite_number(
+                            point[0],
+                            field_name=(
+                                "region_snapshot.rings"
+                                f"[{ring_index}][{point_index}].x"
+                            ),
+                        ),
+                        _finite_number(
+                            point[1],
+                            field_name=(
+                                "region_snapshot.rings"
+                                f"[{ring_index}][{point_index}].y"
+                            ),
+                        ),
+                    )
+                )
+            normalized_rings.append(tuple(normalized_ring))
+        object.__setattr__(self, "mask_sha256", normalized_sha)
+        object.__setattr__(
+            self,
+            "pixel_center_rule",
+            _required_text(
+                self.pixel_center_rule,
+                field_name="region_snapshot.pixel_center_rule",
+                maximum_length=128,
+            ),
+        )
+        object.__setattr__(
+            self,
+            "components",
+            _non_negative_int(
+                self.components,
+                field_name="region_snapshot.components",
+            ),
+        )
+        object.__setattr__(
+            self,
+            "holes",
+            _non_negative_int(self.holes, field_name="region_snapshot.holes"),
+        )
+        object.__setattr__(self, "rings", tuple(normalized_rings))
+        object.__setattr__(
+            self,
+            "source",
+            _required_text(
+                self.source,
+                field_name="region_snapshot.source",
+                maximum_length=256,
+            ),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "mask_sha256": self.mask_sha256,
+            "pixel_center_rule": self.pixel_center_rule,
+            "components": self.components,
+            "holes": self.holes,
+            "rings": [
+                [[x, y] for x, y in ring]
+                for ring in self.rings
+            ],
+            "source": self.source,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "AnalysisRegionSnapshot":
+        _require_mapping(payload, field_name="region_snapshot")
+        _require_exact_keys(
+            payload,
+            required={
+                "mask_sha256",
+                "pixel_center_rule",
+                "components",
+                "holes",
+                "rings",
+                "source",
+            },
+            field_name="region_snapshot",
+        )
+        rings = payload["rings"]
+        if not isinstance(rings, list) or any(
+            not isinstance(ring, list) for ring in rings
+        ):
+            raise TypeError("region_snapshot.rings 必须是二维列表")
+        return cls(
+            mask_sha256=payload["mask_sha256"],  # type: ignore[arg-type]
+            pixel_center_rule=payload["pixel_center_rule"],  # type: ignore[arg-type]
+            components=payload["components"],  # type: ignore[arg-type]
+            holes=payload["holes"],  # type: ignore[arg-type]
+            rings=tuple(tuple(point for point in ring) for ring in rings),  # type: ignore[arg-type]
+            source=payload["source"],  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True, slots=True)
+class AnalysisSourceDescriptor:
+    """Content-addressed source image, including an optional slide viewport."""
+
+    kind: str
+    pixel_sha256: str
+    store_id: str | None = None
+    focus: int | None = None
+    origin: tuple[int, int] | None = None
+    viewport_size: tuple[int, int] | None = None
+
+    def __post_init__(self) -> None:
+        normalized_sha = str(self.pixel_sha256 or "").strip().lower()
+        if not _SHA256_PATTERN.fullmatch(normalized_sha):
+            raise ValueError("source_descriptor.pixel_sha256 必须是 64 位小写十六进制")
+        normalized_store = (
+            None
+            if self.store_id is None
+            else _required_id(self.store_id, field_name="source_descriptor.store_id")
+        )
+        normalized_focus = (
+            None
+            if self.focus is None
+            else _non_negative_int(self.focus, field_name="source_descriptor.focus")
+        )
+        normalized_origin = _optional_int_pair(
+            self.origin,
+            field_name="source_descriptor.origin",
+            positive=False,
+        )
+        normalized_viewport = _optional_int_pair(
+            self.viewport_size,
+            field_name="source_descriptor.viewport_size",
+            positive=True,
+        )
+        slide_fields = (
+            normalized_store,
+            normalized_focus,
+            normalized_origin,
+            normalized_viewport,
+        )
+        if any(value is not None for value in slide_fields) and not all(
+            value is not None for value in slide_fields
+        ):
+            raise ValueError(
+                "数字切片来源必须同时提供 store_id、focus、origin 和 viewport_size"
+            )
+        object.__setattr__(
+            self,
+            "kind",
+            _required_text(
+                self.kind,
+                field_name="source_descriptor.kind",
+                maximum_length=128,
+            ),
+        )
+        object.__setattr__(self, "pixel_sha256", normalized_sha)
+        object.__setattr__(self, "store_id", normalized_store)
+        object.__setattr__(self, "focus", normalized_focus)
+        object.__setattr__(self, "origin", normalized_origin)
+        object.__setattr__(self, "viewport_size", normalized_viewport)
+
+    def to_dict(self) -> dict[str, object]:
+        payload: dict[str, object] = {
+            "kind": self.kind,
+            "pixel_sha256": self.pixel_sha256,
+        }
+        if self.store_id is not None:
+            payload.update(
+                {
+                    "store_id": self.store_id,
+                    "focus": self.focus,
+                    "origin": list(self.origin or ()),
+                    "viewport_size": list(self.viewport_size or ()),
+                }
+            )
+        return payload
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "AnalysisSourceDescriptor":
+        _require_mapping(payload, field_name="source_descriptor")
+        _require_exact_keys(
+            payload,
+            required={"kind", "pixel_sha256"},
+            optional={"store_id", "focus", "origin", "viewport_size"},
+            field_name="source_descriptor",
+        )
+        return cls(
+            kind=payload["kind"],  # type: ignore[arg-type]
+            pixel_sha256=payload["pixel_sha256"],  # type: ignore[arg-type]
+            store_id=payload.get("store_id"),  # type: ignore[arg-type]
+            focus=payload.get("focus"),  # type: ignore[arg-type]
+            origin=payload.get("origin"),  # type: ignore[arg-type]
+            viewport_size=payload.get("viewport_size"),  # type: ignore[arg-type]
+        )
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class AnalysisDependencySignature:
+    """Canonical, hash-verified transitive dependency snapshot."""
+
+    sha256: str
+    _dependencies_json: str = field(repr=False)
+
+    def __init__(
+        self,
+        *,
+        calibration: object = None,
+        roi_transitive_refs: Mapping[str, object] | None = None,
+        measurement_revisions: Mapping[str, object] | None = None,
+        point_set: object = None,
+        group: object = None,
+        study_region: object = None,
+    ) -> None:
+        dependencies_json = _canonical_json_object(
+            {
+                "calibration": calibration,
+                "roi_transitive_refs": dict(roi_transitive_refs or {}),
+                "measurement_revisions": dict(measurement_revisions or {}),
+                "point_set": point_set,
+                "group": group,
+                "study_region": study_region,
+            },
+            field_name="dependency_signature.dependencies",
+        )
+        digest = hashlib.sha256(dependencies_json.encode("utf-8")).hexdigest()
+        object.__setattr__(self, "sha256", digest)
+        object.__setattr__(self, "_dependencies_json", dependencies_json)
+
+    @property
+    def dependencies(self) -> dict[str, object]:
+        return json.loads(self._dependencies_json)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "algorithm": "sha256",
+            "sha256": self.sha256,
+            "dependencies": self.dependencies,
+        }
+
+    @classmethod
+    def from_dict(
+        cls,
+        payload: Mapping[str, object],
+    ) -> "AnalysisDependencySignature":
+        _require_mapping(payload, field_name="dependency_signature")
+        _require_exact_keys(
+            payload,
+            required={"algorithm", "sha256", "dependencies"},
+            field_name="dependency_signature",
+        )
+        if payload["algorithm"] != "sha256":
+            raise ValueError("dependency_signature.algorithm 必须是 sha256")
+        dependencies = payload["dependencies"]
+        if not isinstance(dependencies, Mapping):
+            raise TypeError("dependency_signature.dependencies 必须是对象")
+        _require_exact_keys(
+            dependencies,
+            required={
+                "calibration",
+                "roi_transitive_refs",
+                "measurement_revisions",
+                "point_set",
+                "group",
+                "study_region",
+            },
+            field_name="dependency_signature.dependencies",
+        )
+        roi_refs = dependencies["roi_transitive_refs"]
+        measurement_revisions = dependencies["measurement_revisions"]
+        if not isinstance(roi_refs, Mapping):
+            raise TypeError("dependency_signature.roi_transitive_refs 必须是对象")
+        if not isinstance(measurement_revisions, Mapping):
+            raise TypeError("dependency_signature.measurement_revisions 必须是对象")
+        restored = cls(
+            calibration=dependencies["calibration"],
+            roi_transitive_refs=roi_refs,
+            measurement_revisions=measurement_revisions,
+            point_set=dependencies["point_set"],
+            group=dependencies["group"],
+            study_region=dependencies["study_region"],
+        )
+        supplied_sha = str(payload["sha256"] or "").strip().lower()
+        if supplied_sha != restored.sha256:
+            raise ValueError("dependency_signature.sha256 与依赖内容不一致")
+        return restored
+
+
+@dataclass(frozen=True, slots=True, init=False)
+class AnalysisToolSpec:
+    """Serializable contract for one independently versioned analysis tool."""
+
+    tool_id: str
+    version: str
+    chinese_name: str
+    convertible_kinds: tuple[str, ...]
+    _parameter_schema_json: str = field(repr=False)
+    _output_schema_json: str = field(repr=False)
+
+    def __init__(
+        self,
+        *,
+        tool_id: str,
+        version: str,
+        chinese_name: str,
+        parameter_schema: Mapping[str, object],
+        output_schema: Mapping[str, object],
+        convertible_kinds: Iterable[str] = (),
+    ) -> None:
+        normalized_tool_id = str(tool_id or "").strip().lower()
+        if not _TOOL_ID_PATTERN.fullmatch(normalized_tool_id):
+            raise ValueError("tool_spec.tool_id 格式无效")
+        normalized_kinds = tuple(
+            _required_text(
+                value,
+                field_name=f"tool_spec.convertible_kinds[{index}]",
+                maximum_length=128,
+            )
+            for index, value in enumerate(convertible_kinds)
+        )
+        if len(set(normalized_kinds)) != len(normalized_kinds):
+            raise ValueError("tool_spec.convertible_kinds 不能重复")
+        object.__setattr__(self, "tool_id", normalized_tool_id)
+        object.__setattr__(
+            self,
+            "version",
+            _required_text(
+                version,
+                field_name="tool_spec.version",
+                maximum_length=128,
+            ),
+        )
+        object.__setattr__(
+            self,
+            "chinese_name",
+            _required_text(
+                chinese_name,
+                field_name="tool_spec.chinese_name",
+                maximum_length=256,
+            ),
+        )
+        object.__setattr__(self, "convertible_kinds", normalized_kinds)
+        object.__setattr__(
+            self,
+            "_parameter_schema_json",
+            _canonical_json_object(
+                parameter_schema,
+                field_name="tool_spec.parameter_schema",
+            ),
+        )
+        object.__setattr__(
+            self,
+            "_output_schema_json",
+            _canonical_json_object(
+                output_schema,
+                field_name="tool_spec.output_schema",
+            ),
+        )
+
+    @property
+    def parameter_schema(self) -> dict[str, object]:
+        return json.loads(self._parameter_schema_json)
+
+    @property
+    def output_schema(self) -> dict[str, object]:
+        return json.loads(self._output_schema_json)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "tool_id": self.tool_id,
+            "version": self.version,
+            "chinese_name": self.chinese_name,
+            "parameter_schema": self.parameter_schema,
+            "output_schema": self.output_schema,
+            "convertible_kinds": list(self.convertible_kinds),
+        }
+
+    @classmethod
+    def from_dict(cls, payload: Mapping[str, object]) -> "AnalysisToolSpec":
+        _require_mapping(payload, field_name="tool_spec")
+        _require_exact_keys(
+            payload,
+            required={
+                "tool_id",
+                "version",
+                "chinese_name",
+                "parameter_schema",
+                "output_schema",
+                "convertible_kinds",
+            },
+            field_name="tool_spec",
+        )
+        parameter_schema = payload["parameter_schema"]
+        output_schema = payload["output_schema"]
+        convertible_kinds = payload["convertible_kinds"]
+        if not isinstance(parameter_schema, Mapping):
+            raise TypeError("tool_spec.parameter_schema 必须是对象")
+        if not isinstance(output_schema, Mapping):
+            raise TypeError("tool_spec.output_schema 必须是对象")
+        if not isinstance(convertible_kinds, list):
+            raise TypeError("tool_spec.convertible_kinds 必须是列表")
+        return cls(
+            tool_id=payload["tool_id"],  # type: ignore[arg-type]
+            version=payload["version"],  # type: ignore[arg-type]
+            chinese_name=payload["chinese_name"],  # type: ignore[arg-type]
+            parameter_schema=parameter_schema,
+            output_schema=output_schema,
+            convertible_kinds=convertible_kinds,  # type: ignore[arg-type]
         )
 
 
@@ -348,12 +779,16 @@ class AnalysisArtifact:
     source_document_id: str
     source_pixel_revision: int
     source_reference: AnalysisObjectReference | None
+    region_snapshot: AnalysisRegionSnapshot | None
+    source_descriptor: AnalysisSourceDescriptor | None
+    dependency_signature: AnalysisDependencySignature | None
     tool_id: str
     tool_version: str
     calibration_signature: str | None
     tables: tuple[AnalysisTable, ...]
     curves: tuple[AnalysisCurve, ...]
     assets: tuple[AnalysisAssetReference, ...]
+    warnings: tuple[str, ...]
     status: AnalysisArtifactStatus
     stale_reason: str | None
     created_at: str
@@ -371,10 +806,14 @@ class AnalysisArtifact:
         parameters: Mapping[str, object] | None = None,
         calibration_signature: str | None = None,
         source_reference: AnalysisObjectReference | None = None,
+        region_snapshot: AnalysisRegionSnapshot | None = None,
+        source_descriptor: AnalysisSourceDescriptor | None = None,
+        dependency_signature: AnalysisDependencySignature | None = None,
         scalars: Mapping[str, JsonScalar] | None = None,
         tables: Iterable[AnalysisTable] = (),
         curves: Iterable[AnalysisCurve] = (),
         assets: Iterable[AnalysisAssetReference] = (),
+        warnings: Iterable[str] = (),
         status: AnalysisArtifactStatus | str = AnalysisArtifactStatus.CURRENT,
         stale_reason: str | None = None,
         created_at: str | None = None,
@@ -412,6 +851,21 @@ class AnalysisArtifact:
             AnalysisObjectReference,
         ):
             raise TypeError("source_reference 必须是 AnalysisObjectReference")
+        if region_snapshot is not None and not isinstance(
+            region_snapshot,
+            AnalysisRegionSnapshot,
+        ):
+            raise TypeError("region_snapshot 必须是 AnalysisRegionSnapshot")
+        if source_descriptor is not None and not isinstance(
+            source_descriptor,
+            AnalysisSourceDescriptor,
+        ):
+            raise TypeError("source_descriptor 必须是 AnalysisSourceDescriptor")
+        if dependency_signature is not None and not isinstance(
+            dependency_signature,
+            AnalysisDependencySignature,
+        ):
+            raise TypeError("dependency_signature 必须是 AnalysisDependencySignature")
         normalized_signature = (
             None
             if calibration_signature is None
@@ -424,6 +878,18 @@ class AnalysisArtifact:
         frozen_tables = tuple(tables)
         frozen_curves = tuple(curves)
         frozen_assets = tuple(assets)
+        if isinstance(warnings, (str, bytes)):
+            raise TypeError("warnings 必须是字符串列表")
+        frozen_warnings = tuple(
+            _required_text(
+                warning,
+                field_name="warning",
+                maximum_length=1024,
+            )
+            for warning in warnings
+        )
+        if len(frozen_warnings) > 256:
+            raise ValueError("warnings 不能超过 256 条")
         if any(not isinstance(item, AnalysisTable) for item in frozen_tables):
             raise TypeError("tables 必须全部是 AnalysisTable")
         if any(not isinstance(item, AnalysisCurve) for item in frozen_curves):
@@ -471,12 +937,16 @@ class AnalysisArtifact:
         object.__setattr__(self, "source_document_id", document_id)
         object.__setattr__(self, "source_pixel_revision", pixel_revision)
         object.__setattr__(self, "source_reference", source_reference)
+        object.__setattr__(self, "region_snapshot", region_snapshot)
+        object.__setattr__(self, "source_descriptor", source_descriptor)
+        object.__setattr__(self, "dependency_signature", dependency_signature)
         object.__setattr__(self, "tool_id", normalized_tool_id)
         object.__setattr__(self, "tool_version", normalized_tool_version)
         object.__setattr__(self, "calibration_signature", normalized_signature)
         object.__setattr__(self, "tables", frozen_tables)
         object.__setattr__(self, "curves", frozen_curves)
         object.__setattr__(self, "assets", frozen_assets)
+        object.__setattr__(self, "warnings", frozen_warnings)
         object.__setattr__(self, "status", normalized_status)
         object.__setattr__(self, "stale_reason", normalized_reason)
         object.__setattr__(self, "created_at", timestamp)
@@ -510,6 +980,9 @@ class AnalysisArtifact:
             source_document_id=self.source_document_id,
             source_pixel_revision=self.source_pixel_revision,
             source_reference=self.source_reference,
+            region_snapshot=self.region_snapshot,
+            source_descriptor=self.source_descriptor,
+            dependency_signature=self.dependency_signature,
             tool_id=self.tool_id,
             tool_version=self.tool_version,
             parameters=self.parameters,
@@ -518,6 +991,7 @@ class AnalysisArtifact:
             tables=self.tables,
             curves=self.curves,
             assets=self.assets,
+            warnings=self.warnings,
             status=status,
             stale_reason=stale_reason,
             created_at=self.created_at,
@@ -541,15 +1015,38 @@ class AnalysisArtifact:
         }
         if self.source_reference is not None:
             payload["source_reference"] = self.source_reference.to_dict()
+        if self.region_snapshot is not None:
+            payload["region_snapshot"] = self.region_snapshot.to_dict()
+        if self.source_descriptor is not None:
+            payload["source_descriptor"] = self.source_descriptor.to_dict()
+        if self.dependency_signature is not None:
+            payload["dependency_signature"] = self.dependency_signature.to_dict()
         if self.calibration_signature is not None:
             payload["calibration_signature"] = self.calibration_signature
         if self.stale_reason is not None:
             payload["stale_reason"] = self.stale_reason
+        if self.warnings:
+            payload["warnings"] = list(self.warnings)
         return payload
 
     @classmethod
     def from_dict(cls, payload: Mapping[str, object]) -> "AnalysisArtifact":
         _require_mapping(payload, field_name="AnalysisArtifact")
+        schema_version = payload.get("schema_version")
+        if (
+            isinstance(schema_version, bool)
+            or not isinstance(schema_version, int)
+            or schema_version not in {1, ANALYSIS_ARTIFACT_SCHEMA_VERSION}
+        ):
+            raise ValueError(
+                "不支持的 AnalysisArtifact schema_version: "
+                f"{schema_version!r}"
+            )
+        provenance_fields = {
+            "region_snapshot",
+            "source_descriptor",
+            "dependency_signature",
+        }
         _require_exact_keys(
             payload,
             required={
@@ -571,24 +1068,20 @@ class AnalysisArtifact:
                 "source_reference",
                 "calibration_signature",
                 "stale_reason",
-            },
+            }
+            | (
+                provenance_fields | {"warnings"}
+                if schema_version >= 2
+                else set()
+            ),
             field_name="AnalysisArtifact",
         )
-        schema_version = payload["schema_version"]
-        if (
-            isinstance(schema_version, bool)
-            or not isinstance(schema_version, int)
-            or schema_version != ANALYSIS_ARTIFACT_SCHEMA_VERSION
-        ):
-            raise ValueError(
-                "不支持的 AnalysisArtifact schema_version: "
-                f"{schema_version!r}"
-            )
         parameters = payload["parameters"]
         scalars = payload["scalars"]
         tables = payload["tables"]
         curves = payload["curves"]
         assets = payload["assets"]
+        warnings = payload.get("warnings", [])
         if not isinstance(parameters, Mapping):
             raise TypeError("AnalysisArtifact.parameters 必须是对象")
         if not isinstance(scalars, Mapping):
@@ -605,12 +1098,34 @@ class AnalysisArtifact:
             not isinstance(item, Mapping) for item in assets
         ):
             raise TypeError("AnalysisArtifact.assets 必须是对象列表")
+        if not isinstance(warnings, list) or any(
+            not isinstance(item, str) for item in warnings
+        ):
+            raise TypeError("AnalysisArtifact.warnings 必须是字符串列表")
         source_reference_payload = payload.get("source_reference")
         if source_reference_payload is not None and not isinstance(
             source_reference_payload,
             Mapping,
         ):
             raise TypeError("AnalysisArtifact.source_reference 必须是对象")
+        region_snapshot_payload = payload.get("region_snapshot")
+        if region_snapshot_payload is not None and not isinstance(
+            region_snapshot_payload,
+            Mapping,
+        ):
+            raise TypeError("AnalysisArtifact.region_snapshot 必须是对象")
+        source_descriptor_payload = payload.get("source_descriptor")
+        if source_descriptor_payload is not None and not isinstance(
+            source_descriptor_payload,
+            Mapping,
+        ):
+            raise TypeError("AnalysisArtifact.source_descriptor 必须是对象")
+        dependency_signature_payload = payload.get("dependency_signature")
+        if dependency_signature_payload is not None and not isinstance(
+            dependency_signature_payload,
+            Mapping,
+        ):
+            raise TypeError("AnalysisArtifact.dependency_signature 必须是对象")
         return cls(
             id=payload["id"],  # type: ignore[arg-type]
             source_document_id=payload["source_document_id"],  # type: ignore[arg-type]
@@ -619,6 +1134,23 @@ class AnalysisArtifact:
                 None
                 if source_reference_payload is None
                 else AnalysisObjectReference.from_dict(source_reference_payload)
+            ),
+            region_snapshot=(
+                None
+                if region_snapshot_payload is None
+                else AnalysisRegionSnapshot.from_dict(region_snapshot_payload)
+            ),
+            source_descriptor=(
+                None
+                if source_descriptor_payload is None
+                else AnalysisSourceDescriptor.from_dict(source_descriptor_payload)
+            ),
+            dependency_signature=(
+                None
+                if dependency_signature_payload is None
+                else AnalysisDependencySignature.from_dict(
+                    dependency_signature_payload
+                )
             ),
             tool_id=payload["tool_id"],  # type: ignore[arg-type]
             tool_version=payload["tool_version"],  # type: ignore[arg-type]
@@ -637,6 +1169,7 @@ class AnalysisArtifact:
                 AnalysisAssetReference.from_dict(item)
                 for item in assets
             ),
+            warnings=warnings,
             status=payload["status"],  # type: ignore[arg-type]
             stale_reason=payload.get("stale_reason"),  # type: ignore[arg-type]
             created_at=payload["created_at"],  # type: ignore[arg-type]
@@ -683,9 +1216,14 @@ def refresh_artifact_validity(
     *,
     source_document_exists: bool = True,
     current_pixel_revision: int | None = None,
+    current_source_descriptor: AnalysisSourceDescriptor | None | object = _UNSET,
+    current_source_descriptors: (
+        Mapping[str, AnalysisSourceDescriptor | None] | None
+    ) = None,
     current_calibration_signature: str | None | object = _UNSET,
     roi_revisions: Mapping[str, int] | None = None,
     measurement_revisions: Mapping[str, int] | None = None,
+    current_dependency_signatures: Mapping[str, str | None] | None = None,
 ) -> AnalysisArtifact:
     """Mark a current artifact stale when any authoritative source changed.
 
@@ -706,6 +1244,30 @@ def refresh_artifact_validity(
         )
         if normalized_revision != artifact.source_pixel_revision:
             return artifact.mark_stale("来源图片像素已变化")
+    if artifact.source_descriptor is not None:
+        descriptor_to_compare: AnalysisSourceDescriptor | None | object = (
+            current_source_descriptor
+        )
+        if current_source_descriptors is not None:
+            descriptor_to_compare = current_source_descriptors.get(
+                artifact.id
+            )
+        if (
+            descriptor_to_compare is not _UNSET
+            and descriptor_to_compare is not None
+            and not isinstance(
+                descriptor_to_compare,
+                AnalysisSourceDescriptor,
+            )
+        ):
+            raise TypeError(
+                "current_source_descriptor 必须是 AnalysisSourceDescriptor 或 None"
+            )
+        if (
+            descriptor_to_compare is not _UNSET
+            and descriptor_to_compare != artifact.source_descriptor
+        ):
+            return artifact.mark_stale("来源图片内容或冻结视窗已变化")
     if current_calibration_signature is not _UNSET:
         normalized_signature = (
             None
@@ -718,6 +1280,14 @@ def refresh_artifact_validity(
         )
         if normalized_signature != artifact.calibration_signature:
             return artifact.mark_stale("标定已变化")
+
+    dependency_signature = artifact.dependency_signature
+    if dependency_signature is not None and current_dependency_signatures is not None:
+        current_dependency_sha = current_dependency_signatures.get(artifact.id)
+        if current_dependency_sha is None:
+            return artifact.mark_stale("分析依赖已不存在或无法验证")
+        if str(current_dependency_sha).strip().lower() != dependency_signature.sha256:
+            return artifact.mark_stale("分析依赖已变化")
 
     reference = artifact.source_reference
     if reference is None:
@@ -749,9 +1319,14 @@ def refresh_artifacts_validity(
     document_id: str,
     source_document_exists: bool = True,
     current_pixel_revision: int | None = None,
+    current_source_descriptor: AnalysisSourceDescriptor | None | object = _UNSET,
+    current_source_descriptors: (
+        Mapping[str, AnalysisSourceDescriptor | None] | None
+    ) = None,
     current_calibration_signature: str | None | object = _UNSET,
     roi_revisions: Mapping[str, int] | None = None,
     measurement_revisions: Mapping[str, int] | None = None,
+    current_dependency_signatures: Mapping[str, str | None] | None = None,
 ) -> tuple[AnalysisArtifact, ...]:
     """Refresh only artifacts belonging to one document, preserving order."""
 
@@ -771,9 +1346,12 @@ def refresh_artifacts_validity(
                 artifact,
                 source_document_exists=source_document_exists,
                 current_pixel_revision=current_pixel_revision,
+                current_source_descriptor=current_source_descriptor,
+                current_source_descriptors=current_source_descriptors,
                 current_calibration_signature=current_calibration_signature,
                 roi_revisions=roi_revisions,
                 measurement_revisions=measurement_revisions,
+                current_dependency_signatures=current_dependency_signatures,
             )
         )
     return tuple(refreshed)
@@ -1024,6 +1602,30 @@ def _non_negative_int(value: object, *, field_name: str) -> int:
     return value
 
 
+def _optional_int_pair(
+    value: object,
+    *,
+    field_name: str,
+    positive: bool,
+) -> tuple[int, int] | None:
+    if value is None:
+        return None
+    if (
+        not isinstance(value, Sequence)
+        or isinstance(value, (str, bytes))
+        or len(value) != 2
+    ):
+        raise TypeError(f"{field_name} 必须是两个整数")
+    normalized: list[int] = []
+    for index, item in enumerate(value):
+        if isinstance(item, bool) or not isinstance(item, int):
+            raise TypeError(f"{field_name}[{index}] 必须是整数")
+        if positive and item <= 0:
+            raise ValueError(f"{field_name}[{index}] 必须大于 0")
+        normalized.append(item)
+    return normalized[0], normalized[1]
+
+
 __all__ = [
     "ANALYSIS_ARTIFACT_SCHEMA_VERSION",
     "AnalysisArtifact",
@@ -1031,9 +1633,13 @@ __all__ = [
     "AnalysisAssetKind",
     "AnalysisAssetReference",
     "AnalysisCurve",
+    "AnalysisDependencySignature",
     "AnalysisObjectKind",
     "AnalysisObjectReference",
+    "AnalysisRegionSnapshot",
+    "AnalysisSourceDescriptor",
     "AnalysisTable",
+    "AnalysisToolSpec",
     "JsonScalar",
     "calibration_signature_from_values",
     "refresh_artifact_validity",

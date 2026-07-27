@@ -27,6 +27,24 @@ RoiBounds: TypeAlias = tuple[float, float, float, float]
 RoiMask: TypeAlias = NDArray[np.bool_]
 
 
+@dataclass(frozen=True, slots=True)
+class ProjectRoiDeletionResult:
+    """An immutable, fully validated ROI deletion plan.
+
+    ``remaining_rois`` can be assigned to the project in one operation.  This
+    avoids exposing a half-mutated graph while dependent composite ROIs are
+    being discovered.
+    """
+
+    remaining_rois: tuple["ProjectRoi", ...]
+    requested_ids: frozenset[str]
+    dependent_ids: frozenset[str]
+
+    @property
+    def removed_ids(self) -> frozenset[str]:
+        return self.requested_ids | self.dependent_ids
+
+
 class ProjectRoiKind(StrEnum):
     RECTANGLE = "rect"
     ELLIPSE = "ellipse"
@@ -495,6 +513,68 @@ class ProjectRoi:
             color=payload["color"],  # type: ignore[arg-type]
             revision=payload["revision"],  # type: ignore[arg-type]
         )
+
+
+def remove_rois_with_dependents(
+    rois: Iterable[ProjectRoi],
+    roi_ids: Iterable[str],
+) -> ProjectRoiDeletionResult:
+    """Plan removal of ROIs and the transitive composite dependency closure.
+
+    A composite becomes dangling as soon as any operand is removed.  That
+    composite is therefore removed too, which can in turn invalidate another
+    composite.  The input collection is never mutated and validation completes
+    before a result is returned.
+    """
+
+    normalized_rois = tuple(rois)
+    if any(not isinstance(roi, ProjectRoi) for roi in normalized_rois):
+        raise TypeError("rois 必须全部是 ProjectRoi")
+    roi_by_id: dict[str, ProjectRoi] = {}
+    for roi in normalized_rois:
+        if roi.id in roi_by_id:
+            raise ValueError(f"rois 包含重复 ID: {roi.id}")
+        roi_by_id[roi.id] = roi
+
+    requested_ids = frozenset(
+        _required_id(roi_id, field_name="roi_ids")
+        for roi_id in roi_ids
+    )
+    missing_ids = requested_ids - roi_by_id.keys()
+    if missing_ids:
+        raise KeyError(f"要删除的 ROI 不存在: {', '.join(sorted(missing_ids))}")
+    if not requested_ids:
+        return ProjectRoiDeletionResult(
+            remaining_rois=normalized_rois,
+            requested_ids=frozenset(),
+            dependent_ids=frozenset(),
+        )
+
+    removed_ids = set(requested_ids)
+    while True:
+        newly_dangling = {
+            roi.id
+            for roi in normalized_rois
+            if (
+                roi.id not in removed_ids
+                and isinstance(roi.geometry, RoiBooleanExpression)
+                and any(
+                    operand_id in removed_ids or operand_id not in roi_by_id
+                    for operand_id in roi.geometry.operand_ids
+                )
+            )
+        }
+        if not newly_dangling:
+            break
+        removed_ids.update(newly_dangling)
+
+    return ProjectRoiDeletionResult(
+        remaining_rois=tuple(
+            roi for roi in normalized_rois if roi.id not in removed_ids
+        ),
+        requested_ids=requested_ids,
+        dependent_ids=frozenset(removed_ids - requested_ids),
+    )
 
 
 def rasterize_roi_mask(

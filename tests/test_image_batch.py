@@ -57,6 +57,48 @@ _PLENTY_OF_DISK = 10 << 30
 
 
 class ImageBatchExecutionTests(unittest.TestCase):
+    def test_copy_roi_propagates_frozen_mask_and_bounds_to_later_steps(
+        self,
+    ) -> None:
+        source = np.arange(36, dtype=np.uint8).reshape(6, 6)
+        roi = np.zeros((6, 6), dtype=bool)
+        roi[1:5, 2:5] = True
+        item = BatchRasterInput(
+            document_id="copy-roi",
+            display_name="复制 ROI",
+            raster=numpy_to_raster_plane(source),
+            roi_mask=roi,
+        )
+        recipe = ImageProcessingRecipe.from_operations(
+            (
+                ImageOperationSpec(
+                    "copy",
+                    {"roi_mode": "mask", "outside_value": 0.0},
+                ),
+                ImageOperationSpec("invert", {"minimum": 0, "maximum": 255}),
+            )
+        )
+
+        result = execute_batch_recipe(
+            BatchRecipeRequest(
+                request_id="copy-roi",
+                generation=1,
+                recipe=recipe,
+                inputs=(item,),
+                available_disk_bytes=_PLENTY_OF_DISK,
+            )
+        )
+
+        self.assertTrue(result.commit_allowed)
+        candidate = result.commit_candidates[0]
+        self.assertEqual((candidate.raster.width, candidate.raster.height), (3, 4))
+        self.assertEqual(
+            candidate.derivation.recipe.operations[0].result_metadata[
+                "roi_bounds"
+            ],
+            [2, 1, 3, 4],
+        )
+
     def test_success_produces_audited_candidates_without_mutating_sources(self) -> None:
         source_array = np.asarray([[0, 5], [10, 20]], dtype=np.uint8)
         first = _input("first", source_array)
@@ -116,6 +158,69 @@ class ImageBatchExecutionTests(unittest.TestCase):
         np.testing.assert_array_equal(
             raster_plane_to_numpy(result.commit_candidates[0].raster),
             image + 1,
+        )
+
+    def test_reference_flat_field_batch_records_reference_provenance(
+        self,
+    ) -> None:
+        source = np.full((3, 4), 100, dtype=np.uint8)
+        reference = np.asarray(
+            [
+                [50, 75, 100, 125],
+                [60, 80, 110, 140],
+                [70, 90, 120, 150],
+            ],
+            dtype=np.uint8,
+        )
+        recipe = _recipe(
+            "flat_field_correction",
+            {
+                "flat_field_source": "reference",
+                "secondary_document_id": "white-reference",
+                "radius": 25.0,
+                "method": "gaussian",
+                "preserve_mean": True,
+            },
+        )
+        item = _input("sample", source, secondary=reference)
+
+        result = execute_batch_recipe(
+            BatchRecipeRequest(
+                request_id="flat-reference",
+                generation=1,
+                recipe=recipe,
+                inputs=(item,),
+                available_disk_bytes=_PLENTY_OF_DISK,
+            )
+        )
+
+        self.assertTrue(result.commit_allowed)
+        candidate = result.commit_candidates[0]
+        operation = candidate.derivation.recipe.operations[0]
+        self.assertEqual(
+            operation.parameters["secondary_sha256"],
+            item.secondary_raster.sha256(),
+        )
+        self.assertEqual(
+            operation.parameters["secondary_document_id"],
+            "white-reference",
+        )
+        self.assertEqual(
+            operation.parameters["reference_levels"],
+            [float(np.mean(reference, dtype=np.float64))],
+        )
+        expected = np.rint(
+            np.clip(
+                source.astype(np.float32)
+                * float(np.mean(reference, dtype=np.float64))
+                / reference.astype(np.float32),
+                0,
+                255,
+            )
+        ).astype(np.uint8)
+        np.testing.assert_array_equal(
+            raster_plane_to_numpy(candidate.raster),
+            expected,
         )
 
     def test_cancellation_after_a_success_disables_every_commit_candidate(self) -> None:

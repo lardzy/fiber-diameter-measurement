@@ -701,6 +701,12 @@ def _probe_image_processing_pipeline() -> dict[str, Any]:
         ImageOperation,
         ImageOperationRequest,
         execute_image_operation,
+        image_operation_registry,
+    )
+    from fdm.services.raster_derivation import (
+        duplicate_raster_plane,
+        merge_gray8_channels,
+        split_rgb_channels,
     )
     from fdm.services.raster_io import (
         numpy_to_raster_plane,
@@ -718,6 +724,17 @@ def _probe_image_processing_pipeline() -> dict[str, Any]:
         ),
     }
     cases: dict[str, dict[str, Any]] = {}
+    registry = image_operation_registry()
+    enum_ids = {operation.value for operation in ImageOperation}
+    if set(registry) != enum_ids:
+        raise RuntimeError("image operation registry does not cover the enum")
+    if any(
+        descriptor.operation_id != operation_id
+        or not descriptor.chinese_name
+        or not callable(descriptor.executor)
+        for operation_id, descriptor in registry.items()
+    ):
+        raise RuntimeError("image operation registry contains an invalid descriptor")
     with tempfile.TemporaryDirectory(
         prefix="fdm-图像处理管线-self-check-"
     ) as tmpdir:
@@ -778,10 +795,43 @@ def _probe_image_processing_pipeline() -> dict[str, Any]:
                 "sha256": plane.sha256(),
                 "bytes": written.bytes_written,
             }
+        rgb = np.zeros((6, 8, 3), dtype=np.uint8)
+        rgb[..., 0] = np.arange(48, dtype=np.uint8).reshape(6, 8)
+        rgb[..., 1] = 90
+        rgb[..., 2] = 170
+        rgb_plane = numpy_to_raster_plane(rgb)
+        duplicate = duplicate_raster_plane(
+            rgb_plane,
+            expected_source_sha256=rgb_plane.sha256(),
+        )
+        channels = split_rgb_channels(
+            rgb_plane,
+            expected_source_sha256=rgb_plane.sha256(),
+        )
+        merged = merge_gray8_channels(
+            channels.red,
+            channels.green,
+            channels.blue,
+            expected_red_sha256=channels.red.sha256(),
+            expected_green_sha256=channels.green.sha256(),
+            expected_blue_sha256=channels.blue.sha256(),
+        )
+        if (
+            duplicate.plane.sha256() != rgb_plane.sha256()
+            or merged.plane.sha256() != rgb_plane.sha256()
+        ):
+            raise RuntimeError("copy/split/merge changed RGB pixels")
     return {
         "ok": len(cases) == len(sources)
         and all(item["ok"] is True for item in cases.values()),
         "operation": ImageOperation.GAUSSIAN_BLUR.value,
+        "registered_operations": len(registry),
+        "registry_complete": set(registry) == enum_ids,
+        "copy_split_merge": {
+            "ok": True,
+            "source_sha256": rgb_plane.sha256(),
+            "merged_sha256": merged.plane.sha256(),
+        },
         "cases": cases,
     }
 
@@ -806,7 +856,20 @@ def _probe_analysis_pipeline() -> dict[str, Any]:
         inspect_safe_analysis_npz,
         write_safe_analysis_npz,
     )
-    from fdm.services.analysis_export import export_analysis_workbook
+    from fdm.services.analysis_batch import (
+        AnalysisBatchRequest,
+        AnalysisInvocation,
+        AnalysisRecipe,
+        execute_analysis_batch,
+    )
+    from fdm.services.analysis_export import (
+        export_analysis_portable_package,
+        export_analysis_workbook,
+    )
+    from fdm.services.analysis_profiles import (
+        AnalysisMeasurementProfile,
+        AnalysisMeasurementProfileStore,
+    )
     from fdm.services.image_batch import (
         BatchRasterInput,
         BatchRecipeRequest,
@@ -871,6 +934,29 @@ def _probe_analysis_pipeline() -> dict[str, Any]:
             workbook_sheets = list(workbook.sheetnames)
         finally:
             workbook.close()
+        package_path = root / "中文目录" / "可搬运分析包.zip"
+        package_result = export_analysis_portable_package(
+            (artifact,),
+            package_path,
+            document_names={"中文来源图片": "中文来源图片"},
+        )
+        if not package_result.success or package_result.path is None:
+            raise RuntimeError(package_result.message)
+
+        profile_store = AnalysisMeasurementProfileStore(
+            root / "配置" / "analysis-profiles.json"
+        )
+        profile = AnalysisMeasurementProfile(
+            profile_id="self-check-profile",
+            name="发布自检方向性",
+            tool_id="fdm.directionality",
+            tool_version="2",
+            parameters={"bins": 18, "algorithm_version": 2},
+        )
+        profile_store.upsert(profile)
+        restored_profiles = profile_store.load()
+        if restored_profiles != (profile,):
+            raise RuntimeError("analysis profile atomic round-trip failed")
 
         direction_image = np.zeros((32, 40), dtype=np.uint8)
         direction_image[14:18, 3:37] = 255
@@ -891,6 +977,42 @@ def _probe_analysis_pipeline() -> dict[str, Any]:
             or float(advanced.result.total_weight) <= 0.0
         ):
             raise RuntimeError("advanced analysis registry contract failed")
+
+        analysis_batch_request = AnalysisBatchRequest(
+            request_id="advanced-analysis-batch-self-check",
+            generation=8,
+            recipe=AnalysisRecipe(
+                "directionality-v2",
+                "方向性 v2",
+                AdvancedAnalysisKind.DIRECTIONALITY,
+                parameters={"algorithm_version": 2, "bins": 18},
+                required_inputs=("plane",),
+            ),
+            invocations=tuple(
+                AnalysisInvocation(
+                    item_id=f"analysis-item-{index}",
+                    display_name=f"分析项目 {index}",
+                    analysis=AdvancedAnalysisInvocation(
+                        AdvancedAnalysisKind.DIRECTIONALITY,
+                        request_id=f"advanced-item-{index}",
+                        generation=8,
+                        plane=direction_plane,
+                    ),
+                )
+                for index in (1, 2)
+            ),
+        )
+        analysis_batch_result = execute_analysis_batch(
+            analysis_batch_request
+        )
+        if (
+            analysis_batch_result.request_id
+            != analysis_batch_request.request_id
+            or analysis_batch_result.generation
+            != analysis_batch_request.generation
+            or analysis_batch_result.success_count != 2
+        ):
+            raise RuntimeError("advanced analysis batch contract failed")
 
         recipe = ImageProcessingRecipe.from_operations(
             (
@@ -952,12 +1074,28 @@ def _probe_analysis_pipeline() -> dict[str, Any]:
                 "bytes": workbook_result.path.stat().st_size,
                 "unicode_path": True,
             },
+            "portable_package": {
+                "ok": True,
+                "bytes": package_result.path.stat().st_size,
+                "unicode_path": True,
+            },
+            "analysis_profiles": {
+                "ok": True,
+                "count": len(restored_profiles),
+                "tool_version": restored_profiles[0].tool_version,
+            },
             "advanced_analysis": {
                 "ok": True,
                 "kind": advanced.kind.value,
                 "request_id": advanced.request_id,
                 "generation": advanced.generation,
                 "registered_tools": len(registry.registrations()),
+            },
+            "advanced_analysis_batch": {
+                "ok": True,
+                "request_id": analysis_batch_result.request_id,
+                "generation": analysis_batch_result.generation,
+                "success_count": analysis_batch_result.success_count,
             },
             "batch": {
                 "ok": True,

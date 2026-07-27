@@ -121,6 +121,7 @@ class DirectionalityRequest:
     histogram_smoothing_bins: float = 1.0
     peak_min_fraction: float = 0.1
     max_peaks: int = 8
+    algorithm_version: int = 1
     request_id: str = ""
     generation: int = 0
 
@@ -142,6 +143,8 @@ class DirectionalityRequest:
             _invalid("方向峰值阈值比例必须在 0 到 1 之间。")
         if int(self.max_peaks) < 1:
             _invalid("最多方向峰数量必须至少为 1。")
+        if int(self.algorithm_version) not in (1, 2):
+            _invalid("方向性算法版本只支持 1 或 2。")
         object.__setattr__(self, "bins", int(self.bins))
         object.__setattr__(self, "gradient_sigma", float(self.gradient_sigma))
         object.__setattr__(self, "minimum_gradient", float(self.minimum_gradient))
@@ -152,6 +155,7 @@ class DirectionalityRequest:
         )
         object.__setattr__(self, "peak_min_fraction", fraction)
         object.__setattr__(self, "max_peaks", int(self.max_peaks))
+        object.__setattr__(self, "algorithm_version", int(self.algorithm_version))
         object.__setattr__(self, "request_id", str(self.request_id))
         object.__setattr__(self, "generation", int(self.generation))
 
@@ -162,6 +166,7 @@ class OrientationPeak:
     weight: float
     relative_weight: float
     bin_index: int
+    width_degrees: float | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -172,9 +177,24 @@ class DirectionalityResult:
     peaks: tuple[OrientationPeak, ...]
     valid_gradient_pixels: int
     total_weight: float
+    algorithm_version: int = 1
+    concentration: float | None = None
+    gradient_magnitude_squared: NDArray[np.float32] | None = None
+    fourier_power: NDArray[np.float32] | None = None
+    orientation_map_degrees: NDArray[np.float32] | None = None
     convention: str = "0°向右，逆时针为正，轴向范围[0°,180°)"
     request_id: str = ""
     generation: int = 0
+
+    def __post_init__(self) -> None:
+        for name in (
+            "gradient_magnitude_squared",
+            "fourier_power",
+            "orientation_map_degrees",
+        ):
+            value = getattr(self, name)
+            if value is not None:
+                object.__setattr__(self, name, _freeze_float_output(value))
 
 
 @dataclass(frozen=True, slots=True)
@@ -184,6 +204,8 @@ class SkeletonNetworkRequest:
     pixel_size_x: float = 1.0
     pixel_size_y: float = 1.0
     unit: str = "px"
+    algorithm_version: int = 1
+    prune_terminal_branches_below: float = 0.0
     request_id: str = ""
     generation: int = 0
 
@@ -191,10 +213,22 @@ class SkeletonNetworkRequest:
         object.__setattr__(self, "mask", _freeze_binary_mask(self.mask, "骨架掩膜"))
         _require_finite_positive("横向像素尺寸", self.pixel_size_x)
         _require_finite_positive("纵向像素尺寸", self.pixel_size_y)
+        if int(self.algorithm_version) not in (1, 2):
+            _invalid("骨架算法版本只支持 1 或 2。")
+        _require_finite_nonnegative(
+            "末端分支剪枝阈值",
+            self.prune_terminal_branches_below,
+        )
         object.__setattr__(self, "already_skeletonized", bool(self.already_skeletonized))
         object.__setattr__(self, "pixel_size_x", float(self.pixel_size_x))
         object.__setattr__(self, "pixel_size_y", float(self.pixel_size_y))
         object.__setattr__(self, "unit", str(self.unit or "px"))
+        object.__setattr__(self, "algorithm_version", int(self.algorithm_version))
+        object.__setattr__(
+            self,
+            "prune_terminal_branches_below",
+            float(self.prune_terminal_branches_below),
+        )
         object.__setattr__(self, "request_id", str(self.request_id))
         object.__setattr__(self, "generation", int(self.generation))
 
@@ -205,6 +239,13 @@ class SkeletonBranch:
     end_px: Coordinate | None
     length: float
     closed: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class SkeletonPruningAudit:
+    start_px: Coordinate
+    length: float
+    removed_pixel_count: int
 
 
 @dataclass(frozen=True, slots=True)
@@ -221,11 +262,29 @@ class SkeletonNetworkResult:
     total_length: float
     maximum_geodesic_distance: float
     unit: str
+    algorithm_version: int = 1
+    slab_pixel_count: int = 0
+    junction_pixel_count: int = 0
+    triple_junction_count: int = 0
+    quadruple_or_higher_junction_count: int = 0
+    mean_branch_length: float | None = None
+    maximum_branch_length: float | None = None
+    classification_map: NDArray[np.uint8] | None = None
+    pruning_audit: tuple[SkeletonPruningAudit, ...] = ()
     request_id: str = ""
     generation: int = 0
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "skeleton", _freeze_bool_output(self.skeleton))
+        if self.classification_map is not None:
+            classification = np.array(
+                self.classification_map,
+                dtype=np.uint8,
+                copy=True,
+                order="C",
+            )
+            classification.setflags(write=False)
+            object.__setattr__(self, "classification_map", classification)
 
 
 @dataclass(frozen=True, slots=True)
@@ -418,6 +477,9 @@ class GlcmHaralickResult:
 class SpatialDistributionRequest:
     points: tuple[Coordinate, ...]
     study_area: float | None = None
+    study_bounds: tuple[float, float, float, float] | None = None
+    ripley_radii: tuple[float, ...] = ()
+    algorithm_version: int = 1
     pixel_size_x: float = 1.0
     pixel_size_y: float = 1.0
     unit: str = "px"
@@ -432,12 +494,36 @@ class SpatialDistributionRequest:
         _require_finite_positive("纵向像素尺寸", self.pixel_size_y)
         if self.study_area is not None:
             _require_finite_positive("研究区域面积", self.study_area)
+        bounds = self.study_bounds
+        if bounds is not None:
+            if len(bounds) != 4:
+                _invalid("研究区域边界必须是 (左, 上, 右, 下)。")
+            left, top, right, bottom = (
+                _finite_float("研究区域边界", value) for value in bounds
+            )
+            if right <= left or bottom <= top:
+                _invalid("研究区域边界必须具有正宽高。")
+            bounds = (left, top, right, bottom)
+        radii = tuple(
+            _finite_float("Ripley 半径", value) for value in self.ripley_radii
+        )
+        if any(value <= 0 for value in radii):
+            _invalid("Ripley 半径必须为正数。")
+        if tuple(sorted(set(radii))) != radii:
+            _invalid("Ripley 半径必须严格递增且不能重复。")
+        if int(self.algorithm_version) not in (1, 2):
+            _invalid("空间分布算法版本只支持 1 或 2。")
+        if int(self.algorithm_version) == 2 and bounds is None:
+            _invalid("空间分布 v2 必须显式提供完整研究区域边界。")
         object.__setattr__(self, "points", points)
         object.__setattr__(
             self,
             "study_area",
             None if self.study_area is None else float(self.study_area),
         )
+        object.__setattr__(self, "study_bounds", bounds)
+        object.__setattr__(self, "ripley_radii", radii)
+        object.__setattr__(self, "algorithm_version", int(self.algorithm_version))
         object.__setattr__(self, "pixel_size_x", float(self.pixel_size_x))
         object.__setattr__(self, "pixel_size_y", float(self.pixel_size_y))
         object.__setattr__(self, "unit", str(self.unit or "px"))
@@ -457,6 +543,11 @@ class SpatialDistributionResult:
     area_source: str
     spatial_density: float
     unit: str
+    algorithm_version: int = 1
+    ripley_radii: tuple[float, ...] = ()
+    ripley_k: tuple[float, ...] = ()
+    ripley_l: tuple[float, ...] = ()
+    boundary_correction: str | None = None
     request_id: str = ""
     generation: int = 0
 
@@ -534,16 +625,22 @@ def estimate_advanced_analysis_resources(
 
     if isinstance(request, DirectionalityRequest):
         pixels = int(request.image.size)
-        peak_bytes = pixels * 8 * 7 + request.bins * 8 * 4
-        work = pixels * 14
-        output = request.bins * 3
+        multiplier = 15 if request.algorithm_version == 2 else 7
+        peak_bytes = pixels * 8 * multiplier + request.bins * 8 * 4
+        work = pixels * (28 if request.algorithm_version == 2 else 14)
+        output = request.bins * 3 + (
+            pixels * 3 if request.algorithm_version == 2 else 0
+        )
         kind = AdvancedAnalysisKind.DIRECTIONALITY
     elif isinstance(request, SkeletonNetworkRequest):
         pixels = int(request.mask.size)
         foreground = int(np.count_nonzero(request.mask))
         peak_bytes = pixels * 12 + foreground * 160
         work = pixels * (12 if not request.already_skeletonized else 2) + foreground * 24
-        output = pixels + foreground * 6
+        output = (
+            pixels * (2 if request.algorithm_version == 2 else 1)
+            + foreground * 6
+        )
         kind = AdvancedAnalysisKind.SKELETON_NETWORK
         if foreground > limits.max_skeleton_pixels:
             return _rejected_estimate(
@@ -651,12 +748,13 @@ def analyze_fiber_directionality(
             borderType=cv2.BORDER_REFLECT_101,
         )
     _check_cancel(cancellation_token)
+    gradient_kernel = 5 if request.algorithm_version == 2 else 3
     gradient_x = cv2.Sobel(
         source,
         cv2.CV_64F,
         1,
         0,
-        ksize=3,
+        ksize=gradient_kernel,
         borderType=cv2.BORDER_REFLECT_101,
     )
     gradient_y_image = cv2.Sobel(
@@ -664,10 +762,11 @@ def analyze_fiber_directionality(
         cv2.CV_64F,
         0,
         1,
-        ksize=3,
+        ksize=gradient_kernel,
         borderType=cv2.BORDER_REFLECT_101,
     )
-    magnitude = np.hypot(gradient_x, gradient_y_image)
+    magnitude_squared = gradient_x * gradient_x + gradient_y_image * gradient_y_image
+    magnitude = np.sqrt(magnitude_squared)
     valid = mask & np.isfinite(magnitude) & (magnitude > request.minimum_gradient)
     valid_count = int(np.count_nonzero(valid))
     bin_width = 180.0 / request.bins
@@ -681,19 +780,65 @@ def analyze_fiber_directionality(
             peaks=(),
             valid_gradient_pixels=0,
             total_weight=0.0,
+            algorithm_version=request.algorithm_version,
+            concentration=0.0 if request.algorithm_version == 2 else None,
+            gradient_magnitude_squared=(
+                magnitude_squared.astype(np.float32)
+                if request.algorithm_version == 2
+                else None
+            ),
+            fourier_power=(
+                np.zeros(source.shape, dtype=np.float32)
+                if request.algorithm_version == 2
+                else None
+            ),
+            orientation_map_degrees=(
+                np.zeros(source.shape, dtype=np.float32)
+                if request.algorithm_version == 2
+                else None
+            ),
             request_id=request.request_id,
             generation=request.generation,
         )
     # atan2 的 y 分量取反，将向下的图像 y 轴转换为向上的数学 y 轴。
     gradient_angle = np.arctan2(-gradient_y_image[valid], gradient_x[valid])
     fiber_angle_degrees = np.mod(np.degrees(gradient_angle + math.pi / 2.0), 180.0)
+    gradient_weights = (
+        magnitude_squared[valid]
+        if request.algorithm_version == 2
+        else magnitude[valid]
+    )
     histogram, _edges = np.histogram(
         fiber_angle_degrees,
         bins=request.bins,
         range=(0.0, 180.0),
-        weights=magnitude[valid],
+        weights=gradient_weights,
     )
     histogram = histogram.astype(np.float64)
+    fourier_power: NDArray[np.float64] | None = None
+    if request.algorithm_version == 2:
+        centered = np.where(mask, source - float(np.mean(source[mask])), 0.0)
+        transform = np.fft.fftshift(np.fft.fft2(centered))
+        fourier_power = np.square(np.abs(transform), dtype=np.float64)
+        center_y = fourier_power.shape[0] // 2
+        center_x = fourier_power.shape[1] // 2
+        fourier_power[center_y, center_x] = 0.0
+        frequency_y = np.arange(fourier_power.shape[0]) - center_y
+        frequency_x = np.arange(fourier_power.shape[1]) - center_x
+        grid_x, grid_y = np.meshgrid(frequency_x, frequency_y)
+        frequency_angles = np.mod(
+            np.degrees(np.arctan2(-grid_y, grid_x)) - 90.0,
+            180.0,
+        )
+        fourier_histogram, _ = np.histogram(
+            frequency_angles.ravel(),
+            bins=request.bins,
+            range=(0.0, 180.0),
+            weights=fourier_power.ravel(),
+        )
+        if np.sum(fourier_histogram) > 0 and np.sum(histogram) > 0:
+            fourier_histogram *= np.sum(histogram) / np.sum(fourier_histogram)
+            histogram = histogram + fourier_histogram
     if request.histogram_smoothing_bins > 0:
         histogram = _smooth_circular_histogram(
             histogram,
@@ -710,7 +855,27 @@ def analyze_fiber_directionality(
         centers,
         minimum_fraction=request.peak_min_fraction,
         maximum_count=request.max_peaks,
+        include_width=request.algorithm_version == 2,
     )
+    concentration = None
+    orientation_map = None
+    if request.algorithm_version == 2:
+        radians = np.radians(centers * 2.0)
+        concentration = float(
+            math.hypot(
+                float(np.sum(histogram * np.cos(radians))),
+                float(np.sum(histogram * np.sin(radians))),
+            )
+            / total_weight
+        ) if total_weight > 0 else 0.0
+        orientation_map = np.zeros(source.shape, dtype=np.float32)
+        pixel_angles = np.mod(
+            np.degrees(
+                np.arctan2(-gradient_y_image, gradient_x) + math.pi / 2.0
+            ),
+            180.0,
+        )
+        orientation_map[valid] = pixel_angles[valid].astype(np.float32)
     _check_cancel(cancellation_token)
     return DirectionalityResult(
         bin_centers_degrees=tuple(float(value) for value in centers),
@@ -719,6 +884,19 @@ def analyze_fiber_directionality(
         peaks=peaks,
         valid_gradient_pixels=valid_count,
         total_weight=total_weight,
+        algorithm_version=request.algorithm_version,
+        concentration=concentration,
+        gradient_magnitude_squared=(
+            magnitude_squared.astype(np.float32)
+            if request.algorithm_version == 2
+            else None
+        ),
+        fourier_power=(
+            fourier_power.astype(np.float32)
+            if fourier_power is not None
+            else None
+        ),
+        orientation_map_degrees=orientation_map,
         request_id=request.request_id,
         generation=request.generation,
     )
@@ -741,6 +919,18 @@ def analyze_skeleton_network(
             cancellation_token=cancellation_token,
             max_work_units=limits.max_work_units,
         )
+    pruning_audit: tuple[SkeletonPruningAudit, ...] = ()
+    if (
+        request.algorithm_version == 2
+        and request.prune_terminal_branches_below > 0
+    ):
+        skeleton, pruning_audit = _prune_terminal_skeleton_branches(
+            skeleton,
+            threshold=request.prune_terminal_branches_below,
+            pixel_size_x=request.pixel_size_x,
+            pixel_size_y=request.pixel_size_y,
+            cancellation_token=cancellation_token,
+        )
     _check_cancel(cancellation_token)
     coordinates_yx = np.argwhere(skeleton)
     count = int(coordinates_yx.shape[0])
@@ -758,6 +948,15 @@ def analyze_skeleton_network(
             total_length=0.0,
             maximum_geodesic_distance=0.0,
             unit=request.unit,
+            algorithm_version=request.algorithm_version,
+            slab_pixel_count=0,
+            junction_pixel_count=0,
+            triple_junction_count=0,
+            quadruple_or_higher_junction_count=0,
+            mean_branch_length=None,
+            maximum_branch_length=None,
+            classification_map=np.zeros(skeleton.shape, dtype=np.uint8),
+            pruning_audit=pruning_audit,
             request_id=request.request_id,
             generation=request.generation,
         )
@@ -808,6 +1007,17 @@ def analyze_skeleton_network(
         )
         for cluster in branch_clusters
     )
+    junction_orders = tuple(
+        len(
+            {
+                neighbor
+                for vertex in cluster
+                for neighbor, _weight in adjacency[vertex]
+                if neighbor not in cluster
+            }
+        )
+        for cluster in branch_clusters
+    )
     endpoint_coordinates = tuple(
         (float(coordinates_yx[index, 1]), float(coordinates_yx[index, 0]))
         for index in endpoint_vertices
@@ -831,6 +1041,13 @@ def analyze_skeleton_network(
         cancellation_token=cancellation_token,
         max_work_units=limits.max_work_units,
     )
+    classification_map = np.zeros(skeleton.shape, dtype=np.uint8)
+    for vertex, (raw_y, raw_x) in enumerate(coordinates_yx):
+        degree = int(degrees[vertex])
+        classification_map[int(raw_y), int(raw_x)] = (
+            1 if degree == 0 else 2 if degree == 1 else 3 if degree == 2 else 4
+        )
+    branch_lengths = tuple(branch.length for branch in branches)
     return SkeletonNetworkResult(
         skeleton=skeleton,
         endpoint_coordinates_px=endpoint_coordinates,
@@ -844,6 +1061,19 @@ def analyze_skeleton_network(
         total_length=float(total_length),
         maximum_geodesic_distance=float(maximum_geodesic),
         unit=request.unit,
+        algorithm_version=request.algorithm_version,
+        slab_pixel_count=int(np.count_nonzero(degrees == 2)),
+        junction_pixel_count=int(np.count_nonzero(degrees >= 3)),
+        triple_junction_count=sum(order == 3 for order in junction_orders),
+        quadruple_or_higher_junction_count=sum(
+            order >= 4 for order in junction_orders
+        ),
+        mean_branch_length=(
+            float(np.mean(branch_lengths)) if branch_lengths else None
+        ),
+        maximum_branch_length=max(branch_lengths) if branch_lengths else None,
+        classification_map=classification_map,
+        pruning_audit=pruning_audit,
         request_id=request.request_id,
         generation=request.generation,
     )
@@ -1175,9 +1405,31 @@ def analyze_spatial_distribution(
         nearest_indices[start:stop] = local_indices
         nearest_squared[start:stop] = squared[local_rows, local_indices]
     distances = np.sqrt(nearest_squared)
+    scaled_bounds: tuple[float, float, float, float] | None = None
+    if request.study_bounds is not None:
+        left, top, right, bottom = request.study_bounds
+        scaled_bounds = (
+            left * request.pixel_size_x,
+            top * request.pixel_size_y,
+            right * request.pixel_size_x,
+            bottom * request.pixel_size_y,
+        )
+        if (
+            np.any(points[:, 0] < scaled_bounds[0])
+            or np.any(points[:, 0] > scaled_bounds[2])
+            or np.any(points[:, 1] < scaled_bounds[1])
+            or np.any(points[:, 1] > scaled_bounds[3])
+        ):
+            _invalid("空间点必须全部位于显式研究区域边界内。")
     if request.study_area is not None:
         area = request.study_area
         area_source = "用户指定"
+    elif scaled_bounds is not None:
+        area = (
+            (scaled_bounds[2] - scaled_bounds[0])
+            * (scaled_bounds[3] - scaled_bounds[1])
+        )
+        area_source = "显式研究区域边界"
     else:
         width = float(np.max(points[:, 0]) - np.min(points[:, 0]))
         height = float(np.max(points[:, 1]) - np.min(points[:, 1]))
@@ -1186,6 +1438,50 @@ def analyze_spatial_distribution(
         if not math.isfinite(area) or area <= 0:
             _invalid("点集包围框面积为零，请显式提供研究区域面积。")
     density = count / area
+    ripley_k: tuple[float, ...] = ()
+    ripley_l: tuple[float, ...] = ()
+    if request.algorithm_version == 2:
+        assert scaled_bounds is not None
+        width = scaled_bounds[2] - scaled_bounds[0]
+        height = scaled_bounds[3] - scaled_bounds[1]
+        radii = request.ripley_radii or (
+            min(width, height) * 0.05,
+            min(width, height) * 0.1,
+            min(width, height) * 0.2,
+        )
+        weighted_pair_counts = np.zeros(len(radii), dtype=np.float64)
+        for start in range(0, count, block_size):
+            _check_cancel(cancellation_token)
+            stop = min(count, start + block_size)
+            delta = (
+                points[start:stop, np.newaxis, :]
+                - points[np.newaxis, :, :]
+            )
+            dx = np.abs(delta[..., 0])
+            dy = np.abs(delta[..., 1])
+            pair_distances = np.hypot(dx, dy)
+            overlap = (width - dx) * (height - dy)
+            translation_weights = np.divide(
+                area,
+                overlap,
+                out=np.zeros_like(overlap),
+                where=overlap > 0,
+            )
+            local_rows = np.arange(stop - start)
+            translation_weights[local_rows, np.arange(start, stop)] = 0.0
+            for radius_index, radius in enumerate(radii):
+                weighted_pair_counts[radius_index] += np.sum(
+                    translation_weights * (pair_distances <= radius),
+                    dtype=np.float64,
+                )
+        k_values = tuple(
+            float(area * value / (count * (count - 1)))
+            for value in weighted_pair_counts
+        )
+        ripley_k = k_values
+        ripley_l = tuple(math.sqrt(value / math.pi) for value in k_values)
+    else:
+        radii = ()
     return SpatialDistributionResult(
         nearest_neighbor_distances=tuple(float(value) for value in distances),
         nearest_neighbor_indices=tuple(int(value) for value in nearest_indices),
@@ -1197,6 +1493,15 @@ def analyze_spatial_distribution(
         area_source=area_source,
         spatial_density=float(density),
         unit=request.unit,
+        algorithm_version=request.algorithm_version,
+        ripley_radii=tuple(float(value) for value in radii),
+        ripley_k=ripley_k,
+        ripley_l=ripley_l,
+        boundary_correction=(
+            "矩形窗口平移边界校正"
+            if request.algorithm_version == 2
+            else None
+        ),
         request_id=request.request_id,
         generation=request.generation,
     )
@@ -1263,6 +1568,89 @@ def _smooth_circular_histogram(
     for offset, weight in zip(range(-radius, radius + 1), kernel, strict=True):
         result += np.roll(histogram, offset) * float(weight)
     return result
+
+
+def _prune_terminal_skeleton_branches(
+    skeleton: NDArray[np.bool_],
+    *,
+    threshold: float,
+    pixel_size_x: float,
+    pixel_size_y: float,
+    cancellation_token: CancellationToken | None,
+) -> tuple[NDArray[np.bool_], tuple[SkeletonPruningAudit, ...]]:
+    pruned = np.asarray(skeleton, dtype=bool).copy()
+    audits: list[SkeletonPruningAudit] = []
+    height, width = pruned.shape
+
+    def neighbors(y: int, x: int) -> list[tuple[int, int, float]]:
+        result: list[tuple[int, int, float]] = []
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                ny, nx = y + dy, x + dx
+                if not (0 <= ny < height and 0 <= nx < width and pruned[ny, nx]):
+                    continue
+                if dx and dy and (pruned[y, nx] or pruned[ny, x]):
+                    continue
+                result.append(
+                    (
+                        ny,
+                        nx,
+                        math.hypot(dx * pixel_size_x, dy * pixel_size_y),
+                    )
+                )
+        return result
+
+    while True:
+        _check_cancel(cancellation_token)
+        endpoints = [
+            (int(y), int(x))
+            for y, x in np.argwhere(pruned)
+            if len(neighbors(int(y), int(x))) == 1
+        ]
+        removed_any = False
+        for start_y, start_x in endpoints:
+            if not pruned[start_y, start_x]:
+                continue
+            path = [(start_y, start_x)]
+            length = 0.0
+            previous: tuple[int, int] | None = None
+            current = (start_y, start_x)
+            terminal_degree = 1
+            while True:
+                candidates = [
+                    item
+                    for item in neighbors(*current)
+                    if (item[0], item[1]) != previous
+                ]
+                if len(candidates) != 1:
+                    break
+                ny, nx, weight = candidates[0]
+                previous, current = current, (ny, nx)
+                length += weight
+                terminal_degree = len(neighbors(ny, nx))
+                if terminal_degree != 2:
+                    break
+                path.append((ny, nx))
+            if (
+                terminal_degree >= 3
+                and 0.0 < length < threshold
+                and path
+            ):
+                for y, x in path:
+                    pruned[y, x] = False
+                audits.append(
+                    SkeletonPruningAudit(
+                        start_px=(float(start_x), float(start_y)),
+                        length=float(length),
+                        removed_pixel_count=len(path),
+                    )
+                )
+                removed_any = True
+        if not removed_any:
+            break
+    return pruned, tuple(audits)
 
 
 def _skeletonize_with_cancellation(
@@ -1337,6 +1725,7 @@ def _directionality_peaks(
     *,
     minimum_fraction: float,
     maximum_count: int,
+    include_width: bool = False,
 ) -> tuple[OrientationPeak, ...]:
     maximum = float(np.max(histogram)) if histogram.size else 0.0
     if maximum <= 0:
@@ -1362,12 +1751,28 @@ def _directionality_peaks(
     if not selected:
         selected = [int(np.argmax(histogram))]
     selected.sort(key=lambda index: (-float(histogram[index]), index))
+    bin_width = 180.0 / len(histogram)
+
+    def half_height_width(index: int) -> float:
+        threshold = float(histogram[index]) * 0.5
+        width_bins = 1
+        cursor = (index - 1) % len(histogram)
+        while cursor != index and float(histogram[cursor]) >= threshold:
+            width_bins += 1
+            cursor = (cursor - 1) % len(histogram)
+        cursor = (index + 1) % len(histogram)
+        while cursor != index and float(histogram[cursor]) >= threshold:
+            width_bins += 1
+            cursor = (cursor + 1) % len(histogram)
+        return min(180.0, width_bins * bin_width)
+
     return tuple(
         OrientationPeak(
             angle_degrees=float(centers[index]),
             weight=float(histogram[index]),
             relative_weight=float(histogram[index] / maximum),
             bin_index=int(index),
+            width_degrees=half_height_width(index) if include_width else None,
         )
         for index in selected[:maximum_count]
     )

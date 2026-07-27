@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PurePosixPath
 import copy
 import hashlib
@@ -11,7 +11,13 @@ from typing import Any, Protocol
 from fdm import __version__
 from fdm.analysis_artifacts import AnalysisArtifact, AnalysisAssetReference
 from fdm.atomic_io import atomic_replace_file, staged_path_for
-from fdm.models import ImageDocument, ProjectState, project_assets_root
+from fdm.models import (
+    PROJECT_SCHEMA_VERSION,
+    SUPPORTED_PROJECT_REQUIRED_FEATURES,
+    ImageDocument,
+    ProjectState,
+    project_assets_root,
+)
 from fdm.lifecycle import TransitionIntent
 from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.services.analysis_asset_io import (
@@ -233,6 +239,12 @@ class ProjectSessionHost(Protocol):
 
     def _show_project_information(self, title: str, message: str) -> None: ...
     def _show_project_warning(self, title: str, message: str) -> None: ...
+    def _confirm_project_schema_upgrade(
+        self,
+        source_path: Path,
+        backup_path: Path,
+        source_schema_version: int,
+    ) -> bool: ...
     def _select_project_save_path(self, default_path: Path) -> str: ...
     def _select_project_open_path(self) -> str: ...
     def _preferred_dialog_directory(self, *, recent_dir: str = "") -> Path: ...
@@ -468,6 +480,63 @@ class ProjectSessionController:
             if not selected_path:
                 return ProjectSaveResult(False, cancelled=True, message="用户取消保存。")
             target_path = host._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
+        if not host.project.compatibility.can_overwrite(target_path):
+            features = "、".join(
+                host.project.compatibility.unknown_required_features
+            )
+            message = (
+                "该项目包含当前版本不支持的必需功能，已按只读方式打开，"
+                "不能覆盖原项目文件。"
+            )
+            if features:
+                message += f"\n\n未知功能：{features}"
+            message += "\n\n如需保留当前可见内容，请使用“另存为”写入新文件。"
+            host._show_project_warning("只读项目", message)
+            return ProjectSaveResult(
+                False,
+                path=target_path,
+                message=message,
+            )
+        compatibility_source = host.project.compatibility.source_path
+        same_loaded_project = False
+        if compatibility_source is not None:
+            try:
+                same_loaded_project = (
+                    Path(compatibility_source).expanduser().resolve()
+                    == target_path.expanduser().resolve()
+                )
+            except OSError:
+                same_loaded_project = str(compatibility_source) == str(
+                    target_path
+                )
+        needs_schema_upgrade = (
+            target_path.exists()
+            and same_loaded_project
+            and host.project.compatibility.source_schema_version
+            < PROJECT_SCHEMA_VERSION
+        )
+        if needs_schema_upgrade:
+            backup_path = target_path.with_name(
+                f"{target_path.name}.pre-v{PROJECT_SCHEMA_VERSION}.bak"
+            )
+            confirm_upgrade = getattr(
+                host,
+                "_confirm_project_schema_upgrade",
+                None,
+            )
+            if callable(confirm_upgrade) and not bool(
+                confirm_upgrade(
+                    target_path,
+                    backup_path,
+                    host.project.compatibility.source_schema_version,
+                )
+            ):
+                return ProjectSaveResult(
+                    False,
+                    path=target_path,
+                    cancelled=True,
+                    message="用户取消升级并覆盖旧项目。",
+                )
         asset_result = self._stage_project_assets(target_path, save_plan)
         if not asset_result:
             return ProjectSaveResult(
@@ -480,6 +549,11 @@ class ProjectSessionController:
             asset_result.analysis_asset_overrides,
         )
         try:
+            if target_path.exists() and same_loaded_project:
+                ProjectIO.create_pre_upgrade_backup(
+                    target_path,
+                    project=host.project,
+                )
             # The project JSON is the commit point and is always published last.
             ProjectIO.save_payload(
                 committed_payload,
@@ -514,6 +588,40 @@ class ProjectSessionController:
                 if isinstance(item, dict)
             ]
         host.project.version = __version__
+        host.project.project_schema_version = int(
+            committed_payload.get(
+                "project_schema_version",
+                host.project.project_schema_version,
+            )
+        )
+        host.project.min_reader_version = int(
+            committed_payload.get(
+                "min_reader_version",
+                host.project.min_reader_version,
+            )
+        )
+        committed_required_features = committed_payload.get(
+            "required_features",
+            host.project.required_features,
+        )
+        if isinstance(committed_required_features, list) and all(
+            isinstance(item, str) for item in committed_required_features
+        ):
+            host.project.required_features = tuple(
+                dict.fromkeys(committed_required_features)
+            )
+        host.project.compatibility = replace(
+            host.project.compatibility,
+            source_schema_version=host.project.project_schema_version,
+            min_reader_version=host.project.min_reader_version,
+            required_features=host.project.required_features,
+            unknown_required_features=tuple(
+                feature
+                for feature in host.project.required_features
+                if feature not in SUPPORTED_PROJECT_REQUIRED_FEATURES
+            ),
+            source_path=str(target_path.expanduser().resolve()),
+        )
         # The JSON replacement above is the save commit point.  Removing old
         # revision assets is deliberately post-commit housekeeping: a denied
         # directory traversal, disappearing mount, or antivirus race must not
@@ -625,9 +733,23 @@ class ProjectSessionController:
             project_group_templates=list(project.project_group_templates),
             project_rois=list(project.project_rois),
             analysis_artifacts=list(project.analysis_artifacts),
+            project_schema_version=project.project_schema_version,
+            min_reader_version=project.min_reader_version,
+            required_features=project.required_features,
+            compatibility=project.compatibility,
             load_issues=list(project.load_issues),
         )
         host.project.metadata = project.metadata
+        if project.compatibility.read_only:
+            features = "、".join(
+                project.compatibility.unknown_required_features
+            )
+            host._show_project_warning(
+                "项目以只读兼容模式打开",
+                "项目包含当前版本不支持的必需功能。"
+                "您可以查看当前版本能够识别的内容，但不能覆盖原项目文件。"
+                + (f"\n\n未知功能：{features}" if features else ""),
+            )
         host._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
         repaired_paths: list[str] = []

@@ -3772,6 +3772,24 @@ class DocumentCanvas(QWidget):
         visible = inverse.mapRect(QRectF(self.rect()))
         return visible.intersected(self._paint_image_bounds())
 
+    def visible_source_pixel_rect(self) -> tuple[float, float, float, float] | None:
+        """Return the exact visible field in authoritative image coordinates.
+
+        This public, read-only snapshot is used by bounded pixel-processing
+        previews.  It deliberately omits the paint-time padding used for
+        labels, hit targets and overlay cache warming.
+        """
+
+        visible = self._exact_visible_image_rect()
+        if visible.isEmpty() or not visible.isValid():
+            return None
+        return (
+            float(visible.x()),
+            float(visible.y()),
+            float(visible.width()),
+            float(visible.height()),
+        )
+
     def _publish_view_transform(self, *, zoom_changed: bool = False) -> None:
         snapshot = self.viewport_snapshot()
         if zoom_changed:

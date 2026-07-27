@@ -290,6 +290,43 @@ class DisplayAdjustmentDialogTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_histogram_auto_uses_frozen_roi_and_reset_restores_native_range(
+        self,
+    ) -> None:
+        values = np.asarray(
+            [[0, 1000, 2000], [3000, 4000, 65535]],
+            dtype="<u2",
+        )
+        mask = np.asarray(
+            [[False, True, True], [True, True, False]],
+            dtype=np.bool_,
+        )
+        dialog = DisplayAdjustmentDialog(
+            self._gray16(),
+            DisplayTransform(),
+            roi_mask=mask,
+        )
+        try:
+            self.assertIn("当前 ROI", dialog.histogramScopeLabel.text())
+            self.assertIn("N=4", dialog.histogramScopeLabel.text())
+            dialog._apply_auto_range()  # noqa: SLF001
+            self.assertGreater(dialog.channelLowSpins[0].value(), 0.0)
+            self.assertLess(dialog.channelHighSpins[0].value(), 65535.0)
+            dialog._reset_controls()  # noqa: SLF001
+            self.assertEqual(dialog.channelLowSpins[0].value(), 0.0)
+            self.assertEqual(dialog.channelHighSpins[0].value(), 65535.0)
+            self.assertEqual(dialog.gammaSpin.value(), 1.0)
+        finally:
+            dialog.close()
+
+    def test_roi_mask_shape_is_validated(self) -> None:
+        with self.assertRaisesRegex(ValueError, "ROI 掩膜尺寸"):
+            DisplayAdjustmentDialog(
+                self._gray16(),
+                DisplayTransform(),
+                roi_mask=np.ones((1, 1), dtype=np.bool_),
+            )
+
 
 if __name__ == "__main__":
     unittest.main()

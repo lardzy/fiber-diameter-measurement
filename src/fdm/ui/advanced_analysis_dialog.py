@@ -22,6 +22,12 @@ from PySide6.QtWidgets import (
 )
 
 from fdm.raster import RasterPixelType
+from fdm.services.analysis_profiles import AnalysisMeasurementProfileStore
+from fdm.ui.analysis_parameters_dialog import analysis_parameter_schema
+from fdm.ui.analysis_profile_controls import (
+    AnalysisOutputFieldSelector,
+    AnalysisProfileControls,
+)
 from fdm.ui.image_analysis_controller import AnalysisTool
 from fdm.ui.widgets import (
     NoWheelComboBox,
@@ -45,6 +51,7 @@ class AdvancedAnalysisParametersDialog(QDialog):
         has_analysis_mask: bool = False,
         active_group_label: str | None = None,
         initial_parameters: dict[str, object] | None = None,
+        profile_store: AnalysisMeasurementProfileStore | None = None,
         parent: QWidget | None = None,
     ) -> None:
         super().__init__(parent)
@@ -118,9 +125,27 @@ class AdvancedAnalysisParametersDialog(QDialog):
         content_layout = QVBoxLayout(content)
         content_layout.setContentsMargins(6, 6, 6, 6)
         content_layout.addWidget(form_group)
+        self.output_field_selector = AnalysisOutputFieldSelector(
+            f"fdm.{tool.value}",
+            parent=content,
+        )
+        content_layout.addWidget(self.output_field_selector)
         content_layout.addStretch(1)
         scroll.setWidget(content)
         root.addWidget(scroll, 1)
+
+        schema = analysis_parameter_schema(tool)
+        self.profile_controls = AnalysisProfileControls(
+            tool_id=f"fdm.{tool.value}",
+            tool_version=schema.version,
+            read_parameters=self.parameters,
+            apply_parameters=self.set_parameters,
+            read_output_fields=self.output_fields,
+            apply_output_fields=self.set_output_fields,
+            store=profile_store,
+            parent=self,
+        )
+        root.addWidget(self.profile_controls)
 
         buttons = QDialogButtonBox(
             QDialogButtonBox.StandardButton.Ok
@@ -133,6 +158,12 @@ class AdvancedAnalysisParametersDialog(QDialog):
         buttons.rejected.connect(self.reject)
         root.addWidget(buttons)
 
+    def output_fields(self) -> tuple[str, ...] | None:
+        return self.output_field_selector.output_fields()
+
+    def set_output_fields(self, fields: Iterable[str] | None) -> None:
+        self.output_field_selector.set_output_fields(fields)
+
     def parameters(self) -> dict[str, object]:
         """Return validated kernel parameters plus private spatial UI tokens."""
 
@@ -140,6 +171,9 @@ class AdvancedAnalysisParametersDialog(QDialog):
         if tool is AnalysisTool.DIRECTIONALITY:
             return {
                 "channel": self._combo_value("channel"),
+                "algorithm_version": self._int_combo_value(
+                    "algorithm_version"
+                ),
                 "bins": self._int_value("bins"),
                 "gradient_sigma": self._float_value("gradient_sigma"),
                 "minimum_gradient": self._float_value("minimum_gradient"),
@@ -155,6 +189,13 @@ class AdvancedAnalysisParametersDialog(QDialog):
                 "foreground": self._combo_value("foreground"),
                 "already_skeletonized": self._checked("already_skeletonized"),
             }
+            if tool is AnalysisTool.SKELETON:
+                result["algorithm_version"] = self._int_combo_value(
+                    "algorithm_version"
+                )
+                result["prune_terminal_branches_below"] = self._float_value(
+                    "prune_terminal_branches_below"
+                )
             threshold = self._optional_float("threshold")
             if threshold is not None:
                 result["threshold"] = threshold
@@ -198,12 +239,29 @@ class AdvancedAnalysisParametersDialog(QDialog):
             return result
         if tool is AnalysisTool.SPATIAL_DISTRIBUTION:
             result = {
+                "algorithm_version": self._int_combo_value(
+                    "algorithm_version"
+                ),
                 SPATIAL_POINT_SCOPE_KEY: self._combo_value("point_scope"),
                 SPATIAL_STUDY_AREA_MODE_KEY: self._combo_value(
                     "study_area_mode"
                 ),
             }
+            ripley_radii = self._optional_float_sequence(
+                "ripley_radii",
+                positive=True,
+            )
+            if ripley_radii:
+                if tuple(sorted(ripley_radii)) != ripley_radii:
+                    raise ValueError("Ripley 半径必须严格递增。")
+                result["ripley_radii"] = ripley_radii
             if result[SPATIAL_STUDY_AREA_MODE_KEY] == "custom":
+                if result["algorithm_version"] == 2:
+                    raise ValueError(
+                        "Ripley K/L v2 需要完整矩形研究区域，"
+                        "不能只提供面积；请选择当前矩形范围、点集包围框，"
+                        "或切换到 v1。"
+                    )
                 result["study_area"] = self._float_value("study_area")
             return result
         if tool is AnalysisTool.SURFACE:
@@ -213,6 +271,66 @@ class AdvancedAnalysisParametersDialog(QDialog):
                 "sample_step_y": self._int_value("sample_step_y"),
             }
         raise ValueError(f"不支持的高级分析工具：{tool.value}")
+
+    def set_parameters(self, values: dict[str, object] | object) -> None:
+        if not isinstance(values, dict):
+            try:
+                values = dict(values)  # type: ignore[arg-type]
+            except (TypeError, ValueError) as exc:
+                raise TypeError("分析预设参数必须是对象") from exc
+        normalized = dict(values)
+        if self.tool is AnalysisTool.SPATIAL_DISTRIBUTION:
+            if "point_scope" in normalized:
+                normalized[SPATIAL_POINT_SCOPE_KEY] = normalized.pop(
+                    "point_scope"
+                )
+            if "study_area_mode" in normalized:
+                normalized[SPATIAL_STUDY_AREA_MODE_KEY] = normalized.pop(
+                    "study_area_mode"
+                )
+        key_aliases = {
+            SPATIAL_POINT_SCOPE_KEY: "point_scope",
+            SPATIAL_STUDY_AREA_MODE_KEY: "study_area_mode",
+        }
+        if self.tool is AnalysisTool.GLCM:
+            value_range = normalized.pop("value_range", None)
+            check = self._editors.get("use_value_range")
+            if isinstance(check, QCheckBox):
+                check.setChecked(value_range is not None)
+            if value_range is not None:
+                if (
+                    not isinstance(value_range, (tuple, list))
+                    or len(value_range) != 2
+                ):
+                    raise ValueError("GLCM 数值范围必须包含下限和上限")
+                normalized["value_minimum"] = value_range[0]
+                normalized["value_maximum"] = value_range[1]
+        for raw_key, value in normalized.items():
+            key = key_aliases.get(raw_key, raw_key)
+            editor = self._editors.get(key)
+            if editor is None:
+                raise ValueError(f"预设包含当前工具不支持的参数：{raw_key}")
+            if isinstance(editor, NoWheelComboBox):
+                index = editor.findData(value)
+                if index < 0:
+                    raise ValueError(f"参数 {raw_key} 的预设选项不受支持")
+                editor.setCurrentIndex(index)
+            elif isinstance(editor, NoWheelSpinBox):
+                editor.setValue(int(value))
+            elif isinstance(editor, NoWheelDoubleSpinBox):
+                editor.setValue(float(value))
+            elif isinstance(editor, QCheckBox):
+                editor.setChecked(bool(value))
+            elif isinstance(editor, QLineEdit):
+                if isinstance(value, (tuple, list)):
+                    editor.setText(", ".join(str(item) for item in value))
+                else:
+                    editor.setText(str(value))
+            else:
+                raise TypeError(f"参数 {raw_key} 的编辑器类型不受支持")
+            optional = self._optional_checks.get(key)
+            if optional is not None:
+                optional.setChecked(value is not None)
 
     def _build_form(
         self,
@@ -232,6 +350,16 @@ class AdvancedAnalysisParametersDialog(QDialog):
         }:
             self._add_channel(form)
         if tool is AnalysisTool.DIRECTIONALITY:
+            self._add_combo(
+                form,
+                "algorithm_version",
+                "算法版本",
+                (
+                    ("v2：5×5 梯度、Fourier 融合与峰宽", 2),
+                    ("v1：历史 3×3 梯度结果", 1),
+                ),
+                2,
+            )
             self._add_int(form, "bins", "方向区间数", 180, 4, 4096)
             self._add_float(
                 form, "gradient_sigma", "梯度平滑 σ（px）", 1.0, 0.0, 1000.0
@@ -281,11 +409,29 @@ class AdvancedAnalysisParametersDialog(QDialog):
                 ),
             )
             if tool is AnalysisTool.SKELETON:
+                self._add_combo(
+                    form,
+                    "algorithm_version",
+                    "算法版本",
+                    (
+                        ("v2：节点分类、分支统计与可审计剪枝", 2),
+                        ("v1：历史骨架网络结果", 1),
+                    ),
+                    2,
+                )
                 self._add_check(
                     form,
                     "already_skeletonized",
                     "输入已经是单像素骨架",
                     False,
+                )
+                self._add_float(
+                    form,
+                    "prune_terminal_branches_below",
+                    "末端分支剪枝阈值（物理单位）",
+                    0.0,
+                    0.0,
+                    1.0e12,
                 )
             return
         if tool is AnalysisTool.TUBENESS:
@@ -340,6 +486,16 @@ class AdvancedAnalysisParametersDialog(QDialog):
             self._set_enabled(("value_minimum", "value_maximum"), False)
             return
         if tool is AnalysisTool.SPATIAL_DISTRIBUTION:
+            self._add_combo(
+                form,
+                "algorithm_version",
+                "算法版本",
+                (
+                    ("v2：Ripley K/L（矩形窗口平移边界校正）", 2),
+                    ("v1：历史最近邻与空间密度结果", 1),
+                ),
+                2,
+            )
             active_label = (
                 f"当前类别：{active_group_label}"
                 if active_group_label
@@ -366,6 +522,15 @@ class AdvancedAnalysisParametersDialog(QDialog):
                     ("手工指定面积", "custom"),
                 ),
                 "scope",
+            )
+            self._add_line(
+                form,
+                "ripley_radii",
+                "Ripley 半径（当前长度单位）",
+                "",
+            )
+            self._editors["ripley_radii"].setToolTip(
+                "使用逗号分隔的严格递增正数；留空时按研究区域尺寸自动选择。"
             )
             self._add_float(
                 form, "study_area", "手工研究区域面积", 1.0, 1.0e-12, 1.0e18
@@ -396,13 +561,13 @@ class AdvancedAnalysisParametersDialog(QDialog):
         form: QFormLayout,
         key: str,
         label: str,
-        items: Iterable[tuple[str, str]],
-        default: str,
+        items: Iterable[tuple[str, object]],
+        default: object,
     ) -> None:
         combo = NoWheelComboBox(self)
         for text, value in items:
             combo.addItem(text, value)
-        selected = str(self._initial.get(key, default))
+        selected = self._initial.get(key, default)
         index = combo.findData(selected)
         combo.setCurrentIndex(max(0, index))
         self._editors[key] = combo
@@ -514,6 +679,12 @@ class AdvancedAnalysisParametersDialog(QDialog):
         assert isinstance(editor, NoWheelComboBox)
         return str(editor.currentData())
 
+    def _int_combo_value(self, key: str) -> int:
+        editor = self._editors[key]
+        if not isinstance(editor, NoWheelComboBox):
+            raise TypeError(f"{key} 不是选择控件")
+        return int(editor.currentData())
+
     def _int_value(self, key: str) -> int:
         editor = self._editors[key]
         assert isinstance(editor, NoWheelSpinBox)
@@ -548,6 +719,18 @@ class AdvancedAnalysisParametersDialog(QDialog):
         if positive and any(value <= 0 for value in values):
             raise ValueError(f"{key} 只能包含正数。")
         return tuple(values)
+
+    def _optional_float_sequence(
+        self,
+        key: str,
+        *,
+        positive: bool = False,
+    ) -> tuple[float, ...]:
+        editor = self._editors[key]
+        assert isinstance(editor, QLineEdit)
+        if not editor.text().strip():
+            return ()
+        return self._float_sequence(key, positive=positive)
 
     def _int_sequence(
         self,
@@ -614,8 +797,9 @@ class AdvancedAnalysisParametersDialog(QDialog):
                 "计算指定量化级数、距离和方向的 Haralick GLCM 纹理特征。"
             ),
             AnalysisTool.SPATIAL_DISTRIBUTION: (
-                "从当前图片的 RAW 计数点计算最近邻距离和空间密度。"
-                "选中的 ROI 或数字切片当前视窗会作为空间过滤边界。"
+                "从当前图片的 RAW 计数点计算最近邻距离、空间密度及 "
+                "Ripley K/L。v2 使用矩形窗口平移边界校正；"
+                "非矩形 ROI 需改用点集包围框或历史 v1。"
             ),
             AnalysisTool.SURFACE: (
                 "对二维强度进行规则采样并生成表面数据；仅用于强度可视化，"

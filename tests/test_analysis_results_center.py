@@ -12,6 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
+    from PySide6.QtCore import QItemSelectionModel
     from PySide6.QtWidgets import QApplication, QComboBox, QScrollArea
 
     from fdm.analysis_artifacts import (
@@ -27,6 +28,7 @@ try:
     from fdm.services.analysis_asset_io import write_safe_analysis_npz
     from fdm.ui.analysis_results_center import (
         AnalysisActionRequest,
+        AnalysisConversionPreview,
         AnalysisExportRequest,
         AnalysisLocateRequest,
         AnalysisResultsCenter,
@@ -133,7 +135,14 @@ class AnalysisResultsCenterTests(unittest.TestCase):
         ]
         self.assertEqual(
             tabs,
-            ["分析摘要", "参数与来源", "详细表格", "曲线 / 直方图", "标签图 / 资产"],
+            [
+                "分析摘要",
+                "参数与来源",
+                "详细表格",
+                "曲线 / 直方图",
+                "标签图 / 资产",
+                "比较摘要",
+            ],
         )
         self.assertEqual(self.dialog._count_label.text(), "2 项结果")  # noqa: SLF001
         self.dialog._artifact_table.selectRow(1)  # noqa: SLF001
@@ -172,10 +181,12 @@ class AnalysisResultsCenterTests(unittest.TestCase):
         recalculated: list[AnalysisActionRequest] = []
         converted: list[AnalysisActionRequest] = []
         exported: list[AnalysisExportRequest] = []
+        previews: list[AnalysisConversionPreview] = []
         self.dialog.locateRequested.connect(located.append)
         self.dialog.recalculateRequested.connect(recalculated.append)
         self.dialog.convertToMeasurementRequested.connect(converted.append)
         self.dialog.exportRequested.connect(exported.append)
+        self.dialog.conversionPreviewRequested.connect(previews.append)
 
         self.dialog._artifact_table.selectRow(0)  # noqa: SLF001
         selected_item = self.dialog._artifact_table.item(0, 0)  # noqa: SLF001
@@ -188,8 +199,119 @@ class AnalysisResultsCenterTests(unittest.TestCase):
         self.assertEqual(located[0].object_id, "roi_current")
         self.assertEqual(recalculated[0].artifact_ids, ("current",))
         self.assertEqual(converted[0].artifact_ids, ("current",))
+        self.assertEqual(previews[0].artifact_ids, ("current",))
+        self.assertEqual(previews[0].estimated_item_count, 2)
         self.assertEqual(exported[0].artifact_ids, ("current", "stale"))
         self.assertIsNone(exported[0].selected_table_name)
+
+    def test_multi_select_delete_cleanup_clear_and_curve_csv_requests(self) -> None:
+        deleted: list[AnalysisActionRequest] = []
+        cleaned: list[AnalysisActionRequest] = []
+        cleared: list[AnalysisActionRequest] = []
+        exported: list[AnalysisExportRequest] = []
+        self.dialog.deleteRequested.connect(deleted.append)
+        self.dialog.cleanupRequested.connect(cleaned.append)
+        self.dialog.clearRequested.connect(cleared.append)
+        self.dialog.exportRequested.connect(exported.append)
+
+        selection = self.dialog._artifact_table.selectionModel()  # noqa: SLF001
+        selection.clearSelection()
+        for row in (0, 1):
+            selection.select(
+                self.dialog._artifact_table.model().index(row, 0),  # noqa: SLF001
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows,
+            )
+        self.app.processEvents()
+
+        self.assertEqual(
+            {item.id for item in self.dialog.selected_artifacts()},
+            {"current", "stale"},
+        )
+        self.dialog._delete_button.click()  # noqa: SLF001
+        self.dialog._cleanup_button.click()  # noqa: SLF001
+        self.dialog._clear_button.click()  # noqa: SLF001
+
+        self.assertEqual(set(deleted[0].artifact_ids), {"current", "stale"})
+        self.assertEqual(cleaned[0].artifact_ids, ("stale",))
+        self.assertEqual(set(cleared[0].artifact_ids), {"current", "stale"})
+
+        self.dialog._artifact_table.selectRow(0)  # noqa: SLF001
+        self.dialog._curve_csv_button.click()  # noqa: SLF001
+        self.assertEqual(exported[-1].artifact_ids, ("current",))
+        self.assertEqual(exported[-1].selected_curve_name, "面积分布")
+
+    def test_current_single_tubeness_result_exposes_audited_chain_action(
+        self,
+    ) -> None:
+        tubeness = _artifact(
+            "tube",
+            tool_id="fdm.tubeness",
+        )
+        self.dialog.set_artifacts((tubeness,))
+        requested: list[AnalysisActionRequest] = []
+        self.dialog.tubenessChainRequested.connect(requested.append)
+        self.dialog._artifact_table.selectRow(0)  # noqa: SLF001
+        self.app.processEvents()
+
+        self.assertTrue(
+            self.dialog._tubeness_chain_button.isEnabled()  # noqa: SLF001
+        )
+        self.dialog._tubeness_chain_button.click()  # noqa: SLF001
+        self.assertEqual(requested[-1].artifact_ids, ("tube",))
+
+        self.dialog.set_artifacts((self.stale,))
+        self.dialog._artifact_table.selectRow(0)  # noqa: SLF001
+        self.app.processEvents()
+        self.assertFalse(
+            self.dialog._tubeness_chain_button.isEnabled()  # noqa: SLF001
+        )
+
+    def test_multi_selection_shows_comparison_and_locates_current_row(self) -> None:
+        located: list[AnalysisLocateRequest] = []
+        self.dialog.locateRequested.connect(located.append)
+        selection = self.dialog._artifact_table.selectionModel()  # noqa: SLF001
+        selection.clearSelection()
+        for row in (0, 1):
+            index = self.dialog._artifact_table.model().index(row, 0)  # noqa: SLF001
+            selection.select(
+                index,
+                QItemSelectionModel.SelectionFlag.Select
+                | QItemSelectionModel.SelectionFlag.Rows,
+            )
+        second = self.dialog._artifact_table.model().index(1, 0)  # noqa: SLF001
+        selection.setCurrentIndex(
+            second,
+            QItemSelectionModel.SelectionFlag.NoUpdate,
+        )
+        self.app.processEvents()
+
+        comparison_index = self.dialog._comparison_tab_index  # noqa: SLF001
+        self.assertTrue(self.dialog._tabs.isTabEnabled(comparison_index))  # noqa: SLF001
+        self.assertEqual(
+            self.dialog._tabs.currentIndex(),  # noqa: SLF001
+            comparison_index,
+        )
+        self.assertEqual(
+            self.dialog._comparison_table.rowCount(),  # noqa: SLF001
+            2,
+        )
+        summary = self.dialog._comparison_summary.text()  # noqa: SLF001
+        self.assertIn("已选择 2 项", summary)
+        self.assertIn("当前 1 项 / 已失效 1 项", summary)
+        self.assertEqual(self.dialog.current_artifact_id(), "stale")
+
+        clicked = self.dialog._artifact_table.item(1, 0)  # noqa: SLF001
+        self.dialog._artifact_table.itemClicked.emit(clicked)  # noqa: SLF001
+        self.assertEqual(located[-1].artifact_id, "stale")
+        self.assertEqual(located[-1].document_id, "doc_2")
+
+        self.dialog._artifact_table.selectRow(0)  # noqa: SLF001
+        self.app.processEvents()
+        self.assertFalse(
+            self.dialog._tabs.isTabEnabled(comparison_index)  # noqa: SLF001
+        )
+        self.assertEqual(self.dialog._tabs.currentIndex(), 0)  # noqa: SLF001
 
     def test_all_dropdowns_ignore_incidental_wheel(self) -> None:
         combos = self.dialog.findChildren(QComboBox)
@@ -312,3 +434,38 @@ class AnalysisResultsCenterTests(unittest.TestCase):
             self.assertEqual(rgb.shape, (48, 64, 3))
             self.assertEqual(rgb.dtype, np.uint8)
             self.assertIn("局部厚度热力图", description)
+
+    def test_fft_npz_is_loaded_as_safe_bounded_heatmap(self) -> None:
+        with TemporaryDirectory() as directory:
+            source = Path(directory) / "fft-power.npz"
+            info = write_safe_analysis_npz(
+                source,
+                schema="fdm.fft-power-spectrum.v1",
+                arrays={
+                    "power": np.arange(
+                        32 * 48,
+                        dtype=np.float32,
+                    ).reshape((32, 48)),
+                },
+                metadata={"power_normalization": "unnormalized"},
+            )
+            reference = AnalysisAssetReference(
+                kind=AnalysisAssetKind.OTHER,
+                path="analysis/test/fft-power.npz",
+                sha256=info.sha256,
+                media_type="application/x-npz",
+                metadata={
+                    "schema": info.schema,
+                    "allow_pickle": False,
+                    "members": {
+                        name: {"dtype": dtype, "shape": list(shape)}
+                        for name, dtype, shape in info.members
+                    },
+                },
+            )
+
+            rgb, description = _load_bounded_asset_preview(source, reference)
+
+            self.assertEqual(rgb.shape, (32, 48, 3))
+            self.assertEqual(rgb.dtype, np.uint8)
+            self.assertIn("FFT 功率谱", description)

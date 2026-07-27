@@ -4059,8 +4059,17 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             measurement.recalculate(None)
 
-            window._append_new_measurement(document, measurement, label="新增测量")
+            with patch.object(
+                window,
+                "_refresh_document_analysis_validity",
+            ) as refresh_validity:
+                window._append_new_measurement(
+                    document,
+                    measurement,
+                    label="新增测量",
+                )
 
+            refresh_validity.assert_called_once_with(document)
             self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
             self.assertEqual(window._object_inspector._object_id, measurement.id)
             self.assertEqual(window._object_properties_section.summaryLabel.text(), "线段")
