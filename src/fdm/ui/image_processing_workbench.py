@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
     QDialog,
     QDialogButtonBox,
     QFormLayout,
+    QFrame,
+    QGraphicsScene,
+    QGraphicsView,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -27,9 +30,7 @@ from PySide6.QtWidgets import (
     QMessageBox,
     QPushButton,
     QScrollArea,
-    QSizePolicy,
     QSplitter,
-    QStackedWidget,
     QVBoxLayout,
     QWidget,
 )
@@ -65,6 +66,112 @@ PREVIEW_MAX_PIXELS = 4_000_000
 PREVIEW_MAX_WORKING_SET_BYTES = 256 << 20
 OVERVIEW_MAX_EDGE = 2_048
 OVERVIEW_MAX_PIXELS = 2_000_000
+
+
+class ProcessingPreviewView(QGraphicsView):
+    """Zoomable raster preview without resampling the authoritative pixels."""
+
+    zoomChanged = Signal(float, bool)
+
+    MIN_ZOOM = 0.05
+    MAX_ZOOM = 8.0
+    ZOOM_STEP = 1.25
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self._scene = QGraphicsScene(self)
+        self._pixmap_item = self._scene.addPixmap(QPixmap())
+        self._fit_mode = True
+        self.setScene(self._scene)
+        self.setFrameShape(QFrame.Shape.StyledPanel)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self.setDragMode(QGraphicsView.DragMode.ScrollHandDrag)
+        self.setTransformationAnchor(
+            QGraphicsView.ViewportAnchor.AnchorUnderMouse
+        )
+        self.setResizeAnchor(
+            QGraphicsView.ViewportAnchor.AnchorViewCenter
+        )
+        self.setRenderHint(
+            QPainter.RenderHint.SmoothPixmapTransform,
+            True,
+        )
+        self.setMinimumSize(240, 180)
+
+    @property
+    def fit_mode(self) -> bool:
+        return self._fit_mode
+
+    def image_size(self) -> tuple[int, int]:
+        pixmap = self._pixmap_item.pixmap()
+        return pixmap.width(), pixmap.height()
+
+    def zoom_factor(self) -> float:
+        return float(self.transform().m11())
+
+    def set_image(
+        self,
+        image: QImage,
+        *,
+        force_fit: bool = False,
+    ) -> None:
+        pixmap = QPixmap.fromImage(image)
+        self._pixmap_item.setPixmap(pixmap)
+        self._scene.setSceneRect(QRectF(pixmap.rect()))
+        if force_fit:
+            self.fit_image()
+        elif self._fit_mode:
+            self.fit_image()
+        else:
+            self._emit_zoom_changed()
+
+    def fit_image(self) -> None:
+        self._fit_mode = True
+        self.resetTransform()
+        scene_rect = self._scene.sceneRect()
+        if not scene_rect.isEmpty():
+            self.fitInView(
+                scene_rect,
+                Qt.AspectRatioMode.KeepAspectRatio,
+            )
+        self._emit_zoom_changed()
+
+    def actual_size(self) -> None:
+        self.set_zoom_factor(1.0)
+
+    def set_zoom_factor(self, factor: float) -> None:
+        resolved = max(
+            self.MIN_ZOOM,
+            min(self.MAX_ZOOM, float(factor)),
+        )
+        self._fit_mode = False
+        self.resetTransform()
+        self.scale(resolved, resolved)
+        self._emit_zoom_changed()
+
+    def zoom_by(self, multiplier: float) -> None:
+        self.set_zoom_factor(self.zoom_factor() * float(multiplier))
+
+    def resizeEvent(self, event: object) -> None:  # noqa: N802
+        super().resizeEvent(event)
+        if self._fit_mode:
+            self.fit_image()
+
+    def wheelEvent(self, event: object) -> None:  # noqa: N802
+        if event.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            delta = int(event.angleDelta().y())
+            if delta:
+                self.zoom_by(
+                    self.ZOOM_STEP
+                    if delta > 0
+                    else 1.0 / self.ZOOM_STEP
+                )
+            event.accept()
+            return
+        super().wheelEvent(event)
+
+    def _emit_zoom_changed(self) -> None:
+        self.zoomChanged.emit(self.zoom_factor(), self._fit_mode)
 
 
 @dataclass(frozen=True, slots=True)
@@ -2720,6 +2827,11 @@ class ImageProcessingWorkbench(QDialog):
             secondary_images=self._secondary_images,
         )
         self._overview_image = raster_plane_to_bounded_overview_image(source)
+        self._latest_preview_image = raster_plane_to_display_image(
+            self._preview_snapshot.source
+        )
+        self._processed_overview_image = self._overview_image.copy()
+        self._overview_note_text = ""
         self._secondary_image_names = {
             document_id: str((secondary_image_names or {}).get(document_id) or document_id)
             for document_id in self._secondary_images
@@ -3160,53 +3272,69 @@ class ImageProcessingWorkbench(QDialog):
             )
         )
         hint = QLabel(
-            "1:1 预览不缩放源像素；"
+            "预览计算始终使用未缩放的原始像素；显示缩放不会改变处理数据。"
             f"当前使用{sample_description}。"
             "最终处理始终以完整原始分辨率执行。",
             panel,
         )
+        self._preview_hint = hint
         hint.setWordWrap(True)
         layout.addWidget(hint)
 
-        self._preview_stack = QStackedWidget(panel)
-        self._preview_scroll = QScrollArea(self._preview_stack)
-        self._preview_scroll.setWidgetResizable(False)
-        self._preview_scroll.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
+        self._preview_view = ProcessingPreviewView(panel)
+        self._preview_view.zoomChanged.connect(
+            self._on_preview_zoom_changed
         )
-        self._preview_image_label = QLabel(self._preview_scroll)
-        self._preview_image_label.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop
-        )
-        self._preview_scroll.setWidget(self._preview_image_label)
-        self._preview_stack.addWidget(self._preview_scroll)
+        layout.addWidget(self._preview_view, 1)
 
-        self._overview_page = QWidget(self._preview_stack)
-        overview_layout = QVBoxLayout(self._overview_page)
-        self._overview_image_label = QLabel(self._overview_page)
-        self._overview_image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._overview_image_label.setMinimumSize(240, 180)
-        self._overview_image_label.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Expanding,
-        )
-        overview_note = QLabel(
-            "预览已缩放，仅用于观察全图趋势；像素级判断请切回 1:1。",
-            self._overview_page,
-        )
-        overview_note.setObjectName("scaledOverviewNotice")
-        overview_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        overview_note.setWordWrap(True)
-        overview_layout.addWidget(self._overview_image_label, 1)
-        overview_layout.addWidget(overview_note)
-        self._preview_stack.addWidget(self._overview_page)
-        layout.addWidget(self._preview_stack, 1)
+        self._overview_note = QLabel(panel)
+        self._overview_note.setObjectName("scaledOverviewNotice")
+        self._overview_note.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        self._overview_note.setWordWrap(True)
+        self._overview_note.setVisible(False)
+        layout.addWidget(self._overview_note)
 
         preview_mode_row = QHBoxLayout()
         self._overview_checkbox = QCheckBox("显示近似全图概览", panel)
         self._overview_checkbox.toggled.connect(self._toggle_overview)
         preview_mode_row.addWidget(self._overview_checkbox)
         preview_mode_row.addStretch(1)
+        self._fit_preview_button = QPushButton("适合", panel)
+        self._fit_preview_button.setToolTip("完整显示当前预览")
+        self._fit_preview_button.clicked.connect(
+            self._preview_view.fit_image
+        )
+        preview_mode_row.addWidget(self._fit_preview_button)
+        self._actual_preview_button = QPushButton("1:1", panel)
+        self._actual_preview_button.setToolTip(
+            "一个原始图像像素对应一个界面逻辑像素"
+        )
+        self._actual_preview_button.clicked.connect(
+            self._preview_view.actual_size
+        )
+        preview_mode_row.addWidget(self._actual_preview_button)
+        self._zoom_out_button = QPushButton("−", panel)
+        self._zoom_out_button.setToolTip("缩小预览（Ctrl+滚轮向下）")
+        self._zoom_out_button.clicked.connect(
+            lambda: self._preview_view.zoom_by(
+                1.0 / ProcessingPreviewView.ZOOM_STEP
+            )
+        )
+        preview_mode_row.addWidget(self._zoom_out_button)
+        self._preview_zoom_label = QLabel("100%", panel)
+        self._preview_zoom_label.setAlignment(
+            Qt.AlignmentFlag.AlignCenter
+        )
+        self._preview_zoom_label.setMinimumWidth(54)
+        preview_mode_row.addWidget(self._preview_zoom_label)
+        self._zoom_in_button = QPushButton("+", panel)
+        self._zoom_in_button.setToolTip("放大预览（Ctrl+滚轮向上）")
+        self._zoom_in_button.clicked.connect(
+            lambda: self._preview_view.zoom_by(
+                ProcessingPreviewView.ZOOM_STEP
+            )
+        )
+        preview_mode_row.addWidget(self._zoom_in_button)
         layout.addLayout(preview_mode_row)
         return panel
 
@@ -3490,7 +3618,7 @@ class ImageProcessingWorkbench(QDialog):
             return widget
         raise ValueError(f"未知参数控件类型: {parameter.kind}")
 
-    def _parameter_value_changed(self) -> None:
+    def _parameter_value_changed(self, *_signal_values: object) -> None:
         if self._updating_parameter_form:
             return
         row = self._steps_list.currentRow()
@@ -3535,10 +3663,46 @@ class ImageProcessingWorkbench(QDialog):
             else:  # pragma: no cover - construction is exhaustive
                 continue
             parameters[field.key] = value
-        replacement = ImageOperationSpec(definition.operation.value, parameters)
+        current = self._steps[row]
+        try:
+            replacement = ImageOperationSpec(
+                current.operation_id,
+                parameters,
+                implementation=current.implementation,
+                implementation_version=current.implementation_version,
+                result_metadata=current.result_metadata,
+            )
+        except (TypeError, ValueError) as exc:
+            self._status_label.setText(f"参数无效：{exc}")
+            return
+        if replacement == current:
+            return
         updated = list(self._steps)
         updated[row] = replacement
-        self._commit_steps(tuple(updated), selected_index=row)
+        self._commit_parameter_steps(tuple(updated))
+
+    def _commit_parameter_steps(
+        self,
+        steps: tuple[ImageOperationSpec, ...],
+    ) -> None:
+        """Commit parameter values without destroying the signal sender.
+
+        Rebuilding the dynamic form synchronously from a checkbox, combo box
+        or editor signal deletes that emitting QWidget before Qt has returned
+        from the native signal.  Parameter edits do not change the step label
+        or form structure, so only the immutable recipe model and history need
+        updating here.  Switching steps, undo and redo continue to rebuild the
+        form through their normal paths.
+        """
+
+        if steps == self._steps:
+            return
+        self._undo_stack.append(self._steps)
+        if len(self._undo_stack) > 100:
+            del self._undo_stack[0]
+        self._redo_stack.clear()
+        self._steps = tuple(steps)
+        self._schedule_preview()
 
     def _schedule_preview(self) -> None:
         self._controller.cancel_preview()
@@ -3832,48 +3996,93 @@ class ImageProcessingWorkbench(QDialog):
 
     def _show_preview_raster(self, raster: RasterPlane) -> None:
         image = raster_plane_to_display_image(raster)
-        pixmap = QPixmap.fromImage(image)
-        self._preview_image_label.setPixmap(pixmap)
-        self._preview_image_label.resize(pixmap.size())
-        self._update_overview_pixmap()
-
-    def _update_overview_pixmap(self) -> None:
-        overview_size = self._overview_image_label.size()
-        if overview_size.width() < 2 or overview_size.height() < 2:
-            overview_size.setWidth(320)
-            overview_size.setHeight(240)
-        overview = self._overview_image.copy()
-        if not self._preview_snapshot.is_full_source:
-            painter = QPainter(overview)
-            try:
-                full_width, full_height = (
-                    self._preview_snapshot.full_source_size
-                )
-                x, y, width, height = self._preview_snapshot.bounds
-                scale_x = overview.width() / float(full_width)
-                scale_y = overview.height() / float(full_height)
-                sample_rect = QRectF(
-                    x * scale_x,
-                    y * scale_y,
-                    max(1.0, width * scale_x),
-                    max(1.0, height * scale_y),
-                )
-                painter.setPen(QPen(QColor("#2A9D8F"), 2.0))
-                painter.setBrush(QColor(42, 157, 143, 36))
-                painter.drawRect(sample_rect)
-            finally:
-                painter.end()
-        self._overview_image_label.setPixmap(
-            QPixmap.fromImage(overview).scaled(
-                overview_size,
-                Qt.AspectRatioMode.KeepAspectRatio,
-                Qt.TransformationMode.SmoothTransformation,
-            )
+        self._latest_preview_image = image
+        self._processed_overview_image = (
+            self._overview_image_for_processed_preview(raster, image)
         )
+        self._update_preview_display()
+
+    def _overview_image_for_processed_preview(
+        self,
+        raster: RasterPlane,
+        preview_image: QImage,
+    ) -> QImage:
+        if not self._steps:
+            self._overview_note_text = (
+                "当前显示原图概览；添加处理步骤后，这里会同步显示"
+                "最新处理结果。"
+            )
+            return raster_plane_to_bounded_overview_image(raster)
+        if self._preview_snapshot.is_full_source:
+            self._overview_note_text = (
+                "当前显示处理后的完整图片概览；显示已按比例缩放，"
+                "像素级判断请切回 1:1。"
+            )
+            return raster_plane_to_bounded_overview_image(raster)
+
+        sample_width = self._preview_snapshot.source.width
+        sample_height = self._preview_snapshot.source.height
+        if (raster.width, raster.height) != (
+            sample_width,
+            sample_height,
+        ):
+            self._overview_note_text = (
+                "当前配方改变了样本几何尺寸，因此这里只显示处理后的"
+                "样本概览，不将其伪装成完整图片结果。"
+            )
+            return raster_plane_to_bounded_overview_image(raster)
+
+        overview = self._overview_image.copy()
+        full_width, full_height = self._preview_snapshot.full_source_size
+        x, y, width, height = self._preview_snapshot.bounds
+        scale_x = overview.width() / float(full_width)
+        scale_y = overview.height() / float(full_height)
+        sample_rect = QRectF(
+            x * scale_x,
+            y * scale_y,
+            max(1.0, width * scale_x),
+            max(1.0, height * scale_y),
+        )
+        painter = QPainter(overview)
+        try:
+            painter.drawImage(
+                sample_rect,
+                preview_image,
+                QRectF(preview_image.rect()),
+            )
+            painter.setPen(QPen(QColor("#2A9D8F"), 2.0))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(sample_rect)
+        finally:
+            painter.end()
+        self._overview_note_text = (
+            "绿色框内为处理后的原始像素样本，框外保留原图用于定位；"
+            "最终处理仍会作用于完整原始图片。"
+        )
+        return overview
+
+    def _update_preview_display(self, *, force_fit: bool = False) -> None:
+        overview = self._overview_checkbox.isChecked()
+        image = (
+            self._processed_overview_image
+            if overview
+            else self._latest_preview_image
+        )
+        self._overview_note.setText(self._overview_note_text)
+        self._overview_note.setVisible(overview)
+        self._preview_view.set_image(image, force_fit=force_fit)
 
     def _toggle_overview(self, checked: bool) -> None:
-        self._preview_stack.setCurrentWidget(
-            self._overview_page if checked else self._preview_scroll
+        self._update_preview_display(force_fit=True)
+
+    def _on_preview_zoom_changed(
+        self,
+        factor: float,
+        fit_mode: bool,
+    ) -> None:
+        percentage = max(1, int(round(float(factor) * 100.0)))
+        self._preview_zoom_label.setText(
+            f"适合 · {percentage}%" if fit_mode else f"{percentage}%"
         )
 
 

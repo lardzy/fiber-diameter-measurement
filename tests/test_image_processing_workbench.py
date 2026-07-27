@@ -13,7 +13,15 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
     import numpy as np
-    from PySide6.QtWidgets import QApplication, QComboBox, QDoubleSpinBox, QLabel, QSpinBox
+    from PySide6.QtWidgets import (
+        QApplication,
+        QCheckBox,
+        QComboBox,
+        QDoubleSpinBox,
+        QLabel,
+        QLineEdit,
+        QSpinBox,
+    )
 
     from fdm.cancellation import CancellationToken
     from fdm.image_processing_models import ImageOperationSpec
@@ -322,6 +330,296 @@ class ImageProcessingWorkbenchTests(unittest.TestCase):
             self.assertEqual(len(dialog.operation_steps()), 2)
             dialog._redo_steps()  # noqa: SLF001
             self.assertEqual(dialog.operation_steps(), ())
+        finally:
+            dialog.close()
+
+    def test_parameter_editors_do_not_destroy_the_active_signal_sender(self) -> None:
+        rgba = array_to_raster_plane(
+            np.zeros((6, 8, 4), dtype=np.uint8)
+        )
+        secondary = array_to_raster_plane(
+            np.ones((6, 8, 4), dtype=np.uint8)
+        )
+        dialog = ImageProcessingWorkbench(
+            rgba,
+            source_document_id="doc-1",
+            secondary_images={
+                "doc-2": rgba,
+                "doc-3": secondary,
+            },
+        )
+        try:
+            with mock.patch.object(dialog, "_schedule_preview"):
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "convert_color",
+                            8,
+                            6,
+                            source_pixel_type=RasterPixelType.RGBA8,
+                        ),
+                    )
+                )
+                checkbox = dialog._parameter_widgets["drop_alpha"]  # noqa: SLF001
+                combo = dialog._parameter_widgets["target_model"]  # noqa: SLF001
+                self.assertIsInstance(checkbox, QCheckBox)
+                self.assertIsInstance(combo, QComboBox)
+                for _index in range(101):
+                    checkbox.click()
+                combo.setCurrentIndex(
+                    (combo.currentIndex() + 1) % combo.count()
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["drop_alpha"],  # noqa: SLF001
+                    checkbox,
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["target_model"],  # noqa: SLF001
+                    combo,
+                )
+                self.assertEqual(
+                    dialog.operation_steps()[0].parameters["drop_alpha"],
+                    checkbox.isChecked(),
+                )
+                self.assertEqual(
+                    dialog.operation_steps()[0].parameters["target_model"],
+                    combo.currentData(),
+                )
+
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "custom_convolution",
+                            8,
+                            6,
+                            source_pixel_type=RasterPixelType.RGBA8,
+                        ),
+                    )
+                )
+                integer = dialog._parameter_widgets["kernel_width"]  # noqa: SLF001
+                floating = dialog._parameter_widgets["offset"]  # noqa: SLF001
+                number_list = dialog._parameter_widgets["kernel"]  # noqa: SLF001
+                self.assertIsInstance(integer, QSpinBox)
+                self.assertIsInstance(floating, QDoubleSpinBox)
+                self.assertIsInstance(number_list, QLineEdit)
+                integer.setValue(5)
+                integer.editingFinished.emit()
+                floating.setValue(2.5)
+                floating.editingFinished.emit()
+                number_list.setText(
+                    "0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, "
+                    "1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0"
+                )
+                number_list.editingFinished.emit()
+                self.assertIs(
+                    dialog._parameter_widgets["kernel_width"],  # noqa: SLF001
+                    integer,
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["offset"],  # noqa: SLF001
+                    floating,
+                )
+                self.assertIs(
+                    dialog._parameter_widgets["kernel"],  # noqa: SLF001
+                    number_list,
+                )
+
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "image_calculator",
+                            8,
+                            6,
+                            source_pixel_type=RasterPixelType.RGBA8,
+                            secondary_document_id="doc-2",
+                        ),
+                    )
+                )
+                secondary_combo = dialog._parameter_widgets[  # noqa: SLF001
+                    "secondary_document_id"
+                ]
+                self.assertIsInstance(secondary_combo, QComboBox)
+                secondary_combo.setCurrentIndex(1)
+                self.assertIs(
+                    dialog._parameter_widgets[  # noqa: SLF001
+                        "secondary_document_id"
+                    ],
+                    secondary_combo,
+                )
+                self.assertEqual(
+                    dialog.operation_steps()[0].parameters[
+                        "secondary_document_id"
+                    ],
+                    "doc-3",
+                )
+        finally:
+            dialog.close()
+
+    def test_every_catalog_parameter_widget_survives_its_native_signal(self) -> None:
+        rgba = array_to_raster_plane(
+            np.zeros((6, 8, 4), dtype=np.uint8)
+        )
+        secondary = array_to_raster_plane(
+            np.ones((6, 8, 4), dtype=np.uint8)
+        )
+        dialog = ImageProcessingWorkbench(
+            rgba,
+            source_document_id="doc-1",
+            secondary_images={
+                "doc-2": rgba,
+                "doc-3": secondary,
+            },
+        )
+        exercised = 0
+        expected = 0
+        try:
+            with mock.patch.object(dialog, "_schedule_preview"):
+                for definition in workbench_module._OPERATION_CATALOG:  # noqa: SLF001
+                    if not definition.available_for_new_recipe:
+                        continue
+                    expected += len(definition.parameters)
+                    step = default_operation_spec(
+                        definition.operation.value,
+                        8,
+                        6,
+                        source_pixel_type=RasterPixelType.RGBA8,
+                        secondary_document_id="doc-2",
+                    )
+                    dialog.set_operation_steps((step,))
+                    for field in definition.parameters:
+                        widget = dialog._parameter_widgets[field.key]  # noqa: SLF001
+                        with self.subTest(
+                            operation=definition.operation.value,
+                            parameter=field.key,
+                            kind=field.kind,
+                        ):
+                            if isinstance(widget, QCheckBox):
+                                widget.click()
+                            elif isinstance(widget, QSpinBox):
+                                original = widget.value()
+                                candidate = (
+                                    original + 1
+                                    if original < widget.maximum()
+                                    else original - 1
+                                )
+                                widget.setValue(candidate)
+                                widget.editingFinished.emit()
+                            elif isinstance(widget, QDoubleSpinBox):
+                                original = widget.value()
+                                step_size = max(
+                                    float(widget.singleStep()),
+                                    10.0 ** (-widget.decimals()),
+                                )
+                                candidate = (
+                                    original + step_size
+                                    if original + step_size
+                                    <= widget.maximum()
+                                    else original - step_size
+                                )
+                                widget.setValue(candidate)
+                                widget.editingFinished.emit()
+                            elif isinstance(widget, QComboBox):
+                                if widget.count() > 1:
+                                    widget.setCurrentIndex(
+                                        (widget.currentIndex() + 1)
+                                        % widget.count()
+                                    )
+                                else:
+                                    widget.currentIndexChanged.emit(
+                                        widget.currentIndex()
+                                    )
+                            elif isinstance(widget, QLineEdit):
+                                tokens = (
+                                    widget.text()
+                                    .replace(";", " ")
+                                    .replace(",", " ")
+                                    .split()
+                                )
+                                self.assertTrue(tokens)
+                                tokens[0] = f"{float(tokens[0]) + 0.125:g}"
+                                widget.setText(", ".join(tokens))
+                                widget.editingFinished.emit()
+                            else:  # pragma: no cover - catalog is exhaustive
+                                self.fail(
+                                    f"未覆盖参数控件：{type(widget).__name__}"
+                                )
+                            self.assertIs(
+                                dialog._parameter_widgets[field.key],  # noqa: SLF001
+                                widget,
+                            )
+                            exercised += 1
+            self.assertEqual(exercised, expected)
+            self.assertGreater(exercised, 200)
+        finally:
+            dialog.close()
+
+    def test_preview_fits_window_supports_zoom_and_uses_processed_overview(
+        self,
+    ) -> None:
+        source = array_to_raster_plane(
+            np.zeros((562, 750), dtype=np.uint8)
+        )
+        processed = array_to_raster_plane(
+            np.full((562, 750), 255, dtype=np.uint8)
+        )
+        dialog = ImageProcessingWorkbench(
+            source,
+            source_document_id="doc-1",
+        )
+        try:
+            dialog._preview_view.resize(400, 300)  # noqa: SLF001
+            dialog._preview_view.fit_image()  # noqa: SLF001
+            self.assertTrue(dialog._preview_view.fit_mode)  # noqa: SLF001
+            self.assertEqual(
+                dialog._preview_view.image_size(),  # noqa: SLF001
+                (750, 562),
+            )
+            self.assertLess(
+                dialog._preview_view.zoom_factor(),  # noqa: SLF001
+                1.0,
+            )
+
+            dialog._preview_view.actual_size()  # noqa: SLF001
+            self.assertFalse(dialog._preview_view.fit_mode)  # noqa: SLF001
+            self.assertAlmostEqual(
+                dialog._preview_view.zoom_factor(),  # noqa: SLF001
+                1.0,
+            )
+            dialog._preview_view.zoom_by(  # noqa: SLF001
+                dialog._preview_view.ZOOM_STEP  # noqa: SLF001
+            )
+            self.assertGreater(
+                dialog._preview_view.zoom_factor(),  # noqa: SLF001
+                1.0,
+            )
+
+            with mock.patch.object(dialog, "_schedule_preview"):
+                dialog.set_operation_steps(
+                    (
+                        default_operation_spec(
+                            "threshold",
+                            750,
+                            562,
+                            source_pixel_type=RasterPixelType.GRAY8,
+                        ),
+                    )
+                )
+            dialog._show_preview_raster(processed)  # noqa: SLF001
+            dialog._overview_checkbox.setChecked(True)  # noqa: SLF001
+            self.app.processEvents()
+            overview = dialog._processed_overview_image  # noqa: SLF001
+            self.assertEqual(
+                overview.pixelColor(
+                    overview.width() // 2,
+                    overview.height() // 2,
+                ).red(),
+                255,
+            )
+            self.assertIn(
+                "处理后的完整图片概览",
+                dialog._overview_note.text(),  # noqa: SLF001
+            )
+            self.assertFalse(dialog._overview_note.isHidden())  # noqa: SLF001
         finally:
             dialog.close()
 
