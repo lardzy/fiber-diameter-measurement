@@ -220,6 +220,28 @@ class MainWindowDisplayAdjustmentTests(unittest.TestCase):
         self.assertIs(window._rasters[document.id], plane)
         window._close_image_processing_workbench(wait=True)
 
+    def test_closing_idle_workbench_releases_display_adjustment_gate(self) -> None:
+        window, _document, _plane = self._window()
+
+        window._open_image_processing_workbench()
+        workbench = window._image_processing_workbench
+        self.assertIsNotNone(workbench)
+
+        workbench.close()
+        self.app.processEvents()
+
+        self.assertIsNone(window._image_processing_workbench)
+        self.assertIsNone(window._image_processing_source_context)
+
+        with patch(
+            "fdm.ui.main_window.QMessageBox.information"
+        ) as information:
+            window._open_display_adjustment_dialog()
+            self.app.processEvents()
+
+        information.assert_not_called()
+        self.assertIsNotNone(window._display_adjustment_dialog)
+
     def test_stale_display_result_is_discarded(self) -> None:
         window, document, plane = self._window()
         result = DisplayAdjustmentResult(

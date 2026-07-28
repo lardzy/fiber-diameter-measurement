@@ -6292,6 +6292,11 @@ class MainWindow(QMainWindow):
         workbench.batchApplyRequested.connect(
             self._open_image_batch_dialog
         )
+        workbench.finished.connect(
+            lambda _result, target=workbench: (
+                self._clear_image_processing_workbench(target)
+            )
+        )
         workbench.destroyed.connect(
             lambda _object=None, target=workbench: (
                 self._clear_image_processing_workbench(target)

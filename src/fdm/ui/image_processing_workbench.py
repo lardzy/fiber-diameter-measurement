@@ -3602,6 +3602,8 @@ class ImageProcessingWorkbench(QDialog):
         self._pending_parameter_result_metadata: dict[str, object] = {}
         self._updating_parameter_form = False
         self._final_in_progress = False
+        self._shutdown_started = False
+        self._dispose_when_idle = False
 
         self._controller = ImageProcessingTaskController(
             executor=executor,
@@ -3611,6 +3613,7 @@ class ImageProcessingWorkbench(QDialog):
         self._controller.finalReady.connect(self._on_final_ready)
         self._controller.taskFailed.connect(self._on_task_failed)
         self._controller.busyChanged.connect(self._on_busy_changed)
+        self.finished.connect(self._on_dialog_finished)
 
         self._preview_timer = QTimer(self)
         self._preview_timer.setSingleShot(True)
@@ -3991,8 +3994,35 @@ class ImageProcessingWorkbench(QDialog):
         self._preview_timer.stop()
         self._controller.cancel_all()
 
+    def _begin_shutdown(self, *, dispose_when_idle: bool) -> None:
+        self._preview_timer.stop()
+        if not self._shutdown_started:
+            self._shutdown_started = True
+            self._controller.close()
+        if dispose_when_idle:
+            self._dispose_when_idle = True
+        self._delete_when_tasks_idle()
+
+    def _delete_when_tasks_idle(self) -> None:
+        if not self._dispose_when_idle:
+            return
+        if any(
+            self._controller.is_busy(kind)
+            for kind in WorkbenchTaskKind
+        ):
+            return
+        self.deleteLater()
+
+    @Slot(int)
+    def _on_dialog_finished(self, _result: int) -> None:
+        # QDialog.close()/reject() normally hides a dialog instead of
+        # destroying it.  Retire this one-shot workbench immediately, but
+        # defer QObject deletion until cooperative background cancellation has
+        # really drained both task lanes.
+        self._begin_shutdown(dispose_when_idle=True)
+
     def closeEvent(self, event: QCloseEvent) -> None:
-        self.cancel_tasks()
+        self._begin_shutdown(dispose_when_idle=False)
         super().closeEvent(event)
 
     def _build_ui(self) -> None:
@@ -6663,6 +6693,7 @@ class ImageProcessingWorkbench(QDialog):
         if kind == WorkbenchTaskKind.FINAL.value and not busy and self._final_in_progress:
             self._final_in_progress = False
         self._update_actions()
+        self._delete_when_tasks_idle()
 
     def _cancel_and_close(self) -> None:
         self.cancel_tasks()
