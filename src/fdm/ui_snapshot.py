@@ -48,8 +48,9 @@ from fdm.services.image_batch import (  # noqa: E402
     BatchItemResourceEstimate,
     BatchResourceEstimate,
 )
+from fdm.services.raster_export import RasterExportFormat  # noqa: E402
 from fdm.services.raster_io import qimage_to_raster_plane  # noqa: E402
-from fdm.settings import AppSettings  # noqa: E402
+from fdm.settings import AppSettings, RawRecordTemplate  # noqa: E402
 from fdm.ui.dialogs import ExportOptionsDialog, SettingsDialog  # noqa: E402
 from fdm.ui.display_adjustment_dialog import DisplayAdjustmentDialog  # noqa: E402
 from fdm.ui.image_loader import ImageLoadRequest  # noqa: E402
@@ -337,6 +338,18 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
         default="records",
     )
     parser.add_argument(
+        "--export-page",
+        choices=("files", "images"),
+        default="files",
+        help="导出选项截图页面；仅在 --scenario measurement-export 时生效。",
+    )
+    parser.add_argument(
+        "--export-format",
+        choices=tuple(item.value for item in RasterExportFormat),
+        default=RasterExportFormat.PNG.value,
+        help="导出选项图片格式；仅在 --scenario measurement-export 时生效。",
+    )
+    parser.add_argument(
         "--processing-operation",
         choices=tuple(IMAGE_PROCESSING_SNAPSHOT_OPERATIONS),
         default="gaussian_blur",
@@ -412,6 +425,13 @@ def main() -> int:
         and args.processing_operation != "gaussian_blur"
     ):
         scenario_name = f"image-processing-{args.processing_operation}"
+    elif args.scenario == "measurement-export":
+        suffixes = []
+        if args.export_page != "files":
+            suffixes.append(args.export_page)
+        if args.export_format != RasterExportFormat.PNG.value:
+            suffixes.append(args.export_format)
+        scenario_name = "-".join(["measurement-export", *suffixes])
     else:
         scenario_name = args.scenario
     output = args.output or (
@@ -433,9 +453,37 @@ def main() -> int:
                 "/tmp/显微图像导出.png",
             )
         elif args.scenario == "measurement-export":
+            selected_template_path = (
+                "runtime/content-templates/"
+                "研发中心高倍率联合测量原始记录模板.xlsm"
+            )
             widget = ExportOptionsDialog(
                 ExportSelection.all_enabled(),
                 allow_all_scope=True,
+                raw_record_templates=[
+                    RawRecordTemplate(
+                        name="激光共聚焦面积测量原始记录模板",
+                        path=(
+                            "runtime/content-templates/"
+                            "激光共聚焦面积测量原始记录模板.xlsm"
+                        ),
+                    ),
+                    RawRecordTemplate(
+                        name=(
+                            "超长名称验证：研发中心高倍率激光共聚焦"
+                            "纤维与孔洞联合测量原始记录模板"
+                        ),
+                        path=selected_template_path,
+                    ),
+                    RawRecordTemplate(
+                        name="常规直径测量模板",
+                        path=(
+                            "runtime/content-templates/"
+                            "常规直径测量模板.xlsx"
+                        ),
+                    ),
+                ],
+                last_raw_record_template_path=selected_template_path,
             )
         elif args.scenario == "display-adjustment":
             widget = DisplayAdjustmentDialog(
@@ -614,11 +662,21 @@ def main() -> int:
         widget.show()
         for _ in range(5):
             app.processEvents()
-        if isinstance(widget, SettingsDialog):
+        if isinstance(widget, (SettingsDialog, ExportOptionsDialog)):
             # Offscreen Qt exposes a synthetic screen unrelated to the review
             # matrix.  Re-apply the requested deterministic capture size after
             # the dialog has exercised its real show-time clamping logic.
             widget.resize(max(640, args.width), max(480, args.height))
+            app.processEvents()
+        if isinstance(widget, ExportOptionsDialog):
+            widget._export_navigation.setCurrentRow(
+                {"files": 0, "images": 1}[args.export_page]
+            )
+            widget._image_format_combo.setCurrentIndex(
+                widget._image_format_combo.findData(
+                    RasterExportFormat(args.export_format)
+                )
+            )
             app.processEvents()
         if isinstance(widget, MainWindow) and args.scenario == "measurement-results":
             widget._toggle_results_panel()
@@ -681,6 +739,16 @@ def main() -> int:
             "tool_mode": args.tool_mode if args.scenario != "settings" else None,
             "settings_page": args.settings_page if args.scenario == "settings" else None,
             "results_tab": args.results_tab if args.scenario == "measurement-results" else None,
+            "export_page": (
+                args.export_page
+                if args.scenario == "measurement-export"
+                else None
+            ),
+            "export_format": (
+                args.export_format
+                if args.scenario == "measurement-export"
+                else None
+            ),
             "processing_operation": (
                 args.processing_operation
                 if args.scenario == "image-processing"

@@ -79,6 +79,24 @@ class UiSnapshotScenarioTests(unittest.TestCase):
             "gaussian_blur",
         )
 
+    def test_measurement_export_snapshot_exposes_both_pages(self) -> None:
+        default_args = _parse_args(["--scenario", "measurement-export"])
+        image_args = _parse_args(
+            [
+                "--scenario",
+                "measurement-export",
+                "--export-page",
+                "images",
+                "--export-format",
+                "jpeg",
+            ]
+        )
+
+        self.assertEqual(default_args.export_page, "files")
+        self.assertEqual(default_args.export_format, "png")
+        self.assertEqual(image_args.export_page, "images")
+        self.assertEqual(image_args.export_format, "jpeg")
+
     def test_processing_snapshot_exposes_professional_parameter_panels(self) -> None:
         self.assertEqual(
             IMAGE_PROCESSING_SNAPSHOT_OPERATIONS,
