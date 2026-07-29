@@ -26,6 +26,7 @@ from fdm.ui.canvas import (
     MagicSegmentSubtractInputMode,
     canvas_workspace_background,
 )
+from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.rendering import measurement_label_image_bounds
 
 
@@ -69,6 +70,51 @@ def _bounding_update_rect(update_mock) -> QRect:
         assert rect.isValid() and not rect.isEmpty()
         combined = rect if combined.isNull() else combined.united(rect)
     return combined
+
+
+def _render_freehand_preview(
+    canvas: DocumentCanvas,
+    points: list[Point],
+    *,
+    destructive: bool,
+) -> QImage:
+    target = QImage(
+        canvas.width(),
+        canvas.height(),
+        QImage.Format.Format_ARGB32_Premultiplied,
+    )
+    target.fill(QColor(0, 0, 0, 0))
+    painter = QPainter(target)
+    painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+    try:
+        canvas._draw_pending_path_preview(  # noqa: SLF001
+            painter,
+            points,
+            [],
+            destructive_preview=destructive,
+        )
+    finally:
+        painter.end()
+    return target
+
+
+def _image_difference_bounds(before: QImage, after: QImage) -> QRect:
+    assert before.size() == after.size()
+    left = before.width()
+    top = before.height()
+    right = -1
+    bottom = -1
+    for y in range(before.height()):
+        for x in range(before.width()):
+            if before.pixel(x, y) == after.pixel(x, y):
+                continue
+            left = min(left, x)
+            top = min(top, y)
+            right = max(right, x)
+            bottom = max(bottom, y)
+    if right < left or bottom < top:
+        return QRect()
+    return QRect(left, top, right - left + 1, bottom - top + 1)
 
 
 class CanvasInteractionInvalidationTests(unittest.TestCase):
@@ -192,33 +238,192 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
                     canvas.clear_document()
                     canvas.close()
 
-    def test_freehand_sampling_invalidates_only_new_segment(self) -> None:
+    def test_freehand_sampling_invalidates_changed_fill_wedge(self) -> None:
         document = ImageDocument(
             id="doc-freehand",
             path="/tmp/freehand.png",
             image_size=(320, 240),
         )
         canvas = self._canvas(document)
-        first = Point(46.0, 58.0)
-        second = Point(124.0, 92.0)
+        first = Point(40.0, 40.0)
+        second = Point(200.0, 40.0)
+        third = Point(200.0, 180.0)
+        fourth = Point(100.0, 180.0)
+        fill_probe = Point(90.0, 100.0)
         try:
             canvas.set_tool_mode("freehand_area")
-            with patch.object(canvas, "update") as update:
-                canvas.mousePressEvent(
-                    _PointerEvent(canvas.image_to_widget(first))
+            canvas.mousePressEvent(
+                _PointerEvent(canvas.image_to_widget(first))
+            )
+            canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+            canvas.mouseMoveEvent(
+                _PointerEvent(canvas.image_to_widget(second))
+            )
+            canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+            canvas.mouseMoveEvent(
+                _PointerEvent(canvas.image_to_widget(third))
+            )
+            old_points = list(canvas._drawing_polygon_points)  # noqa: SLF001
+            old_previews = {
+                destructive: _render_freehand_preview(
+                    canvas,
+                    old_points,
+                    destructive=destructive,
                 )
+                for destructive in (False, True)
+            }
+
+            with patch.object(canvas, "update") as update:
                 canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
                 canvas.mouseMoveEvent(
-                    _PointerEvent(canvas.image_to_widget(second))
+                    _PointerEvent(canvas.image_to_widget(fourth))
+                )
+
+            dirty = self._assert_local_update(
+                canvas,
+                update,
+                first,
+                third,
+                fourth,
+                fill_probe,
+            )
+            self.assertEqual(
+                canvas._drawing_polygon_points,  # noqa: SLF001
+                [first, second, third, fourth],
+            )
+            new_points = list(canvas._drawing_polygon_points)  # noqa: SLF001
+            probe = canvas.image_to_widget(fill_probe).toPoint()
+            for destructive in (False, True):
+                with self.subTest(destructive=destructive):
+                    new_preview = _render_freehand_preview(
+                        canvas,
+                        new_points,
+                        destructive=destructive,
+                    )
+                    changed_pixels = _image_difference_bounds(
+                        old_previews[destructive],
+                        new_preview,
+                    )
+                    self.assertTrue(changed_pixels.isValid())
+                    self.assertTrue(
+                        dirty.contains(changed_pixels),
+                        (
+                            f"dirty region {dirty!r} misses changed preview "
+                            f"pixels {changed_pixels!r}"
+                        ),
+                    )
+                    self.assertEqual(
+                        old_previews[destructive].pixelColor(probe).alpha(),
+                        0,
+                    )
+                    self.assertGreater(
+                        new_preview.pixelColor(probe).alpha(),
+                        0,
+                    )
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_magic_freehand_subtract_uses_fill_wedge_invalidation(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc-magic-freehand",
+            path="/tmp/magic-freehand.png",
+            image_size=(320, 240),
+        )
+        canvas = self._canvas(document)
+        points = (
+            Point(40.0, 40.0),
+            Point(200.0, 40.0),
+            Point(200.0, 180.0),
+        )
+        fourth = Point(100.0, 180.0)
+        fill_probe = Point(90.0, 100.0)
+        try:
+            canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
+            canvas._magic_segment.active_stage = (  # noqa: SLF001
+                MagicSegmentOperationMode.SUBTRACT
+            )
+            canvas.set_magic_subtract_input_mode(
+                MagicSegmentSubtractInputMode.FREEHAND
+            )
+            canvas.mousePressEvent(
+                _PointerEvent(canvas.image_to_widget(points[0]))
+            )
+            for point in points[1:]:
+                canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(point))
+                )
+
+            with patch.object(canvas, "update") as update:
+                canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(fourth))
                 )
 
             self._assert_local_update(
                 canvas,
                 update,
-                first,
-                second,
+                points[0],
+                points[-1],
+                fourth,
+                fill_probe,
             )
         finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_digital_slide_freehand_invalidation_uses_global_coordinates(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="doc-slide-freehand",
+            path="/tmp/freehand.fdmslide",
+            image_size=(4096, 3072),
+            document_kind="digital_slide",
+        )
+        canvas = DigitalSlideCanvas()
+        canvas.resize(320, 240)
+        image = QImage(320, 240, QImage.Format.Format_RGB32)
+        image.fill(0)
+        canvas.set_document(document, image)
+        canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        points = (
+            Point(1040.0, 2040.0),
+            Point(1200.0, 2040.0),
+            Point(1200.0, 2180.0),
+        )
+        fourth = Point(1100.0, 2180.0)
+        fill_probe = Point(1090.0, 2100.0)
+        try:
+            canvas.set_tool_mode("freehand_area")
+            canvas.mousePressEvent(
+                _PointerEvent(canvas.image_to_widget(points[0]))
+            )
+            for point in points[1:]:
+                canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(point))
+                )
+
+            with patch.object(canvas, "update") as update:
+                canvas._freehand_last_sample_at -= 1.0  # noqa: SLF001
+                canvas.mouseMoveEvent(
+                    _PointerEvent(canvas.image_to_widget(fourth))
+                )
+
+            self._assert_local_update(
+                canvas,
+                update,
+                points[0],
+                points[-1],
+                fourth,
+                fill_probe,
+            )
+        finally:
+            canvas.shutdown()
             canvas.clear_document()
             canvas.close()
 

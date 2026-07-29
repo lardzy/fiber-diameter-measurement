@@ -3182,18 +3182,25 @@ class DocumentCanvas(QWidget):
             )
             self._area_hover_point = self._drawing_polygon_points[-1] if self._drawing_polygon_points else None
             if len(self._drawing_polygon_points) != previous_count:
-                changed_points = (
-                    [previous_last, self._drawing_polygon_points[-1]]
-                    if previous_last is not None
-                    else [self._drawing_polygon_points[-1]]
-                )
+                new_last = self._drawing_polygon_points[-1]
+                first_point = self._drawing_polygon_points[0]
+                # A new freehand point replaces the closing edge
+                # ``previous_last -> first`` with two edges through
+                # ``new_last``.  The odd-even fill can therefore change
+                # anywhere inside that wedge, not only beside the sampled
+                # segment.
+                previous_closing_edge = [first_point]
+                if (
+                    previous_last is not None
+                    and previous_last != first_point
+                ):
+                    previous_closing_edge.append(previous_last)
+                changed_fill_wedge = list(previous_closing_edge)
+                if new_last != changed_fill_wedge[-1]:
+                    changed_fill_wedge.append(new_last)
                 self._update_preview_regions(
-                    (
-                        [previous_last]
-                        if previous_last is not None
-                        else []
-                    ),
-                    changed_points,
+                    previous_closing_edge,
+                    changed_fill_wedge,
                 )
             return
 
