@@ -3385,7 +3385,6 @@ class MainWindow(QMainWindow):
         plan_layout.setContentsMargins(0, 0, 0, 0)
         plan_layout.setSpacing(8)
         plan_layout.addWidget(self._build_digital_slide_capture_box(panel))
-        plan_layout.addWidget(self._build_digital_slide_output_box(panel))
         plan_layout.addStretch(1)
         scroll.setWidget(panel)
         layout.addWidget(scroll, 1)
@@ -4448,6 +4447,7 @@ class MainWindow(QMainWindow):
         layout.addWidget(stage_section)
 
         layout.addStretch(1)
+        layout.addWidget(self._build_digital_slide_output_box(panel))
         scroll.setWidget(panel)
         self._refresh_digital_slide_ports(prefer_auto=True)
         self._apply_digital_slide_motion_settings()
