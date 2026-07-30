@@ -140,8 +140,15 @@ class AdaptiveLayoutController(QObject):
             self.restore_preferred_extents()
 
     def set_workspace(self, workspace: WorkspaceMode | str) -> None:
-        self._workspace = WorkspaceMode(workspace)
+        target_workspace = WorkspaceMode(workspace)
+        workspace_changed = target_workspace is not self._workspace
+        self._workspace = target_workspace
         if self.is_presentation_suspended:
+            return
+        compact = int(self._window.width()) < self.COMPACT_WIDTH
+        # Frame-stream previews resync the workspace for every frame; preserve
+        # the user's dock visibility unless the mode or breakpoint changed.
+        if not workspace_changed and compact == self._compact:
             return
         self.apply_for_width(self._window.width(), force=True)
 
