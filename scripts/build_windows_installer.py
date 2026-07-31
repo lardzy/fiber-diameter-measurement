@@ -302,6 +302,14 @@ def main() -> int:
         action="store_true",
         help="Exclude private runtime/content-templates from both onedir and installer output.",
     )
+    parser.add_argument(
+        "--public-release",
+        action="store_true",
+        help=(
+            "Build a public installer without private runtime/area-models "
+            "or runtime/content-templates; the output uses the -public suffix."
+        ),
+    )
     args = parser.parse_args()
 
     root = Path(__file__).resolve().parents[1]
@@ -315,8 +323,8 @@ def main() -> int:
         strict_asset_hashes=args.strict_asset_hashes,
         strict_release=args.strict_release,
         rebuild_onedir=not args.reuse_onedir,
-        exclude_area_models=args.exclude_area_models,
-        exclude_content_templates=args.exclude_content_templates,
+        exclude_area_models=args.exclude_area_models or args.public_release,
+        exclude_content_templates=args.exclude_content_templates or args.public_release,
     )
 
 

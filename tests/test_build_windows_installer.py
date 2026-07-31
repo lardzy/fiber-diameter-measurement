@@ -122,6 +122,13 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 True,
                 True,
             ),
+            (["build_windows_installer.py", "--public-release"], True, True, True),
+            (
+                ["build_windows_installer.py", "--reuse-onedir", "--public-release"],
+                False,
+                True,
+                True,
+            ),
         )
         for argv, expected_rebuild, exclude_models, exclude_templates in cases:
             with (

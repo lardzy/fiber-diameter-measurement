@@ -353,6 +353,14 @@ def main() -> int:
         action="store_true",
         help="Build without runtime/content-templates.",
     )
+    parser.add_argument(
+        "--public-release",
+        action="store_true",
+        help=(
+            "Build a public package without private runtime/area-models "
+            "or runtime/content-templates; packaged area inference is disabled."
+        ),
+    )
     args = parser.parse_args()
     return build(
         clean=not args.no_clean,
@@ -360,8 +368,8 @@ def main() -> int:
         bootloader_debug=args.bootloader_debug,
         profile=args.profile,
         strict_asset_hashes=args.strict_asset_hashes,
-        exclude_area_models=args.exclude_area_models,
-        exclude_content_templates=args.exclude_content_templates,
+        exclude_area_models=args.exclude_area_models or args.public_release,
+        exclude_content_templates=args.exclude_content_templates or args.public_release,
     )
 
 

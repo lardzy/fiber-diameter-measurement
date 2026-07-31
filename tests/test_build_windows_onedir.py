@@ -17,6 +17,7 @@ from build_support import RuntimeProfileCheck
 from build_windows_onedir import (
     build,
     check_windows_build_dependencies,
+    main as onedir_main,
     run_packaged_self_check,
 )
 
@@ -40,6 +41,17 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         )
         self._dependency_mock = self._dependency_patcher.start()
         self.addCleanup(self._dependency_patcher.stop)
+
+    def test_cli_public_release_excludes_both_private_components(self) -> None:
+        with (
+            patch.object(sys, "argv", ["build_windows_onedir.py", "--public-release"]),
+            patch("build_windows_onedir.build", return_value=0) as build_mock,
+        ):
+            result = onedir_main()
+
+        self.assertEqual(result, 0)
+        self.assertTrue(build_mock.call_args.kwargs["exclude_area_models"])
+        self.assertTrue(build_mock.call_args.kwargs["exclude_content_templates"])
 
     def test_spec_uses_flat_onedir_layout_for_both_executables(self) -> None:
         spec_payload = (
