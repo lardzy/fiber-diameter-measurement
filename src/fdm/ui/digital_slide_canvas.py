@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from threading import Thread
+from threading import Event, Thread
 from time import perf_counter
 from weakref import ref
 
@@ -10,14 +10,18 @@ from shiboken6 import isValid as is_qobject_valid
 
 from fdm.geometry import Point
 from fdm.models import ImageDocument
+from fdm.runtime_logging import append_runtime_log
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.ui.canvas import DocumentCanvas
+from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
+from fdm.ui.view_transform import CanvasZoomMode
 
 
 class DigitalSlideCanvas(DocumentCanvas):
     viewportChanged = Signal(int, int, int)
     navigationModeChanged = Signal(str)
-    _bufferRendered = Signal(int, int, int, int, QImage)
+    viewportBufferFailed = Signal(str)
+    _bufferRendered = Signal(int, int, int, int, QImage, str, str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -40,7 +44,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._viewport_buffer_focus_index = -1
         self._viewport_buffer_request_id = 0
         self._viewport_buffer_thread: Thread | None = None
+        self._viewport_buffer_thread_request_id: int | None = None
+        self._viewport_buffer_cancel = Event()
         self._viewport_buffer_pending = False
+        self._viewport_buffer_error_blocked = False
+        self._viewport_buffer_last_error = ""
         self._viewport_last_publish_at = 0.0
         self._bufferRendered.connect(self._on_viewport_buffer_rendered)
 
@@ -69,12 +77,37 @@ class DigitalSlideCanvas(DocumentCanvas):
         """Detach long-lived slide resources before the Qt widget is deleted."""
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
+        self._cancel_overlay_requests()
         self._invalidate_viewport_buffer()
+        thread = self._viewport_buffer_thread
+        if thread is not None and thread.is_alive():
+            # Tile decoding checks the token between rows. A bounded join keeps
+            # tab close responsive even if the underlying filesystem stalls;
+            # generation checks still prevent any late UI publication.
+            thread.join(timeout=2.0)
+        if thread is None or not thread.is_alive():
+            self._viewport_buffer_thread = None
+            self._viewport_buffer_thread_request_id = None
         self._slide_store = None
         self._slide_manifest = None
 
+    def hideEvent(self, event) -> None:
+        """Cancel navigation/buffer work when another document tab takes over."""
+
+        self._smooth_nav_keys.clear()
+        self._smooth_nav_timer.stop()
+        self._smooth_nav_last_at = 0.0
+        self._invalidate_viewport_buffer()
+        super().hideEvent(event)
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        self._allow_viewport_buffer_retry()
+        self._request_viewport_buffer()
+
     def set_image(self, image: QImage) -> None:
         self._image = image
+        self._publish_view_transform()
         self.update()
 
     def focus_index(self) -> int:
@@ -93,10 +126,17 @@ class DigitalSlideCanvas(DocumentCanvas):
         mode = "smooth" if mode == "smooth" else "step"
         if mode == self._navigation_mode:
             return
+        navigation_was_active = bool(self._smooth_nav_keys)
+        if navigation_was_active:
+            self._cancel_overlay_requests()
         self._navigation_mode = mode
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
         self._smooth_nav_last_at = 0.0
+        if navigation_was_active:
+            self._publish_viewport_state(throttled=False)
+            self._request_viewport_buffer()
+            self.update()
         self.navigationModeChanged.emit(mode)
 
     def toggle_navigation_mode(self) -> str:
@@ -104,6 +144,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         return self._navigation_mode
 
     def move_viewport_by(self, dx: float, dy: float, *, throttled: bool = False) -> None:
+        if dx or dy:
+            # A discrete navigation action is an explicit retry boundary.  A
+            # held smooth-navigation key clears the error latch only once in
+            # _begin_smooth_navigation(), so a permanent read error cannot
+            # create a new worker on every 16 ms timer tick.
+            if not self._smooth_nav_keys:
+                self._allow_viewport_buffer_retry()
+            # Overlay tiles live on the global slide grid, but their cache key
+            # also carries the exact device-pixel phase at the current
+            # viewport origin.  A pending tile from the previous origin must
+            # therefore not survive a navigation step.
+            self._cancel_overlay_requests()
         self._viewport_origin = Point(self._viewport_origin.x + dx, self._viewport_origin.y + dy)
         self._clamp_viewport()
         if self._render_current_viewport_from_buffer():
@@ -116,13 +168,22 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self._slide_manifest is None:
             super().center_on_image_point(point)
             return
+        # Whole-slide navigation moves the global SQLite viewport without
+        # changing the local FIT/ACTUAL/CUSTOM transform.  Derive the image
+        # coordinate currently under the widget center using the base mapping,
+        # then place the requested global point at that same local coordinate.
+        local_center = DocumentCanvas.widget_to_image(
+            self,
+            QPointF(self.width() / 2.0, self.height() / 2.0),
+        )
+        self._allow_viewport_buffer_retry()
+        self._cancel_overlay_requests()
         self._viewport_origin = Point(
-            point.x - (self._slide_manifest.viewport_width / 2.0),
-            point.y - (self._slide_manifest.viewport_height / 2.0),
+            point.x - local_center.x,
+            point.y - local_center.y,
         )
         self._clamp_viewport()
         self._reload_viewport()
-        super().center_on_image_point(point)
 
     def set_focus_index(self, focus_index: int) -> None:
         focus_index = self._normalized_focus_index(focus_index)
@@ -141,6 +202,33 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._pan.x + ((point.x - self._viewport_origin.x) * self._zoom),
             self._pan.y + ((point.y - self._viewport_origin.y) * self._zoom),
         )
+
+    def _overlay_widget_origin(self) -> QPointF:
+        """Map global slide coordinates into the mounted viewport widget."""
+
+        return QPointF(
+            float(self._pan.x - (self._viewport_origin.x * self._zoom)),
+            float(self._pan.y - (self._viewport_origin.y * self._zoom)),
+        )
+
+    def _paint_image_bounds(self) -> QRectF:
+        """Global slide-space bounds covered by the current viewport raster."""
+
+        if self._image is None:
+            return QRectF()
+        bounds = QRectF(
+            float(self._viewport_origin.x),
+            float(self._viewport_origin.y),
+            float(self._image.width()),
+            float(self._image.height()),
+        )
+        if self._document is None:
+            return bounds
+        width, height = self._document.image_size
+        return bounds.intersected(QRectF(0.0, 0.0, float(width), float(height)))
+
+    def _viewport_focus_index(self) -> int | None:
+        return int(self._focus_index)
 
     def fit_to_view(self) -> None:
         self._initial_fit_pending = False
@@ -241,6 +329,11 @@ class DigitalSlideCanvas(DocumentCanvas):
                     self._smooth_nav_last_at = 0.0
                     self._publish_viewport_state(throttled=False)
                     self._request_viewport_buffer()
+                    # If the requested buffer is already available this is the
+                    # single warmable frame for the final viewport.  Otherwise
+                    # _enqueue_overlay_tiles() keeps warming suspended until
+                    # _on_viewport_buffer_rendered() publishes the exact frame.
+                    self.update()
             event.accept()
             return
         super().keyReleaseEvent(event)
@@ -259,18 +352,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _visible_image_rect(self) -> QRectF:
         if self._image is None:
             return QRectF()
-        zoom = max(self._zoom, 0.001)
-        left = (0.0 - self._pan.x) / zoom
-        top = (0.0 - self._pan.y) / zoom
-        right = (self.width() - self._pan.x) / zoom
-        bottom = (self.height() - self._pan.y) / zoom
-        padding = max(16.0, 28.0 / zoom)
-        return QRectF(
-            self._viewport_origin.x + max(0.0, min(left, right) - padding),
-            self._viewport_origin.y + max(0.0, min(top, bottom) - padding),
-            min(float(self._image.width()), abs(right - left) + (padding * 2.0)),
-            min(float(self._image.height()), abs(bottom - top) + (padding * 2.0)),
-        )
+        return self._paint_context().image_rect
 
     def _persist_view_state(self) -> None:
         super()._persist_view_state()
@@ -294,6 +376,9 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _begin_smooth_navigation(self, event: QKeyEvent) -> None:
         if getattr(event, "isAutoRepeat", lambda: False)():
             return
+        if not self._smooth_nav_keys:
+            self._allow_viewport_buffer_retry()
+            self._cancel_overlay_requests()
         self._smooth_nav_keys.add(int(event.key()))
         self._smooth_nav_shift = event.modifiers() == Qt.KeyboardModifier.ShiftModifier
         self._smooth_nav_last_at = perf_counter()
@@ -348,16 +433,47 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_pending = False
         self._initial_fit_done = True
         cursor_position = event.position()
-        local_before = DocumentCanvas.widget_to_image(self, cursor_position)
         zoom_factor = 1.15 if effective_delta > 0 else 1 / 1.15
-        self._zoom = max(0.05, min(40.0, self._zoom * zoom_factor))
-        self._pan = Point(
-            cursor_position.x() - (local_before.x * self._zoom),
-            cursor_position.y() - (local_before.y * self._zoom),
+        self._set_zoom_at_widget_position(
+            self._zoom * zoom_factor,
+            cursor_position,
+            mode=CanvasZoomMode.CUSTOM,
         )
-        self._persist_view_state()
-        self.update()
         event.accept()
+
+    def _overlay_navigation_is_transient(self) -> bool:
+        """Return whether the mounted raster is still following navigation.
+
+        Measurements use global slide coordinates, so direct vector rendering
+        remains exact while the viewport changes.  Building passive tiles at
+        every 16 ms navigation tick, however, only creates work whose
+        device-pixel phase is obsolete before completion.
+        """
+
+        thread = self._viewport_buffer_thread
+        return bool(
+            self._smooth_nav_keys
+            or self._smooth_nav_timer.isActive()
+            or self._viewport_buffer_pending
+            or (thread is not None and thread.is_alive())
+        )
+
+    def _overlay_motion_active(self) -> bool:
+        return (
+            super()._overlay_motion_active()
+            or self._overlay_navigation_is_transient()
+        )
+
+    def _enqueue_overlay_tiles(self, keys: list[CanvasOverlayTileKey]) -> None:
+        """Warm passive tiles only after the viewport raster has stabilized."""
+
+        if self._overlay_navigation_is_transient():
+            # Cancellation is cooperative in CanvasOverlayTileCache.  Clearing
+            # the local queue here also prevents a stale tile from starting
+            # after the current worker acknowledges cancellation.
+            self._cancel_overlay_requests()
+            return
+        super()._enqueue_overlay_tiles(keys)
 
     def _clamp_viewport(self) -> None:
         if self._slide_manifest is None:
@@ -410,10 +526,23 @@ class DigitalSlideCanvas(DocumentCanvas):
         )
 
     def _invalidate_viewport_buffer(self) -> None:
+        self._viewport_buffer_cancel.set()
         self._viewport_buffer = QImage()
         self._viewport_buffer_focus_index = -1
         self._viewport_buffer_request_id += 1
         self._viewport_buffer_pending = False
+        self._allow_viewport_buffer_retry()
+
+    def _allow_viewport_buffer_retry(self) -> None:
+        """Clear a permanent-error latch at an explicit user retry boundary."""
+
+        self._viewport_buffer_error_blocked = False
+
+    def refresh_viewport_buffer(self) -> None:
+        """Explicitly retry the background viewport buffer after a read error."""
+
+        self._allow_viewport_buffer_retry()
+        self._request_viewport_buffer()
 
     def _render_current_viewport_from_buffer(self) -> bool:
         if self._slide_manifest is None or self._viewport_buffer.isNull():
@@ -477,7 +606,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         if not self.isVisible():
             return
+        if self._viewport_buffer_error_blocked:
+            return
         if self._viewport_buffer_thread is not None and self._viewport_buffer_thread.is_alive():
+            self._viewport_buffer_cancel.set()
             self._viewport_buffer_pending = True
             return
         if not self._viewport_needs_buffer_refresh():
@@ -495,11 +627,16 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._viewport_buffer_request_id += 1
         request_id = self._viewport_buffer_request_id
         self._viewport_buffer_pending = False
+        cancellation = Event()
+        self._viewport_buffer_cancel = cancellation
         canvas_ref = ref(self)
 
         def render() -> None:
-            store = DigitalSlideStore(store_path)
+            store: DigitalSlideStore | None = None
+            status = "ok"
+            error = ""
             try:
+                store = DigitalSlideStore(store_path)
                 image = store.render_viewport(
                     x=desired.left(),
                     y=desired.top(),
@@ -507,23 +644,82 @@ class DigitalSlideCanvas(DocumentCanvas):
                     height=desired.height(),
                     z_index=focus_index,
                     blend_width=blend_width,
+                    cancellation_requested=cancellation.is_set,
                 )
+            except Exception as exc:
+                image = QImage()
+                status = "error"
+                error = f"{type(exc).__name__}: {exc}"
             finally:
-                store.close()
+                if store is not None:
+                    try:
+                        store.close()
+                    except Exception as exc:
+                        image = QImage()
+                        status = "error"
+                        error = f"{type(exc).__name__}: {exc}"
             canvas = canvas_ref()
             if canvas is None or not is_qobject_valid(canvas):
                 return
-            canvas._bufferRendered.emit(request_id, desired.left(), desired.top(), focus_index, image)
+            if cancellation.is_set():
+                image = QImage()
+                status = "cancelled"
+                error = ""
+            elif image.isNull():
+                status = "error"
+                if not error:
+                    error = "DigitalSlideStore.render_viewport returned a null image"
+            canvas._bufferRendered.emit(
+                request_id,
+                desired.left(),
+                desired.top(),
+                focus_index,
+                image,
+                status,
+                error,
+            )
 
         thread = Thread(target=render, name=f"fdm-slide-buffer-{store_path.name}", daemon=True)
         self._viewport_buffer_thread = thread
+        self._viewport_buffer_thread_request_id = request_id
         thread.start()
 
-    def _on_viewport_buffer_rendered(self, request_id: int, x: int, y: int, focus_index: int, image: QImage) -> None:
-        self._viewport_buffer_thread = None
-        if request_id != self._viewport_buffer_request_id or focus_index != self._focus_index or image.isNull():
+    def _on_viewport_buffer_rendered(
+        self,
+        request_id: int,
+        x: int,
+        y: int,
+        focus_index: int,
+        image: QImage,
+        status: str,
+        error: str,
+    ) -> None:
+        if request_id == self._viewport_buffer_thread_request_id:
+            self._viewport_buffer_thread = None
+            self._viewport_buffer_thread_request_id = None
+        stale = request_id != self._viewport_buffer_request_id or focus_index != self._focus_index
+        if stale:
+            thread = self._viewport_buffer_thread
+            if thread is None or not thread.is_alive():
+                self._request_viewport_buffer()
+            return
+        if status == "cancelled":
             self._request_viewport_buffer()
             return
+        if status != "ok" or image.isNull():
+            self._viewport_buffer_pending = False
+            self._viewport_buffer_error_blocked = True
+            self._viewport_buffer_last_error = error or "数字切片视口缓冲返回空图像"
+            store_path = self._slide_store.path if self._slide_store is not None else ""
+            details = (
+                f"path={store_path}\n"
+                f"request_id={request_id}, focus_index={focus_index}, origin=({x}, {y})\n"
+                f"error={self._viewport_buffer_last_error}"
+            )
+            append_runtime_log("数字切片视口缓冲读取失败", details)
+            self.viewportBufferFailed.emit(self._viewport_buffer_last_error)
+            return
+        self._viewport_buffer_last_error = ""
         self._viewport_buffer = image
         self._viewport_buffer_origin = Point(float(x), float(y))
         self._viewport_buffer_focus_index = int(focus_index)
@@ -535,6 +731,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _publish_viewport_state(self, *, throttled: bool) -> None:
         now = perf_counter()
         if throttled and (now - self._viewport_last_publish_at) < 0.12:
+            self._publish_view_transform()
             return
         self._viewport_last_publish_at = now
         self._persist_view_state()
@@ -543,6 +740,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             int(round(self._viewport_origin.y)),
             int(self._focus_index),
         )
+        self._publish_view_transform()
 
     def _reload_viewport(self, *, throttled: bool = False) -> None:
         image = self._render_current_viewport()

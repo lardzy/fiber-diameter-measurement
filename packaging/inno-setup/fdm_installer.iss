@@ -27,6 +27,10 @@
   #error "Application icon not found. Expected packaging/assets/icons/app-icon.ico."
 #endif
 
+#ifnexist ProjectRoot + "\LICENSE"
+  #error "Application license not found. Expected LICENSE in the project root."
+#endif
+
 [Setup]
 AppId={{F0F6A8B5-4838-4DF0-B2C1-18F1D5AA4A66}
 AppName={#MyAppName}
@@ -34,6 +38,7 @@ AppVersion={#MyAppVersion}
 AppVerName={#MyAppName} {#MyAppVersion}
 AppPublisher={#MyAppPublisher}
 SetupIconFile={#MyAppIconFile}
+LicenseFile={#ProjectRoot}\LICENSE
 DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes

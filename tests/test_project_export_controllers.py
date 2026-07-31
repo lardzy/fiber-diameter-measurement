@@ -8,10 +8,20 @@ import sys
 import unittest
 from unittest.mock import patch
 
+import numpy as np
+from PySide6.QtGui import QColor, QImage
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from fdm.models import CalibrationPreset, ImageDocument, ProjectState, new_id
+from fdm.models import (
+    CalibrationPreset,
+    ImageDocument,
+    ProjectCompatibilityState,
+    ProjectState,
+    new_id,
+)
 from fdm.project_io import ProjectIO
+from fdm.raster import RasterPixelType
 from fdm.settings import AppSettings, RawRecordTemplate
 from fdm.services.export_service import (
     ExportScope,
@@ -22,6 +32,12 @@ from fdm.services.export_service import (
 )
 from fdm.ui.export_controller import ExportController
 from fdm.ui.project_session_controller import ProjectSessionController
+from fdm.services.raster_io import (
+    RasterMetadata,
+    numpy_to_raster_plane,
+    read_raster_file,
+    write_native_raster_asset,
+)
 
 
 PROJECT_VERSION = "test"
@@ -311,6 +327,54 @@ class _ExportHost:
 
 
 class ProjectAndExportControllerTests(unittest.TestCase):
+    def test_legacy_in_place_upgrade_can_be_cancelled_before_asset_staging(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "legacy.fdmproj"
+            original = b'{"version":"0.1.0","documents":[]}'
+            project_path.write_bytes(original)
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self._project_path = project_path
+                    self.project.compatibility = ProjectCompatibilityState(
+                        source_schema_version=1,
+                        min_reader_version=1,
+                        source_path=str(project_path),
+                    )
+                    self.confirmed: tuple[Path, Path, int] | None = None
+
+                def _confirm_project_schema_upgrade(
+                    self,
+                    source_path: Path,
+                    backup_path: Path,
+                    source_schema_version: int,
+                ) -> bool:
+                    self.confirmed = (
+                        source_path,
+                        backup_path,
+                        source_schema_version,
+                    )
+                    return False
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertFalse(result)
+            self.assertTrue(result.cancelled)
+            self.assertEqual(project_path.read_bytes(), original)
+            self.assertIsNotNone(host.confirmed)
+            self.assertFalse(
+                project_path.with_name(
+                    f"{project_path.name}.pre-v2.bak"
+                ).exists()
+            )
+
     def test_save_project_uses_first_default_path_and_remembers_directory(self) -> None:
         with TemporaryDirectory() as tmp:
             host = _ProjectHost(Path(tmp))
@@ -377,6 +441,208 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertTrue(document.dirty_flags.session_dirty)
             self.assertTrue(document.dirty_flags.calibration_dirty)
             warning_mock.assert_called_once()
+
+    def test_project_save_persists_float32_derived_asset_without_bit_depth_loss(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "derived.fdmproj"
+            pixels = np.array(
+                [[0.0, 1.25, np.nan], [np.inf, -4.5, 9.0]],
+                dtype=np.float32,
+            )
+            plane = numpy_to_raster_plane(pixels)
+            document = ImageDocument(
+                id="derived_float",
+                path="processed/derived.tif",
+                image_size=(3, 2),
+                source_type="project_asset",
+                raster_pixel_type=RasterPixelType.GRAY32_FLOAT,
+            )
+            document.initialize_runtime_state()
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(
+                        version=PROJECT_VERSION,
+                        documents=[document],
+                    )
+
+                def _project_asset_raster_for_save(
+                    self,
+                    source: ImageDocument,
+                ):
+                    assert source.id == document.id
+                    return plane, RasterMetadata(
+                        source_format="TIFF",
+                        dpi_x=120.0,
+                        dpi_y=120.0,
+                    )
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertTrue(result)
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            stored = payload["documents"][0]
+            self.assertEqual(stored["raster_pixel_type"], "gray32_float")
+            self.assertTrue(stored["path"].startswith("processed/derived.rev-"))
+            self.assertTrue(stored["path"].endswith(".tif"))
+            asset_path = project_path.with_suffix(".assets") / stored["path"]
+            restored = read_raster_file(asset_path).require_success()
+            self.assertIsNotNone(restored.plane)
+            self.assertEqual(restored.plane.sha256(), plane.sha256())
+
+    def test_project_asset_save_rejects_path_escape_before_writing(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "unsafe.fdmproj"
+            outside_path = root / "escaped.png"
+            document = ImageDocument(
+                id="unsafe_asset",
+                path="../escaped.png",
+                image_size=(2, 2),
+                source_type="project_asset",
+            )
+            document.initialize_runtime_state()
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(
+                        version=PROJECT_VERSION,
+                        documents=[document],
+                    )
+                    self.warnings: list[str] = []
+
+                def _show_project_warning(
+                    self,
+                    title: str,
+                    message: str,
+                ) -> None:
+                    self.warnings.append(f"{title}: {message}")
+
+                def _document_display_name(
+                    self,
+                    source: ImageDocument,
+                ) -> str:
+                    return source.path
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertFalse(result)
+            self.assertFalse(project_path.exists())
+            self.assertFalse(outside_path.exists())
+            self.assertTrue(
+                any("安全相对路径" in item for item in host.warnings)
+            )
+
+    def test_qimage_compatibility_asset_uses_matching_png_extension(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "fallback.fdmproj"
+            document = ImageDocument(
+                id="fallback_asset",
+                path="captures/legacy-name.jpg",
+                image_size=(2, 2),
+                source_type="project_asset",
+                raster_pixel_type=RasterPixelType.RGB8,
+            )
+            document.initialize_runtime_state()
+            image = QImage(2, 2, QImage.Format.Format_RGB32)
+            image.fill(QColor("#336699"))
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(
+                        version=PROJECT_VERSION,
+                        documents=[document],
+                    )
+
+                def _project_asset_image_for_save(
+                    self,
+                    source: ImageDocument,
+                ) -> QImage:
+                    assert source.id == document.id
+                    return image
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertTrue(result)
+            payload = json.loads(project_path.read_text(encoding="utf-8"))
+            stored_path = payload["documents"][0]["path"]
+            self.assertTrue(stored_path.endswith(".png"))
+            asset_path = project_path.with_suffix(".assets") / stored_path
+            restored = read_raster_file(asset_path).require_success()
+            self.assertEqual(
+                restored.plane.pixel_type,
+                RasterPixelType.RGB8,
+            )
+
+    def test_project_asset_save_rejects_declared_dimension_mismatch(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "dimension-mismatch.fdmproj"
+            plane = numpy_to_raster_plane(
+                np.zeros((2, 3), dtype=np.uint8)
+            )
+            document = ImageDocument(
+                id="dimension_mismatch",
+                path="processed/mismatch.png",
+                image_size=(2, 2),
+                source_type="project_asset",
+                raster_pixel_type=RasterPixelType.GRAY8,
+            )
+            document.initialize_runtime_state()
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.project = ProjectState(
+                        version=PROJECT_VERSION,
+                        documents=[document],
+                    )
+                    self.warnings: list[str] = []
+
+                def _project_asset_raster_for_save(
+                    self,
+                    source: ImageDocument,
+                ):
+                    assert source.id == document.id
+                    return plane, None
+
+                def _show_project_warning(
+                    self,
+                    title: str,
+                    message: str,
+                ) -> None:
+                    self.warnings.append(f"{title}: {message}")
+
+            host = Host()
+            result = ProjectSessionController(host).save_project(
+                str(project_path)
+            )
+
+            self.assertFalse(result)
+            self.assertFalse(project_path.exists())
+            self.assertTrue(
+                any("图片尺寸" in item for item in host.warnings)
+            )
 
     def test_compatibility_project_views_preserve_legacy_calibration_presets(self) -> None:
         with TemporaryDirectory() as tmp:
@@ -490,13 +756,8 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             first.initialize_runtime_state()
             second.initialize_runtime_state()
 
-            class FakeImage:
-                def isNull(self) -> bool:
-                    return False
-
-                def save(self, path: str, _format: str) -> bool:
-                    Path(path).write_bytes(b"valid-png")
-                    return True
+            first_image = QImage(10, 10, QImage.Format.Format_RGB32)
+            first_image.fill(QColor("#336699"))
 
             class Host(_ProjectHost):
                 def __init__(self) -> None:
@@ -511,7 +772,7 @@ class ProjectAndExportControllerTests(unittest.TestCase):
                     return document.path
 
                 def _project_asset_image_for_save(self, document: ImageDocument):
-                    return FakeImage() if document.id == first.id else None
+                    return first_image if document.id == first.id else None
 
             host = Host()
             result = ProjectSessionController(host).save_project(str(project_path))
@@ -527,7 +788,15 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             project_path = root / "corrupt-revision.fdmproj"
             previous_project = b'{"previous":true}'
             project_path.write_bytes(previous_project)
-            image_payload = b"valid-png"
+            plane = numpy_to_raster_plane(
+                np.full((10, 10, 3), 128, dtype=np.uint8)
+            )
+            encoded_probe = root / "probe.png"
+            self.assertTrue(
+                write_native_raster_asset(plane, encoded_probe)
+            )
+            image_payload = encoded_probe.read_bytes()
+            encoded_probe.unlink()
             digest = hashlib.sha256(image_payload).hexdigest()
             corrupt_revision = (
                 project_path.with_suffix(".assets")
@@ -541,16 +810,9 @@ class ProjectAndExportControllerTests(unittest.TestCase):
                 path="captures/capture.png",
                 image_size=(10, 10),
                 source_type="project_asset",
+                raster_pixel_type=RasterPixelType.RGB8,
             )
             document.initialize_runtime_state()
-
-            class FakeImage:
-                def isNull(self) -> bool:
-                    return False
-
-                def save(self, path: str, _format: str) -> bool:
-                    Path(path).write_bytes(image_payload)
-                    return True
 
             class Host(_ProjectHost):
                 def __init__(self) -> None:
@@ -564,9 +826,12 @@ class ProjectAndExportControllerTests(unittest.TestCase):
                 def _document_display_name(self, source: ImageDocument) -> str:
                     return source.path
 
-                def _project_asset_image_for_save(self, source: ImageDocument):
-                    del source
-                    return FakeImage()
+                def _project_asset_raster_for_save(
+                    self,
+                    source: ImageDocument,
+                ):
+                    assert source.id == document.id
+                    return plane, None
 
             host = Host()
             with patch("fdm.ui.project_session_controller.ProjectIO.save") as save_mock:

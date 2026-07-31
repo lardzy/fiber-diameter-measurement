@@ -61,6 +61,95 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertTrue(window._project_dock.isVisible())
         self.assertFalse(window._inspector_dock.isVisible())
 
+    def test_compact_digital_slide_frame_refresh_preserves_selected_side_panel(self) -> None:
+        window = self._window()
+        window.resize(1093, 700)
+        window.show()
+        self.app.processEvents()
+        window._digital_slide_mode = True
+        window._preview_active = True
+        window._sync_digital_slide_mode_ui()
+        self.app.processEvents()
+
+        self.assertTrue(window._adaptive_layout.is_compact)
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
+
+        window.toggle_inspector_panel_action.trigger()
+        self.app.processEvents()
+        self.assertFalse(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+
+        frame = QImage(640, 480, QImage.Format.Format_RGB32)
+        frame.fill(Qt.GlobalColor.black)
+        with patch.object(window._capture_manager, "preview_kind", return_value="frame_stream"):
+            for _ in range(3):
+                window._on_live_preview_frame_ready(frame)
+                self.app.processEvents()
+
+        self.assertFalse(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+        self.assertFalse(window.toggle_project_panel_action.isChecked())
+        self.assertTrue(window.toggle_inspector_panel_action.isChecked())
+
+    def test_wide_digital_slide_frame_refresh_preserves_hidden_panels(self) -> None:
+        window = self._window()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        window._digital_slide_mode = True
+        window._preview_active = True
+        window._sync_digital_slide_mode_ui()
+        self.app.processEvents()
+
+        self.assertFalse(window._adaptive_layout.is_compact)
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+
+        frame = QImage(640, 480, QImage.Format.Format_RGB32)
+        frame.fill(Qt.GlobalColor.black)
+        with patch.object(window._capture_manager, "preview_kind", return_value="frame_stream"):
+            window.toggle_project_panel_action.trigger()
+            self.app.processEvents()
+            for _ in range(3):
+                window._on_live_preview_frame_ready(frame)
+                self.app.processEvents()
+            self.assertFalse(window._project_dock.isVisible())
+            self.assertTrue(window._inspector_dock.isVisible())
+
+            window.toggle_project_panel_action.trigger()
+            window.toggle_inspector_panel_action.trigger()
+            self.app.processEvents()
+            for _ in range(3):
+                window._on_live_preview_frame_ready(frame)
+                self.app.processEvents()
+
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
+        self.assertTrue(window.toggle_project_panel_action.isChecked())
+        self.assertFalse(window.toggle_inspector_panel_action.isChecked())
+
+    def test_workspace_sync_catches_up_after_suspended_breakpoint_change(self) -> None:
+        window = self._window()
+        window.resize(1600, 900)
+        window.show()
+        self.app.processEvents()
+        layout = window._adaptive_layout
+
+        self.assertFalse(layout.is_compact)
+        layout.begin_presentation_mode()
+        window.resize(1093, 700)
+        self.app.processEvents()
+        self.assertFalse(layout.is_compact)
+
+        layout.end_presentation_mode(reapply_layout=False)
+        layout.set_workspace(layout.workspace)
+        self.app.processEvents()
+
+        self.assertTrue(layout.is_compact)
+        self.assertFalse(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+
     def test_wide_layout_exposes_docks_and_results_remain_opt_in(self) -> None:
         window = self._window()
         window.resize(1600, 900)

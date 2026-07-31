@@ -33,6 +33,9 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "rename": "fa5s.edit",
     "fit": "fa5s.expand-arrows-alt",
     "actual_size": "fa5s.expand",
+    "fullscreen": "mdi6.fullscreen",
+    "exit_fullscreen": "mdi6.fullscreen-exit",
+    "navigator": "mdi6.map-outline",
     "export": "fa5s.file-export",
     "settings": "fa5s.cog",
     "statistics": "fa5s.chart-bar",
@@ -320,6 +323,96 @@ def _draw_actual_size(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.drawLine(QPointF(box.left() + 2.0, center.y()), QPointF(box.right() - 2.0, center.y()))
 
 
+def _draw_fullscreen(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    """Four outward arrows, intentionally distinct from the fit brackets."""
+
+    painter.setPen(_pen(color, 1.65))
+    center = rect.center()
+    outer = rect.adjusted(2.7, 2.7, -2.7, -2.7)
+    for corner in (
+        QPointF(outer.left(), outer.top()),
+        QPointF(outer.right(), outer.top()),
+        QPointF(outer.left(), outer.bottom()),
+        QPointF(outer.right(), outer.bottom()),
+    ):
+        direction_x = -1.0 if corner.x() < center.x() else 1.0
+        direction_y = -1.0 if corner.y() < center.y() else 1.0
+        inner = QPointF(
+            center.x() + direction_x * rect.width() * 0.08,
+            center.y() + direction_y * rect.height() * 0.08,
+        )
+        painter.drawLine(inner, corner)
+        painter.drawLine(
+            corner,
+            QPointF(corner.x() - direction_x * rect.width() * 0.26, corner.y()),
+        )
+        painter.drawLine(
+            corner,
+            QPointF(corner.x(), corner.y() - direction_y * rect.height() * 0.26),
+        )
+
+
+def _draw_exit_fullscreen(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    """Four inward arrows that make the exit action visually unambiguous."""
+
+    painter.setPen(_pen(color, 1.65))
+    center = rect.center()
+    for direction_x, direction_y in (
+        (-1.0, -1.0),
+        (1.0, -1.0),
+        (-1.0, 1.0),
+        (1.0, 1.0),
+    ):
+        outer = QPointF(
+            center.x() + direction_x * rect.width() * 0.36,
+            center.y() + direction_y * rect.height() * 0.36,
+        )
+        inner = QPointF(
+            center.x() + direction_x * rect.width() * 0.08,
+            center.y() + direction_y * rect.height() * 0.08,
+        )
+        painter.drawLine(outer, inner)
+        painter.drawLine(
+            inner,
+            QPointF(inner.x() + direction_x * rect.width() * 0.23, inner.y()),
+        )
+        painter.drawLine(
+            inner,
+            QPointF(inner.x(), inner.y() + direction_y * rect.height() * 0.23),
+        )
+
+
+def _draw_navigator(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    """A miniature image with a highlighted viewport rectangle."""
+
+    outer = rect.adjusted(2.5, 3.5, -2.5, -3.5)
+    painter.setPen(_pen(color, 1.45))
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.drawRoundedRect(outer, 2.0, 2.0)
+    landscape = QPainterPath(
+        QPointF(outer.left() + 1.8, outer.bottom() - outer.height() * 0.22)
+    )
+    landscape.lineTo(
+        QPointF(outer.left() + outer.width() * 0.34, outer.top() + outer.height() * 0.52)
+    )
+    landscape.lineTo(
+        QPointF(outer.left() + outer.width() * 0.53, outer.top() + outer.height() * 0.68)
+    )
+    landscape.lineTo(
+        QPointF(outer.right() - 1.8, outer.top() + outer.height() * 0.34)
+    )
+    painter.drawPath(landscape)
+    viewport = QRectF(
+        outer.left() + outer.width() * 0.42,
+        outer.top() + outer.height() * 0.18,
+        outer.width() * 0.42,
+        outer.height() * 0.48,
+    )
+    painter.setPen(_pen(color, 1.8))
+    painter.setBrush(QColor(color.red(), color.green(), color.blue(), 55))
+    painter.drawRect(viewport)
+
+
 def _draw_add(painter: QPainter, color: QColor, rect: QRectF) -> None:
     painter.setPen(_pen(color, 1.8))
     painter.drawEllipse(rect.adjusted(3.0, 3.0, -3.0, -3.0))
@@ -439,6 +532,9 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "export": _draw_export,
     "fit": _draw_fit,
     "actual_size": _draw_actual_size,
+    "fullscreen": _draw_fullscreen,
+    "exit_fullscreen": _draw_exit_fullscreen,
+    "navigator": _draw_navigator,
     "add": _draw_add,
     "rename": _draw_rename,
     "model": _draw_model,

@@ -4,11 +4,20 @@ from dataclasses import dataclass, field, replace
 from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import Any, Iterable, Mapping
+import hashlib
+import json
 import math
 import statistics
 import uuid
 
+from fdm.analysis_artifacts import (
+    AnalysisArtifact,
+    AnalysisDependencySignature,
+    AnalysisSourceDescriptor,
+    calibration_signature_from_values,
+    refresh_artifacts_validity,
+)
 from fdm.geometry import (
     Line,
     Point,
@@ -20,10 +29,67 @@ from fdm.geometry import (
     polyline_centroid,
     polyline_length,
 )
+from fdm.image_processing_models import (
+    DisplayTransform,
+    ImageDerivation,
+    RasterSemantic,
+    RasterTypeState,
+)
+from fdm.project_roi import (
+    ProjectRoi,
+    ProjectRoiDeletionResult,
+    remove_rois_with_dependents,
+)
+from fdm.raster import RasterPixelType
 from fdm.version import __version__
 
 UNCATEGORIZED_LABEL = "未分类"
 UNCATEGORIZED_COLOR = "#98A2B3"
+
+PROJECT_SCHEMA_VERSION = 2
+PROJECT_MIN_READER_VERSION = 2
+SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
+    {
+        "analysis-artifacts/v1",
+        "analysis-artifacts/v2",
+        "project-rois/v1",
+    }
+)
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectCompatibilityState:
+    """Runtime compatibility decision for a loaded project file."""
+
+    source_schema_version: int = PROJECT_SCHEMA_VERSION
+    min_reader_version: int = PROJECT_MIN_READER_VERSION
+    required_features: tuple[str, ...] = ()
+    unknown_required_features: tuple[str, ...] = ()
+    source_path: str | None = None
+
+    @property
+    def read_only(self) -> bool:
+        return bool(self.unknown_required_features)
+
+    @property
+    def overwrite_allowed(self) -> bool:
+        return not self.read_only
+
+    @property
+    def requires_upgrade(self) -> bool:
+        return self.source_schema_version < PROJECT_SCHEMA_VERSION
+
+    def can_overwrite(self, path: str | Path | None = None) -> bool:
+        if not self.read_only:
+            return True
+        if path is None or self.source_path is None:
+            return False
+        try:
+            return Path(path).expanduser().resolve() != Path(
+                self.source_path
+            ).expanduser().resolve()
+        except OSError:
+            return str(path) != self.source_path
 
 
 def utc_now_iso() -> str:
@@ -40,6 +106,10 @@ def project_assets_root(project_path: str | Path) -> Path:
 
 def project_capture_root(project_path: str | Path) -> Path:
     return project_assets_root(project_path) / "captures"
+
+
+def project_processed_root(project_path: str | Path) -> Path:
+    return project_assets_root(project_path) / "processed"
 
 
 def project_slide_root(project_path: str | Path) -> Path:
@@ -722,6 +792,104 @@ class OverlayAnnotationKind:
     ARROW = "arrow"
 
 
+class OverlayTextAnchorAlignment:
+    """Anchor point placement within an overlay text layout box."""
+
+    TOP_LEFT = "top_left"
+    TOP_CENTER = "top_center"
+    TOP_RIGHT = "top_right"
+    CENTER_LEFT = "center_left"
+    CENTER = "center"
+    CENTER_RIGHT = "center_right"
+    BOTTOM_LEFT = "bottom_left"
+    BOTTOM_CENTER = "bottom_center"
+    BOTTOM_RIGHT = "bottom_right"
+
+    # Readable aliases for callers that describe the second row as "middle".
+    MIDDLE_LEFT = CENTER_LEFT
+    MIDDLE_CENTER = CENTER
+    MIDDLE_RIGHT = CENTER_RIGHT
+
+    @classmethod
+    def normalize(cls, value: object) -> str:
+        token = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        aliases = {
+            cls.TOP_LEFT: cls.TOP_LEFT,
+            cls.TOP_CENTER: cls.TOP_CENTER,
+            cls.TOP_RIGHT: cls.TOP_RIGHT,
+            cls.CENTER_LEFT: cls.CENTER_LEFT,
+            cls.CENTER: cls.CENTER,
+            cls.CENTER_RIGHT: cls.CENTER_RIGHT,
+            cls.BOTTOM_LEFT: cls.BOTTOM_LEFT,
+            cls.BOTTOM_CENTER: cls.BOTTOM_CENTER,
+            cls.BOTTOM_RIGHT: cls.BOTTOM_RIGHT,
+            "middle_left": cls.CENTER_LEFT,
+            "middle": cls.CENTER,
+            "middle_center": cls.CENTER,
+            "middle_right": cls.CENTER_RIGHT,
+        }
+        return aliases.get(token, cls.CENTER)
+
+
+class OverlayTextSizeSpace:
+    """Coordinate space used to interpret an overlay text font size."""
+
+    LEGACY_OUTPUT_PX = "legacy_output_px"
+    IMAGE_PX = "image_px"
+
+    @classmethod
+    def normalize(cls, value: object) -> str:
+        token = str(value or "").strip().lower().replace("-", "_").replace(" ", "_")
+        if token == cls.LEGACY_OUTPUT_PX:
+            return cls.LEGACY_OUTPUT_PX
+        return cls.IMAGE_PX
+
+
+@dataclass(slots=True)
+class OverlayTextLayoutSpec:
+    """Explicit placement and size semantics for a text overlay.
+
+    A missing spec on :class:`OverlayAnnotation` retains the legacy fixed-output
+    pixel behavior.  New annotations use image-space sizing and a centered
+    anchor unless the caller requests otherwise.
+    """
+
+    anchor_alignment: str = OverlayTextAnchorAlignment.CENTER
+    size_space: str = OverlayTextSizeSpace.IMAGE_PX
+    image_font_size_px: float = 18.0
+
+    def __post_init__(self) -> None:
+        self.anchor_alignment = OverlayTextAnchorAlignment.normalize(self.anchor_alignment)
+        self.size_space = OverlayTextSizeSpace.normalize(self.size_space)
+        normalized_size = _normalize_optional_finite(
+            self.image_font_size_px,
+            minimum=1.0,
+            maximum=8192.0,
+        )
+        self.image_font_size_px = 18.0 if normalized_size is None else float(normalized_size)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "anchor_alignment": self.anchor_alignment,
+            "size_space": self.size_space,
+            "image_font_size_px": self.image_font_size_px,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: dict[str, Any]) -> "OverlayTextLayoutSpec":
+        return cls(
+            anchor_alignment=payload.get("anchor_alignment", OverlayTextAnchorAlignment.CENTER),
+            size_space=payload.get("size_space", OverlayTextSizeSpace.IMAGE_PX),
+            image_font_size_px=payload.get("image_font_size_px", 18.0),
+        )
+
+
+def _overlay_text_layout_from_payload(payload: object) -> OverlayTextLayoutSpec | None:
+    if not isinstance(payload, dict):
+        return None
+    return OverlayTextLayoutSpec.from_dict(payload)
+
+
 @dataclass(slots=True)
 class OverlayAnnotation:
     id: str
@@ -733,6 +901,7 @@ class OverlayAnnotation:
     end_px: Point = field(default_factory=lambda: Point(0.0, 0.0))
     created_at: str = field(default_factory=utc_now_iso)
     appearance: ObjectAppearanceOverride | None = None
+    text_layout: OverlayTextLayoutSpec | None = None
 
     def normalized_kind(self) -> str:
         if self.kind in {
@@ -769,6 +938,8 @@ class OverlayAnnotation:
         if self.is_text():
             payload["content"] = self.content
             payload["anchor_px"] = self.anchor_px.to_dict()
+            if self.text_layout is not None:
+                payload["text_layout"] = self.text_layout.to_dict()
         else:
             payload["start_px"] = self.start_px.to_dict()
             payload["end_px"] = self.end_px.to_dict()
@@ -796,6 +967,7 @@ class OverlayAnnotation:
                 anchor_px=Point.from_dict(payload.get("anchor_px", {"x": 0.0, "y": 0.0})),
                 created_at=str(payload.get("created_at", utc_now_iso())),
                 appearance=_appearance_from_payload(payload.get("appearance")),
+                text_layout=_overlay_text_layout_from_payload(payload.get("text_layout")),
             )
         return cls(
             id=str(payload["id"]),
@@ -880,6 +1052,11 @@ class ImageDocument:
     calibration_load_payload: dict[str, Any] | None = field(default=None, repr=False, compare=False)
     dirty_flags: DirtyFlags = field(default_factory=DirtyFlags)
     history: Any = field(default=None, repr=False, compare=False)
+    raster_pixel_type: RasterPixelType | None = None
+    display_transform: DisplayTransform | None = None
+    derivation: ImageDerivation | None = None
+    # Keep the legacy positional order through ``derivation`` intact.
+    raster_semantic: RasterSemantic | None = None
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1689,11 +1866,31 @@ class ImageDocument:
         }
         if self.source_type == "filesystem" and self.absolute_path:
             payload["absolute_path"] = self.absolute_path
+        if self.raster_pixel_type is not None:
+            payload["raster_pixel_type"] = self.raster_pixel_type.value
+        if self.raster_semantic is not None:
+            payload["raster_semantic"] = self.raster_semantic.value
+        if self.display_transform is not None:
+            payload["display_transform"] = self.display_transform.to_dict()
+        if self.derivation is not None:
+            payload["derivation"] = self.derivation.to_dict()
         return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
         overlay_payload = payload.get("overlay_annotations")
+        display_transform_payload = payload.get("display_transform")
+        if (
+            display_transform_payload is not None
+            and not isinstance(display_transform_payload, dict)
+        ):
+            raise TypeError("display_transform 必须是对象")
+        derivation_payload = payload.get("derivation")
+        if (
+            derivation_payload is not None
+            and not isinstance(derivation_payload, dict)
+        ):
+            raise TypeError("derivation 必须是对象")
         overlay_annotations = [
             OverlayAnnotation.from_dict(item)
             for item in overlay_payload
@@ -1703,12 +1900,67 @@ class ImageDocument:
             for item in payload.get("text_annotations", [])
             if isinstance(item, dict)
         ]
+        parsed_pixel_type = (
+            RasterPixelType.parse(payload["raster_pixel_type"])
+            if payload.get("raster_pixel_type") is not None
+            else None
+        )
+        parsed_derivation = (
+            ImageDerivation.from_dict(derivation_payload)
+            if isinstance(derivation_payload, dict)
+            else None
+        )
+        semantic_payload = payload.get("raster_semantic")
+        derivation_semantic = (
+            parsed_derivation.result_semantic
+            if parsed_derivation is not None
+            else None
+        )
+        if semantic_payload is not None and derivation_semantic is not None:
+            root_semantic = (
+                semantic_payload
+                if isinstance(semantic_payload, RasterSemantic)
+                else RasterSemantic(str(semantic_payload))
+            )
+            if root_semantic is not derivation_semantic:
+                raise ValueError(
+                    "文档 raster_semantic 与 derivation.result.semantic "
+                    "不一致，已拒绝按不确定语义加载"
+                )
+        if semantic_payload is None:
+            semantic_payload = derivation_semantic
+        parsed_semantic = (
+            (
+                semantic_payload
+                if isinstance(semantic_payload, RasterSemantic)
+                else RasterSemantic(str(semantic_payload))
+            )
+            if semantic_payload is not None
+            else None
+        )
+        if parsed_semantic is not None:
+            if parsed_pixel_type is None:
+                raise ValueError(
+                    "raster_semantic 需要同时记录 raster_pixel_type"
+                )
+            RasterTypeState(
+                pixel_type=parsed_pixel_type,
+                semantic=parsed_semantic,
+            )
         image_document = cls(
             id=str(payload["id"]),
             path=str(payload["path"]),
             source_type=str(payload.get("source_type", "filesystem")),
             document_kind=str(payload.get("document_kind", "image")),
             absolute_path=str(payload["absolute_path"]) if payload.get("absolute_path") else None,
+            raster_pixel_type=parsed_pixel_type,
+            raster_semantic=parsed_semantic,
+            display_transform=(
+                DisplayTransform.from_dict(display_transform_payload)
+                if isinstance(display_transform_payload, dict)
+                else None
+            ),
+            derivation=parsed_derivation,
             image_size=(int(payload["image_size"][0]), int(payload["image_size"][1])),
             calibration=Calibration.from_dict(payload["calibration"]) if payload.get("calibration") else None,
             fiber_groups=[
@@ -1735,14 +1987,223 @@ class ProjectState:
     calibration_presets: list[CalibrationPreset] = field(default_factory=list)
     project_default_calibration: Calibration | None = None
     project_group_templates: list[ProjectGroupTemplate] = field(default_factory=list)
+    project_rois: list[ProjectRoi] = field(default_factory=list)
+    analysis_artifacts: list[AnalysisArtifact] = field(default_factory=list)
     metadata: dict[str, Any] = field(default_factory=dict)
     load_issues: list[dict[str, Any]] = field(default_factory=list, repr=False, compare=False)
+    project_schema_version: int = PROJECT_SCHEMA_VERSION
+    min_reader_version: int = PROJECT_MIN_READER_VERSION
+    required_features: tuple[str, ...] = ()
+    compatibility: ProjectCompatibilityState = field(
+        default_factory=ProjectCompatibilityState,
+        repr=False,
+        compare=False,
+    )
+    _extension_state_id: int = field(
+        default=0,
+        init=False,
+        repr=False,
+        compare=False,
+    )
+    _next_extension_state_id: int = field(
+        default=1,
+        init=False,
+        repr=False,
+        compare=False,
+    )
 
     def get_document(self, document_id: str) -> ImageDocument | None:
         for document in self.documents:
             if document.id == document_id:
                 return document
         return None
+
+    def get_project_roi(self, roi_id: str) -> ProjectRoi | None:
+        for roi in self.project_rois:
+            if roi.id == roi_id:
+                return roi
+        return None
+
+    def get_analysis_artifact(self, artifact_id: str) -> AnalysisArtifact | None:
+        for artifact in self.analysis_artifacts:
+            if artifact.id == artifact_id:
+                return artifact
+        return None
+
+    @property
+    def is_read_only_compatible(self) -> bool:
+        return self.compatibility.read_only
+
+    def effective_required_features(self) -> tuple[str, ...]:
+        """Return declared features plus those required by persisted content."""
+
+        features = list(self.required_features)
+        if self.project_rois:
+            features.append("project-rois/v1")
+        if self.analysis_artifacts:
+            features.append("analysis-artifacts/v2")
+        return tuple(dict.fromkeys(features))
+
+    def remove_project_rois(
+        self,
+        roi_ids: Iterable[str],
+    ) -> ProjectRoiDeletionResult:
+        """Atomically remove ROIs and every now-dangling composite."""
+
+        result = remove_rois_with_dependents(self.project_rois, roi_ids)
+        if result.removed_ids:
+            self.project_rois = list(result.remaining_rois)
+            self.mark_extension_changed()
+        return result
+
+    @property
+    def extension_state_id(self) -> int:
+        """O(1) dirty identity for ROI and independent analysis branches."""
+
+        return self._extension_state_id
+
+    def mark_extension_changed(self) -> int:
+        state_id = self._next_extension_state_id
+        self._next_extension_state_id += 1
+        self._extension_state_id = state_id
+        return state_id
+
+    def refresh_analysis_validity(
+        self,
+        document_id: str,
+        *,
+        source_document_exists: bool | None = None,
+        current_pixel_revision: int | None = None,
+        current_source_descriptor: AnalysisSourceDescriptor | None | object = ...,
+        current_source_descriptors: (
+            Mapping[str, AnalysisSourceDescriptor | None] | None
+        ) = None,
+        current_calibration_signature: str | None | object = ...,
+        roi_revisions: Mapping[str, int] | None = None,
+        measurement_revisions: Mapping[str, int] | None = None,
+    ) -> int:
+        """Mark outdated analysis results stale without deleting audit data.
+
+        The caller should pass ``current_pixel_revision`` whenever authoritative
+        pixels may have changed.  ROI and measurement revision registries
+        default to the currently mounted project objects.  A previously stale
+        artifact is never revived; recalculation must append a new artifact.
+        """
+
+        normalized_document_id = str(document_id or "").strip()
+        if not normalized_document_id:
+            raise ValueError("document_id 不能为空")
+        document = self.get_document(normalized_document_id)
+        document_exists = (
+            document is not None
+            if source_document_exists is None
+            else source_document_exists
+        )
+        if not isinstance(document_exists, bool):
+            raise TypeError("source_document_exists 必须是布尔值")
+        if roi_revisions is None:
+            roi_revisions = {
+                roi.id: roi.revision
+                for roi in self.project_rois
+                if roi.document_id == normalized_document_id
+            }
+        if measurement_revisions is None:
+            measurement_revisions = (
+                {}
+                if document is None
+                else {
+                    measurement.id: measurement.geometry_revision
+                    for measurement in document.measurements
+                }
+            )
+        if current_calibration_signature is ...:
+            calibration = None if document is None else document.calibration
+            calibration_signature = (
+                None
+                if calibration is None
+                else calibration_signature_from_values(
+                    pixels_per_unit=calibration.pixels_per_unit,
+                    unit=calibration.unit,
+                )
+            )
+        else:
+            calibration_signature = current_calibration_signature
+        before = tuple(self.analysis_artifacts)
+        current_dependency_signatures = {
+            artifact.id: (
+                None
+                if rebuilt is None
+                else rebuilt.sha256
+            )
+            for artifact in before
+            if artifact.source_document_id == normalized_document_id
+            and artifact.dependency_signature is not None
+            for rebuilt in (
+                _rebuild_analysis_dependency_signature(
+                    self,
+                    document,
+                    artifact.dependency_signature,
+                ),
+            )
+        }
+        refresh_kwargs: dict[str, object] = {
+            "document_id": normalized_document_id,
+            "source_document_exists": document_exists,
+            "current_pixel_revision": current_pixel_revision,
+            "current_calibration_signature": calibration_signature,
+            "roi_revisions": roi_revisions,
+            "measurement_revisions": measurement_revisions,
+            "current_dependency_signatures": current_dependency_signatures,
+        }
+        if current_source_descriptor is not ...:
+            refresh_kwargs["current_source_descriptor"] = (
+                current_source_descriptor
+            )
+        if current_source_descriptors is not None:
+            refresh_kwargs["current_source_descriptors"] = (
+                current_source_descriptors
+            )
+        refreshed = refresh_artifacts_validity(
+            before,
+            **refresh_kwargs,  # type: ignore[arg-type]
+        )
+        self.analysis_artifacts = list(refreshed)
+        return sum(
+            previous is not current
+            for previous, current in zip(before, refreshed, strict=True)
+        )
+
+    def analysis_dependency_is_current(
+        self,
+        document_id: str,
+        dependency_signature: AnalysisDependencySignature | None,
+    ) -> bool:
+        """Verify a frozen analysis dependency against current project state.
+
+        This is intentionally side-effect free so result-commit paths can call
+        it before and after writing assets.  ``None`` represents an old v1
+        analysis request that did not declare dependency provenance.
+        """
+
+        if dependency_signature is None:
+            return True
+        if not isinstance(dependency_signature, AnalysisDependencySignature):
+            raise TypeError(
+                "dependency_signature 必须是 AnalysisDependencySignature"
+            )
+        normalized_document_id = str(document_id or "").strip()
+        if not normalized_document_id:
+            raise ValueError("document_id 不能为空")
+        document = self.get_document(normalized_document_id)
+        rebuilt = _rebuild_analysis_dependency_signature(
+            self,
+            document,
+            dependency_signature,
+        )
+        return (
+            rebuilt is not None
+            and rebuilt.sha256 == dependency_signature.sha256
+        )
 
     def to_dict(self) -> dict[str, Any]:
         seen_template_labels: set[str] = set()
@@ -1753,13 +2214,25 @@ class ProjectState:
                 continue
             seen_template_labels.add(token)
             serialized_templates.append(template.to_dict())
-        return {
+        payload = {
+            "project_schema_version": PROJECT_SCHEMA_VERSION,
+            "min_reader_version": PROJECT_MIN_READER_VERSION,
+            "required_features": list(self.effective_required_features()),
             "version": self.version,
             "documents": [document.to_dict() for document in self.documents],
             "project_default_calibration": self.project_default_calibration.to_dict() if self.project_default_calibration else None,
             "project_group_templates": serialized_templates,
             "metadata": self.metadata,
         }
+        serialized_rois = _serialize_project_rois(self.project_rois)
+        if serialized_rois:
+            payload["project_rois"] = serialized_rois
+        serialized_artifacts = _serialize_analysis_artifacts(
+            self.analysis_artifacts
+        )
+        if serialized_artifacts:
+            payload["analysis_artifacts"] = serialized_artifacts
+        return payload
 
     @classmethod
     def empty(cls) -> "ProjectState":
@@ -1767,6 +2240,9 @@ class ProjectState:
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ProjectState":
+        if not isinstance(payload, dict):
+            raise TypeError("ProjectState 必须是对象")
+        compatibility = _project_compatibility_from_payload(payload)
         seen_template_labels: set[str] = set()
         project_group_templates: list[ProjectGroupTemplate] = []
         for item in payload.get("project_group_templates", []):
@@ -1776,6 +2252,29 @@ class ProjectState:
                 continue
             seen_template_labels.add(token)
             project_group_templates.append(template)
+        project_rois_payload = payload.get("project_rois", [])
+        if not isinstance(project_rois_payload, list) or any(
+            not isinstance(item, dict) for item in project_rois_payload
+        ):
+            raise TypeError("project_rois 必须是对象列表")
+        analysis_artifacts_payload = payload.get("analysis_artifacts", [])
+        if not isinstance(analysis_artifacts_payload, list) or any(
+            not isinstance(item, dict) for item in analysis_artifacts_payload
+        ):
+            raise TypeError("analysis_artifacts 必须是对象列表")
+        project_rois = [
+            ProjectRoi.from_dict(item)
+            for item in project_rois_payload
+        ]
+        analysis_artifacts = [
+            AnalysisArtifact.from_dict(item)
+            for item in analysis_artifacts_payload
+        ]
+        _ensure_unique_ids(project_rois, field_name="project_rois")
+        _ensure_unique_ids(
+            analysis_artifacts,
+            field_name="analysis_artifacts",
+        )
         return cls(
             version=str(payload.get("version", __version__)),
             documents=[ImageDocument.from_dict(item) for item in payload.get("documents", [])],
@@ -1785,5 +2284,299 @@ class ProjectState:
             ],
             project_default_calibration=Calibration.from_dict(payload["project_default_calibration"]) if payload.get("project_default_calibration") else None,
             project_group_templates=project_group_templates,
+            project_rois=project_rois,
+            analysis_artifacts=analysis_artifacts,
             metadata=dict(payload.get("metadata", {})),
+            project_schema_version=compatibility.source_schema_version,
+            min_reader_version=compatibility.min_reader_version,
+            required_features=compatibility.required_features,
+            compatibility=compatibility,
         )
+
+
+def _analysis_dependency_json_sha256(value: object) -> str:
+    payload = json.dumps(
+        value,
+        ensure_ascii=False,
+        allow_nan=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
+
+
+def _rebuild_analysis_dependency_signature(
+    project: ProjectState,
+    document: ImageDocument | None,
+    dependency_signature: AnalysisDependencySignature | None,
+) -> AnalysisDependencySignature | None:
+    """Rebuild a v2 dependency signature from current authoritative objects.
+
+    The stored dependency descriptor defines the original analysis scope. Current
+    revisions, point coordinates, category membership and calibration values
+    are substituted into that descriptor. Missing dependencies deliberately
+    return ``None`` so validity refresh marks the artifact stale.
+    """
+
+    original = dependency_signature
+    if original is None or document is None:
+        return None
+    dependencies = original.dependencies
+
+    calibration = document.calibration
+    current_calibration = (
+        {
+            "signature": None,
+            "pixel_size_x": 1.0,
+            "pixel_size_y": 1.0,
+            "unit": "px",
+        }
+        if calibration is None
+        else {
+            "signature": calibration_signature_from_values(
+                pixels_per_unit=calibration.pixels_per_unit,
+                unit=calibration.unit,
+            ),
+            "pixel_size_x": 1.0 / calibration.pixels_per_unit,
+            "pixel_size_y": 1.0 / calibration.pixels_per_unit,
+            "unit": calibration.unit,
+        }
+    )
+
+    stored_roi_refs = dependencies.get("roi_transitive_refs")
+    if not isinstance(stored_roi_refs, Mapping):
+        return None
+    roi_lookup = {
+        roi.id: roi
+        for roi in project.project_rois
+        if roi.document_id == document.id
+    }
+    current_roi_refs: dict[str, object] = {}
+    for roi_id, stored_entry in stored_roi_refs.items():
+        if not isinstance(roi_id, str) or not isinstance(stored_entry, Mapping):
+            return None
+        roi = roi_lookup.get(roi_id)
+        if roi is None:
+            return None
+        expected_revision = stored_entry.get("revision")
+        if (
+            isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+            or roi.revision != expected_revision
+            or stored_entry.get("kind") != roi.kind.value
+        ):
+            return None
+        current_roi_refs[roi_id] = dict(stored_entry)
+
+    stored_measurements = dependencies.get("measurement_revisions")
+    if not isinstance(stored_measurements, Mapping):
+        return None
+    measurement_lookup = {
+        measurement.id: measurement
+        for measurement in document.measurements
+    }
+    current_measurements: dict[str, int] = {}
+    for measurement_id, expected_revision in stored_measurements.items():
+        if (
+            not isinstance(measurement_id, str)
+            or isinstance(expected_revision, bool)
+            or not isinstance(expected_revision, int)
+        ):
+            return None
+        measurement = measurement_lookup.get(measurement_id)
+        if (
+            measurement is None
+            or measurement.geometry_revision != expected_revision
+        ):
+            return None
+        current_measurements[measurement_id] = measurement.geometry_revision
+
+    stored_study_region = dependencies.get("study_region")
+    current_point_set = dependencies.get("point_set")
+    current_group = dependencies.get("group")
+    if current_point_set is not None:
+        if not isinstance(current_point_set, Mapping):
+            return None
+        measurement_ids = current_point_set.get("measurement_ids")
+        if not isinstance(measurement_ids, list) or any(
+            not isinstance(item, str) for item in measurement_ids
+        ):
+            return None
+        origin_x = 0.0
+        origin_y = 0.0
+        if isinstance(stored_study_region, Mapping):
+            raw_origin = stored_study_region.get("viewport_origin")
+            if (
+                isinstance(raw_origin, list)
+                and len(raw_origin) == 2
+                and all(
+                    isinstance(item, (int, float)) and not isinstance(item, bool)
+                    for item in raw_origin
+                )
+            ):
+                origin_x = float(raw_origin[0])
+                origin_y = float(raw_origin[1])
+        point_records: list[dict[str, object]] = []
+        for measurement_id in measurement_ids:
+            measurement = measurement_lookup.get(measurement_id)
+            if (
+                measurement is None
+                or measurement.measurement_kind != "count"
+                or measurement.point_px is None
+            ):
+                return None
+            point_records.append(
+                {
+                    "measurement_id": measurement.id,
+                    "revision": measurement.geometry_revision,
+                    "point": [
+                        float(measurement.point_px.x) - origin_x,
+                        float(measurement.point_px.y) - origin_y,
+                    ],
+                    "group_id": measurement.fiber_group_id,
+                }
+            )
+        rebuilt_point_set = dict(current_point_set)
+        rebuilt_point_set.update(
+            {
+                "sha256": _analysis_dependency_json_sha256(point_records),
+                "count": len(point_records),
+                "measurement_ids": list(measurement_ids),
+            }
+        )
+        current_point_set = rebuilt_point_set
+
+        if not isinstance(current_group, Mapping):
+            return None
+        scope = str(current_group.get("scope", "all"))
+        rebuilt_group: dict[str, object]
+        if scope == "active_group":
+            group_id = str(current_group.get("id") or "")
+            group = document.get_group(group_id)
+            if group is None:
+                return None
+            membership = sorted(
+                measurement.id
+                for measurement in document.count_measurements()
+                if measurement.fiber_group_id == group.id
+            )
+            rebuilt_group = {
+                "scope": "active_group",
+                "id": group.id,
+                "number": group.number,
+                "label": group.label,
+                "color": group.color,
+                "membership_sha256": _analysis_dependency_json_sha256(
+                    membership
+                ),
+            }
+        elif scope == "all":
+            membership = sorted(
+                measurement.id
+                for measurement in document.count_measurements()
+            )
+            rebuilt_group = {
+                "scope": "all",
+                "membership_sha256": _analysis_dependency_json_sha256(
+                    membership
+                ),
+            }
+            # Early v2 artifacts did not yet persist all-scope membership. Keep
+            # their original canonical shape for read compatibility.
+            if "membership_sha256" not in current_group:
+                rebuilt_group.pop("membership_sha256")
+        else:
+            return None
+        current_group = rebuilt_group
+
+    return AnalysisDependencySignature(
+        calibration=current_calibration,
+        roi_transitive_refs=current_roi_refs,
+        measurement_revisions=current_measurements,
+        point_set=current_point_set,
+        group=current_group,
+        study_region=stored_study_region,
+    )
+
+
+def _project_compatibility_from_payload(
+    payload: Mapping[str, Any],
+    *,
+    source_path: str | Path | None = None,
+) -> ProjectCompatibilityState:
+    raw_schema_version = payload.get("project_schema_version", 1)
+    if isinstance(raw_schema_version, bool) or not isinstance(raw_schema_version, int):
+        raise TypeError("project_schema_version 必须是整数")
+    if raw_schema_version < 1:
+        raise ValueError("project_schema_version 不能小于 1")
+    if raw_schema_version > PROJECT_SCHEMA_VERSION:
+        raise ValueError(
+            "项目格式版本过新，当前程序不支持: "
+            f"{raw_schema_version} > {PROJECT_SCHEMA_VERSION}"
+        )
+
+    raw_min_reader = payload.get("min_reader_version", 1)
+    if isinstance(raw_min_reader, bool) or not isinstance(raw_min_reader, int):
+        raise TypeError("min_reader_version 必须是整数")
+    if raw_min_reader < 1:
+        raise ValueError("min_reader_version 不能小于 1")
+    if raw_min_reader > PROJECT_SCHEMA_VERSION:
+        raise ValueError(
+            "项目要求更高版本的读取器: "
+            f"{raw_min_reader} > {PROJECT_SCHEMA_VERSION}"
+        )
+
+    raw_features = payload.get("required_features", [])
+    if not isinstance(raw_features, list) or any(
+        not isinstance(feature, str) for feature in raw_features
+    ):
+        raise TypeError("required_features 必须是字符串列表")
+    normalized_features = tuple(
+        dict.fromkeys(
+            feature.strip()
+            for feature in raw_features
+            if feature.strip()
+        )
+    )
+    unknown_features = tuple(
+        feature
+        for feature in normalized_features
+        if feature not in SUPPORTED_PROJECT_REQUIRED_FEATURES
+    )
+    return ProjectCompatibilityState(
+        source_schema_version=raw_schema_version,
+        min_reader_version=raw_min_reader,
+        required_features=normalized_features,
+        unknown_required_features=unknown_features,
+        source_path=None if source_path is None else str(Path(source_path)),
+    )
+
+
+def _ensure_unique_ids(
+    items: list[ProjectRoi] | list[AnalysisArtifact],
+    *,
+    field_name: str,
+) -> None:
+    seen: set[str] = set()
+    for item in items:
+        if item.id in seen:
+            raise ValueError(f"{field_name} 包含重复 ID: {item.id}")
+        seen.add(item.id)
+
+
+def _serialize_project_rois(
+    rois: list[ProjectRoi],
+) -> list[dict[str, object]]:
+    if any(not isinstance(roi, ProjectRoi) for roi in rois):
+        raise TypeError("project_rois 必须全部是 ProjectRoi")
+    _ensure_unique_ids(rois, field_name="project_rois")
+    return [roi.to_dict() for roi in rois]
+
+
+def _serialize_analysis_artifacts(
+    artifacts: list[AnalysisArtifact],
+) -> list[dict[str, object]]:
+    if any(not isinstance(artifact, AnalysisArtifact) for artifact in artifacts):
+        raise TypeError("analysis_artifacts 必须全部是 AnalysisArtifact")
+    _ensure_unique_ids(artifacts, field_name="analysis_artifacts")
+    return [artifact.to_dict() for artifact in artifacts]

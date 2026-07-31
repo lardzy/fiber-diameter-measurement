@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.geometry import Line, Point
 from fdm.lifecycle import AcquisitionDisposition, DigitalSlideAcquisitionSession, TransitionIntent, TransitionResult
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ObjectAppearanceOverride, OverlayAnnotation, OverlayAnnotationKind, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
+from fdm.models import Calibration, CalibrationPreset, ImageDocument, Measurement, ObjectAppearanceOverride, OverlayAnnotation, OverlayAnnotationKind, OverlayTextAnchorAlignment, OverlayTextLayoutSpec, OverlayTextSizeSpace, ProjectGroupTemplate, ProjectState, TextAnnotation, new_id
 from fdm.settings import (
     AppThemeMode,
     AppSettings,
@@ -67,7 +67,8 @@ if PYSIDE_AVAILABLE:
     from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
     from fdm.ui.main_window import DigitalSlideWriteWorker, MainWindow
     from fdm.ui.preview_analysis_dialog import PreviewAnalysisDialog
-    from fdm.ui.rendering import draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings
+    from fdm.ui.rendering import annotation_rect, draw_area_measurement, draw_measurements, draw_scale_overlay, measurement_display_text_with_settings, resolve_overlay_text_layout
+    from fdm.ui.view_transform import CanvasZoomMode
     from fdm.ui.widgets import FiberGroupListItemWidget, MeasurementToolStrip, OverlayToolSplitButton
 else:
     AreaEditOperationMode = object  # type: ignore[assignment]
@@ -89,10 +90,13 @@ else:
     DigitalSlideWriteWorker = object  # type: ignore[assignment]
     MainWindow = object  # type: ignore[assignment]
     PreviewAnalysisDialog = object  # type: ignore[assignment]
+    CanvasZoomMode = object  # type: ignore[assignment]
     draw_area_measurement = object  # type: ignore[assignment]
     draw_measurements = object  # type: ignore[assignment]
     draw_scale_overlay = object  # type: ignore[assignment]
     measurement_display_text_with_settings = object  # type: ignore[assignment]
+    annotation_rect = object  # type: ignore[assignment]
+    resolve_overlay_text_layout = object  # type: ignore[assignment]
     FiberGroupListItemWidget = object  # type: ignore[assignment]
     MeasurementToolStrip = object  # type: ignore[assignment]
     OverlayToolSplitButton = object  # type: ignore[assignment]
@@ -1906,8 +1910,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._digital_slide_progress_bar)
             output_box = window._digital_slide_output_path_edit.parent()
             self.assertIs(window._digital_slide_progress_bar.parent().parent(), output_box)
-            self.assertTrue(window._digital_slide_left_panel.isAncestorOf(output_box))
+            self.assertFalse(window._digital_slide_left_panel.isAncestorOf(output_box))
+            self.assertTrue(window._digital_slide_right_panel.isAncestorOf(output_box))
+            right_panel_layout = window._digital_slide_right_panel.widget().layout()
+            self.assertIs(right_panel_layout.itemAt(right_panel_layout.count() - 1).widget(), output_box)
             self.assertIsNotNone(window._digital_slide_start_button)
+            window._toggle_inspector_panel()
+            self.app.processEvents()
+            self.assertEqual(window._digital_slide_right_panel.horizontalScrollBar().maximum(), 0)
             self.assertTrue(window._digital_slide_start_button.isVisible())
             self.assertLessEqual(window._digital_slide_right_panel.minimumWidth(), 300)
         finally:
@@ -3167,6 +3177,137 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             dialog.close()
 
+    def test_export_options_warns_for_legacy_text_in_selected_full_resolution_scope(
+        self,
+    ) -> None:
+        dialog = ExportOptionsDialog(
+            ExportSelection(
+                include_measurement_overlay=True,
+                render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+            ),
+            allow_all_scope=True,
+            legacy_overlay_text_count_current=1,
+            legacy_overlay_text_count_all=3,
+        )
+        try:
+            warning = dialog._legacy_overlay_text_warning
+            self.assertFalse(warning.isHidden())
+            self.assertIn("3 个旧版固定像素文字", warning.text())
+
+            dialog._scope_current.setChecked(True)
+            self.assertFalse(warning.isHidden())
+            self.assertIn("1 个旧版固定像素文字", warning.text())
+
+            screen_index = dialog._render_mode_combo.findData(
+                ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE
+            )
+            dialog._render_mode_combo.setCurrentIndex(screen_index)
+            self.assertTrue(warning.isHidden())
+
+            full_index = dialog._render_mode_combo.findData(
+                ExportImageRenderMode.FULL_RESOLUTION
+            )
+            dialog._render_mode_combo.setCurrentIndex(full_index)
+            dialog._measurement_overlay.setChecked(False)
+            self.assertTrue(warning.isHidden())
+
+            dialog._scale_overlay.setChecked(True)
+            self.assertFalse(warning.isHidden())
+        finally:
+            dialog.close()
+
+    def test_export_options_hides_legacy_text_warning_when_selected_scope_is_clean(
+        self,
+    ) -> None:
+        dialog = ExportOptionsDialog(
+            ExportSelection(
+                include_combined_overlay=True,
+                render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+            ),
+            allow_all_scope=False,
+            legacy_overlay_text_count_current=0,
+            legacy_overlay_text_count_all=4,
+        )
+        try:
+            self.assertTrue(dialog._legacy_overlay_text_warning.isHidden())
+        finally:
+            dialog.close()
+
+    def test_main_window_passes_mounted_legacy_text_counts_to_export_dialog(
+        self,
+    ) -> None:
+        window = MainWindow()
+        try:
+            first = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/export-legacy-first.png",
+                image_size=(120, 80),
+                overlay_annotations=[
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id="placeholder",
+                        kind=OverlayAnnotationKind.TEXT,
+                        content="旧版一",
+                        anchor_px=Point(10.0, 10.0),
+                    ),
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id="placeholder",
+                        kind=OverlayAnnotationKind.TEXT,
+                        content="旧版二",
+                        anchor_px=Point(20.0, 20.0),
+                    ),
+                ],
+            )
+            for annotation in first.overlay_annotations:
+                annotation.image_id = first.id
+            second = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/export-legacy-second.png",
+                image_size=(120, 80),
+                overlay_annotations=[
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id="placeholder",
+                        kind=OverlayAnnotationKind.TEXT,
+                        content="当前旧版",
+                        anchor_px=Point(12.0, 12.0),
+                    ),
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id="placeholder",
+                        kind=OverlayAnnotationKind.TEXT,
+                        content="新版",
+                        anchor_px=Point(24.0, 24.0),
+                        text_layout=OverlayTextLayoutSpec(),
+                    ),
+                    OverlayAnnotation(
+                        id=new_id("overlay"),
+                        image_id="placeholder",
+                        kind=OverlayAnnotationKind.RECT,
+                        start_px=Point(5.0, 5.0),
+                        end_px=Point(30.0, 30.0),
+                    ),
+                ],
+            )
+            for annotation in second.overlay_annotations:
+                annotation.image_id = second.id
+            first.initialize_runtime_state()
+            second.initialize_runtime_state()
+            image = QImage(120, 80, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            self._load_document_into_window(window, first, image)
+            self._load_document_into_window(window, second, image)
+
+            with patch("fdm.ui.main_window.ExportOptionsDialog") as dialog_type:
+                window._create_export_options_dialog(ExportSelection())
+
+            kwargs = dialog_type.call_args.kwargs
+            self.assertEqual(kwargs["legacy_overlay_text_count_current"], 1)
+            self.assertEqual(kwargs["legacy_overlay_text_count_all"], 3)
+        finally:
+            window.close()
+
     def test_export_results_uses_template_name_as_default_excel_filename(self) -> None:
         window = MainWindow()
         try:
@@ -3787,6 +3928,49 @@ class CanvasAndExportTests(unittest.TestCase):
             with patch.object(window, "_confirm_close_documents", return_value=True):
                 window.close()
 
+    def test_object_style_edit_does_not_escalate_to_full_canvas_update(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(960, 540, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/local_style_refresh.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            measurement = Measurement(
+                id="local-style",
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                measurement_kind="line",
+                line_px=Line(Point(320, 260), Point(420, 260)),
+            )
+            measurement.recalculate(None)
+            document.add_measurement(measurement)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._sync_overlay_visual_state()  # noqa: SLF001
+
+            with patch.object(canvas, "update") as update:
+                window._on_object_appearance_change_requested(
+                    "measurement",
+                    measurement.id,
+                    ObjectAppearanceOverride(stroke_color="#FF0000"),
+                )
+
+            self.assertTrue(update.call_args_list)
+            for repaint in update.call_args_list:
+                self.assertTrue(
+                    repaint.args,
+                    "single-object style edit requested an unbounded update()",
+                )
+        finally:
+            with patch.object(window, "_confirm_close_documents", return_value=True):
+                window.close()
+
     def test_current_object_inspector_updates_measurement_and_overlay_with_history(self) -> None:
         window = MainWindow()
         try:
@@ -3839,7 +4023,20 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(document.get_measurement(measurement.id).appearance, appearance)
 
             window._on_canvas_overlay_selected(document.id, overlay.id)
-            window._on_overlay_content_change_requested(overlay.id, "更新后的文字")
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._sync_overlay_visual_state()  # noqa: SLF001
+            with patch.object(canvas, "update") as update:
+                window._on_overlay_content_change_requested(
+                    overlay.id,
+                    "更新后的文字",
+                )
+            self.assertTrue(update.call_args_list)
+            for repaint in update.call_args_list:
+                self.assertTrue(
+                    repaint.args,
+                    "single-overlay edit requested an unbounded update()",
+                )
             self.assertEqual(document.get_overlay_annotation(overlay.id).content, "更新后的文字")
             self.assertEqual(window._object_properties_section.summaryLabel.text(), "文字")
         finally:
@@ -3868,8 +4065,17 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             measurement.recalculate(None)
 
-            window._append_new_measurement(document, measurement, label="新增测量")
+            with patch.object(
+                window,
+                "_refresh_document_analysis_validity",
+            ) as refresh_validity:
+                window._append_new_measurement(
+                    document,
+                    measurement,
+                    label="新增测量",
+                )
 
+            refresh_validity.assert_called_once_with(document)
             self.assertEqual(document.view_state.selected_measurement_id, measurement.id)
             self.assertEqual(window._object_inspector._object_id, measurement.id)
             self.assertEqual(window._object_properties_section.summaryLabel.text(), "线段")
@@ -4213,7 +4419,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 [
                     window.fit_action,
                     window.actual_size_action,
+                    window.fullscreen_measurement_action,
                     window.digital_slide_smooth_navigation_action,
+                    window.toggle_canvas_navigator_action,
                     window.toggle_project_panel_action,
                     window.toggle_inspector_panel_action,
                     window.toggle_results_panel_action,
@@ -6232,7 +6440,14 @@ class CanvasAndExportTests(unittest.TestCase):
             window.resize(1280, 860)
             window.show()
             self.app.processEvents()
-            self.assertGreaterEqual(window._left_panel_splitter.sizes()[1], 340)
+            # In compact mode the dock can be hidden temporarily.  Qt then
+            # leaves QSplitter.sizes() at its last visible allocation even
+            # though the child keeps its enforced usable geometry inside the
+            # enclosing scroll area.  Assert the actual category editor
+            # geometry so adding the ROI section cannot squeeze it.
+            category_panel = window._left_panel_splitter.widget(1)
+            self.assertGreaterEqual(category_panel.minimumHeight(), 340)
+            self.assertGreaterEqual(category_panel.height(), 340)
         finally:
             window.close()
 
@@ -7146,6 +7361,373 @@ class CanvasAndExportTests(unittest.TestCase):
             window._reset_workspace()
             window.close()
 
+    def test_new_text_uses_image_space_size_and_center_anchor_at_current_zoom(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(800, 600, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_image_space.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._zoom = 0.25  # noqa: SLF001 - deterministic creation-scale fixture
+            window._app_settings.text_font_size = 18
+            window._app_settings.text_size_space = OverlayTextSizeSpace.IMAGE_PX
+            window._app_settings.text_anchor_alignment = (
+                OverlayTextAnchorAlignment.CENTER
+            )
+
+            with patch(
+                "fdm.ui.main_window.QInputDialog.getMultiLineText",
+                return_value=("缩放画布文字", True),
+            ):
+                window._on_canvas_overlay_create_requested(
+                    document.id,
+                    {
+                        "kind": OverlayAnnotationKind.TEXT,
+                        "anchor_px": Point(400, 300),
+                    },
+                )
+
+            self.assertEqual(len(document.overlay_annotations), 1)
+            annotation = document.overlay_annotations[0]
+            self.assertIsNotNone(annotation.text_layout)
+            assert annotation.text_layout is not None
+            self.assertEqual(
+                annotation.text_layout.size_space,
+                OverlayTextSizeSpace.IMAGE_PX,
+            )
+            self.assertEqual(
+                annotation.text_layout.anchor_alignment,
+                OverlayTextAnchorAlignment.CENTER,
+            )
+            self.assertAlmostEqual(
+                annotation.text_layout.image_font_size_px,
+                72.0,
+            )
+            resolved = resolve_overlay_text_layout(
+                annotation,
+                window._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            self.assertEqual(resolved.font.pixelSize(), 18)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_legacy_text_conversion_preserves_screen_rect_and_undo_restores_layout(
+        self,
+    ) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(800, 600, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_legacy_conversion.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            legacy = OverlayAnnotation(
+                id="legacy_text",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="旧版文字",
+                anchor_px=Point(200, 150),
+                appearance=ObjectAppearanceOverride(font_size=24),
+                text_layout=None,
+            )
+            document.add_overlay_annotation(legacy)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._zoom = 0.25  # noqa: SLF001 - deterministic conversion-scale fixture
+
+            before = resolve_overlay_text_layout(
+                document.get_overlay_annotation(legacy.id),
+                window._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            window._on_overlay_text_layout_conversion_requested(legacy.id)
+
+            converted = document.get_overlay_annotation(legacy.id)
+            self.assertIsNotNone(converted)
+            self.assertIsNotNone(converted.text_layout)
+            assert converted.text_layout is not None
+            self.assertEqual(
+                converted.text_layout.size_space,
+                OverlayTextSizeSpace.IMAGE_PX,
+            )
+            self.assertEqual(
+                converted.text_layout.anchor_alignment,
+                OverlayTextAnchorAlignment.CENTER,
+            )
+            self.assertAlmostEqual(
+                converted.text_layout.image_font_size_px,
+                96.0,
+            )
+            after = resolve_overlay_text_layout(
+                converted,
+                window._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            self.assertLess(
+                abs(before.text_rect.left() - after.text_rect.left()),
+                1.0,
+            )
+            self.assertLess(
+                abs(before.text_rect.top() - after.text_rect.top()),
+                1.0,
+            )
+            self.assertLess(
+                abs(before.text_rect.right() - after.text_rect.right()),
+                1.0,
+            )
+            self.assertLess(
+                abs(before.text_rect.bottom() - after.text_rect.bottom()),
+                1.0,
+            )
+
+            window.undo_current_document()
+
+            restored = document.get_overlay_annotation(legacy.id)
+            self.assertIsNotNone(restored)
+            self.assertIsNone(restored.text_layout)
+            self.assertEqual(restored.anchor_px, legacy.anchor_px)
+            self.assertEqual(restored.appearance, legacy.appearance)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_text_anchor_change_preserves_visual_rect_and_is_undoable(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(800, 600, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_anchor_change.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            original = OverlayAnnotation(
+                id="anchored_text",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="锚点切换",
+                anchor_px=Point(400, 300),
+                text_layout=OverlayTextLayoutSpec(
+                    anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                    size_space=OverlayTextSizeSpace.IMAGE_PX,
+                    image_font_size_px=48,
+                ),
+            )
+            document.add_overlay_annotation(original)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+            canvas._zoom = 0.5  # noqa: SLF001 - deterministic anchor fixture
+            before = resolve_overlay_text_layout(
+                original,
+                window._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+
+            window._on_overlay_text_layout_change_requested(
+                original.id,
+                OverlayTextLayoutSpec(
+                    anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+                    size_space=OverlayTextSizeSpace.IMAGE_PX,
+                    image_font_size_px=48,
+                ),
+            )
+
+            changed = document.get_overlay_annotation(original.id)
+            self.assertIsNotNone(changed)
+            self.assertEqual(
+                changed.text_layout.anchor_alignment,
+                OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+            )
+            after = resolve_overlay_text_layout(
+                changed,
+                window._app_settings,
+                canvas.image_to_widget,
+                render_mode="screen_scale_full_image",
+            )
+            self.assertLess(
+                abs(before.text_rect.left() - after.text_rect.left()),
+                1.0,
+            )
+            self.assertLess(
+                abs(before.text_rect.top() - after.text_rect.top()),
+                1.0,
+            )
+            self.assertNotEqual(changed.anchor_px, original.anchor_px)
+
+            window.undo_current_document()
+
+            restored = document.get_overlay_annotation(original.id)
+            self.assertIsNotNone(restored)
+            self.assertEqual(restored.anchor_px, original.anchor_px)
+            self.assertEqual(
+                restored.text_layout.anchor_alignment,
+                OverlayTextAnchorAlignment.CENTER,
+            )
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_text_content_edit_reconstrains_full_resolution_bounds(self) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(400, 200, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_content_boundary.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            original = OverlayAnnotation(
+                id="edge_content_text",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="短",
+                anchor_px=Point(385, 100),
+                text_layout=OverlayTextLayoutSpec(
+                    anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                    size_space=OverlayTextSizeSpace.IMAGE_PX,
+                    image_font_size_px=20,
+                ),
+            )
+            document.add_overlay_annotation(original)
+            self._load_document_into_window(window, document, image)
+
+            window._on_overlay_content_change_requested(
+                original.id,
+                "变长后的文字",
+            )
+
+            changed = document.get_overlay_annotation(original.id)
+            self.assertIsNotNone(changed)
+            rect = annotation_rect(
+                changed,
+                window._app_settings,
+                lambda point: QPointF(point.x, point.y),
+                render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+            )
+            self.assertLessEqual(rect.right(), 399.01)
+            self.assertGreaterEqual(rect.left(), -0.01)
+            self.assertNotEqual(changed.anchor_px, original.anchor_px)
+
+            window.undo_current_document()
+
+            restored = document.get_overlay_annotation(original.id)
+            self.assertIsNotNone(restored)
+            self.assertEqual(restored.content, original.content)
+            self.assertEqual(restored.anchor_px, original.anchor_px)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_text_actual_size_preview_sets_one_to_one_and_centers_annotation(
+        self,
+    ) -> None:
+        window = MainWindow()
+        try:
+            image = QImage(800, 600, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/text_actual_size_preview.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            annotation = OverlayAnnotation(
+                id="preview_text",
+                image_id=document.id,
+                kind=OverlayAnnotationKind.TEXT,
+                content="原始像素预览",
+                anchor_px=Point(420, 310),
+                text_layout=OverlayTextLayoutSpec(
+                    anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                    size_space=OverlayTextSizeSpace.IMAGE_PX,
+                    image_font_size_px=48,
+                ),
+            )
+            document.add_overlay_annotation(annotation)
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+            self.assertIsNotNone(canvas)
+
+            with patch.object(canvas, "actual_size") as actual_size, patch.object(
+                canvas,
+                "center_on_image_point",
+            ) as center_on_image_point:
+                window._on_overlay_text_actual_size_preview_requested(
+                    annotation.id,
+                )
+
+            actual_size.assert_called_once_with()
+            center_on_image_point.assert_called_once_with(annotation.anchor_px)
+            self.assertIn("原始像素 1:1", window.statusBar().currentMessage())
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_text_constraint_keeps_complete_text_rect_inside_image(self) -> None:
+        document, _image, canvas = self._create_canvas_document()
+        canvas._zoom = 0.25  # noqa: SLF001 - ensure full-resolution bounds drive clamping
+        annotation = OverlayAnnotation(
+            id="edge_text",
+            image_id=document.id,
+            kind=OverlayAnnotationKind.TEXT,
+            content="边界",
+            anchor_px=Point(199, 119),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=18,
+            ),
+        )
+
+        constrained = canvas.constrain_overlay_annotation(annotation)
+        rect = annotation_rect(
+            constrained,
+            canvas._settings,  # noqa: SLF001 - verify the canvas render bounds
+            canvas.image_to_widget,
+        )
+        image_corners = [
+            canvas.widget_to_image(rect.topLeft()),
+            canvas.widget_to_image(rect.topRight()),
+            canvas.widget_to_image(rect.bottomLeft()),
+            canvas.widget_to_image(rect.bottomRight()),
+        ]
+
+        self.assertGreaterEqual(min(point.x for point in image_corners), -0.01)
+        self.assertGreaterEqual(min(point.y for point in image_corners), -0.01)
+        self.assertLessEqual(max(point.x for point in image_corners), 199.01)
+        self.assertLessEqual(max(point.y for point in image_corners), 119.01)
+        full_resolution_rect = annotation_rect(
+            constrained,
+            canvas._settings,  # noqa: SLF001 - verify exact export-space bounds
+            lambda point: QPointF(point.x, point.y),
+            render_mode=ExportImageRenderMode.FULL_RESOLUTION,
+        )
+        self.assertGreaterEqual(full_resolution_rect.left(), -0.01)
+        self.assertGreaterEqual(full_resolution_rect.top(), -0.01)
+        self.assertLessEqual(full_resolution_rect.right(), 199.01)
+        self.assertLessEqual(full_resolution_rect.bottom(), 119.01)
+
     def test_delete_selected_measurement_prioritizes_table_multi_selection(self) -> None:
         window = MainWindow()
         try:
@@ -7378,8 +7960,13 @@ class CanvasAndExportTests(unittest.TestCase):
 
             self.assertIsNotNone(canvas)
             self.assertAlmostEqual(canvas._zoom, 1.0)
-            self.assertAlmostEqual(canvas._pan.x, 20.0)
-            self.assertAlmostEqual(canvas._pan.y, 20.0)
+            self.assertEqual(canvas.zoom_mode(), CanvasZoomMode.ACTUAL)
+            # Switching to 1:1 preserves the current view center instead of
+            # forcing the image back to the top-left corner.
+            widget_center = QPointF(canvas.width() / 2.0, canvas.height() / 2.0)
+            image_center = canvas.widget_to_image(widget_center)
+            self.assertAlmostEqual(image_center.x, widget_center.x())
+            self.assertAlmostEqual(image_center.y, widget_center.y())
         finally:
             window.close()
 
@@ -7647,7 +8234,7 @@ class CanvasAndExportTests(unittest.TestCase):
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             self.assertEqual(dialog._theme_mode_combo.currentData(), AppThemeMode.DARK)
-            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#F4F1DE")
+            self.assertEqual(dialog._measurement_label_color.property("color_value"), "#FF0000")
             self.assertEqual(dialog._measurement_label_decimals.value(), 2)
             self.assertTrue(dialog._measurement_label_background.isChecked())
             self.assertEqual(dialog._endpoint_style_combo.currentData(), MeasurementEndpointStyle.BAR)
@@ -8600,7 +9187,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertEqual([number for _point, number in captured], [1, 2])
 
-    def test_area_measurement_draws_fill_path_and_strokes_all_rings(self) -> None:
+    def test_area_measurement_combines_fill_with_outer_stroke_for_all_rings(self) -> None:
         document, _, _canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -8630,10 +9217,16 @@ class CanvasAndExportTests(unittest.TestCase):
             show_handles=False,
         )
 
-        self.assertEqual([call[0] for call in painter.calls], ["path", "path", "path"])
-        self.assertEqual(painter.calls[0][1], Qt.PenStyle.NoPen)
-        self.assertEqual(painter.calls[1][1].color().name().lower(), "#0b0b0b")
-        self.assertEqual(painter.calls[2][1].color().name().lower(), QColor(AppSettings().default_measurement_color).name().lower())
+        self.assertEqual([call[0] for call in painter.calls], ["path", "path"])
+        self.assertEqual(painter.calls[0][1].color().name().lower(), "#0b0b0b")
+        self.assertEqual(painter.calls[0][2].alpha(), 80)
+        self.assertEqual(
+            painter.calls[1][1].color().name().lower(),
+            QColor(AppSettings().default_measurement_color).name().lower(),
+        )
+        self.assertEqual(painter.calls[1][2], Qt.BrushStyle.NoBrush)
+        self.assertGreater(painter.calls[0][3], 8)
+        self.assertEqual(painter.calls[0][3], painter.calls[1][3])
 
     def test_unselected_magic_segment_area_draws_with_simplified_display_geometry(self) -> None:
         document, _, _canvas = self._create_canvas_document()

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import os
 import shutil
@@ -17,24 +18,43 @@ from build_support import (
     check_runtime_profile,
     normalize_build_exclusions,
     private_content_template_files,
+    resolve_runtime_profile,
     summarize_runtime_hash_mismatches,
     write_release_manifest,
     write_installer_version_include,
 )
 
 
-def check_area_runtime_dependencies() -> list[str]:
+_DISTRIBUTION_NAMES_BY_MODULE = {
+    "PIL": "Pillow",
+    "cv2": "opencv-python",
+}
+
+
+def check_windows_build_dependencies(
+    profile: str,
+    *,
+    root: Path | None = None,
+) -> list[str]:
+    """Return dependencies declared by the selected runtime profile that are unavailable."""
+
+    project_root = root or Path(__file__).resolve().parents[1]
+    resolved = resolve_runtime_profile(project_root, str(profile or "").strip().lower())
     missing: list[str] = []
-    for module_name, package_name in (
-        ("PIL", "Pillow"),
-        ("torch", "torch"),
-        ("torchvision", "torchvision"),
-    ):
+    for module_name in resolved.required_python_modules:
         try:
-            __import__(module_name)
-        except ImportError:
-            missing.append(package_name)
+            available = importlib.util.find_spec(module_name) is not None
+        except (ImportError, ModuleNotFoundError, ValueError):
+            available = False
+        if not available:
+            missing.append(_DISTRIBUTION_NAMES_BY_MODULE.get(module_name, module_name))
     return missing
+
+
+def check_area_runtime_dependencies(*, root: Path | None = None) -> list[str]:
+    """Backward-compatible full-build dependency probe."""
+
+    return check_windows_build_dependencies("full", root=root)
 
 
 def check_magic_segment_runtime_assets(root: Path) -> list[str]:
@@ -131,6 +151,19 @@ def build(
         print(
             "PyInstaller is not installed in the current environment.\n"
             "Please run: pip install pyinstaller",
+            file=sys.stderr,
+        )
+        return 1
+
+    try:
+        missing_image_dependencies = check_windows_build_dependencies(profile, root=root)
+    except (OSError, RuntimeError, ValueError) as exc:
+        print(f"Invalid runtime asset profile {profile!r}: {exc}", file=sys.stderr)
+        return 1
+    if missing_image_dependencies:
+        print(
+            "Windows runtime-profile build dependencies are missing: "
+            + ", ".join(missing_image_dependencies),
             file=sys.stderr,
         )
         return 1

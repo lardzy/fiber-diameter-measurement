@@ -8,7 +8,14 @@ import runpy
 import sys
 
 from fdm.atomic_io import atomic_write_json
-from fdm.models import CalibrationPreset
+from fdm.models import (
+    CalibrationPreset,
+    OverlayTextAnchorAlignment,
+    OverlayTextSizeSpace,
+)
+
+
+DEFAULT_MEASUREMENT_LABEL_COLOR = "#FF0000"
 
 
 class MeasurementEndpointStyle:
@@ -63,7 +70,7 @@ class MeasurementLabelStyleSettings:
     enabled: bool = True
     font_family: str = "Microsoft YaHei UI"
     font_size: int = 14
-    color: str = "#F4F1DE"
+    color: str = DEFAULT_MEASUREMENT_LABEL_COLOR
     decimals: int = 2
     background_enabled: bool = True
     parallel_to_line: bool = False
@@ -612,7 +619,7 @@ class AppSettings:
     )
     measurement_label_font_family: str = "Microsoft YaHei UI"
     measurement_label_font_size: int = 14
-    measurement_label_color: str = "#F4F1DE"
+    measurement_label_color: str = DEFAULT_MEASUREMENT_LABEL_COLOR
     measurement_label_decimals: int = 2
     measurement_label_parallel_to_line: bool = False
     measurement_label_background_enabled: bool = True
@@ -633,8 +640,11 @@ class AppSettings:
     text_font_family: str = "Microsoft YaHei UI"
     text_font_size: int = 18
     text_color: str = "#F7F4EA"
+    text_size_space: str = OverlayTextSizeSpace.IMAGE_PX
+    text_anchor_alignment: str = OverlayTextAnchorAlignment.CENTER
     overlay_line_color: str = "#F7F4EA"
     overlay_line_width: float = 2.5
+    show_canvas_navigator: bool = True
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
@@ -766,7 +776,14 @@ class AppSettings:
         normalized.scale_overlay_length_value = self._normalize_scale_overlay_length_value(self.scale_overlay_length_value)
         normalized.scale_overlay_font_size = self._normalize_font_size(self.scale_overlay_font_size, minimum=8, maximum=96)
         normalized.text_font_size = self._normalize_font_size(self.text_font_size, minimum=8, maximum=144)
+        normalized.text_size_space = OverlayTextSizeSpace.normalize(
+            self.text_size_space
+        )
+        normalized.text_anchor_alignment = OverlayTextAnchorAlignment.normalize(
+            self.text_anchor_alignment
+        )
         normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
+        normalized.show_canvas_navigator = bool(self.show_canvas_navigator)
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
@@ -1157,8 +1174,11 @@ class AppSettings:
             "text_font_family": normalized.text_font_family,
             "text_font_size": normalized.text_font_size,
             "text_color": normalized.text_color,
+            "text_size_space": normalized.text_size_space,
+            "text_anchor_alignment": normalized.text_anchor_alignment,
             "overlay_line_color": normalized.overlay_line_color,
             "overlay_line_width": normalized.overlay_line_width,
+            "show_canvas_navigator": normalized.show_canvas_navigator,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
@@ -1318,9 +1338,21 @@ class AppSettings:
             maximum=144,
         )
         settings.text_color = str(payload.get("text_color", settings.text_color))
+        settings.text_size_space = OverlayTextSizeSpace.normalize(
+            payload.get("text_size_space", settings.text_size_space)
+        )
+        settings.text_anchor_alignment = OverlayTextAnchorAlignment.normalize(
+            payload.get(
+                "text_anchor_alignment",
+                settings.text_anchor_alignment,
+            )
+        )
         settings.overlay_line_color = str(payload.get("overlay_line_color", settings.overlay_line_color))
         settings.overlay_line_width = cls._normalize_overlay_line_width(
             payload.get("overlay_line_width", settings.overlay_line_width)
+        )
+        settings.show_canvas_navigator = bool(
+            payload.get("show_canvas_navigator", settings.show_canvas_navigator)
         )
         settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(

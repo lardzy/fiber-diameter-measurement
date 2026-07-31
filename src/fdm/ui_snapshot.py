@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+from collections.abc import Sequence
 import json
 import os
 from pathlib import Path
@@ -12,13 +13,101 @@ from PySide6.QtCore import QEventLoop, QPoint, QTimer  # noqa: E402
 from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
+from fdm.analysis_artifacts import (  # noqa: E402
+    AnalysisArtifact,
+    AnalysisCurve,
+    AnalysisObjectKind,
+    AnalysisObjectReference,
+    AnalysisTable,
+)
 from fdm.geometry import Line, Point  # noqa: E402
-from fdm.models import Calibration, ImageDocument, Measurement, new_id  # noqa: E402
-from fdm.settings import AppSettings  # noqa: E402
-from fdm.ui.dialogs import SettingsDialog  # noqa: E402
+from fdm.image_processing_models import (  # noqa: E402
+    DisplayTransform,
+    ImageProcessingRecipe,
+)
+from fdm.models import (  # noqa: E402
+    Calibration,
+    ImageDocument,
+    Measurement,
+    OverlayAnnotation,
+    OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
+    new_id,
+)
+from fdm.project_roi import (  # noqa: E402
+    EllipseRoiGeometry,
+    PolygonRoiGeometry,
+    ProjectRoi,
+    RectangleRoiGeometry,
+    RoiPoint,
+)
+from fdm.services.export_service import ExportSelection  # noqa: E402
+from fdm.services.image_batch import (  # noqa: E402
+    BatchItemResourceEstimate,
+    BatchResourceEstimate,
+)
+from fdm.services.raster_export import RasterExportFormat  # noqa: E402
+from fdm.services.raster_io import qimage_to_raster_plane  # noqa: E402
+from fdm.settings import AppSettings, RawRecordTemplate  # noqa: E402
+from fdm.ui.dialogs import ExportOptionsDialog, SettingsDialog  # noqa: E402
+from fdm.ui.display_adjustment_dialog import DisplayAdjustmentDialog  # noqa: E402
 from fdm.ui.image_loader import ImageLoadRequest  # noqa: E402
+from fdm.ui.image_processing_workbench import (  # noqa: E402
+    ImageProcessingWorkbench,
+    default_operation_spec,
+)
+from fdm.ui.image_batch_dialog import (  # noqa: E402
+    BatchDocumentOption,
+    ImageBatchProcessingDialog,
+)
 from fdm.ui.main_window import MainWindow  # noqa: E402
+from fdm.ui.analysis_results_center import AnalysisResultsCenter  # noqa: E402
+from fdm.ui.advanced_analysis_dialog import (  # noqa: E402
+    AdvancedAnalysisParametersDialog,
+)
+from fdm.ui.image_analysis_controller import AnalysisTool  # noqa: E402
+from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
+
+
+UI_SNAPSHOT_SCENARIOS = (
+    "empty",
+    "measurement",
+    "measurement-fullscreen",
+    "measurement-zoomed",
+    "measurement-object",
+    "overlay-text-object",
+    "measurement-calibration-collapsed",
+    "measurement-records-collapsed",
+    "measurement-results",
+    "acquisition",
+    "digital-slide",
+    "settings",
+    "current-image-export",
+    "measurement-export",
+    "display-adjustment",
+    "image-processing",
+    "image-batch",
+    "roi-workspace",
+    "analysis-results",
+    "advanced-analysis",
+)
+
+IMAGE_PROCESSING_SNAPSHOT_OPERATIONS = {
+    "gaussian_blur": "gaussian_blur",
+    "threshold": "threshold",
+    "binarize": "binarize",
+    "canny": "canny_edges",
+    "convolution": "custom_convolution",
+    "resize": "resize",
+    "fft": "fft_filter",
+    "morphology": "erode",
+    "brightness": "brightness_contrast",
+    "adaptive_threshold": "adaptive_threshold",
+    "stripe": "stripe_suppression",
+}
 
 
 def _settle_ui(milliseconds: int = 800) -> None:
@@ -133,21 +222,90 @@ def _demo_document() -> tuple[ImageDocument, QImage]:
     return document, image
 
 
-def _parse_args() -> argparse.Namespace:
+def _demo_analysis_artifacts(
+    document: ImageDocument,
+) -> tuple[AnalysisArtifact, ...]:
+    measurement = next(
+        item
+        for item in document.measurements
+        if item.measurement_kind == "area"
+    )
+    shape = AnalysisArtifact(
+        id="analysis_review_shape",
+        source_document_id=document.id,
+        source_pixel_revision=0,
+        source_reference=AnalysisObjectReference(
+            kind=AnalysisObjectKind.MEASUREMENT,
+            object_id=measurement.id,
+            revision=measurement.geometry_revision,
+        ),
+        tool_id="fdm.shape",
+        tool_version="1",
+        parameters={"scope": "当前面积对象"},
+        scalars={
+            "net_area": 12634.25,
+            "hole_area_px": 482.0,
+            "hole_count": 2,
+            "circularity": 0.83,
+        },
+        tables=(
+            AnalysisTable(
+                name="位置与边界",
+                columns=("项目", "X", "Y", "宽", "高"),
+                rows=(
+                    ("质心", 913.4, 561.2, None, None),
+                    ("边界框", 760.0, 450.0, 320.0, 230.0),
+                ),
+            ),
+        ),
+    )
+    histogram = AnalysisArtifact(
+        id="analysis_review_histogram",
+        source_document_id=document.id,
+        source_pixel_revision=0,
+        tool_id="fdm.histogram",
+        tool_version="1",
+        parameters={"channel": "luminance", "bins": 16},
+        scalars={
+            "included_pixel_count": 98420,
+            "non_finite_count": 0,
+            "channel": "luminance",
+        },
+        curves=(
+            AnalysisCurve(
+                name="直方图",
+                x=tuple(float(index * 16) for index in range(16)),
+                y=(
+                    320.0,
+                    860.0,
+                    1840.0,
+                    4260.0,
+                    7820.0,
+                    10600.0,
+                    13240.0,
+                    14260.0,
+                    13480.0,
+                    10820.0,
+                    7260.0,
+                    4380.0,
+                    2560.0,
+                    1220.0,
+                    540.0,
+                    160.0,
+                ),
+                x_unit="强度",
+                y_unit="频数",
+            ),
+        ),
+    )
+    return shape, histogram.mark_stale("ROI 几何已变化，建议重新计算")
+
+
+def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Generate deterministic UI review screenshots.")
     parser.add_argument(
         "--scenario",
-        choices=(
-            "empty",
-            "measurement",
-            "measurement-object",
-            "measurement-calibration-collapsed",
-            "measurement-records-collapsed",
-            "measurement-results",
-            "acquisition",
-            "digital-slide",
-            "settings",
-        ),
+        choices=UI_SNAPSHOT_SCENARIOS,
         default="measurement",
     )
     parser.add_argument("--theme", choices=("dark", "light", "system"), default="dark")
@@ -179,11 +337,59 @@ def _parse_args() -> argparse.Namespace:
         choices=("records", "statistics", "distribution"),
         default="records",
     )
+    parser.add_argument(
+        "--export-page",
+        choices=("files", "images"),
+        default="files",
+        help="导出选项截图页面；仅在 --scenario measurement-export 时生效。",
+    )
+    parser.add_argument(
+        "--export-format",
+        choices=tuple(item.value for item in RasterExportFormat),
+        default=RasterExportFormat.PNG.value,
+        help="导出选项图片格式；仅在 --scenario measurement-export 时生效。",
+    )
+    parser.add_argument(
+        "--processing-operation",
+        choices=tuple(IMAGE_PROCESSING_SNAPSHOT_OPERATIONS),
+        default="gaussian_blur",
+        help=(
+            "右侧参数面板审查场景；仅在 --scenario image-processing 时生效。"
+        ),
+    )
     parser.add_argument("--width", type=int, default=1600)
     parser.add_argument("--height", type=int, default=900)
     parser.add_argument("--scale", type=float, default=1.0, help="Qt UI scale factor, for example 1.25 or 1.5")
     parser.add_argument("--output", type=Path)
-    return parser.parse_args()
+    return parser.parse_args(argv)
+
+
+def _processing_snapshot_operation_id(operation: str) -> str:
+    """Resolve a stable review preset to the production operation identifier."""
+
+    try:
+        return IMAGE_PROCESSING_SNAPSHOT_OPERATIONS[str(operation)]
+    except KeyError as exc:
+        raise ValueError(f"未知的图像处理截图操作: {operation}") from exc
+
+
+def _apply_measurement_zoomed_scene(window: MainWindow) -> bool:
+    """Apply the deterministic zoom used to review canvas navigation chrome."""
+
+    canvas = window.current_canvas()
+    if canvas is None:
+        return False
+    canvas.set_view_zoom(2.4)
+    canvas.center_on_image_point(Point(760.0, 430.0))
+    return True
+
+
+def _apply_measurement_fullscreen_scene(window: MainWindow) -> bool:
+    """Enter the production full-screen path used by the review scene."""
+
+    window._toggle_fullscreen_measurement(True)
+    controller = window._fullscreen_controller
+    return bool(controller is not None and controller.is_active)
 
 
 def main() -> int:
@@ -195,10 +401,37 @@ def main() -> int:
     settings = AppSettings(theme_mode=args.theme)
     apply_application_theme(app, args.theme)
     document, image = _demo_document()
+    if args.scenario == "overlay-text-object":
+        text_overlay = OverlayAnnotation(
+            id=new_id("overlay"),
+            image_id=document.id,
+            kind=OverlayAnnotationKind.TEXT,
+            content="高分辨率样品\n中心锚点",
+            anchor_px=Point(640.0, 390.0),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.CENTER,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=72.0,
+            ),
+        )
+        document.add_overlay_annotation(text_overlay)
+        document.select_overlay_annotation(text_overlay.id)
     if args.scenario == "settings":
         scenario_name = f"settings-{args.settings_page}"
     elif args.scenario == "measurement-results":
         scenario_name = f"measurement-results-{args.results_tab}"
+    elif (
+        args.scenario == "image-processing"
+        and args.processing_operation != "gaussian_blur"
+    ):
+        scenario_name = f"image-processing-{args.processing_operation}"
+    elif args.scenario == "measurement-export":
+        suffixes = []
+        if args.export_page != "files":
+            suffixes.append(args.export_page)
+        if args.export_format != RasterExportFormat.PNG.value:
+            suffixes.append(args.export_format)
+        scenario_name = "-".join(["measurement-export", *suffixes])
     else:
         scenario_name = args.scenario
     output = args.output or (
@@ -215,8 +448,211 @@ def main() -> int:
             widget = SettingsDialog(settings, document=document)
             page_order = ("general", "measurement", "annotation", "analysis", "area", "acquisition", "export")
             widget._settings_navigation.setCurrentRow(page_order.index(args.settings_page))
+        elif args.scenario == "current-image-export":
+            widget = CurrentImageExportDialog(
+                "/tmp/显微图像导出.png",
+            )
+        elif args.scenario == "measurement-export":
+            selected_template_path = (
+                "runtime/content-templates/"
+                "研发中心高倍率联合测量原始记录模板.xlsm"
+            )
+            widget = ExportOptionsDialog(
+                ExportSelection.all_enabled(),
+                allow_all_scope=True,
+                raw_record_templates=[
+                    RawRecordTemplate(
+                        name="激光共聚焦面积测量原始记录模板",
+                        path=(
+                            "runtime/content-templates/"
+                            "激光共聚焦面积测量原始记录模板.xlsm"
+                        ),
+                    ),
+                    RawRecordTemplate(
+                        name=(
+                            "超长名称验证：研发中心高倍率激光共聚焦"
+                            "纤维与孔洞联合测量原始记录模板"
+                        ),
+                        path=selected_template_path,
+                    ),
+                    RawRecordTemplate(
+                        name="常规直径测量模板",
+                        path=(
+                            "runtime/content-templates/"
+                            "常规直径测量模板.xlsx"
+                        ),
+                    ),
+                ],
+                last_raw_record_template_path=selected_template_path,
+            )
+        elif args.scenario == "display-adjustment":
+            widget = DisplayAdjustmentDialog(
+                qimage_to_raster_plane(image),
+                DisplayTransform(
+                    channel_ranges=(
+                        (18.0, 232.0),
+                        (20.0, 236.0),
+                        (16.0, 228.0),
+                    ),
+                    gamma=1.15,
+                ),
+                source_name="激光共聚焦 RGB 示例",
+            )
+        elif args.scenario == "image-processing":
+            raster = qimage_to_raster_plane(image)
+            widget = ImageProcessingWorkbench(
+                raster,
+                source_document_id=document.id,
+                source_name="显微图像处理示例",
+                roi_summary="整张图片",
+            )
+            widget.set_operation_steps(
+                (
+                    default_operation_spec(
+                        _processing_snapshot_operation_id(
+                            args.processing_operation
+                        ),
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=raster.pixel_type,
+                    ),
+                )
+            )
+        elif args.scenario == "image-batch":
+            raster = qimage_to_raster_plane(image)
+            recipe = ImageProcessingRecipe.from_operations(
+                (
+                    default_operation_spec(
+                        "gaussian_blur",
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=raster.pixel_type,
+                    ),
+                    default_operation_spec(
+                        "clahe",
+                        image.width(),
+                        image.height(),
+                        source_pixel_type=raster.pixel_type,
+                    ),
+                )
+            )
+            widget = ImageBatchProcessingDialog(
+                recipe,
+                (
+                    BatchDocumentOption(
+                        "batch-review-a",
+                        "激光共聚焦样品 A",
+                        "RGB8 · 1280×820",
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-b",
+                        "激光共聚焦样品 B",
+                        "RGB8 · 1920×1080",
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-c",
+                        "批次 07 灰度样品",
+                        "GRAY16 · 2048×1536",
+                        selected=False,
+                    ),
+                    BatchDocumentOption(
+                        "batch-review-slide",
+                        "数字化切片（当前焦层）",
+                        "数字化切片",
+                        is_digital_slide=True,
+                    ),
+                ),
+                recipe_name="纤维对比度增强",
+            )
+            widget.apply_preflight(
+                BatchResourceEstimate(
+                    items=(
+                        BatchItemResourceEstimate(
+                            document_id="batch-review-a",
+                            source_bytes=4 << 20,
+                            estimated_output_bytes=4 << 20,
+                            estimated_peak_bytes=82 << 20,
+                            allowed=True,
+                        ),
+                        BatchItemResourceEstimate(
+                            document_id="batch-review-b",
+                            source_bytes=7 << 20,
+                            estimated_output_bytes=7 << 20,
+                            estimated_peak_bytes=126 << 20,
+                            allowed=True,
+                        ),
+                    ),
+                    estimated_total_output_bytes=11 << 20,
+                    available_disk_bytes=42 << 30,
+                    reserve_disk_bytes=2 << 30,
+                    disk_allowed=True,
+                )
+            )
+        elif args.scenario == "analysis-results":
+            artifacts = _demo_analysis_artifacts(document)
+            widget = AnalysisResultsCenter(
+                artifacts,
+                document_names={document.id: "激光共聚焦示例图像"},
+                measurement_names={
+                    measurement.id: f"面积对象 #{index + 1}"
+                    for index, measurement in enumerate(
+                        document.measurements
+                    )
+                },
+            )
+        elif args.scenario == "advanced-analysis":
+            widget = AdvancedAnalysisParametersDialog(
+                AnalysisTool.DIRECTIONALITY,
+                pixel_type=qimage_to_raster_plane(image).pixel_type,
+                has_analysis_mask=True,
+                active_group_label="玻璃纤维 · 批次 07",
+            )
         else:
             widget = MainWindow()
+            if args.scenario == "roi-workspace":
+                widget.project.project_rois.extend(
+                    (
+                        ProjectRoi(
+                            id="roi_review_rect",
+                            document_id=document.id,
+                            name="纤维密集区域",
+                            geometry=RectangleRoiGeometry(
+                                120.0,
+                                140.0,
+                                360.0,
+                                250.0,
+                            ),
+                        ),
+                        ProjectRoi(
+                            id="roi_review_ellipse",
+                            document_id=document.id,
+                            name="孔洞复核区域",
+                            geometry=EllipseRoiGeometry(
+                                610.0,
+                                260.0,
+                                240.0,
+                                190.0,
+                            ),
+                            color="#F4D35E",
+                        ),
+                        ProjectRoi(
+                            id="roi_review_polygon",
+                            document_id=document.id,
+                            name="批次 07 自由区域",
+                            geometry=PolygonRoiGeometry(
+                                rings=(
+                                    (
+                                        RoiPoint(780.0, 470.0),
+                                        RoiPoint(1080.0, 450.0),
+                                        RoiPoint(1120.0, 700.0),
+                                        RoiPoint(820.0, 690.0),
+                                    ),
+                                )
+                            ),
+                            color="#1C9ECB",
+                        ),
+                    )
+                )
             if args.scenario != "empty":
                 widget._add_loaded_document(
                     ImageLoadRequest(path=document.path, document=document),
@@ -226,11 +662,21 @@ def main() -> int:
         widget.show()
         for _ in range(5):
             app.processEvents()
-        if isinstance(widget, SettingsDialog):
+        if isinstance(widget, (SettingsDialog, ExportOptionsDialog)):
             # Offscreen Qt exposes a synthetic screen unrelated to the review
             # matrix.  Re-apply the requested deterministic capture size after
             # the dialog has exercised its real show-time clamping logic.
             widget.resize(max(640, args.width), max(480, args.height))
+            app.processEvents()
+        if isinstance(widget, ExportOptionsDialog):
+            widget._export_navigation.setCurrentRow(
+                {"files": 0, "images": 1}[args.export_page]
+            )
+            widget._image_format_combo.setCurrentIndex(
+                widget._image_format_combo.findData(
+                    RasterExportFormat(args.export_format)
+                )
+            )
             app.processEvents()
         if isinstance(widget, MainWindow) and args.scenario == "measurement-results":
             widget._toggle_results_panel()
@@ -240,10 +686,25 @@ def main() -> int:
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-object":
             widget._object_properties_section.setExpanded(True)
             widget._refresh_object_inspector()
+        elif isinstance(widget, MainWindow) and args.scenario == "overlay-text-object":
+            widget._calibration_section.setExpanded(False)
+            widget._records_section.setExpanded(False)
+            widget._area_recognition_section.setExpanded(False)
+            widget._object_properties_section.setExpanded(True)
+            widget._refresh_object_inspector()
+            widget._inspector_scroll.ensureWidgetVisible(
+                widget._object_properties_section,
+                0,
+                0,
+            )
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-calibration-collapsed":
             widget._calibration_section.setExpanded(False)
         elif isinstance(widget, MainWindow) and args.scenario == "measurement-records-collapsed":
             widget._records_section.setExpanded(False)
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-fullscreen":
+            _apply_measurement_fullscreen_scene(widget)
+        elif isinstance(widget, MainWindow) and args.scenario == "measurement-zoomed":
+            _apply_measurement_zoomed_scene(widget)
         elif isinstance(widget, MainWindow) and args.scenario in {"acquisition", "digital-slide"}:
             widget._preview_active = True
             widget._digital_slide_mode = args.scenario == "digital-slide"
@@ -259,6 +720,12 @@ def main() -> int:
             widget._refresh_statistics_ui()
         for _ in range(3):
             app.processEvents()
+        if isinstance(widget, MainWindow) and args.scenario == "measurement-fullscreen":
+            # Recreate the real entry hint after the window-state transition,
+            # then freeze its production fade timer for a deterministic review
+            # capture.  The application itself still fades the hint normally.
+            widget._show_fullscreen_hint()
+            widget._fullscreen_hint_timer.stop()
         widget.ensurePolished()
         widget.update()
         _settle_ui()
@@ -272,6 +739,21 @@ def main() -> int:
             "tool_mode": args.tool_mode if args.scenario != "settings" else None,
             "settings_page": args.settings_page if args.scenario == "settings" else None,
             "results_tab": args.results_tab if args.scenario == "measurement-results" else None,
+            "export_page": (
+                args.export_page
+                if args.scenario == "measurement-export"
+                else None
+            ),
+            "export_format": (
+                args.export_format
+                if args.scenario == "measurement-export"
+                else None
+            ),
+            "processing_operation": (
+                args.processing_operation
+                if args.scenario == "image-processing"
+                else None
+            ),
             "scale": args.scale,
             "path": str(output.resolve()),
             "window": [widget.width(), widget.height()],
@@ -286,6 +768,10 @@ def main() -> int:
                     "inspector_visible": bool(widget._inspector_dock and widget._inspector_dock.isVisible()),
                     "results_visible": bool(widget._results_dock and widget._results_dock.isVisible()),
                     "compact": bool(widget._adaptive_layout and widget._adaptive_layout.is_compact),
+                    "fullscreen_active": bool(
+                        widget._fullscreen_controller is not None
+                        and widget._fullscreen_controller.is_active
+                    ),
                 }
             )
         print(json.dumps(payload, ensure_ascii=False, allow_nan=False))

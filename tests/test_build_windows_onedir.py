@@ -14,7 +14,11 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(PROJECT_ROOT / "scripts"))
 
 from build_support import RuntimeProfileCheck
-from build_windows_onedir import build, run_packaged_self_check
+from build_windows_onedir import (
+    build,
+    check_windows_build_dependencies,
+    run_packaged_self_check,
+)
 
 
 def _prepare_build_root(root: Path) -> None:
@@ -29,6 +33,14 @@ def _prepare_build_root(root: Path) -> None:
 
 
 class BuildWindowsOnedirTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._dependency_patcher = patch(
+            "build_windows_onedir.check_windows_build_dependencies",
+            return_value=[],
+        )
+        self._dependency_mock = self._dependency_patcher.start()
+        self.addCleanup(self._dependency_patcher.stop)
+
     def test_spec_uses_flat_onedir_layout_for_both_executables(self) -> None:
         spec_payload = (
             PROJECT_ROOT / "packaging" / "pyinstaller" / "fdm_onedir.spec"
@@ -37,6 +49,61 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         self.assertEqual(spec_payload.count('contents_directory="."'), 2)
         self.assertIn("FDM_EXCLUDED_COMPONENTS", spec_payload)
         self.assertIn("collect_private_content_template_datas", spec_payload)
+        self.assertIn("resolve_runtime_profile", spec_payload)
+        self.assertIn('("tifffile", "openpyxl", "et_xmlfile")', spec_payload)
+        self.assertIn("copy_metadata(distribution_name)", spec_payload)
+        self.assertIn('collection_packages.add("et_xmlfile")', spec_payload)
+
+    def test_dependency_probe_is_derived_from_inherited_runtime_profile(self) -> None:
+        def find_spec(module_name: str):
+            if module_name in {"openpyxl", "torch"}:
+                return None
+            return object()
+
+        with patch(
+            "build_windows_onedir.importlib.util.find_spec",
+            side_effect=find_spec,
+        ):
+            self.assertEqual(
+                check_windows_build_dependencies("core", root=PROJECT_ROOT),
+                ["openpyxl"],
+            )
+            self.assertEqual(
+                check_windows_build_dependencies("full", root=PROJECT_ROOT),
+                ["openpyxl", "torch"],
+            )
+
+    def test_build_blocks_before_pyinstaller_when_profile_dependency_is_missing(self) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_build_root(root)
+            self._dependency_mock.return_value = ["openpyxl"]
+
+            with (
+                patch.dict(sys.modules, {"PyInstaller": ModuleType("PyInstaller")}),
+                patch("build_windows_onedir.check_runtime_profile") as profile_mock,
+                patch("build_windows_onedir.subprocess.run") as run_mock,
+            ):
+                result = build(
+                    clean=True,
+                    console=False,
+                    bootloader_debug=False,
+                    profile="full",
+                    root=root,
+                )
+
+            self.assertEqual(result, 1)
+            profile_mock.assert_not_called()
+            run_mock.assert_not_called()
+            self._dependency_mock.assert_called_once_with("full", root=root)
+
+    def test_installer_displays_the_project_license_before_installation(self) -> None:
+        installer_payload = (
+            PROJECT_ROOT / "packaging" / "inno-setup" / "fdm_installer.iss"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('LicenseFile={#ProjectRoot}\\LICENSE', installer_payload)
+        self.assertIn('#ifnexist ProjectRoot + "\\LICENSE"', installer_payload)
 
     def test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads(self) -> None:
         cases = (

@@ -198,9 +198,37 @@ class BuildSupportTests(unittest.TestCase):
         self.assertIn("runtime/area-infer/app/model_metadata.py", full)
         self.assertFalse(any(path.startswith("runtime/content-templates/") for path in core | full))
         profile_check = check_runtime_profile(PROJECT_ROOT, "full")
-        self.assertIn("measurement", resolve_runtime_profile(PROJECT_ROOT, "core").features)
-        self.assertIn("area-inference", resolve_runtime_profile(PROJECT_ROOT, "full").features)
+        core_profile = resolve_runtime_profile(PROJECT_ROOT, "core")
+        full_profile = resolve_runtime_profile(PROJECT_ROOT, "full")
+        self.assertEqual(
+            core_profile.required_python_modules,
+            ("numpy", "cv2", "PIL", "openpyxl", "tifffile"),
+        )
+        self.assertEqual(
+            full_profile.required_python_modules,
+            (
+                "numpy",
+                "cv2",
+                "PIL",
+                "openpyxl",
+                "tifffile",
+                "onnxruntime",
+                "torch",
+                "torchvision",
+            ),
+        )
+        self.assertTrue(
+            {
+                "measurement",
+                "image-export",
+                "image-processing",
+                "image-analysis",
+                "batch-processing",
+            }.issubset(core_profile.features)
+        )
+        self.assertIn("area-inference", full_profile.features)
         self.assertEqual(profile_check.missing_files, ())
+        self.assertEqual(profile_check.missing_python_modules, ())
         self.assertEqual(profile_check.hash_mismatches, ())
         self.assertEqual(profile_check.metadata_errors, ())
 
@@ -406,9 +434,23 @@ license = "LicenseRef-Test"
                 reject_extra_files=True,
             )
             self.assertTrue(valid["ok"], valid["errors"])
-            self.assertEqual(set(valid["features"]), {"measurement", "capture", "digital-slide"})
+            self.assertEqual(
+                set(valid["features"]),
+                {
+                    "measurement",
+                    "capture",
+                    "digital-slide",
+                    "image-export",
+                    "image-processing",
+                    "image-analysis",
+                    "batch-processing",
+                },
+            )
             self.assertEqual(packaged_runtime_features(app_dir), frozenset(valid["features"]))
             self.assertIn("python", valid["dependency_versions"])
+            self.assertIn("tifffile", valid["dependency_versions"])
+            self.assertIn("openpyxl", valid["dependency_versions"])
+            self.assertIn("et_xmlfile", valid["dependency_versions"])
 
             first_asset = app_dir / required[0]
             first_asset.write_bytes(b"tampered")

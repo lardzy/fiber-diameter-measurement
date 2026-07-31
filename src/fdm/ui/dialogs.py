@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QFontComboBox,
     QFormLayout,
     QGroupBox,
+    QAbstractScrollArea,
     QAbstractItemView,
     QHBoxLayout,
     QLabel,
@@ -28,6 +29,7 @@ from PySide6.QtWidgets import (
     QPlainTextEdit,
     QRadioButton,
     QScrollArea,
+    QSizePolicy,
     QSlider,
     QSpinBox,
     QHeaderView,
@@ -41,12 +43,17 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
-from fdm.models import ImageDocument
+from fdm.models import (
+    ImageDocument,
+    OverlayTextAnchorAlignment,
+    OverlayTextSizeSpace,
+)
 from fdm.settings import (
     AppThemeMode,
     AreaInferDevice,
     AreaModelMapping,
     AppSettings,
+    DEFAULT_MEASUREMENT_LABEL_COLOR,
     FocusStackProfile,
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
@@ -68,6 +75,11 @@ from fdm.settings import (
     to_resource_relative_path,
 )
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
+from fdm.services.raster_export import (
+    RasterEncodingOptions,
+    RasterExportFormat,
+    TiffCompression,
+)
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
@@ -99,6 +111,18 @@ RAW_RECORD_DIRECTION_ITEMS = [
     ("横向", RawRecordExportDirection.HORIZONTAL),
 ]
 
+OVERLAY_TEXT_ANCHOR_ITEMS = [
+    ("左上", OverlayTextAnchorAlignment.TOP_LEFT),
+    ("上中", OverlayTextAnchorAlignment.TOP_CENTER),
+    ("右上", OverlayTextAnchorAlignment.TOP_RIGHT),
+    ("左中", OverlayTextAnchorAlignment.CENTER_LEFT),
+    ("中心", OverlayTextAnchorAlignment.CENTER),
+    ("右中", OverlayTextAnchorAlignment.CENTER_RIGHT),
+    ("左下", OverlayTextAnchorAlignment.BOTTOM_LEFT),
+    ("下中", OverlayTextAnchorAlignment.BOTTOM_CENTER),
+    ("右下", OverlayTextAnchorAlignment.BOTTOM_RIGHT),
+]
+
 
 class _MeasurementStylePreview(QWidget):
     """Small live preview for clean-profile measurement appearance settings."""
@@ -108,7 +132,7 @@ class _MeasurementStylePreview(QWidget):
         self._metric = "area" if metric == "area" else "length"
         self._show_label = True
         self._font = QFont()
-        self._label_color = QColor("#F4F1DE")
+        self._label_color = QColor(DEFAULT_MEASUREMENT_LABEL_COLOR)
         self._line_color = QColor("#2A9D8F")
         self._background_enabled = True
         self._decimals = 2
@@ -190,12 +214,50 @@ class _MeasurementStylePreview(QWidget):
         painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, text)
 
 
+def _redirect_editor_wheel_to_parent_scroll(widget: QWidget, event) -> None:
+    parent = widget.parentWidget()
+    while parent is not None:
+        if (
+            isinstance(parent, QAbstractScrollArea)
+            and bool(parent.property("redirectEditorWheel"))
+        ):
+            bar = parent.verticalScrollBar()
+            pixel_delta = (
+                event.pixelDelta().y()
+                if hasattr(event, "pixelDelta")
+                else 0
+            )
+            angle_delta = (
+                event.angleDelta().y()
+                if hasattr(event, "angleDelta")
+                else 0
+            )
+            if pixel_delta:
+                amount = -int(pixel_delta)
+            elif angle_delta:
+                amount = -int(
+                    round(
+                        angle_delta
+                        / 120.0
+                        * max(12, bar.singleStep() * 3)
+                    )
+                )
+            else:
+                amount = 0
+            if amount:
+                bar.setValue(bar.value() + amount)
+            event.accept()
+            return
+        parent = parent.parentWidget()
+    event.ignore()
+
+
 class NoWheelComboBox(QComboBox):
     def wheelEvent(self, event) -> None:
         if self.view().isVisible():
             super().wheelEvent(event)
             return
-        event.ignore()
+        _redirect_editor_wheel_to_parent_scroll(self, event)
 
 
 class NoWheelFontComboBox(QFontComboBox):
@@ -208,12 +270,12 @@ class NoWheelFontComboBox(QFontComboBox):
 
 class NoWheelSpinBox(QSpinBox):
     def wheelEvent(self, event) -> None:
-        event.ignore()
+        _redirect_editor_wheel_to_parent_scroll(self, event)
 
 
 class NoWheelDoubleSpinBox(QDoubleSpinBox):
     def wheelEvent(self, event) -> None:
-        event.ignore()
+        _redirect_editor_wheel_to_parent_scroll(self, event)
 
 
 class NoWheelSlider(QSlider):
@@ -700,23 +762,47 @@ class FiberGroupDialog(QDialog):
 
 
 class ExportOptionsDialog(QDialog):
+    _NAVIGATION_DEFINITIONS = (
+        (
+            "文件与模板",
+            "原始记录模板、Excel、CSV 与结构化数据",
+        ),
+        (
+            "图片与叠加",
+            "测量叠加图、比例尺、渲染方式与图片编码",
+        ),
+    )
+
     def __init__(
         self,
         selection: ExportSelection,
         *,
         allow_all_scope: bool,
+        legacy_overlay_text_count_current: int = 0,
+        legacy_overlay_text_count_all: int = 0,
         raw_record_templates: list[RawRecordTemplate] | None = None,
         last_raw_record_template_path: str = "",
         parent=None,
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("导出选项")
+        self.resize(820, 600)
+        self.setMinimumSize(640, 460)
+        self._preferred_size_applied = False
+        self._legacy_overlay_text_count_current = max(
+            0,
+            int(legacy_overlay_text_count_current),
+        )
+        self._legacy_overlay_text_count_all = max(
+            0,
+            int(legacy_overlay_text_count_all),
+        )
 
-        self._measurement_overlay = QCheckBox("测量叠加图 PNG")
+        self._measurement_overlay = QCheckBox("测量叠加图")
         self._measurement_overlay.setChecked(selection.include_measurement_overlay)
-        self._scale_overlay = QCheckBox("比例尺图 PNG")
+        self._scale_overlay = QCheckBox("比例尺图")
         self._scale_overlay.setChecked(selection.include_scale_overlay)
-        self._combined_overlay = QCheckBox("测量 + 比例尺叠加图 PNG")
+        self._combined_overlay = QCheckBox("测量 + 比例尺叠加图")
         self._combined_overlay.setChecked(selection.include_combined_overlay)
         self._scale_json = QCheckBox("比例尺 JSON")
         self._scale_json.setChecked(selection.include_scale_json)
@@ -725,17 +811,8 @@ class ExportOptionsDialog(QDialog):
         self._csv = QCheckBox("CSV 文档")
         self._csv.setChecked(selection.include_csv)
 
-        export_group = QGroupBox("导出内容")
-        export_layout = QVBoxLayout(export_group)
-        export_layout.addWidget(self._measurement_overlay)
-        export_layout.addWidget(self._scale_overlay)
-        export_layout.addWidget(self._combined_overlay)
-        export_layout.addWidget(self._scale_json)
-        export_layout.addWidget(self._excel)
-        export_layout.addWidget(self._csv)
-
-        scope_group = QGroupBox("导出范围")
-        scope_layout = QVBoxLayout(scope_group)
+        self._scope_group = QGroupBox("导出范围")
+        scope_layout = QHBoxLayout(self._scope_group)
         self._scope_current = QRadioButton("当前图片")
         self._scope_all = QRadioButton("全部已打开图片")
         self._scope_current.setChecked(not allow_all_scope)
@@ -743,52 +820,479 @@ class ExportOptionsDialog(QDialog):
         self._scope_all.setEnabled(allow_all_scope)
         scope_layout.addWidget(self._scope_current)
         scope_layout.addWidget(self._scope_all)
+        scope_layout.addStretch(1)
 
-        render_group = QGroupBox("图片导出模式")
-        render_layout = QFormLayout(render_group)
-        self._render_mode_combo = QComboBox()
+        self._render_group = QGroupBox("图片导出模式")
+        render_layout = QFormLayout(self._render_group)
+        render_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        self._render_mode_combo = NoWheelComboBox()
         self._render_mode_combo.addItem("整图按屏显比例导出", ExportImageRenderMode.SCREEN_SCALE_FULL_IMAGE)
         self._render_mode_combo.addItem("完整分辨率", ExportImageRenderMode.FULL_RESOLUTION)
         self._render_mode_combo.addItem("当前视窗截图", ExportImageRenderMode.CURRENT_VIEWPORT)
         render_index = self._render_mode_combo.findData(selection.render_mode)
         self._render_mode_combo.setCurrentIndex(max(0, render_index))
-        self._render_mode_hint = QLabel("图片类导出会使用这里的渲染模式；表格和 JSON 不受影响。")
+        self._render_mode_hint = QLabel("仅影响图片输出；Excel、CSV 和 JSON 不受影响。")
         self._render_mode_hint.setWordWrap(True)
+        self._render_mode_hint.setVisible(False)
+        self._render_mode_combo.setToolTip(self._render_mode_hint.text())
+        self._legacy_overlay_text_warning = QLabel()
+        self._legacy_overlay_text_warning.setObjectName(
+            "exportLegacyOverlayTextWarning"
+        )
+        self._legacy_overlay_text_warning.setWordWrap(True)
         render_layout.addRow("渲染方式", self._render_mode_combo)
-        render_layout.addRow("", self._render_mode_hint)
+        render_layout.addRow("", self._legacy_overlay_text_warning)
 
-        raw_record_group = QGroupBox("原始记录模板")
-        raw_record_layout = QFormLayout(raw_record_group)
-        self._raw_record_template_combo = QComboBox()
+        encoding = selection.image_encoding
+        self._image_format_group = QGroupBox("图片格式与编码")
+        self._image_format_layout = QFormLayout(self._image_format_group)
+        self._image_format_layout.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        self._image_format_layout.setVerticalSpacing(0)
+        self._image_format_combo = NoWheelComboBox()
+        for label, value in (
+            ("PNG（无损）", RasterExportFormat.PNG),
+            ("JPEG（有损）", RasterExportFormat.JPEG),
+            ("TIFF（无损）", RasterExportFormat.TIFF),
+            ("BMP", RasterExportFormat.BMP),
+            ("WebP", RasterExportFormat.WEBP),
+        ):
+            self._image_format_combo.addItem(label, value)
+        format_index = self._image_format_combo.findData(encoding.format)
+        self._image_format_combo.setCurrentIndex(max(0, format_index))
+
+        self._image_quality_spin = NoWheelSpinBox()
+        self._image_quality_spin.setRange(1, 100)
+        self._image_quality_spin.setValue(int(encoding.resolved_quality or 95))
+        self._image_quality_spin.setSuffix("%")
+
+        self._jpeg_progressive_checkbox = QCheckBox("渐进式 JPEG")
+        self._jpeg_progressive_checkbox.setChecked(
+            encoding.jpeg_progressive
+        )
+
+        self._png_compression_spin = NoWheelSpinBox()
+        self._png_compression_spin.setRange(0, 9)
+        self._png_compression_spin.setValue(encoding.png_compression)
+
+        self._tiff_compression_combo = NoWheelComboBox()
+        self._tiff_compression_combo.addItem("Deflate", TiffCompression.DEFLATE)
+        self._tiff_compression_combo.addItem("LZW", TiffCompression.LZW)
+        self._tiff_compression_combo.addItem("无压缩", TiffCompression.NONE)
+        tiff_index = self._tiff_compression_combo.findData(
+            encoding.tiff_compression
+        )
+        self._tiff_compression_combo.setCurrentIndex(max(0, tiff_index))
+
+        self._webp_lossless_checkbox = QCheckBox("使用无损 WebP")
+        self._webp_lossless_checkbox.setChecked(encoding.webp_lossless)
+        self._webp_method_spin = NoWheelSpinBox()
+        self._webp_method_spin.setRange(0, 6)
+        self._webp_method_spin.setValue(encoding.webp_method)
+
+        self._flatten_background = tuple(encoding.jpeg_background)
+        self._flatten_background_button = QPushButton()
+        self._apply_flatten_background_button()
+        self._flatten_background_button.clicked.connect(
+            self._choose_flatten_background
+        )
+
+        self._image_encoding_hint = QLabel()
+        self._image_encoding_hint.setWordWrap(True)
+        self._image_format_primary_row = QWidget(self._image_format_group)
+        image_format_primary_layout = QHBoxLayout(
+            self._image_format_primary_row
+        )
+        image_format_primary_layout.setContentsMargins(0, 0, 0, 0)
+        image_format_primary_layout.setSpacing(10)
+        image_format_primary_layout.addWidget(self._image_format_combo, 1)
+        image_format_primary_layout.addWidget(
+            self._webp_lossless_checkbox
+        )
+
+        self._image_quality_row = QWidget(self._image_format_group)
+        image_quality_layout = QHBoxLayout(self._image_quality_row)
+        image_quality_layout.setContentsMargins(0, 0, 0, 0)
+        image_quality_layout.setSpacing(10)
+        image_quality_layout.addWidget(self._image_quality_spin, 1)
+        image_quality_layout.addWidget(
+            self._jpeg_progressive_checkbox
+        )
+        self._webp_method_label = QLabel(
+            "编码强度",
+            self._image_quality_row,
+        )
+        image_quality_layout.addWidget(self._webp_method_label)
+        image_quality_layout.addWidget(self._webp_method_spin)
+
+        self._image_format_layout.addRow(
+            "格式",
+            self._image_format_primary_row,
+        )
+        self._image_format_layout.addRow("质量", self._image_quality_row)
+        self._image_format_layout.addRow("PNG 压缩级别", self._png_compression_spin)
+        self._image_format_layout.addRow("TIFF 压缩", self._tiff_compression_combo)
+        self._image_format_layout.addRow("透明区域背景", self._flatten_background_button)
+        self._image_format_layout.addRow("", self._image_encoding_hint)
+
+        self._raw_record_group = QGroupBox("Excel 与原始记录模板")
+        self._raw_record_group.setObjectName("exportPrimaryTemplateGroup")
+        raw_record_layout = QVBoxLayout(self._raw_record_group)
+        raw_record_layout.addWidget(self._excel)
+        raw_record_form = QFormLayout()
+        raw_record_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        self._raw_record_template_combo = NoWheelComboBox()
+        self._raw_record_template_combo.setSizeAdjustPolicy(
+            QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self._raw_record_template_combo.setMinimumContentsLength(18)
+        self._raw_record_template_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
         self._raw_record_template_combo.addItem("不使用模板", "")
         for template in raw_record_templates or []:
             display_name = template.name or Path(template.path).stem or template.path
             self._raw_record_template_combo.addItem(display_name, template.path)
+            template_item = self._raw_record_template_combo.count() - 1
+            self._raw_record_template_combo.setItemData(
+                template_item,
+                str(template.path),
+                Qt.ItemDataRole.ToolTipRole,
+            )
         selected_template_path = selection.raw_record_template_path or last_raw_record_template_path
         template_index = self._raw_record_template_combo.findData(selected_template_path)
+        if selected_template_path and template_index < 0:
+            self._raw_record_template_combo.addItem(
+                f"⚠ 模板不可用：{Path(selected_template_path).name}",
+                selected_template_path,
+            )
+            template_index = self._raw_record_template_combo.count() - 1
+            self._raw_record_template_combo.setItemData(
+                template_index,
+                (
+                    "当前模板不在已注册模板列表中；继续导出时会重新校验，"
+                    "不可用则回退到标准 Excel。\n"
+                    f"{selected_template_path}"
+                ),
+                Qt.ItemDataRole.ToolTipRole,
+            )
+            self._raw_record_template_combo.setItemData(
+                template_index,
+                True,
+                Qt.ItemDataRole.UserRole + 1,
+            )
         self._raw_record_template_combo.setCurrentIndex(max(0, template_index))
-        self._raw_record_template_hint = QLabel("选择后会复制模板并写入测量数据；模板文件本身不会被修改。")
+        self._raw_record_template_hint = QLabel()
         self._raw_record_template_hint.setWordWrap(True)
-        raw_record_layout.addRow("模板", self._raw_record_template_combo)
-        raw_record_layout.addRow("", self._raw_record_template_hint)
+        raw_record_form.addRow("原始记录模板", self._raw_record_template_combo)
+        raw_record_form.addRow("", self._raw_record_template_hint)
+        raw_record_layout.addLayout(raw_record_form)
+
+        self._structured_data_group = QGroupBox("其它结构化数据")
+        structured_data_layout = QHBoxLayout(self._structured_data_group)
+        structured_data_layout.addWidget(self._csv)
+        structured_data_layout.addWidget(self._scale_json)
+        structured_data_layout.addStretch(1)
+
+        self._overlay_group = QGroupBox("图片内容")
+        overlay_layout = QHBoxLayout(self._overlay_group)
+        overlay_layout.addWidget(self._measurement_overlay)
+        overlay_layout.addWidget(self._scale_overlay)
+        overlay_layout.addWidget(self._combined_overlay)
+        overlay_layout.addStretch(1)
+
+        files_content = QWidget(self)
+        files_layout = QVBoxLayout(files_content)
+        files_layout.setContentsMargins(0, 0, 8, 0)
+        files_layout.setSpacing(10)
+        files_layout.addWidget(self._raw_record_group)
+        files_layout.addWidget(self._structured_data_group)
+        files_layout.addStretch(1)
+
+        image_content = QWidget(self)
+        image_layout = QVBoxLayout(image_content)
+        image_layout.setContentsMargins(0, 0, 8, 0)
+        image_layout.setSpacing(6)
+        image_layout.addWidget(self._overlay_group)
+        image_layout.addWidget(self._render_group)
+        image_layout.addWidget(self._image_format_group)
+        image_layout.addStretch(1)
+
+        self._export_page_scrolls = (
+            self._build_export_page_scroll(files_content),
+            self._build_export_page_scroll(image_content),
+        )
+        self._export_pages = QStackedWidget(self)
+        self._export_pages.setObjectName("exportOptionsPages")
+        for page_scroll in self._export_page_scrolls:
+            self._export_pages.addWidget(page_scroll)
+
+        self._export_navigation = QListWidget(self)
+        self._export_navigation.setObjectName("exportOptionsNavigation")
+        self._export_navigation.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        self._export_navigation.setTextElideMode(
+            Qt.TextElideMode.ElideRight
+        )
+        self._export_navigation.setUniformItemSizes(True)
+        self._export_navigation.setSpacing(2)
+        self._export_navigation_items: list[QListWidgetItem] = []
+        for index, (label, description) in enumerate(
+            self._NAVIGATION_DEFINITIONS
+        ):
+            item = QListWidgetItem(label)
+            item.setData(Qt.ItemDataRole.UserRole, index)
+            item.setToolTip(description)
+            self._export_navigation.addItem(item)
+            self._export_navigation_items.append(item)
+
+        sidebar = QFrame(self)
+        sidebar.setObjectName("exportOptionsSidebar")
+        sidebar.setMinimumWidth(170)
+        sidebar.setMaximumWidth(210)
+        sidebar_layout = QVBoxLayout(sidebar)
+        sidebar_layout.setContentsMargins(12, 12, 12, 12)
+        sidebar_layout.setSpacing(8)
+        sidebar_title = QLabel("导出设置", sidebar)
+        sidebar_title.setObjectName("exportOptionsSidebarTitle")
+        sidebar_layout.addWidget(sidebar_title)
+        sidebar_layout.addWidget(self._export_navigation, 1)
+
+        self._export_page_title = QLabel(self)
+        self._export_page_title.setObjectName("exportOptionsPageTitle")
+        self._export_page_description = QLabel(self)
+        self._export_page_description.setObjectName(
+            "exportOptionsPageDescription"
+        )
+        self._export_page_description.setWordWrap(True)
+        page_layout = QVBoxLayout()
+        page_layout.setContentsMargins(16, 12, 12, 0)
+        page_layout.setSpacing(6)
+        page_layout.addWidget(self._export_page_title)
+        page_layout.addWidget(self._export_page_description)
+        page_layout.addWidget(self._scope_group)
+        page_layout.addWidget(self._export_pages, 1)
+
+        main_content_layout = QHBoxLayout()
+        main_content_layout.setContentsMargins(0, 0, 0, 0)
+        main_content_layout.setSpacing(0)
+        main_content_layout.addWidget(sidebar)
+        main_content_layout.addLayout(page_layout, 1)
 
         self._measurement_overlay.toggled.connect(self._update_render_mode_state)
         self._scale_overlay.toggled.connect(self._update_render_mode_state)
         self._combined_overlay.toggled.connect(self._update_render_mode_state)
+        self._scope_current.toggled.connect(
+            self._update_legacy_overlay_text_warning
+        )
+        self._scope_all.toggled.connect(
+            self._update_legacy_overlay_text_warning
+        )
+        self._render_mode_combo.currentIndexChanged.connect(
+            self._update_legacy_overlay_text_warning
+        )
+        self._image_format_combo.currentIndexChanged.connect(
+            self._update_image_encoding_state
+        )
+        self._webp_lossless_checkbox.toggled.connect(
+            self._update_image_encoding_state
+        )
         self._excel.toggled.connect(self._update_raw_record_template_state)
+        self._raw_record_template_combo.currentIndexChanged.connect(
+            self._update_raw_record_template_state
+        )
+        self._csv.toggled.connect(self._update_export_summary)
+        self._scale_json.toggled.connect(self._update_export_summary)
+        self._scope_current.toggled.connect(self._update_export_summary)
+        self._scope_all.toggled.connect(self._update_export_summary)
+        self._render_mode_combo.currentIndexChanged.connect(
+            self._update_export_summary
+        )
+        self._export_navigation.currentItemChanged.connect(
+            self._activate_export_navigation_item
+        )
 
-        buttons = QDialogButtonBox(QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel)
-        buttons.accepted.connect(self.accept)
-        buttons.rejected.connect(self.reject)
+        self._export_summary_label = QLabel(self)
+        self._export_summary_label.setObjectName("exportOptionsSummary")
+        self._export_summary_label.setWordWrap(True)
+
+        self._button_box = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        save_button = self._button_box.button(
+            QDialogButtonBox.StandardButton.Ok
+        )
+        save_button.setObjectName("exportOptionsSaveButton")
+        save_button.setText("保存")
+        self._button_box.button(
+            QDialogButtonBox.StandardButton.Cancel
+        ).setText("取消")
+        self._button_box.accepted.connect(self.accept)
+        self._button_box.rejected.connect(self.reject)
 
         layout = QVBoxLayout(self)
-        layout.addWidget(export_group)
-        layout.addWidget(scope_group)
-        layout.addWidget(render_group)
-        layout.addWidget(raw_record_group)
-        layout.addWidget(buttons)
+        layout.setContentsMargins(0, 0, 12, 12)
+        layout.setSpacing(8)
+        layout.addLayout(main_content_layout, 1)
+        layout.addWidget(self._export_summary_label)
+        layout.addWidget(self._button_box)
+        self.setStyleSheet(
+            """
+            QFrame#exportOptionsSidebar {
+                border: none;
+                border-right: 1px solid palette(mid);
+            }
+            QLabel#exportOptionsSidebarTitle,
+            QLabel#exportOptionsPageTitle {
+                font-size: 18px;
+                font-weight: 700;
+            }
+            QLabel#exportOptionsPageDescription {
+                color: palette(placeholder-text);
+            }
+            QListWidget#exportOptionsNavigation {
+                border: none;
+                background: transparent;
+                outline: none;
+            }
+            QListWidget#exportOptionsNavigation::item {
+                padding: 7px 9px;
+                border-radius: 6px;
+            }
+            QListWidget#exportOptionsNavigation::item:hover {
+                background: rgba(42, 157, 143, 45);
+            }
+            QListWidget#exportOptionsNavigation::item:selected {
+                background: #2A9D8F;
+                color: white;
+            }
+            QGroupBox#exportPrimaryTemplateGroup {
+                border: 1px solid #2A9D8F;
+            }
+            QGroupBox#exportPrimaryTemplateGroup::title {
+                color: #2A9D8F;
+                font-weight: 700;
+            }
+            QLabel#exportOptionsSummary {
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+                background: palette(alternate-base);
+                padding: 8px 10px;
+                margin-left: 12px;
+            }
+            QPushButton#exportOptionsSaveButton {
+                min-width: 88px;
+                border: 1px solid #238B7F;
+                border-radius: 6px;
+                background: #2A9D8F;
+                color: white;
+                font-weight: 600;
+                padding: 2px 16px;
+            }
+            QPushButton#exportOptionsSaveButton:hover {
+                background: #31AA9B;
+            }
+            QPushButton#exportOptionsSaveButton:pressed {
+                background: #238B7F;
+            }
+            QPushButton#exportOptionsSaveButton:disabled {
+                border-color: palette(mid);
+                background: palette(alternate-base);
+                color: palette(placeholder-text);
+            }
+            """
+        )
+        self._update_export_navigation_item_sizes()
+        has_structured_output = bool(
+            selection.include_excel
+            or selection.include_csv
+            or selection.include_scale_json
+            or selected_template_path
+        )
+        has_image_output = bool(
+            selection.include_measurement_overlay
+            or selection.include_scale_overlay
+            or selection.include_combined_overlay
+        )
+        self._export_navigation.setCurrentRow(
+            0 if has_structured_output or not has_image_output else 1
+        )
         self._update_render_mode_state()
+        self._update_image_encoding_state()
         self._update_raw_record_template_state()
+        self._update_export_summary()
+
+    @staticmethod
+    def _build_export_page_scroll(content: QWidget) -> QScrollArea:
+        content.setMinimumWidth(0)
+        content.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(
+            Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+        )
+        scroll.setProperty("redirectEditorWheel", True)
+        scroll.setWidget(content)
+        return scroll
+
+    def _update_export_navigation_item_sizes(self) -> None:
+        metrics = QFontMetrics(self._export_navigation.font())
+        row_height = max(42, metrics.height() + 18)
+        row_size = QSize(0, row_height)
+        for item in self._export_navigation_items:
+            item.setSizeHint(row_size)
+        self._export_navigation.scheduleDelayedItemsLayout()
+
+    def _activate_export_navigation_item(
+        self,
+        current: QListWidgetItem | None,
+        _previous: QListWidgetItem | None,
+    ) -> None:
+        if current is None:
+            return
+        index = int(current.data(Qt.ItemDataRole.UserRole))
+        if not 0 <= index < len(self._NAVIGATION_DEFINITIONS):
+            return
+        title, description = self._NAVIGATION_DEFINITIONS[index]
+        self._export_page_title.setText(title)
+        self._export_page_description.setText(description)
+        self._export_pages.setCurrentIndex(index)
+
+    def changeEvent(self, event) -> None:
+        super().changeEvent(event)
+        if event.type() in {
+            QEvent.Type.ApplicationFontChange,
+            QEvent.Type.FontChange,
+            QEvent.Type.StyleChange,
+        }:
+            self._update_export_navigation_item_sizes()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._preferred_size_applied:
+            return
+        self._preferred_size_applied = True
+        screen = self.screen() or QApplication.primaryScreen()
+        if screen is None:
+            self.resize(900, 620)
+            return
+        available = screen.availableGeometry()
+        margin = 32
+        target_width = max(640, min(900, available.width() - margin))
+        target_height = max(460, min(620, available.height() - margin))
+        self.resize(target_width, target_height)
 
     def _update_render_mode_state(self) -> None:
         enabled = (
@@ -796,15 +1300,246 @@ class ExportOptionsDialog(QDialog):
             or self._scale_overlay.isChecked()
             or self._combined_overlay.isChecked()
         )
+        self._render_group.setEnabled(enabled)
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
+        self._image_format_group.setEnabled(enabled)
+        self._update_legacy_overlay_text_warning()
+        self._update_export_summary()
+
+    def _update_image_encoding_state(self) -> None:
+        export_format = self._image_format_combo.currentData()
+        is_jpeg = export_format == RasterExportFormat.JPEG
+        is_png = export_format == RasterExportFormat.PNG
+        is_tiff = export_format == RasterExportFormat.TIFF
+        is_webp = export_format == RasterExportFormat.WEBP
+        is_bmp = export_format == RasterExportFormat.BMP
+        webp_lossless = is_webp and self._webp_lossless_checkbox.isChecked()
+
+        self._image_format_layout.setRowVisible(
+            self._image_quality_row,
+            is_jpeg or (is_webp and not webp_lossless),
+        )
+        self._jpeg_progressive_checkbox.setVisible(is_jpeg)
+        self._image_format_layout.setRowVisible(
+            self._png_compression_spin,
+            is_png,
+        )
+        self._image_format_layout.setRowVisible(
+            self._tiff_compression_combo,
+            is_tiff,
+        )
+        self._webp_lossless_checkbox.setVisible(is_webp)
+        self._webp_method_label.setVisible(is_webp)
+        self._webp_method_spin.setVisible(is_webp)
+        self._image_format_layout.setRowVisible(
+            self._flatten_background_button,
+            is_jpeg or is_bmp,
+        )
+        self._image_quality_spin.setEnabled(is_jpeg or (is_webp and not webp_lossless))
+        self._jpeg_progressive_checkbox.setEnabled(is_jpeg)
+        self._png_compression_spin.setEnabled(is_png)
+        self._tiff_compression_combo.setEnabled(is_tiff)
+        self._webp_lossless_checkbox.setEnabled(is_webp)
+        self._webp_method_spin.setEnabled(is_webp)
+        self._flatten_background_button.setEnabled(is_jpeg or is_bmp)
+
+        if is_jpeg:
+            self._image_encoding_hint.setText(
+                "JPEG 是有损格式，不建议将导出文件再次用于定量测量或面积识别。"
+            )
+        elif is_png:
+            self._image_encoding_hint.setText(
+                "PNG 压缩级别只影响编码时间和文件大小，不影响图像质量。"
+            )
+        elif is_tiff:
+            self._image_encoding_hint.setText(
+                "当前叠加图是 8 位视觉合成；选择 TIFF 不会恢复源图片的高位深。"
+            )
+        elif is_webp and webp_lossless:
+            self._image_encoding_hint.setText("无损 WebP 会保留叠加图像素和透明度。")
+        elif is_webp:
+            self._image_encoding_hint.setText("WebP 当前使用有损质量设置。")
+        else:
+            self._image_encoding_hint.setText("BMP 不提供质量或压缩选项。")
+        self._update_export_summary()
+
+    def _apply_flatten_background_button(self) -> None:
+        red, green, blue = self._flatten_background
+        color = QColor(red, green, blue)
+        text_color = "#111111" if color.lightness() > 160 else "#FFFFFF"
+        self._flatten_background_button.setText(
+            f"RGB({red}, {green}, {blue})"
+        )
+        self._flatten_background_button.setStyleSheet(
+            "QPushButton {"
+            f"background-color: rgb({red}, {green}, {blue});"
+            f"color: {text_color};"
+            "}"
+        )
+
+    def _choose_flatten_background(self) -> None:
+        color = QColor(*self._flatten_background)
+        selected = QColorDialog.getColor(color, self, "选择透明区域背景色")
+        if not selected.isValid():
+            return
+        self._flatten_background = (
+            selected.red(),
+            selected.green(),
+            selected.blue(),
+        )
+        self._apply_flatten_background_button()
+
+    def _update_legacy_overlay_text_warning(self) -> None:
+        image_overlay_selected = (
+            self._measurement_overlay.isChecked()
+            or self._scale_overlay.isChecked()
+            or self._combined_overlay.isChecked()
+        )
+        full_resolution = (
+            self._render_mode_combo.currentData()
+            == ExportImageRenderMode.FULL_RESOLUTION
+        )
+        legacy_count = (
+            self._legacy_overlay_text_count_all
+            if self._scope_all.isChecked() and self._scope_all.isEnabled()
+            else self._legacy_overlay_text_count_current
+        )
+        visible = image_overlay_selected and full_resolution and legacy_count > 0
+        if visible:
+            self._legacy_overlay_text_warning.setText(
+                "⚠ 当前导出范围含 "
+                f"{legacy_count} 个旧版固定像素文字。完整分辨率导出时，"
+                "文字可能显得过小；建议先在“当前对象属性”中转换为随图像缩放文字。"
+            )
+        else:
+            self._legacy_overlay_text_warning.clear()
+        self._legacy_overlay_text_warning.setVisible(visible)
 
     def _update_raw_record_template_state(self) -> None:
         enabled = self._excel.isChecked()
         self._raw_record_template_combo.setEnabled(enabled)
         self._raw_record_template_hint.setEnabled(enabled)
+        selected_path = str(
+            self._raw_record_template_combo.currentData() or ""
+        ).strip()
+        selected_unavailable = bool(
+            self._raw_record_template_combo.currentData(
+                Qt.ItemDataRole.UserRole + 1
+            )
+        )
+        if not enabled:
+            self._raw_record_template_hint.setText(
+                "启用“Excel 文档”后可选择原始记录模板。"
+            )
+        elif selected_unavailable:
+            self._raw_record_template_hint.setText(
+                "当前模板未注册或不可用；继续后会重新校验，"
+                "失败时自动回退到标准 Excel。"
+            )
+        elif selected_path:
+            self._raw_record_template_hint.setText(
+                "将复制所选模板并写入测量数据；源模板文件不会被修改。"
+            )
+        else:
+            self._raw_record_template_hint.setText(
+                "未使用原始记录模板，将生成标准测量结果工作簿。"
+            )
+        selected_name = self._raw_record_template_combo.currentText().strip()
+        self._raw_record_template_combo.setToolTip(
+            (
+                (
+                    "当前模板未注册或不可用；继续后将重新校验。\n"
+                    f"{selected_name}\n{selected_path}"
+                    if selected_unavailable
+                    else f"{selected_name}\n{selected_path}"
+                )
+                if selected_path
+                else "原始记录模板可在“首选项 > 导出与模板”中管理。"
+            )
+        )
+        self._update_export_summary()
+
+    def _update_export_summary(self) -> None:
+        summary = getattr(self, "_export_summary_label", None)
+        if summary is None:
+            return
+
+        outputs: list[str] = []
+        summary_details: list[str] = []
+        if self._excel.isChecked():
+            template_path = str(
+                self._raw_record_template_combo.currentData() or ""
+            ).strip()
+            if template_path:
+                template_name = (
+                    self._raw_record_template_combo.currentText().strip()
+                    or Path(template_path).stem
+                )
+                outputs.append("Excel（原始记录模板）")
+                summary_details.append(
+                    f"原始记录模板：{template_name}\n{template_path}"
+                )
+            else:
+                outputs.append("Excel")
+        if self._csv.isChecked():
+            outputs.append("CSV")
+        if self._scale_json.isChecked():
+            outputs.append("比例尺 JSON")
+
+        image_outputs: list[str] = []
+        if self._measurement_overlay.isChecked():
+            image_outputs.append("测量叠加图")
+        if self._scale_overlay.isChecked():
+            image_outputs.append("比例尺图")
+        if self._combined_overlay.isChecked():
+            image_outputs.append("组合叠加图")
+        outputs.extend(image_outputs)
+
+        scope_text = (
+            "全部已打开图片"
+            if self._scope_all.isChecked() and self._scope_all.isEnabled()
+            else "当前图片"
+        )
+        if not outputs:
+            summary.setText(f"导出概要：{scope_text} · 尚未选择导出内容")
+        else:
+            image_suffix = ""
+            if image_outputs:
+                image_suffix = (
+                    f" · 图片格式：{self._image_format_combo.currentText()}"
+                )
+            summary.setText(
+                f"导出概要：{scope_text} · "
+                + "、".join(outputs)
+                + image_suffix
+            )
+        summary.setToolTip("\n\n".join(summary_details))
+        continue_button = self._button_box.button(
+            QDialogButtonBox.StandardButton.Ok
+        )
+        if continue_button is not None:
+            continue_button.setEnabled(bool(outputs))
 
     def selection(self) -> ExportSelection:
+        export_format = self._image_format_combo.currentData()
+        image_encoding = RasterEncodingOptions(
+            format=export_format,
+            quality=(
+                self._image_quality_spin.value()
+                if export_format in {
+                    RasterExportFormat.JPEG,
+                    RasterExportFormat.WEBP,
+                }
+                else None
+            ),
+            jpeg_progressive=self._jpeg_progressive_checkbox.isChecked(),
+            png_compression=self._png_compression_spin.value(),
+            tiff_compression=self._tiff_compression_combo.currentData(),
+            webp_lossless=self._webp_lossless_checkbox.isChecked(),
+            webp_method=self._webp_method_spin.value(),
+            jpeg_background=self._flatten_background,
+        )
         return ExportSelection(
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
@@ -815,6 +1550,7 @@ class ExportOptionsDialog(QDialog):
             scope=ExportScope.ALL_OPEN if self._scope_all.isChecked() and self._scope_all.isEnabled() else ExportScope.CURRENT,
             render_mode=self._render_mode_combo.currentData(),
             raw_record_template_path=str(self._raw_record_template_combo.currentData() or "") if self._excel.isChecked() else "",
+            image_encoding=image_encoding,
         )
 
 
@@ -839,6 +1575,8 @@ class ShortcutHelpDialog(QDialog):
                     "Delete / Backspace  删除选中对象",
                     "",
                     "视图与工具",
+                    "F11  进入或退出全屏测量",
+                    "Esc  优先取消当前绘制；没有活动绘制时退出全屏测量",
                     "Space  临时抓手 / 平移画布",
                     "A  在当前工具与浏览工具之间切换",
                     "V  切换面积填充显示",
@@ -863,7 +1601,7 @@ class ShortcutHelpDialog(QDialog):
                     "1 / 2 / 3  在智能 / 多边形 / 自由圈选剔除之间切换",
                     "S  确认当前剔除形状并继续添加下一块（仅剔除模式）",
                     "Enter / F  完成当前魔棒遮罩",
-                    "Esc  放弃当前测量线、多边形、自由形状或魔棒草稿",
+                    "Esc  放弃当前测量线、多边形、自由形状或魔棒草稿（优先于退出全屏）",
                     "",
                     "说明",
                     "正采样点用于告诉模型“这里属于目标区域”。",
@@ -1338,6 +2076,8 @@ class SettingsDialog(QDialog):
             text_font_family=self._font_combo_family_value(self._text_font),
             text_font_size=self._text_size.value(),
             text_color=self._text_color.property("color_value") or self._initial_settings.text_color,
+            text_size_space=self._text_size_space_combo.currentData(),
+            text_anchor_alignment=self._text_anchor_combo.currentData(),
             overlay_line_color=self._overlay_line_color.property("color_value") or self._initial_settings.overlay_line_color,
             overlay_line_width=self._overlay_line_width.value(),
             focus_stack_profile=self._focus_stack_profile_combo.currentData(),
@@ -1550,7 +2290,8 @@ class SettingsDialog(QDialog):
             show_label=self._show_length_measurement_labels.isChecked(),
             font=font,
             label_color=str(
-                self._length_measurement_label_color.property("color_value") or "#F4F1DE"
+                self._length_measurement_label_color.property("color_value")
+                or DEFAULT_MEASUREMENT_LABEL_COLOR
             ),
             line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
             background_enabled=self._length_measurement_label_background.isChecked(),
@@ -1568,7 +2309,8 @@ class SettingsDialog(QDialog):
             show_label=self._show_area_measurement_labels.isChecked(),
             font=font,
             label_color=str(
-                self._area_measurement_label_color.property("color_value") or "#F4F1DE"
+                self._area_measurement_label_color.property("color_value")
+                or DEFAULT_MEASUREMENT_LABEL_COLOR
             ),
             line_color=str(self._default_measurement_color.property("color_value") or "#2A9D8F"),
             background_enabled=self._area_measurement_label_background.isChecked(),
@@ -1864,9 +2606,43 @@ class SettingsDialog(QDialog):
         self._text_size.setRange(8, 144)
         self._text_size.setValue(settings.text_font_size)
         self._text_color = self._create_color_button(settings.text_color)
+        self._text_size_space_combo = NoWheelComboBox()
+        self._text_size_space_combo.addItem(
+            "随图像缩放（推荐）",
+            OverlayTextSizeSpace.IMAGE_PX,
+        )
+        self._text_size_space_combo.addItem(
+            "固定输出像素",
+            OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+        )
+        self._text_size_space_combo.setCurrentIndex(
+            max(
+                0,
+                self._text_size_space_combo.findData(settings.text_size_space),
+            )
+        )
+        self._text_anchor_combo = NoWheelComboBox()
+        for label, value in OVERLAY_TEXT_ANCHOR_ITEMS:
+            self._text_anchor_combo.addItem(label, value)
+        self._text_anchor_combo.setCurrentIndex(
+            max(
+                0,
+                self._text_anchor_combo.findData(
+                    settings.text_anchor_alignment
+                ),
+            )
+        )
         text_form.addRow("文字字体", self._text_font)
-        text_form.addRow("文字字号", self._text_size)
+        text_form.addRow("新建时屏显字号", self._text_size)
         text_form.addRow("文字颜色", self._text_color)
+        text_form.addRow("尺寸基准", self._text_size_space_combo)
+        text_form.addRow("默认锚点", self._text_anchor_combo)
+        text_hint = QLabel(
+            "“随图像缩放”会在创建时按当前缩放率换算并冻结原图字号，"
+            "使画布、完整分辨率和其它图片导出模式保持同一相对大小。"
+        )
+        text_hint.setWordWrap(True)
+        text_form.addRow("", text_hint)
 
         shape_group = QGroupBox("图形标注默认样式")
         shape_form = QFormLayout(shape_group)

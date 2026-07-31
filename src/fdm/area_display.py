@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from dataclasses import dataclass
+from collections.abc import Iterator
+from contextlib import contextmanager
+from dataclasses import dataclass, field
 import math
 import os
 import time
@@ -35,15 +37,20 @@ SCREEN_PROXY_FRAME_MAX_BUILD_MS = 20.0
 SCREEN_PROXY_FRAME_MAX_OBJECT_VERTICES = 12_000
 _SQRT_TWO = math.sqrt(2.0)
 _SCALAR_MAX_ENTRIES = 2048
-_PATH_MAX_ENTRIES = 256
 _PATH_MAX_ESTIMATED_BYTES = 64 * 1024 * 1024
 _PROXY_BUCKETS_PER_MEASUREMENT = 3
+_PROXY_FAILURE_MAX_ENTRIES = 2048
 _HIT_INDEX_MAX_ENTRIES = 32
 _HIT_INDEX_MAX_ESTIMATED_BYTES = 32 * 1024 * 1024
 _HIT_INDEX_CELL_SIZE = 64.0
 _HIT_INDEX_COMPACT_POINT_THRESHOLD = 50_000
 _HIT_INDEX_VECTOR_CHUNK_SIZE = 65_536
 _PROXY_POINT_ESTIMATED_BYTES = 72
+
+_MeasurementIdentity = tuple[int, str]
+_MeasurementRevisionKey = tuple[int, str, int]
+_MeasurementBucketKey = tuple[int, str, int, int]
+_PathPin = tuple[str, _MeasurementRevisionKey | _MeasurementBucketKey]
 
 
 @dataclass(frozen=True, slots=True)
@@ -121,6 +128,28 @@ class _ProxyEntry:
 class _OwnedValue:
     owner: Measurement
     value: object
+
+
+@dataclass(slots=True)
+class _OwnerCacheKeys:
+    bounds: set[_MeasurementRevisionKey] = field(default_factory=set)
+    moments: set[_MeasurementRevisionKey] = field(default_factory=set)
+    hole_areas: set[_MeasurementRevisionKey] = field(default_factory=set)
+    raw_paths: set[_MeasurementRevisionKey] = field(default_factory=set)
+    proxies: set[_MeasurementBucketKey] = field(default_factory=set)
+    proxy_failures: set[_MeasurementBucketKey] = field(default_factory=set)
+    hit_indexes: set[_MeasurementRevisionKey] = field(default_factory=set)
+
+    def is_empty(self) -> bool:
+        return not (
+            self.bounds
+            or self.moments
+            or self.hole_areas
+            or self.raw_paths
+            or self.proxies
+            or self.proxy_failures
+            or self.hit_indexes
+        )
 
 
 @dataclass(slots=True)
@@ -307,8 +336,52 @@ class AreaDerivedGeometryService:
         self._path_clock = 0
         self._hit_indexes: OrderedDict[tuple[int, str, int], _RawHitIndex] = OrderedDict()
         self._hit_index_bytes = 0
+        self._owner_cache_keys: dict[_MeasurementIdentity, _OwnerCacheKeys] = {}
+        self._path_cache_generation = 0
+        self._path_render_pass_depth = 0
+        self._path_render_pass_pins: set[_PathPin] = set()
+        self._path_render_pass_admission_blocked = False
+
+    @property
+    def path_cache_generation(self) -> int:
+        """Monotonic revision of successfully admitted or removed path entries."""
+
+        return self._path_cache_generation
+
+    @property
+    def path_cache_bytes(self) -> int:
+        return self._path_bytes
+
+    @property
+    def path_cache_entry_count(self) -> int:
+        return len(self._raw_paths) + len(self._proxies)
+
+    @contextmanager
+    def path_render_pass(self) -> Iterator[None]:
+        """Keep paths used by one sequential paint scan resident.
+
+        A byte-bounded LRU can otherwise enter a scan-thrash cycle when the
+        visible working set is just larger than its budget: inserting the first
+        miss evicts the path needed next.  Entries touched in this context are
+        protected until the outermost pass ends.  Once every evictable entry is
+        pinned, further misses use exact uncached RAW geometry instead of
+        repeatedly rotating the cache.
+        """
+
+        if self._path_render_pass_depth == 0:
+            self._path_render_pass_pins.clear()
+            self._path_render_pass_admission_blocked = False
+        self._path_render_pass_depth += 1
+        try:
+            yield
+        finally:
+            self._path_render_pass_depth = max(0, self._path_render_pass_depth - 1)
+            if self._path_render_pass_depth == 0:
+                self._path_render_pass_pins.clear()
+                self._path_render_pass_admission_blocked = False
 
     def clear(self) -> None:
+        had_paths = bool(self._raw_paths or self._proxies)
         self._known_revisions.clear()
         self._bounds.clear()
         self._moments.clear()
@@ -320,26 +393,34 @@ class AreaDerivedGeometryService:
         self._path_clock = 0
         self._hit_indexes.clear()
         self._hit_index_bytes = 0
+        self._owner_cache_keys.clear()
+        self._path_render_pass_pins.clear()
+        self._path_render_pass_depth = 0
+        self._path_render_pass_admission_blocked = False
+        if had_paths:
+            self._path_cache_generation += 1
 
     def discard_measurement(self, measurement: Measurement) -> None:
         identity = (id(measurement), measurement.id)
         self._known_revisions.pop(identity, None)
-        for cache in (self._bounds, self._moments, self._hole_areas):
-            for key in list(cache):
-                if key[:2] == identity:
-                    cache.pop(key, None)
-        for key in list(self._raw_paths):
-            if key[:2] == identity:
-                self._remove_raw_path(key)
-        for key in list(self._proxies):
-            if key[:2] == identity:
-                self._remove_proxy(key)
-        for key in list(self._proxy_failures):
-            if key[:2] == identity:
-                self._proxy_failures.pop(key, None)
-        for key in list(self._hit_indexes):
-            if key[:2] == identity:
-                self._remove_hit_index(key)
+        owner_keys = self._owner_cache_keys.get(identity)
+        if owner_keys is None:
+            return
+        for key in tuple(owner_keys.bounds):
+            self._remove_owned_value(self._bounds, key, "bounds")
+        for key in tuple(owner_keys.moments):
+            self._remove_owned_value(self._moments, key, "moments")
+        for key in tuple(owner_keys.hole_areas):
+            self._remove_owned_value(self._hole_areas, key, "hole_areas")
+        for key in tuple(owner_keys.raw_paths):
+            self._remove_raw_path(key)
+        for key in tuple(owner_keys.proxies):
+            self._remove_proxy(key)
+        for key in tuple(owner_keys.proxy_failures):
+            self._remove_proxy_failure(key)
+        for key in tuple(owner_keys.hit_indexes):
+            self._remove_hit_index(key)
+        self._owner_cache_keys.pop(identity, None)
 
     def discard_document(self, measurements: list[Measurement]) -> None:
         """Release every derived entry owned by a document being closed."""
@@ -356,58 +437,106 @@ class AreaDerivedGeometryService:
             return
         self._known_revisions[identity] = revision
         self._known_revisions.move_to_end(identity)
-        while len(self._known_revisions) > (_SCALAR_MAX_ENTRIES * 2):
-            self._known_revisions.popitem(last=False)
         if previous_revision is None:
             return
-        for cache in (self._bounds, self._moments, self._hole_areas):
-            for key in list(cache):
-                if key[:2] == identity and key[2] != revision:
-                    cache.pop(key, None)
-        for key in list(self._raw_paths):
-            if key[:2] == identity and key[2] != revision:
+        owner_keys = self._owner_cache_keys.get(identity)
+        if owner_keys is None:
+            return
+        for key in tuple(owner_keys.bounds):
+            if key[2] != revision:
+                self._remove_owned_value(self._bounds, key, "bounds")
+        for key in tuple(owner_keys.moments):
+            if key[2] != revision:
+                self._remove_owned_value(self._moments, key, "moments")
+        for key in tuple(owner_keys.hole_areas):
+            if key[2] != revision:
+                self._remove_owned_value(self._hole_areas, key, "hole_areas")
+        for key in tuple(owner_keys.raw_paths):
+            if key[2] != revision:
                 self._remove_raw_path(key)
-        for key in list(self._proxies):
-            if key[:2] == identity and key[2] != revision:
+        for key in tuple(owner_keys.proxies):
+            if key[2] != revision:
                 self._remove_proxy(key)
-        for key in list(self._proxy_failures):
-            if key[:2] == identity and key[2] != revision:
-                self._proxy_failures.pop(key, None)
-        for key in list(self._hit_indexes):
-            if key[:2] == identity and key[2] != revision:
+        for key in tuple(owner_keys.proxy_failures):
+            if key[2] != revision:
+                self._remove_proxy_failure(key)
+        for key in tuple(owner_keys.hit_indexes):
+            if key[2] != revision:
                 self._remove_hit_index(key)
 
-    @staticmethod
+    def _owner_keys(self, measurement: Measurement) -> _OwnerCacheKeys:
+        identity = (id(measurement), measurement.id)
+        return self._owner_cache_keys.setdefault(identity, _OwnerCacheKeys())
+
+    def _register_owner_key(
+        self,
+        measurement: Measurement,
+        cache_name: str,
+        key: _MeasurementRevisionKey | _MeasurementBucketKey,
+    ) -> None:
+        getattr(self._owner_keys(measurement), cache_name).add(key)
+
+    def _unregister_owner_key(
+        self,
+        measurement: Measurement,
+        cache_name: str,
+        key: _MeasurementRevisionKey | _MeasurementBucketKey,
+    ) -> None:
+        identity = (id(measurement), measurement.id)
+        owner_keys = self._owner_cache_keys.get(identity)
+        if owner_keys is None:
+            return
+        getattr(owner_keys, cache_name).discard(key)
+        if owner_keys.is_empty():
+            self._owner_cache_keys.pop(identity, None)
+
     def _owned_value(
+        self,
         cache: OrderedDict[tuple[int, str, int], _OwnedValue],
         key: tuple[int, str, int],
         measurement: Measurement,
+        cache_name: str,
     ) -> object | None:
         entry = cache.get(key)
         if entry is None:
             return None
         if entry.owner is not measurement:
-            cache.pop(key, None)
+            self._remove_owned_value(cache, key, cache_name)
             return None
         cache.move_to_end(key)
         return entry.value
 
-    @staticmethod
     def _store_owned_value(
+        self,
         cache: OrderedDict[tuple[int, str, int], _OwnedValue],
         key: tuple[int, str, int],
         measurement: Measurement,
         value: object,
+        cache_name: str,
     ) -> None:
+        if key in cache:
+            self._remove_owned_value(cache, key, cache_name)
         cache[key] = _OwnedValue(owner=measurement, value=value)
+        self._register_owner_key(measurement, cache_name, key)
         cache.move_to_end(key)
         while len(cache) > _SCALAR_MAX_ENTRIES:
-            cache.popitem(last=False)
+            oldest_key = next(iter(cache))
+            self._remove_owned_value(cache, oldest_key, cache_name)
+
+    def _remove_owned_value(
+        self,
+        cache: OrderedDict[tuple[int, str, int], _OwnedValue],
+        key: tuple[int, str, int],
+        cache_name: str,
+    ) -> None:
+        entry = cache.pop(key, None)
+        if entry is not None:
+            self._unregister_owner_key(entry.owner, cache_name, key)
 
     def raw_bounds(self, measurement: Measurement) -> tuple[float, float, float, float] | None:
         self._purge_stale_revisions(measurement)
         key = _measurement_key(measurement)
-        cached = self._owned_value(self._bounds, key, measurement)
+        cached = self._owned_value(self._bounds, key, measurement, "bounds")
         if cached is not None:
             return cached  # type: ignore[return-value]
         rings = _raw_rings(measurement)
@@ -418,28 +547,34 @@ class AreaDerivedGeometryService:
             bounds = polygon_bounds(outline)
         else:
             bounds = None
-        self._store_owned_value(self._bounds, key, measurement, bounds)
+        self._store_owned_value(self._bounds, key, measurement, bounds, "bounds")
         return bounds
 
     def _area_moments(self, measurement: Measurement) -> tuple[float, Point]:
         self._purge_stale_revisions(measurement)
         key = _measurement_key(measurement)
-        cached = self._owned_value(self._moments, key, measurement)
+        cached = self._owned_value(self._moments, key, measurement, "moments")
         if cached is not None:
             return cached  # type: ignore[return-value]
         rings = _raw_rings(measurement)
         moments = area_rings_area_and_centroid(rings)
-        self._store_owned_value(self._moments, key, measurement, moments)
+        self._store_owned_value(self._moments, key, measurement, moments, "moments")
         return moments
 
     def hole_area(self, measurement: Measurement) -> float:
         self._purge_stale_revisions(measurement)
         key = _measurement_key(measurement)
-        cached = self._owned_value(self._hole_areas, key, measurement)
+        cached = self._owned_value(self._hole_areas, key, measurement, "hole_areas")
         if cached is not None:
             return float(cached)
         hole_area = float(area_rings_hole_area(_raw_rings(measurement)))
-        self._store_owned_value(self._hole_areas, key, measurement, hole_area)
+        self._store_owned_value(
+            self._hole_areas,
+            key,
+            measurement,
+            hole_area,
+            "hole_areas",
+        )
         return hole_area
 
     def vector_area(self, measurement: Measurement) -> float:
@@ -456,6 +591,7 @@ class AreaDerivedGeometryService:
             self._moments,
             _measurement_key(measurement),
             measurement,
+            "moments",
         )
         if cached is None:
             return None
@@ -477,6 +613,7 @@ class AreaDerivedGeometryService:
         if cached is not None and cached.owner is measurement:
             self._raw_paths.move_to_end(key)
             cached.last_used = self._next_path_clock()
+            self._pin_raw_path(key)
             return cached.path
         if cached is not None:
             self._remove_raw_path(key)
@@ -484,14 +621,18 @@ class AreaDerivedGeometryService:
         estimated_bytes = _path_bytes(path)
         if estimated_bytes > _PATH_MAX_ESTIMATED_BYTES:
             return path
-        self._evict_paths_for(estimated_bytes)
+        if not self._evict_paths_for(estimated_bytes):
+            return path
         self._raw_paths[key] = _PathEntry(
             owner=measurement,
             path=path,
             estimated_bytes=estimated_bytes,
             last_used=self._next_path_clock(),
         )
+        self._register_owner_key(measurement, "raw_paths", key)
         self._path_bytes += estimated_bytes
+        self._path_cache_generation += 1
+        self._pin_raw_path(key)
         return path
 
     def raw_geometry(self, measurement: Measurement) -> AreaGeometryView:
@@ -537,11 +678,12 @@ class AreaDerivedGeometryService:
             cached = None
         failed = self._proxy_failures.get(key)
         if failed is not None and failed.owner is not measurement:
-            self._proxy_failures.pop(key, None)
+            self._remove_proxy_failure(key)
             failed = None
         if cached is not None:
             self._proxies.move_to_end(key)
             cached.last_used = self._next_path_clock()
+            self._pin_proxy(key)
             return AreaGeometryView(
                 outline_points=cached.outline_points,
                 fill_rings=cached.fill_rings,
@@ -571,21 +713,29 @@ class AreaDerivedGeometryService:
         if build_budget is not None:
             build_budget.record(time.perf_counter() - started)
         if cached is None:
+            self._evict_measurement_proxy_failure_buckets(key[:3])
+            self._evict_proxy_failures_for_insert()
             self._proxy_failures[key] = _OwnedValue(owner=measurement, value=True)
+            self._register_owner_key(measurement, "proxy_failures", key)
             self._proxy_failures.move_to_end(key)
-            while len(self._proxy_failures) > _PATH_MAX_ENTRIES:
-                self._proxy_failures.popitem(last=False)
             return raw
         if cached.estimated_bytes > _PATH_MAX_ESTIMATED_BYTES:
             return raw
-        self._evict_measurement_proxy_buckets(key[:3])
+        if not self._evict_measurement_proxy_buckets(key[:3]):
+            return raw
         # A validated proxy becomes the normal unselected screen path. Keep at
         # most one path representation for that object in the shared budget;
         # exact hit testing/export can rebuild RAW from the untouched rings.
-        self._remove_raw_path(_measurement_key(measurement))
-        self._evict_paths_for(cached.estimated_bytes)
+        if not self._evict_paths_for(
+            cached.estimated_bytes,
+            replacing_raw_key=_measurement_key(measurement),
+        ):
+            return raw
         self._proxies[key] = cached
+        self._register_owner_key(measurement, "proxies", key)
         self._path_bytes += cached.estimated_bytes
+        self._path_cache_generation += 1
+        self._pin_proxy(key)
         return AreaGeometryView(
             outline_points=cached.outline_points,
             fill_rings=cached.fill_rings,
@@ -631,7 +781,12 @@ class AreaDerivedGeometryService:
         except Exception:  # pragma: no cover - defensive Qt backend fallback
             return None
         moments_key = _measurement_key(measurement)
-        cached_moments = self._owned_value(self._moments, moments_key, measurement)
+        cached_moments = self._owned_value(
+            self._moments,
+            moments_key,
+            measurement,
+            "moments",
+        )
         if cached_moments is None:
             raw_area, moment_x, moment_y = odd_even_path_moments(
                 raw_simplified,
@@ -649,7 +804,13 @@ class AreaDerivedGeometryService:
             else:
                 centroid = Point(moment_x / raw_area, moment_y / raw_area)
             cached_moments = (raw_area, centroid)
-            self._store_owned_value(self._moments, moments_key, measurement, cached_moments)
+            self._store_owned_value(
+                self._moments,
+                moments_key,
+                measurement,
+                cached_moments,
+                "moments",
+            )
         raw_area = float(cached_moments[0])
         for attempt_epsilon in (
             epsilon,
@@ -747,11 +908,60 @@ class AreaDerivedGeometryService:
                 return False
         return True
 
-    def _evict_measurement_proxy_buckets(self, measurement_key: tuple[int, str, int]) -> None:
-        matching = [key for key in self._proxies if key[:3] == measurement_key]
+    def _evict_measurement_proxy_buckets(
+        self,
+        measurement_key: tuple[int, str, int],
+    ) -> bool:
+        owner_keys = self._owner_cache_keys.get(measurement_key[:2])
+        matching = sorted(
+            (
+                key
+                for key in (() if owner_keys is None else owner_keys.proxies)
+                if key[:3] == measurement_key and key in self._proxies
+            ),
+            key=lambda candidate: self._proxies[candidate].last_used,
+        )
         while len(matching) >= _PROXY_BUCKETS_PER_MEASUREMENT:
-            key = matching.pop(0)
+            evictable_index = next(
+                (
+                    index
+                    for index, candidate in enumerate(matching)
+                    if not self._path_is_pinned("proxy", candidate)
+                ),
+                None,
+            )
+            if evictable_index is None:
+                return False
+            key = matching.pop(evictable_index)
             self._remove_proxy(key)
+        return True
+
+    def _evict_measurement_proxy_failure_buckets(
+        self,
+        measurement_key: tuple[int, str, int],
+    ) -> None:
+        owner_keys = self._owner_cache_keys.get(measurement_key[:2])
+        matching = sorted(
+            key
+            for key in (() if owner_keys is None else owner_keys.proxy_failures)
+            if key[:3] == measurement_key and key in self._proxy_failures
+        )
+        while len(matching) >= _PROXY_BUCKETS_PER_MEASUREMENT:
+            self._remove_proxy_failure(matching.pop(0))
+
+    def _evict_proxy_failures_for_insert(self) -> None:
+        """Keep failed screen-proxy memoization globally bounded.
+
+        Failure entries are intentionally tiny, but a project can still expose
+        an unbounded number of distinct measurement/revision/zoom keys over a
+        long session.  The ordered mapping is already maintained as an LRU by
+        ``screen_geometry()``; evicting through the common removal helper also
+        keeps the per-owner reverse index exact.
+        """
+
+        while len(self._proxy_failures) >= _PROXY_FAILURE_MAX_ENTRIES:
+            oldest_key = next(iter(self._proxy_failures))
+            self._remove_proxy_failure(oldest_key)
 
     def _next_path_clock(self) -> int:
         self._path_clock += 1
@@ -761,26 +971,120 @@ class AreaDerivedGeometryService:
         entry = self._raw_paths.pop(key, None)
         if entry is not None:
             self._path_bytes = max(0, self._path_bytes - entry.estimated_bytes)
+            self._unregister_owner_key(entry.owner, "raw_paths", key)
+            self._path_render_pass_pins.discard(("raw", key))
+            self._path_cache_generation += 1
 
     def _remove_proxy(self, key: tuple[int, str, int, int]) -> None:
         entry = self._proxies.pop(key, None)
         if entry is not None:
             self._path_bytes = max(0, self._path_bytes - entry.estimated_bytes)
+            self._unregister_owner_key(entry.owner, "proxies", key)
+            self._path_render_pass_pins.discard(("proxy", key))
+            self._path_cache_generation += 1
 
-    def _evict_paths_for(self, required_bytes: int) -> None:
-        while (self._raw_paths or self._proxies) and (
-            len(self._raw_paths) + len(self._proxies) >= _PATH_MAX_ENTRIES
-            or self._path_bytes + required_bytes > _PATH_MAX_ESTIMATED_BYTES
+    def _remove_proxy_failure(self, key: tuple[int, str, int, int]) -> None:
+        entry = self._proxy_failures.pop(key, None)
+        if entry is not None:
+            self._unregister_owner_key(entry.owner, "proxy_failures", key)
+
+    def _pin_raw_path(self, key: _MeasurementRevisionKey) -> None:
+        if self._path_render_pass_depth > 0:
+            self._path_render_pass_pins.add(("raw", key))
+
+    def _pin_proxy(self, key: _MeasurementBucketKey) -> None:
+        if self._path_render_pass_depth > 0:
+            self._path_render_pass_pins.add(("proxy", key))
+
+    def _path_is_pinned(
+        self,
+        kind: str,
+        key: _MeasurementRevisionKey | _MeasurementBucketKey,
+    ) -> bool:
+        return self._path_render_pass_depth > 0 and (kind, key) in self._path_render_pass_pins
+
+    def _evict_paths_for(
+        self,
+        required_bytes: int,
+        *,
+        replacing_raw_key: _MeasurementRevisionKey | None = None,
+    ) -> bool:
+        """Reserve byte budget without evicting entries used by this paint pass.
+
+        Candidate selection is transactional: no entry is removed unless the
+        complete request can fit.  This prevents a failed large admission from
+        destroying a useful stable working set.
+        """
+
+        required = max(0, int(required_bytes))
+        if required > _PATH_MAX_ESTIMATED_BYTES:
+            return False
+        replacement = (
+            self._raw_paths.get(replacing_raw_key)
+            if replacing_raw_key is not None
+            else None
+        )
+        replacement_bytes = 0 if replacement is None else replacement.estimated_bytes
+        bytes_after_replacement = self._path_bytes - replacement_bytes
+        bytes_to_free = max(
+            0,
+            bytes_after_replacement + required - _PATH_MAX_ESTIMATED_BYTES,
+        )
+        if bytes_to_free <= 0:
+            if replacing_raw_key is not None:
+                self._remove_raw_path(replacing_raw_key)
+            return True
+        if (
+            self._path_render_pass_depth > 0
+            and self._path_render_pass_admission_blocked
         ):
-            raw_item = next(iter(self._raw_paths.items()), None)
-            proxy_item = next(iter(self._proxies.items()), None)
-            if proxy_item is None or (
-                raw_item is not None
-                and raw_item[1].last_used <= proxy_item[1].last_used
-            ):
-                self._remove_raw_path(raw_item[0])  # type: ignore[index]
+            return False
+
+        candidates: list[
+            tuple[
+                int,
+                str,
+                _MeasurementRevisionKey | _MeasurementBucketKey,
+                int,
+            ]
+        ] = []
+        for key, entry in self._raw_paths.items():
+            if key == replacing_raw_key or self._path_is_pinned("raw", key):
+                continue
+            candidates.append((entry.last_used, "raw", key, entry.estimated_bytes))
+        for key, entry in self._proxies.items():
+            if self._path_is_pinned("proxy", key):
+                continue
+            candidates.append((entry.last_used, "proxy", key, entry.estimated_bytes))
+        candidates.sort(key=lambda item: item[0])
+
+        selected: list[
+            tuple[
+                int,
+                str,
+                _MeasurementRevisionKey | _MeasurementBucketKey,
+                int,
+            ]
+        ] = []
+        selected_bytes = 0
+        for candidate in candidates:
+            selected.append(candidate)
+            selected_bytes += candidate[3]
+            if selected_bytes >= bytes_to_free:
+                break
+        if selected_bytes < bytes_to_free:
+            if self._path_render_pass_depth > 0:
+                self._path_render_pass_admission_blocked = True
+            return False
+
+        if replacing_raw_key is not None:
+            self._remove_raw_path(replacing_raw_key)
+        for _last_used, kind, key, _estimated_bytes in selected:
+            if kind == "raw":
+                self._remove_raw_path(key)  # type: ignore[arg-type]
             else:
-                self._remove_proxy(proxy_item[0])
+                self._remove_proxy(key)  # type: ignore[arg-type]
+        return True
 
     def contains_raw(self, measurement: Measurement, point: Point) -> bool:
         """Use the exact odd-even raw path for interior hit testing."""
@@ -823,6 +1127,7 @@ class AreaDerivedGeometryService:
             oldest_key = next(iter(self._hit_indexes))
             self._remove_hit_index(oldest_key)
         self._hit_indexes[key] = index
+        self._register_owner_key(measurement, "hit_indexes", key)
         self._hit_index_bytes += index.estimated_bytes
         return index
 
@@ -830,6 +1135,7 @@ class AreaDerivedGeometryService:
         entry = self._hit_indexes.pop(key, None)
         if entry is not None:
             self._hit_index_bytes = max(0, self._hit_index_bytes - entry.estimated_bytes)
+            self._unregister_owner_key(entry.owner, "hit_indexes", key)
 
 
 def _proxy_points_bytes(rings: list[list[Point]]) -> int:

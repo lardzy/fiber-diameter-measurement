@@ -19,19 +19,29 @@ from fdm.geometry import (
     polygon_centroid,
 )
 from fdm.models import (
+    PROJECT_MIN_READER_VERSION,
+    PROJECT_SCHEMA_VERSION,
     Calibration,
     CalibrationPreset,
     ImageDocument,
     Measurement,
     OverlayAnnotation,
     OverlayAnnotationKind,
+    OverlayTextAnchorAlignment,
+    OverlayTextLayoutSpec,
+    OverlayTextSizeSpace,
     ProjectGroupTemplate,
     ProjectState,
     TextAnnotation,
     new_id,
     project_assets_root,
 )
-from fdm.project_io import ProjectIO, resolve_document_load_path
+from fdm.project_io import (
+    ProjectCompatibilityError,
+    ProjectIO,
+    resolve_document_load_path,
+)
+from fdm.project_roi import ProjectRoi, RectangleRoiGeometry
 from fdm.services.area_inference import AreaInferenceService
 from fdm.services.area_inference import normalize_area_result_label, parse_area_model_labels
 from fdm.settings import (
@@ -58,6 +68,112 @@ from fdm.settings import (
 
 
 class ModelsProjectIOTests(unittest.TestCase):
+    def test_project_schema_v2_roundtrip_and_schema1_compatibility(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            current_path = root / "current.fdmproj"
+            legacy_path = root / "legacy.fdmproj"
+            project = ProjectState(version="test", documents=[])
+
+            ProjectIO.save(project, current_path)
+            current_payload = json.loads(current_path.read_text(encoding="utf-8"))
+            self.assertEqual(
+                current_payload["project_schema_version"],
+                PROJECT_SCHEMA_VERSION,
+            )
+            self.assertEqual(
+                current_payload["min_reader_version"],
+                PROJECT_MIN_READER_VERSION,
+            )
+            self.assertEqual(current_payload["required_features"], [])
+
+            legacy_path.write_text(
+                json.dumps({"version": "legacy", "documents": []}),
+                encoding="utf-8",
+            )
+            legacy = ProjectIO.load(legacy_path)
+            self.assertEqual(legacy.project_schema_version, 1)
+            self.assertTrue(legacy.compatibility.requires_upgrade)
+            self.assertFalse(legacy.compatibility.read_only)
+
+    def test_required_features_are_derived_from_persisted_extensions(self) -> None:
+        project = ProjectState(version="test", documents=[])
+        project.project_rois.append(
+            ProjectRoi(
+                id="roi_feature",
+                document_id="image_feature",
+                name="范围",
+                geometry=RectangleRoiGeometry(1.0, 2.0, 3.0, 4.0),
+            )
+        )
+
+        payload = project.to_dict()
+
+        self.assertEqual(payload["required_features"], ["project-rois/v1"])
+
+    def test_project_rejects_newer_schema_and_reader_requirement(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "future.fdmproj"
+            for field, value in (
+                ("project_schema_version", PROJECT_SCHEMA_VERSION + 1),
+                ("min_reader_version", PROJECT_SCHEMA_VERSION + 1),
+            ):
+                with self.subTest(field=field):
+                    payload = {
+                        "project_schema_version": PROJECT_SCHEMA_VERSION,
+                        "min_reader_version": 1,
+                        "required_features": [],
+                        "version": "future",
+                        "documents": [],
+                    }
+                    payload[field] = value
+                    path.write_text(json.dumps(payload), encoding="utf-8")
+                    with self.assertRaisesRegex(ValueError, "版本|读取器"):
+                        ProjectIO.load(path)
+
+    def test_unknown_required_feature_loads_read_only_and_blocks_overwrite(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            source = root / "future-feature.fdmproj"
+            save_as = root / "copy.fdmproj"
+            payload = ProjectState(version="test", documents=[]).to_dict()
+            payload["required_features"] = ["future-segmentation/v9"]
+            source.write_text(json.dumps(payload), encoding="utf-8")
+
+            loaded = ProjectIO.load(source)
+
+            self.assertTrue(loaded.is_read_only_compatible)
+            self.assertEqual(
+                loaded.compatibility.unknown_required_features,
+                ("future-segmentation/v9",),
+            )
+            self.assertFalse(loaded.compatibility.can_overwrite(source))
+            self.assertTrue(loaded.compatibility.can_overwrite(save_as))
+            with self.assertRaises(ProjectCompatibilityError):
+                ProjectIO.save(loaded, source)
+            ProjectIO.save(loaded, save_as)
+            self.assertTrue(save_as.exists())
+
+    def test_pre_upgrade_backup_is_created_once_for_schema1(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            source = Path(tmp_dir) / "legacy.fdmproj"
+            original = json.dumps(
+                {"version": "legacy", "documents": []},
+                ensure_ascii=False,
+            )
+            source.write_text(original, encoding="utf-8")
+
+            first = ProjectIO.create_pre_upgrade_backup(source)
+            second = ProjectIO.create_pre_upgrade_backup(source)
+
+            self.assertTrue(first.required)
+            self.assertTrue(first.created)
+            self.assertIsNotNone(first.backup_path)
+            assert first.backup_path is not None
+            self.assertEqual(first.backup_path.read_text(encoding="utf-8"), original)
+            self.assertFalse(second.created)
+            self.assertEqual(second.backup_path, first.backup_path)
+
     def test_calibration_conversion(self) -> None:
         calibration = Calibration(
             mode="image_scale",
@@ -355,7 +471,144 @@ class ModelsProjectIOTests(unittest.TestCase):
 
         self.assertEqual(len(document.overlay_annotations), 1)
         self.assertEqual(document.overlay_annotations[0].kind, OverlayAnnotationKind.TEXT)
+        self.assertIsNone(document.overlay_annotations[0].text_layout)
         self.assertEqual(document.selected_overlay_id, "text_legacy")
+
+    def test_overlay_text_layout_roundtrip_preserves_image_space_anchor_semantics(self) -> None:
+        annotation = OverlayAnnotation(
+            id="overlay_text_new",
+            image_id="image_new",
+            kind=OverlayAnnotationKind.TEXT,
+            content="高分辨率文字",
+            anchor_px=Point(640.0, 480.0),
+            text_layout=OverlayTextLayoutSpec(
+                anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+                size_space=OverlayTextSizeSpace.IMAGE_PX,
+                image_font_size_px=256.5,
+            ),
+        )
+
+        payload = annotation.to_dict()
+        loaded = OverlayAnnotation.from_dict(payload)
+        cloned = loaded.clone(content="已克隆")
+        translated = loaded.translated(12.0, -8.0)
+
+        self.assertEqual(
+            payload["text_layout"],
+            {
+                "anchor_alignment": "bottom_right",
+                "size_space": "image_px",
+                "image_font_size_px": 256.5,
+            },
+        )
+        self.assertEqual(loaded.text_layout, annotation.text_layout)
+        self.assertEqual(cloned.text_layout, annotation.text_layout)
+        self.assertEqual(translated.text_layout, annotation.text_layout)
+        self.assertEqual(translated.anchor_px, Point(652.0, 472.0))
+
+    def test_overlay_text_layout_missing_field_remains_legacy(self) -> None:
+        payload = {
+            "id": "overlay_text_legacy",
+            "image_id": "image_legacy",
+            "kind": OverlayAnnotationKind.TEXT,
+            "content": "旧版文字",
+            "anchor_px": {"x": 18.0, "y": 22.0},
+        }
+
+        annotation = OverlayAnnotation.from_dict(payload)
+
+        self.assertIsNone(annotation.text_layout)
+        self.assertNotIn("text_layout", annotation.to_dict())
+        self.assertIsNone(
+            TextAnnotation.from_dict(
+                {
+                    "id": "legacy_text_annotation",
+                    "image_id": "image_legacy",
+                    "content": "更旧格式",
+                    "anchor_px": {"x": 2.0, "y": 3.0},
+                }
+            ).to_overlay().text_layout
+        )
+
+    def test_overlay_text_layout_normalizes_invalid_values_safely(self) -> None:
+        cases = (
+            (
+                {
+                    "anchor_alignment": "not-an-anchor",
+                    "size_space": "not-a-size-space",
+                    "image_font_size_px": "not-a-number",
+                },
+                OverlayTextAnchorAlignment.CENTER,
+                OverlayTextSizeSpace.IMAGE_PX,
+                18.0,
+            ),
+            (
+                {
+                    "anchor_alignment": "middle-left",
+                    "size_space": "legacy-output-px",
+                    "image_font_size_px": float("inf"),
+                },
+                OverlayTextAnchorAlignment.CENTER_LEFT,
+                OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+                18.0,
+            ),
+            (
+                {
+                    "anchor_alignment": "TOP RIGHT",
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": -100,
+                },
+                OverlayTextAnchorAlignment.TOP_RIGHT,
+                OverlayTextSizeSpace.IMAGE_PX,
+                1.0,
+            ),
+            (
+                {
+                    "anchor_alignment": OverlayTextAnchorAlignment.BOTTOM_CENTER,
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": 100_000,
+                },
+                OverlayTextAnchorAlignment.BOTTOM_CENTER,
+                OverlayTextSizeSpace.IMAGE_PX,
+                8192.0,
+            ),
+        )
+        for layout_payload, expected_anchor, expected_space, expected_size in cases:
+            with self.subTest(layout_payload=layout_payload):
+                annotation = OverlayAnnotation.from_dict(
+                    {
+                        "id": "overlay_text_invalid",
+                        "image_id": "image_invalid",
+                        "kind": OverlayAnnotationKind.TEXT,
+                        "content": "归一化",
+                        "anchor_px": {"x": 0.0, "y": 0.0},
+                        "text_layout": layout_payload,
+                    }
+                )
+                self.assertIsNotNone(annotation.text_layout)
+                assert annotation.text_layout is not None
+                self.assertEqual(annotation.text_layout.anchor_alignment, expected_anchor)
+                self.assertEqual(annotation.text_layout.size_space, expected_space)
+                self.assertEqual(annotation.text_layout.image_font_size_px, expected_size)
+
+    def test_shape_overlay_ignores_text_layout_payload(self) -> None:
+        annotation = OverlayAnnotation.from_dict(
+            {
+                "id": "overlay_rect",
+                "image_id": "image_shapes",
+                "kind": OverlayAnnotationKind.RECT,
+                "start_px": {"x": 10.0, "y": 20.0},
+                "end_px": {"x": 30.0, "y": 40.0},
+                "text_layout": {
+                    "anchor_alignment": OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+                    "size_space": OverlayTextSizeSpace.IMAGE_PX,
+                    "image_font_size_px": 72.0,
+                },
+            }
+        )
+
+        self.assertIsNone(annotation.text_layout)
+        self.assertNotIn("text_layout", annotation.to_dict())
 
     def test_project_roundtrip_preserves_project_asset_document_source_type(self) -> None:
         document = ImageDocument(
@@ -724,8 +977,11 @@ class ModelsProjectIOTests(unittest.TestCase):
             scale_overlay_font_size=21,
             text_font_size=26,
             text_color="#123456",
+            text_size_space=OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+            text_anchor_alignment=OverlayTextAnchorAlignment.BOTTOM_RIGHT,
             overlay_line_color="#FFAA00",
             overlay_line_width=3.5,
+            show_canvas_navigator=False,
             focus_stack_profile=FocusStackProfile.SHARP,
             focus_stack_sharpen_strength=60,
             magic_segment_model_variant=MagicSegmentModelVariant.EDGE_SAM,
@@ -781,8 +1037,17 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded.scale_overlay_font_size, 21)
         self.assertEqual(loaded.text_font_size, 26)
         self.assertEqual(loaded.text_color, "#123456")
+        self.assertEqual(
+            loaded.text_size_space,
+            OverlayTextSizeSpace.LEGACY_OUTPUT_PX,
+        )
+        self.assertEqual(
+            loaded.text_anchor_alignment,
+            OverlayTextAnchorAlignment.BOTTOM_RIGHT,
+        )
         self.assertEqual(loaded.overlay_line_color, "#FFAA00")
         self.assertAlmostEqual(loaded.overlay_line_width, 3.5)
+        self.assertFalse(loaded.show_canvas_navigator)
         self.assertEqual(loaded.focus_stack_profile, FocusStackProfile.SHARP)
         self.assertEqual(loaded.focus_stack_sharpen_strength, 60)
         self.assertEqual(loaded.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM)
@@ -865,6 +1130,7 @@ class ModelsProjectIOTests(unittest.TestCase):
             loaded.area_measurement_label_style,
         )
         self.assertFalse(loaded.length_measurement_label_style.enabled)
+        self.assertEqual(loaded.length_measurement_label_style.color, "#334455")
         self.assertEqual(loaded.area_measurement_label_style.decimals, 6)
         self.assertTrue(loaded.length_measurement_label_style.parallel_to_line)
         self.assertFalse(loaded.area_measurement_label_style.background_enabled)
@@ -940,7 +1206,9 @@ class ModelsProjectIOTests(unittest.TestCase):
         settings = AppSettings.from_dict({})
 
         self.assertEqual(settings.theme_mode, AppThemeMode.DARK)
-        self.assertEqual(settings.measurement_label_color, "#F4F1DE")
+        self.assertEqual(settings.measurement_label_color, "#FF0000")
+        self.assertEqual(settings.length_measurement_label_style.color, "#FF0000")
+        self.assertEqual(settings.area_measurement_label_style.color, "#FF0000")
         self.assertEqual(settings.measurement_label_decimals, 2)
         self.assertTrue(settings.measurement_label_background_enabled)
         self.assertTrue(settings.length_measurement_label_style.enabled)
@@ -958,6 +1226,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(settings.scale_overlay_font_size, 18)
         self.assertEqual(settings.overlay_line_color, "#F7F4EA")
         self.assertAlmostEqual(settings.overlay_line_width, 2.5)
+        self.assertTrue(settings.show_canvas_navigator)
         self.assertEqual(settings.focus_stack_profile, FocusStackProfile.BALANCED)
         self.assertEqual(settings.focus_stack_sharpen_strength, 35)
         self.assertEqual(settings.magic_segment_model_variant, MagicSegmentModelVariant.EDGE_SAM_3X)

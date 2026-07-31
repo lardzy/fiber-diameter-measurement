@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
-from pathlib import Path
+from dataclasses import dataclass, replace
+from pathlib import Path, PurePosixPath
 import copy
 import hashlib
 import math
@@ -9,11 +9,27 @@ import re
 from typing import Any, Protocol
 
 from fdm import __version__
+from fdm.analysis_artifacts import AnalysisArtifact, AnalysisAssetReference
 from fdm.atomic_io import atomic_replace_file, staged_path_for
-from fdm.models import ImageDocument, ProjectState, project_assets_root
+from fdm.models import (
+    PROJECT_SCHEMA_VERSION,
+    SUPPORTED_PROJECT_REQUIRED_FEATURES,
+    ImageDocument,
+    ProjectState,
+    project_assets_root,
+)
 from fdm.lifecycle import TransitionIntent
 from fdm.project_io import ProjectIO, resolve_document_load_path
+from fdm.services.analysis_asset_io import (
+    copy_verified_analysis_asset,
+    validate_analysis_asset_reference,
+)
 from fdm.services.digital_slide_store import copy_slide_file
+from fdm.services.raster_io import (
+    qimage_to_raster_plane,
+    recommended_native_asset_suffix,
+    write_native_raster_asset,
+)
 from fdm.settings import AppSettings
 
 
@@ -66,6 +82,7 @@ class ProjectDirtySnapshot:
     project_default_document_ids: tuple[str, ...]
     project_asset_documents: tuple[tuple[str, str], ...]
     project_group_templates: tuple[tuple[str, str], ...]
+    project_extension_state_id: int
     document_persistence: ProjectPersistenceSnapshot
 
 
@@ -124,6 +141,15 @@ class DocumentSaveOverride:
 
 
 @dataclass(frozen=True, slots=True)
+class AnalysisAssetSaveOverride:
+    """One verified analysis-asset reference published after JSON commit."""
+
+    artifact_id: str
+    asset_index: int
+    reference: AnalysisAssetReference
+
+
+@dataclass(frozen=True, slots=True)
 class AssetWriteOperation:
     """A project asset write derived from an immutable save plan."""
 
@@ -142,6 +168,10 @@ class ProjectSavePlan:
     def payload_with_overrides(
         self,
         overrides: tuple[DocumentSaveOverride, ...] | list[DocumentSaveOverride],
+        analysis_asset_overrides: (
+            tuple[AnalysisAssetSaveOverride, ...]
+            | list[AnalysisAssetSaveOverride]
+        ) = (),
     ) -> dict[str, Any]:
         override_by_id = {item.document_id: item for item in overrides}
         documents: list[dict[str, Any]] = []
@@ -155,6 +185,37 @@ class ProjectSavePlan:
             documents.append(document_payload)
         output = dict(self.payload)
         output["documents"] = documents
+        asset_override_by_key = {
+            (item.artifact_id, item.asset_index): item.reference
+            for item in analysis_asset_overrides
+        }
+        raw_artifacts = self.payload.get("analysis_artifacts", [])
+        if raw_artifacts:
+            artifacts: list[dict[str, Any]] = []
+            for raw_artifact in raw_artifacts:
+                if not isinstance(raw_artifact, dict):
+                    raise ValueError("分析结果持久化 payload 无效")
+                artifact_payload = copy.deepcopy(raw_artifact)
+                artifact_id = str(artifact_payload.get("id", ""))
+                raw_assets = artifact_payload.get("assets", [])
+                if not isinstance(raw_assets, list):
+                    raise ValueError(f"分析结果 {artifact_id} 的资产列表无效")
+                assets: list[dict[str, object]] = []
+                for asset_index, raw_asset in enumerate(raw_assets):
+                    reference = asset_override_by_key.get(
+                        (artifact_id, asset_index)
+                    )
+                    if reference is not None:
+                        assets.append(reference.to_dict())
+                    elif isinstance(raw_asset, dict):
+                        assets.append(copy.deepcopy(raw_asset))
+                    else:
+                        raise ValueError(
+                            f"分析结果 {artifact_id} 的资产引用无效"
+                        )
+                artifact_payload["assets"] = assets
+                artifacts.append(artifact_payload)
+            output["analysis_artifacts"] = artifacts
         return output
 
 
@@ -162,6 +223,7 @@ class ProjectSavePlan:
 class ProjectAssetStageResult:
     success: bool
     overrides: tuple[DocumentSaveOverride, ...] = ()
+    analysis_asset_overrides: tuple[AnalysisAssetSaveOverride, ...] = ()
     created_paths: tuple[Path, ...] = ()
     message: str = ""
 
@@ -177,6 +239,12 @@ class ProjectSessionHost(Protocol):
 
     def _show_project_information(self, title: str, message: str) -> None: ...
     def _show_project_warning(self, title: str, message: str) -> None: ...
+    def _confirm_project_schema_upgrade(
+        self,
+        source_path: Path,
+        backup_path: Path,
+        source_schema_version: int,
+    ) -> bool: ...
     def _select_project_save_path(self, default_path: Path) -> str: ...
     def _select_project_open_path(self) -> str: ...
     def _preferred_dialog_directory(self, *, recent_dir: str = "") -> Path: ...
@@ -184,6 +252,11 @@ class ProjectSessionHost(Protocol):
     def _remember_recent_directory(self, *, setting_name: str, directory: Path, context: str) -> None: ...
     def _document_display_name(self, document: ImageDocument) -> str: ...
     def _project_asset_image_for_save(self, document: ImageDocument): ...
+    def _project_asset_raster_for_save(self, document: ImageDocument): ...
+    def _analysis_asset_source_for_save(
+        self,
+        reference: AnalysisAssetReference,
+    ) -> Path | None: ...
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool: ...
     def _merge_legacy_calibration_presets(self, presets: list[object]) -> int: ...
     def _reset_workspace(self) -> None: ...
@@ -407,6 +480,63 @@ class ProjectSessionController:
             if not selected_path:
                 return ProjectSaveResult(False, cancelled=True, message="用户取消保存。")
             target_path = host._normalize_dialog_save_path(selected_path, "fiber_measurement.fdmproj")
+        if not host.project.compatibility.can_overwrite(target_path):
+            features = "、".join(
+                host.project.compatibility.unknown_required_features
+            )
+            message = (
+                "该项目包含当前版本不支持的必需功能，已按只读方式打开，"
+                "不能覆盖原项目文件。"
+            )
+            if features:
+                message += f"\n\n未知功能：{features}"
+            message += "\n\n如需保留当前可见内容，请使用“另存为”写入新文件。"
+            host._show_project_warning("只读项目", message)
+            return ProjectSaveResult(
+                False,
+                path=target_path,
+                message=message,
+            )
+        compatibility_source = host.project.compatibility.source_path
+        same_loaded_project = False
+        if compatibility_source is not None:
+            try:
+                same_loaded_project = (
+                    Path(compatibility_source).expanduser().resolve()
+                    == target_path.expanduser().resolve()
+                )
+            except OSError:
+                same_loaded_project = str(compatibility_source) == str(
+                    target_path
+                )
+        needs_schema_upgrade = (
+            target_path.exists()
+            and same_loaded_project
+            and host.project.compatibility.source_schema_version
+            < PROJECT_SCHEMA_VERSION
+        )
+        if needs_schema_upgrade:
+            backup_path = target_path.with_name(
+                f"{target_path.name}.pre-v{PROJECT_SCHEMA_VERSION}.bak"
+            )
+            confirm_upgrade = getattr(
+                host,
+                "_confirm_project_schema_upgrade",
+                None,
+            )
+            if callable(confirm_upgrade) and not bool(
+                confirm_upgrade(
+                    target_path,
+                    backup_path,
+                    host.project.compatibility.source_schema_version,
+                )
+            ):
+                return ProjectSaveResult(
+                    False,
+                    path=target_path,
+                    cancelled=True,
+                    message="用户取消升级并覆盖旧项目。",
+                )
         asset_result = self._stage_project_assets(target_path, save_plan)
         if not asset_result:
             return ProjectSaveResult(
@@ -414,8 +544,16 @@ class ProjectSessionController:
                 path=target_path,
                 message=asset_result.message or "项目资产写入失败。",
             )
-        committed_payload = save_plan.payload_with_overrides(asset_result.overrides)
+        committed_payload = save_plan.payload_with_overrides(
+            asset_result.overrides,
+            asset_result.analysis_asset_overrides,
+        )
         try:
+            if target_path.exists() and same_loaded_project:
+                ProjectIO.create_pre_upgrade_backup(
+                    target_path,
+                    project=host.project,
+                )
             # The project JSON is the commit point and is always published last.
             ProjectIO.save_payload(
                 committed_payload,
@@ -442,7 +580,48 @@ class ProjectSessionController:
                 continue
             document.path = override.path
             document.metadata = copy.deepcopy(override.metadata)
+        committed_artifacts = committed_payload.get("analysis_artifacts", [])
+        if isinstance(committed_artifacts, list):
+            host.project.analysis_artifacts = [
+                AnalysisArtifact.from_dict(item)
+                for item in committed_artifacts
+                if isinstance(item, dict)
+            ]
         host.project.version = __version__
+        host.project.project_schema_version = int(
+            committed_payload.get(
+                "project_schema_version",
+                host.project.project_schema_version,
+            )
+        )
+        host.project.min_reader_version = int(
+            committed_payload.get(
+                "min_reader_version",
+                host.project.min_reader_version,
+            )
+        )
+        committed_required_features = committed_payload.get(
+            "required_features",
+            host.project.required_features,
+        )
+        if isinstance(committed_required_features, list) and all(
+            isinstance(item, str) for item in committed_required_features
+        ):
+            host.project.required_features = tuple(
+                dict.fromkeys(committed_required_features)
+            )
+        host.project.compatibility = replace(
+            host.project.compatibility,
+            source_schema_version=host.project.project_schema_version,
+            min_reader_version=host.project.min_reader_version,
+            required_features=host.project.required_features,
+            unknown_required_features=tuple(
+                feature
+                for feature in host.project.required_features
+                if feature not in SUPPORTED_PROJECT_REQUIRED_FEATURES
+            ),
+            source_path=str(target_path.expanduser().resolve()),
+        )
         # The JSON replacement above is the save commit point.  Removing old
         # revision assets is deliberately post-commit housekeeping: a denied
         # directory traversal, disappearing mount, or antivirus race must not
@@ -552,9 +731,25 @@ class ProjectSessionController:
             documents=[],
             project_default_calibration=project.project_default_calibration,
             project_group_templates=list(project.project_group_templates),
+            project_rois=list(project.project_rois),
+            analysis_artifacts=list(project.analysis_artifacts),
+            project_schema_version=project.project_schema_version,
+            min_reader_version=project.min_reader_version,
+            required_features=project.required_features,
+            compatibility=project.compatibility,
             load_issues=list(project.load_issues),
         )
         host.project.metadata = project.metadata
+        if project.compatibility.read_only:
+            features = "、".join(
+                project.compatibility.unknown_required_features
+            )
+            host._show_project_warning(
+                "项目以只读兼容模式打开",
+                "项目包含当前版本不支持的必需功能。"
+                "您可以查看当前版本能够识别的内容，但不能覆盖原项目文件。"
+                + (f"\n\n未知功能：{features}" if features else ""),
+            )
         host._refresh_preset_combo()
         load_items: list[tuple[str, ImageDocument | None]] = []
         repaired_paths: list[str] = []
@@ -615,7 +810,10 @@ class ProjectSessionController:
 
         plan = self._build_project_save_plan(project=project)
         result = self._stage_project_assets(target_path, plan)
-        payload = plan.payload_with_overrides(result.overrides)
+        payload = plan.payload_with_overrides(
+            result.overrides,
+            result.analysis_asset_overrides,
+        )
         compatibility_project = ProjectState.from_dict(payload)
         compatibility_project.calibration_presets = copy.deepcopy(
             getattr(project or self._host.project, "calibration_presets", [])
@@ -650,7 +848,20 @@ class ProjectSessionController:
         for operation in operations:
             snapshot = operation.snapshot
             source_document = operation.source_document
-            document_path = str(snapshot.payload.get("path", ""))
+            try:
+                document_path = _validated_project_asset_path_token(
+                    snapshot.payload.get("path", "")
+                )
+            except ValueError as exc:
+                host._show_project_warning(
+                    "保存项目",
+                    f"项目资产路径无效: "
+                    f"{host._document_display_name(source_document)}\n{exc}",
+                )
+                return _failed_asset_stage_result(
+                    created_paths,
+                    str(exc),
+                )
             document_kind = str(snapshot.payload.get("document_kind", "image"))
             document_metadata = (
                 copy.deepcopy(snapshot.payload.get("metadata", {}))
@@ -712,8 +923,26 @@ class ProjectSessionController:
                 )
                 continue
 
+            raster_provider = getattr(
+                host,
+                "_project_asset_raster_for_save",
+                None,
+            )
             image = host._project_asset_image_for_save(source_document)
-            if image is None or image.isNull():
+            try:
+                raster_asset = (
+                    raster_provider(source_document)
+                    if callable(raster_provider)
+                    else None
+                )
+            except Exception as exc:  # noqa: BLE001 - normalize provider failures
+                host._show_project_warning(
+                    "保存项目",
+                    f"读取项目内图片像素失败: "
+                    f"{host._document_display_name(source_document)}\n{exc}",
+                )
+                return _failed_asset_stage_result(created_paths, str(exc))
+            if raster_asset is None and (image is None or image.isNull()):
                 host._show_project_warning(
                     "保存项目",
                     f"无法找到项目内图片数据: {host._document_display_name(source_document)}",
@@ -722,13 +951,78 @@ class ProjectSessionController:
                     created_paths,
                     "项目内图片数据不可用。",
                 )
+            if raster_asset is None:
+                plane = qimage_to_raster_plane(image)
+                raster_metadata = None
+            else:
+                plane, raster_metadata = raster_asset
+            expected_pixel_type = source_document.raster_pixel_type
+            if (
+                expected_pixel_type is not None
+                and plane.pixel_type is not expected_pixel_type
+            ):
+                reason = (
+                    "项目文档声明的像素类型与待保存像素不一致："
+                    f"期望 {expected_pixel_type.value}，实际 "
+                    f"{plane.pixel_type.value}。"
+                )
+                host._show_project_warning("保存项目", reason)
+                return _failed_asset_stage_result(created_paths, reason)
+            expected_size = tuple(source_document.image_size)
+            actual_size = (plane.width, plane.height)
+            if expected_size != actual_size:
+                reason = (
+                    "项目文档声明的图片尺寸与待保存像素不一致："
+                    f"期望 {expected_size[0]}×{expected_size[1]}，实际 "
+                    f"{actual_size[0]}×{actual_size[1]}。"
+                )
+                host._show_project_warning("保存项目", reason)
+                return _failed_asset_stage_result(created_paths, reason)
+            required_suffix = recommended_native_asset_suffix(
+                plane.pixel_type
+            )
+            current_suffix = Path(document_path).suffix.casefold()
+            if plane.pixel_type.value == "gray32_float":
+                allowed_suffixes = {".tif", ".tiff"}
+            elif plane.pixel_type.value == "gray16":
+                allowed_suffixes = {".png", ".tif", ".tiff"}
+            else:
+                allowed_suffixes = {".png"}
+            if current_suffix not in allowed_suffixes:
+                document_path = str(
+                    Path(document_path).with_suffix(required_suffix)
+                ).replace("\\", "/")
             original_target = project_assets_root(target_path) / document_path
             output_path = original_target
             original_target.parent.mkdir(parents=True, exist_ok=True)
             try:
-                with staged_path_for(original_target, suffix=".png") as staged_path:
-                    if not image.save(str(staged_path), "PNG") or staged_path.stat().st_size <= 0:
-                        raise OSError("QImage 未生成有效 PNG")
+                staged_suffix = (
+                    original_target.suffix
+                    if original_target.suffix.casefold()
+                    in {".png", ".tif", ".tiff"}
+                    else ".png"
+                )
+                with staged_path_for(
+                    original_target,
+                    suffix=staged_suffix,
+                ) as staged_path:
+                    encoded = write_native_raster_asset(
+                        plane,
+                        staged_path,
+                        metadata=raster_metadata,
+                    )
+                    if not encoded:
+                        failure = encoded.failure
+                        detail = (
+                            f"{failure.message}: {failure.detail}"
+                            if failure is not None and failure.detail
+                            else (
+                                failure.message
+                                if failure is not None
+                                else "未知编码错误"
+                            )
+                        )
+                        raise OSError(detail)
                     digest = _file_sha256(staged_path)
                     revised_relative = _revisioned_asset_path(document_path, digest)
                     output_path = project_assets_root(target_path) / revised_relative
@@ -752,11 +1046,117 @@ class ProjectSessionController:
                     metadata=document_metadata,
                 )
             )
+        try:
+            analysis_asset_overrides = self._stage_analysis_assets(
+                target_path,
+                plan,
+                created_paths=created_paths,
+            )
+        except Exception as exc:  # noqa: BLE001 - one storage contract for all assets
+            host._show_project_warning(
+                "保存项目",
+                f"写入分析结果资产失败，旧项目保持不变：\n{exc}",
+            )
+            return _failed_asset_stage_result(created_paths, str(exc))
         return ProjectAssetStageResult(
             True,
             overrides=tuple(overrides),
+            analysis_asset_overrides=analysis_asset_overrides,
             created_paths=tuple(created_paths),
         )
+
+    def _stage_analysis_assets(
+        self,
+        target_path: Path,
+        plan: ProjectSavePlan,
+        *,
+        created_paths: list[Path],
+    ) -> tuple[AnalysisAssetSaveOverride, ...]:
+        """Verify and stage every external array referenced by analysis data."""
+
+        raw_artifacts = plan.payload.get("analysis_artifacts", [])
+        if not raw_artifacts:
+            return ()
+        if not isinstance(raw_artifacts, list):
+            raise ValueError("项目中的分析结果列表无效")
+        host = self._host
+        provider = getattr(host, "_analysis_asset_source_for_save", None)
+        old_project_path = getattr(host, "_project_path", None)
+        target_root = project_assets_root(target_path)
+        overrides: list[AnalysisAssetSaveOverride] = []
+        for raw_artifact in raw_artifacts:
+            if not isinstance(raw_artifact, dict):
+                raise ValueError("项目中的分析结果记录无效")
+            artifact = AnalysisArtifact.from_dict(raw_artifact)
+            for asset_index, reference in enumerate(artifact.assets):
+                source_path: Path | None = None
+                if callable(provider):
+                    provided = provider(reference)
+                    if provided is not None:
+                        source_path = Path(provided)
+                if source_path is None and old_project_path is not None:
+                    candidate = (
+                        project_assets_root(old_project_path) / reference.path
+                    )
+                    if candidate.is_file():
+                        source_path = candidate
+                if source_path is None:
+                    candidate = target_root / reference.path
+                    if candidate.is_file():
+                        source_path = candidate
+                if source_path is None or not source_path.is_file():
+                    raise FileNotFoundError(
+                        f"分析结果 {artifact.id} 的资产不存在："
+                        f"{reference.path}"
+                    )
+                validate_analysis_asset_reference(source_path, reference)
+
+                original_token = _validated_project_asset_path_token(
+                    reference.path
+                )
+                original_parts = PurePosixPath(original_token).parts
+                if not original_parts or original_parts[0].casefold() != "analysis":
+                    original_token = (
+                        PurePosixPath("analysis")
+                        / artifact.id
+                        / PurePosixPath(original_token).name
+                    ).as_posix()
+                revised_relative = _revisioned_asset_path(
+                    original_token,
+                    reference.sha256,
+                )
+                output_path = target_root / revised_relative
+                if output_path.exists():
+                    validate_analysis_asset_reference(output_path, reference)
+                else:
+                    output_path.parent.mkdir(parents=True, exist_ok=True)
+                    try:
+                        copy_verified_analysis_asset(
+                            source_path,
+                            output_path,
+                            reference,
+                        )
+                    except Exception:
+                        try:
+                            output_path.unlink(missing_ok=True)
+                        except OSError:
+                            pass
+                        raise
+                    created_paths.append(output_path)
+                overrides.append(
+                    AnalysisAssetSaveOverride(
+                        artifact_id=artifact.id,
+                        asset_index=asset_index,
+                        reference=AnalysisAssetReference(
+                            kind=reference.kind,
+                            path=revised_relative,
+                            sha256=reference.sha256,
+                            media_type=reference.media_type,
+                            metadata=reference.metadata,
+                        ),
+                    )
+                )
+        return tuple(overrides)
 
     def _cleanup_unreferenced_revision_assets(self, target_path: Path, project: ProjectState) -> None:
         self._cleanup_unreferenced_revision_assets_payload(target_path, project.to_dict())
@@ -774,6 +1174,14 @@ class ProjectSessionController:
             for document in payload.get("documents", [])
             if isinstance(document, dict) and document.get("source_type") == "project_asset"
         }
+        for artifact in payload.get("analysis_artifacts", []):
+            if not isinstance(artifact, dict):
+                continue
+            for asset in artifact.get("assets", []):
+                if isinstance(asset, dict) and asset.get("path"):
+                    referenced.add(
+                        (asset_root / str(asset["path"])).resolve()
+                    )
         for candidate in asset_root.rglob("*"):
             if not candidate.is_file() or candidate.resolve() in referenced:
                 continue
@@ -806,6 +1214,22 @@ def _failed_asset_stage_result(
         except OSError:
             pass
     return ProjectAssetStageResult(False, message=message)
+
+
+def _validated_project_asset_path_token(value: object) -> str:
+    token = str(value or "").replace("\\", "/").strip()
+    path = PurePosixPath(token)
+    if (
+        not token
+        or path.is_absolute()
+        or ".." in path.parts
+        or any(part.endswith(":") for part in path.parts)
+    ):
+        raise ValueError("项目资产路径必须是资产目录内的安全相对路径。")
+    normalized = path.as_posix()
+    if normalized in {".", ""}:
+        raise ValueError("项目资产路径不能为空。")
+    return normalized
 
 
 def _revisioned_asset_path(path_token: str, digest: str) -> str:

@@ -1,13 +1,20 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from pathlib import Path, PureWindowsPath
 import copy
 import json
 import math
 
-from fdm.atomic_io import atomic_write_json
-from fdm.models import Calibration, CalibrationPreset, ImageDocument, ProjectState
+from fdm.atomic_io import atomic_copy_file, atomic_write_json
+from fdm.models import (
+    PROJECT_SCHEMA_VERSION,
+    Calibration,
+    CalibrationPreset,
+    ImageDocument,
+    ProjectCompatibilityState,
+    ProjectState,
+)
 
 
 _NONFINITE_RAW_VALUE_KEY = "__fdm_nonfinite_float_v1__"
@@ -52,6 +59,22 @@ class DocumentPathResolution:
     path: Path
     source: str
     repaired_from_missing_absolute: bool = False
+
+
+class ProjectCompatibilityError(ValueError):
+    """Raised when a compatibility decision forbids an in-place save."""
+
+
+@dataclass(frozen=True, slots=True)
+class ProjectUpgradeBackupResult:
+    source_path: Path
+    backup_path: Path | None
+    source_schema_version: int
+    created: bool
+
+    @property
+    def required(self) -> bool:
+        return self.source_schema_version < PROJECT_SCHEMA_VERSION
 
 
 def _save_filesystem_token(token: str, project_dir: Path) -> Path:
@@ -192,8 +215,24 @@ class ProjectIO:
             calibration_presets=list(getattr(project, "calibration_presets", [])),
             project_default_calibration=getattr(project, "project_default_calibration", None),
             project_group_templates=list(getattr(project, "project_group_templates", [])),
+            project_rois=list(getattr(project, "project_rois", [])),
+            analysis_artifacts=list(getattr(project, "analysis_artifacts", [])),
             metadata=getattr(project, "metadata", {}),
             load_issues=list(getattr(project, "load_issues", [])),
+            project_schema_version=getattr(
+                project,
+                "project_schema_version",
+                PROJECT_SCHEMA_VERSION,
+            ),
+            min_reader_version=getattr(project, "min_reader_version", 1),
+            required_features=tuple(
+                getattr(project, "required_features", ())
+            ),
+            compatibility=getattr(
+                project,
+                "compatibility",
+                ProjectCompatibilityState(),
+            ),
         )
         payload = projected.to_dict()
         # Model serializers already allocate independent geometry/list payloads,
@@ -254,6 +293,14 @@ class ProjectIO:
         *,
         preserve_path_document_ids: set[str] | None = None,
     ) -> Path:
+        if not project.compatibility.can_overwrite(path):
+            features = "、".join(
+                project.compatibility.unknown_required_features
+            )
+            raise ProjectCompatibilityError(
+                "项目包含当前程序不支持的必需功能，不能覆盖原文件"
+                + (f": {features}" if features else "")
+            )
         payload = ProjectIO.persistent_payload(project)
         return ProjectIO.save_payload(
             payload,
@@ -264,10 +311,14 @@ class ProjectIO:
 
     @staticmethod
     def load(path: str | Path) -> ProjectState:
-        input_path = Path(path)
+        input_path = Path(path).expanduser().resolve()
         payload = json.loads(input_path.read_text(encoding="utf-8"))
         sanitized_payload, issues = _sanitize_invalid_calibration_payloads(payload)
         project = ProjectState.from_dict(sanitized_payload)
+        project.compatibility = replace(
+            project.compatibility,
+            source_path=str(input_path),
+        )
         project.load_issues = issues
         issues_by_document = {
             str(issue.get("document_id")): str(issue.get("message", "标尺无效"))
@@ -291,6 +342,60 @@ class ProjectIO:
                 else None
             )
         return project
+
+    @staticmethod
+    def create_pre_upgrade_backup(
+        path: str | Path,
+        *,
+        project: ProjectState | None = None,
+    ) -> ProjectUpgradeBackupResult:
+        """Create an idempotent backup before a legacy project is upgraded.
+
+        Current-schema files need no backup.  A stable ``.pre-v2.bak`` name is
+        used so repeated save attempts do not create unbounded backup chains.
+        """
+
+        source_path = Path(path).expanduser().resolve()
+        if project is None:
+            payload = json.loads(source_path.read_text(encoding="utf-8"))
+            if not isinstance(payload, dict):
+                raise ValueError("项目文件根节点必须是 JSON 对象")
+            raw_schema_version = payload.get("project_schema_version", 1)
+            if (
+                isinstance(raw_schema_version, bool)
+                or not isinstance(raw_schema_version, int)
+                or raw_schema_version < 1
+            ):
+                raise ValueError("project_schema_version 无效")
+            source_schema_version = raw_schema_version
+        else:
+            source_schema_version = project.compatibility.source_schema_version
+
+        if source_schema_version >= PROJECT_SCHEMA_VERSION:
+            return ProjectUpgradeBackupResult(
+                source_path=source_path,
+                backup_path=None,
+                source_schema_version=source_schema_version,
+                created=False,
+            )
+
+        backup_path = source_path.with_name(
+            f"{source_path.name}.pre-v{PROJECT_SCHEMA_VERSION}.bak"
+        )
+        if backup_path.exists():
+            return ProjectUpgradeBackupResult(
+                source_path=source_path,
+                backup_path=backup_path,
+                source_schema_version=source_schema_version,
+                created=False,
+            )
+        atomic_copy_file(source_path, backup_path)
+        return ProjectUpgradeBackupResult(
+            source_path=source_path,
+            backup_path=backup_path,
+            source_schema_version=source_schema_version,
+            created=True,
+        )
 
 
 def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[dict]]:
