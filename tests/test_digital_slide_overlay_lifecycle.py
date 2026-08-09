@@ -15,6 +15,7 @@ from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QTabWidget, QWidget
 
+from fdm.construction_geometry import ConstructionEntity, FreePointDefinition
 from fdm.geometry import Line, Point
 from fdm.models import ImageDocument, Measurement
 from fdm.services.digital_slide_store import DigitalSlideManifest
@@ -33,6 +34,31 @@ class _WheelEvent:
 
     def position(self) -> QPointF:
         return self._position
+
+    def accept(self) -> None:
+        self.accepted = True
+
+
+class _MouseEvent:
+    def __init__(
+        self,
+        position: QPointF,
+        *,
+        button: Qt.MouseButton = Qt.MouseButton.LeftButton,
+    ) -> None:
+        self._position = QPointF(position)
+        self._button = button
+        self.accepted = False
+
+    def position(self) -> QPointF:
+        return QPointF(self._position)
+
+    def button(self) -> Qt.MouseButton:
+        return self._button
+
+    @staticmethod
+    def modifiers() -> Qt.KeyboardModifier:
+        return Qt.KeyboardModifier.NoModifier
 
     def accept(self) -> None:
         self.accepted = True
@@ -274,6 +300,70 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             mapped_origin = canvas.image_to_widget(canvas.viewport_origin())
             self.assertAlmostEqual(mapped_origin.x(), 20.0)
             self.assertAlmostEqual(mapped_origin.y(), 30.0)
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_fit_padding_rejects_creation_and_drag_clamps_to_mounted_global_viewport(
+        self,
+    ) -> None:
+        document = ImageDocument(
+            id="slide-pointer-bounds",
+            path="/tmp/slide-pointer-bounds.fdmslide",
+            image_size=(4096, 4096),
+            document_kind="digital_slide",
+        )
+        document.initialize_runtime_state()
+        image = QImage(200, 100, QImage.Format.Format_RGB32)
+        image.fill(0)
+        canvas = DigitalSlideCanvas()
+        canvas.resize(400, 400)
+        canvas.set_document(document, image)
+        canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        canvas.fit_to_view()
+        created: list[ConstructionEntity] = []
+        edited: list[ConstructionEntity] = []
+        canvas.constructionCreateRequested.connect(
+            lambda _document_id, entity: created.append(entity)
+        )
+        canvas.constructionEdited.connect(
+            lambda _document_id, _entity_id, entity: edited.append(entity)
+        )
+        try:
+            canvas.set_tool_mode("construction", construction_kind="point")
+            padding_position = QPointF(200.0, 50.0)
+            padding_global = canvas.widget_to_image(padding_position)
+            self.assertLess(padding_global.y, canvas.viewport_origin().y)
+            canvas.mousePressEvent(_MouseEvent(padding_position))
+            canvas.mouseReleaseEvent(_MouseEvent(padding_position))
+            self.assertEqual(created, [])
+
+            target = Point(1050.0, 2050.0)
+            target_position = canvas.image_to_widget(target)
+            canvas.mousePressEvent(_MouseEvent(target_position))
+            canvas.mouseReleaseEvent(_MouseEvent(target_position))
+            self.assertEqual(len(created), 1)
+            self.assertIsInstance(created[0].definition, FreePointDefinition)
+            self.assertEqual(created[0].definition.point, target)
+
+            entity = ConstructionEntity(
+                id="drag-point",
+                name="拖动点",
+                definition=FreePointDefinition(target),
+            )
+            document.add_construction_entity(entity)
+            canvas.set_tool_mode("select")
+            canvas.set_selected_construction(entity.id)
+            canvas.mousePressEvent(_MouseEvent(target_position))
+            canvas.mouseMoveEvent(_MouseEvent(padding_position))
+            canvas.mouseReleaseEvent(_MouseEvent(padding_position))
+
+            self.assertEqual(len(edited), 1)
+            self.assertIsInstance(edited[0].definition, FreePointDefinition)
+            dragged = edited[0].definition.point
+            self.assertGreaterEqual(dragged.x, 1000.0)
+            self.assertLess(dragged.x, 1200.0)
+            self.assertEqual(dragged.y, 2000.0)
         finally:
             canvas.clear_document()
             canvas.close()

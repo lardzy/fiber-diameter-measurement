@@ -48,6 +48,7 @@ class ExportHost(Protocol):
         *,
         include_measurements: bool,
         include_scale: bool,
+        include_construction_geometry: bool = False,
         render_mode: str,
         render_context: ExportRenderContext | None = None,
     ) -> RenderedExport: ...

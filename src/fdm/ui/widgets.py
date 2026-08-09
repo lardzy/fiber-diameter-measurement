@@ -798,6 +798,7 @@ class MeasurementToolStrip(QWidget):
         self._count_context_widget: QWidget | None = None
         self._preview_context_widget: QWidget | None = None
         self._path_context_widget: QWidget | None = None
+        self._construction_context_widget: QWidget | None = None
         self._compact_mode = False
         self._primary_tools_visible = True
         self._active_mode = "select"
@@ -1147,6 +1148,12 @@ class MeasurementToolStrip(QWidget):
         widget.setVisible(False)
         self._refresh_context_visibility()
 
+    def setConstructionContextWidget(self, widget: QWidget) -> None:
+        self._construction_context_widget = widget
+        self._context_layout.addWidget(widget)
+        widget.setVisible(False)
+        self._refresh_context_visibility()
+
     def setActiveMode(self, mode: str) -> None:
         self._active_mode = mode
         for button in set(self._split_mode_lookup.values()):
@@ -1229,12 +1236,24 @@ class MeasurementToolStrip(QWidget):
     def isPathContextVisible(self) -> bool:
         return bool(self._path_context_widget and not self._path_context_widget.isHidden())
 
+    def setConstructionContextVisible(self, visible: bool) -> None:
+        if self._construction_context_widget is not None:
+            self._construction_context_widget.setVisible(bool(visible))
+        self._refresh_context_visibility()
+
+    def isConstructionContextVisible(self) -> bool:
+        return bool(
+            self._construction_context_widget
+            and not self._construction_context_widget.isHidden()
+        )
+
     def _refresh_context_visibility(self) -> None:
         visible = (
             self.isMagicContextVisible()
             or self.isCountContextVisible()
             or self.isPreviewContextVisible()
             or self.isPathContextVisible()
+            or self.isConstructionContextVisible()
         )
         if not visible:
             self._context_placement = "hidden"
@@ -1294,6 +1313,11 @@ class MeasurementToolStrip(QWidget):
             return self._preview_context_widget
         if self.isPathContextVisible() and self._path_context_widget is not None:
             return self._path_context_widget
+        if (
+            self.isConstructionContextVisible()
+            and self._construction_context_widget is not None
+        ):
+            return self._construction_context_widget
         return None
 
     def _context_height_for_width(self, width: int) -> int:

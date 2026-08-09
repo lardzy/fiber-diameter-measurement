@@ -645,6 +645,18 @@ class AppSettings:
     overlay_line_color: str = "#F7F4EA"
     overlay_line_width: float = 2.5
     show_canvas_navigator: bool = True
+    object_snap_enabled: bool = True
+    object_snap_kinds: list[str] = field(
+        default_factory=lambda: [
+            "point",
+            "endpoint",
+            "midpoint",
+            "center",
+            "quadrant",
+            "intersection",
+        ]
+    )
+    object_snap_aperture_px: float = 10.0
     focus_stack_profile: str = FocusStackProfile.BALANCED
     focus_stack_sharpen_strength: int = 35
     magic_segment_model_variant: str = MagicSegmentModelVariant.EDGE_SAM_3X
@@ -784,6 +796,28 @@ class AppSettings:
         )
         normalized.overlay_line_width = self._normalize_overlay_line_width(self.overlay_line_width)
         normalized.show_canvas_navigator = bool(self.show_canvas_navigator)
+        normalized.object_snap_enabled = bool(self.object_snap_enabled)
+        allowed_snap_kinds = {
+            "point",
+            "endpoint",
+            "midpoint",
+            "center",
+            "quadrant",
+            "intersection",
+            "nearest",
+        }
+        normalized.object_snap_kinds = list(
+            dict.fromkeys(
+                kind
+                for kind in (str(item).strip().lower() for item in self.object_snap_kinds)
+                if kind in allowed_snap_kinds
+            )
+        )
+        try:
+            snap_aperture = float(self.object_snap_aperture_px)
+        except (TypeError, ValueError):
+            snap_aperture = 10.0
+        normalized.object_snap_aperture_px = max(4.0, min(40.0, snap_aperture))
         normalized.focus_stack_profile = self._normalize_focus_stack_profile(self.focus_stack_profile)
         normalized.focus_stack_sharpen_strength = self._normalize_focus_stack_sharpen_strength(self.focus_stack_sharpen_strength)
         normalized.magic_segment_model_variant = self._normalize_magic_segment_model_variant(self.magic_segment_model_variant)
@@ -1179,6 +1213,9 @@ class AppSettings:
             "overlay_line_color": normalized.overlay_line_color,
             "overlay_line_width": normalized.overlay_line_width,
             "show_canvas_navigator": normalized.show_canvas_navigator,
+            "object_snap_enabled": normalized.object_snap_enabled,
+            "object_snap_kinds": list(normalized.object_snap_kinds),
+            "object_snap_aperture_px": normalized.object_snap_aperture_px,
             "focus_stack_profile": normalized.focus_stack_profile,
             "focus_stack_sharpen_strength": normalized.focus_stack_sharpen_strength,
             "magic_segment_model_variant": normalized.magic_segment_model_variant,
@@ -1354,6 +1391,21 @@ class AppSettings:
         settings.show_canvas_navigator = bool(
             payload.get("show_canvas_navigator", settings.show_canvas_navigator)
         )
+        settings.object_snap_enabled = bool(
+            payload.get("object_snap_enabled", settings.object_snap_enabled)
+        )
+        raw_snap_kinds = payload.get("object_snap_kinds", settings.object_snap_kinds)
+        if isinstance(raw_snap_kinds, (list, tuple, set)):
+            settings.object_snap_kinds = [str(item) for item in raw_snap_kinds]
+        try:
+            settings.object_snap_aperture_px = float(
+                payload.get(
+                    "object_snap_aperture_px",
+                    settings.object_snap_aperture_px,
+                )
+            )
+        except (TypeError, ValueError):
+            settings.object_snap_aperture_px = 10.0
         settings.focus_stack_profile = cls._normalize_focus_stack_profile(payload.get("focus_stack_profile", settings.focus_stack_profile))
         settings.focus_stack_sharpen_strength = cls._normalize_focus_stack_sharpen_strength(
             payload.get("focus_stack_sharpen_strength", settings.focus_stack_sharpen_strength)

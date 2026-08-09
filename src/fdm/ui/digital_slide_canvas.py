@@ -5,7 +5,7 @@ from time import perf_counter
 from weakref import ref
 
 from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QImage, QKeyEvent, QWheelEvent
+from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QWheelEvent
 from shiboken6 import isValid as is_qobject_valid
 
 from fdm.geometry import Point
@@ -50,6 +50,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._viewport_last_publish_at = 0.0
+        # Pointer drags are constrained to the raster that is currently
+        # mounted in the canvas.  Keep this separate from the whole-slide
+        # coordinate system used by navigation and programmatic locating.
+        self._clamp_pointer_to_mounted_viewport = False
         self._bufferRendered.connect(self._on_viewport_buffer_rendered)
 
     def set_slide_document(self, document: ImageDocument, store: DigitalSlideStore) -> None:
@@ -150,6 +154,11 @@ class DigitalSlideCanvas(DocumentCanvas):
             # active so navigation cannot move a stale highlight away from the
             # stationary pointer.
             self._set_hovered_line_endpoint(None)
+            self._hovered_construction_id = None
+            self._hovered_construction_handle = None
+            self._set_active_snap_candidate(None)
+            if self._construction_session is not None:
+                self._construction_session.hover_point = None
             # A discrete navigation action is an explicit retry boundary.  A
             # held smooth-navigation key clears the error latch only once in
             # _begin_smooth_navigation(), so a permanent read error cannot
@@ -182,6 +191,11 @@ class DigitalSlideCanvas(DocumentCanvas):
             QPointF(self.width() / 2.0, self.height() / 2.0),
         )
         self._set_hovered_line_endpoint(None)
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
+        if self._construction_session is not None:
+            self._construction_session.hover_point = None
         self._allow_viewport_buffer_retry()
         self._cancel_overlay_requests()
         self._viewport_origin = Point(
@@ -201,7 +215,13 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def widget_to_image(self, position: QPointF) -> Point:
         local = super().widget_to_image(position)
-        return Point(local.x + self._viewport_origin.x, local.y + self._viewport_origin.y)
+        point = Point(
+            local.x + self._viewport_origin.x,
+            local.y + self._viewport_origin.y,
+        )
+        if self._clamp_pointer_to_mounted_viewport:
+            return self._clamp_to_mounted_viewport(point)
+        return point
 
     def image_to_widget(self, point: Point) -> QPointF:
         return QPointF(
@@ -350,10 +370,78 @@ class DigitalSlideCanvas(DocumentCanvas):
         return self._document.image_size
 
     def _point_in_image(self, point: Point) -> bool:
-        if self._document is None:
+        bounds = self._paint_image_bounds()
+        if bounds.isEmpty() or not bounds.isValid():
             return False
-        width, height = self._document.image_size
-        return 0 <= point.x < width and 0 <= point.y < height
+        return (
+            bounds.left() <= point.x < bounds.right()
+            and bounds.top() <= point.y < bounds.bottom()
+        )
+
+    def _clamp_to_mounted_viewport(self, point: Point) -> Point:
+        """Clamp a pointer coordinate while retaining global slide space."""
+
+        bounds = self._paint_image_bounds()
+        if bounds.isEmpty() or not bounds.isValid():
+            return point
+        return Point(
+            max(bounds.left(), min(bounds.right() - 1.0, point.x)),
+            max(bounds.top(), min(bounds.bottom() - 1.0, point.y)),
+        )
+
+    def _query_object_snap(self, image_point: Point):
+        # Geometry outside the mounted raster may be nearby in whole-slide
+        # coordinates, but it is neither visible nor a valid pointer target.
+        if not self._point_in_image(image_point):
+            self._set_active_snap_candidate(None)
+            return None
+        candidate = super()._query_object_snap(image_point)
+        if candidate is not None and not self._point_in_image(candidate.point_px):
+            self._set_active_snap_candidate(None)
+            return None
+        return candidate
+
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        # A press in FIT padding must remain outside the image so it cannot
+        # start a measurement or construction command.
+        previous = self._clamp_pointer_to_mounted_viewport
+        self._clamp_pointer_to_mounted_viewport = False
+        try:
+            super().mousePressEvent(event)
+        finally:
+            self._clamp_pointer_to_mounted_viewport = previous
+
+    def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        # Once a pointer operation has started, dragging into the padding pins
+        # the preview to the nearest mounted pixel instead of writing a global
+        # coordinate belonging to an invisible slide region.
+        previous = self._clamp_pointer_to_mounted_viewport
+        self._clamp_pointer_to_mounted_viewport = self._has_pointer_edit_operation()
+        try:
+            super().mouseMoveEvent(event)
+        finally:
+            self._clamp_pointer_to_mounted_viewport = previous
+
+    def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        previous = self._clamp_pointer_to_mounted_viewport
+        self._clamp_pointer_to_mounted_viewport = self._has_pointer_edit_operation()
+        try:
+            super().mouseReleaseEvent(event)
+        finally:
+            self._clamp_pointer_to_mounted_viewport = previous
+
+    def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
+        # Double-click completes paths, but padding must not contribute a new
+        # point or silently clamp an otherwise invalid click onto the border.
+        point = self.widget_to_image(event.position())
+        if not self._point_in_image(point):
+            return
+        previous = self._clamp_pointer_to_mounted_viewport
+        self._clamp_pointer_to_mounted_viewport = False
+        try:
+            super().mouseDoubleClickEvent(event)
+        finally:
+            self._clamp_pointer_to_mounted_viewport = previous
 
     def _visible_image_rect(self) -> QRectF:
         if self._image is None:

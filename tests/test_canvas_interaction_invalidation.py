@@ -536,10 +536,17 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
             with patch.object(canvas, "update") as update:
                 canvas.mouseMoveEvent(_PointerEvent(start_position))
 
-            self.assertEqual(update.call_count, 1)
-            start_dirty = update.call_args.args[0]
-            self.assertTrue(start_dirty.contains(start_position.toPoint()))
-            self.assertLess(start_dirty.width(), canvas.width() / 2)
+            # Manual mode now paints both the editable endpoint handle and the
+            # object-snap marker.  They may request separate dirty rectangles,
+            # but both must remain confined to the endpoint neighborhood.
+            self.assertGreaterEqual(update.call_count, 1)
+            start_dirty_rects = [call.args[0] for call in update.call_args_list]
+            self.assertTrue(
+                all(rect.contains(start_position.toPoint()) for rect in start_dirty_rects)
+            )
+            self.assertTrue(
+                all(rect.width() < canvas.width() / 2 for rect in start_dirty_rects)
+            )
 
             with patch.object(canvas, "update") as unchanged_update:
                 canvas.mouseMoveEvent(_PointerEvent(start_position))
@@ -548,11 +555,20 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
             with patch.object(canvas, "update") as moved_update:
                 canvas.mouseMoveEvent(_PointerEvent(end_position))
 
-            self.assertEqual(moved_update.call_count, 2)
+            self.assertGreaterEqual(moved_update.call_count, 2)
             dirty_rects = [call.args[0] for call in moved_update.call_args_list]
             self.assertTrue(any(rect.contains(start_position.toPoint()) for rect in dirty_rects))
             self.assertTrue(any(rect.contains(end_position.toPoint()) for rect in dirty_rects))
-            self.assertTrue(all(rect.width() < canvas.width() / 2 for rect in dirty_rects))
+            self.assertTrue(
+                all(
+                    rect.contains(start_position.toPoint())
+                    or rect.contains(end_position.toPoint())
+                    for rect in dirty_rects
+                )
+            )
+            self.assertTrue(
+                all(rect.width() < canvas.width() / 2 for rect in dirty_rects)
+            )
         finally:
             canvas.clear_document()
             canvas.close()

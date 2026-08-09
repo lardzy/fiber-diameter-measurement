@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, fields
+from dataclasses import dataclass, fields, replace
 from datetime import datetime, timedelta
 from importlib import metadata as importlib_metadata
 from pathlib import Path
@@ -87,6 +87,13 @@ from fdm.area_display import (
     ensure_measurement_display_geometry,
 )
 from fdm.geometry import Line, Point, line_length
+from fdm.construction_document import make_construction_resolver
+from fdm.construction_geometry import (
+    ConstructionEntity,
+    ConstructionResolver,
+    ConstructionValidationError,
+    SourceObjectKind,
+)
 from fdm.history import (
     DocumentChangeImpact,
     DocumentHistoryState,
@@ -191,6 +198,13 @@ from fdm.services.export_service import (
     ExportService,
     RenderedExport,
 )
+from fdm.services.construction_operations import (
+    copy_constructions,
+    detach_live_sources,
+    iter_live_refs,
+    plan_cascade_deletion,
+    transitive_dependents,
+)
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
 from fdm.services.group_manager import GroupManager
 from fdm.services.measurement_statistics import StatisticsScope
@@ -294,6 +308,13 @@ from fdm.ui.canvas import (
     magic_prompt_visual,
 )
 from fdm.ui.canvas_navigator import CanvasNavigatorWidget
+from fdm.ui.construction_widgets import (
+    ConstructionContextWidget,
+    ConstructionManagerPanel,
+    ObjectSnapStatusButton,
+    construction_kind_label,
+)
+from fdm.ui.construction_rendering import draw_construction_entities
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
@@ -970,6 +991,14 @@ class ImageAnalysisRunContext:
 
 
 @dataclass(frozen=True, slots=True)
+class WorkspaceCompositeHistoryEntry:
+    """One user command represented by synchronized per-document histories."""
+
+    label: str
+    document_sequences: tuple[tuple[str, int], ...]
+
+
+@dataclass(frozen=True, slots=True)
 class AnalysisBatchItemContext:
     item_id: str
     document_id: str
@@ -1192,12 +1221,18 @@ class MainWindow(QMainWindow):
             pass
         self._document_order: list[str] = []
         self._workspace_history_budget = WorkspaceHistoryBudget()
+        self._workspace_composite_undo: list[WorkspaceCompositeHistoryEntry] = []
+        self._workspace_composite_redo: list[WorkspaceCompositeHistoryEntry] = []
         self._images: dict[str, QImage] = {}
         self._rasters: dict[str, RasterPlane] = {}
         self._raster_metadata: dict[str, RasterMetadata] = {}
         self._display_cache_transforms: dict[
             str,
             DisplayTransform | None,
+        ] = {}
+        self._construction_resolution_cache: dict[
+            str,
+            tuple[int, int, bool, int, Mapping[str, object]],
         ] = {}
         self._display_adjustment_dialog: DisplayAdjustmentDialog | None = None
         self._display_adjustment_document_id: str | None = None
@@ -1240,6 +1275,7 @@ class MainWindow(QMainWindow):
         self._manual_tool_mode = "manual"
         self._area_tool_mode = "polygon_area"
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
+        self._construction_tool_kind = "point"
         self._group_list_rebuilding = False
         self._table_rebuilding = False
         self._syncing_measurement_table_selection = False
@@ -1266,6 +1302,13 @@ class MainWindow(QMainWindow):
         self._overlay_tool_button: OverlayToolSplitButton | None = None
         self._overlay_tool_menu: QMenu | None = None
         self._overlay_subtool_actions: dict[str, QAction] = {}
+        self._construction_tool_button: OverlayToolSplitButton | None = None
+        self._construction_tool_menu: QMenu | None = None
+        self._construction_subtool_actions: dict[str, QAction] = {}
+        self._construction_context_widget: ConstructionContextWidget | None = None
+        self._construction_manager: ConstructionManagerPanel | None = None
+        self._object_snap_status_button: ObjectSnapStatusButton | None = None
+        self._geometry_manager_tabs: QTabWidget | None = None
         self._left_panel: QWidget | None = None
         self._left_panel_splitter: QSplitter | None = None
         self._roi_manager: RoiManagerPanel | None = None
@@ -1802,6 +1845,18 @@ class MainWindow(QMainWindow):
 
     def _build_ui(self) -> None:
         self.setStatusBar(QStatusBar())
+        self._object_snap_status_button = ObjectSnapStatusButton(self.statusBar())
+        self._object_snap_status_button.setSnapState(
+            self._app_settings.object_snap_enabled,
+            self._app_settings.object_snap_kinds,
+        )
+        self._object_snap_status_button.enabledChanged.connect(
+            self._on_object_snap_enabled_changed
+        )
+        self._object_snap_status_button.kindsChanged.connect(
+            self._on_object_snap_kinds_changed
+        )
+        self.statusBar().addPermanentWidget(self._object_snap_status_button, 0)
         self._zoom_status_button = ViewZoomStatusButton(self.statusBar())
         self._zoom_status_button.fitRequested.connect(self.fit_current_image)
         self._zoom_status_button.actualRequested.connect(self.actual_size_current_image)
@@ -2132,6 +2187,7 @@ class MainWindow(QMainWindow):
             (MagicSegmentToolMode.REFERENCE, "同类扩选"),
             (MagicSegmentToolMode.FIBER_QUICK, "快速测径"),
             ("calibration", "标定"),
+            ("construction", "辅助几何"),
             ("overlay", "叠加标注"),
         ]:
             action = QAction(label, self)
@@ -2151,6 +2207,7 @@ class MainWindow(QMainWindow):
         self._mode_actions[MagicSegmentToolMode.REFERENCE].setIcon(self._magic_tool_icon(MagicSegmentToolMode.REFERENCE))
         self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color="#FF7F50"))
+        self._mode_actions["construction"].setIcon(themed_icon("manual", color="#58C4C7"))
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
 
         self.image_processing_workbench_action = QAction(
@@ -2712,6 +2769,8 @@ class MainWindow(QMainWindow):
         self._magic_tool_button = self._build_magic_tool_button()
         strip.setMagicToolButton(self._magic_tool_button)
         strip.addModeAction("calibration", self._mode_actions["calibration"])
+        self._construction_tool_button = self._build_construction_tool_button()
+        strip.addSplitModeButton("construction", self._construction_tool_button)
         self._overlay_tool_button = self._build_overlay_tool_button()
         strip.setOverlayButton(self._overlay_tool_button)
         self._magic_controls_widget = self._build_magic_segment_controls()
@@ -2720,6 +2779,20 @@ class MainWindow(QMainWindow):
         strip.setPreviewContextWidget(self._preview_analysis_widget)
         self._path_controls_widget = self._build_path_drawing_controls()
         strip.setPathContextWidget(self._path_controls_widget)
+        self._construction_context_widget = ConstructionContextWidget(self)
+        self._construction_context_widget.backRequested.connect(
+            self._construction_back_step
+        )
+        self._construction_context_widget.finishRequested.connect(
+            self._construction_finish
+        )
+        self._construction_context_widget.cancelRequested.connect(
+            self._construction_cancel
+        )
+        self._construction_context_widget.parameterChanged.connect(
+            self._construction_parameter_changed
+        )
+        strip.setConstructionContextWidget(self._construction_context_widget)
         strip.setActiveMode(self._tool_mode)
         return strip
 
@@ -2921,6 +2994,129 @@ class MainWindow(QMainWindow):
             (OverlayAnnotationKind.LINE, "直线", "overlay_line"),
             (OverlayAnnotationKind.ARROW, "箭头", "overlay_arrow"),
         ]
+
+    def _construction_tool_definitions(self) -> list[tuple[str, str, str, str]]:
+        return [
+            ("点", "point", "自由点", "count"),
+            ("点", "midpoint", "中点", "count"),
+            ("点", "intersection", "交点", "count"),
+            ("线", "segment", "辅助线段", "manual"),
+            ("线", "ray", "射线", "manual"),
+            ("线", "infinite_line", "无限直线", "manual"),
+            ("线", "horizontal_line", "水平无限线", "manual"),
+            ("线", "vertical_line", "垂直无限线", "manual"),
+            ("圆", "circle_center_radius", "圆心—半径", "overlay_circle"),
+            ("圆", "circle_center_diameter", "圆心—直径", "overlay_circle"),
+            ("圆", "circle_diameter_2p", "两点直径圆", "overlay_circle"),
+            ("圆", "circle_3p", "三点圆", "overlay_circle"),
+            ("派生", "parallel_through", "过点平行线", "continuous_manual"),
+            ("派生", "parallel_offset", "定距偏移线", "continuous_manual"),
+            ("派生", "parallel_array", "等距平行阵列", "continuous_manual"),
+            ("派生", "perpendicular", "过点垂线", "manual"),
+            ("派生", "perpendicular_bisector", "垂直平分线", "manual"),
+            ("相切与圆", "concentric_circle", "同心圆", "overlay_circle"),
+            ("相切与圆", "offset_circle", "偏移圆", "overlay_circle"),
+            ("相切与圆", "tangent_point_circle", "点到圆切线", "manual"),
+            ("相切与圆", "common_tangent_external", "两圆外公切线", "manual"),
+            ("相切与圆", "common_tangent_internal", "两圆内公切线", "manual"),
+            ("相切与圆", "tangent_circle_ttr", "相切—相切—半径圆", "overlay_circle"),
+            ("相切与圆", "tangent_circle_3", "三相切圆", "overlay_circle"),
+        ]
+
+    def _construction_tool_label(self, kind: str) -> str:
+        for _group, tool_kind, label, _icon in self._construction_tool_definitions():
+            if tool_kind == kind:
+                return label
+        return "自由点"
+
+    def _construction_tool_icon(self, kind: str, *, active: bool = False) -> QIcon:
+        color = self._professional_tool_icon_color(active)
+        for _group, tool_kind, _label, icon_name in self._construction_tool_definitions():
+            if tool_kind == kind:
+                return themed_icon(icon_name, color=color)
+        return themed_icon("manual", color=color)
+
+    def _activate_construction_tool(self, kind: str) -> None:
+        valid = {item[1] for item in self._construction_tool_definitions()}
+        if kind not in valid:
+            kind = "point"
+        self._construction_tool_kind = kind
+        self.set_tool_mode("construction", construction_kind=kind)
+
+    def _build_construction_tool_button(self) -> OverlayToolSplitButton:
+        button = OverlayToolSplitButton(self)
+        button.setText("辅助几何")
+        button.primaryTriggered.connect(
+            lambda: self._activate_construction_tool(self._construction_tool_kind)
+        )
+        menu = QMenu(self)
+        menu.setObjectName("constructionToolMenu")
+        menu.setStyleSheet(
+            self._build_split_menu_stylesheet(
+                "constructionToolMenu",
+                "rgba(88, 196, 199, 41)",
+            )
+        )
+        grouped: dict[str, QMenu] = {}
+        for group, kind, label, _icon_name in self._construction_tool_definitions():
+            submenu = grouped.get(group)
+            if submenu is None:
+                submenu = menu.addMenu(group)
+                grouped[group] = submenu
+            action = QAction(label, submenu)
+            action.setCheckable(True)
+            action.setIcon(self._construction_tool_icon(kind))
+            action.triggered.connect(
+                lambda checked=False, tool_kind=kind: self._activate_construction_tool(
+                    tool_kind
+                )
+            )
+            submenu.addAction(action)
+            self._construction_subtool_actions[kind] = action
+        button.setMenu(menu)
+        self._construction_tool_menu = menu
+        self._sync_construction_tool_button()
+        return button
+
+    def _sync_construction_tool_button(self) -> None:
+        kind = self._construction_tool_kind
+        active = self._tool_mode == "construction"
+        icon = self._construction_tool_icon(kind, active=active)
+        label = self._construction_tool_label(kind)
+        if self._construction_tool_button is not None:
+            self._construction_tool_button.blockSignals(True)
+            self._construction_tool_button.setText(label)
+            self._construction_tool_button.setChecked(active)
+            self._construction_tool_button.setCurrentTool(kind, icon)
+            self._construction_tool_button.setToolTip(
+                f"辅助几何（当前：{label}）"
+            )
+            self._construction_tool_button.blockSignals(False)
+        for tool_kind, action in self._construction_subtool_actions.items():
+            action.setChecked(tool_kind == kind)
+            action.setIcon(self._construction_tool_icon(tool_kind))
+        if self._construction_context_widget is not None:
+            self._construction_context_widget.configure(kind)
+
+    def _construction_back_step(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None and hasattr(canvas, "construction_back_step"):
+            canvas.construction_back_step()
+
+    def _construction_finish(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None and hasattr(canvas, "finish_construction_command"):
+            canvas.finish_construction_command()
+
+    def _construction_cancel(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None and hasattr(canvas, "cancel_construction_command"):
+            canvas.cancel_construction_command()
+
+    def _construction_parameter_changed(self, name: str, value: object) -> None:
+        canvas = self.current_canvas()
+        if canvas is not None and hasattr(canvas, "set_construction_parameter"):
+            canvas.set_construction_parameter(name, value)
 
     def _magic_tool_definitions(self) -> list[tuple[str, str]]:
         return [
@@ -3350,12 +3546,37 @@ class MainWindow(QMainWindow):
             self._on_roi_locate_requested
         )
 
+        self._construction_manager = ConstructionManagerPanel(standard_content)
+        self._construction_manager.selectionChanged.connect(
+            self._on_construction_selection_changed
+        )
+        self._construction_manager.metadataChangeRequested.connect(
+            self._on_construction_metadata_change_requested
+        )
+        self._construction_manager.batchColorChangeRequested.connect(
+            self._on_construction_batch_color_change_requested
+        )
+        self._construction_manager.locateRequested.connect(
+            self._on_construction_locate_requested
+        )
+        self._construction_manager.copyRequested.connect(
+            self._on_construction_copy_requested
+        )
+        self._construction_manager.deleteRequested.connect(
+            self._on_construction_delete_requested
+        )
+        geometry_tabs = QTabWidget(standard_content)
+        geometry_tabs.setObjectName("roiConstructionTabs")
+        geometry_tabs.addTab(self._roi_manager, "ROI")
+        geometry_tabs.addTab(self._construction_manager, "辅助对象")
+        self._geometry_manager_tabs = geometry_tabs
+
         splitter = QSplitter(Qt.Orientation.Vertical)
         self._left_panel_splitter = splitter
         splitter.setChildrenCollapsible(False)
         splitter.addWidget(image_box)
         splitter.addWidget(group_box)
-        splitter.addWidget(self._roi_manager)
+        splitter.addWidget(geometry_tabs)
         splitter.setStretchFactor(0, 1)
         splitter.setStretchFactor(1, 2)
         splitter.setStretchFactor(2, 1)
@@ -3934,6 +4155,15 @@ class MainWindow(QMainWindow):
         )
         self._object_inspector.overlayTextActualSizePreviewRequested.connect(
             self._on_overlay_text_actual_size_preview_requested
+        )
+        self._object_inspector.constructionDetachRequested.connect(
+            self._on_construction_detach_requested
+        )
+        self._object_inspector.constructionLocateSourcesRequested.connect(
+            self._on_construction_locate_sources_requested
+        )
+        self._object_inspector.constructionDefinitionChangeRequested.connect(
+            self._on_construction_definition_change_requested
         )
         self._object_properties_section = CollapsibleSection(
             "当前对象属性",
@@ -4570,7 +4800,13 @@ class MainWindow(QMainWindow):
         action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
         return action
 
-    def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
+    def set_tool_mode(
+        self,
+        mode: str,
+        *,
+        overlay_kind: str | None = None,
+        construction_kind: str | None = None,
+    ) -> None:
         previous_mode = self._tool_mode
         if is_magic_toolbar_tool_mode(mode) and "magic-segmentation" not in self._runtime_features:
             mode = "select"
@@ -4578,6 +4814,10 @@ class MainWindow(QMainWindow):
             mode = "select"
         if overlay_kind in {item[0] for item in self._overlay_tool_definitions()}:
             self._overlay_tool_kind = overlay_kind
+        if construction_kind in {
+            item[1] for item in self._construction_tool_definitions()
+        }:
+            self._construction_tool_kind = str(construction_kind)
         current_canvas = self.current_canvas()
         current_document_id = current_canvas.document_id if current_canvas is not None else None
         if current_document_id is not None and mode != previous_mode:
@@ -4597,7 +4837,11 @@ class MainWindow(QMainWindow):
             self._last_non_select_tool = mode
         self._tool_mode = mode
         for canvas in self._canvases.values():
-            canvas.set_tool_mode(mode, overlay_kind=self._overlay_tool_kind)
+            canvas.set_tool_mode(
+                mode,
+                overlay_kind=self._overlay_tool_kind,
+                construction_kind=self._construction_tool_kind,
+            )
             if is_magic_segment_tool_mode(mode):
                 self._sync_canvas_magic_subtract_input_mode(canvas)
         if mode in self._mode_actions:
@@ -4608,10 +4852,19 @@ class MainWindow(QMainWindow):
         self._sync_manual_tool_button()
         self._sync_area_tool_button()
         self._sync_magic_tool_button()
+        self._sync_construction_tool_button()
         self._sync_overlay_tool_button()
         self._update_magic_segment_controls()
         self._update_count_numbers_button()
         self._update_path_drawing_controls()
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip.setConstructionContextVisible(
+                mode == "construction" and not self._preview_active
+            )
+        if self._construction_context_widget is not None:
+            self._construction_context_widget.configure(
+                self._construction_tool_kind
+            )
         self._schedule_statistics_refresh()
 
     def current_document(self) -> ImageDocument | None:
@@ -11681,6 +11934,7 @@ class MainWindow(QMainWindow):
             "polygon_area",
             "freehand_area",
             "calibration",
+            "construction",
             "overlay",
             MagicSegmentToolMode.STANDARD,
             MagicSegmentToolMode.REFERENCE,
@@ -11698,6 +11952,9 @@ class MainWindow(QMainWindow):
         self._mode_actions[MagicSegmentToolMode.REFERENCE].setIcon(self._magic_tool_icon(MagicSegmentToolMode.REFERENCE))
         self._mode_actions[MagicSegmentToolMode.FIBER_QUICK].setIcon(self._magic_tool_icon(MagicSegmentToolMode.FIBER_QUICK))
         self._mode_actions["calibration"].setIcon(themed_icon("calibration", color=self._tool_icon_color("calibration")))
+        self._mode_actions["construction"].setIcon(
+            self._construction_tool_icon(self._construction_tool_kind)
+        )
         self._mode_actions["overlay"].setIcon(self._overlay_tool_icon())
         if hasattr(self, "fit_action"):
             self.fit_action.setIcon(
@@ -11734,6 +11991,8 @@ class MainWindow(QMainWindow):
             self._sync_area_tool_button()
         if self._magic_tool_button is not None:
             self._sync_magic_tool_button()
+        if self._construction_tool_button is not None:
+            self._sync_construction_tool_button()
         if self._overlay_tool_button is not None:
             self._sync_overlay_tool_button()
 
@@ -11747,6 +12006,17 @@ class MainWindow(QMainWindow):
                 f" color: {self._status_color('muted')};"
                 " padding: 1px 7px; border: 1px solid transparent;"
                 " border-radius: 5px; }"
+                "QToolButton:hover {"
+                " border-color: palette(mid); background: palette(alternate-base);"
+                " }"
+            )
+        if self._object_snap_status_button is not None:
+            self._object_snap_status_button.setStyleSheet(
+                "QToolButton {"
+                f" color: {self._status_color('muted')};"
+                " padding: 1px 7px; border: 1px solid transparent;"
+                " border-radius: 5px; }"
+                "QToolButton:checked { border-color: #2A9D8F; }"
                 "QToolButton:hover {"
                 " border-color: palette(mid); background: palette(alternate-base);"
                 " }"
@@ -12233,6 +12503,7 @@ class MainWindow(QMainWindow):
             (self._manual_tool_menu, "manualToolMenu", "rgba(217, 167, 42, 41)"),
             (self._area_tool_menu, "areaToolMenu", "rgba(90, 174, 105, 41)"),
             (self._magic_tool_menu, "magicToolMenu", "rgba(217, 108, 117, 41)"),
+            (self._construction_tool_menu, "constructionToolMenu", "rgba(88, 196, 199, 41)"),
             (self._overlay_tool_menu, "overlayToolMenu", "rgba(183, 154, 216, 41)"),
         )
         for menu, object_name, checked_rgba in menu_specs:
@@ -15205,6 +15476,20 @@ class MainWindow(QMainWindow):
             return False
         return True
 
+    def _on_object_snap_enabled_changed(self, enabled: bool) -> None:
+        self._app_settings.object_snap_enabled = bool(enabled)
+        self._refresh_canvases_for_settings()
+        self._save_app_settings(context="对象捕捉")
+
+    def _on_object_snap_kinds_changed(self, kinds: object) -> None:
+        try:
+            normalized = [str(kind) for kind in kinds]  # type: ignore[union-attr]
+        except TypeError:
+            normalized = []
+        self._app_settings.object_snap_kinds = normalized
+        self._refresh_canvases_for_settings()
+        self._save_app_settings(context="对象捕捉")
+
     def _schedule_workspace_layout_save(self) -> None:
         try:
             self._workspace_layout_save_timer.start()
@@ -15572,6 +15857,8 @@ class MainWindow(QMainWindow):
                 document.restore_state_stamp(before_stamp)
             raise
 
+        if any(before != after for _document, _stamp, before, after in after_states):
+            self._discard_workspace_composite_redo()
         for document, before_stamp, before, after in after_states:
             if document.history is not None and before != after:
                 after_stamp = document.advance_state(
@@ -16689,6 +16976,23 @@ class MainWindow(QMainWindow):
         if callable(connect):
             connect(self._on_canvas_roi_geometry_committed)
 
+    def _connect_canvas_construction_signals(
+        self,
+        canvas: DocumentCanvas,
+    ) -> None:
+        canvas.constructionCreateRequested.connect(
+            self._on_canvas_construction_create_requested
+        )
+        canvas.constructionEdited.connect(
+            self._on_canvas_construction_edited
+        )
+        canvas.constructionCommandChanged.connect(
+            self._on_canvas_construction_command_changed
+        )
+        canvas.snapCandidateChanged.connect(
+            self._on_canvas_snap_candidate_changed
+        )
+
     def _mount_document(
         self,
         document: ImageDocument,
@@ -16704,7 +17008,11 @@ class MainWindow(QMainWindow):
         canvas = DocumentCanvas()
         canvas.set_document(document, image)
         canvas.set_settings(self._app_settings)
-        canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
+        canvas.set_tool_mode(
+            self._tool_mode,
+            overlay_kind=self._overlay_tool_kind,
+            construction_kind=self._construction_tool_kind,
+        )
         if is_magic_segment_tool_mode(self._tool_mode):
             self._sync_canvas_magic_subtract_input_mode(canvas)
         canvas.set_show_area_fill(self._show_area_fill)
@@ -16730,6 +17038,7 @@ class MainWindow(QMainWindow):
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
         self._connect_canvas_roi_signals(canvas)
+        self._connect_canvas_construction_signals(canvas)
 
         self._remove_unresolved_placeholder_ui(document.id)
         insert_index = self.project_session_controller.ui_insert_index(document.id, self._document_order)
@@ -16820,7 +17129,11 @@ class MainWindow(QMainWindow):
         canvas = DigitalSlideCanvas()
         canvas.set_slide_document(target_document, store)
         canvas.set_settings(self._app_settings)
-        canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
+        canvas.set_tool_mode(
+            self._tool_mode,
+            overlay_kind=self._overlay_tool_kind,
+            construction_kind=self._construction_tool_kind,
+        )
         canvas.set_show_area_fill(self._show_area_fill)
         canvas.lineCommitted.connect(self._on_canvas_line_committed)
         canvas.objectSelectionChanged.connect(self._on_canvas_object_selection_changed)
@@ -16844,6 +17157,7 @@ class MainWindow(QMainWindow):
         canvas.magicSegmentRequested.connect(self._on_canvas_magic_segment_requested)
         canvas.magicSegmentSessionChanged.connect(self._on_canvas_magic_segment_session_changed)
         self._connect_canvas_roi_signals(canvas)
+        self._connect_canvas_construction_signals(canvas)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
 
@@ -17228,6 +17542,11 @@ class MainWindow(QMainWindow):
 
     def _activate_app_settings(self, settings: AppSettings) -> None:
         self._app_settings = settings
+        if self._object_snap_status_button is not None:
+            self._object_snap_status_button.setSnapState(
+                settings.object_snap_enabled,
+                settings.object_snap_kinds,
+            )
         if self._adaptive_layout is not None:
             self._adaptive_layout.set_layout_settings(settings.workspace_layout)
             QTimer.singleShot(0, self._adaptive_layout.restore_preferred_extents)
@@ -17819,18 +18138,172 @@ class MainWindow(QMainWindow):
         self._apply_document_change(document, "删除未分类", mutate)
         self.statusBar().showMessage("未分类入口已隐藏", 3000)
 
+    def _prompt_measurement_dependency_action(
+        self,
+        targets: dict[str, tuple[ImageDocument, tuple[str, ...]]],
+    ) -> str | None:
+        dependent_names: list[str] = []
+        dependent_count = 0
+        locked_dependent_names: list[str] = []
+        for document, measurement_ids in targets.values():
+            dependent_ids = transitive_dependents(
+                document.construction_entities,
+                measurement_ids,
+                source_kind=SourceObjectKind.MEASUREMENT,
+            )
+            dependent_count += len(dependent_ids)
+            dependent_names.extend(
+                entity.name
+                for entity in document.construction_entities
+                if entity.id in dependent_ids
+            )
+            locked_dependent_names.extend(
+                entity.name or entity.id
+                for entity in document.construction_entities
+                if entity.id in dependent_ids and entity.locked
+            )
+        if dependent_count == 0:
+            return "direct"
+        if locked_dependent_names:
+            locked_summary = "、".join(locked_dependent_names[:8])
+            if len(locked_dependent_names) > 8:
+                locked_summary += f" 等 {len(locked_dependent_names)} 个"
+            QMessageBox.warning(
+                self,
+                "测量来源存在锁定下游",
+                "待删除测量影响到已锁定的辅助对象，不能级联删除或冻结来源："
+                f"\n{locked_summary}\n\n请先解锁这些辅助对象后重试。",
+            )
+            return None
+        summary = "、".join(dependent_names[:8])
+        if len(dependent_names) > 8:
+            summary += f" 等 {len(dependent_names)} 个"
+        box = QMessageBox(self)
+        box.setIcon(QMessageBox.Icon.Warning)
+        box.setWindowTitle("测量对象被辅助几何引用")
+        box.setText(
+            f"待删除测量被 {dependent_count} 个辅助对象直接或间接引用：\n{summary}"
+        )
+        box.setInformativeText(
+            "可级联删除这些辅助对象，或先冻结当前来源几何并保留下游。"
+        )
+        cancel_button = box.addButton("取消", QMessageBox.ButtonRole.RejectRole)
+        freeze_button = box.addButton(
+            "解除关联并保留下游",
+            QMessageBox.ButtonRole.ActionRole,
+        )
+        cascade_button = box.addButton(
+            "级联删除",
+            QMessageBox.ButtonRole.DestructiveRole,
+        )
+        box.setDefaultButton(cancel_button)
+        box.exec()
+        clicked = box.clickedButton()
+        if clicked is cascade_button:
+            return "cascade"
+        if clicked is freeze_button:
+            return "freeze"
+        return None
+
+    @staticmethod
+    def _remove_measurements_with_dependencies(
+        document: ImageDocument,
+        measurement_ids: tuple[str, ...],
+        dependency_action: str,
+    ) -> int:
+        targets = tuple(dict.fromkeys(item for item in measurement_ids if item))
+        if not targets:
+            return 0
+        dependent_ids = transitive_dependents(
+            document.construction_entities,
+            targets,
+            source_kind=SourceObjectKind.MEASUREMENT,
+        )
+        locked_dependent_ids = tuple(
+            entity.id
+            for entity in document.construction_entities
+            if entity.id in dependent_ids and entity.locked
+        )
+        if locked_dependent_ids:
+            raise ConstructionValidationError(
+                "locked_dependent_objects",
+                "待删除测量影响到已锁定的辅助对象，请先解锁后重试",
+                locked_dependent_ids,
+            )
+        if dependent_ids and dependency_action == "cascade":
+            document.remove_construction_entities(
+                dependent_ids,
+                mark_dirty=False,
+            )
+        elif dependent_ids and dependency_action == "freeze":
+            resolver = make_construction_resolver(document)
+            replacements: dict[str, ConstructionEntity] = {}
+            for entity in document.construction_entities:
+                if entity.id not in dependent_ids:
+                    continue
+                detached = detach_live_sources(
+                    entity,
+                    resolver,
+                    source_ids=targets,
+                    source_kind=SourceObjectKind.MEASUREMENT,
+                )
+                if detached is not entity:
+                    replacements[entity.id] = replace(
+                        detached,
+                        revision=entity.revision + 1,
+                    )
+            if replacements:
+                document.construction_entities = [
+                    replacements.get(entity.id, entity)
+                    for entity in document.construction_entities
+                ]
+                document.mark_construction_geometry_changed()
+        elif dependent_ids:
+            raise ConstructionValidationError(
+                "dependent_objects",
+                "测量对象仍被辅助几何引用",
+                dependent_ids,
+            )
+        return document.remove_measurements(list(targets))
+
     def delete_selected_measurement(self) -> None:
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None:
             return
+        if document.selected_construction_id is not None:
+            self._on_construction_delete_requested(
+                (document.selected_construction_id,)
+            )
+            self._focus_current_canvas()
+            return
         selected_measurement_ids = self._selected_measurement_ids_from_table()
         if selected_measurement_ids:
             label = "删除测量" if len(selected_measurement_ids) == 1 else "批量删除测量"
+            target_ids = tuple(selected_measurement_ids)
+            action = self._prompt_measurement_dependency_action(
+                {document.id: (document, target_ids)}
+            )
+            if action is None:
+                return
 
             def mutate_rows() -> None:
-                document.remove_measurements(selected_measurement_ids)
+                self._remove_measurements_with_dependencies(
+                    document,
+                    target_ids,
+                    action,
+                )
 
-            self._apply_document_change(document, label, mutate_rows)
+            self._apply_document_change(
+                document,
+                label,
+                mutate_rows,
+                impact=(
+                    DocumentChangeImpact.SESSION
+                    | DocumentChangeImpact.GEOMETRY
+                    | DocumentChangeImpact.CONSTRUCTION
+                ),
+                geometry_measurement_ids=target_ids,
+            )
             self._focus_current_canvas()
             return
         if document.selected_overlay_id is not None:
@@ -17849,11 +18322,30 @@ class MainWindow(QMainWindow):
         if document.view_state.selected_measurement_id is None:
             return
         measurement_id = document.view_state.selected_measurement_id
+        action = self._prompt_measurement_dependency_action(
+            {document.id: (document, (measurement_id,))}
+        )
+        if action is None:
+            return
 
         def mutate() -> None:
-            document.remove_measurement(measurement_id)
+            self._remove_measurements_with_dependencies(
+                document,
+                (measurement_id,),
+                action,
+            )
 
-        self._apply_document_change(document, "删除测量", mutate)
+        self._apply_document_change(
+            document,
+            "删除测量",
+            mutate,
+            impact=(
+                DocumentChangeImpact.SESSION
+                | DocumentChangeImpact.GEOMETRY
+                | DocumentChangeImpact.CONSTRUCTION
+            ),
+            geometry_measurement_ids=(measurement_id,),
+        )
 
     def delete_all_measurements(self) -> None:
         document = self.current_document()
@@ -17869,10 +18361,31 @@ class MainWindow(QMainWindow):
             return
         scope, _group_label = selection
         target_documents = [document] if scope == ExportScope.CURRENT else list(self.project.documents)
+        target_map = {
+            item.id: (
+                item,
+                tuple(measurement.id for measurement in item.measurements),
+            )
+            for item in target_documents
+            if item.measurements
+        }
+        action = self._prompt_measurement_dependency_action(target_map)
+        if action is None:
+            return
         removed_count = self._apply_documents_change(
             target_documents,
             "删除全部测量",
-            lambda item: item.clear_measurements(),
+            lambda item: self._remove_measurements_with_dependencies(
+                item,
+                target_map.get(item.id, (item, ()))[1],
+                action,
+            ),
+            workspace_scope=scope == ExportScope.ALL_OPEN,
+            impact=(
+                DocumentChangeImpact.SESSION
+                | DocumentChangeImpact.GEOMETRY
+                | DocumentChangeImpact.CONSTRUCTION
+            ),
         )
         if removed_count > 0:
             scope_label = "当前图片" if scope == ExportScope.CURRENT else "整个项目"
@@ -17898,15 +18411,61 @@ class MainWindow(QMainWindow):
         if not group_label:
             return
         target_documents = [document] if scope == ExportScope.CURRENT else list(self.project.documents)
+        target_map = {
+            item.id: (
+                item,
+                self._measurement_ids_for_group_label(item, group_label),
+            )
+            for item in target_documents
+        }
+        target_map = {
+            document_id: value
+            for document_id, value in target_map.items()
+            if value[1]
+        }
+        action = self._prompt_measurement_dependency_action(target_map)
+        if action is None:
+            return
         removed_count = self._apply_documents_change(
             target_documents,
             "删除指定类别测量",
-            lambda item, label=group_label: item.clear_measurements_by_group_label(label),
+            lambda item: self._remove_measurements_with_dependencies(
+                item,
+                target_map.get(item.id, (item, ()))[1],
+                action,
+            ),
+            workspace_scope=scope == ExportScope.ALL_OPEN,
+            impact=(
+                DocumentChangeImpact.SESSION
+                | DocumentChangeImpact.GEOMETRY
+                | DocumentChangeImpact.CONSTRUCTION
+            ),
         )
         if removed_count > 0:
             scope_label = "当前图片" if scope == ExportScope.CURRENT else "整个项目"
             self.statusBar().showMessage(f"已删除“{group_label}”在{scope_label}中的 {removed_count} 条测量记录", 4000)
             self._focus_current_canvas()
+
+    @staticmethod
+    def _measurement_ids_for_group_label(
+        document: ImageDocument,
+        group_label: str,
+    ) -> tuple[str, ...]:
+        token = normalize_group_label(group_label)
+        group = document.find_group_by_label(token)
+        if group is not None:
+            return tuple(
+                measurement.id
+                for measurement in document.measurements
+                if measurement.fiber_group_id == group.id
+            )
+        if token == normalize_group_label(UNCATEGORIZED_LABEL):
+            return tuple(
+                measurement.id
+                for measurement in document.measurements
+                if measurement.fiber_group_id is None
+            )
+        return ()
 
     def _selected_measurement_ids_from_table(self) -> list[str]:
         return self._records_controller.selected_measurement_ids()
@@ -18507,7 +19066,18 @@ class MainWindow(QMainWindow):
 
     def undo_current_document(self) -> None:
         document = self.current_document()
-        if document is None or document.history is None:
+        if document is None:
+            return
+        self._prune_invalid_workspace_composites()
+        if self._undo_workspace_composite_for(document):
+            return
+        if self._workspace_composite_waits_on_other_document(document, redo=False):
+            self.statusBar().showMessage(
+                "该项目级命令在另一张图片上还有较新的改动；请先撤销那些改动，以保持整批操作原子。",
+                5000,
+            )
+            return
+        if document.history is None:
             return
         previous_measurements = tuple(document.measurements)
         if not document.history.undo(document):
@@ -18523,7 +19093,18 @@ class MainWindow(QMainWindow):
 
     def redo_current_document(self) -> None:
         document = self.current_document()
-        if document is None or document.history is None:
+        if document is None:
+            return
+        self._prune_invalid_workspace_composites()
+        if self._redo_workspace_composite_for(document):
+            return
+        if self._workspace_composite_waits_on_other_document(document, redo=True):
+            self.statusBar().showMessage(
+                "该项目级命令在另一张图片上还有较新的历史项；请先处理那些历史项，以保持整批操作原子。",
+                5000,
+            )
+            return
+        if document.history is None:
             return
         previous_measurements = tuple(document.measurements)
         if not document.history.redo(document):
@@ -18536,6 +19117,222 @@ class MainWindow(QMainWindow):
                 self._save_calibration_sidecar(document, context="重做")
         self._refresh_document_analysis_validity(document)
         self._update_ui_for_current_document()
+
+    def _workspace_composite_ready(
+        self,
+        entry: WorkspaceCompositeHistoryEntry,
+        *,
+        redo: bool,
+    ) -> bool:
+        for document_id, sequence in entry.document_sequences:
+            document = self.project.get_document(document_id)
+            history = document.history if document is not None else None
+            if history is None:
+                return False
+            latest = (
+                history.latest_redo_sequence
+                if redo
+                else history.latest_undo_sequence
+            )
+            if latest != sequence:
+                return False
+        return True
+
+    def _workspace_composite_intact(
+        self,
+        entry: WorkspaceCompositeHistoryEntry,
+        *,
+        redo: bool,
+    ) -> bool:
+        for document_id, sequence in entry.document_sequences:
+            document = self.project.get_document(document_id)
+            history = document.history if document is not None else None
+            if history is None:
+                return False
+            contains = (
+                history.contains_redo_sequence(sequence)
+                if redo
+                else history.contains_undo_sequence(sequence)
+            )
+            if not contains:
+                return False
+        return True
+
+    def _discard_workspace_composite_entry(
+        self,
+        entry: WorkspaceCompositeHistoryEntry,
+    ) -> None:
+        sequences_by_document: dict[str, set[int]] = {}
+        for document_id, sequence in entry.document_sequences:
+            sequences_by_document.setdefault(document_id, set()).add(sequence)
+        for document_id, sequences in sequences_by_document.items():
+            document = self.project.get_document(document_id)
+            history = document.history if document is not None else None
+            if history is not None:
+                history.discard_sequences(sequences)
+
+    def _discard_workspace_composite_redo(self) -> None:
+        for entry in tuple(self._workspace_composite_redo):
+            self._discard_workspace_composite_entry(entry)
+        self._workspace_composite_redo.clear()
+
+    def _prune_invalid_workspace_composites(self) -> None:
+        """Remove coordinator entries that can no longer run atomically.
+
+        Per-document limits and workspace-wide byte eviction operate below the
+        coordinator.  Once any participant command is gone, retain neither the
+        coordinator entry nor the other participants' now-orphaned commands.
+        """
+
+        for stack, redo in (
+            (self._workspace_composite_undo, False),
+            (self._workspace_composite_redo, True),
+        ):
+            invalid = [
+                entry
+                for entry in stack
+                if not self._workspace_composite_intact(entry, redo=redo)
+            ]
+            if not invalid:
+                continue
+            invalid_ids = {id(entry) for entry in invalid}
+            stack[:] = [entry for entry in stack if id(entry) not in invalid_ids]
+            for entry in invalid:
+                self._discard_workspace_composite_entry(entry)
+
+    def _workspace_composite_precedes_current_history(
+        self,
+        entry: WorkspaceCompositeHistoryEntry,
+        current: ImageDocument,
+        *,
+        redo: bool,
+    ) -> bool:
+        if current.id in dict(entry.document_sequences):
+            return True
+        history = current.history
+        if history is None:
+            latest = None
+        elif redo:
+            latest = history.latest_redo_sequence
+        else:
+            latest = history.latest_undo_sequence
+        if latest is None:
+            return True
+        sequences = tuple(sequence for _document_id, sequence in entry.document_sequences)
+        if not sequences:
+            return False
+        boundary = min(sequences) if redo else max(sequences)
+        return boundary < latest if redo else boundary > latest
+
+    def _workspace_composite_available_for(
+        self,
+        current: ImageDocument,
+        *,
+        redo: bool,
+    ) -> bool:
+        stack = (
+            self._workspace_composite_redo
+            if redo
+            else self._workspace_composite_undo
+        )
+        if not stack:
+            return False
+        entry = stack[-1]
+        return (
+            self._workspace_composite_ready(entry, redo=redo)
+            and self._workspace_composite_precedes_current_history(
+                entry,
+                current,
+                redo=redo,
+            )
+        )
+
+    def _workspace_composite_waits_on_other_document(
+        self,
+        current: ImageDocument,
+        *,
+        redo: bool,
+    ) -> bool:
+        stack = (
+            self._workspace_composite_redo
+            if redo
+            else self._workspace_composite_undo
+        )
+        if not stack or current.history is None:
+            return False
+        entry = stack[-1]
+        expected = dict(entry.document_sequences).get(current.id)
+        if expected is None:
+            return False
+        latest = (
+            current.history.latest_redo_sequence
+            if redo
+            else current.history.latest_undo_sequence
+        )
+        return latest == expected and not self._workspace_composite_ready(
+            entry,
+            redo=redo,
+        )
+
+    def _undo_workspace_composite_for(self, current: ImageDocument) -> bool:
+        if not self._workspace_composite_available_for(current, redo=False):
+            return False
+        entry = self._workspace_composite_undo[-1]
+        previous_measurements: dict[str, tuple[Measurement, ...]] = {}
+        for document_id, _sequence in reversed(entry.document_sequences):
+            document = self.project.get_document(document_id)
+            if document is None or document.history is None:
+                return False
+            previous_measurements[document_id] = tuple(document.measurements)
+            if not document.history.undo(document):
+                return False
+        self._workspace_composite_undo.pop()
+        self._workspace_composite_redo.append(entry)
+        for document_id, _sequence in entry.document_sequences:
+            document = self.project.get_document(document_id)
+            if document is None:
+                continue
+            self._discard_detached_area_geometry(
+                previous_measurements.get(document_id, ()),
+                document,
+            )
+            self._refresh_document_analysis_validity(document)
+            canvas = self._canvases.get(document_id)
+            if canvas is not None:
+                canvas.notify_document_visual_changed()
+        self._update_ui_for_current_document()
+        self.statusBar().showMessage(f"已撤销：{entry.label}（整个项目）", 3000)
+        return True
+
+    def _redo_workspace_composite_for(self, current: ImageDocument) -> bool:
+        if not self._workspace_composite_available_for(current, redo=True):
+            return False
+        entry = self._workspace_composite_redo[-1]
+        previous_measurements: dict[str, tuple[Measurement, ...]] = {}
+        for document_id, _sequence in entry.document_sequences:
+            document = self.project.get_document(document_id)
+            if document is None or document.history is None:
+                return False
+            previous_measurements[document_id] = tuple(document.measurements)
+            if not document.history.redo(document):
+                return False
+        self._workspace_composite_redo.pop()
+        self._workspace_composite_undo.append(entry)
+        for document_id, _sequence in entry.document_sequences:
+            document = self.project.get_document(document_id)
+            if document is None:
+                continue
+            self._discard_detached_area_geometry(
+                previous_measurements.get(document_id, ()),
+                document,
+            )
+            self._refresh_document_analysis_validity(document)
+            canvas = self._canvases.get(document_id)
+            if canvas is not None:
+                canvas.notify_document_visual_changed()
+        self._update_ui_for_current_document()
+        self.statusBar().showMessage(f"已重做：{entry.label}（整个项目）", 3000)
+        return True
 
     def _save_calibration_sidecar(self, document: ImageDocument, *, context: str) -> bool:
         result = CalibrationSidecarIO.save_document(document)
@@ -18614,6 +19411,8 @@ class MainWindow(QMainWindow):
             for index in range(self.tab_widget.count())
         ]
         self.project = ProjectState.empty()
+        self._workspace_composite_undo.clear()
+        self._workspace_composite_redo.clear()
         self._project_path = None
         self._pending_project_load_snapshot = False
         self.project_session_controller.clear_unresolved_documents()
@@ -18744,8 +19543,13 @@ class MainWindow(QMainWindow):
             self.project.mark_extension_changed()
         index = self._document_order.index(document_id)
         self._document_order.pop(index)
+        # Composite entries cannot remain atomic once one participating
+        # document leaves the workspace.
+        self._workspace_composite_undo.clear()
+        self._workspace_composite_redo.clear()
         self.project.documents = [document for document in self.project.documents if document.id != document_id]
         self.project_session_controller.remove_document(document_id)
+        self._construction_resolution_cache.pop(document_id, None)
         self._images.pop(document_id, None)
         self._rasters.pop(document_id, None)
         self._raster_metadata.pop(document_id, None)
@@ -18859,6 +19663,9 @@ class MainWindow(QMainWindow):
         self._close_image_batch_dialog(wait=True)
         self._close_analysis_batch_dialog(wait=True)
         self.project = ProjectState.empty()
+        self._construction_resolution_cache.clear()
+        self._workspace_composite_undo.clear()
+        self._workspace_composite_redo.clear()
         self._project_path = None
         self._pending_project_load_snapshot = False
         self.project_session_controller.clear_unresolved_documents()
@@ -18881,6 +19688,10 @@ class MainWindow(QMainWindow):
         geometry_measurement_ids: tuple[str, ...] = (),
     ) -> bool:
         before_stamp = document.state_stamp
+        before_construction_revision = document.construction_geometry_revision
+        before_construction_metadata_revision = (
+            document.construction_metadata_revision
+        )
         before = DocumentHistoryState.capture(
             document,
             geometry_measurement_ids=geometry_measurement_ids,
@@ -18893,9 +19704,18 @@ class MainWindow(QMainWindow):
         )
         changed = before != after
         if changed:
+            self._discard_workspace_composite_redo()
             self._discard_detached_area_geometry(before.measurement_objects, document)
             if impact & DocumentChangeImpact.GEOMETRY:
                 document.mark_measurement_geometry_changed()
+            if (
+                impact & DocumentChangeImpact.CONSTRUCTION
+                and document.construction_geometry_revision
+                == before_construction_revision
+                and document.construction_metadata_revision
+                == before_construction_metadata_revision
+            ):
+                document.mark_construction_geometry_changed()
             after_stamp = document.advance_state(dirty_domains_for_impact(impact))
             if document.history is not None:
                 document.history.push_delta(
@@ -18998,6 +19818,7 @@ class MainWindow(QMainWindow):
         return total_changed
 
     def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
+        self._discard_workspace_composite_redo()
         before_stamp = document.state_stamp
         before = DocumentHistoryState.capture(document)
         document.insert_measurement_incremental(measurement)
@@ -19035,7 +19856,18 @@ class MainWindow(QMainWindow):
         documents: list[ImageDocument],
         label: str,
         mutator,
+        *,
+        workspace_scope: bool,
+        impact: DocumentChangeImpact = DocumentChangeImpact.SESSION,
     ) -> int:
+        before_revisions = {
+            document.id: (
+                document.measurement_geometry_revision,
+                document.construction_geometry_revision,
+                document.construction_metadata_revision,
+            )
+            for document in documents
+        }
         captures = [
             (document, document.state_stamp, DocumentHistoryState.capture(document))
             for document in documents
@@ -19065,26 +19897,61 @@ class MainWindow(QMainWindow):
 
         changed_any = False
         changed_documents: list[ImageDocument] = []
+        composite_sequences: list[tuple[str, int]] = []
+        if any(before != after for _document, _stamp, before, after in applied):
+            self._discard_workspace_composite_redo()
         for document, before_stamp, before, after in applied:
             changed = before != after
             if changed:
                 self._discard_detached_area_geometry(before.measurement_objects, document)
-                after_stamp = document.advance_state({DirtyDomain.SESSION})
+                (
+                    measurement_revision,
+                    construction_revision,
+                    construction_metadata_revision,
+                ) = before_revisions[document.id]
+                if (
+                    impact & DocumentChangeImpact.GEOMETRY
+                    and document.measurement_geometry_revision
+                    == measurement_revision
+                ):
+                    document.mark_measurement_geometry_changed()
+                if (
+                    impact & DocumentChangeImpact.CONSTRUCTION
+                    and document.construction_geometry_revision
+                    == construction_revision
+                    and document.construction_metadata_revision
+                    == construction_metadata_revision
+                ):
+                    document.mark_construction_geometry_changed()
+                after_stamp = document.advance_state(
+                    dirty_domains_for_impact(impact)
+                )
                 if document.history is not None:
-                    document.history.push_delta(
+                    pushed = document.history.push_delta(
                         label,
                         before=before,
                         after=after,
                         before_stamp=before_stamp,
                         after_stamp=after_stamp,
-                        impact=DocumentChangeImpact.SESSION,
+                        impact=impact,
                     )
+                    sequence = document.history.latest_undo_sequence
+                    if pushed and sequence is not None:
+                        composite_sequences.append((document.id, sequence))
                 changed_documents.append(document)
             else:
                 document.restore_state_stamp(before_stamp)
             changed_any = changed_any or changed
         for document in changed_documents:
             self._refresh_document_analysis_validity(document)
+        if workspace_scope and composite_sequences:
+            self._workspace_composite_undo.append(
+                WorkspaceCompositeHistoryEntry(
+                    label=label,
+                    document_sequences=tuple(composite_sequences),
+                )
+            )
+            self._prune_invalid_workspace_composites()
         if changed_any:
             self._update_ui_for_current_document()
         return total_removed
@@ -19310,6 +20177,11 @@ class MainWindow(QMainWindow):
 
     @staticmethod
     def _document_selection_ref(document: ImageDocument) -> CanvasSelectionRef:
+        construction = document.get_construction_entity(
+            document.selected_construction_id
+        )
+        if construction is not None:
+            return CanvasSelectionRef.construction(construction.id)
         annotation = document.get_overlay_annotation(document.selected_overlay_id)
         if annotation is not None:
             return CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
@@ -19335,6 +20207,7 @@ class MainWindow(QMainWindow):
             else:
                 document.select_measurement(None)
                 document.select_overlay_annotation(None)
+                document.select_construction(None)
         elif selection.kind == "overlay" and selection.object_id:
             annotation = document.get_overlay_annotation(selection.object_id)
             if annotation is not None:
@@ -19342,10 +20215,26 @@ class MainWindow(QMainWindow):
             else:
                 document.select_measurement(None)
                 document.select_overlay_annotation(None)
+                document.select_construction(None)
+        elif selection.kind == "construction" and selection.object_id:
+            construction = document.get_construction_entity(
+                selection.object_id
+            )
+            if construction is not None:
+                document.select_construction(construction.id)
+            else:
+                document.select_measurement(None)
+                document.select_overlay_annotation(None)
+                document.select_construction(None)
         else:
             document.select_measurement(None)
             document.select_overlay_annotation(None)
+            document.select_construction(None)
         self._sync_measurement_table_selection(document, scroll=True)
+        if self._construction_manager is not None:
+            self._construction_manager.selectEntity(
+                document.selected_construction_id
+            )
         self._refresh_project_roi_ui()
         self._update_action_states()
         self._schedule_statistics_refresh()
@@ -19405,6 +20294,175 @@ class MainWindow(QMainWindow):
             geometry_measurement_ids=(measurement_id,),
         )
         self._focus_current_canvas()
+
+    def _on_canvas_construction_create_requested(
+        self,
+        document_id: str,
+        payload: object,
+    ) -> None:
+        document = self.project.get_document(document_id)
+        if document is None or not isinstance(payload, ConstructionEntity):
+            return
+
+        def mutate() -> None:
+            document.add_construction_entity(
+                payload,
+                select=True,
+                mark_dirty=False,
+            )
+
+        if self._apply_document_change(
+            document,
+            "新增辅助对象",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        ):
+            self.statusBar().showMessage(
+                f"已新增{construction_kind_label(payload)}",
+                2200,
+            )
+        self._focus_current_canvas()
+
+    def _on_canvas_construction_edited(
+        self,
+        document_id: str,
+        construction_id: str,
+        payload: object,
+    ) -> None:
+        document = self.project.get_document(document_id)
+        if document is None or not isinstance(payload, ConstructionEntity):
+            return
+
+        def mutate() -> None:
+            document.replace_construction_entity(
+                construction_id,
+                payload,
+                select=True,
+                mark_dirty=False,
+            )
+
+        self._apply_document_change(
+            document,
+            "编辑辅助对象",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+        self._focus_current_canvas()
+
+    def _on_construction_definition_change_requested(
+        self,
+        construction_id: str,
+        definition: object,
+    ) -> None:
+        document = self.current_document()
+        if document is None:
+            return
+        entity = document.get_construction_entity(construction_id)
+        if entity is None or entity.locked or not hasattr(definition, "kind"):
+            self._refresh_object_inspector()
+            return
+        candidate = replace(entity, definition=definition)
+        candidate_entities = [
+            candidate if item.id == construction_id else item
+            for item in document.construction_entities
+        ]
+        base_resolver = make_construction_resolver(document)
+        resolved = ConstructionResolver(
+            document.id,
+            candidate_entities,
+            external_feature_resolver=base_resolver.external_feature_resolver,
+        ).resolve(candidate)
+        if not resolved.valid:
+            reason = str(getattr(getattr(resolved, "error", None), "message", ""))
+            QMessageBox.warning(
+                self,
+                "修改辅助对象参数",
+                reason or "当前参数无法构造有效几何。",
+            )
+            self._refresh_object_inspector()
+            return
+
+        def mutate() -> None:
+            document.replace_construction_entity(
+                construction_id,
+                candidate,
+                select=True,
+                mark_dirty=False,
+            )
+
+        self._apply_document_change(
+            document,
+            "修改辅助对象参数",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+        self._focus_current_canvas()
+
+    def _on_canvas_construction_command_changed(
+        self,
+        document_id: str,
+        payload: object,
+    ) -> None:
+        if document_id != (self.current_document().id if self.current_document() else None):
+            return
+        if self._construction_context_widget is None or not isinstance(payload, dict):
+            return
+        tool = str(payload.get("tool", self._construction_tool_kind))
+        point_count = int(payload.get("point_count", 0) or 0)
+        source_count = int(payload.get("source_count", 0) or 0)
+        invalid_reason = str(payload.get("invalid_reason", "") or "")
+        self._construction_context_widget.setCommandState(
+            distance_px=payload.get("spacing"),
+            count=payload.get("count"),
+            both_sides=payload.get("both_sides"),
+            extend=payload.get("extend"),
+        )
+        prompts = {
+            "point": "单击放置自由点",
+            "midpoint": "请选择有限线段",
+            "intersection": "依次选择两个线/圆；多解时再选分支",
+            "segment": "依次指定线段的两个端点",
+            "ray": "指定起点，再指定射线方向",
+            "infinite_line": "指定直线上的两个点",
+            "horizontal_line": "单击指定水平线通过点",
+            "vertical_line": "单击指定垂直线通过点",
+            "circle_center_radius": "指定圆心，再指定圆周点",
+            "circle_center_diameter": "指定圆心，再指定圆周点",
+            "circle_diameter_2p": "指定直径的两个端点",
+            "circle_3p": "依次指定圆上的三个点",
+            "parallel_through": "选择源线，再指定通过点",
+            "parallel_offset": "选择源线，再单击偏移侧",
+            "parallel_array": "选择源线，再单击阵列侧",
+            "perpendicular": "选择源线，再指定通过点",
+            "perpendicular_bisector": "请选择有限线段",
+            "concentric_circle": "选择源圆，再指定新圆周点",
+            "offset_circle": "选择源圆，再单击偏移侧",
+            "tangent_point_circle": "选择点对象，再选择圆；多解时选分支",
+            "common_tangent_external": "依次选择两个圆；再选择外公切线分支",
+            "common_tangent_internal": "依次选择两个圆；再选择内公切线分支",
+            "tangent_circle_ttr": "选择两个线/圆来源；再选择固定半径解",
+            "tangent_circle_3": "选择三个线/圆来源；再选择相切圆解",
+        }
+        progress = ""
+        if point_count or source_count:
+            progress = f" · 已选 {source_count} 个来源 / {point_count} 个点"
+        prompt = invalid_reason or prompts.get(tool, "按提示创建辅助对象")
+        self._construction_context_widget.setPrompt(prompt + progress)
+
+    def _on_canvas_snap_candidate_changed(
+        self,
+        document_id: str,
+        candidate: object,
+    ) -> None:
+        current = self.current_document()
+        if current is None or current.id != document_id:
+            return
+        if self._object_snap_status_button is None:
+            return
+        kind = getattr(candidate, "kind", None)
+        self._object_snap_status_button.showActiveKind(
+            getattr(kind, "value", None) if kind is not None else None
+        )
 
     def _on_canvas_overlay_create_requested(self, document_id: str, payload: object) -> None:
         document = self.project.get_document(document_id)
@@ -19766,17 +20824,33 @@ class MainWindow(QMainWindow):
         if document is not None and not selected_ids and document.view_state.selected_measurement_id:
             selected_ids = [document.view_state.selected_measurement_id]
         overlay_id = document.selected_overlay_id if document is not None else None
+        construction_id = (
+            getattr(document, "selected_construction_id", None)
+            if document is not None
+            else None
+        )
         inspector.set_context(
             document,
             settings=self._app_settings,
             measurement_ids=selected_ids,
             overlay_id=overlay_id,
+            construction_id=construction_id,
             view_zoom=canvas.view_zoom() if canvas is not None else 1.0,
         )
         section = self._object_properties_section
         if section is None:
             return
-        if overlay_id and document is not None:
+        if construction_id and document is not None:
+            getter = getattr(document, "get_construction_entity", None)
+            entity = getter(construction_id) if callable(getter) else None
+            section.setSummary(
+                self._construction_tool_label(
+                    str(getattr(getattr(entity, "definition", None), "kind", ""))
+                )
+                if entity is not None
+                else "辅助几何"
+            )
+        elif overlay_id and document is not None:
             overlay = document.get_overlay_annotation(overlay_id)
             section.setSummary(
                 "文字" if overlay is not None and overlay.is_text() else "叠加图形"
@@ -19995,21 +21069,94 @@ class MainWindow(QMainWindow):
     def _project_uncategorized_measurement_count(self, current_document: ImageDocument | None = None) -> int:
         return self._group_manager().project_uncategorized_measurement_count(current_document)
 
+    def _construction_resolutions(
+        self,
+        document: ImageDocument,
+    ) -> Mapping[str, object]:
+        """Resolve a document construction graph once per analytical revision."""
+
+        cached = self._construction_resolution_cache.get(document.id)
+        document_token = id(document)
+        geometry_revision = document.construction_geometry_revision
+        if (
+            cached is not None
+            and cached[0] == document_token
+            and cached[1] == geometry_revision
+        ):
+            measurement_revision = (
+                document.measurement_geometry_revision if cached[2] else -1
+            )
+            if cached[3] == measurement_revision:
+                return cached[4]
+        depends_on_measurements = any(
+            reference.object_kind is SourceObjectKind.MEASUREMENT
+            for entity in document.construction_entities
+            for reference in iter_live_refs(entity)
+        )
+        measurement_revision = (
+            document.measurement_geometry_revision
+            if depends_on_measurements
+            else -1
+        )
+        resolved = make_construction_resolver(document).resolve_all()
+        self._construction_resolution_cache[document.id] = (
+            document_token,
+            geometry_revision,
+            depends_on_measurements,
+            measurement_revision,
+            resolved,
+        )
+        return resolved
+
     def _update_ui_for_current_document(self) -> None:
         document = self.current_document()
         self._ensure_document_display_cache(document)
         self._populate_group_list(document)
         self._refresh_project_roi_ui()
+        if self._construction_manager is not None:
+            self._construction_manager.setEntities(
+                getattr(document, "construction_entities", ()) if document is not None else (),
+                selected_id=(
+                    getattr(document, "selected_construction_id", None)
+                    if document is not None
+                    else None
+                ),
+                resolution_by_id=(
+                    self._construction_resolutions(document)
+                    if document is not None
+                    else None
+                ),
+                content_revision=(
+                    document.construction_geometry_revision,
+                    document.construction_metadata_revision,
+                )
+                if document is not None
+                else None,
+            )
         self._update_calibration_panel(document)
+        if self._construction_context_widget is not None:
+            if document is not None and document.calibration is not None:
+                self._construction_context_widget.setDistanceUnit(
+                    document.calibration.unit,
+                    document.calibration.pixels_per_unit,
+                )
+            else:
+                self._construction_context_widget.setDistanceUnit("px", 1.0)
         self._populate_measurement_table(document)
         self._update_image_resolution_label(document)
         self._update_statusbar_aux_labels()
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)
-            canvas.set_tool_mode("select" if self._preview_active and canvas is self._preview_canvas else self._tool_mode)
+            canvas.set_tool_mode(
+                "select"
+                if self._preview_active and canvas is self._preview_canvas
+                else self._tool_mode,
+                construction_kind=self._construction_tool_kind,
+            )
             canvas.set_show_area_fill(False if self._preview_active and canvas is self._preview_canvas else self._show_area_fill)
             canvas.notify_document_visual_changed()
+            canvas.publish_construction_command_state()
         self._sync_current_view_transform()
         self._update_action_states()
         self._schedule_statistics_refresh()
@@ -20222,6 +21369,447 @@ class MainWindow(QMainWindow):
         self._schedule_statistics_refresh()
         canvas.focus_canvas()
 
+    def _on_construction_selection_changed(self, payload: object) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        if document is None:
+            return
+        selected = tuple(str(item) for item in payload) if isinstance(payload, (list, tuple, set)) else ()
+        construction_id = selected[0] if selected else None
+        selector = getattr(document, "select_construction", None)
+        if callable(selector):
+            selector(construction_id)
+        if canvas is not None and hasattr(canvas, "set_selected_construction"):
+            canvas.set_selected_construction(construction_id)
+        if construction_id:
+            self._records_controller.selection_model.clearSelection()
+        self._refresh_object_inspector()
+        self._update_action_states()
+
+    def _on_construction_metadata_change_requested(
+        self,
+        construction_id: str,
+        field_name: str,
+        value: object,
+    ) -> None:
+        document = self.current_document()
+        getter = getattr(document, "get_construction_entity", None) if document is not None else None
+        entity = getter(construction_id) if callable(getter) else None
+        if document is None or entity is None:
+            return
+        target_field = str(field_name)
+        if target_field == "stroke_color":
+            if entity.locked:
+                self.statusBar().showMessage("锁定的辅助对象不能修改颜色。", 2500)
+                return
+            def mutate_color() -> None:
+                current = document.get_construction_entity(construction_id)
+                if current is None:
+                    return
+                document.replace_construction_entity(
+                    construction_id,
+                    replace(
+                        current,
+                        style=replace(
+                            current.style,
+                            stroke_color=str(value),
+                        ),
+                    ),
+                    mark_dirty=False,
+                )
+
+            self._apply_document_change(
+                document,
+                "更新辅助对象颜色",
+                mutate_color,
+                impact=DocumentChangeImpact.CONSTRUCTION,
+            )
+            return
+        available_fields = {item.name for item in fields(type(entity))}
+        if target_field == "snap_enabled" and target_field not in available_fields:
+            target_field = "snappable"
+        if target_field not in {"visible", "locked", "snap_enabled", "snappable"}:
+            return
+        if target_field not in available_fields:
+            return
+
+        def mutate() -> None:
+            current = document.get_construction_entity(construction_id)
+            if current is None:
+                return
+            replacer = getattr(document, "replace_construction_entity", None)
+            if callable(replacer):
+                replacement = replace(current, **{target_field: bool(value)})
+                replacer(
+                    construction_id,
+                    replacement,
+                    mark_dirty=False,
+                )
+            else:
+                replacement = replace(
+                    current,
+                    **{
+                        target_field: bool(value),
+                        "revision": int(getattr(current, "revision", 0)) + 1,
+                    },
+                )
+                document.construction_entities = [
+                    replacement if item.id == construction_id else item
+                    for item in document.construction_entities
+                ]
+                document.select_construction(construction_id)
+
+        self._apply_document_change(
+            document,
+            "更新辅助对象属性",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+
+    def _on_construction_batch_color_change_requested(
+        self,
+        payload: object,
+        color: str,
+    ) -> None:
+        document = self.current_document()
+        selected = (
+            tuple(dict.fromkeys(str(item) for item in payload))
+            if isinstance(payload, (list, tuple, set))
+            else ()
+        )
+        entities = (
+            [document.get_construction_entity(entity_id) for entity_id in selected]
+            if document is not None
+            else []
+        )
+        if document is None or not selected or any(entity is None for entity in entities):
+            return
+        if any(bool(entity.locked) for entity in entities if entity is not None):
+            self.statusBar().showMessage("所选对象包含锁定项，请先解锁后再修改颜色。", 3500)
+            return
+        selected_ids = set(selected)
+
+        def mutate() -> None:
+            document.construction_entities = [
+                (
+                    replace(
+                        entity,
+                        style=replace(entity.style, stroke_color=str(color)),
+                        revision=entity.revision + 1,
+                    )
+                    if entity.id in selected_ids
+                    else entity
+                )
+                for entity in document.construction_entities
+            ]
+            document.mark_construction_metadata_changed()
+
+        self._apply_document_change(
+            document,
+            "批量更新辅助对象颜色",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+
+    def _on_construction_locate_requested(self, construction_id: str) -> None:
+        canvas = self.current_canvas()
+        if canvas is None:
+            return
+        if hasattr(canvas, "center_on_construction"):
+            canvas.center_on_construction(construction_id)
+        canvas.focus_canvas()
+
+    def _on_construction_locate_sources_requested(self, construction_id: str) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        entity = (
+            document.get_construction_entity(construction_id)
+            if document is not None
+            else None
+        )
+        if document is None or entity is None:
+            return
+        references = tuple(iter_live_refs(entity))
+        if not references:
+            self.statusBar().showMessage("该辅助对象没有实时来源。", 2500)
+            return
+        first = references[0]
+        if first.object_kind is SourceObjectKind.CONSTRUCTION:
+            source_entity = document.get_construction_entity(first.object_id)
+            if source_entity is not None and canvas is not None:
+                document.select_construction(source_entity.id)
+                canvas.set_selected_construction(source_entity.id)
+                canvas.center_on_construction(source_entity.id)
+        elif first.object_kind is SourceObjectKind.MEASUREMENT:
+            measurement = document.get_measurement(first.object_id)
+            if measurement is not None:
+                self._activate_measurement_id(measurement.id)
+        summary = "、".join(reference.object_id for reference in references[:4])
+        if len(references) > 4:
+            summary += f" 等 {len(references)} 个"
+        self.statusBar().showMessage(f"来源：{summary}", 3500)
+        self._refresh_object_inspector()
+
+    def _on_construction_detach_requested(self, construction_id: str) -> None:
+        document = self.current_document()
+        entity = (
+            document.get_construction_entity(construction_id)
+            if document is not None
+            else None
+        )
+        if document is None or entity is None:
+            return
+        if entity.locked:
+            self.statusBar().showMessage("该辅助对象已锁定，不能解除关联。", 2500)
+            self._refresh_object_inspector()
+            return
+        if not tuple(iter_live_refs(entity)):
+            self.statusBar().showMessage("该辅助对象已经是冻结几何。", 2500)
+            return
+        try:
+            frozen = detach_live_sources(
+                entity,
+                make_construction_resolver(document),
+            )
+        except (ConstructionValidationError, ValueError) as exc:
+            QMessageBox.warning(self, "解除辅助对象关联", str(exc))
+            return
+
+        def mutate() -> None:
+            document.replace_construction_entity(
+                construction_id,
+                frozen,
+                select=True,
+                mark_dirty=False,
+            )
+
+        if self._apply_document_change(
+            document,
+            "解除辅助对象关联",
+            mutate,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        ):
+            self.statusBar().showMessage("已冻结当前几何并解除关联。", 3000)
+
+    def _on_construction_copy_requested(self, payload: object) -> None:
+        selected = tuple(str(item) for item in payload) if isinstance(payload, (list, tuple, set)) else ()
+        if not selected:
+            return
+        self._copy_constructions_to_document(selected)
+
+    def _on_construction_delete_requested(self, payload: object) -> None:
+        document = self.current_document()
+        selected = tuple(str(item) for item in payload) if isinstance(payload, (list, tuple, set)) else ()
+        if document is None or not selected:
+            return
+        try:
+            plan = plan_cascade_deletion(
+                document.construction_entities,
+                selected,
+            )
+        except (KeyError, ValueError) as exc:
+            QMessageBox.warning(self, "删除辅助对象", str(exc))
+            return
+        affected_ids = set(plan.requested_ids) | set(plan.dependent_ids)
+        locked_names = [
+            entity.name or entity.id
+            for entity in document.construction_entities
+            if entity.id in affected_ids and entity.locked
+        ]
+        if locked_names:
+            summary = "、".join(locked_names[:5])
+            if len(locked_names) > 5:
+                summary += f" 等 {len(locked_names)} 个"
+            self.statusBar().showMessage(
+                f"不能删除或改写锁定的辅助对象：{summary}；请先解锁。",
+                4500,
+            )
+            return
+        mode = "direct"
+        if plan.dependent_ids:
+            names = [
+                entity.name
+                for entity in document.construction_entities
+                if entity.id in plan.dependent_ids
+            ]
+            summary = "、".join(names[:6])
+            if len(names) > 6:
+                summary += f" 等 {len(names)} 个"
+            box = QMessageBox(self)
+            box.setIcon(QMessageBox.Icon.Warning)
+            box.setWindowTitle("辅助对象存在依赖")
+            box.setText(
+                f"所选对象被 {len(plan.dependent_ids)} 个下游对象引用：\n{summary}"
+            )
+            box.setInformativeText(
+                "可级联删除全部下游对象，或冻结当前几何并保留下游对象。"
+            )
+            cancel_button = box.addButton(
+                "取消",
+                QMessageBox.ButtonRole.RejectRole,
+            )
+            freeze_button = box.addButton(
+                "解除关联并保留下游",
+                QMessageBox.ButtonRole.ActionRole,
+            )
+            cascade_button = box.addButton(
+                "级联删除",
+                QMessageBox.ButtonRole.DestructiveRole,
+            )
+            box.setDefaultButton(cancel_button)
+            box.exec()
+            clicked = box.clickedButton()
+            if clicked is cancel_button or clicked is None:
+                return
+            mode = "cascade" if clicked is cascade_button else "freeze"
+
+        if mode == "freeze":
+            resolver = make_construction_resolver(document)
+            replacements: dict[str, ConstructionEntity] = {}
+            try:
+                for entity in document.construction_entities:
+                    if entity.id not in plan.dependent_ids:
+                        continue
+                    detached = detach_live_sources(
+                        entity,
+                        resolver,
+                        source_ids=plan.requested_ids,
+                        source_kind=SourceObjectKind.CONSTRUCTION,
+                    )
+                    if detached is not entity:
+                        replacements[entity.id] = replace(
+                            detached,
+                            revision=entity.revision + 1,
+                        )
+            except (ConstructionValidationError, ValueError) as exc:
+                QMessageBox.warning(
+                    self,
+                    "删除辅助对象",
+                    f"无法冻结下游几何：{exc}",
+                )
+                return
+
+            def mutate_freeze() -> None:
+                document.construction_entities = [
+                    replacements.get(entity.id, entity)
+                    for entity in document.construction_entities
+                    if entity.id not in plan.requested_ids
+                ]
+                document.select_construction(None)
+                document.mark_construction_geometry_changed()
+
+            label = "删除辅助对象并冻结下游"
+            mutator = mutate_freeze
+        else:
+            removed_ids = (
+                plan.removed_ids if mode == "cascade" else plan.requested_ids
+            )
+
+            def mutate_remove() -> None:
+                document.remove_construction_entities(
+                    removed_ids,
+                    mark_dirty=False,
+                )
+
+            label = "级联删除辅助对象" if mode == "cascade" else "删除辅助对象"
+            mutator = mutate_remove
+
+        self._apply_document_change(
+            document,
+            label,
+            mutator,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+
+    def _copy_constructions_to_document(self, construction_ids: tuple[str, ...]) -> None:
+        source = self.current_document()
+        if source is None:
+            return
+        targets = [
+            document
+            for document in self.project.documents
+            if document.id != source.id
+        ]
+        if not targets:
+            QMessageBox.information(
+                self,
+                "复制辅助对象",
+                "请先打开至少另一张目标图片。",
+            )
+            return
+        labels = [
+            f"{self._document_display_name(document)}  ({document.image_size[0]}×{document.image_size[1]})"
+            for document in targets
+        ]
+        selected_label, ok = QInputDialog.getItem(
+            self,
+            "复制辅助对象",
+            "目标图片",
+            labels,
+            0,
+            False,
+        )
+        if not ok:
+            return
+        try:
+            target = targets[labels.index(selected_label)]
+            result = copy_constructions(source, target, construction_ids)
+        except (ValueError, KeyError, ConstructionValidationError) as exc:
+            QMessageBox.warning(self, "复制辅助对象", str(exc))
+            return
+        summary = result.bounds_summary
+        details = [
+            f"源尺寸：{summary.source_image_size[0]}×{summary.source_image_size[1]}",
+            f"目标尺寸：{summary.target_image_size[0]}×{summary.target_image_size[1]}",
+            f"将复制 {len(result.entities)} 个对象（含依赖闭包）",
+        ]
+        if summary.calibration_differs:
+            details.append("标定不同；仍将保持原始像素坐标，不做缩放。")
+        if summary.partially_outside_ids:
+            details.append(
+                f"部分越界：{len(summary.partially_outside_ids)} 个"
+            )
+        if summary.fully_outside_ids:
+            details.append(
+                f"完全越界：{len(summary.fully_outside_ids)} 个"
+            )
+        if summary.unresolved_ids:
+            details.append(f"不可解：{len(summary.unresolved_ids)} 个")
+        response = QMessageBox.question(
+            self,
+            "确认复制辅助对象",
+            "\n".join(details),
+            QMessageBox.StandardButton.Ok
+            | QMessageBox.StandardButton.Cancel,
+            QMessageBox.StandardButton.Cancel,
+        )
+        if response != QMessageBox.StandardButton.Ok:
+            return
+
+        def mutate_copy() -> None:
+            target.construction_entities.extend(result.entities)
+            if result.entities:
+                target.select_construction(result.entities[-1].id)
+                target.mark_construction_geometry_changed()
+
+        self._apply_document_change(
+            target,
+            "跨图复制辅助对象",
+            mutate_copy,
+            impact=DocumentChangeImpact.CONSTRUCTION,
+        )
+        target_canvas = self._canvases.get(target.id)
+        if target_canvas is not None:
+            target_canvas.notify_document_visual_changed()
+        # The history entry belongs to the target document.  Make the result
+        # visible and ensure the next Ctrl+Z reverses the copy the user just
+        # completed, instead of an unrelated older command on the source.
+        self._set_current_document(target.id)
+        self.statusBar().showMessage(
+            f"已复制 {len(result.entities)} 个辅助对象到 {self._document_display_name(target)}。",
+            4000,
+        )
+
     def _activate_measurement_id(self, measurement_id: str) -> None:
         document = self.current_document()
         canvas = self.current_canvas()
@@ -20379,6 +21967,7 @@ class MainWindow(QMainWindow):
         return f"导出过程中发生错误：\n{exc}"
 
     def _update_action_states(self) -> None:
+        self._prune_invalid_workspace_composites()
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
@@ -20393,6 +21982,7 @@ class MainWindow(QMainWindow):
                 or
                 document.view_state.selected_measurement_id is not None
                 or document.selected_overlay_id is not None
+                or document.selected_construction_id is not None
             )
         )
         has_measurements = bool(document and document.measurements)
@@ -20565,8 +22155,42 @@ class MainWindow(QMainWindow):
                 and not preview_active
                 and not (document is not None and document.is_digital_slide())
             )
-        self.undo_action.setEnabled(bool(history and history.can_undo()) and not preview_active)
-        self.redo_action.setEnabled(bool(history and history.can_redo()) and not preview_active)
+        workspace_undo_available = bool(
+            document
+            and self._workspace_composite_available_for(document, redo=False)
+        )
+        workspace_redo_available = bool(
+            document
+            and self._workspace_composite_available_for(document, redo=True)
+        )
+        undo_waiting = bool(
+            document
+            and self._workspace_composite_waits_on_other_document(
+                document,
+                redo=False,
+            )
+        )
+        redo_waiting = bool(
+            document
+            and self._workspace_composite_waits_on_other_document(
+                document,
+                redo=True,
+            )
+        )
+        self.undo_action.setEnabled(
+            (
+                workspace_undo_available
+                or bool(history and history.can_undo() and not undo_waiting)
+            )
+            and not preview_active
+        )
+        self.redo_action.setEnabled(
+            (
+                workspace_redo_available
+                or bool(history and history.can_redo() and not redo_waiting)
+            )
+            and not preview_active
+        )
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
         self.live_preview_action.setEnabled(capture_feature_available)
@@ -20596,15 +22220,22 @@ class MainWindow(QMainWindow):
                 action = self._mode_actions.get(mode)
                 if action is not None:
                     action.setVisible(magic_available)
+        if self._construction_tool_button is not None:
+            self._construction_tool_button.setEnabled(not preview_active)
         if self._overlay_tool_button is not None:
             self._overlay_tool_button.setEnabled(not preview_active)
         self._update_path_drawing_controls()
         self._update_magic_segment_controls()
         self._update_count_numbers_button()
         self._update_preview_analysis_controls()
+        if self._measurement_tool_strip is not None:
+            self._measurement_tool_strip.setConstructionContextVisible(
+                self._tool_mode == "construction" and not preview_active
+            )
         self._sync_manual_tool_button()
         self._sync_area_tool_button()
         self._sync_magic_tool_button()
+        self._sync_construction_tool_button()
         self._sync_overlay_tool_button()
         self._sync_digital_slide_navigation_action()
         self._update_project_navigation_summary()
@@ -21781,6 +23412,7 @@ class MainWindow(QMainWindow):
         *,
         include_measurements: bool,
         include_scale: bool,
+        include_construction_geometry: bool = False,
         render_mode: str,
         render_context: ExportRenderContext | None = None,
     ) -> RenderedExport:
@@ -21850,12 +23482,26 @@ class MainWindow(QMainWindow):
 
             def image_to_output(point) -> QPointF:
                 return QPointF(point.x - viewport_origin.x, point.y - viewport_origin.y)
+
+            visible_construction_rect = QRectF(
+                viewport_origin.x,
+                viewport_origin.y,
+                source_image.width(),
+                source_image.height(),
+            )
         elif render_mode == ExportImageRenderMode.FULL_RESOLUTION:
             image = self._create_export_surface(source_image.width(), source_image.height())
             image_to_output_scale = 1.0
 
             def image_to_output(point) -> QPointF:
                 return QPointF(point.x, point.y)
+
+            visible_construction_rect = QRectF(
+                0.0,
+                0.0,
+                source_image.width(),
+                source_image.height(),
+            )
         elif render_mode == ExportImageRenderMode.CURRENT_VIEWPORT:
             canvas = mounted_canvas
             viewport_width = max(200, canvas.width()) if canvas is not None else max(400, min(1400, source_image.width()))
@@ -21868,6 +23514,29 @@ class MainWindow(QMainWindow):
                     document.view_state.pan.x + (point.x * screen_scale),
                     document.view_state.pan.y + (point.y * screen_scale),
                 )
+
+            visible_left = max(
+                0.0,
+                -document.view_state.pan.x / screen_scale,
+            )
+            visible_top = max(
+                0.0,
+                -document.view_state.pan.y / screen_scale,
+            )
+            visible_right = min(
+                float(source_image.width()),
+                (image.width() - document.view_state.pan.x) / screen_scale,
+            )
+            visible_bottom = min(
+                float(source_image.height()),
+                (image.height() - document.view_state.pan.y) / screen_scale,
+            )
+            visible_construction_rect = QRectF(
+                visible_left,
+                visible_top,
+                max(0.0, visible_right - visible_left),
+                max(0.0, visible_bottom - visible_top),
+            )
         else:
             output_width = max(1, int(round(source_image.width() * screen_scale)))
             output_height = max(1, int(round(source_image.height() * screen_scale)))
@@ -21876,6 +23545,13 @@ class MainWindow(QMainWindow):
 
             def image_to_output(point) -> QPointF:
                 return QPointF(point.x * screen_scale, point.y * screen_scale)
+
+            visible_construction_rect = QRectF(
+                0.0,
+                0.0,
+                source_image.width(),
+                source_image.height(),
+            )
 
         painter = QPainter(image)
         if not painter.isActive():
@@ -21909,6 +23585,18 @@ class MainWindow(QMainWindow):
         scale_bg_width = metrics["scale_bg_width"]
         scale_fg_width = metrics["scale_fg_width"]
         font_px = metrics["font_px"]
+
+        if include_construction_geometry:
+            construction_resolver = make_construction_resolver(document)
+            draw_construction_entities(
+                painter,
+                (
+                    (entity, construction_resolver.resolve(entity))
+                    for entity in document.construction_entities
+                ),
+                image_to_output,
+                visible_image_rect=visible_construction_rect,
+            )
 
         if include_measurements:
             draw_measurements(

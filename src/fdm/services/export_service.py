@@ -62,6 +62,10 @@ class ExportSelection:
     include_measurement_overlay: bool = False
     include_scale_overlay: bool = False
     include_combined_overlay: bool = False
+    # An image-overlay modifier, not an independently exported artifact.
+    # Keep this opt-in even for ``all_enabled`` so default result images remain
+    # measurement-only and construction geometry never leaks into tabular data.
+    include_construction_geometry: bool = False
     include_scale_json: bool = False
     include_excel: bool = False
     include_csv: bool = False
@@ -103,6 +107,7 @@ class ExportOptionsSnapshot:
     include_measurement_overlay: bool = False
     include_scale_overlay: bool = False
     include_combined_overlay: bool = False
+    include_construction_geometry: bool = False
     include_scale_json: bool = False
     include_excel: bool = False
     include_csv: bool = False
@@ -119,6 +124,9 @@ class ExportOptionsSnapshot:
             include_measurement_overlay=bool(selection.include_measurement_overlay),
             include_scale_overlay=bool(selection.include_scale_overlay),
             include_combined_overlay=bool(selection.include_combined_overlay),
+            include_construction_geometry=bool(
+                selection.include_construction_geometry
+            ),
             include_scale_json=bool(selection.include_scale_json),
             include_excel=bool(selection.include_excel),
             include_csv=bool(selection.include_csv),
@@ -133,6 +141,7 @@ class ExportOptionsSnapshot:
             include_measurement_overlay=self.include_measurement_overlay,
             include_scale_overlay=self.include_scale_overlay,
             include_combined_overlay=self.include_combined_overlay,
+            include_construction_geometry=self.include_construction_geometry,
             include_scale_json=self.include_scale_json,
             include_excel=self.include_excel,
             include_csv=self.include_csv,
@@ -524,6 +533,9 @@ class ExportService:
                     output_file,
                     include_measurements=True,
                     include_scale=False,
+                    include_construction_geometry=(
+                        execution_selection.include_construction_geometry
+                    ),
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -546,6 +558,9 @@ class ExportService:
                     output_file,
                     include_measurements=False,
                     include_scale=True,
+                    include_construction_geometry=(
+                        execution_selection.include_construction_geometry
+                    ),
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -568,6 +583,9 @@ class ExportService:
                     output_file,
                     include_measurements=True,
                     include_scale=True,
+                    include_construction_geometry=(
+                        execution_selection.include_construction_geometry
+                    ),
                     render_mode=active_plan.options.render_mode,
                     render_context=render_context_by_document.get(document.id),
                     encoding=active_plan.options.image_encoding,
@@ -732,6 +750,7 @@ class ExportService:
         *,
         include_measurements: bool,
         include_scale: bool,
+        include_construction_geometry: bool = False,
         render_mode: str,
         render_context: ExportRenderContext | None,
         encoding: RasterEncodingOptions,
@@ -750,6 +769,11 @@ class ExportService:
                 "include_scale": include_scale,
                 "render_mode": render_mode,
             }
+            # Preserve compatibility with renderers implementing the previous
+            # contract.  The new keyword is only needed for the explicit opt-in
+            # path; omission has the same meaning as False.
+            if include_construction_geometry:
+                kwargs["include_construction_geometry"] = True
             if render_context is not None:
                 kwargs["render_context"] = render_context
             result = overlay_renderer(document, temporary_path, **kwargs)

@@ -18,6 +18,7 @@ from fdm.analysis_artifacts import (
     calibration_signature_from_values,
     refresh_artifacts_validity,
 )
+from fdm.construction_geometry import ConstructionEntity
 from fdm.geometry import (
     Line,
     Point,
@@ -52,6 +53,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
     {
         "analysis-artifacts/v1",
         "analysis-artifacts/v2",
+        "construction-geometry/v1",
         "project-rois/v1",
     }
 )
@@ -1057,6 +1059,8 @@ class ImageDocument:
     derivation: ImageDerivation | None = None
     # Keep the legacy positional order through ``derivation`` intact.
     raster_semantic: RasterSemantic | None = None
+    construction_entities: list[ConstructionEntity] = field(default_factory=list)
+    selected_construction_id: str | None = None
     _current_state_stamp: DocumentStateStamp = field(
         default_factory=DocumentStateStamp,
         init=False,
@@ -1072,6 +1076,8 @@ class ImageDocument:
     )
     _next_state_id: int = field(default=1, init=False, repr=False, compare=False)
     _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
+    _construction_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
+    _construction_metadata_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     def initialize_runtime_state(self) -> None:
         from fdm.history import DocumentHistory
@@ -1088,6 +1094,14 @@ class ImageDocument:
         if self.active_group_id is None or self.get_group(self.active_group_id) is None:
             self.active_group_id = self.fiber_groups[0].id if self.fiber_groups else None
         if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
+            self.selected_overlay_id = None
+        if (
+            self.selected_construction_id
+            and self.get_construction_entity(self.selected_construction_id) is None
+        ):
+            self.selected_construction_id = None
+        if self.selected_construction_id is not None:
+            self.view_state.selected_measurement_id = None
             self.selected_overlay_id = None
         if self._saved_state_stamp is None:
             self._saved_state_stamp = self._current_state_stamp
@@ -1248,6 +1262,120 @@ class ImageDocument:
     def mark_measurement_geometry_changed(self) -> None:
         self._measurement_geometry_revision += 1
 
+    def get_construction_entity(
+        self,
+        construction_id: str | None,
+    ) -> ConstructionEntity | None:
+        if construction_id is None:
+            return None
+        for entity in self.construction_entities:
+            if entity.id == construction_id:
+                return entity
+        return None
+
+    @property
+    def construction_geometry_revision(self) -> int:
+        return self._construction_geometry_revision
+
+    def mark_construction_geometry_changed(self) -> None:
+        self._construction_geometry_revision += 1
+
+    @property
+    def construction_metadata_revision(self) -> int:
+        return self._construction_metadata_revision
+
+    def mark_construction_metadata_changed(self) -> None:
+        self._construction_metadata_revision += 1
+
+    def select_construction(self, construction_id: str | None) -> None:
+        entity = self.get_construction_entity(construction_id)
+        self.selected_construction_id = entity.id if entity is not None else None
+        if entity is not None:
+            self.view_state.selected_measurement_id = None
+            self.selected_overlay_id = None
+
+    def add_construction_entity(
+        self,
+        entity: ConstructionEntity,
+        *,
+        select: bool = True,
+        mark_dirty: bool = True,
+    ) -> None:
+        if self.get_construction_entity(entity.id) is not None:
+            raise ValueError(f"辅助几何包含重复 ID: {entity.id}")
+        self.construction_entities.append(entity)
+        if select:
+            self.select_construction(entity.id)
+        self.mark_construction_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
+
+    def remove_construction_entities(
+        self,
+        construction_ids: Iterable[str],
+        *,
+        mark_dirty: bool = True,
+    ) -> int:
+        targets = {str(item) for item in construction_ids if item}
+        if not targets:
+            return 0
+        original_count = len(self.construction_entities)
+        self.construction_entities = [
+            entity
+            for entity in self.construction_entities
+            if entity.id not in targets
+        ]
+        removed_count = original_count - len(self.construction_entities)
+        if removed_count <= 0:
+            return 0
+        if self.selected_construction_id in targets:
+            self.selected_construction_id = None
+        self.mark_construction_geometry_changed()
+        if mark_dirty:
+            self.mark_session_dirty()
+        return removed_count
+
+    def replace_construction_entity(
+        self,
+        construction_id: str,
+        entity: ConstructionEntity,
+        *,
+        select: bool = True,
+        mark_dirty: bool = True,
+    ) -> bool:
+        for index, current in enumerate(self.construction_entities):
+            if current.id != construction_id:
+                continue
+            replacement = replace(
+                entity,
+                id=current.id,
+                revision=current.revision + 1,
+            )
+            self.construction_entities[index] = replacement
+            if select:
+                self.select_construction(current.id)
+            if current.definition != replacement.definition:
+                self.mark_construction_geometry_changed()
+            else:
+                self.mark_construction_metadata_changed()
+            if mark_dirty:
+                self.mark_session_dirty()
+            return True
+        return False
+
+    def remove_construction_entity(
+        self,
+        construction_id: str,
+        *,
+        mark_dirty: bool = True,
+    ) -> bool:
+        return bool(
+            self.remove_construction_entities(
+                (construction_id,),
+                mark_dirty=mark_dirty,
+            )
+        )
+
     @property
     def text_annotations(self) -> list[OverlayAnnotation]:
         return [
@@ -1285,11 +1413,13 @@ class ImageDocument:
         self.view_state.selected_measurement_id = measurement_id
         if measurement_id is not None:
             self.selected_overlay_id = None
+            self.selected_construction_id = None
 
     def select_overlay_annotation(self, overlay_id: str | None) -> None:
         self.selected_overlay_id = overlay_id
         if overlay_id is not None:
             self.view_state.selected_measurement_id = None
+            self.selected_construction_id = None
 
     def select_text_annotation(self, text_id: str | None) -> None:
         annotation = self.get_text_annotation(text_id)
@@ -1654,13 +1784,20 @@ class ImageDocument:
         self.refresh_dirty_flags()
 
     def session_snapshot(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "fiber_groups": [group.to_dict() for group in self.sorted_groups()],
             "measurements": [measurement.to_dict() for measurement in self.measurements],
             "overlay_annotations": [annotation.to_dict() for annotation in self.overlay_annotations],
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
+        if self.construction_entities:
+            payload["construction_entities"] = [
+                entity.to_dict() for entity in self.construction_entities
+            ]
+        if self.selected_construction_id is not None:
+            payload["selected_construction_id"] = self.selected_construction_id
+        return payload
 
     def calibration_snapshot(self) -> dict[str, Any]:
         calibration_line = self.metadata.get("calibration_line")
@@ -1685,6 +1822,10 @@ class ImageDocument:
             "active_group_id": self.active_group_id,
             "selected_measurement_id": self.view_state.selected_measurement_id,
             "selected_overlay_id": self.selected_overlay_id,
+            "construction_entities": [
+                entity.to_dict() for entity in self.construction_entities
+            ],
+            "selected_construction_id": self.selected_construction_id,
             "scale_overlay_anchor": self.scale_overlay_anchor.to_dict() if self.scale_overlay_anchor else None,
             "suppressed_project_group_labels": list(self.suppressed_project_group_labels),
         }
@@ -1716,6 +1857,13 @@ class ImageDocument:
         self.active_group_id = snapshot.get("active_group_id")
         self.view_state.selected_measurement_id = snapshot.get("selected_measurement_id")
         self.selected_overlay_id = snapshot.get("selected_overlay_id", snapshot.get("selected_text_id"))
+        construction_payload = snapshot.get("construction_entities", [])
+        self.construction_entities = [
+            ConstructionEntity.from_dict(item)
+            for item in construction_payload
+            if isinstance(item, dict)
+        ]
+        self.selected_construction_id = snapshot.get("selected_construction_id")
         scale_overlay_anchor = snapshot.get("scale_overlay_anchor")
         self.scale_overlay_anchor = Point.from_dict(scale_overlay_anchor) if scale_overlay_anchor else None
         self.suppressed_project_group_labels = self._normalized_suppressed_project_group_labels(
@@ -1728,7 +1876,13 @@ class ImageDocument:
             self.view_state.selected_measurement_id = None
         if self.selected_overlay_id and self.get_overlay_annotation(self.selected_overlay_id) is None:
             self.selected_overlay_id = None
+        if self.get_construction_entity(self.selected_construction_id) is None:
+            self.selected_construction_id = None
+        if self.selected_construction_id is not None:
+            self.view_state.selected_measurement_id = None
+            self.selected_overlay_id = None
         self.mark_measurement_geometry_changed()
+        self.mark_construction_geometry_changed()
         self.refresh_dirty_flags()
 
     def mark_session_saved(self) -> None:
@@ -1874,11 +2028,29 @@ class ImageDocument:
             payload["display_transform"] = self.display_transform.to_dict()
         if self.derivation is not None:
             payload["derivation"] = self.derivation.to_dict()
+        if self.construction_entities:
+            payload["construction_entities"] = [
+                entity.to_dict() for entity in self.construction_entities
+            ]
+        if self.selected_construction_id is not None:
+            payload["selected_construction_id"] = self.selected_construction_id
         return payload
 
     @classmethod
     def from_dict(cls, payload: dict[str, Any]) -> "ImageDocument":
         overlay_payload = payload.get("overlay_annotations")
+        construction_payload = payload.get("construction_entities", [])
+        if not isinstance(construction_payload, list) or any(
+            not isinstance(item, dict) for item in construction_payload
+        ):
+            raise TypeError("construction_entities 必须是对象列表")
+        construction_entities = [
+            ConstructionEntity.from_dict(item)
+            for item in construction_payload
+        ]
+        construction_ids = [entity.id for entity in construction_entities]
+        if len(construction_ids) != len(set(construction_ids)):
+            raise ValueError("construction_entities 包含重复 ID")
         display_transform_payload = payload.get("display_transform")
         if (
             display_transform_payload is not None
@@ -1973,6 +2145,12 @@ class ImageDocument:
             metadata=dict(payload.get("metadata", {})),
             active_group_id=payload.get("active_group_id"),
             selected_overlay_id=payload.get("selected_overlay_id", payload.get("selected_text_id")),
+            construction_entities=construction_entities,
+            selected_construction_id=(
+                str(payload["selected_construction_id"])
+                if payload.get("selected_construction_id")
+                else None
+            ),
             scale_overlay_anchor=Point.from_dict(payload["scale_overlay_anchor"]) if payload.get("scale_overlay_anchor") else None,
             suppressed_project_group_labels=list(payload.get("suppressed_project_group_labels", [])),
         )
@@ -2042,6 +2220,8 @@ class ProjectState:
             features.append("project-rois/v1")
         if self.analysis_artifacts:
             features.append("analysis-artifacts/v2")
+        if any(document.construction_entities for document in self.documents):
+            features.append("construction-geometry/v1")
         return tuple(dict.fromkeys(features))
 
     def remove_project_rois(

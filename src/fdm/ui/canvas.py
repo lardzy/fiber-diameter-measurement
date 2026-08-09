@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from itertools import product
 import math
 import os
 import time
@@ -24,7 +25,7 @@ from PySide6.QtGui import (
     QTransform,
     QWheelEvent,
 )
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QMenu, QWidget
 
 from fdm.area_display import (
     AREA_GEOMETRY_RAW,
@@ -44,6 +45,65 @@ from fdm.geometry import (
     point_to_polyline_distance,
     point_to_polygon_edge_distance,
     polygon_translate,
+)
+from fdm.construction_document import (
+    ResolvedSourceCandidate,
+    make_construction_resolver,
+    resolved_source_candidates,
+    resolved_construction_entries,
+    resolved_geometry_bounds,
+)
+from fdm.construction_geometry import (
+    ArraySide,
+    CircleCenterDiameterDefinition,
+    CircleCenterRadiusDefinition,
+    CircleTangency,
+    CircleThreePointDefinition,
+    CircleTwoPointDefinition,
+    CommonTangentDefinition,
+    CommonTangentMode,
+    ConcentricCircleDefinition,
+    ConstructionEntity,
+    ConstructionResolver,
+    FeatureSource,
+    FreePointDefinition,
+    FrozenFeatureSnapshot,
+    IntersectionDefinition,
+    LineDefinition,
+    LineAxisConstraint,
+    LineExtent,
+    LiveFeatureRef,
+    MidpointDefinition,
+    OffsetCircleDefinition,
+    OffsetParallelDefinition,
+    ParallelArrayDefinition,
+    ParallelLineSequence,
+    ParallelThroughPointDefinition,
+    PerpendicularBisectorDefinition,
+    PerpendicularDefinition,
+    PointCircleTangentDefinition,
+    ResolvedCircle,
+    ResolvedConstruction,
+    ResolvedLine,
+    ResolvedLineArray,
+    ResolvedPoint,
+    SourceObjectKind,
+    TangencyConstraint,
+    TangentTangentRadiusCircleDefinition,
+    ThreeTangentCircleDefinition,
+    common_tangent_lines,
+    geometry_intersections,
+    intersection_branch_hint,
+    point_circle_tangent_lines,
+    tangent_tangent_radius_solutions,
+    tangent_points_for_circle,
+    three_tangent_circle_solutions,
+    iter_live_refs as iter_construction_live_refs,
+    transitive_dependents as construction_transitive_dependents,
+)
+from fdm.construction_spatial_index import (
+    ConstructionSpatialIndex,
+    ConstructionSpatialItem,
 )
 from fdm.models import (
     ImageDocument,
@@ -70,6 +130,13 @@ from fdm.services.prompt_segmentation import (
     magic_mask_to_geometry,
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
+)
+from fdm.services.object_snap_service import (
+    ObjectSnapEngine,
+    ObjectSnapSettings,
+    SnapCandidate,
+    SnapKind,
+    contextual_snap_candidate,
 )
 from fdm.settings import (
     AppSettings,
@@ -114,6 +181,10 @@ from fdm.ui.rendering import (
     measurement_geometry_cull_padding,
     overlay_annotation_bounds,
     overlay_annotation_handle_points,
+)
+from fdm.ui.construction_rendering import (
+    draw_construction_entities,
+    draw_snap_candidate,
 )
 
 
@@ -192,6 +263,10 @@ class CanvasSelectionRef:
     def overlay(cls, overlay_id: str, overlay_kind: str) -> "CanvasSelectionRef":
         return cls(kind="overlay", object_id=overlay_id, overlay_kind=overlay_kind)
 
+    @classmethod
+    def construction(cls, construction_id: str) -> "CanvasSelectionRef":
+        return cls(kind="construction", object_id=construction_id)
+
 
 @dataclass(frozen=True, slots=True)
 class RoiGeometryCommit:
@@ -219,6 +294,18 @@ class _RoiCaptureSession:
     drag_start: Point | None = None
     drag_end: Point | None = None
     dragging: bool = False
+
+
+@dataclass(slots=True)
+class _ConstructionCommandSession:
+    kind: str
+    points: list[Point] = field(default_factory=list)
+    point_sources: list[FeatureSource] = field(default_factory=list)
+    sources: list[FeatureSource] = field(default_factory=list)
+    hover_point: Point | None = None
+    invalid_reason: str = ""
+    advanced_solution_cache_key: tuple[object, ...] | None = None
+    advanced_solution_cache: tuple[tuple[object, object], ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -834,6 +921,10 @@ class DocumentCanvas(QWidget):
     viewZoomChanged = Signal(float)
     viewTransformChanged = Signal(object)
     roiGeometryCommitted = Signal(object)
+    constructionCreateRequested = Signal(str, object)
+    constructionEdited = Signal(str, str, object)
+    constructionCommandChanged = Signal(str, object)
+    snapCandidateChanged = Signal(str, object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -843,6 +934,40 @@ class DocumentCanvas(QWidget):
         self._image: QImage | None = None
         self._tool_mode = "select"
         self._overlay_tool_kind = OverlayAnnotationKind.TEXT
+        self._construction_tool_kind = "point"
+        self._construction_session: _ConstructionCommandSession | None = None
+        self._construction_spacing = 20.0
+        self._construction_count = 2
+        self._construction_both_sides = False
+        self._construction_extend_intersections = False
+        self._construction_preview_resolver: ConstructionResolver | None = None
+        self._construction_preview_resolver_signature: tuple[int, int, int] | None
+        self._construction_preview_resolver_signature = None
+        self._hovered_construction_id: str | None = None
+        self._hovered_construction_handle: tuple[str, int] | None = None
+        self._dragging_construction_handle: tuple[str, int] | None = None
+        self._drag_construction_origin: ConstructionEntity | None = None
+        self._drag_construction_preview: ConstructionEntity | None = None
+        self._drag_construction_resolver: ConstructionResolver | None = None
+        self._drag_construction_affected_ids: frozenset[str] = frozenset()
+        self._drag_construction_affected_order: tuple[str, ...] = ()
+        self._drag_construction_entity_order: dict[str, int] = {}
+        self._drag_construction_preview_index: ConstructionSpatialIndex | None = None
+        self._drag_construction_preview_bounds: CanvasDisplayBounds | None = None
+        self._active_snap_candidate: SnapCandidate | None = None
+        self._object_snap_engine = ObjectSnapEngine()
+        self._object_snap_exclusion_cache_key: tuple[object, ...] | None = None
+        self._object_snap_exclusion_cache: tuple[frozenset[str], frozenset[str]] = (
+            frozenset(),
+            frozenset(),
+        )
+        self._construction_spatial_index: ConstructionSpatialIndex | None = None
+        self._construction_spatial_signature: tuple[int, int] | None = None
+        self._construction_dependency_revision = -1
+        self._construction_depends_on_measurements = False
+        self._construction_visual_revision: tuple[int, int, int] | None = None
+        self._construction_entity_lookup_signature: tuple[int, int] | None = None
+        self._construction_entity_lookup: dict[str, ConstructionEntity] = {}
         self._zoom = 1.0
         self._zoom_mode = CanvasZoomMode.CUSTOM
         self._pan = Point(20.0, 20.0)
@@ -1120,6 +1245,13 @@ class DocumentCanvas(QWidget):
         self._document = document
         self._image = image
         self._hovered_line_endpoint = None
+        self._clear_construction_interaction()
+        self._construction_spatial_index = None
+        self._construction_spatial_signature = None
+        self._construction_dependency_revision = -1
+        self._construction_entity_lookup_signature = None
+        self._construction_entity_lookup = {}
+        self._construction_visual_revision = self._construction_visual_signature()
         self._cancel_area_drawing()
         self._cancel_line_drawing()
         self._magic_segment = PromptSegmentationSession()
@@ -1174,6 +1306,14 @@ class DocumentCanvas(QWidget):
         self._dragging_handle = None
         self._drag_preview_line = None
         self._hovered_line_endpoint = None
+        self._clear_construction_interaction()
+        self._construction_spatial_index = None
+        self._construction_spatial_signature = None
+        self._construction_dependency_revision = -1
+        self._construction_depends_on_measurements = False
+        self._construction_entity_lookup_signature = None
+        self._construction_entity_lookup = {}
+        self._construction_visual_revision = None
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
@@ -1233,6 +1373,7 @@ class DocumentCanvas(QWidget):
             self._drag_overlay_origin = None
             self._drag_overlay_preview = None
             self._scale_anchor_pick_active = False
+            self._clear_construction_interaction()
         self._update_cursor()
         self.update()
 
@@ -1240,7 +1381,13 @@ class DocumentCanvas(QWidget):
         self._fit_alignment = "top_left" if alignment == "top_left" else "center"
         self.update()
 
-    def set_tool_mode(self, mode: str, *, overlay_kind: str | None = None) -> None:
+    def set_tool_mode(
+        self,
+        mode: str,
+        *,
+        overlay_kind: str | None = None,
+        construction_kind: str | None = None,
+    ) -> None:
         if self._roi_capture is not None:
             self._clear_roi_capture(restore_tool=False)
         next_overlay_kind = (
@@ -1255,9 +1402,18 @@ class DocumentCanvas(QWidget):
             }
             else self._overlay_tool_kind
         )
-        if mode == self._tool_mode and next_overlay_kind == self._overlay_tool_kind:
+        next_construction_kind = (
+            str(construction_kind)
+            if str(construction_kind or "").strip()
+            else self._construction_tool_kind
+        )
+        if (
+            mode == self._tool_mode
+            and next_overlay_kind == self._overlay_tool_kind
+            and next_construction_kind == self._construction_tool_kind
+        ):
             return
-        if mode != self._tool_mode:
+        if mode != self._tool_mode or next_construction_kind != self._construction_tool_kind:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
             if mode in {"polygon_area", "freehand_area"}:
@@ -1270,8 +1426,12 @@ class DocumentCanvas(QWidget):
                 self.clear_fiber_quick_session()
             self._cancel_overlay_interaction()
             self._hovered_line_endpoint = None
+            self._clear_construction_interaction()
         self._tool_mode = mode
         self._overlay_tool_kind = next_overlay_kind
+        self._construction_tool_kind = next_construction_kind
+        if mode == "construction":
+            self._ensure_construction_session()
         self._update_cursor()
         self.update()
 
@@ -1283,6 +1443,7 @@ class DocumentCanvas(QWidget):
             canvas_visual_signature != self._canvas_visual_settings_signature
         )
         self._settings = settings
+        self._sync_object_snap_settings()
         self._overlay_settings_signature = overlay_signature
         self._canvas_visual_settings_signature = canvas_visual_signature
         if overlay_changed:
@@ -1292,6 +1453,1177 @@ class DocumentCanvas(QWidget):
             self._measurement_display_index = None
             self._measurement_display_index_signature = None
             self.update()
+
+    def _sync_object_snap_settings(self) -> None:
+        kinds: set[SnapKind] = set()
+        for raw_kind in getattr(self._settings, "object_snap_kinds", ()):
+            try:
+                kinds.add(SnapKind(str(raw_kind)))
+            except ValueError:
+                continue
+        self._object_snap_engine.update_settings(
+            ObjectSnapSettings(
+                enabled=bool(
+                    getattr(self._settings, "object_snap_enabled", True)
+                ),
+                enabled_kinds=frozenset(kinds),
+                aperture_px=float(
+                    getattr(self._settings, "object_snap_aperture_px", 10.0)
+                ),
+                hysteresis_px=3.0,
+                include_measurements=True,
+            )
+        )
+        if not self._object_snap_engine.settings.enabled:
+            self._set_active_snap_candidate(None)
+
+    def _ensure_construction_session(self) -> _ConstructionCommandSession:
+        session = self._construction_session
+        if session is None or session.kind != self._construction_tool_kind:
+            session = _ConstructionCommandSession(self._construction_tool_kind)
+            self._construction_session = session
+        self._emit_construction_command_changed()
+        return session
+
+    def _clear_construction_interaction(self) -> None:
+        self._construction_session = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._construction_preview_resolver = None
+        self._construction_preview_resolver_signature = None
+        self._clear_construction_drag_cache()
+        self._set_active_snap_candidate(None, repaint=False)
+        self._object_snap_engine.clear_hysteresis()
+
+    def _clear_construction_drag_cache(self) -> None:
+        self._dragging_construction_handle = None
+        self._drag_construction_origin = None
+        self._drag_construction_preview = None
+        self._drag_construction_resolver = None
+        self._drag_construction_affected_ids = frozenset()
+        self._drag_construction_affected_order = ()
+        self._drag_construction_entity_order = {}
+        self._drag_construction_preview_index = None
+        self._drag_construction_preview_bounds = None
+
+    def cancel_construction_command(self) -> bool:
+        session = self._construction_session
+        if session is None or (not session.points and not session.sources):
+            return False
+        self._construction_session = _ConstructionCommandSession(
+            self._construction_tool_kind
+        )
+        self._set_active_snap_candidate(None, repaint=False)
+        self._emit_construction_command_changed()
+        self.update()
+        return True
+
+    def construction_back_step(self) -> bool:
+        session = self._ensure_construction_session()
+        if session.points:
+            session.points.pop()
+            if session.point_sources:
+                session.point_sources.pop()
+        elif session.sources:
+            session.sources.pop()
+        else:
+            return False
+        session.invalid_reason = ""
+        self._emit_construction_command_changed()
+        self.update()
+        return True
+
+    def finish_construction_command(self) -> bool:
+        session = self._construction_session
+        if session is None:
+            return False
+        return self._try_complete_construction_session(session, force=True)
+
+    def set_construction_parameter(self, name: str, value: object) -> None:
+        if name in {"spacing", "distance"}:
+            try:
+                self._construction_spacing = max(1e-6, float(value))
+            except (TypeError, ValueError):
+                return
+        elif name == "count":
+            try:
+                self._construction_count = max(1, int(value))
+            except (TypeError, ValueError):
+                return
+        elif name == "both_sides":
+            self._construction_both_sides = bool(value)
+        elif name == "extend":
+            self._construction_extend_intersections = bool(value)
+        else:
+            return
+        self._emit_construction_command_changed()
+        self.update()
+
+    def _emit_construction_command_changed(self) -> None:
+        if self._document is None:
+            return
+        session = self._construction_session
+        self.constructionCommandChanged.emit(
+            self._document.id,
+            {
+                "tool": self._construction_tool_kind,
+                "point_count": len(session.points) if session else 0,
+                "source_count": len(session.sources) if session else 0,
+                "invalid_reason": session.invalid_reason if session else "",
+                "spacing": self._construction_spacing,
+                "count": self._construction_count,
+                "both_sides": self._construction_both_sides,
+                "extend": self._construction_extend_intersections,
+            },
+        )
+
+    def publish_construction_command_state(self) -> None:
+        """Re-publish this canvas' document-local command parameters."""
+
+        self._emit_construction_command_changed()
+
+    def _construction_source_at(
+        self,
+        image_point: Point,
+        *,
+        require_line: bool = False,
+        accepted_geometry_types: tuple[type, ...] = (),
+        widget_point: QPointF | None = None,
+    ) -> tuple[LiveFeatureRef, object] | None:
+        if self._document is None:
+            return None
+        tolerance_px = 10.0 / max(self._zoom, 0.001)
+        index = self._ensure_construction_spatial_index()
+        construction_entries = (
+            self._current_construction_pairs(
+                index.query_pairs(image_point, tolerance_px),
+                visible_only=True,
+                snappable_only=True,
+            )
+            if index is not None
+            else ()
+        )
+        candidates = resolved_source_candidates(
+            self._document,
+            image_point,
+            tolerance_px=tolerance_px,
+            require_line=require_line,
+            accepted_geometry_types=accepted_geometry_types,
+            construction_entries=construction_entries,
+            measurements=self._measurement_candidates(
+                image_point,
+                tolerance=tolerance_px,
+            ),
+        )
+        if not candidates:
+            return None
+        candidate = self._choose_construction_source_candidate(
+            candidates,
+            widget_point=widget_point,
+        )
+        if candidate is None:
+            return None
+        return (
+            LiveFeatureRef(
+                self._document.id,
+                candidate.object_id,
+                object_kind=candidate.object_kind,
+                feature=candidate.feature,
+            ),
+            candidate.geometry,
+        )
+
+    def _choose_construction_source_candidate(
+        self,
+        candidates: tuple[ResolvedSourceCandidate, ...],
+        *,
+        widget_point: QPointF | None,
+    ) -> ResolvedSourceCandidate | None:
+        best = candidates[0]
+        coincident_tolerance = 0.75 / max(self._zoom, 0.001)
+        coincident: list[ResolvedSourceCandidate] = []
+        seen: set[tuple[str, str, str]] = set()
+        for candidate in candidates:
+            if candidate.distance_px - best.distance_px > coincident_tolerance:
+                break
+            identity = (
+                str(candidate.object_kind),
+                candidate.object_id,
+                candidate.feature,
+            )
+            if identity in seen:
+                continue
+            seen.add(identity)
+            coincident.append(candidate)
+        if len(coincident) <= 1 or widget_point is None:
+            return best
+
+        menu = QMenu(self)
+        menu.setTitle("选择辅助几何来源")
+        action_candidates: dict[object, ResolvedSourceCandidate] = {}
+        for candidate in coincident:
+            action = menu.addAction(self._construction_source_candidate_label(candidate))
+            action_candidates[action] = candidate
+        chosen = menu.exec(self.mapToGlobal(widget_point.toPoint()))
+        return action_candidates.get(chosen)
+
+    def _construction_source_candidate_label(
+        self,
+        candidate: ResolvedSourceCandidate,
+    ) -> str:
+        if self._document is None:
+            return candidate.object_id
+        source_kind = SourceObjectKind(candidate.object_kind)
+        if source_kind is SourceObjectKind.CONSTRUCTION:
+            entity = self._document.get_construction_entity(candidate.object_id)
+            object_label = (
+                entity.name
+                if entity is not None and entity.name
+                else candidate.object_id
+            )
+            source_label = "辅助对象"
+        else:
+            measurement = self._document.get_measurement(candidate.object_id)
+            object_label = (
+                f"测量 {candidate.object_id[-8:]}"
+                if measurement is not None
+                else candidate.object_id
+            )
+            source_label = "测量对象"
+        feature = candidate.feature
+        if feature.startswith("line:"):
+            line_token = feature.split(":", 1)[1]
+            try:
+                line_index = int(line_token)
+                feature = (
+                    f"偏移线 {line_index:+d}"
+                    if line_token.startswith(("+", "-"))
+                    else f"子线 {line_index + 1}"
+                )
+            except ValueError:
+                pass
+        elif feature == "geometry":
+            feature = "主体"
+        return f"{source_label} · {object_label} · {feature}"
+
+    def _captured_construction_point_source(
+        self,
+        point: Point,
+        *,
+        widget_point: QPointF | None = None,
+        disambiguate_identity: bool = False,
+    ) -> FeatureSource | None:
+        candidate = self._active_snap_candidate
+        if (
+            self._document is not None
+            and candidate is not None
+            and distance(candidate.point_px, point) <= 1e-6
+            and candidate.source_type in {
+                SourceObjectKind.CONSTRUCTION.value,
+                SourceObjectKind.MEASUREMENT.value,
+            }
+        ):
+            if disambiguate_identity:
+                identity_tolerance = 0.75 / max(self._zoom, 0.001)
+                index = self._ensure_construction_spatial_index()
+                construction_entries = (
+                    self._current_construction_pairs(
+                        index.query_pairs(point, identity_tolerance),
+                        visible_only=True,
+                        snappable_only=True,
+                    )
+                    if index is not None
+                    else ()
+                )
+                point_candidates = tuple(
+                    item
+                    for item in resolved_source_candidates(
+                        self._document,
+                        point,
+                        tolerance_px=identity_tolerance,
+                        accepted_geometry_types=(ResolvedPoint,),
+                        construction_entries=construction_entries,
+                        measurements=self._measurement_candidates(
+                            point,
+                            tolerance=identity_tolerance,
+                        ),
+                    )
+                    if isinstance(item.geometry, ResolvedPoint)
+                    and distance(item.geometry.point, point) <= 1e-6
+                )
+                if point_candidates:
+                    chosen = self._choose_construction_source_candidate(
+                        point_candidates,
+                        widget_point=widget_point,
+                    )
+                    if chosen is None:
+                        return None
+                    reference = LiveFeatureRef(
+                        self._document.id,
+                        chosen.object_id,
+                        object_kind=chosen.object_kind,
+                        feature=chosen.feature,
+                    )
+                    resolved = make_construction_resolver(
+                        self._document
+                    ).resolve_feature(reference)
+                    if (
+                        isinstance(resolved, ResolvedPoint)
+                        and distance(resolved.point, point) <= 1e-6
+                    ):
+                        return reference
+            reference = LiveFeatureRef(
+                self._document.id,
+                candidate.source_id,
+                object_kind=SourceObjectKind(candidate.source_type),
+                feature=candidate.feature_key,
+            )
+            resolved = make_construction_resolver(
+                self._document
+            ).resolve_feature(reference)
+            if (
+                isinstance(resolved, ResolvedPoint)
+                and distance(resolved.point, point) <= 1e-6
+            ):
+                return reference
+        return FrozenFeatureSnapshot(ResolvedPoint(point))
+
+    def _construction_mouse_press(
+        self,
+        image_point: Point,
+        *,
+        widget_point: QPointF | None = None,
+    ) -> bool:
+        if self._document is None or not self._point_in_image(image_point):
+            return False
+        session = self._ensure_construction_session()
+        point = self._anchor_point_for_event(image_point, Qt.KeyboardModifier.NoModifier)
+        kind = session.kind
+        session.invalid_reason = ""
+
+        if kind == "point":
+            return self._commit_construction_definition(FreePointDefinition(point))
+        if kind == "horizontal_line":
+            return self._commit_construction_definition(
+                LineDefinition(
+                    point,
+                    Point(point.x + 1.0, point.y),
+                    LineExtent.INFINITE,
+                    LineAxisConstraint.HORIZONTAL,
+                )
+            )
+        if kind == "vertical_line":
+            return self._commit_construction_definition(
+                LineDefinition(
+                    point,
+                    Point(point.x, point.y + 1.0),
+                    LineExtent.INFINITE,
+                    LineAxisConstraint.VERTICAL,
+                )
+            )
+
+        if kind in {"concentric_circle", "offset_circle"} and not session.sources:
+            hit = self._construction_source_at(
+                point,
+                accepted_geometry_types=(ResolvedCircle,),
+                widget_point=widget_point,
+            )
+            if hit is None:
+                session.invalid_reason = "请选择一个圆对象"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            session.sources.append(hit[0])
+            self._emit_construction_command_changed()
+            self.update()
+            return True
+
+        advanced_source_counts = {
+            "tangent_point_circle": 2,
+            "common_tangent_external": 2,
+            "common_tangent_internal": 2,
+            "tangent_circle_ttr": 2,
+            "tangent_circle_3": 3,
+        }
+        required_sources = advanced_source_counts.get(kind)
+        if required_sources is not None:
+            if len(session.sources) < required_sources:
+                expected = self._advanced_expected_source_types(
+                    kind,
+                    len(session.sources),
+                )
+                hit = self._construction_source_at(
+                    point,
+                    accepted_geometry_types=expected,
+                    widget_point=widget_point,
+                )
+                if kind == "tangent_point_circle" and not session.sources:
+                    source = (
+                        hit[0]
+                        if hit is not None
+                        else self._captured_construction_point_source(point)
+                    )
+                    session.sources.append(source)
+                    self._emit_construction_command_changed()
+                    self.update()
+                    return True
+                if hit is None:
+                    session.invalid_reason = "请选择可解析的点、线或圆对象"
+                    self._emit_construction_command_changed()
+                    self.update()
+                    return True
+                source, geometry = hit
+                if any(
+                    isinstance(existing, LiveFeatureRef)
+                    and existing.object_id == source.object_id
+                    and existing.feature == source.feature
+                    and existing.object_kind == source.object_kind
+                    for existing in session.sources
+                ):
+                    session.invalid_reason = "请选择另一个来源对象"
+                    self._emit_construction_command_changed()
+                    return True
+                session.sources.append(source)
+                if len(session.sources) < required_sources:
+                    self._emit_construction_command_changed()
+                    self.update()
+                    return True
+                solutions = self._advanced_solution_candidates(session)
+                if len(solutions) == 1:
+                    return self._commit_construction_definition(solutions[0][0])
+                if not solutions:
+                    session.invalid_reason = "当前来源组合没有可构造的实数解"
+                else:
+                    session.invalid_reason = "存在多个解，请单击所需分支"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            solutions = self._advanced_solution_candidates(session)
+            if not solutions:
+                session.invalid_reason = "当前来源组合没有可构造的实数解"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            definition, _geometry = min(
+                solutions,
+                key=lambda item: self._distance_to_resolved_geometry(
+                    point,
+                    item[1],
+                ),
+            )
+            return self._commit_construction_definition(definition)
+
+        source_only_line = kind in {
+            "midpoint",
+            "parallel_through",
+            "parallel_offset",
+            "parallel_array",
+            "perpendicular",
+            "perpendicular_bisector",
+        }
+        if source_only_line and not session.sources:
+            hit = self._construction_source_at(
+                point,
+                require_line=True,
+                widget_point=widget_point,
+            )
+            if hit is None:
+                session.invalid_reason = "请选择一条可解析的线或线段"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            source, source_geometry = hit
+            if (
+                kind in {"midpoint", "perpendicular_bisector"}
+                and isinstance(source_geometry, ResolvedLine)
+                and source_geometry.extent is not LineExtent.SEGMENT
+            ):
+                session.invalid_reason = "该命令要求有限线段"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            session.sources.append(source)
+            if kind == "midpoint":
+                return self._try_complete_construction_session(session)
+            if kind == "perpendicular_bisector":
+                return self._try_complete_construction_session(session)
+            self._emit_construction_command_changed()
+            self.update()
+            return True
+
+        if kind == "intersection":
+            if len(session.sources) < 2:
+                hit = self._construction_source_at(
+                    point,
+                    accepted_geometry_types=(ResolvedLine, ResolvedCircle),
+                    widget_point=widget_point,
+                )
+                if hit is None:
+                    session.invalid_reason = "请选择线或圆对象"
+                    self._emit_construction_command_changed()
+                    self.update()
+                    return True
+                source, _geometry = hit
+                if any(
+                    existing.object_id == source.object_id
+                    and existing.feature == source.feature
+                    and existing.object_kind == source.object_kind
+                    for existing in session.sources
+                ):
+                    session.invalid_reason = "请选择另一个对象"
+                    self._emit_construction_command_changed()
+                    return True
+                session.sources.append(source)
+                if len(session.sources) < 2:
+                    self._emit_construction_command_changed()
+                    self.update()
+                    return True
+                branches = self._construction_intersection_candidates(session)
+                if len(branches) <= 1:
+                    return self._try_complete_construction_session(session)
+                session.invalid_reason = "存在多个交点，请单击所需分支"
+                self._emit_construction_command_changed()
+                self.update()
+                return True
+            branches = self._construction_intersection_candidates(session)
+            if branches:
+                branch = min(
+                    range(len(branches)),
+                    key=lambda index: distance(point, branches[index]),
+                )
+                return self._try_complete_construction_session(
+                    session,
+                    intersection_branch=branch,
+                )
+            return self._try_complete_construction_session(session)
+
+        point_source = self._captured_construction_point_source(
+            point,
+            widget_point=widget_point,
+            disambiguate_identity=kind in {"parallel_through", "perpendicular"},
+        )
+        if point_source is None:
+            return True
+        session.points.append(point)
+        session.point_sources.append(point_source)
+        completed = self._try_complete_construction_session(session)
+        if not completed:
+            self._emit_construction_command_changed()
+            self.update()
+        return True
+
+    def _construction_intersection_candidates(
+        self,
+        session: _ConstructionCommandSession,
+    ) -> tuple[Point, ...]:
+        if self._document is None or len(session.sources) < 2:
+            return ()
+        resolver = self._ensure_construction_preview_resolver()
+        if resolver is None:
+            return ()
+        first = resolver.resolve_feature(session.sources[0])
+        second = resolver.resolve_feature(session.sources[1])
+        if not isinstance(first, (ResolvedLine, ResolvedCircle)) or not isinstance(
+            second, (ResolvedLine, ResolvedCircle)
+        ):
+            return ()
+        candidates, issue = geometry_intersections(
+            first,
+            second,
+            extend=self._construction_extend_intersections,
+        )
+        return tuple(candidates) if issue is None else ()
+
+    @staticmethod
+    def _advanced_expected_source_types(
+        kind: str,
+        index: int,
+    ) -> tuple[type, ...]:
+        if kind == "tangent_point_circle":
+            return (ResolvedPoint,) if index == 0 else (ResolvedCircle,)
+        if kind in {"common_tangent_external", "common_tangent_internal"}:
+            return (ResolvedCircle,)
+        return (ResolvedLine, ResolvedCircle)
+
+    @staticmethod
+    def _advanced_expected_source_message(kind: str, index: int) -> str:
+        if kind == "tangent_point_circle":
+            return "请先选择点对象" if index == 0 else "请选择圆对象"
+        if kind in {"common_tangent_external", "common_tangent_internal"}:
+            return "请选择圆对象"
+        return "请选择线或圆对象"
+
+    def _advanced_solution_candidates(
+        self,
+        session: _ConstructionCommandSession,
+        *,
+        resolved_geometries: tuple[object, ...] | None = None,
+    ) -> tuple[tuple[object, object], ...]:
+        if self._document is None:
+            return ()
+        cache_key = (
+            session.kind,
+            tuple(session.sources),
+            (
+                self._document.construction_geometry_revision,
+                self._document.measurement_geometry_revision,
+            ),
+            self._construction_spacing,
+            self._construction_extend_intersections,
+        )
+        if session.advanced_solution_cache_key == cache_key:
+            return session.advanced_solution_cache
+        if resolved_geometries is None:
+            resolver = self._ensure_construction_preview_resolver()
+            if resolver is None:
+                return ()
+            geometries = tuple(
+                resolver.resolve_feature(source) for source in session.sources
+            )
+        else:
+            geometries = resolved_geometries
+        kind = session.kind
+        candidates: list[tuple[object, object]] = []
+        if (
+            kind == "tangent_point_circle"
+            and len(geometries) >= 2
+            and isinstance(geometries[0], ResolvedPoint)
+            and isinstance(geometries[1], ResolvedCircle)
+        ):
+            lines, issue = point_circle_tangent_lines(
+                geometries[0].point,
+                geometries[1],
+            )
+            if issue is None:
+                for branch, line in enumerate(lines):
+                    candidates.append(
+                        (
+                            PointCircleTangentDefinition(
+                                session.sources[0],
+                                session.sources[1],
+                                branch=branch,
+                            ),
+                            line,
+                        )
+                    )
+        elif (
+            kind in {"common_tangent_external", "common_tangent_internal"}
+            and len(geometries) >= 2
+            and isinstance(geometries[0], ResolvedCircle)
+            and isinstance(geometries[1], ResolvedCircle)
+        ):
+            mode = (
+                CommonTangentMode.INTERNAL
+                if kind == "common_tangent_internal"
+                else CommonTangentMode.EXTERNAL
+            )
+            lines, issue = common_tangent_lines(
+                geometries[0],
+                geometries[1],
+                mode,
+            )
+            if issue is None:
+                for branch, line in enumerate(lines):
+                    candidates.append(
+                        (
+                            CommonTangentDefinition(
+                                session.sources[0],
+                                session.sources[1],
+                                mode=mode,
+                                branch=branch,
+                            ),
+                            line,
+                        )
+                    )
+        elif (
+            kind == "tangent_circle_ttr"
+            and len(geometries) >= 2
+            and all(
+                isinstance(item, (ResolvedLine, ResolvedCircle))
+                for item in geometries[:2]
+            )
+        ):
+            seen_circles: set[tuple[int, int, int]] = set()
+            constraint_sets = tuple(
+                self._tangency_constraints_for_geometry(geometry)
+                for geometry in geometries[:2]
+            )
+            for first_constraint, second_constraint in product(*constraint_sets):
+                solutions, issue = tangent_tangent_radius_solutions(
+                    geometries[0],
+                    geometries[1],
+                    self._construction_spacing,
+                    first_constraint=first_constraint,
+                    second_constraint=second_constraint,
+                    extend=self._construction_extend_intersections,
+                )
+                if issue is not None:
+                    continue
+                for solution in solutions:
+                    key = self._resolved_circle_solution_key(solution.circle)
+                    if key in seen_circles:
+                        continue
+                    seen_circles.add(key)
+                    candidates.append(
+                        (
+                            TangentTangentRadiusCircleDefinition(
+                                session.sources[0],
+                                session.sources[1],
+                                self._construction_spacing,
+                                first_constraint=first_constraint,
+                                second_constraint=second_constraint,
+                                branch=solution.branch,
+                                extend=self._construction_extend_intersections,
+                            ),
+                            solution.circle,
+                        )
+                    )
+        elif (
+            kind == "tangent_circle_3"
+            and len(geometries) >= 3
+            and all(
+                isinstance(item, (ResolvedLine, ResolvedCircle))
+                for item in geometries[:3]
+            )
+        ):
+            seen_circles: set[tuple[int, int, int]] = set()
+            constraint_sets = tuple(
+                self._tangency_constraints_for_geometry(geometry)
+                for geometry in geometries[:3]
+            )
+            for first_constraint, second_constraint, third_constraint in product(
+                *constraint_sets
+            ):
+                solutions, issue = three_tangent_circle_solutions(
+                    (geometries[0], geometries[1], geometries[2]),
+                    (
+                        first_constraint,
+                        second_constraint,
+                        third_constraint,
+                    ),
+                    extend=self._construction_extend_intersections,
+                )
+                if issue is not None:
+                    continue
+                for solution in solutions:
+                    key = self._resolved_circle_solution_key(solution.circle)
+                    if key in seen_circles:
+                        continue
+                    seen_circles.add(key)
+                    candidates.append(
+                        (
+                            ThreeTangentCircleDefinition(
+                                session.sources[0],
+                                session.sources[1],
+                                session.sources[2],
+                                first_constraint=first_constraint,
+                                second_constraint=second_constraint,
+                                third_constraint=third_constraint,
+                                branch=solution.branch,
+                                extend=self._construction_extend_intersections,
+                            ),
+                            solution.circle,
+                        )
+                    )
+        result = tuple(candidates)
+        session.advanced_solution_cache_key = cache_key
+        session.advanced_solution_cache = result
+        return result
+
+    @staticmethod
+    def _tangency_constraints_for_geometry(
+        geometry: ResolvedLine | ResolvedCircle,
+    ) -> tuple[TangencyConstraint, ...]:
+        if isinstance(geometry, ResolvedLine):
+            return (
+                TangencyConstraint(line_side=-1),
+                TangencyConstraint(line_side=1),
+            )
+        return tuple(
+            TangencyConstraint(circle_relation=relation)
+            for relation in CircleTangency
+        )
+
+    @staticmethod
+    def _resolved_circle_solution_key(circle: ResolvedCircle) -> tuple[int, int, int]:
+        # Analytical solvers are deterministic but equivalent constraint
+        # families can produce the same circle.  Quantize only for de-duplicating
+        # the preview/chooser; the selected definition retains exact parameters.
+        scale = 1_000_000
+        return (
+            round(circle.center.x * scale),
+            round(circle.center.y * scale),
+            round(circle.radius * scale),
+        )
+
+    def _try_complete_construction_session(
+        self,
+        session: _ConstructionCommandSession,
+        *,
+        force: bool = False,
+        intersection_branch: int = 0,
+    ) -> bool:
+        kind = session.kind
+        points = session.points
+        sources = session.sources
+        definition = None
+        if kind in {"segment", "ray", "infinite_line"} and len(points) >= 2:
+            extent = {
+                "segment": LineExtent.SEGMENT,
+                "ray": LineExtent.RAY,
+                "infinite_line": LineExtent.INFINITE,
+            }[kind]
+            definition = LineDefinition(points[0], points[1], extent)
+        elif kind == "circle_center_radius" and (len(points) >= 2 or (force and points)):
+            definition = CircleCenterRadiusDefinition(
+                points[0],
+                (
+                    distance(points[0], points[1])
+                    if len(points) >= 2
+                    else self._construction_spacing
+                ),
+            )
+        elif kind == "circle_center_diameter" and (len(points) >= 2 or (force and points)):
+            definition = CircleCenterDiameterDefinition(
+                points[0],
+                (
+                    distance(points[0], points[1]) * 2.0
+                    if len(points) >= 2
+                    else self._construction_spacing
+                ),
+            )
+        elif kind == "circle_diameter_2p" and len(points) >= 2:
+            definition = CircleTwoPointDefinition(points[0], points[1])
+        elif kind == "circle_3p" and len(points) >= 3:
+            definition = CircleThreePointDefinition(points[0], points[1], points[2])
+        elif kind == "midpoint" and sources:
+            definition = MidpointDefinition(sources[0])
+        elif kind == "intersection" and len(sources) >= 2:
+            branch_hint = None
+            resolver = make_construction_resolver(self._document)
+            first_geometry = resolver.resolve_feature(sources[0])
+            second_geometry = resolver.resolve_feature(sources[1])
+            candidates, issue = geometry_intersections(
+                first_geometry,
+                second_geometry,
+                extend=self._construction_extend_intersections,
+            )
+            if issue is None and intersection_branch < len(candidates):
+                branch_hint = intersection_branch_hint(
+                    first_geometry,
+                    second_geometry,
+                    candidates[intersection_branch],
+                )
+            definition = IntersectionDefinition(
+                sources[0],
+                sources[1],
+                branch=intersection_branch,
+                extend=self._construction_extend_intersections,
+                branch_hint=branch_hint,
+            )
+        elif kind == "parallel_through" and sources and points:
+            definition = ParallelThroughPointDefinition(
+                sources[0],
+                points[0],
+                point_source=(
+                    session.point_sources[0]
+                    if session.point_sources
+                    else FrozenFeatureSnapshot(ResolvedPoint(points[0]))
+                ),
+            )
+        elif kind == "perpendicular" and sources and points:
+            definition = PerpendicularDefinition(
+                sources[0],
+                points[0],
+                point_source=(
+                    session.point_sources[0]
+                    if session.point_sources
+                    else FrozenFeatureSnapshot(ResolvedPoint(points[0]))
+                ),
+            )
+        elif kind == "perpendicular_bisector" and sources:
+            definition = PerpendicularBisectorDefinition(sources[0])
+        elif kind in {"parallel_offset", "parallel_array"} and sources and points:
+            signed_distance = self._signed_distance_to_source(sources[0], points[0])
+            sign = -1.0 if signed_distance < 0.0 else 1.0
+            if kind == "parallel_offset":
+                definition = OffsetParallelDefinition(
+                    sources[0], sign * self._construction_spacing
+                )
+            else:
+                side = (
+                    ArraySide.BOTH
+                    if self._construction_both_sides
+                    else (ArraySide.NEGATIVE if sign < 0 else ArraySide.POSITIVE)
+                )
+                definition = ParallelArrayDefinition(
+                    sources[0],
+                    self._construction_spacing,
+                    self._construction_count,
+                    side,
+                )
+        elif kind in {"concentric_circle", "offset_circle"} and sources and (
+            points or force
+        ):
+            source_geometry = (
+                make_construction_resolver(self._document).resolve_feature(
+                    sources[0]
+                )
+                if self._document is not None
+                else None
+            )
+            if isinstance(source_geometry, ResolvedCircle):
+                if kind == "concentric_circle":
+                    radius = (
+                        distance(source_geometry.center, points[0])
+                        if points
+                        else self._construction_spacing
+                    )
+                    definition = ConcentricCircleDefinition(
+                        sources[0],
+                        radius,
+                    )
+                else:
+                    radial_delta = (
+                        distance(source_geometry.center, points[0])
+                        - source_geometry.radius
+                        if points
+                        else self._construction_spacing
+                    )
+                    sign = -1.0 if radial_delta < 0.0 else 1.0
+                    definition = OffsetCircleDefinition(
+                        sources[0],
+                        sign * self._construction_spacing,
+                    )
+        if definition is None:
+            if force:
+                session.invalid_reason = "当前步骤尚未完成"
+                self._emit_construction_command_changed()
+            return False
+        return self._commit_construction_definition(definition)
+
+    def _signed_distance_to_source(
+        self,
+        source: LiveFeatureRef,
+        point: Point,
+    ) -> float:
+        if self._document is None:
+            return 0.0
+        resolver = self._drag_construction_resolver
+        if resolver is None:
+            resolver = self._ensure_construction_preview_resolver()
+        if resolver is None:
+            return 0.0
+        geometry = resolver.resolve_feature(source)
+        if not isinstance(geometry, ResolvedLine):
+            return 0.0
+        dx, dy = geometry.direction
+        return (point.x - geometry.start.x) * (-dy) + (
+            point.y - geometry.start.y
+        ) * dx
+
+    def _commit_construction_definition(self, definition: object) -> bool:
+        if self._document is None:
+            return False
+        labels = {
+            "free_point": "辅助点",
+            "line": "辅助线",
+            "circle_center_radius": "辅助圆",
+            "circle_center_diameter": "辅助圆",
+            "circle_two_point": "辅助圆",
+            "circle_three_point": "三点圆",
+            "midpoint": "关联中点",
+            "intersection": "关联交点",
+            "parallel_through_point": "平行线",
+            "offset_parallel": "偏移平行线",
+            "parallel_array": "平行阵列",
+            "perpendicular": "垂线",
+            "perpendicular_bisector": "垂直平分线",
+            "concentric_circle": "同心圆",
+            "offset_circle": "偏移圆",
+            "point_circle_tangent": "点圆切线",
+            "common_tangent": "两圆公切线",
+            "tangent_tangent_radius_circle": "两源相切圆",
+            "three_tangent_circle": "三相切圆",
+        }
+        entity = ConstructionEntity(
+            id=f"construction_{uuid4().hex}",
+            name=f"{labels.get(getattr(definition, 'kind', ''), '辅助对象')} {len(self._document.construction_entities) + 1}",
+            definition=definition,
+        )
+        resolver = type(make_construction_resolver(self._document))(
+            self._document.id,
+            [*self._document.construction_entities, entity],
+            external_feature_resolver=make_construction_resolver(
+                self._document
+            ).external_feature_resolver,
+        )
+        resolved = resolver.resolve(entity)
+        if not resolved.valid:
+            session = self._ensure_construction_session()
+            session.invalid_reason = (
+                resolved.error.message if resolved.error is not None else "无法构造"
+            )
+            if session.kind == "circle_3p" and len(session.points) >= 3:
+                session.points.pop()
+            self._emit_construction_command_changed()
+            self.update()
+            return True
+        self.constructionCreateRequested.emit(self._document.id, entity)
+        self._construction_session = _ConstructionCommandSession(
+            self._construction_tool_kind
+        )
+        self._set_active_snap_candidate(None, repaint=False)
+        self._emit_construction_command_changed()
+        self.update()
+        return True
+
+    def _construction_resolution_signature(self) -> tuple[int, int]:
+        """Revision key including analytical measurement dependencies only."""
+
+        document = self._document
+        if document is None:
+            return (-1, -1)
+        construction_revision = document.construction_geometry_revision
+        if self._construction_dependency_revision != construction_revision:
+            self._construction_depends_on_measurements = any(
+                reference.object_kind is SourceObjectKind.MEASUREMENT
+                or str(reference.object_kind) == SourceObjectKind.MEASUREMENT.value
+                for entity in document.construction_entities
+                for reference in iter_construction_live_refs(entity.definition)
+            )
+            self._construction_dependency_revision = construction_revision
+        measurement_revision = (
+            document.measurement_geometry_revision
+            if self._construction_depends_on_measurements
+            else -1
+        )
+        return construction_revision, measurement_revision
+
+    def _ensure_construction_preview_resolver(self) -> ConstructionResolver | None:
+        """Reuse one command-preview graph map until analytical inputs change."""
+
+        document = self._document
+        if document is None:
+            return None
+        signature = (
+            id(document),
+            document.construction_geometry_revision,
+            document.measurement_geometry_revision,
+        )
+        if (
+            self._construction_preview_resolver is None
+            or self._construction_preview_resolver_signature != signature
+        ):
+            self._construction_preview_resolver = make_construction_resolver(document)
+            self._construction_preview_resolver_signature = signature
+        return self._construction_preview_resolver
+
+    def _resolve_construction_preview_definition(
+        self,
+        definition: object,
+        *,
+        entity_id: str,
+    ) -> tuple[ConstructionEntity, ResolvedConstruction] | None:
+        resolver = self._ensure_construction_preview_resolver()
+        if resolver is None:
+            return None
+        entity = ConstructionEntity(
+            id=entity_id,
+            name="预览",
+            definition=definition,
+        )
+        resolver.entities[entity.id] = entity
+        resolver._cache.pop(entity.id, None)  # noqa: SLF001
+        return entity, resolver.resolve(entity.id)
+
+    def _construction_visual_signature(self) -> tuple[int, int, int]:
+        resolution = self._construction_resolution_signature()
+        metadata_revision = (
+            self._document.construction_metadata_revision
+            if self._document is not None
+            else -1
+        )
+        return resolution[0], resolution[1], metadata_revision
+
+    def _ensure_construction_entity_lookup(self) -> dict[str, ConstructionEntity]:
+        document = self._document
+        if document is None:
+            return {}
+        signature = (
+            document.construction_geometry_revision,
+            document.construction_metadata_revision,
+        )
+        if self._construction_entity_lookup_signature != signature:
+            self._construction_entity_lookup = {
+                entity.id: entity for entity in document.construction_entities
+            }
+            self._construction_entity_lookup_signature = signature
+        return self._construction_entity_lookup
+
+    def _current_construction_pairs(
+        self,
+        pairs: Iterable[tuple[ConstructionEntity, object]],
+        *,
+        visible_only: bool = False,
+        snappable_only: bool = False,
+    ) -> tuple[tuple[ConstructionEntity, object], ...]:
+        lookup = self._ensure_construction_entity_lookup()
+        result: list[tuple[ConstructionEntity, object]] = []
+        for indexed_entity, resolved in pairs:
+            entity = lookup.get(indexed_entity.id)
+            if entity is None:
+                continue
+            if visible_only and not entity.visible:
+                continue
+            if snappable_only and not entity.snap_enabled:
+                continue
+            result.append((entity, resolved))
+        return tuple(result)
+
+    def _current_construction_items(
+        self,
+        items: Iterable[ConstructionSpatialItem],
+        *,
+        visible_only: bool = False,
+        snappable_only: bool = False,
+    ) -> tuple[ConstructionSpatialItem, ...]:
+        lookup = self._ensure_construction_entity_lookup()
+        result: list[ConstructionSpatialItem] = []
+        for item in items:
+            entity = lookup.get(item.entity_id)
+            if entity is None:
+                continue
+            if visible_only and not entity.visible:
+                continue
+            if snappable_only and not entity.snap_enabled:
+                continue
+            result.append(
+                item if item.entity is entity else replace(item, entity=entity)
+            )
+        return tuple(result)
+
+    def _ensure_construction_spatial_index(self) -> ConstructionSpatialIndex | None:
+        """Return the current resolved/indexed construction graph.
+
+        Both painting and object snap use this cache.  Keeping the revision
+        check ahead of ``resolved_construction_entries`` is important: pointer
+        motion and unrelated screen repaints must not re-resolve every object.
+        """
+
+        if self._document is None:
+            return None
+        resolution_signature = self._construction_resolution_signature()
+        if (
+            self._construction_spatial_index is None
+            or self._construction_spatial_signature != resolution_signature
+        ):
+            self._construction_spatial_index = ConstructionSpatialIndex.build_for_revision(
+                resolved_construction_entries(self._document),
+                revision=self._document.construction_geometry_revision,
+            )
+            self._construction_spatial_signature = resolution_signature
+        return self._construction_spatial_index
 
     def notify_document_visual_changed(self) -> None:
         """Refresh only the visual envelope changed by a model mutation.
@@ -1306,6 +2638,23 @@ class DocumentCanvas(QWidget):
         # under the pointer without producing another mouse event.  Drop that
         # cached hit before repainting the changed document geometry.
         self._set_hovered_line_endpoint(None)
+        construction_resolution_signature = self._construction_resolution_signature()
+        construction_signature = self._construction_visual_signature()
+        construction_changed = bool(
+            self._document is not None
+            and self._construction_visual_revision != construction_signature
+        )
+        if construction_changed:
+            self._construction_visual_revision = construction_signature
+            self._hovered_construction_id = None
+            self._hovered_construction_handle = None
+            if self._construction_spatial_signature != construction_resolution_signature:
+                self._construction_spatial_index = None
+                self._construction_spatial_signature = None
+            self._set_active_snap_candidate(None, repaint=False)
+            # Construction geometry deliberately bypasses measurement overlay
+            # tiles, so one screen-layer refresh is enough for this revision.
+            self.update()
         full_invalidation, changed_bounds = self._sync_overlay_visual_state()
         if full_invalidation:
             self.update()
@@ -2223,6 +3572,22 @@ class DocumentCanvas(QWidget):
         if previous_measurement_id != measurement_id and self._tool_mode in {"polygon_area", "freehand_area"}:
             self._area_edit_operation_mode = AreaEditOperationMode.ADD
 
+    def set_selected_construction(self, construction_id: str | None) -> None:
+        if self._document is None:
+            return
+        entity = self._document.get_construction_entity(construction_id)
+        if entity is not None:
+            self._set_object_selection(
+                CanvasSelectionRef.construction(entity.id),
+                notify=False,
+            )
+        else:
+            previous = self._current_object_selection()
+            self._document.select_construction(None)
+            current = self._current_object_selection()
+            if current != previous:
+                self._refresh_selection_visual(previous, current)
+
     def set_selected_overlay_annotation(self, overlay_id: str | None) -> None:
         if self._document is None:
             return
@@ -2258,6 +3623,11 @@ class DocumentCanvas(QWidget):
     def _current_object_selection(self) -> CanvasSelectionRef:
         if self._document is None:
             return CanvasSelectionRef.none()
+        construction = self._document.get_construction_entity(
+            self._document.selected_construction_id
+        )
+        if construction is not None:
+            return CanvasSelectionRef.construction(construction.id)
         annotation = self._document.get_overlay_annotation(self._document.selected_overlay_id)
         if annotation is not None:
             return CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
@@ -2285,9 +3655,18 @@ class DocumentCanvas(QWidget):
             else:
                 selection = CanvasSelectionRef.overlay(annotation.id, annotation.normalized_kind())
                 self._document.select_overlay_annotation(annotation.id)
+        elif selection.kind == "construction" and selection.object_id:
+            construction = self._document.get_construction_entity(
+                selection.object_id
+            )
+            if construction is None:
+                selection = CanvasSelectionRef.none()
+            else:
+                self._document.select_construction(construction.id)
         if selection.kind == "none":
             self._document.select_measurement(None)
             self._document.select_overlay_annotation(None)
+            self._document.select_construction(None)
 
         current = self._current_object_selection()
         if current == previous:
@@ -2338,6 +3717,26 @@ class DocumentCanvas(QWidget):
     ) -> CanvasDisplayBounds | None:
         if self._document is None or selection.object_id is None:
             return None
+        if selection.kind == "construction":
+            resolved = make_construction_resolver(self._document).resolve(
+                selection.object_id
+            )
+            if not resolved.valid or resolved.geometry is None:
+                return None
+            bounds = resolved_geometry_bounds(
+                resolved.geometry,
+                image_size=self._document.image_size,
+            )
+            if bounds is None:
+                return None
+            return CanvasDisplayBounds(
+                QRectF(
+                    bounds[0],
+                    bounds[1],
+                    max(0.001, bounds[2] - bounds[0]),
+                    max(0.001, bounds[3] - bounds[1]),
+                )
+            ).expanded(14.0 / max(self._zoom, 0.001))
         if selection.kind == "measurement":
             measurement = self._document.get_measurement(selection.object_id)
             if measurement is None:
@@ -2539,6 +3938,9 @@ class DocumentCanvas(QWidget):
         if self._image is None:
             return
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         self._center_image_point_in_widget(point)
         if self._zoom_mode is CanvasZoomMode.FIT:
@@ -2547,10 +3949,36 @@ class DocumentCanvas(QWidget):
         self._publish_view_transform()
         self.update()
 
+    def center_on_construction(self, construction_id: str) -> bool:
+        if self._document is None:
+            return False
+        resolved = make_construction_resolver(self._document).resolve(
+            construction_id
+        )
+        if not resolved.valid or resolved.geometry is None:
+            return False
+        bounds = resolved_geometry_bounds(
+            resolved.geometry,
+            image_size=self._document.image_size,
+        )
+        if bounds is None:
+            return False
+        self.set_selected_construction(construction_id)
+        self.center_on_image_point(
+            Point(
+                (bounds[0] + bounds[2]) / 2.0,
+                (bounds[1] + bounds[3]) / 2.0,
+            )
+        )
+        return True
+
     def fit_to_view(self) -> None:
         if self._image is None:
             return
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         image_width = max(1.0, float(self._image.width()))
         image_height = max(1.0, float(self._image.height()))
@@ -2579,6 +4007,9 @@ class DocumentCanvas(QWidget):
         if self._image is None:
             return
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         center = QPointF(self.width() / 2.0, self.height() / 2.0)
         center_image_point = self.widget_to_image(center)
@@ -2599,6 +4030,7 @@ class DocumentCanvas(QWidget):
             self._temporary_grab_active = True
         if self._temporary_grab_active:
             self._set_hovered_line_endpoint(None)
+            self._set_active_snap_candidate(None)
         self._update_cursor()
 
     def keyPressEvent(self, event) -> None:
@@ -2617,6 +4049,22 @@ class DocumentCanvas(QWidget):
                 and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
             ):
                 self._commit_roi_capture()
+                event.accept()
+                return
+        if self._tool_mode == "construction":
+            if event.key() == Qt.Key.Key_Escape:
+                self.cancel_construction_command()
+                event.accept()
+                return
+            if (
+                event.modifiers() == Qt.KeyboardModifier.NoModifier
+                and event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter)
+            ):
+                self.finish_construction_command()
+                event.accept()
+                return
+            if event.key() in (Qt.Key.Key_Backspace, Qt.Key.Key_Delete):
+                self.construction_back_step()
                 event.accept()
                 return
         if (
@@ -2689,6 +4137,7 @@ class DocumentCanvas(QWidget):
         painter.restore()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._draw_project_rois(painter, target)
+        self._draw_constructions(painter, paint_context)
         self._draw_annotations(painter, paint_context)
         self._draw_preview(painter)
 
@@ -2708,6 +4157,9 @@ class DocumentCanvas(QWidget):
         if self._image is None or self._document is None:
             return
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         if self._zoom_mode is CanvasZoomMode.FIT:
             self.fit_to_view()
@@ -2723,6 +4175,9 @@ class DocumentCanvas(QWidget):
 
         self._end_canvas_pan()
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         canvas_overlay_tile_cache.protect(id(self), ())
         self._reset_proxy_warming()
@@ -2731,6 +4186,9 @@ class DocumentCanvas(QWidget):
 
     def leaveEvent(self, event: QEvent) -> None:
         self._set_hovered_line_endpoint(None)
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         super().leaveEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
@@ -2761,6 +4219,7 @@ class DocumentCanvas(QWidget):
         """
 
         self._set_hovered_line_endpoint(None)
+        self._set_active_snap_candidate(None)
         self._panning = True
         self._pan_button = button
         self._pan_drag_unsnapped = Point(self._pan.x, self._pan.y)
@@ -2824,6 +4283,22 @@ class DocumentCanvas(QWidget):
             return
         self.setFocus(Qt.FocusReason.MouseFocusReason)
         self._last_mouse_pos = event.position()
+        if (
+            event.button() == Qt.MouseButton.RightButton
+            and self._tool_mode == "construction"
+            and not self._temporary_grab_active
+            and self._construction_session is not None
+            and (
+                self._construction_session.points
+                or self._construction_session.sources
+            )
+        ):
+            # CAD-style construction commands reserve right-click for backing
+            # up one acquisition step.  With no pending step, right-drag keeps
+            # the canvas pan behavior users already know.
+            self.construction_back_step()
+            event.accept()
+            return
         if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._begin_canvas_pan(event.button())
             self._update_cursor()
@@ -2846,6 +4321,14 @@ class DocumentCanvas(QWidget):
             if self._point_in_image(image_point):
                 self._scale_anchor_preview_point = self._clamp_to_image(image_point, pixel_center=False)
                 self.scaleAnchorPicked.emit(self._document.id, self._scale_anchor_preview_point)
+            return
+
+        if self._tool_mode == "construction":
+            self._set_object_selection(CanvasSelectionRef.none())
+            self._construction_mouse_press(
+                image_point,
+                widget_point=event.position(),
+            )
             return
 
         if is_magic_segment_tool_mode(self._tool_mode):
@@ -2980,7 +4463,10 @@ class DocumentCanvas(QWidget):
             elif self._document.selected_overlay_id is not None:
                 # Subtract keeps the selected area but still dismisses overlays.
                 self._document.select_overlay_annotation(None)
-            point = self._clamp_to_image(image_point, pixel_center=False)
+            point = self._clamp_to_image(
+                self._object_snapped_point(image_point),
+                pixel_center=False,
+            )
             if self._can_close_polygon_with_point(point):
                 if subtract_active:
                     self._complete_area_subtract_polygon(list(self._drawing_polygon_points))
@@ -3001,7 +4487,10 @@ class DocumentCanvas(QWidget):
             if not self._point_in_image(image_point):
                 return
             self._set_object_selection(CanvasSelectionRef.none())
-            point = self._clamp_to_image(image_point, pixel_center=False)
+            point = self._clamp_to_image(
+                self._object_snapped_point(image_point),
+                pixel_center=False,
+            )
             if not self._continuous_manual_tool_strategy.should_append_point(
                 self._drawing_polygon_points,
                 point,
@@ -3040,7 +4529,10 @@ class DocumentCanvas(QWidget):
         if self._tool_mode == "count":
             if not self._point_in_image(image_point):
                 return
-            point = self._clamp_to_image(image_point, pixel_center=False)
+            point = self._clamp_to_image(
+                self._object_snapped_point(image_point),
+                pixel_center=False,
+            )
             if self._document.selected_overlay_id is not None:
                 self._set_object_selection(CanvasSelectionRef.none())
             self.lineCommitted.emit(
@@ -3110,6 +4602,14 @@ class DocumentCanvas(QWidget):
                 self.update()
                 return
 
+
+            construction_handle = self._hit_test_selected_construction_handle(
+                image_point
+            )
+            if construction_handle is not None:
+                self._begin_construction_drag(construction_handle)
+                return
+
         selected_handle = None
         if self._tool_mode == "manual":
             selected_handle = self._hit_test_selected_endpoint(
@@ -3133,6 +4633,14 @@ class DocumentCanvas(QWidget):
             area_measurement_id = self._hit_test_area_measurement(image_point)
             if area_measurement_id is not None:
                 self._set_object_selection(CanvasSelectionRef.measurement(area_measurement_id))
+                return
+
+
+            construction_id = self._hit_test_construction(image_point)
+            if construction_id is not None:
+                self._set_object_selection(
+                    CanvasSelectionRef.construction(construction_id)
+                )
                 return
 
             handle = self._hit_test_endpoint(image_point)
@@ -3196,6 +4704,25 @@ class DocumentCanvas(QWidget):
             self._roi_capture_mouse_move(image_point)
             return
 
+        if self._dragging_construction_handle is not None:
+            moving_point = self._clamp_to_image(
+                self._object_snapped_point(image_point),
+                pixel_center=False,
+            )
+            self._update_construction_drag(moving_point)
+            return
+
+        if self._tool_mode == "construction":
+            session = self._ensure_construction_session()
+            session.hover_point = self._clamp_to_image(
+                self._object_snapped_point(image_point),
+                pixel_center=False,
+            )
+            session.invalid_reason = self._construction_preview_error(session)
+            self._emit_construction_command_changed()
+            self.update()
+            return
+
         if is_reference_propagation_tool_mode(self._tool_mode) and self._reference_instance.dragging:
             self._reference_instance.drag_end = self._clamp_to_image(image_point, pixel_center=False)
             self.update()
@@ -3210,7 +4737,7 @@ class DocumentCanvas(QWidget):
         ):
             previous_hover = self._area_hover_point
             next_hover = self._clamp_to_image(
-                image_point,
+                self._object_snapped_point(image_point),
                 pixel_center=False,
             )
             self._area_hover_point = next_hover
@@ -3353,12 +4880,13 @@ class DocumentCanvas(QWidget):
                     or self._drag_area_origin_points
                 )
                 preview = list(self._drag_area_origin_points)
-                preview[point_index] = self._clamp_to_image(image_point, pixel_center=False)
+                snapped_image_point = self._object_snapped_point(image_point)
+                preview[point_index] = self._clamp_to_image(snapped_image_point, pixel_center=False)
                 self._drag_area_preview_points = preview
                 if self._drag_area_origin_rings is not None and ring_index is not None:
                     preview_rings = self._clone_magic_rings(self._drag_area_origin_rings)
                     if 0 <= ring_index < len(preview_rings) and 0 <= point_index < len(preview_rings[ring_index]):
-                        preview_rings[ring_index][point_index] = self._clamp_to_image(image_point, pixel_center=False)
+                        preview_rings[ring_index][point_index] = self._clamp_to_image(snapped_image_point, pixel_center=False)
                     self._drag_area_preview_rings = preview_rings
                     if preview_rings:
                         self._drag_area_preview_points = list(preview_rings[0])
@@ -3464,6 +4992,20 @@ class DocumentCanvas(QWidget):
             image_point,
             widget_point=event.position(),
         )
+        if self._object_snap_pointer_enabled():
+            self._query_object_snap(image_point)
+        else:
+            self._set_active_snap_candidate(None)
+        if self._tool_mode == "select":
+            self._update_construction_hover(
+                image_point,
+                widget_point=event.position(),
+            )
+        elif self._hovered_construction_id is not None:
+            self._hovered_construction_id = None
+            self._hovered_construction_handle = None
+            self._update_cursor()
+            self.update()
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._document is None:
@@ -3487,6 +5029,30 @@ class DocumentCanvas(QWidget):
         if self._roi_capture is not None:
             self._roi_capture_mouse_release(
                 self.widget_to_image(event.position())
+            )
+            return
+
+        if (
+            self._dragging_construction_handle is not None
+            and self._drag_construction_preview is not None
+        ):
+            construction_id, _handle_index = self._dragging_construction_handle
+            preview = self._drag_construction_preview
+            previous_bounds = self._drag_construction_preview_bounds
+            self._clear_construction_drag_cache()
+            self.constructionEdited.emit(
+                self._document.id,
+                construction_id,
+                preview,
+            )
+            self._update_cursor()
+            self._apply_visual_change(
+                CanvasVisualChange(
+                    old_bounds=previous_bounds,
+                    new_bounds=self._selection_display_bounds(
+                        CanvasSelectionRef.construction(construction_id)
+                    ),
+                )
             )
             return
 
@@ -3705,7 +5271,12 @@ class DocumentCanvas(QWidget):
             )
             and len(self._drawing_polygon_points) >= 1
         ):
-            point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
+            point = self._clamp_to_image(
+                self._object_snapped_point(
+                    self.widget_to_image(event.position())
+                ),
+                pixel_center=False,
+            )
             previous_point_count = len(self._drawing_polygon_points)
             if (
                 self._tool_mode == "continuous_manual"
@@ -3776,6 +5347,9 @@ class DocumentCanvas(QWidget):
         if self._image is None:
             return
         self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
         self._update_cursor()
         image_before = self.widget_to_image(position)
         self._zoom = _bounded_view_zoom(zoom)
@@ -5827,6 +7401,704 @@ class DocumentCanvas(QWidget):
         finally:
             painter.restore()
 
+    def _draw_constructions(
+        self,
+        painter: QPainter,
+        paint_context: CanvasPaintContext,
+    ) -> None:
+        if self._document is None:
+            return
+        index = self._ensure_construction_spatial_index()
+        visible_rect = paint_context.image_rect.normalized()
+        if index is None or visible_rect.isEmpty():
+            entries = ()
+        else:
+            center = visible_rect.center()
+            viewport_radius = math.hypot(
+                visible_rect.width() / 2.0,
+                visible_rect.height() / 2.0,
+            ) + max(1.0, 8.0 / max(self._zoom, 0.001))
+            query_center = Point(center.x(), center.y())
+            base_entries = self._current_construction_pairs(
+                index.query_pairs(query_center, viewport_radius),
+                visible_only=True,
+            )
+            preview_index = self._drag_construction_preview_index
+            affected_ids = self._drag_construction_affected_ids
+            if preview_index is None or not affected_ids:
+                entries = base_entries
+            else:
+                base_entries = tuple(
+                    pair for pair in base_entries if pair[0].id not in affected_ids
+                )
+                preview_entries = preview_index.query_pairs(
+                    query_center,
+                    viewport_radius,
+                    predicate=lambda item: item.entity.visible,
+                )
+                order = self._drag_construction_entity_order
+                entries = tuple(
+                    sorted(
+                        (*base_entries, *preview_entries),
+                        key=lambda pair: order.get(pair[0].id, len(order)),
+                    )
+                )
+        draw_construction_entities(
+            painter,
+            entries,
+            self.image_to_widget,
+            visible_image_rect=paint_context.image_rect,
+            selected_id=self._document.selected_construction_id,
+            hovered_id=self._hovered_construction_id,
+            show_handles=self._tool_mode == "select",
+        )
+
+    def _draw_construction_preview(self, painter: QPainter) -> None:
+        if (
+            self._document is None
+            or self._tool_mode != "construction"
+            or self._construction_session is None
+        ):
+            return
+        session = self._construction_session
+        points = list(session.points)
+        if session.hover_point is not None:
+            points.append(session.hover_point)
+        color = QColor("#EF5350" if session.invalid_reason else "#F4D35E")
+        pen = QPen(color, 1.8, Qt.PenStyle.DashLine)
+        pen.setCosmetic(True)
+        painter.save()
+        try:
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            mapped = [self.image_to_widget(point) for point in points]
+            if session.kind in {
+                "segment",
+                "ray",
+                "infinite_line",
+                "circle_diameter_2p",
+            } and len(mapped) >= 2:
+                painter.drawLine(mapped[0], mapped[1])
+            elif session.kind in {
+                "circle_center_radius",
+                "circle_center_diameter",
+            } and len(points) >= 2:
+                radius = distance(points[0], points[1]) * self._zoom
+                painter.drawEllipse(mapped[0], radius, radius)
+            elif session.kind == "circle_3p" and mapped:
+                if len(mapped) >= 2:
+                    painter.drawPolyline(QPolygonF(mapped))
+                preview_definition = (
+                    CircleThreePointDefinition(points[0], points[1], points[2])
+                    if len(points) >= 3
+                    else None
+                )
+                if preview_definition is not None:
+                    self._draw_preview_definition(painter, preview_definition)
+            elif session.kind == "intersection" and len(session.sources) >= 2:
+                for candidate in self._construction_intersection_candidates(session):
+                    center = self.image_to_widget(candidate)
+                    painter.drawLine(center + QPointF(-6.0, -6.0), center + QPointF(6.0, 6.0))
+                    painter.drawLine(center + QPointF(-6.0, 6.0), center + QPointF(6.0, -6.0))
+            elif session.kind in {
+                "tangent_point_circle",
+                "common_tangent_external",
+                "common_tangent_internal",
+                "tangent_circle_ttr",
+                "tangent_circle_3",
+            }:
+                self._draw_resolved_construction_previews(
+                    painter,
+                    self._advanced_solution_candidates(session),
+                )
+            elif session.sources and session.hover_point is not None:
+                preview_definition = self._construction_derived_preview_definition(
+                    session,
+                    session.hover_point,
+                )
+                if preview_definition is not None:
+                    self._draw_preview_definition(painter, preview_definition)
+            for point in session.points:
+                center = self.image_to_widget(point)
+                painter.drawEllipse(center, 3.5, 3.5)
+        except (TypeError, ValueError):
+            # Degenerate three-point circles and zero-length previews are
+            # represented by the red definition points until the pointer moves
+            # back to a solvable position.
+            pass
+        finally:
+            painter.restore()
+
+    def _construction_derived_preview_definition(
+        self,
+        session: _ConstructionCommandSession,
+        point: Point,
+    ) -> object | None:
+        if not session.sources:
+            return None
+        source = session.sources[0]
+        if session.kind == "parallel_through":
+            return ParallelThroughPointDefinition(source, point)
+        if session.kind == "perpendicular":
+            return PerpendicularDefinition(source, point)
+        signed = self._signed_distance_to_source(source, point)
+        sign = -1.0 if signed < 0.0 else 1.0
+        if session.kind == "parallel_offset":
+            return OffsetParallelDefinition(source, sign * self._construction_spacing)
+        if session.kind == "parallel_array":
+            side = (
+                ArraySide.BOTH
+                if self._construction_both_sides
+                else (ArraySide.NEGATIVE if sign < 0.0 else ArraySide.POSITIVE)
+            )
+            return ParallelArrayDefinition(
+                source,
+                self._construction_spacing,
+                self._construction_count,
+                side,
+            )
+        if session.kind in {"concentric_circle", "offset_circle"}:
+            if self._document is None:
+                return None
+            resolver = self._ensure_construction_preview_resolver()
+            if resolver is None:
+                return None
+            geometry = resolver.resolve_feature(source)
+            if not isinstance(geometry, ResolvedCircle):
+                return None
+            if session.kind == "concentric_circle":
+                return ConcentricCircleDefinition(
+                    source,
+                    distance(geometry.center, point),
+                )
+            delta = distance(geometry.center, point) - geometry.radius
+            return OffsetCircleDefinition(
+                source,
+                (-1.0 if delta < 0.0 else 1.0)
+                * self._construction_spacing,
+            )
+        return None
+
+    def _draw_preview_definition(self, painter: QPainter, definition: object) -> None:
+        entry = self._resolve_construction_preview_definition(
+            definition,
+            entity_id="__construction_preview__",
+        )
+        if entry is None:
+            return
+        entity, resolved = entry
+        if not resolved.valid:
+            return
+        draw_construction_entities(
+            painter,
+            ((entity, resolved),),
+            self.image_to_widget,
+            visible_image_rect=self._visible_image_rect(),
+        )
+
+    def _draw_resolved_construction_previews(
+        self,
+        painter: QPainter,
+        candidates: Iterable[tuple[object, object]],
+    ) -> None:
+        entries: list[tuple[ConstructionEntity, ResolvedConstruction]] = []
+        geometry_types = (ResolvedPoint, ResolvedLine, ResolvedCircle, ResolvedLineArray)
+        for index, (definition, geometry) in enumerate(candidates):
+            if not isinstance(geometry, geometry_types):
+                continue
+            entity = ConstructionEntity(
+                id=f"__construction_solution_preview__:{index}",
+                name="预览",
+                definition=definition,
+            )
+            entries.append(
+                (
+                    entity,
+                    ResolvedConstruction(entity.id, geometry=geometry),
+                )
+            )
+        if not entries:
+            return
+        draw_construction_entities(
+            painter,
+            entries,
+            self.image_to_widget,
+            visible_image_rect=self._visible_image_rect(),
+        )
+
+    def _construction_preview_error(
+        self,
+        session: _ConstructionCommandSession,
+    ) -> str:
+        if self._document is None or session.hover_point is None:
+            return ""
+        if session.kind in {
+            "tangent_point_circle",
+            "common_tangent_external",
+            "common_tangent_internal",
+            "tangent_circle_ttr",
+            "tangent_circle_3",
+        }:
+            required = 3 if session.kind == "tangent_circle_3" else 2
+            if len(session.sources) >= required:
+                solutions = self._advanced_solution_candidates(session)
+                if not solutions:
+                    return "当前来源组合没有可构造的实数解"
+                if len(solutions) > 1:
+                    return "存在多个解，请单击所需分支"
+            return ""
+        definition = None
+        points = [*session.points, session.hover_point]
+        try:
+            if session.kind == "circle_3p" and len(points) >= 3:
+                definition = CircleThreePointDefinition(
+                    points[0], points[1], points[2]
+                )
+            elif session.sources:
+                definition = self._construction_derived_preview_definition(
+                    session,
+                    session.hover_point,
+                )
+            if definition is None:
+                return ""
+            entry = self._resolve_construction_preview_definition(
+                definition,
+                entity_id="__construction_validation__",
+            )
+            if entry is None:
+                return ""
+            _entity, result = entry
+            if result.valid:
+                return ""
+            return result.error.message if result.error is not None else "无法构造"
+        except (TypeError, ValueError) as exc:
+            return str(exc)
+
+    @staticmethod
+    def _distance_to_resolved_geometry(point: Point, geometry: object) -> float:
+        if isinstance(geometry, ResolvedPoint):
+            return distance(point, geometry.point)
+        if isinstance(geometry, ResolvedCircle):
+            return abs(distance(point, geometry.center) - geometry.radius)
+        if isinstance(geometry, ResolvedLineArray):
+            if isinstance(geometry.lines, ParallelLineSequence):
+                return min(
+                    (
+                        DocumentCanvas._distance_to_resolved_geometry(point, line)
+                        for _index, line in geometry.lines.indexed_nearest(point)
+                    ),
+                    default=math.inf,
+                )
+            return min(
+                DocumentCanvas._distance_to_resolved_geometry(point, line)
+                for line in geometry.lines
+            )
+        if not isinstance(geometry, ResolvedLine):
+            return math.inf
+        dx = geometry.end.x - geometry.start.x
+        dy = geometry.end.y - geometry.start.y
+        denominator = dx * dx + dy * dy
+        if denominator <= 1e-12:
+            return math.inf
+        parameter = (
+            (point.x - geometry.start.x) * dx
+            + (point.y - geometry.start.y) * dy
+        ) / denominator
+        if geometry.extent is LineExtent.SEGMENT:
+            parameter = max(0.0, min(1.0, parameter))
+        elif geometry.extent is LineExtent.RAY:
+            parameter = max(0.0, parameter)
+        projected = Point(
+            geometry.start.x + parameter * dx,
+            geometry.start.y + parameter * dy,
+        )
+        return distance(point, projected)
+
+    def _hit_test_construction(self, image_point: Point) -> str | None:
+        if self._document is None:
+            return None
+        tolerance = 7.0 / max(self._zoom, 0.001)
+        index = self._ensure_construction_spatial_index()
+        if index is None:
+            return None
+        candidates = self._current_construction_pairs(
+            index.query_pairs(image_point, tolerance),
+            visible_only=True,
+        )
+        best: tuple[float, str] | None = None
+        # ``query_pairs`` retains document order.  Reverse it to preserve the
+        # canvas' existing equal-distance priority for the most recently added
+        # object while still choosing the analytically closest geometry.
+        for entity, resolved in reversed(candidates):
+            if not resolved.valid or resolved.geometry is None:
+                continue
+            hit_distance = self._distance_to_resolved_geometry(
+                image_point,
+                resolved.geometry,
+            )
+            if hit_distance <= tolerance and (
+                best is None or hit_distance < best[0]
+            ):
+                best = (hit_distance, entity.id)
+        return best[1] if best is not None else None
+
+    def _update_construction_hover(
+        self,
+        image_point: Point,
+        *,
+        widget_point: QPointF,
+    ) -> None:
+        hovered_id: str | None = None
+        hovered_handle: tuple[str, int] | None = None
+        if (
+            not self._read_only
+            and not self._temporary_grab_active
+            and not self._has_pointer_edit_operation()
+            and self._point_in_image(image_point)
+        ):
+            overlay_blocks = (
+                self._hit_test_selected_overlay_handle(image_point) is not None
+                or self._hit_test_overlay_annotation(
+                    widget_point,
+                    image_point,
+                )
+                is not None
+                or self._hit_test_selected_area_handle(image_point) is not None
+            )
+            if not overlay_blocks:
+                hovered_handle = self._hit_test_selected_construction_handle(
+                    image_point
+                )
+                selected_line_endpoint = self._hit_test_selected_endpoint(
+                    image_point,
+                    tolerance=self._selected_line_endpoint_tolerance(),
+                )
+                if hovered_handle is not None:
+                    hovered_id = hovered_handle[0]
+                elif selected_line_endpoint is None and self._hit_test_area_measurement(
+                    image_point
+                ) is None:
+                    hovered_id = self._hit_test_construction(image_point)
+        if (
+            hovered_id == self._hovered_construction_id
+            and hovered_handle == self._hovered_construction_handle
+        ):
+            return
+        self._hovered_construction_id = hovered_id
+        self._hovered_construction_handle = hovered_handle
+        self._update_cursor()
+        self.update()
+
+    def _construction_control_points(
+        self,
+        entity: ConstructionEntity,
+    ) -> tuple[Point, ...]:
+        definition = entity.definition
+        if isinstance(definition, FreePointDefinition):
+            return (definition.point,)
+        if isinstance(definition, LineDefinition):
+            if definition.axis_constraint is not None:
+                return (definition.start,)
+            return (definition.start, definition.end)
+        if isinstance(definition, CircleCenterRadiusDefinition):
+            return (
+                definition.center,
+                Point(definition.center.x + definition.radius, definition.center.y),
+            )
+        if isinstance(definition, CircleCenterDiameterDefinition):
+            return (
+                definition.center,
+                Point(
+                    definition.center.x + definition.diameter / 2.0,
+                    definition.center.y,
+                ),
+            )
+        if isinstance(definition, CircleTwoPointDefinition):
+            return (definition.first, definition.second)
+        if isinstance(definition, CircleThreePointDefinition):
+            return (definition.first, definition.second, definition.third)
+        if isinstance(
+            definition,
+            (ParallelThroughPointDefinition, PerpendicularDefinition),
+        ):
+            if isinstance(definition.point_source, LiveFeatureRef):
+                # A live through-point is edited at its source object.  This
+                # constrained child offers locate/detach instead of silently
+                # breaking the association by dragging.
+                return ()
+            if isinstance(definition.point_source, FrozenFeatureSnapshot):
+                point_geometry = make_construction_resolver(
+                    self._document
+                ).resolve_feature(definition.point_source)
+                if isinstance(point_geometry, ResolvedPoint):
+                    return (point_geometry.point,)
+            return (definition.point,)
+        resolved = make_construction_resolver(self._document).resolve(entity)
+        if not resolved.valid or resolved.geometry is None:
+            return ()
+        if isinstance(definition, (OffsetParallelDefinition, ParallelArrayDefinition)):
+            geometry = resolved.geometry
+            line = (
+                geometry.lines[0]
+                if isinstance(geometry, ResolvedLineArray) and geometry.lines
+                else geometry
+            )
+            if isinstance(line, ResolvedLine):
+                return (
+                    Point(
+                        (line.start.x + line.end.x) / 2.0,
+                        (line.start.y + line.end.y) / 2.0,
+                    ),
+                )
+        return ()
+
+    def _hit_test_selected_construction_handle(
+        self,
+        image_point: Point,
+    ) -> tuple[str, int] | None:
+        if self._document is None or self._document.selected_construction_id is None:
+            return None
+        entity = self._document.get_construction_entity(
+            self._document.selected_construction_id
+        )
+        if entity is None or not entity.visible or entity.locked:
+            return None
+        tolerance = 9.0 / max(self._zoom, 0.001)
+        candidates = [
+            (distance(point, image_point), index)
+            for index, point in enumerate(self._construction_control_points(entity))
+        ]
+        if not candidates:
+            return None
+        nearest_distance, index = min(candidates)
+        if nearest_distance > tolerance:
+            return None
+        return entity.id, index
+
+    def _construction_preview_display_bounds(
+        self,
+        entries: Iterable[tuple[ConstructionEntity, ResolvedConstruction]],
+    ) -> CanvasDisplayBounds | None:
+        if self._document is None:
+            return None
+        dirty_rect: QRectF | None = None
+        for entity, resolved in entries:
+            geometry = resolved.geometry
+            if not entity.visible or geometry is None:
+                continue
+            bounds = resolved_geometry_bounds(
+                geometry,
+                image_size=self._document.image_size,
+            )
+            if bounds is None:
+                continue
+            rect = QRectF(
+                bounds[0],
+                bounds[1],
+                max(1e-6, bounds[2] - bounds[0]),
+                max(1e-6, bounds[3] - bounds[1]),
+            )
+            dirty_rect = rect if dirty_rect is None else dirty_rect.united(rect)
+        if dirty_rect is None:
+            return None
+        return CanvasDisplayBounds(dirty_rect).expanded(
+            14.0 / max(self._zoom, 0.001)
+        )
+
+    def _set_construction_drag_preview(
+        self,
+        preview: ConstructionEntity,
+        *,
+        repaint: bool = True,
+    ) -> bool:
+        """Resolve and index only the graph affected by one handle drag frame."""
+
+        resolver = self._drag_construction_resolver
+        if self._document is None or resolver is None:
+            return False
+        previous_preview = self._drag_construction_preview
+        resolver.entities[preview.id] = preview
+        for entity_id in self._drag_construction_affected_ids:
+            # The drag resolver persists across pointer frames.  Its unaffected
+            # ancestor cache remains valid; only the edited object and its live
+            # downstream closure need analytical recomputation.
+            resolver._cache.pop(entity_id, None)  # noqa: SLF001
+
+        lookup = self._ensure_construction_entity_lookup()
+        entries: list[tuple[ConstructionEntity, ResolvedConstruction]] = []
+        preview_valid = False
+        for entity_id in self._drag_construction_affected_order:
+            entity = preview if entity_id == preview.id else lookup.get(entity_id)
+            if entity is None:
+                continue
+            resolved = resolver.resolve(entity_id)
+            if entity_id == preview.id:
+                preview_valid = resolved.valid
+            entries.append((entity, resolved))
+        if not preview_valid:
+            if previous_preview is not None:
+                resolver.entities[preview.id] = previous_preview
+            for entity_id in self._drag_construction_affected_ids:
+                resolver._cache.pop(entity_id, None)  # noqa: SLF001
+            return False
+
+        previous_bounds = self._drag_construction_preview_bounds
+        self._drag_construction_preview = preview
+        self._drag_construction_preview_index = ConstructionSpatialIndex.build(entries)
+        self._drag_construction_preview_bounds = (
+            self._construction_preview_display_bounds(entries)
+        )
+        if repaint:
+            self._apply_visual_change(
+                CanvasVisualChange(
+                    old_bounds=previous_bounds,
+                    new_bounds=self._drag_construction_preview_bounds,
+                )
+            )
+        return True
+
+    def _begin_construction_drag(self, handle: tuple[str, int]) -> None:
+        if self._document is None:
+            return
+        entity = self._document.get_construction_entity(handle[0])
+        if entity is None or not entity.visible or entity.locked:
+            return
+        # Build/reuse the immutable base index before the preview diverges from
+        # the document.  The resolver and dependency closure are then retained
+        # for the complete pointer gesture instead of rebuilding 10k mappings
+        # on every mouse move and paint event.
+        self._ensure_construction_spatial_index()
+        self._set_object_selection(CanvasSelectionRef.construction(entity.id))
+        self._dragging_construction_handle = handle
+        self._drag_construction_origin = entity
+        affected_ids = {
+            entity.id,
+            *construction_transitive_dependents(
+                self._document.construction_entities,
+                (entity.id,),
+                source_kind=SourceObjectKind.CONSTRUCTION,
+            ),
+        }
+        self._drag_construction_affected_ids = frozenset(affected_ids)
+        self._drag_construction_affected_order = tuple(
+            candidate.id
+            for candidate in self._document.construction_entities
+            if candidate.id in affected_ids
+        )
+        self._drag_construction_entity_order = {
+            candidate.id: index
+            for index, candidate in enumerate(self._document.construction_entities)
+        }
+        self._drag_construction_resolver = make_construction_resolver(self._document)
+        self._drag_construction_preview = None
+        self._drag_construction_preview_index = None
+        self._drag_construction_preview_bounds = None
+        self._set_construction_drag_preview(entity, repaint=False)
+        self._set_active_snap_candidate(None)
+        self._update_cursor()
+
+    def _update_construction_drag(self, point: Point) -> None:
+        origin = self._drag_construction_origin
+        handle = self._dragging_construction_handle
+        if self._document is None or origin is None or handle is None:
+            return
+        definition = origin.definition
+        index = handle[1]
+        next_definition = None
+        if isinstance(definition, FreePointDefinition):
+            next_definition = FreePointDefinition(point)
+        elif isinstance(definition, LineDefinition):
+            if definition.axis_constraint is LineAxisConstraint.HORIZONTAL:
+                delta_x = definition.end.x - definition.start.x
+                next_definition = LineDefinition(
+                    point,
+                    Point(point.x + delta_x, point.y),
+                    definition.extent,
+                    definition.axis_constraint,
+                )
+            elif definition.axis_constraint is LineAxisConstraint.VERTICAL:
+                delta_y = definition.end.y - definition.start.y
+                next_definition = LineDefinition(
+                    point,
+                    Point(point.x, point.y + delta_y),
+                    definition.extent,
+                    definition.axis_constraint,
+                )
+            else:
+                next_definition = LineDefinition(
+                    point if index == 0 else definition.start,
+                    point if index == 1 else definition.end,
+                    definition.extent,
+                )
+        elif isinstance(definition, CircleCenterRadiusDefinition):
+            next_definition = (
+                CircleCenterRadiusDefinition(point, definition.radius)
+                if index == 0
+                else CircleCenterRadiusDefinition(
+                    definition.center,
+                    distance(definition.center, point),
+                )
+            )
+        elif isinstance(definition, CircleCenterDiameterDefinition):
+            next_definition = (
+                CircleCenterDiameterDefinition(point, definition.diameter)
+                if index == 0
+                else CircleCenterDiameterDefinition(
+                    definition.center,
+                    distance(definition.center, point) * 2.0,
+                )
+            )
+        elif isinstance(definition, CircleTwoPointDefinition):
+            next_definition = CircleTwoPointDefinition(
+                point if index == 0 else definition.first,
+                point if index == 1 else definition.second,
+            )
+        elif isinstance(definition, CircleThreePointDefinition):
+            values = [definition.first, definition.second, definition.third]
+            values[index] = point
+            next_definition = CircleThreePointDefinition(*values)
+        elif isinstance(definition, ParallelThroughPointDefinition):
+            next_definition = replace(
+                definition,
+                point=point,
+                point_source=(
+                    FrozenFeatureSnapshot(ResolvedPoint(point))
+                    if definition.point_source is not None
+                    else None
+                ),
+            )
+        elif isinstance(definition, PerpendicularDefinition):
+            next_definition = replace(
+                definition,
+                point=point,
+                point_source=(
+                    FrozenFeatureSnapshot(ResolvedPoint(point))
+                    if definition.point_source is not None
+                    else None
+                ),
+            )
+        elif isinstance(definition, OffsetParallelDefinition):
+            next_definition = replace(
+                definition,
+                offset=self._signed_distance_to_source(definition.source, point),
+            )
+        elif isinstance(definition, ParallelArrayDefinition):
+            signed = self._signed_distance_to_source(definition.source, point)
+            side = (
+                definition.side
+                if definition.side is ArraySide.BOTH
+                else (ArraySide.NEGATIVE if signed < 0.0 else ArraySide.POSITIVE)
+            )
+            next_definition = replace(
+                definition,
+                spacing=max(1e-6, abs(signed)),
+                side=side,
+            )
+        if next_definition is None:
+            return
+        preview = replace(origin, definition=next_definition)
+        self._set_construction_drag_preview(preview)
+
     def _draw_preview(self, painter: QPainter) -> None:
         preview_line = self._drag_preview_line or self._drawing_line
         if preview_line is not None:
@@ -5923,6 +8195,12 @@ class DocumentCanvas(QWidget):
 
         self._draw_roi_capture_preview(painter)
         self._draw_line_endpoint_controls(painter)
+        self._draw_construction_preview(painter)
+        draw_snap_candidate(
+            painter,
+            self._active_snap_candidate,
+            self.image_to_widget,
+        )
 
     def _line_for_endpoint_controls(self, measurement_id: str) -> Line | None:
         if (
@@ -6014,6 +8292,8 @@ class DocumentCanvas(QWidget):
             )
             is not None
             or self._hit_test_selected_area_handle(image_point) is not None
+            or self._hit_test_selected_construction_handle(image_point)
+            is not None
         ):
             return None
         selected = self._hit_test_selected_endpoint(
@@ -6024,6 +8304,8 @@ class DocumentCanvas(QWidget):
             return selected
         # An area object is selected before an unselected line endpoint.
         if self._hit_test_area_measurement(image_point) is not None:
+            return None
+        if self._hit_test_construction(image_point) is not None:
             return None
         return self._hit_test_endpoint(image_point)
 
@@ -6564,6 +8846,9 @@ class DocumentCanvas(QWidget):
         *,
         snap_anchor: bool,
     ) -> tuple[Point, Point]:
+        snapped_candidate = self._query_object_snap(candidate)
+        if snapped_candidate is not None:
+            candidate = snapped_candidate.point_px
         use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
         use_shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
         line = self._line_tool_strategy.preview_line(
@@ -6577,12 +8862,332 @@ class DocumentCanvas(QWidget):
         return line.start, line.end
 
     def _anchor_point_for_event(self, image_point: Point, modifiers: Qt.KeyboardModifiers) -> Point:
+        snapped_candidate = self._query_object_snap(image_point)
+        if snapped_candidate is not None:
+            return snapped_candidate.point_px
         use_ctrl = bool(modifiers & Qt.KeyboardModifier.ControlModifier)
         return self._line_tool_strategy.anchor_for_event(
             image_point,
             image_size=self._image_size(),
             snap_to_pixel=use_ctrl,
         )
+
+    def _object_snap_pointer_enabled(self) -> bool:
+        if (
+            self._document is None
+            or self._image is None
+            or self._read_only
+            or self._temporary_grab_active
+            or self._panning
+            or not self._object_snap_engine.settings.enabled
+        ):
+            return False
+        return self._tool_mode in {
+            "manual",
+            "continuous_manual",
+            "snap",
+            "polygon_area",
+            "count",
+            "calibration",
+            "construction",
+            "select",
+        }
+
+    def _query_object_snap(self, image_point: Point) -> SnapCandidate | None:
+        if not self._object_snap_pointer_enabled() or self._document is None:
+            self._set_active_snap_candidate(None)
+            return None
+        settings = self._object_snap_engine.settings
+        query_radius = (
+            settings.aperture_px + settings.hysteresis_px
+        ) / max(self._zoom, 0.001)
+        index = self._ensure_construction_spatial_index()
+        if index is None:
+            self._set_active_snap_candidate(None)
+            return None
+        nearby_constructions = self._current_construction_items(
+            index.query(image_point, query_radius),
+            visible_only=True,
+            snappable_only=True,
+        )
+        nearby_measurements = self._measurement_candidates(
+            image_point,
+            tolerance=query_radius,
+        )
+        excluded_constructions, excluded_measurements = (
+            self._object_snap_excluded_sources()
+        )
+        if excluded_constructions:
+            nearby_constructions = tuple(
+                item
+                for item in nearby_constructions
+                if item.entity_id not in excluded_constructions
+            )
+        if excluded_measurements:
+            nearby_measurements = [
+                measurement
+                for measurement in nearby_measurements
+                if measurement.id not in excluded_measurements
+            ]
+        candidate = self._object_snap_engine.query(
+            image_point,
+            image_to_screen=self.image_to_widget,
+            constructions=nearby_constructions,
+            measurements=nearby_measurements,
+            contextual_candidates=self._construction_contextual_snap_candidates(
+                image_point
+            ),
+        )
+        self._set_active_snap_candidate(candidate)
+        return candidate
+
+    def _construction_contextual_snap_candidates(
+        self,
+        cursor_image_point: Point,
+    ) -> tuple[SnapCandidate, ...]:
+        """Return command-scoped perpendicular-foot or tangent-point snaps."""
+
+        document = self._document
+        session = self._construction_session
+        if (
+            document is None
+            or self._tool_mode != "construction"
+            or session is None
+            or not session.sources
+        ):
+            return ()
+
+        contextual_kinds = {
+            "perpendicular",
+            "tangent_point_circle",
+            "common_tangent_external",
+            "common_tangent_internal",
+            "tangent_circle_ttr",
+            "tangent_circle_3",
+        }
+        if session.kind not in contextual_kinds:
+            return ()
+
+        resolver = self._ensure_construction_preview_resolver()
+        if resolver is None:
+            return ()
+        geometries = tuple(
+            resolver.resolve_feature(source) for source in session.sources
+        )
+        related_ids = tuple(
+            self._construction_snap_source_identity(source, index)
+            for index, source in enumerate(session.sources)
+        )
+        source_id = "|".join(related_ids)
+        candidates: list[SnapCandidate] = []
+
+        if session.kind == "perpendicular" and isinstance(
+            geometries[0], ResolvedLine
+        ):
+            source_line = geometries[0]
+            parameter = source_line.project_parameter(cursor_image_point)
+            if source_line.contains_parameter(parameter):
+                candidates.append(
+                    contextual_snap_candidate(
+                        source_line.point_at(parameter),
+                        kind=SnapKind.PERPENDICULAR,
+                        source_id=source_id,
+                        feature_key="perpendicular:foot",
+                        cursor_image_px=cursor_image_point,
+                        image_to_screen=self.image_to_widget,
+                        related_source_ids=related_ids,
+                    )
+                )
+            return tuple(candidates)
+
+        for solution_index, (definition, geometry) in enumerate(
+            self._advanced_solution_candidates(
+                session,
+                resolved_geometries=geometries,
+            )
+        ):
+            tangent_points: tuple[Point, ...] = ()
+            if (
+                isinstance(definition, PointCircleTangentDefinition)
+                and isinstance(geometry, ResolvedLine)
+                and len(geometries) >= 2
+                and isinstance(geometries[1], ResolvedCircle)
+            ):
+                parameter = geometry.project_parameter(geometries[1].center)
+                tangent_points = (geometry.point_at(parameter),)
+            elif (
+                isinstance(definition, CommonTangentDefinition)
+                and isinstance(geometry, ResolvedLine)
+                and len(geometries) >= 2
+                and isinstance(geometries[0], ResolvedCircle)
+                and isinstance(geometries[1], ResolvedCircle)
+            ):
+                tangent_points = tuple(
+                    geometry.point_at(geometry.project_parameter(circle.center))
+                    for circle in geometries[:2]
+                )
+            elif (
+                isinstance(definition, TangentTangentRadiusCircleDefinition)
+                and isinstance(geometry, ResolvedCircle)
+                and len(geometries) >= 2
+                and all(
+                    isinstance(item, (ResolvedLine, ResolvedCircle))
+                    for item in geometries[:2]
+                )
+            ):
+                resolved_points = tangent_points_for_circle(
+                    geometry,
+                    geometries[:2],
+                    (
+                        definition.first_constraint,
+                        definition.second_constraint,
+                    ),
+                    extend=definition.extend,
+                )
+                tangent_points = resolved_points or ()
+            elif (
+                isinstance(definition, ThreeTangentCircleDefinition)
+                and isinstance(geometry, ResolvedCircle)
+                and len(geometries) >= 3
+                and all(
+                    isinstance(item, (ResolvedLine, ResolvedCircle))
+                    for item in geometries[:3]
+                )
+            ):
+                resolved_points = tangent_points_for_circle(
+                    geometry,
+                    geometries[:3],
+                    (
+                        definition.first_constraint,
+                        definition.second_constraint,
+                        definition.third_constraint,
+                    ),
+                    extend=definition.extend,
+                )
+                tangent_points = resolved_points or ()
+
+            branch = getattr(definition, "branch", solution_index)
+            kind = getattr(definition, "kind", "tangent")
+            for point_index, point in enumerate(tangent_points):
+                candidates.append(
+                    contextual_snap_candidate(
+                        point,
+                        kind=SnapKind.TANGENT,
+                        source_id=source_id,
+                        feature_key=(
+                            f"{kind}:{branch}:{solution_index}:tangent:{point_index}"
+                        ),
+                        cursor_image_px=cursor_image_point,
+                        image_to_screen=self.image_to_widget,
+                        related_source_ids=related_ids,
+                    )
+                )
+        return tuple(candidates)
+
+    @staticmethod
+    def _construction_snap_source_identity(
+        source: FeatureSource,
+        index: int,
+    ) -> str:
+        if isinstance(source, LiveFeatureRef):
+            return (
+                f"{source.object_kind.value}:{source.object_id}:{source.feature}"
+            )
+        return f"frozen:{index}"
+
+    def _object_snap_excluded_sources(self) -> tuple[set[str], set[str]]:
+        """Exclude the object being edited and its stale dependent geometry."""
+
+        document = self._document
+        if document is None:
+            return set(), set()
+        cache_key = (
+            document.id,
+            document.construction_geometry_revision,
+            self._dragging_construction_handle,
+            self._dragging_handle,
+            self._dragging_area_handle,
+            self._drag_construction_affected_ids,
+        )
+        if self._object_snap_exclusion_cache_key == cache_key:
+            constructions, measurements = self._object_snap_exclusion_cache
+            return set(constructions), set(measurements)
+        construction_sources: set[str] = set()
+        measurement_sources: set[str] = set()
+        if self._dragging_construction_handle is not None:
+            construction_sources.update(
+                self._drag_construction_affected_ids
+                or (self._dragging_construction_handle[0],)
+            )
+        if self._dragging_handle is not None:
+            measurement_sources.add(self._dragging_handle[0])
+        if self._dragging_area_handle is not None:
+            measurement_sources.add(self._dragging_area_handle[0])
+        if construction_sources and not self._drag_construction_affected_ids:
+            construction_sources.update(
+                construction_transitive_dependents(
+                    document.construction_entities,
+                    tuple(construction_sources),
+                    source_kind=SourceObjectKind.CONSTRUCTION,
+                )
+            )
+        if measurement_sources:
+            construction_sources.update(
+                construction_transitive_dependents(
+                    document.construction_entities,
+                    tuple(measurement_sources),
+                    source_kind=SourceObjectKind.MEASUREMENT,
+                )
+            )
+        self._object_snap_exclusion_cache_key = cache_key
+        self._object_snap_exclusion_cache = (
+            frozenset(construction_sources),
+            frozenset(measurement_sources),
+        )
+        return construction_sources, measurement_sources
+
+    def _object_snapped_point(self, image_point: Point) -> Point:
+        candidate = self._query_object_snap(image_point)
+        return candidate.point_px if candidate is not None else image_point
+
+    def _set_active_snap_candidate(
+        self,
+        candidate: SnapCandidate | None,
+        *,
+        repaint: bool = True,
+    ) -> bool:
+        previous = self._active_snap_candidate
+        previous_identity = previous.identity if previous is not None else None
+        next_identity = candidate.identity if candidate is not None else None
+        previous_point = previous.point_px if previous is not None else None
+        next_point = candidate.point_px if candidate is not None else None
+        if previous_identity == next_identity and previous_point == next_point:
+            self._active_snap_candidate = candidate
+            return False
+        self._active_snap_candidate = candidate
+        if repaint:
+            for point in (previous_point, next_point):
+                if point is None:
+                    continue
+                center = self.image_to_widget(point)
+                # The marker occupies roughly 16 px around the target and its
+                # semantic label extends 102 px to the right.  Invalidate that
+                # asymmetric screen footprint instead of a 224 px square.
+                dirty_rect = (
+                    QRectF(
+                        center.x() - 12.0,
+                        center.y() - 30.0,
+                        122.0,
+                        48.0,
+                    )
+                    .toAlignedRect()
+                    .intersected(self.rect())
+                )
+                if not dirty_rect.isEmpty():
+                    self.update(dirty_rect)
+        if self._document is not None:
+            self.snapCandidateChanged.emit(self._document.id, candidate)
+        return True
 
     def _begin_line_drawing(self, anchor: Point, *, commit_on_second_click: bool = False) -> None:
         state = self._line_tool_strategy.begin(anchor, commit_on_second_click=commit_on_second_click)
@@ -6667,6 +9272,14 @@ class DocumentCanvas(QWidget):
             or self._dragging_overlay_handle is not None
             or self._scale_anchor_pick_active
             or self._reference_instance.dragging
+            or self._dragging_construction_handle is not None
+            or bool(
+                self._construction_session
+                and (
+                    self._construction_session.points
+                    or self._construction_session.sources
+                )
+            )
         )
 
     def _roi_capture_mouse_press(self, image_point: Point) -> None:
@@ -7224,12 +9837,18 @@ class DocumentCanvas(QWidget):
             self.setCursor(Qt.CursorShape.OpenHandCursor)
         elif (
             self._dragging_handle is not None
+            or self._dragging_construction_handle is not None
+            or self._hovered_construction_handle is not None
             or self._hovered_line_endpoint is not None
         ):
             self.setCursor(Qt.CursorShape.SizeAllCursor)
-        elif self._tool_mode == "manual":
+        elif self._tool_mode in {"manual", "construction"}:
             self.setCursor(Qt.CursorShape.CrossCursor)
         elif self._tool_mode == "select":
-            self.setCursor(Qt.CursorShape.ArrowCursor)
+            self.setCursor(
+                Qt.CursorShape.PointingHandCursor
+                if self._hovered_construction_id is not None
+                else Qt.CursorShape.ArrowCursor
+            )
         else:
             self.unsetCursor()

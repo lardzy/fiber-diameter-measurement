@@ -804,6 +804,14 @@ class ExportOptionsDialog(QDialog):
         self._scale_overlay.setChecked(selection.include_scale_overlay)
         self._combined_overlay = QCheckBox("测量 + 比例尺叠加图")
         self._combined_overlay.setChecked(selection.include_combined_overlay)
+        self._construction_geometry = QCheckBox("在结果图中包含辅助几何")
+        self._construction_geometry.setChecked(
+            selection.include_construction_geometry
+        )
+        self._construction_geometry.setToolTip(
+            "仅叠加到所选结果图；不会写入 Excel、CSV 或比例尺 JSON，"
+            "也不会导出控制柄和对象捕捉标记。"
+        )
         self._scale_json = QCheckBox("比例尺 JSON")
         self._scale_json.setChecked(selection.include_scale_json)
         self._excel = QCheckBox("Excel 文档")
@@ -1005,6 +1013,7 @@ class ExportOptionsDialog(QDialog):
         overlay_layout.addWidget(self._measurement_overlay)
         overlay_layout.addWidget(self._scale_overlay)
         overlay_layout.addWidget(self._combined_overlay)
+        overlay_layout.addWidget(self._construction_geometry)
         overlay_layout.addStretch(1)
 
         files_content = QWidget(self)
@@ -1089,6 +1098,9 @@ class ExportOptionsDialog(QDialog):
         self._measurement_overlay.toggled.connect(self._update_render_mode_state)
         self._scale_overlay.toggled.connect(self._update_render_mode_state)
         self._combined_overlay.toggled.connect(self._update_render_mode_state)
+        self._construction_geometry.toggled.connect(
+            self._update_export_summary
+        )
         self._scope_current.toggled.connect(
             self._update_legacy_overlay_text_warning
         )
@@ -1304,6 +1316,7 @@ class ExportOptionsDialog(QDialog):
         self._render_mode_combo.setEnabled(enabled)
         self._render_mode_hint.setEnabled(enabled)
         self._image_format_group.setEnabled(enabled)
+        self._construction_geometry.setEnabled(enabled)
         self._update_legacy_overlay_text_warning()
         self._update_export_summary()
 
@@ -1509,6 +1522,8 @@ class ExportOptionsDialog(QDialog):
                 image_suffix = (
                     f" · 图片格式：{self._image_format_combo.currentText()}"
                 )
+                if self._construction_geometry.isChecked():
+                    image_suffix += " · 包含辅助几何"
             summary.setText(
                 f"导出概要：{scope_text} · "
                 + "、".join(outputs)
@@ -1544,6 +1559,9 @@ class ExportOptionsDialog(QDialog):
             include_measurement_overlay=self._measurement_overlay.isChecked(),
             include_scale_overlay=self._scale_overlay.isChecked(),
             include_combined_overlay=self._combined_overlay.isChecked(),
+            include_construction_geometry=(
+                self._construction_geometry.isChecked()
+            ),
             include_scale_json=self._scale_json.isChecked(),
             include_excel=self._excel.isChecked(),
             include_csv=self._csv.isChecked(),

@@ -4461,7 +4461,7 @@ class CanvasAndExportTests(unittest.TestCase):
             action_texts = window._measurement_tool_strip.primaryModeLabels()
             self.assertEqual(
                 action_texts,
-                ["浏览", "手动线段", "多边形面积", "计数", "标准魔棒", "标定", "文字"],
+                ["浏览", "手动线段", "多边形面积", "计数", "标准魔棒", "标定", "自由点", "文字"],
             )
             self.assertEqual(
                 [action.text() for action in window._manual_tool_menu.actions() if not action.isSeparator()],

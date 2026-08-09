@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from enum import IntFlag
 import json
+import sys
 from typing import Any, Iterable
 
+from fdm.construction_geometry import ConstructionEntity
 from fdm.geometry import Line, Point
 from fdm.image_processing_models import DisplayTransform
 from fdm.models import (
@@ -33,6 +35,7 @@ class DocumentChangeImpact(IntFlag):
     SESSION = 1
     CALIBRATION = 2
     GEOMETRY = 4
+    CONSTRUCTION = 8
 
 
 def dirty_domains_for_impact(impact: DocumentChangeImpact) -> frozenset[DirtyDomain]:
@@ -54,6 +57,113 @@ def _json_bytes(payload: object) -> bytes:
 
 def _decode_json(payload: bytes) -> Any:
     return json.loads(payload.decode("utf-8"))
+
+
+@dataclass(frozen=True, slots=True)
+class ConstructionHistoryPayload:
+    """Structurally shared immutable construction snapshot.
+
+    Each entity is serialized independently, so editing one object reuses the
+    unchanged bytes of every other object across before/after states and across
+    history commands.  The shallow tuple preserves deterministic order.
+    """
+
+    entity_payloads: tuple[bytes, ...]
+    entities: tuple[ConstructionEntity, ...] = field(compare=False, repr=False)
+
+    def __len__(self) -> int:
+        # Equivalent compact JSON-list size without materializing one large
+        # contiguous byte string.
+        return (
+            sum(len(payload) for payload in self.entity_payloads)
+            + max(0, len(self.entity_payloads) - 1)
+            + 2
+        )
+
+    @property
+    def estimated_bytes(self) -> int:
+        return len(self) + sys.getsizeof(self.entity_payloads) + sys.getsizeof(
+            self.entities
+        )
+
+
+def _serialize_construction_payload(document: Any) -> ConstructionHistoryPayload:
+    entities = tuple(document.construction_entities)
+    return ConstructionHistoryPayload(
+        tuple(_json_bytes(entity.to_dict()) for entity in entities),
+        entities,
+    )
+
+
+def _construction_payload_for_document(document: Any) -> ConstructionHistoryPayload:
+    history = getattr(document, "history", None)
+    provider = getattr(history, "_construction_payload_for", None)
+    if callable(provider):
+        return provider(document)
+    return _serialize_construction_payload(document)
+
+
+def _remember_construction_payload(
+    document: Any,
+    payload: ConstructionHistoryPayload,
+) -> None:
+    history = getattr(document, "history", None)
+    remember = getattr(history, "_remember_construction_payload", None)
+    if callable(remember):
+        remember(document, payload)
+
+
+_DIGITAL_SLIDE_VIEW_METADATA_KEYS = ("viewport_origin", "focus_index")
+
+
+def _current_digital_slide_view_metadata(document: Any) -> dict[str, Any] | None:
+    """Capture view-only metadata that must not participate in undo/redo.
+
+    The live digital-slide canvas owns navigation and focus state.  Restoring
+    those fields from a geometry command would leave the live canvas at one
+    viewport while the document (and the next save) points at another.
+    """
+
+    is_digital_slide = False
+    checker = getattr(document, "is_digital_slide", None)
+    if callable(checker):
+        is_digital_slide = bool(checker())
+    else:
+        is_digital_slide = getattr(document, "document_kind", None) == "digital_slide"
+    if not is_digital_slide:
+        return None
+    metadata = document.metadata if isinstance(document.metadata, dict) else {}
+    slide_metadata = metadata.get("digital_slide")
+    if not isinstance(slide_metadata, dict):
+        return {}
+    return {
+        key: _decode_json(_json_bytes(slide_metadata[key]))
+        for key in _DIGITAL_SLIDE_VIEW_METADATA_KEYS
+        if key in slide_metadata
+    }
+
+
+def _restore_current_digital_slide_view_metadata(
+    document: Any,
+    view_metadata: dict[str, Any] | None,
+) -> None:
+    if view_metadata is None:
+        return
+    metadata = dict(document.metadata) if isinstance(document.metadata, dict) else {}
+    existing_slide_metadata = metadata.get("digital_slide")
+    slide_metadata = (
+        dict(existing_slide_metadata)
+        if isinstance(existing_slide_metadata, dict)
+        else {}
+    )
+    for key in _DIGITAL_SLIDE_VIEW_METADATA_KEYS:
+        slide_metadata.pop(key, None)
+    slide_metadata.update(view_metadata)
+    if slide_metadata or isinstance(existing_slide_metadata, dict):
+        metadata["digital_slide"] = slide_metadata
+    else:
+        metadata.pop("digital_slide", None)
+    document.metadata = metadata
 
 
 @dataclass(frozen=True, slots=True)
@@ -170,11 +280,17 @@ def _restore_measurement_geometry(measurement: Measurement, payload: bytes) -> N
 
 @dataclass(frozen=True, slots=True)
 class DocumentHistoryState:
-    """History state containing no geometry except explicitly edited objects."""
+    """Compact restorable state for one document command.
+
+    Dense measurement geometry remains opt-in through ``geometry_measurement_ids``.
+    Construction geometry is intentionally frozen as one small JSON branch because
+    definitions may reference one another and must be restored atomically.
+    """
 
     calibration_payload: bytes
     groups_payload: bytes
     overlay_payload: bytes
+    construction_payload: ConstructionHistoryPayload
     metadata_payload: bytes
     display_transform_payload: bytes
     measurement_order: tuple[str, ...]
@@ -184,6 +300,7 @@ class DocumentHistoryState:
     active_group_id: str | None = field(compare=False)
     selected_measurement_id: str | None = field(compare=False)
     selected_overlay_id: str | None = field(compare=False)
+    selected_construction_id: str | None = field(compare=False)
     scale_overlay_anchor: tuple[float, float] | None
     suppressed_project_group_labels: tuple[str, ...]
     measurement_objects: tuple[Measurement, ...] = field(
@@ -214,6 +331,7 @@ class DocumentHistoryState:
             overlay_payload=_json_bytes(
                 [annotation.to_dict() for annotation in document.overlay_annotations]
             ),
+            construction_payload=_construction_payload_for_document(document),
             metadata_payload=_json_bytes(document.metadata),
             display_transform_payload=_json_bytes(
                 document.display_transform.to_dict()
@@ -232,6 +350,7 @@ class DocumentHistoryState:
             active_group_id=document.active_group_id,
             selected_measurement_id=document.view_state.selected_measurement_id,
             selected_overlay_id=document.selected_overlay_id,
+            selected_construction_id=document.selected_construction_id,
             scale_overlay_anchor=(
                 (document.scale_overlay_anchor.x, document.scale_overlay_anchor.y)
                 if document.scale_overlay_anchor is not None
@@ -256,6 +375,7 @@ class DocumentHistoryState:
             calibration_payload=self.calibration_payload,
             groups_payload=self.groups_payload,
             overlay_payload=self.overlay_payload,
+            construction_payload=self.construction_payload,
             metadata_payload=self.metadata_payload,
             display_transform_payload=self.display_transform_payload,
             measurement_order=self.measurement_order,
@@ -265,6 +385,7 @@ class DocumentHistoryState:
             active_group_id=self.active_group_id,
             selected_measurement_id=self.selected_measurement_id,
             selected_overlay_id=self.selected_overlay_id,
+            selected_construction_id=self.selected_construction_id,
             scale_overlay_anchor=self.scale_overlay_anchor,
             suppressed_project_group_labels=self.suppressed_project_group_labels,
             measurement_objects=tuple(
@@ -275,7 +396,7 @@ class DocumentHistoryState:
         )
 
     @property
-    def estimated_bytes(self) -> int:
+    def estimated_bytes_without_construction(self) -> int:
         return (
             len(self.calibration_payload)
             + len(self.groups_payload)
@@ -291,8 +412,31 @@ class DocumentHistoryState:
             + len(self.measurement_order) * 24
         )
 
+    @property
+    def estimated_bytes(self) -> int:
+        return (
+            self.estimated_bytes_without_construction
+            + self.construction_payload.estimated_bytes
+        )
+
     def restore(self, document: Any) -> None:
+        current_slide_view = _current_digital_slide_view_metadata(document)
         current_order = tuple(measurement.id for measurement in document.measurements)
+        current_construction_payload = _construction_payload_for_document(document)
+        construction_changed = current_construction_payload != self.construction_payload
+        construction_geometry_changed = construction_changed and (
+            len(document.construction_entities)
+            != len(self.construction_payload.entities)
+            or any(
+                current.id != restored.id
+                or current.definition != restored.definition
+                for current, restored in zip(
+                    document.construction_entities,
+                    self.construction_payload.entities,
+                    strict=True,
+                )
+            )
+        )
         object_map = {measurement.id: measurement for measurement in self.measurement_objects}
         object_map.update(
             {
@@ -320,7 +464,11 @@ class DocumentHistoryState:
             OverlayAnnotation.from_dict(item)
             for item in _decode_json(self.overlay_payload)
         ]
+        if construction_changed:
+            document.construction_entities = list(self.construction_payload.entities)
+        _remember_construction_payload(document, self.construction_payload)
         document.metadata = dict(_decode_json(self.metadata_payload))
+        _restore_current_digital_slide_view_metadata(document, current_slide_view)
         display_transform_payload = _decode_json(
             self.display_transform_payload
         )
@@ -345,6 +493,7 @@ class DocumentHistoryState:
         document.active_group_id = self.active_group_id
         document.view_state.selected_measurement_id = self.selected_measurement_id
         document.selected_overlay_id = self.selected_overlay_id
+        document.selected_construction_id = self.selected_construction_id
         document.scale_overlay_anchor = (
             Point(*self.scale_overlay_anchor)
             if self.scale_overlay_anchor is not None
@@ -360,8 +509,46 @@ class DocumentHistoryState:
             document.view_state.selected_measurement_id = None
         if document.get_overlay_annotation(document.selected_overlay_id) is None:
             document.selected_overlay_id = None
+        if document.get_construction_entity(document.selected_construction_id) is None:
+            document.selected_construction_id = None
+        if document.selected_construction_id is not None:
+            document.view_state.selected_measurement_id = None
+            document.selected_overlay_id = None
         if current_order != self.measurement_order or self.geometry_payloads:
             document.mark_measurement_geometry_changed()
+        if construction_changed:
+            if construction_geometry_changed:
+                document.mark_construction_geometry_changed()
+            else:
+                document.mark_construction_metadata_changed()
+
+
+def _shared_construction_payload_bytes(
+    payloads: Iterable[ConstructionHistoryPayload],
+) -> int:
+    """Count shared entity bytes once while retaining tuple/list overhead."""
+
+    seen_payloads: set[int] = set()
+    seen_entities: set[int] = set()
+    total = 0
+    for payload in payloads:
+        payload_identity = id(payload)
+        if payload_identity in seen_payloads:
+            continue
+        seen_payloads.add(payload_identity)
+        total += (
+            max(0, len(payload.entity_payloads) - 1)
+            + 2
+            + sys.getsizeof(payload.entity_payloads)
+            + sys.getsizeof(payload.entities)
+        )
+        for entity_payload in payload.entity_payloads:
+            identity = id(entity_payload)
+            if identity in seen_entities:
+                continue
+            seen_entities.add(identity)
+            total += len(entity_payload)
+    return total
 
 
 @dataclass(slots=True)
@@ -374,8 +561,31 @@ class DocumentDeltaCommand:
     impact: DocumentChangeImpact
 
     @property
+    def construction_payloads(self) -> tuple[ConstructionHistoryPayload, ...]:
+        if self.before.construction_payload is self.after.construction_payload:
+            return (self.before.construction_payload,)
+        return (
+            self.before.construction_payload,
+            self.after.construction_payload,
+        )
+
+    @property
+    def estimated_bytes_without_construction(self) -> int:
+        return (
+            self.before.estimated_bytes_without_construction
+            + self.after.estimated_bytes_without_construction
+            + 256
+        )
+
+    @property
     def estimated_bytes(self) -> int:
-        return self.before.estimated_bytes + self.after.estimated_bytes + 256
+        return self.estimated_bytes_without_construction + (
+            _shared_construction_payload_bytes(self.construction_payloads)
+        )
+
+    @property
+    def construction_estimated_bytes(self) -> int:
+        return _shared_construction_payload_bytes(self.construction_payloads)
 
     @property
     def affected_domains(self) -> frozenset[DirtyDomain]:
@@ -412,14 +622,18 @@ class UndoCommand:
         return self.domains
 
     def undo(self, document: Any) -> None:
+        current_slide_view = _current_digital_slide_view_metadata(document)
         document.restore_snapshot(self.before)
+        _restore_current_digital_slide_view_metadata(document, current_slide_view)
         if self.before_stamp is not None:
             document.restore_state_stamp(self.before_stamp)
         else:
             document.advance_state({DirtyDomain.SESSION, DirtyDomain.CALIBRATION})
 
     def redo(self, document: Any) -> None:
+        current_slide_view = _current_digital_slide_view_metadata(document)
         document.restore_snapshot(self.after)
+        _restore_current_digital_slide_view_metadata(document, current_slide_view)
         if self.after_stamp is not None:
             document.restore_state_stamp(self.after_stamp)
         else:
@@ -503,9 +717,63 @@ class DocumentHistory:
         self.budget_evicted = False
         self._budget_notice_pending = False
         self._owner = owner
+        self._construction_entities_cache: tuple[ConstructionEntity, ...] | None = None
+        self._construction_payload_cache: ConstructionHistoryPayload | None = None
 
     def bind_document(self, document: Any) -> None:
         self._owner = document
+        self._construction_entities_cache = None
+        self._construction_payload_cache = None
+
+    def _construction_payload_for(
+        self,
+        document: Any,
+    ) -> ConstructionHistoryPayload:
+        """Return a frozen construction payload, reusing it while entities match."""
+
+        entities = document.construction_entities
+        cached_entities = self._construction_entities_cache
+        cached_payload = self._construction_payload_cache
+        if (
+            cached_entities is not None
+            and cached_payload is not None
+            and len(entities) == len(cached_entities)
+            and all(
+                entity is cached
+                for entity, cached in zip(entities, cached_entities, strict=True)
+            )
+        ):
+            return cached_payload
+        reusable = (
+            {
+                id(entity): entity_payload
+                for entity, entity_payload in zip(
+                    cached_entities,
+                    cached_payload.entity_payloads,
+                    strict=True,
+                )
+            }
+            if cached_entities is not None and cached_payload is not None
+            else {}
+        )
+        entity_tuple = tuple(entities)
+        payload = ConstructionHistoryPayload(
+            tuple(
+                reusable.get(id(entity)) or _json_bytes(entity.to_dict())
+                for entity in entity_tuple
+            ),
+            entity_tuple,
+        )
+        self._remember_construction_payload(document, payload)
+        return payload
+
+    def _remember_construction_payload(
+        self,
+        document: Any,
+        payload: ConstructionHistoryPayload,
+    ) -> None:
+        self._construction_entities_cache = payload.entities
+        self._construction_payload_cache = payload
 
     def set_workspace_budget(self, budget: WorkspaceHistoryBudget | None) -> None:
         if self._workspace_budget is not None and self._workspace_budget is not budget:
@@ -520,7 +788,15 @@ class DocumentHistory:
 
     @property
     def total_bytes(self) -> int:
-        return sum(command.estimated_bytes for _sequence, command in self._undo_stack + self._redo_stack)
+        total = 0
+        construction_payloads: list[ConstructionHistoryPayload] = []
+        for _sequence, command in self._undo_stack + self._redo_stack:
+            if isinstance(command, DocumentDeltaCommand):
+                total += command.estimated_bytes_without_construction
+                construction_payloads.extend(command.construction_payloads)
+            else:
+                total += command.estimated_bytes
+        return total + _shared_construction_payload_bytes(construction_payloads)
 
     @property
     def oldest_sequence(self) -> int:
@@ -530,6 +806,8 @@ class DocumentHistory:
     def clear(self) -> None:
         self._undo_stack.clear()
         self._redo_stack.clear()
+        self._construction_entities_cache = None
+        self._construction_payload_cache = None
         self.last_affected_domains = frozenset()
         self.budget_evicted = False
         self._budget_notice_pending = False
@@ -639,6 +917,41 @@ class DocumentHistory:
 
     def can_redo(self) -> bool:
         return bool(self._redo_stack)
+
+    @property
+    def latest_undo_sequence(self) -> int | None:
+        return self._undo_stack[-1][0] if self._undo_stack else None
+
+    @property
+    def latest_redo_sequence(self) -> int | None:
+        return self._redo_stack[-1][0] if self._redo_stack else None
+
+    def contains_undo_sequence(self, sequence: int) -> bool:
+        return any(item_sequence == sequence for item_sequence, _ in self._undo_stack)
+
+    def contains_redo_sequence(self, sequence: int) -> bool:
+        return any(item_sequence == sequence for item_sequence, _ in self._redo_stack)
+
+    def discard_sequences(self, sequences: Iterable[int]) -> int:
+        """Drop coordinator-owned commands without executing either state.
+
+        Workspace commands are represented by one local history command per
+        participating document.  If one participant loses its command to a
+        branch or a history budget, the remaining commands must be removed as
+        well so they cannot later be replayed as only half of the operation.
+        """
+
+        targets = frozenset(int(sequence) for sequence in sequences)
+        if not targets:
+            return 0
+        before_count = len(self._undo_stack) + len(self._redo_stack)
+        self._undo_stack[:] = [
+            item for item in self._undo_stack if item[0] not in targets
+        ]
+        self._redo_stack[:] = [
+            item for item in self._redo_stack if item[0] not in targets
+        ]
+        return before_count - len(self._undo_stack) - len(self._redo_stack)
 
     def undo(self, document: Any) -> bool:
         if not self._undo_stack:

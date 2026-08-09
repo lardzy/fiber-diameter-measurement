@@ -34,8 +34,25 @@ from fdm.models import (
     OverlayTextSizeSpace,
     UNCATEGORIZED_LABEL,
 )
+from fdm.construction_document import make_construction_resolver
+from fdm.construction_geometry import (
+    ArraySide,
+    CircleCenterDiameterDefinition,
+    CircleCenterRadiusDefinition,
+    CommonTangentDefinition,
+    ConcentricCircleDefinition,
+    LineDefinition,
+    LineExtent,
+    OffsetCircleDefinition,
+    OffsetParallelDefinition,
+    ParallelArrayDefinition,
+    PointCircleTangentDefinition,
+    TangentTangentRadiusCircleDefinition,
+    iter_live_refs,
+)
 from fdm.settings import AppSettings
 from fdm.ui.measurement_results_model import format_measurement_mode, format_measurement_status
+from fdm.ui.construction_widgets import construction_kind_label
 from fdm.ui.widgets import (
     NoWheelComboBox,
     NoWheelDoubleSpinBox,
@@ -53,6 +70,9 @@ class CurrentObjectInspector(QWidget):
     overlayTextLayoutChangeRequested = Signal(str, object)
     overlayTextLayoutConversionRequested = Signal(str)
     overlayTextActualSizePreviewRequested = Signal(str)
+    constructionDetachRequested = Signal(str)
+    constructionLocateSourcesRequested = Signal(str)
+    constructionDefinitionChangeRequested = Signal(str, object)
 
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
@@ -62,6 +82,9 @@ class CurrentObjectInspector(QWidget):
         self._object_id = ""
         self._appearance: ObjectAppearanceOverride | None = None
         self._text_layout_spec: OverlayTextLayoutSpec | None = None
+        self._construction_definition: object | None = None
+        self._construction_distance_field = ""
+        self._construction_pixels_per_display_unit = 1.0
         self._view_zoom = 1.0
         self._control_values: dict[str, object] = {}
         self._updating = False
@@ -72,7 +95,7 @@ class CurrentObjectInspector(QWidget):
         self._stack = QStackedWidget(self)
         root.addWidget(self._stack)
 
-        self._empty_label = QLabel("请选择一个测量或叠加对象。", self._stack)
+        self._empty_label = QLabel("请选择一个测量、辅助几何或叠加对象。", self._stack)
         self._empty_label.setWordWrap(True)
         self._empty_label.setMinimumWidth(0)
         self._empty_label.setSizePolicy(
@@ -238,6 +261,92 @@ class CurrentObjectInspector(QWidget):
         metadata_form.addRow("所属类别", self._group_combo)
         page_layout.addWidget(self._metadata_group)
 
+        self._construction_group = QGroupBox("构造关系", self._editor_page)
+        construction_layout = QVBoxLayout(self._construction_group)
+        self._construction_definition_label = QLabel(self._construction_group)
+        self._construction_definition_label.setWordWrap(True)
+        self._construction_definition_label.setTextInteractionFlags(
+            Qt.TextInteractionFlag.TextSelectableByMouse
+        )
+        construction_layout.addWidget(self._construction_definition_label)
+        self._construction_parameters_widget = QWidget(self._construction_group)
+        self._construction_parameters_form = QFormLayout(
+            self._construction_parameters_widget
+        )
+        self._construction_parameters_form.setContentsMargins(0, 2, 0, 2)
+        self._construction_distance_label = QLabel(
+            "距离",
+            self._construction_parameters_widget,
+        )
+        self._construction_distance_spin = NoWheelDoubleSpinBox(
+            self._construction_parameters_widget
+        )
+        self._construction_distance_spin.setDecimals(6)
+        self._construction_distance_spin.editingFinished.connect(
+            self._request_construction_distance_change
+        )
+        self._construction_parameters_form.addRow(
+            self._construction_distance_label,
+            self._construction_distance_spin,
+        )
+        self._construction_count_spin = NoWheelSpinBox(
+            self._construction_parameters_widget
+        )
+        self._construction_count_spin.setRange(1, 10_000)
+        self._construction_count_spin.editingFinished.connect(
+            self._request_construction_count_change
+        )
+        self._construction_parameters_form.addRow(
+            "每侧数量",
+            self._construction_count_spin,
+        )
+        self._construction_side_combo = NoWheelComboBox(
+            self._construction_parameters_widget
+        )
+        self._construction_side_combo.addItem("正向单侧", ArraySide.POSITIVE.value)
+        self._construction_side_combo.addItem("负向单侧", ArraySide.NEGATIVE.value)
+        self._construction_side_combo.addItem("双侧", ArraySide.BOTH.value)
+        self._construction_side_combo.activated.connect(
+            self._request_construction_side_change
+        )
+        self._construction_parameters_form.addRow(
+            "阵列方向",
+            self._construction_side_combo,
+        )
+        self._construction_extent_combo = NoWheelComboBox(
+            self._construction_parameters_widget
+        )
+        self._construction_extent_combo.addItem("有限线段", LineExtent.SEGMENT.value)
+        self._construction_extent_combo.addItem("射线", LineExtent.RAY.value)
+        self._construction_extent_combo.addItem("两端无限", LineExtent.INFINITE.value)
+        self._construction_extent_combo.activated.connect(
+            self._request_construction_extent_change
+        )
+        self._construction_parameters_form.addRow(
+            "线范围",
+            self._construction_extent_combo,
+        )
+        construction_layout.addWidget(self._construction_parameters_widget)
+        construction_buttons = QHBoxLayout()
+        self._construction_locate_sources_button = QPushButton(
+            "定位源对象",
+            self._construction_group,
+        )
+        self._construction_locate_sources_button.clicked.connect(
+            lambda: self.constructionLocateSourcesRequested.emit(self._object_id)
+        )
+        construction_buttons.addWidget(self._construction_locate_sources_button)
+        self._construction_detach_button = QPushButton(
+            "解除关联",
+            self._construction_group,
+        )
+        self._construction_detach_button.clicked.connect(
+            lambda: self.constructionDetachRequested.emit(self._object_id)
+        )
+        construction_buttons.addWidget(self._construction_detach_button)
+        construction_layout.addLayout(construction_buttons)
+        page_layout.addWidget(self._construction_group)
+
         self._appearance_group = QGroupBox("对象样式覆盖", self._editor_page)
         appearance_form = QFormLayout(self._appearance_group)
         self._appearance_form = appearance_form
@@ -300,6 +409,7 @@ class CurrentObjectInspector(QWidget):
         settings: AppSettings,
         measurement_ids: Sequence[str] = (),
         overlay_id: str | None = None,
+        construction_id: str | None = None,
         view_zoom: float = 1.0,
     ) -> None:
         self._document = document
@@ -325,18 +435,25 @@ class CurrentObjectInspector(QWidget):
             if overlay is not None:
                 self._load_overlay(overlay)
                 return
+        if construction_id:
+            getter = getattr(document, "get_construction_entity", None)
+            entity = getter(construction_id) if callable(getter) else None
+            if entity is not None:
+                self._load_construction(entity)
+                return
         measurement_id = unique_measurements[0] if unique_measurements else document.view_state.selected_measurement_id
         measurement = document.get_measurement(measurement_id) if measurement_id else None
         if measurement is not None:
             self._load_measurement(measurement)
             return
-        self._show_empty("请选择一个测量或叠加对象。")
+        self._show_empty("请选择一个测量、辅助几何或叠加对象。")
 
     def _show_empty(self, text: str) -> None:
         self._object_type = ""
         self._object_id = ""
         self._appearance = None
         self._text_layout_spec = None
+        self._construction_definition = None
         self._empty_label.setText(text)
         self._stack.setCurrentWidget(self._empty_label)
 
@@ -366,7 +483,11 @@ class CurrentObjectInspector(QWidget):
             )
             self._content_group.hide()
             self._text_layout_group.hide()
+            self._construction_group.hide()
             self._metadata_group.show()
+            self._appearance_group.show()
+            self._inheritance_label.show()
+            self._reset_button.show()
             self._populate_group_combo(measurement.fiber_group_id)
             group_color = group.color if group is not None else self._settings.default_measurement_color
             is_count = measurement.measurement_kind == "count"
@@ -401,6 +522,233 @@ class CurrentObjectInspector(QWidget):
             self._finish_load()
         finally:
             self._updating = False
+
+    def _load_construction(self, entity: object) -> None:
+        self._updating = True
+        try:
+            self._object_type = "construction"
+            self._object_id = str(getattr(entity, "id", ""))
+            self._appearance = None
+            self._text_layout_spec = None
+            self._construction_definition = definition = getattr(
+                entity,
+                "definition",
+                None,
+            )
+            name = str(getattr(entity, "name", "") or construction_kind_label(entity))
+            state_bits = [
+                "显示" if bool(getattr(entity, "visible", True)) else "隐藏",
+                "锁定" if bool(getattr(entity, "locked", False)) else "可编辑",
+                (
+                    "可捕捉"
+                    if bool(
+                        getattr(
+                            entity,
+                            "snap_enabled",
+                            getattr(entity, "snappable", True),
+                        )
+                    )
+                    else "不捕捉"
+                ),
+            ]
+            resolved = (
+                make_construction_resolver(self._document).resolve(self._object_id)
+                if self._document is not None
+                else None
+            )
+            resolution_valid = bool(getattr(resolved, "valid", False))
+            resolution_error = getattr(resolved, "error", None)
+            resolution_reason = str(
+                getattr(resolution_error, "message", "") or ""
+            )
+            resolution_text = "有效" if resolution_valid else "不可解"
+            if resolution_reason:
+                resolution_text = f"{resolution_text}\n原因：{resolution_reason}"
+            self._summary_label.setText(
+                f"{name} · {construction_kind_label(entity)}\n"
+                f"解析状态：{resolution_text}\n"
+                f"对象状态：{' · '.join(state_bits)}\nID：{self._object_id}"
+            )
+            sources = [
+                reference.object_id
+                for reference in iter_live_refs(definition)
+            ]
+            source_text = "、".join(dict.fromkeys(sources)) if sources else "无实时源对象"
+            self._construction_definition_label.setText(
+                f"定义：{type(definition).__name__}\n源对象：{source_text}"
+            )
+            locked = bool(getattr(entity, "locked", False))
+            self._construction_locate_sources_button.setEnabled(bool(sources))
+            self._construction_detach_button.setEnabled(bool(sources) and not locked)
+            self._set_construction_parameter_controls(definition)
+            self._construction_parameters_widget.setEnabled(not locked)
+            self._content_group.hide()
+            self._text_layout_group.hide()
+            self._metadata_group.hide()
+            self._construction_group.hide()
+            self._appearance_group.show()
+            self._inheritance_label.show()
+            self._reset_button.show()
+            self._appearance_group.hide()
+            self._inheritance_label.hide()
+            self._reset_button.hide()
+            self._construction_group.show()
+            self._stack.setCurrentWidget(self._editor_page)
+        finally:
+            self._updating = False
+
+    def _set_construction_parameter_controls(self, definition: object) -> None:
+        distance_field = ""
+        distance_label = "距离"
+        signed_distance = False
+        if isinstance(definition, (CircleCenterRadiusDefinition, ConcentricCircleDefinition)):
+            distance_field = "radius"
+            distance_label = "半径"
+        elif isinstance(definition, CircleCenterDiameterDefinition):
+            distance_field = "diameter"
+            distance_label = "直径"
+        elif isinstance(definition, ParallelArrayDefinition):
+            distance_field = "spacing"
+            distance_label = "阵列间距"
+        elif isinstance(definition, OffsetParallelDefinition):
+            distance_field = "offset"
+            distance_label = "偏移距离"
+            signed_distance = True
+        elif isinstance(definition, OffsetCircleDefinition):
+            distance_field = "offset"
+            distance_label = "半径偏移"
+            signed_distance = True
+        elif isinstance(definition, TangentTangentRadiusCircleDefinition):
+            distance_field = "radius"
+            distance_label = "固定半径"
+
+        calibration = self._document.calibration if self._document is not None else None
+        factor = (
+            float(calibration.pixels_per_unit)
+            if calibration is not None
+            else 1.0
+        )
+        if not math.isfinite(factor) or factor <= 0.0:
+            factor = 1.0
+        self._construction_pixels_per_display_unit = factor
+        self._construction_distance_field = distance_field
+        unit = str(calibration.unit) if calibration is not None else "px"
+
+        show_distance = bool(distance_field)
+        self._construction_parameters_form.setRowVisible(
+            self._construction_distance_spin,
+            show_distance,
+        )
+        if show_distance:
+            value_px = float(getattr(definition, distance_field))
+            maximum = 1_000_000_000.0 / factor
+            minimum = -maximum if signed_distance else max(1e-9, 1e-6 / factor)
+            self._construction_distance_label.setText(distance_label)
+            self._construction_distance_spin.blockSignals(True)
+            self._construction_distance_spin.setRange(minimum, maximum)
+            self._construction_distance_spin.setSingleStep(max(1e-6, 1.0 / factor))
+            self._construction_distance_spin.setSuffix(f" {unit}")
+            self._construction_distance_spin.setValue(value_px / factor)
+            self._construction_distance_spin.blockSignals(False)
+
+        show_array = isinstance(definition, ParallelArrayDefinition)
+        self._construction_parameters_form.setRowVisible(
+            self._construction_count_spin,
+            show_array,
+        )
+        self._construction_parameters_form.setRowVisible(
+            self._construction_side_combo,
+            show_array,
+        )
+        if show_array:
+            self._construction_count_spin.blockSignals(True)
+            self._construction_count_spin.setValue(definition.count)
+            self._construction_count_spin.blockSignals(False)
+            self._construction_side_combo.blockSignals(True)
+            index = self._construction_side_combo.findData(definition.side.value)
+            self._construction_side_combo.setCurrentIndex(max(0, index))
+            self._construction_side_combo.blockSignals(False)
+
+        extent = getattr(definition, "extent", None)
+        # 水平/垂直工具是定位用的无限构造线。它们只暴露一个平移柄，
+        # 因而不能把范围改成射线或线段，否则会得到无法调长的 1 px 对象。
+        show_extent = isinstance(extent, LineExtent) and self._construction_extent_is_editable(
+            definition
+        )
+        self._construction_parameters_form.setRowVisible(
+            self._construction_extent_combo,
+            show_extent,
+        )
+        if show_extent:
+            self._construction_extent_combo.blockSignals(True)
+            index = self._construction_extent_combo.findData(extent.value)
+            self._construction_extent_combo.setCurrentIndex(max(0, index))
+            self._construction_extent_combo.blockSignals(False)
+        self._construction_parameters_widget.setVisible(
+            show_distance or show_array or show_extent
+        )
+
+    def _emit_construction_definition_change(self, **changes: object) -> None:
+        if (
+            self._updating
+            or self._object_type != "construction"
+            or not self._object_id
+            or self._construction_definition is None
+        ):
+            return
+        try:
+            next_definition = replace(self._construction_definition, **changes)
+        except (TypeError, ValueError):
+            self._set_construction_parameter_controls(self._construction_definition)
+            return
+        if next_definition == self._construction_definition:
+            return
+        self._construction_definition = next_definition
+        self.constructionDefinitionChangeRequested.emit(
+            self._object_id,
+            next_definition,
+        )
+
+    def _request_construction_distance_change(self) -> None:
+        field_name = self._construction_distance_field
+        if not field_name:
+            return
+        self._emit_construction_definition_change(
+            **{
+                field_name: (
+                    self._construction_distance_spin.value()
+                    * self._construction_pixels_per_display_unit
+                )
+            }
+        )
+
+    def _request_construction_count_change(self) -> None:
+        self._emit_construction_definition_change(
+            count=self._construction_count_spin.value()
+        )
+
+    def _request_construction_side_change(self, _index: int = -1) -> None:
+        value = self._construction_side_combo.currentData()
+        if value is not None:
+            self._emit_construction_definition_change(side=ArraySide(str(value)))
+
+    def _request_construction_extent_change(self, _index: int = -1) -> None:
+        if not self._construction_extent_is_editable(self._construction_definition):
+            self._set_construction_parameter_controls(self._construction_definition)
+            return
+        value = self._construction_extent_combo.currentData()
+        if value is not None:
+            self._emit_construction_definition_change(extent=LineExtent(str(value)))
+
+    @staticmethod
+    def _construction_extent_is_editable(definition: object) -> bool:
+        return (
+            isinstance(definition, LineDefinition)
+            and definition.axis_constraint is None
+        ) or isinstance(
+            definition,
+            (PointCircleTangentDefinition, CommonTangentDefinition),
+        )
 
     def _load_overlay(self, overlay: OverlayAnnotation) -> None:
         self._updating = True
