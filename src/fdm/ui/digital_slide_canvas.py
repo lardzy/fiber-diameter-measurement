@@ -145,6 +145,11 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def move_viewport_by(self, dx: float, dy: float, *, throttled: bool = False) -> None:
         if dx or dy:
+            # The cached endpoint hit is expressed in global slide
+            # coordinates.  Clear it while the old viewport mapping is still
+            # active so navigation cannot move a stale highlight away from the
+            # stationary pointer.
+            self._set_hovered_line_endpoint(None)
             # A discrete navigation action is an explicit retry boundary.  A
             # held smooth-navigation key clears the error latch only once in
             # _begin_smooth_navigation(), so a permanent read error cannot
@@ -176,6 +181,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self,
             QPointF(self.width() / 2.0, self.height() / 2.0),
         )
+        self._set_hovered_line_endpoint(None)
         self._allow_viewport_buffer_retry()
         self._cancel_overlay_requests()
         self._viewport_origin = Point(

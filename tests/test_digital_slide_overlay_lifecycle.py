@@ -15,8 +15,8 @@ from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QTabWidget, QWidget
 
-from fdm.geometry import Point
-from fdm.models import ImageDocument
+from fdm.geometry import Line, Point
+from fdm.models import ImageDocument, Measurement
 from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
@@ -232,6 +232,24 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         canvas._zoom = 2.0  # noqa: SLF001
         canvas._pan = Point(20.0, 30.0)  # noqa: SLF001
         canvas._viewport_buffer_error_blocked = True  # noqa: SLF001
+        measurement = Measurement(
+            id="hovered-line",
+            image_id="slide",
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(1040.0, 2040.0), Point(1120.0, 2040.0)),
+        )
+        assert canvas._document is not None  # noqa: SLF001
+        canvas._document.add_measurement(measurement)  # noqa: SLF001
+        canvas.set_selected_measurement(measurement.id)
+        canvas.set_tool_mode("select")
+        canvas._set_hovered_line_endpoint(  # noqa: SLF001
+            (measurement.id, "start")
+        )
+        self.assertEqual(
+            canvas.cursor().shape(),
+            Qt.CursorShape.SizeAllCursor,
+        )
         try:
             with (
                 patch.object(canvas, "_cancel_overlay_requests") as cancel,
@@ -248,6 +266,11 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             cancel.assert_called_once_with()
             self.assertFalse(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
             self.assertEqual(canvas.viewport_origin(), Point(1015.0, 1990.0))
+            self.assertIsNone(canvas._hovered_line_endpoint)  # noqa: SLF001
+            self.assertEqual(
+                canvas.cursor().shape(),
+                Qt.CursorShape.ArrowCursor,
+            )
             mapped_origin = canvas.image_to_widget(canvas.viewport_origin())
             self.assertAlmostEqual(mapped_origin.x(), 20.0)
             self.assertAlmostEqual(mapped_origin.y(), 30.0)

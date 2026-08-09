@@ -810,6 +810,12 @@ class FiberQuickDiameterSession:
 
 
 class DocumentCanvas(QWidget):
+    MANUAL_ENDPOINT_HIT_RADIUS_SCREEN = 5.0
+    SELECTED_ENDPOINT_HIT_RADIUS_SCREEN = 9.0
+    ENDPOINT_HIT_RADIUS_SCREEN = 6.0
+    ENDPOINT_CONTROL_RADIUS_SCREEN = 5.5
+    HOVERED_ENDPOINT_CONTROL_RADIUS_SCREEN = 6.5
+
     lineCommitted = Signal(str, str, object)
     objectSelectionChanged = Signal(str, object)
     measurementSelected = Signal(str, object)
@@ -857,6 +863,7 @@ class DocumentCanvas(QWidget):
 
         self._dragging_handle: tuple[str, str] | None = None
         self._drag_preview_line: Line | None = None
+        self._hovered_line_endpoint: tuple[str, str] | None = None
 
         self._dragging_area_handle: tuple[str, str, int | None, int | None] | None = None
         self._drag_area_preview_points: list[Point] | None = None
@@ -992,6 +999,7 @@ class DocumentCanvas(QWidget):
         normalized_kind = _normalized_capture_roi_kind(kind)
         if normalized_kind is None:
             return False
+        self._set_hovered_line_endpoint(None)
         if self._roi_capture is not None:
             self._clear_roi_capture(restore_tool=True)
         self._cancel_area_drawing()
@@ -1111,6 +1119,7 @@ class DocumentCanvas(QWidget):
         previous_document = self._document
         self._document = document
         self._image = image
+        self._hovered_line_endpoint = None
         self._cancel_area_drawing()
         self._cancel_line_drawing()
         self._magic_segment = PromptSegmentationSession()
@@ -1140,6 +1149,7 @@ class DocumentCanvas(QWidget):
         self._last_view_transform_snapshot = None
         self._rebuild_project_roi_paths()
         self._publish_view_transform()
+        self._update_cursor()
         self.update()
 
     def set_image(self, image: QImage) -> None:
@@ -1163,6 +1173,7 @@ class DocumentCanvas(QWidget):
         self._cancel_area_drawing()
         self._dragging_handle = None
         self._drag_preview_line = None
+        self._hovered_line_endpoint = None
         self._dragging_area_handle = None
         self._drag_area_preview_points = None
         self._drag_area_origin_points = None
@@ -1202,6 +1213,7 @@ class DocumentCanvas(QWidget):
         self._reset_overlay_tracking(invalidate_document=False)
         if document_id is not None:
             self.pathSessionChanged.emit(document_id)
+        self._update_cursor()
         self.update()
 
     def set_read_only(self, read_only: bool) -> None:
@@ -1212,6 +1224,7 @@ class DocumentCanvas(QWidget):
             self._cancel_line_drawing()
             self._dragging_handle = None
             self._drag_preview_line = None
+            self._hovered_line_endpoint = None
             self._drawing_overlay_start = None
             self._drawing_overlay_end = None
             self._dragging_overlay_id = None
@@ -1256,6 +1269,7 @@ class DocumentCanvas(QWidget):
             if is_fiber_quick_tool_mode(self._tool_mode) or not is_fiber_quick_tool_mode(mode):
                 self.clear_fiber_quick_session()
             self._cancel_overlay_interaction()
+            self._hovered_line_endpoint = None
         self._tool_mode = mode
         self._overlay_tool_kind = next_overlay_kind
         self._update_cursor()
@@ -1288,6 +1302,10 @@ class DocumentCanvas(QWidget):
         changes remain explicit full invalidations.
         """
 
+        # Commands such as undo/redo can move or remove the endpoint currently
+        # under the pointer without producing another mouse event.  Drop that
+        # cached hit before repainting the changed document geometry.
+        self._set_hovered_line_endpoint(None)
         full_invalidation, changed_bounds = self._sync_overlay_visual_state()
         if full_invalidation:
             self.update()
@@ -2200,6 +2218,8 @@ class DocumentCanvas(QWidget):
             current = self._current_object_selection()
             if current != previous:
                 self._refresh_selection_visual(previous, current)
+        if previous_measurement_id != self._document.view_state.selected_measurement_id:
+            self._set_hovered_line_endpoint(None)
         if previous_measurement_id != measurement_id and self._tool_mode in {"polygon_area", "freehand_area"}:
             self._area_edit_operation_mode = AreaEditOperationMode.ADD
 
@@ -2272,6 +2292,7 @@ class DocumentCanvas(QWidget):
         current = self._current_object_selection()
         if current == previous:
             return False
+        self._set_hovered_line_endpoint(None)
         self._refresh_selection_visual(previous, current)
         if notify:
             self.objectSelectionChanged.emit(self._document.id, current)
@@ -2464,6 +2485,7 @@ class DocumentCanvas(QWidget):
     def begin_scale_anchor_pick(self) -> None:
         self._scale_anchor_pick_active = True
         self._scale_anchor_preview_point = None
+        self._set_hovered_line_endpoint(None)
         self._update_cursor()
         self.focus_canvas()
         self.update()
@@ -2516,6 +2538,8 @@ class DocumentCanvas(QWidget):
 
         if self._image is None:
             return
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         self._center_image_point_in_widget(point)
         if self._zoom_mode is CanvasZoomMode.FIT:
             self._zoom_mode = CanvasZoomMode.CUSTOM
@@ -2526,6 +2550,8 @@ class DocumentCanvas(QWidget):
     def fit_to_view(self) -> None:
         if self._image is None:
             return
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         image_width = max(1.0, float(self._image.width()))
         image_height = max(1.0, float(self._image.height()))
         viewport_width = max(1.0, float(self.width() - 40))
@@ -2552,6 +2578,8 @@ class DocumentCanvas(QWidget):
     def actual_size(self) -> None:
         if self._image is None:
             return
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         center = QPointF(self.width() / 2.0, self.height() / 2.0)
         center_image_point = self.widget_to_image(center)
         self._zoom = 1.0
@@ -2569,6 +2597,8 @@ class DocumentCanvas(QWidget):
             self._temporary_grab_active = False
         elif pressed and not self._has_pointer_edit_operation():
             self._temporary_grab_active = True
+        if self._temporary_grab_active:
+            self._set_hovered_line_endpoint(None)
         self._update_cursor()
 
     def keyPressEvent(self, event) -> None:
@@ -2677,6 +2707,8 @@ class DocumentCanvas(QWidget):
         super().resizeEvent(event)
         if self._image is None or self._document is None:
             return
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         if self._zoom_mode is CanvasZoomMode.FIT:
             self.fit_to_view()
             return
@@ -2690,10 +2722,16 @@ class DocumentCanvas(QWidget):
         """Stop producers owned by a canvas that is no longer visible."""
 
         self._end_canvas_pan()
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         canvas_overlay_tile_cache.protect(id(self), ())
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
         super().hideEvent(event)
+
+    def leaveEvent(self, event: QEvent) -> None:
+        self._set_hovered_line_endpoint(None)
+        super().leaveEvent(event)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self._image is None:
@@ -2722,6 +2760,7 @@ class DocumentCanvas(QWidget):
         accumulator so sub-pixel mouse movement is never lost.
         """
 
+        self._set_hovered_line_endpoint(None)
         self._panning = True
         self._pan_button = button
         self._pan_drag_unsnapped = Point(self._pan.x, self._pan.y)
@@ -3071,10 +3110,22 @@ class DocumentCanvas(QWidget):
                 self.update()
                 return
 
-        selected_handle = self._hit_test_selected_endpoint(image_point)
+        selected_handle = None
+        if self._tool_mode == "manual":
+            selected_handle = self._hit_test_selected_endpoint(
+                image_point,
+                tolerance=self._manual_line_endpoint_tolerance(),
+            )
+        elif self._tool_mode == "select":
+            selected_handle = self._hit_test_selected_endpoint(
+                image_point,
+                tolerance=self._selected_line_endpoint_tolerance(),
+            )
         if selected_handle is not None:
             self._dragging_handle = selected_handle
             self._drag_preview_line = self._measurement_line(selected_handle[0])
+            self._hovered_line_endpoint = selected_handle
+            self._update_cursor()
             self.update()
             return
 
@@ -3088,7 +3139,9 @@ class DocumentCanvas(QWidget):
             if handle is not None:
                 self._dragging_handle = handle
                 self._drag_preview_line = self._measurement_line(handle[0])
+                self._hovered_line_endpoint = handle
                 self._set_object_selection(CanvasSelectionRef.measurement(handle[0]))
+                self._update_cursor()
                 self.update()
                 return
 
@@ -3102,6 +3155,7 @@ class DocumentCanvas(QWidget):
             return
 
         if self._point_in_image(image_point):
+            self._set_hovered_line_endpoint(None)
             anchor = self._anchor_point_for_event(image_point, event.modifiers())
             self._begin_line_drawing(anchor)
             self._update_preview_regions(
@@ -3404,6 +3458,12 @@ class DocumentCanvas(QWidget):
                     new_bounds=new_preview_bounds,
                 )
             )
+            return
+
+        self._update_line_endpoint_hover(
+            image_point,
+            widget_point=event.position(),
+        )
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._document is None:
@@ -3598,7 +3658,11 @@ class DocumentCanvas(QWidget):
             self.measurementEdited.emit(self._document.id, measurement_id, preview)
             if self._space_pressed:
                 self._temporary_grab_active = True
-                self._update_cursor()
+            self._update_line_endpoint_hover(
+                self.widget_to_image(event.position()),
+                widget_point=event.position(),
+            )
+            self._update_cursor()
             self.update()
             return
 
@@ -3606,6 +3670,10 @@ class DocumentCanvas(QWidget):
         self._drag_preview_line = None
         self._cancel_overlay_interaction()
         self._clear_area_drag_state()
+        self._update_line_endpoint_hover(
+            self.widget_to_image(event.position()),
+            widget_point=event.position(),
+        )
         self._update_cursor()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
@@ -3707,6 +3775,8 @@ class DocumentCanvas(QWidget):
     ) -> None:
         if self._image is None:
             return
+        self._hovered_line_endpoint = None
+        self._update_cursor()
         image_before = self.widget_to_image(position)
         self._zoom = _bounded_view_zoom(zoom)
         self._zoom_mode = mode
@@ -5852,15 +5922,210 @@ class DocumentCanvas(QWidget):
             draw_preview_scale_anchor(painter, self.image_to_widget(preview_point))
 
         self._draw_roi_capture_preview(painter)
+        self._draw_line_endpoint_controls(painter)
 
-    def _hit_test_selected_endpoint(self, image_point: Point) -> tuple[str, str] | None:
+    def _line_for_endpoint_controls(self, measurement_id: str) -> Line | None:
+        if (
+            self._dragging_handle is not None
+            and self._dragging_handle[0] == measurement_id
+            and self._drag_preview_line is not None
+        ):
+            return self._drag_preview_line
+        return self._measurement_line(measurement_id)
+
+    def _line_endpoint_point(
+        self,
+        endpoint: tuple[str, str] | None,
+    ) -> Point | None:
+        if endpoint is None:
+            return None
+        measurement_id, endpoint_name = endpoint
+        line = self._line_for_endpoint_controls(measurement_id)
+        if line is None:
+            return None
+        return line.start if endpoint_name == "start" else line.end
+
+    def _line_endpoint_control_bounds(
+        self,
+        endpoint: tuple[str, str] | None,
+    ) -> CanvasDisplayBounds | None:
+        point = self._line_endpoint_point(endpoint)
+        if point is None:
+            return None
+        return self._preview_display_bounds(
+            [point],
+            padding_screen=self.HOVERED_ENDPOINT_CONTROL_RADIUS_SCREEN + 4.0,
+        )
+
+    def _set_hovered_line_endpoint(
+        self,
+        endpoint: tuple[str, str] | None,
+    ) -> bool:
+        if endpoint is not None and self._line_endpoint_point(endpoint) is None:
+            endpoint = None
+        previous = self._hovered_line_endpoint
+        if previous == endpoint:
+            return False
+        previous_bounds = self._line_endpoint_control_bounds(previous)
+        self._hovered_line_endpoint = endpoint
+        next_bounds = self._line_endpoint_control_bounds(endpoint)
+        # Update both handles independently.  Uniting distant endpoints would
+        # turn a hover transition into a repaint spanning the complete line.
+        for bounds in (previous_bounds, next_bounds):
+            if bounds is not None:
+                self._apply_visual_change(
+                    CanvasVisualChange(old_bounds=bounds)
+                )
+        self._update_cursor()
+        return True
+
+    def _line_endpoint_hover_candidate(
+        self,
+        image_point: Point,
+        *,
+        widget_point: QPointF | None = None,
+    ) -> tuple[str, str] | None:
+        if (
+            self._read_only
+            or self._temporary_grab_active
+            or self._has_pointer_edit_operation()
+            or not self._point_in_image(image_point)
+        ):
+            return None
+        if self._tool_mode == "manual":
+            return self._hit_test_selected_endpoint(
+                image_point,
+                tolerance=self._manual_line_endpoint_tolerance(),
+            )
+        if self._tool_mode != "select":
+            return None
+        resolved_widget_point = (
+            widget_point
+            if widget_point is not None
+            else self.image_to_widget(image_point)
+        )
+        # Keep hover feedback aligned with mousePressEvent's object routing.
+        # Overlays and selected area handles take precedence over line handles.
+        if (
+            self._hit_test_selected_overlay_handle(image_point) is not None
+            or self._hit_test_overlay_annotation(
+                resolved_widget_point,
+                image_point,
+            )
+            is not None
+            or self._hit_test_selected_area_handle(image_point) is not None
+        ):
+            return None
+        selected = self._hit_test_selected_endpoint(
+            image_point,
+            tolerance=self._selected_line_endpoint_tolerance(),
+        )
+        if selected is not None:
+            return selected
+        # An area object is selected before an unselected line endpoint.
+        if self._hit_test_area_measurement(image_point) is not None:
+            return None
+        return self._hit_test_endpoint(image_point)
+
+    def _update_line_endpoint_hover(
+        self,
+        image_point: Point,
+        *,
+        widget_point: QPointF | None = None,
+    ) -> None:
+        self._set_hovered_line_endpoint(
+            self._line_endpoint_hover_candidate(
+                image_point,
+                widget_point=widget_point,
+            )
+        )
+
+    def _draw_line_endpoint_controls(self, painter: QPainter) -> None:
+        if (
+            self._document is None
+            or self._read_only
+            or self._temporary_grab_active
+            or self._panning
+            or (
+                self._has_pointer_edit_operation()
+                and self._dragging_handle is None
+            )
+        ):
+            return
+        controls: dict[tuple[str, str], tuple[Point, bool]] = {}
+
+        def add_control(endpoint: tuple[str, str], *, highlighted: bool) -> None:
+            point = self._line_endpoint_point(endpoint)
+            if point is None:
+                return
+            previous = controls.get(endpoint)
+            controls[endpoint] = (
+                point,
+                highlighted or bool(previous and previous[1]),
+            )
+
+        if self._tool_mode == "select":
+            selected_id = self._document.view_state.selected_measurement_id
+            selected_line = (
+                self._line_for_endpoint_controls(selected_id)
+                if selected_id is not None
+                else None
+            )
+            if selected_id is not None and selected_line is not None:
+                add_control((selected_id, "start"), highlighted=False)
+                add_control((selected_id, "end"), highlighted=False)
+
+        active_endpoint = self._dragging_handle or self._hovered_line_endpoint
+        if self._tool_mode in {"manual", "select"} and active_endpoint is not None:
+            add_control(active_endpoint, highlighted=True)
+        if not controls:
+            return
+
+        painter.save()
+        try:
+            painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            for point, highlighted in controls.values():
+                center = self.image_to_widget(point)
+                radius = (
+                    self.HOVERED_ENDPOINT_CONTROL_RADIUS_SCREEN
+                    if highlighted
+                    else self.ENDPOINT_CONTROL_RADIUS_SCREEN
+                )
+                if highlighted:
+                    halo = QColor("#F4D35E")
+                    halo.setAlpha(105)
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    painter.setBrush(halo)
+                    painter.drawEllipse(center, radius + 2.5, radius + 2.5)
+                painter.setPen(QPen(QColor("#0B0B0B"), 1.4))
+                painter.setBrush(
+                    QColor("#F4D35E") if highlighted else QColor("#FFFFFF")
+                )
+                painter.drawEllipse(center, radius, radius)
+                painter.setPen(Qt.PenStyle.NoPen)
+                painter.setBrush(QColor("#0B0B0B"))
+                painter.drawEllipse(center, 1.35, 1.35)
+        finally:
+            painter.restore()
+
+    def _hit_test_selected_endpoint(
+        self,
+        image_point: Point,
+        *,
+        tolerance: float | None = None,
+    ) -> tuple[str, str] | None:
         if self._document is None or self._document.view_state.selected_measurement_id is None:
             return None
         measurement = self._document.get_measurement(self._document.view_state.selected_measurement_id)
         if measurement is None or measurement.measurement_kind != "line":
             return None
         endpoint_name, endpoint_distance = nearest_endpoint(measurement.effective_line(), image_point)
-        if endpoint_distance <= self._selected_endpoint_tolerance():
+        resolved_tolerance = (
+            self._selected_line_endpoint_tolerance()
+            if tolerance is None
+            else max(0.0, float(tolerance))
+        )
+        if endpoint_distance <= resolved_tolerance:
             return measurement.id, endpoint_name
         return None
 
@@ -6002,8 +6267,20 @@ class DocumentCanvas(QWidget):
     def _selected_endpoint_tolerance(self) -> float:
         return max(4.0, 9.0 / max(self._zoom, 0.001))
 
+    def _manual_line_endpoint_tolerance(self) -> float:
+        return self.MANUAL_ENDPOINT_HIT_RADIUS_SCREEN / max(
+            self._zoom,
+            0.001,
+        )
+
+    def _selected_line_endpoint_tolerance(self) -> float:
+        return self.SELECTED_ENDPOINT_HIT_RADIUS_SCREEN / max(
+            self._zoom,
+            0.001,
+        )
+
     def _endpoint_tolerance(self) -> float:
-        return max(3.0, 6.0 / max(self._zoom, 0.001))
+        return self.ENDPOINT_HIT_RADIUS_SCREEN / max(self._zoom, 0.001)
 
     def _polygon_close_tolerance(self) -> float:
         # Closing is a drawing gesture, so keep it tighter than selected-handle picking.
@@ -6945,5 +7222,14 @@ class DocumentCanvas(QWidget):
             self.setCursor(Qt.CursorShape.OpenHandCursor if self._temporary_grab_active else Qt.CursorShape.ArrowCursor)
         elif self._temporary_grab_active:
             self.setCursor(Qt.CursorShape.OpenHandCursor)
+        elif (
+            self._dragging_handle is not None
+            or self._hovered_line_endpoint is not None
+        ):
+            self.setCursor(Qt.CursorShape.SizeAllCursor)
+        elif self._tool_mode == "manual":
+            self.setCursor(Qt.CursorShape.CrossCursor)
+        elif self._tool_mode == "select":
+            self.setCursor(Qt.CursorShape.ArrowCursor)
         else:
             self.unsetCursor()

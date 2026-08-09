@@ -946,7 +946,7 @@ class CanvasAndExportTests(unittest.TestCase):
 
         self.assertIsNotNone(canvas._drawing_line)
 
-    def test_selected_endpoint_tolerance_allows_new_line_near_existing_measurement(self) -> None:
+    def test_line_endpoint_hit_radii_are_screen_stable_by_tool(self) -> None:
         document, _, canvas = self._create_canvas_document()
         measurement = Measurement(
             id=new_id("meas"),
@@ -958,13 +958,350 @@ class CanvasAndExportTests(unittest.TestCase):
         document.add_measurement(measurement)
         document.view_state.selected_measurement_id = measurement.id
         canvas.set_selected_measurement(measurement.id)
-        canvas.set_tool_mode("manual")
 
-        nearby_position = canvas.image_to_widget(Point(30, 20))
-        canvas.mousePressEvent(FakeMouseEvent(nearby_position, button=Qt.MouseButton.LeftButton))
+        for zoom in (0.5, 1.0, 4.0):
+            with self.subTest(tool="manual", zoom=zoom, screen_offset=4.0):
+                canvas._zoom = zoom
+                canvas.set_tool_mode("manual")
+                endpoint = canvas.image_to_widget(measurement.line_px.start)
+                canvas.mousePressEvent(
+                    FakeMouseEvent(
+                        endpoint + QPointF(0.0, 4.0),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
+
+                self.assertEqual(
+                    canvas._dragging_handle,
+                    (measurement.id, "start"),
+                )
+                self.assertIsNone(canvas._drawing_line)
+                canvas._dragging_handle = None
+                canvas._drag_preview_line = None
+                canvas._set_hovered_line_endpoint(None)
+
+            with self.subTest(tool="manual", zoom=zoom, screen_offset=6.0):
+                endpoint = canvas.image_to_widget(measurement.line_px.start)
+                canvas.mousePressEvent(
+                    FakeMouseEvent(
+                        endpoint + QPointF(0.0, 6.0),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
+
+                self.assertIsNone(canvas._dragging_handle)
+                self.assertIsNotNone(canvas._drawing_line)
+                canvas._cancel_line_drawing()
+
+            with self.subTest(tool="select", zoom=zoom, screen_offset=8.0):
+                canvas.set_tool_mode("select")
+                endpoint = canvas.image_to_widget(measurement.line_px.start)
+                canvas.mousePressEvent(
+                    FakeMouseEvent(
+                        endpoint + QPointF(0.0, 8.0),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
+
+                self.assertEqual(
+                    canvas._dragging_handle,
+                    (measurement.id, "start"),
+                )
+                canvas._dragging_handle = None
+                canvas._drag_preview_line = None
+                canvas._set_hovered_line_endpoint(None)
+
+            with self.subTest(tool="select", zoom=zoom, screen_offset=10.0):
+                endpoint = canvas.image_to_widget(measurement.line_px.start)
+                canvas.mousePressEvent(
+                    FakeMouseEvent(
+                        endpoint + QPointF(0.0, 10.0),
+                        button=Qt.MouseButton.LeftButton,
+                    )
+                )
+
+                self.assertIsNone(canvas._dragging_handle)
+                self.assertIsNone(canvas._drawing_line)
+
+    def test_line_endpoint_hover_updates_cursor_for_manual_and_select(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        document.add_measurement(measurement)
+        canvas.set_selected_measurement(measurement.id)
+        endpoint = canvas.image_to_widget(measurement.line_px.start)
+        background = canvas.image_to_widget(Point(140, 90))
+
+        canvas.set_tool_mode("manual")
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.CrossCursor)
+        canvas.mouseMoveEvent(FakeMouseEvent(endpoint))
+        self.assertEqual(
+            canvas._hovered_line_endpoint,
+            (measurement.id, "start"),
+        )
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.SizeAllCursor)
+        canvas.mouseMoveEvent(FakeMouseEvent(background))
+        self.assertIsNone(canvas._hovered_line_endpoint)
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.CrossCursor)
+
+        canvas.set_tool_mode("select")
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.ArrowCursor)
+        canvas.mouseMoveEvent(FakeMouseEvent(endpoint + QPointF(0.0, 8.0)))
+        self.assertEqual(
+            canvas._hovered_line_endpoint,
+            (measurement.id, "start"),
+        )
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.SizeAllCursor)
+        canvas.mouseMoveEvent(FakeMouseEvent(background))
+        self.assertIsNone(canvas._hovered_line_endpoint)
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.ArrowCursor)
+
+    def test_select_hover_and_press_targets_unselected_line_endpoint(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        selected = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 20), Point(80, 20)),
+        )
+        unselected = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 60), Point(80, 60)),
+        )
+        document.add_measurement(selected)
+        document.add_measurement(unselected)
+        canvas.set_selected_measurement(selected.id)
+        canvas.set_tool_mode("select")
+        endpoint = canvas.image_to_widget(unselected.line_px.start)
+
+        canvas.mouseMoveEvent(FakeMouseEvent(endpoint))
+
+        self.assertEqual(
+            canvas._hovered_line_endpoint,
+            (unselected.id, "start"),
+        )
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.SizeAllCursor)
+
+        canvas.mousePressEvent(
+            FakeMouseEvent(endpoint, button=Qt.MouseButton.LeftButton)
+        )
+
+        self.assertEqual(canvas._dragging_handle, (unselected.id, "start"))
+        self.assertEqual(
+            document.view_state.selected_measurement_id,
+            unselected.id,
+        )
+
+    def test_select_hover_respects_overlay_priority_over_unselected_line_endpoint(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(30, 60), Point(100, 60)),
+        )
+        overlay = OverlayAnnotation(
+            id=new_id("overlay"),
+            image_id=document.id,
+            kind=OverlayAnnotationKind.RECT,
+            start_px=Point(10, 40),
+            end_px=Point(60, 80),
+        )
+        document.add_measurement(measurement)
+        document.add_overlay_annotation(overlay)
+        canvas.set_selected_overlay_annotation(overlay.id)
+        canvas.set_tool_mode("select")
+        endpoint = canvas.image_to_widget(measurement.line_px.start)
+
+        canvas.mouseMoveEvent(FakeMouseEvent(endpoint))
+
+        self.assertIsNone(canvas._hovered_line_endpoint)
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.ArrowCursor)
+
+        canvas.mousePressEvent(
+            FakeMouseEvent(endpoint, button=Qt.MouseButton.LeftButton)
+        )
 
         self.assertIsNone(canvas._dragging_handle)
-        self.assertIsNotNone(canvas._drawing_line)
+        self.assertEqual(canvas._dragging_overlay_id, overlay.id)
+        self.assertEqual(document.selected_overlay_id, overlay.id)
+        self.assertIsNone(document.view_state.selected_measurement_id)
+
+    def test_select_hover_respects_area_priority_over_unselected_line_endpoint(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        line = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(20, 50), Point(100, 50)),
+        )
+        area = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="polygon_area",
+            measurement_kind="area",
+            polygon_px=[
+                Point(10, 35),
+                Point(110, 35),
+                Point(110, 95),
+                Point(10, 95),
+            ],
+        )
+        document.add_measurement(line)
+        document.add_measurement(area)
+        canvas.set_selected_measurement(area.id)
+        canvas.set_tool_mode("select")
+        endpoint = canvas.image_to_widget(line.line_px.start)
+
+        canvas.mouseMoveEvent(FakeMouseEvent(endpoint))
+
+        self.assertIsNone(canvas._hovered_line_endpoint)
+        self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.ArrowCursor)
+
+        canvas.mousePressEvent(
+            FakeMouseEvent(endpoint, button=Qt.MouseButton.LeftButton)
+        )
+
+        self.assertIsNone(canvas._dragging_handle)
+        self.assertIsNone(canvas._dragging_area_handle)
+        self.assertEqual(document.view_state.selected_measurement_id, area.id)
+        self.assertIsNone(document.selected_overlay_id)
+
+    def test_temporary_pointer_modes_clear_endpoint_hover_without_stale_cursor(self) -> None:
+        def hovered_select_canvas() -> tuple[DocumentCanvas, QPointF]:
+            document, _, canvas = self._create_canvas_document()
+            measurement = Measurement(
+                id=new_id("meas"),
+                image_id=document.id,
+                fiber_group_id=None,
+                mode="manual",
+                line_px=Line(Point(20, 20), Point(80, 20)),
+            )
+            document.add_measurement(measurement)
+            canvas.set_selected_measurement(measurement.id)
+            canvas.set_tool_mode("select")
+            endpoint = canvas.image_to_widget(measurement.line_px.start)
+            canvas.mouseMoveEvent(FakeMouseEvent(endpoint))
+            self.assertEqual(
+                canvas._hovered_line_endpoint,
+                (measurement.id, "start"),
+            )
+            self.assertEqual(
+                canvas.cursor().shape(),
+                Qt.CursorShape.SizeAllCursor,
+            )
+            return canvas, endpoint
+
+        for temporary_mode in ("roi", "scale_anchor", "space"):
+            with self.subTest(temporary_mode=temporary_mode):
+                canvas, _endpoint = hovered_select_canvas()
+                try:
+                    if temporary_mode == "roi":
+                        self.assertTrue(canvas.begin_roi_capture("rectangle"))
+                        self.assertIsNone(canvas._hovered_line_endpoint)
+                        self.assertEqual(
+                            canvas.cursor().shape(),
+                            Qt.CursorShape.CrossCursor,
+                        )
+                        self.assertTrue(canvas.cancel_roi_capture())
+                    elif temporary_mode == "scale_anchor":
+                        canvas.begin_scale_anchor_pick()
+                        self.assertIsNone(canvas._hovered_line_endpoint)
+                        self.assertEqual(
+                            canvas.cursor().shape(),
+                            Qt.CursorShape.CrossCursor,
+                        )
+                        canvas.end_scale_anchor_pick()
+                    else:
+                        canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Space))
+                        self.assertIsNone(canvas._hovered_line_endpoint)
+                        self.assertEqual(
+                            canvas.cursor().shape(),
+                            Qt.CursorShape.OpenHandCursor,
+                        )
+                        canvas.keyReleaseEvent(FakeKeyEvent(Qt.Key.Key_Space))
+
+                    self.assertIsNone(canvas._hovered_line_endpoint)
+                    self.assertEqual(
+                        canvas.cursor().shape(),
+                        Qt.CursorShape.ArrowCursor,
+                    )
+                finally:
+                    canvas.clear_document()
+                    canvas.close()
+
+    def test_line_endpoint_controls_are_independent_of_endpoint_style(self) -> None:
+        document, _, canvas = self._create_canvas_document()
+        measurement = Measurement(
+            id=new_id("meas"),
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(30, 30), Point(110, 30)),
+        )
+        document.add_measurement(measurement)
+        canvas.set_selected_measurement(measurement.id)
+        canvas.set_settings(
+            AppSettings(measurement_endpoint_style=MeasurementEndpointStyle.NONE)
+        )
+
+        def render_controls() -> QImage:
+            target = QImage(
+                canvas.size(),
+                QImage.Format.Format_ARGB32_Premultiplied,
+            )
+            target.fill(QColor(0, 0, 0, 0))
+            painter = QPainter(target)
+            try:
+                canvas._draw_preview(painter)
+            finally:
+                painter.end()
+            return target
+
+        start = canvas.image_to_widget(measurement.line_px.start).toPoint()
+        end = canvas.image_to_widget(measurement.line_px.end).toPoint()
+
+        canvas.set_tool_mode("manual")
+        manual_idle = render_controls()
+        self.assertEqual(manual_idle.pixelColor(start).alpha(), 0)
+        self.assertEqual(manual_idle.pixelColor(end).alpha(), 0)
+
+        canvas._set_hovered_line_endpoint((measurement.id, "start"))
+        manual_hover = render_controls()
+        self.assertGreater(manual_hover.pixelColor(start).alpha(), 0)
+        self.assertEqual(manual_hover.pixelColor(end).alpha(), 0)
+
+        canvas.set_tool_mode("select")
+        select_idle = render_controls()
+        self.assertGreater(select_idle.pixelColor(start).alpha(), 0)
+        self.assertGreater(select_idle.pixelColor(end).alpha(), 0)
+
+        self.assertTrue(canvas.begin_roi_capture("rectangle"))
+        roi_capture = render_controls()
+        self.assertEqual(roi_capture.pixelColor(start).alpha(), 0)
+        self.assertEqual(roi_capture.pixelColor(end).alpha(), 0)
+        self.assertTrue(canvas.cancel_roi_capture())
+
+        moved_start = Point(50, 55)
+        canvas._dragging_handle = (measurement.id, "start")
+        canvas._drag_preview_line = Line(moved_start, measurement.line_px.end)
+        dragging = render_controls()
+        moved_start_widget = canvas.image_to_widget(moved_start).toPoint()
+        self.assertEqual(dragging.pixelColor(start).alpha(), 0)
+        self.assertGreater(dragging.pixelColor(moved_start_widget).alpha(), 0)
+        self.assertGreater(dragging.pixelColor(end).alpha(), 0)
 
     def test_polygon_area_uses_tight_close_threshold(self) -> None:
         document, _, canvas = self._create_canvas_document()

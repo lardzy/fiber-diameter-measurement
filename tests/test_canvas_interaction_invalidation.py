@@ -513,6 +513,89 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
+    def test_line_endpoint_hover_invalidates_each_handle_locally(self) -> None:
+        document = ImageDocument(
+            id="doc-hover",
+            path="/tmp/doc-hover.png",
+            image_size=(320, 240),
+        )
+        measurement = Measurement(
+            id="line-hover",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            measurement_kind="line",
+            line_px=Line(Point(40.0, 70.0), Point(260.0, 70.0)),
+        )
+        document.add_measurement(measurement)
+        canvas = self._canvas(document)
+        canvas.set_tool_mode("manual")
+        start_position = canvas.image_to_widget(measurement.line_px.start)
+        end_position = canvas.image_to_widget(measurement.line_px.end)
+        try:
+            with patch.object(canvas, "update") as update:
+                canvas.mouseMoveEvent(_PointerEvent(start_position))
+
+            self.assertEqual(update.call_count, 1)
+            start_dirty = update.call_args.args[0]
+            self.assertTrue(start_dirty.contains(start_position.toPoint()))
+            self.assertLess(start_dirty.width(), canvas.width() / 2)
+
+            with patch.object(canvas, "update") as unchanged_update:
+                canvas.mouseMoveEvent(_PointerEvent(start_position))
+            unchanged_update.assert_not_called()
+
+            with patch.object(canvas, "update") as moved_update:
+                canvas.mouseMoveEvent(_PointerEvent(end_position))
+
+            self.assertEqual(moved_update.call_count, 2)
+            dirty_rects = [call.args[0] for call in moved_update.call_args_list]
+            self.assertTrue(any(rect.contains(start_position.toPoint()) for rect in dirty_rects))
+            self.assertTrue(any(rect.contains(end_position.toPoint()) for rect in dirty_rects))
+            self.assertTrue(all(rect.width() < canvas.width() / 2 for rect in dirty_rects))
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_document_geometry_change_clears_cached_line_endpoint_hover(self) -> None:
+        document = ImageDocument(
+            id="doc-hover-command",
+            path="/tmp/doc-hover-command.png",
+            image_size=(320, 240),
+        )
+        measurement = Measurement(
+            id="line-hover-command",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(40.0, 70.0), Point(260.0, 70.0)),
+        )
+        document.add_measurement(measurement)
+        canvas = self._canvas(document)
+        canvas.set_selected_measurement(measurement.id)
+        canvas.set_tool_mode("select")
+        try:
+            canvas.mouseMoveEvent(
+                _PointerEvent(canvas.image_to_widget(measurement.line_px.start))
+            )
+            self.assertEqual(
+                canvas._hovered_line_endpoint,
+                (measurement.id, "start"),
+            )
+            self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.SizeAllCursor)
+
+            measurement.line_px = Line(
+                Point(90.0, 110.0),
+                Point(280.0, 110.0),
+            )
+            canvas.notify_document_visual_changed()
+
+            self.assertIsNone(canvas._hovered_line_endpoint)
+            self.assertEqual(canvas.cursor().shape(), Qt.CursorShape.ArrowCursor)
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
     def test_area_center_drag_continuous_moves_use_local_regions(self) -> None:
         document = ImageDocument(
             id="doc",
