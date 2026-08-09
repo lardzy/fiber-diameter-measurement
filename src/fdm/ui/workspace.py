@@ -70,6 +70,7 @@ class AdaptiveLayoutController(QObject):
         self._workspace = WorkspaceMode.MEASURE
         self._compact = False
         self._applying = False
+        self._layout_apply_pending = False
         self._suppress_extent_capture = False
         self._presentation_suspend_depth = 0
         self._pending_results_height: int | None = None
@@ -101,6 +102,13 @@ class AdaptiveLayoutController(QObject):
     @property
     def is_compact(self) -> bool:
         return self._compact
+
+    def apply_pending_layout(self) -> None:
+        """Apply a layout change deferred while the main window was hidden."""
+
+        if not self._layout_apply_pending or not self._window.isVisible():
+            return
+        self.apply_for_width(self._window.width(), force=True)
 
     @property
     def is_presentation_suspended(self) -> bool:
@@ -197,8 +205,10 @@ class AdaptiveLayoutController(QObject):
             if not self._window.isVisible():
                 # 首启时窗口尚未映射，传入宽度可能来自错误的屏幕或在映射时被
                 # 窗口管理器再次调整。此时只记录断点状态，dock 可见性交给
-                # show 之后用最终宽度的强制应用决定，避免同一设备首启时
-                # 「项目与类别」时有时无。
+                # show 之后用最终宽度的强制应用决定。运行期隐藏窗口时发生的
+                # 断点或工作区变化也走同一路径，避免逻辑状态先行、dock 状态
+                # 留在旧布局。
+                self._layout_apply_pending = True
                 return
             if compact:
                 self._results_dock.hide()
@@ -224,6 +234,7 @@ class AdaptiveLayoutController(QObject):
                     self._results_dock.setVisible(results_visible)
         finally:
             self._applying = False
+        self._layout_apply_pending = False
         # Dock visibility has been applied explicitly while the window is
         # shown, so later visibilityChanged signals reflect real state.
         self._visibility_ready = True

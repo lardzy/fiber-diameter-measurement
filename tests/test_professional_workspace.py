@@ -44,12 +44,14 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.addCleanup(window.close)
         return window
 
-    def test_first_launch_visibility_ignores_pre_show_width_noise(self) -> None:
-        # 首启时窗口未映射，布局控制器可能先收到一个错误的宽度（多屏/窗口
-        # 管理器钳制）。最终可见性必须只由 show 后的真实宽度决定。
+    def test_first_launch_visibility_ignores_pre_show_transition(self) -> None:
+        # Qt 在窗口映射前可能短暂报告 dock 隐藏。这个过渡信号不能被采样成
+        # 用户的宽屏偏好，否则 show 后「项目与类别」会继续保持隐藏。
         window = self._window()
         window.resize(1366, 700)
-        window._adaptive_layout.apply_for_width(900, force=True)
+        window._adaptive_layout.apply_for_width(1366, force=True)
+        window._project_dock.hide()
+        window._adaptive_layout.note_visibility_change()
         window.show()
         self.app.processEvents()
         self.app.processEvents()
@@ -57,6 +59,43 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertFalse(window._adaptive_layout.is_compact)
         self.assertTrue(window._project_dock.isVisible())
         self.assertTrue(window._inspector_dock.isVisible())
+
+    def test_hidden_breakpoint_change_is_applied_when_reshown(self) -> None:
+        window = self._window()
+        window.resize(1366, 700)
+        window.show()
+        self.app.processEvents()
+        self.assertFalse(window._adaptive_layout.is_compact)
+
+        window.hide()
+        self.app.processEvents()
+        window.resize(900, 700)
+        window._adaptive_layout.apply_for_width(900, force=True)
+        window.show()
+        self.app.processEvents()
+        self.app.processEvents()
+
+        self.assertTrue(window._adaptive_layout.is_compact)
+        self.assertFalse(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+
+    def test_hide_show_without_layout_change_preserves_compact_side_panel(self) -> None:
+        window = self._window()
+        window.resize(1093, 700)
+        window.show()
+        self.app.processEvents()
+        window._toggle_project_panel()
+        self.app.processEvents()
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
+
+        window.hide()
+        self.app.processEvents()
+        window.show()
+        self.app.processEvents()
+
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertFalse(window._inspector_dock.isVisible())
 
     def test_compact_layout_preserves_canvas_and_one_side_panel(self) -> None:
         window = self._window()

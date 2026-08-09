@@ -1869,7 +1869,11 @@ class MainWindow(QMainWindow):
         self._fullscreen_controller.activeChanged.connect(
             self._on_fullscreen_active_changed
         )
-        QTimer.singleShot(0, lambda: self._adaptive_layout and self._adaptive_layout.apply_for_width(self.width(), force=True))
+        QTimer.singleShot(
+            0,
+            lambda: self._adaptive_layout
+            and self._adaptive_layout.apply_pending_layout(),
+        )
 
     def _create_actions(self) -> None:
         self.open_images_action = QAction("打开图片", self)
@@ -11935,6 +11939,11 @@ class MainWindow(QMainWindow):
         if self._adaptive_layout is not None:
             self._adaptive_layout.end_window_resize(self.width())
         self._schedule_inspector_layout_restore()
+
+    def showEvent(self, event) -> None:
+        super().showEvent(event)
+        if self._adaptive_layout is not None:
+            self._adaptive_layout.apply_pending_layout()
 
     def _on_workspace_dock_visibility_changed(self, _visible: bool) -> None:
         if self._adaptive_layout is not None:
