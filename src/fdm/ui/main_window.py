@@ -15170,14 +15170,23 @@ class MainWindow(QMainWindow):
             output_path = output_dir / Path(relative).name
         return relative, output_path
 
-    def _apply_open_view_mode(self, canvas: DocumentCanvas | None) -> None:
+    def _apply_open_view_mode(
+        self,
+        canvas: DocumentCanvas | None,
+        *,
+        restored_view_state: bool = False,
+    ) -> None:
         if canvas is None:
             return
         mode = self._app_settings.open_image_view_mode
-        if mode == OpenImageViewMode.FIT:
-            canvas.fit_to_view()
-        elif mode == OpenImageViewMode.ACTUAL:
+        if mode == OpenImageViewMode.DEFAULT and restored_view_state:
+            # “缺省”对项目恢复的图片保留其保存的视图状态。
+            return
+        if mode == OpenImageViewMode.ACTUAL:
             canvas.actual_size()
+        else:
+            # FIT 以及 DEFAULT（尚未配置设置/遗留“default”值）：新图片默认适合窗口。
+            canvas.fit_to_view()
 
     def _save_app_settings(self, *, context: str) -> bool:
         try:
@@ -16639,6 +16648,7 @@ class MainWindow(QMainWindow):
             tooltip=absolute_path if request.document is None else self._document_tooltip(target_document),
             raster_plane=request.raster_plane,
             raster_metadata=request.raster_metadata,
+            restored_view_state=request.document is not None,
         )
         self.project_session_controller.mark_document_resolved(target_document.id)
 
@@ -16678,6 +16688,7 @@ class MainWindow(QMainWindow):
         tooltip: str,
         raster_plane: RasterPlane | None = None,
         raster_metadata: RasterMetadata | None = None,
+        restored_view_state: bool = False,
     ) -> None:
         if document.history is not None:
             document.history.set_workspace_budget(self._workspace_history_budget)
@@ -16737,7 +16748,7 @@ class MainWindow(QMainWindow):
         self.image_list.insertItem(insert_index, list_item)
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
-        self._apply_open_view_mode(canvas)
+        self._apply_open_view_mode(canvas, restored_view_state=restored_view_state)
         self._update_ui_for_current_document()
 
     def _add_digital_slide_document_from_path(

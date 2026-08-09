@@ -44,6 +44,20 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.addCleanup(window.close)
         return window
 
+    def test_first_launch_visibility_ignores_pre_show_width_noise(self) -> None:
+        # 首启时窗口未映射，布局控制器可能先收到一个错误的宽度（多屏/窗口
+        # 管理器钳制）。最终可见性必须只由 show 后的真实宽度决定。
+        window = self._window()
+        window.resize(1366, 700)
+        window._adaptive_layout.apply_for_width(900, force=True)
+        window.show()
+        self.app.processEvents()
+        self.app.processEvents()
+
+        self.assertFalse(window._adaptive_layout.is_compact)
+        self.assertTrue(window._project_dock.isVisible())
+        self.assertTrue(window._inspector_dock.isVisible())
+
     def test_compact_layout_preserves_canvas_and_one_side_panel(self) -> None:
         window = self._window()
         window.resize(1093, 576)
@@ -691,21 +705,21 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                 self.assertEqual(getter(control), before)
                 self.assertGreater(scroll_bar.value(), 0)
 
-    def test_compact_record_columns_fit_the_inspector_without_horizontal_scroll(self) -> None:
+    def test_compact_record_columns_give_category_double_default_width(self) -> None:
         window = self._window()
         window.resize(1093, 576)
         window.show()
         self.app.processEvents()
         pane = window._inspector_records_pane
         self.assertIsNotNone(pane)
-        self.assertEqual(pane.table.horizontalScrollBar().maximum(), 0)
+        # 类别列默认宽度按产品要求翻倍（184px），窄屏下允许横向滚动。
+        self.assertGreaterEqual(
+            pane.table.columnWidth(int(MeasurementResultColumn.GROUP)),
+            184,
+        )
         self.assertGreaterEqual(
             pane.table.columnWidth(int(MeasurementResultColumn.RESULT_SEQUENCE)),
             44,
-        )
-        self.assertGreaterEqual(
-            pane.table.columnWidth(int(MeasurementResultColumn.GROUP)),
-            76,
         )
         self.assertGreaterEqual(
             pane.table.columnWidth(int(MeasurementResultColumn.RESULT)),

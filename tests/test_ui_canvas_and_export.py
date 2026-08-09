@@ -7970,6 +7970,52 @@ class CanvasAndExportTests(unittest.TestCase):
         finally:
             window.close()
 
+    def test_open_image_view_mode_default_fits_brand_new_image(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.open_image_view_mode = OpenImageViewMode.DEFAULT
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+
+            # A brand-new image has no saved view state; “缺省” must behave
+            # like a fresh install and fit the image to the window instead of
+            # leaving the factory 100% zoom in place.
+            window._add_loaded_document(
+                ImageLoadRequest(path="/tmp/view_mode_default_new.png", document=None),
+                image,
+            )
+            canvas = window.current_canvas()
+
+            self.assertIsNotNone(canvas)
+            self.assertEqual(canvas.zoom_mode(), CanvasZoomMode.FIT)
+            self.assertNotAlmostEqual(canvas._zoom, 1.0)
+        finally:
+            window.close()
+
+    def test_open_image_view_mode_default_keeps_restored_view_state(self) -> None:
+        window = MainWindow()
+        try:
+            window._app_settings.open_image_view_mode = OpenImageViewMode.DEFAULT
+            image = QImage(240, 160, QImage.Format.Format_RGB32)
+            image.fill(QColor("#FFFFFF"))
+            document = ImageDocument(
+                id=new_id("image"),
+                path="/tmp/view_mode_default_restored.png",
+                image_size=(image.width(), image.height()),
+            )
+            document.initialize_runtime_state()
+            document.view_state.zoom = 2.0
+
+            self._load_document_into_window(window, document, image)
+            canvas = window.current_canvas()
+
+            self.assertIsNotNone(canvas)
+            # Project-restored documents keep their saved view under “缺省”.
+            self.assertAlmostEqual(canvas._zoom, 2.0)
+            self.assertNotEqual(canvas.zoom_mode(), CanvasZoomMode.FIT)
+        finally:
+            window.close()
+
     def test_digital_slide_open_defaults_to_fit_even_when_images_open_actual_size(self) -> None:
         window = MainWindow()
         try:

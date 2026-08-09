@@ -317,6 +317,53 @@ class MeasurementResultsModelTests(unittest.TestCase):
         wide.close()
         compact.close()
 
+    def test_group_cell_single_click_opens_editor(self) -> None:
+        document = _document([_measurement("editable", group_id="cotton")])
+        controller = MeasurementRecordsController()
+        pane = MeasurementRecordsPane(controller, compact=True)
+        controller.set_document(document)
+        pane.resize(360, 240)
+        pane.show()
+
+        index = controller.proxy_model.index(0, int(MeasurementResultColumn.GROUP))
+        self.assertTrue(index.isValid())
+        pane._edit_group_on_click(index)
+
+        editor = pane.table.indexWidget(index)
+        self.assertIsNotNone(editor)
+        pane.close()
+
+        # 非类别列单击不进入编辑。
+        other = controller.proxy_model.index(0, int(MeasurementResultColumn.RESULT))
+        pane2 = MeasurementRecordsPane(controller, compact=True)
+        pane2._edit_group_on_click(other)
+        self.assertIsNone(pane2.table.indexWidget(other))
+        pane2.close()
+
+    def test_header_state_not_emitted_before_initial_restore(self) -> None:
+        controller = MeasurementRecordsController()
+        pane = MeasurementRecordsPane(controller, compact=True)
+        emitted: list[str] = []
+        pane.headerStateChanged.connect(emitted.append)
+        column = int(MeasurementResultColumn.GROUP)
+
+        # 构造后、启动恢复前的布局列宽信号不得外发，否则会覆盖已保存状态。
+        pane.table.setColumnWidth(column, 240)
+        self.assertEqual(emitted, [])
+
+        donor = MeasurementRecordsPane(MeasurementRecordsController(), compact=True)
+        donor.table.setColumnWidth(column, 250)
+        saved_state = donor.save_header_state()
+        donor.close()
+
+        self.assertTrue(pane.restore_header_state(saved_state))
+        self.assertEqual(pane.table.columnWidth(column), 250)
+
+        # 恢复完成（或显示）之后，用户调整才会持久化。
+        pane.table.setColumnWidth(column, 260)
+        self.assertTrue(emitted)
+        pane.close()
+
     def test_record_header_state_rejects_legacy_unversioned_payload(self) -> None:
         controller = MeasurementRecordsController()
         pane = MeasurementRecordsPane(controller, compact=True)

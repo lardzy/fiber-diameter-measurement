@@ -81,6 +81,11 @@ class AdaptiveLayoutController(QObject):
             "inspector": True,
             "results": False,
         }
+        # Becomes True once dock visibility is authoritative: either restored
+        # from a saved window state or applied once while the window is shown.
+        # Before that, isHidden() on the docks reports the never-shown
+        # transitional state and must not be sampled into _wide_visibility.
+        self._visibility_ready = False
         for dock in (self._project_dock, self._inspector_dock, self._results_dock):
             if isinstance(dock, WorkspaceDockWidget):
                 dock.extentChanged.connect(
@@ -189,6 +194,12 @@ class AdaptiveLayoutController(QObject):
                     "results": not self._results_dock.isHidden(),
                 }
             self._compact = compact
+            if not self._window.isVisible():
+                # 首启时窗口尚未映射，传入宽度可能来自错误的屏幕或在映射时被
+                # 窗口管理器再次调整。此时只记录断点状态，dock 可见性交给
+                # show 之后用最终宽度的强制应用决定，避免同一设备首启时
+                # 「项目与类别」时有时无。
+                return
             if compact:
                 self._results_dock.hide()
                 if self._workspace == WorkspaceMode.DIGITAL_SLIDE_ACQUIRE:
@@ -213,6 +224,9 @@ class AdaptiveLayoutController(QObject):
                     self._results_dock.setVisible(results_visible)
         finally:
             self._applying = False
+        # Dock visibility has been applied explicitly while the window is
+        # shown, so later visibilityChanged signals reflect real state.
+        self._visibility_ready = True
         self._last_extent_window_size = QSize(self._window.size())
         QTimer.singleShot(0, self.restore_preferred_extents)
         self.layoutChanged.emit(compact)
@@ -286,6 +300,7 @@ class AdaptiveLayoutController(QObject):
 
         if self.is_presentation_suspended:
             return
+        self._visibility_ready = True
         self._wide_visibility = {
             "project": not self._project_dock.isHidden(),
             "inspector": not self._inspector_dock.isHidden(),
@@ -450,7 +465,12 @@ class AdaptiveLayoutController(QObject):
             self.layoutPreferencesChanged.emit()
 
     def note_visibility_change(self) -> None:
-        if self.is_presentation_suspended or self._applying or self._compact:
+        if (
+            self.is_presentation_suspended
+            or self._applying
+            or self._compact
+            or not self._visibility_ready
+        ):
             return
         self._wide_visibility = {
             "project": not self._project_dock.isHidden(),

@@ -256,8 +256,8 @@ class MeasurementRecordsPane(QWidget):
 
     _WIDE_WIDTHS = (105, 125, 150, 90, 120, 75, 110, 125, 90, 125, 160, 120)
     HEADER_STATE_SCHEMA = "measurement-records-v2"
-    COMPACT_HEADER_STATE_SCHEMA = "measurement-records-compact-v3"
-    _COMPACT_WIDTHS = (44, 80, 76, 40, 64, 40, 70, 80, 60, 54, 110, 90)
+    COMPACT_HEADER_STATE_SCHEMA = "measurement-records-compact-v4"
+    _COMPACT_WIDTHS = (44, 80, 184, 36, 64, 36, 70, 80, 60, 48, 110, 90)
     _WIDE_VISIBLE = frozenset(
         {
             MeasurementResultColumn.RESULT_SEQUENCE,
@@ -295,6 +295,9 @@ class MeasurementRecordsPane(QWidget):
         self.controller = controller
         self.compact = bool(compact)
         self._syncing_sort = False
+        # 启动恢复前禁止外发列状态：构造和初次布局期间的列宽信号是默认值，
+        # 若写回设置会在 restore_header_state 读取之前覆盖已保存的用户列宽。
+        self._header_state_persist_ready = False
         layout = QVBoxLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(6)
@@ -358,6 +361,8 @@ class MeasurementRecordsPane(QWidget):
             int(MeasurementResultColumn.GROUP),
             MeasurementGroupDelegate(self.table),
         )
+        # 类别是唯一可编辑列：单击单元格直接弹出下拉，省去双击。
+        self.table.clicked.connect(self._edit_group_on_click)
         self.table.verticalHeader().setVisible(False)
         self.table.setSortingEnabled(True)
         initial_sort_column, initial_sort_order = controller.sort_state
@@ -434,6 +439,8 @@ class MeasurementRecordsPane(QWidget):
         return self.COMPACT_HEADER_STATE_SCHEMA if self.compact else self.HEADER_STATE_SCHEMA
 
     def restore_header_state(self, state: str, *, restore_sort: bool = False) -> bool:
+        # 无论恢复成败，本次恢复完成后才允许把列状态写回设置。
+        self._header_state_persist_ready = True
         token = str(state or "").strip()
         prefix = f"{self.header_state_schema}:"
         if not token.startswith(prefix):
@@ -538,6 +545,11 @@ class MeasurementRecordsPane(QWidget):
         finally:
             self._syncing_sort = False
 
+    def _edit_group_on_click(self, index: QModelIndex) -> None:
+        if not index.isValid() or index.column() != int(MeasurementResultColumn.GROUP):
+            return
+        self.table.edit(index)
+
     def _activate_index(self, index: QModelIndex) -> None:
         if not index.isValid() or index.column() == int(MeasurementResultColumn.GROUP):
             return
@@ -570,8 +582,13 @@ class MeasurementRecordsPane(QWidget):
         self._emit_header_state()
 
     def _emit_header_state(self) -> None:
-        if hasattr(self, "table"):
+        if hasattr(self, "table") and self._header_state_persist_ready:
             self.headerStateChanged.emit(self.save_header_state())
+
+    def showEvent(self, event) -> None:
+        # 独立使用（未走启动恢复流程）时，最晚在显示后允许持久化。
+        self._header_state_persist_ready = True
+        super().showEvent(event)
 
     def _update_count(self, visible: int, total: int) -> None:
         self.count_label.setText(
