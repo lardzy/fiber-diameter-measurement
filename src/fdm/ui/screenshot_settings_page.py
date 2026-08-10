@@ -7,7 +7,6 @@ from PySide6.QtCore import Signal
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import (
     QCheckBox,
-    QComboBox,
     QFileDialog,
     QFormLayout,
     QGroupBox,
@@ -16,7 +15,6 @@ from PySide6.QtWidgets import (
     QLabel,
     QLineEdit,
     QPushButton,
-    QSpinBox,
     QVBoxLayout,
     QWidget,
 )
@@ -29,6 +27,7 @@ from fdm.screenshot_settings import (
     ScreenshotSettings,
 )
 from fdm.services.screenshot_capture import CaptureMode
+from fdm.ui.widgets import NoWheelComboBox, NoWheelSpinBox
 
 
 _HOTKEY_ROWS = (
@@ -98,7 +97,7 @@ class ScreenshotSettingsPage(QWidget):
         )
         output_form.addRow("文件名模板", self.filename_template_edit)
 
-        self.image_format_combo = QComboBox(output_group)
+        self.image_format_combo = NoWheelComboBox(output_group)
         for label, image_format in (
             ("PNG（无损）", ImageFormat.PNG),
             ("JPEG", ImageFormat.JPEG),
@@ -110,7 +109,7 @@ class ScreenshotSettingsPage(QWidget):
         )
         output_form.addRow("图片格式", self.image_format_combo)
 
-        self.quality_spin = QSpinBox(output_group)
+        self.quality_spin = NoWheelSpinBox(output_group)
         self.quality_spin.setRange(1, 100)
         self.quality_spin.setSuffix("%")
         self.quality_spin.setValue(self._quality_for(self._initial_settings.image_format))
@@ -122,7 +121,7 @@ class ScreenshotSettingsPage(QWidget):
         self._quality_format = self._initial_settings.image_format
         output_form.addRow("有损质量", self.quality_spin)
 
-        self.collision_combo = QComboBox(output_group)
+        self.collision_combo = NoWheelComboBox(output_group)
         self.collision_combo.addItem("自动追加序号", CollisionPolicy.INCREMENT.value)
         self.collision_combo.addItem("覆盖同名文件", CollisionPolicy.OVERWRITE.value)
         self.collision_combo.addItem("同名时报告失败", CollisionPolicy.FAIL.value)
@@ -159,7 +158,7 @@ class ScreenshotSettingsPage(QWidget):
         behavior_layout.addStretch(1)
         output_form.addRow("行为", behavior_row)
 
-        self.delay_spin = QSpinBox(output_group)
+        self.delay_spin = NoWheelSpinBox(output_group)
         self.delay_spin.setRange(0, 60_000)
         self.delay_spin.setSingleStep(500)
         self.delay_spin.setSuffix(" ms")

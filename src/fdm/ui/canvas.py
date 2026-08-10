@@ -195,6 +195,10 @@ class MagicSegmentOperationMode:
 
 OVERLAY_CACHE_MIN_MEASUREMENTS = 64
 OVERLAY_CACHE_MIN_AREA_VERTICES = 10_000
+_DIRECT_CONSTRUCTION_LINE_KINDS = frozenset({"segment", "ray", "infinite_line"})
+_CONSTRUCTION_LINE_ANCHOR_KINDS = _DIRECT_CONSTRUCTION_LINE_KINDS | frozenset(
+    {"horizontal_line", "vertical_line"}
+)
 
 
 def _bounded_view_zoom(value: float) -> float:
@@ -302,6 +306,7 @@ class _ConstructionCommandSession:
     points: list[Point] = field(default_factory=list)
     point_sources: list[FeatureSource] = field(default_factory=list)
     sources: list[FeatureSource] = field(default_factory=list)
+    preview_start_point: Point | None = None
     hover_point: Point | None = None
     invalid_reason: str = ""
     advanced_solution_cache_key: tuple[object, ...] | None = None
@@ -1524,6 +1529,7 @@ class DocumentCanvas(QWidget):
             session.points.pop()
             if session.point_sources:
                 session.point_sources.pop()
+            session.preview_start_point = None
         elif session.sources:
             session.sources.pop()
         else:
@@ -1793,12 +1799,35 @@ class DocumentCanvas(QWidget):
         image_point: Point,
         *,
         widget_point: QPointF | None = None,
+        modifiers: Qt.KeyboardModifiers = Qt.KeyboardModifier.NoModifier,
     ) -> bool:
         if self._document is None or not self._point_in_image(image_point):
             return False
         session = self._ensure_construction_session()
-        point = self._anchor_point_for_event(image_point, Qt.KeyboardModifier.NoModifier)
         kind = session.kind
+        if kind in _DIRECT_CONSTRUCTION_LINE_KINDS and session.points:
+            constrained_start, point = self._apply_line_constraints(
+                session.points[0],
+                image_point,
+                modifiers,
+                snap_anchor=True,
+            )
+            # Keep the committed geometry identical to the live preview.  In
+            # particular, pressing Ctrl for the second endpoint also moves an
+            # unsnapped first endpoint to its pixel centre, matching the manual
+            # line tool's established behaviour.
+            session.points[0] = constrained_start
+        else:
+            if kind in _DIRECT_CONSTRUCTION_LINE_KINDS:
+                session.preview_start_point = None
+            point = self._anchor_point_for_event(
+                image_point,
+                (
+                    modifiers
+                    if kind in _CONSTRUCTION_LINE_ANCHOR_KINDS
+                    else Qt.KeyboardModifier.NoModifier
+                ),
+            )
         session.invalid_reason = ""
 
         if kind == "point":
@@ -4328,6 +4357,7 @@ class DocumentCanvas(QWidget):
             self._construction_mouse_press(
                 image_point,
                 widget_point=event.position(),
+                modifiers=event.modifiers(),
             )
             return
 
@@ -4714,10 +4744,27 @@ class DocumentCanvas(QWidget):
 
         if self._tool_mode == "construction":
             session = self._ensure_construction_session()
-            session.hover_point = self._clamp_to_image(
-                self._object_snapped_point(image_point),
-                pixel_center=False,
-            )
+            if session.kind in _DIRECT_CONSTRUCTION_LINE_KINDS:
+                if session.points:
+                    preview_start, hover_point = self._apply_line_constraints(
+                        session.points[0],
+                        image_point,
+                        event.modifiers(),
+                        snap_anchor=True,
+                    )
+                    session.preview_start_point = preview_start
+                else:
+                    session.preview_start_point = None
+                    hover_point = self._anchor_point_for_event(
+                        image_point,
+                        event.modifiers(),
+                    )
+                session.hover_point = hover_point
+            else:
+                session.hover_point = self._clamp_to_image(
+                    self._object_snapped_point(image_point),
+                    pixel_center=False,
+                )
             session.invalid_reason = self._construction_preview_error(session)
             self._emit_construction_command_changed()
             self.update()
@@ -7461,7 +7508,10 @@ class DocumentCanvas(QWidget):
         ):
             return
         session = self._construction_session
-        points = list(session.points)
+        fixed_points = list(session.points)
+        if fixed_points and session.preview_start_point is not None:
+            fixed_points[0] = session.preview_start_point
+        points = list(fixed_points)
         if session.hover_point is not None:
             points.append(session.hover_point)
         color = QColor("#EF5350" if session.invalid_reason else "#F4D35E")
@@ -7518,7 +7568,7 @@ class DocumentCanvas(QWidget):
                 )
                 if preview_definition is not None:
                     self._draw_preview_definition(painter, preview_definition)
-            for point in session.points:
+            for point in fixed_points:
                 center = self.image_to_widget(point)
                 painter.drawEllipse(center, 3.5, 3.5)
         except (TypeError, ValueError):

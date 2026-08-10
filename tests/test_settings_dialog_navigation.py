@@ -10,8 +10,15 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 try:
-    from PySide6.QtCore import QPoint
-    from PySide6.QtWidgets import QApplication, QDialogButtonBox
+    from PySide6.QtCore import QPoint, QPointF, Qt
+    from PySide6.QtGui import QWheelEvent
+    from PySide6.QtWidgets import (
+        QApplication,
+        QComboBox,
+        QDialogButtonBox,
+        QScrollArea,
+        QSpinBox,
+    )
 
     from fdm.geometry import Point
     from fdm.models import (
@@ -21,6 +28,7 @@ try:
     )
     from fdm.settings import AppSettings, MeasurementLabelStyleSettings
     from fdm.ui.dialogs import SettingsDialog
+    from fdm.ui.widgets import NoWheelComboBox, NoWheelSpinBox
 
     PYSIDE_AVAILABLE = True
 except ModuleNotFoundError:
@@ -173,6 +181,89 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             self.assertEqual(screenshot.output_directory, "/tmp/fdm-screenshots")
             self.assertEqual(screenshot.image_format, ImageFormat.JPEG)
             self.assertNotIn("screenshot", app_settings.to_dict())
+        finally:
+            dialog.close()
+
+    def test_screenshot_page_editors_ignore_wheel_and_scroll_the_page(self) -> None:
+        dialog = SettingsDialog(AppSettings(), document=None)
+        try:
+            dialog._settings_navigation.setCurrentRow(6)  # noqa: SLF001
+            dialog.resize(700, 420)
+            dialog.show()
+            self.app.processEvents()
+            # The preferred first-show size may be larger than the test size.
+            # Resize once more so this regression always exercises a scrollable
+            # screenshot settings page.
+            dialog.resize(700, 420)
+            self.app.processEvents()
+
+            scroll = dialog._settings_pages.currentWidget()  # noqa: SLF001
+            self.assertIsInstance(scroll, QScrollArea)
+            assert isinstance(scroll, QScrollArea)
+            scroll_bar = scroll.verticalScrollBar()
+            self.assertGreater(scroll_bar.maximum(), 0)
+
+            page = dialog._screenshot_settings_widget  # noqa: SLF001
+            self.assertTrue(page.findChildren(QComboBox))
+            self.assertTrue(page.findChildren(QSpinBox))
+            self.assertTrue(
+                all(
+                    isinstance(combo, NoWheelComboBox)
+                    for combo in page.findChildren(QComboBox)
+                )
+            )
+            self.assertTrue(
+                all(
+                    isinstance(spin, NoWheelSpinBox)
+                    for spin in page.findChildren(QSpinBox)
+                )
+            )
+            page.image_format_combo.setCurrentIndex(1)
+            page.collision_combo.setCurrentIndex(1)
+            page.quality_spin.setValue(67)
+            page.delay_spin.setValue(5_000)
+            self.app.processEvents()
+
+            editors = (
+                page.image_format_combo,
+                page.collision_combo,
+                page.quality_spin,
+                page.delay_spin,
+            )
+            for editor in editors:
+                with self.subTest(editor=type(editor).__name__):
+                    scroll_bar.setValue(0)
+                    editor.setFocus()
+                    self.app.processEvents()
+                    before = (
+                        editor.currentIndex()
+                        if isinstance(editor, QComboBox)
+                        else editor.value()
+                    )
+                    local_position = QPointF(editor.rect().center())
+                    global_position = QPointF(
+                        editor.mapToGlobal(editor.rect().center())
+                    )
+                    event = QWheelEvent(
+                        local_position,
+                        global_position,
+                        QPoint(0, 0),
+                        QPoint(0, -120),
+                        Qt.MouseButton.NoButton,
+                        Qt.KeyboardModifier.NoModifier,
+                        Qt.ScrollPhase.ScrollUpdate,
+                        False,
+                    )
+
+                    QApplication.sendEvent(editor, event)
+
+                    after = (
+                        editor.currentIndex()
+                        if isinstance(editor, QComboBox)
+                        else editor.value()
+                    )
+                    self.assertEqual(after, before)
+                    self.assertGreater(scroll_bar.value(), 0)
         finally:
             dialog.close()
 

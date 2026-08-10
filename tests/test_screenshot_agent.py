@@ -516,6 +516,7 @@ def test_standalone_settings_scroll_and_disabling_quits_after_accept(
         assert dialog is not None
         scroll = dialog.findChild(QScrollArea)
         assert scroll is not None and scroll.widget() is not None
+        assert scroll.property("redirectEditorWheel") is True
         page = scroll.widget()
         page.resident_checkbox.setChecked(False)
 

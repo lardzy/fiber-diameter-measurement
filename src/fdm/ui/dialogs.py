@@ -1711,6 +1711,7 @@ class SettingsDialog(QDialog):
             self.screenshotCu5DiagnosticRequested
         )
         screenshot_page = self._wrap_settings_page(self._screenshot_settings_widget)
+        screenshot_page.setProperty("redirectEditorWheel", True)
         raw_record_page = self._build_raw_record_templates_tab(settings)
 
         self._settings_pages = QStackedWidget(self)

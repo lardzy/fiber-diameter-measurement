@@ -902,6 +902,7 @@ class ScreenshotAgent(QObject):
         layout = QVBoxLayout(dialog)
         scroll = QScrollArea(dialog)
         scroll.setWidgetResizable(True)
+        scroll.setProperty("redirectEditorWheel", True)
         page = ScreenshotSettingsPage(self._settings)
         page.set_agent_status(True, f"已注册 {len(self._hotkey_modes)} 个全局快捷键")
         scroll.setWidget(page)

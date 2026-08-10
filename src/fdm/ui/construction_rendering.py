@@ -163,7 +163,15 @@ def _draw_emphasis(
         painter.setPen(QPen(QColor("#0B0B0B"), 1.2))
         painter.setBrush(fill)
         for point in points:
-            painter.drawRect(QRectF(image_to_widget(point) - QPointF(4.5, 4.5), QPointF(9.0, 9.0)))
+            center = image_to_widget(point)
+            painter.drawRect(
+                QRectF(
+                    center.x() - 4.5,
+                    center.y() - 4.5,
+                    9.0,
+                    9.0,
+                )
+            )
     finally:
         painter.restore()
 
@@ -239,6 +247,7 @@ def draw_snap_candidate(
     painter.save()
     try:
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.setPen(QPen(QColor("#111111"), 3.8))
         _draw_snap_symbol(painter, center, candidate.kind)
         painter.setPen(QPen(color, 2.0))
@@ -258,7 +267,14 @@ def draw_snap_candidate(
 def _draw_snap_symbol(painter: QPainter, center: QPointF, kind: SnapKind) -> None:
     radius = 5.0
     if kind in {SnapKind.POINT, SnapKind.ENDPOINT}:
-        painter.drawRect(QRectF(center - QPointF(radius, radius), QPointF(radius * 2.0, radius * 2.0)))
+        painter.drawRect(
+            QRectF(
+                center.x() - radius,
+                center.y() - radius,
+                radius * 2.0,
+                radius * 2.0,
+            )
+        )
     elif kind is SnapKind.MIDPOINT:
         painter.drawPolygon(
             QPolygonF(

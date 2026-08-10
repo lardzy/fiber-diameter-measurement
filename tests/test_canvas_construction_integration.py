@@ -93,10 +93,15 @@ def canvas_fixture(app: QApplication) -> tuple[ImageDocument, QImage, DocumentCa
     app.processEvents()
 
 
-def _click_image(canvas: DocumentCanvas, point: Point) -> None:
+def _click_image(
+    canvas: DocumentCanvas,
+    point: Point,
+    *,
+    modifiers: Qt.KeyboardModifier = Qt.KeyboardModifier.NoModifier,
+) -> None:
     position = canvas.image_to_widget(point)
-    canvas.mousePressEvent(_MouseEvent(position))
-    canvas.mouseReleaseEvent(_MouseEvent(position))
+    canvas.mousePressEvent(_MouseEvent(position, modifiers=modifiers))
+    canvas.mouseReleaseEvent(_MouseEvent(position, modifiers=modifiers))
 
 
 def _render_canvas(canvas: DocumentCanvas, app: QApplication) -> QImage:
@@ -203,6 +208,115 @@ def test_construction_entry_creates_free_point_and_finite_line(
     assert definition.extent is LineExtent.SEGMENT
     assert definition.start == Point(40.0, 45.0)
     assert definition.end == Point(110.0, 65.0)
+
+
+@pytest.mark.parametrize(
+    ("tool", "extent"),
+    [
+        ("segment", LineExtent.SEGMENT),
+        ("ray", LineExtent.RAY),
+        ("infinite_line", LineExtent.INFINITE),
+    ],
+)
+def test_direct_construction_lines_share_manual_shift_ctrl_constraints(
+    canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
+    tool: str,
+    extent: LineExtent,
+) -> None:
+    document, _image, canvas = canvas_fixture
+    created: list[ConstructionEntity] = []
+    canvas.constructionCreateRequested.connect(
+        lambda document_id, entity: (
+            document_id == document.id and created.append(entity)
+        )
+    )
+    canvas.set_tool_mode("construction", construction_kind=tool)
+
+    _click_image(canvas, Point(40.2, 45.2))
+    assert canvas._construction_session is not None  # noqa: SLF001
+    assert canvas._construction_session.points == [Point(40.2, 45.2)]  # noqa: SLF001
+
+    combined = (
+        Qt.KeyboardModifier.ShiftModifier
+        | Qt.KeyboardModifier.ControlModifier
+    )
+    moving = canvas.image_to_widget(Point(110.8, 60.1))
+    canvas.mouseMoveEvent(_MouseEvent(moving, modifiers=combined))
+    assert canvas._construction_session.preview_start_point == Point(  # noqa: SLF001
+        40.5,
+        45.5,
+    )
+    assert canvas._construction_session.hover_point == Point(110.5, 45.5)  # noqa: SLF001
+
+    _click_image(canvas, Point(110.8, 60.1), modifiers=combined)
+
+    assert len(created) == 1
+    definition = created[0].definition
+    assert isinstance(definition, LineDefinition)
+    assert definition.extent is extent
+    assert definition.start == Point(40.5, 45.5)
+    assert definition.end == Point(110.5, 45.5)
+
+
+def test_direct_construction_line_shift_uses_dominant_vertical_axis(
+    canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
+) -> None:
+    document, _image, canvas = canvas_fixture
+    created: list[ConstructionEntity] = []
+    canvas.constructionCreateRequested.connect(
+        lambda document_id, entity: (
+            document_id == document.id and created.append(entity)
+        )
+    )
+    canvas.set_tool_mode("construction", construction_kind="segment")
+    _click_image(canvas, Point(62.0, 20.0))
+    _click_image(
+        canvas,
+        Point(70.0, 95.0),
+        modifiers=Qt.KeyboardModifier.ShiftModifier,
+    )
+
+    definition = created[0].definition
+    assert isinstance(definition, LineDefinition)
+    assert definition.start == Point(62.0, 20.0)
+    assert definition.end == Point(62.0, 95.0)
+
+
+@pytest.mark.parametrize(
+    ("tool", "constraint"),
+    [
+        ("horizontal_line", LineAxisConstraint.HORIZONTAL),
+        ("vertical_line", LineAxisConstraint.VERTICAL),
+    ],
+)
+def test_axis_construction_line_ctrl_places_through_point_at_pixel_center(
+    canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
+    tool: str,
+    constraint: LineAxisConstraint,
+) -> None:
+    document, _image, canvas = canvas_fixture
+    created: list[ConstructionEntity] = []
+    canvas.constructionCreateRequested.connect(
+        lambda document_id, entity: (
+            document_id == document.id and created.append(entity)
+        )
+    )
+    canvas.set_tool_mode("construction", construction_kind=tool)
+    _click_image(
+        canvas,
+        Point(45.2, 35.8),
+        modifiers=Qt.KeyboardModifier.ControlModifier,
+    )
+
+    assert len(created) == 1
+    definition = created[0].definition
+    assert isinstance(definition, LineDefinition)
+    assert definition.axis_constraint is constraint
+    assert definition.start == Point(45.5, 35.5)
+    if constraint is LineAxisConstraint.HORIZONTAL:
+        assert definition.end == Point(46.5, 35.5)
+    else:
+        assert definition.end == Point(45.5, 36.5)
 
 
 @pytest.mark.parametrize(
