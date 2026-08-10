@@ -11,7 +11,7 @@ import pytest
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
-from PySide6.QtCore import QCoreApplication, QEvent
+from PySide6.QtCore import QCoreApplication, QEvent, QPoint, Qt
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QDialog, QScrollArea
@@ -46,6 +46,7 @@ from fdm.services.screenshot_capture import (
     CaptureRect,
     CaptureRequest,
     ScreenInfo,
+    WindowCandidate,
 )
 from fdm.services.screenshot_output import OutputResult
 from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
@@ -475,6 +476,94 @@ def test_new_capture_retires_old_overlay_and_stale_finish_keeps_request_identity
             agent._overlay.accept_region(CaptureRect(2, 3, 10, 8))
             QTest.qWait(110)
         assert complete.call_args.kwargs["expected_request"] is request
+    finally:
+        if agent._overlay is not None:
+            agent._overlay.close()
+        agent.close()
+
+
+@pytest.mark.parametrize(
+    ("candidates", "click_position", "expected_handle"),
+    (
+        (
+            (
+                WindowCandidate(
+                    100,
+                    CaptureRect(50, 50, 500, 400),
+                    z_order=0,
+                    metadata={"root_handle": 100},
+                ),
+                WindowCandidate(
+                    101,
+                    CaptureRect(100, 100, 200, 120),
+                    parent_handle=100,
+                    depth=1,
+                    z_order=1,
+                    metadata={
+                        "root_handle": 100,
+                        "ancestor_handles": (100,),
+                    },
+                ),
+            ),
+            QPoint(150, 150),
+            101,
+        ),
+        (
+            (
+                WindowCandidate(
+                    200,
+                    CaptureRect(0, 560, 800, 40),
+                    z_order=0,
+                    metadata={"root_handle": 200},
+                ),
+            ),
+            QPoint(200, 580),
+            200,
+        ),
+    ),
+    ids=("nested-window", "taskbar-style-root"),
+)
+def test_smart_overlay_real_click_reaches_capture_ready(
+    tmp_path: Path,
+    candidates: tuple[WindowCandidate, ...],
+    click_position: QPoint,
+    expected_handle: int,
+) -> None:
+    app = _app()
+
+    class _CandidateBackend(_CaptureBackend):
+        def windows(self, *, include_children: bool = True):
+            return candidates
+
+    coordinator = CaptureCoordinator(_CandidateBackend())
+    agent = ScreenshotAgent(
+        app,
+        coordinator,
+        settings_path=tmp_path / "settings.json",
+        output_service=_OutputService(),
+        cu5_locator=_Locator(),
+    )
+    ready: list[CapturedFrame] = []
+    coordinator.captureReady.connect(ready.append)
+    try:
+        agent.begin_capture(CaptureRequest(CaptureMode.SMART))
+        overlay = agent._overlay
+        assert overlay is not None
+        QTest.mouseMove(overlay, click_position)
+        assert overlay.selected_candidate is not None
+        assert overlay.selected_candidate.handle == expected_handle
+
+        QTest.mouseClick(
+            overlay,
+            Qt.MouseButton.LeftButton,
+            Qt.KeyboardModifier.NoModifier,
+            click_position,
+        )
+        QTest.qWait(110)
+
+        assert len(ready) == 1
+        assert ready[0].target_handle == expected_handle
+        assert agent._overlay is None
     finally:
         if agent._overlay is not None:
             agent._overlay.close()

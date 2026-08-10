@@ -824,6 +824,14 @@ class CaptureCoordinator(QObject):
         return tuple(self._backend.screens())
 
     def candidates(self, request: CaptureRequest) -> tuple[WindowCandidate, ...]:
+        # Region capture is deliberately free-form.  Feeding window candidates
+        # to the shared selection overlay makes a click look like a window
+        # confirmation and, more importantly, makes the highlighted window
+        # appear to "snap" while the user is trying to draw an arbitrary box.
+        # Keep this invariant in the coordinator so every UI client gets the
+        # same behaviour and the native window tree is not enumerated at all.
+        if request.mode is CaptureMode.REGION:
+            return ()
         candidates = tuple(self._backend.windows(include_children=True))
         if request.mode is CaptureMode.CU5:
             return rank_cu5_candidates(candidates)

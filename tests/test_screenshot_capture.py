@@ -208,6 +208,26 @@ def test_coordinator_resolves_full_display_active_last_and_manual_selection() ->
     assert app is QApplication.instance()
 
 
+def test_region_candidates_skip_window_enumeration_while_smart_keeps_candidates() -> None:
+    class _CountingBackend(_Backend):
+        def __init__(self) -> None:
+            super().__init__()
+            self.window_calls = 0
+
+        def windows(self, *, include_children: bool = True):
+            self.window_calls += 1
+            return super().windows(include_children=include_children)
+
+    backend = _CountingBackend()
+    coordinator = CaptureCoordinator(backend)
+
+    assert coordinator.candidates(CaptureRequest(CaptureMode.REGION)) == ()
+    assert backend.window_calls == 0
+
+    assert coordinator.candidates(CaptureRequest(CaptureMode.SMART)) == backend._windows
+    assert backend.window_calls == 1
+
+
 def test_delayed_request_generation_cannot_fire_a_newer_request_early() -> None:
     app = _app()
     coordinator = CaptureCoordinator(_Backend())

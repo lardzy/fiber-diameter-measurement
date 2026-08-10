@@ -33,7 +33,7 @@ from fdm.ui.widgets import NoWheelComboBox, NoWheelSpinBox
 
 
 _HOTKEY_ROWS = (
-    (CaptureMode.REGION, "区域 / 智能识别"),
+    (CaptureMode.REGION, "自由区域"),
     (CaptureMode.WINDOW, "窗口 / 子窗口"),
     (CaptureMode.FULL_SCREEN, "全部屏幕"),
     (CaptureMode.LAST_REGION, "上次区域"),

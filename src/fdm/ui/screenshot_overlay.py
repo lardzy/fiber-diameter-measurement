@@ -266,7 +266,7 @@ class ScreenshotOverlay(QWidget):
         painter.fillRect(self.rect(), QColor(0, 0, 0, 92))
 
         highlight: CaptureRect | None = None
-        label = "拖动选择区域；Tab/滚轮切换窗口层级；Esc 取消"
+        label = "拖动选择区域；Esc 取消"
         if self._drag_origin is not None and self._drag_current is not None:
             local = QRect(self._drag_origin, self._drag_current).normalized()
             highlight = CaptureRect.from_qrect(local)
@@ -276,12 +276,21 @@ class ScreenshotOverlay(QWidget):
             global_origin = self.geometry().topLeft()
             highlight = logical.translated(-global_origin.x(), -global_origin.y())
             title = candidate.title.strip() or candidate.class_name.strip() or "窗口区域"
-            label = f"{title}  {candidate.capture_rect.width} × {candidate.capture_rect.height} px"
+            label = (
+                "单击确认；拖动自由框选；Tab/滚轮切换层级  ·  "
+                f"{title}  {candidate.capture_rect.width} × {candidate.capture_rect.height} px"
+            )
 
         if highlight is not None and highlight.valid:
             rect = highlight.to_qrect()
-            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Clear)
-            painter.fillRect(rect, Qt.GlobalColor.transparent)
+            # A fully transparent pixel in a Windows layered window is also
+            # excluded from native hit testing.  Clearing the recognised area
+            # therefore made clicks pass through to the target application:
+            # the shaded taskbar/desktop edge worked, while the visually clear
+            # window area appeared unresponsive.  Alpha 1 is visually clear
+            # but keeps the overlay as the mouse target.
+            painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_Source)
+            painter.fillRect(rect, QColor(0, 0, 0, 1))
             painter.setCompositionMode(QPainter.CompositionMode.CompositionMode_SourceOver)
             painter.setPen(QPen(QColor(45, 180, 255), 2))
             painter.drawRect(rect.adjusted(1, 1, -1, -1))
