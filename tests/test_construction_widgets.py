@@ -10,7 +10,7 @@ import pytest
 pytest.importorskip("PySide6")
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QAction, QColor, QImage
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 import fdm.ui.main_window as main_window_module
@@ -49,6 +49,7 @@ from fdm.ui.construction_widgets import (
 )
 from fdm.ui.main_window import MainWindow
 from fdm.ui.object_inspector import CurrentObjectInspector
+from fdm.ui.widgets import MeasurementToolStrip
 
 
 @pytest.fixture(scope="module")
@@ -303,6 +304,196 @@ def test_context_snapshot_updates_every_parameter_without_feedback(
     assert widget.extendCheck.isChecked()
     assert emitted == []
     widget.close()
+
+
+@pytest.mark.parametrize(
+    ("tool", "expected_prompt"),
+    (
+        ("point", "单击放点"),
+        ("midpoint", "选择有限线段"),
+        ("intersection", "选两对象；再选交点"),
+        ("segment", "两端点 · Shift 正交 · Ctrl 像素中心"),
+        ("ray", "起点和方向 · Shift 正交 · Ctrl 像素中心"),
+        ("infinite_line", "直线两点 · Shift 正交 · Ctrl 像素中心"),
+        ("horizontal_line", "通过点 · Ctrl 像素中心"),
+        ("vertical_line", "通过点 · Ctrl 像素中心"),
+        ("circle_center_radius", "指定圆心和圆周点"),
+        ("circle_center_diameter", "指定圆心和圆周点"),
+        ("circle_diameter_2p", "指定直径两端点"),
+        ("circle_3p", "指定圆上三点"),
+        ("parallel_through", "选择源线和通过点"),
+        ("parallel_offset", "选择源线和偏移侧"),
+        ("parallel_array", "选择源线和阵列侧"),
+        ("perpendicular", "选择源线和通过点"),
+        ("perpendicular_bisector", "选择有限线段"),
+        ("concentric_circle", "选择源圆和新圆周点"),
+        ("offset_circle", "选择源圆和偏移侧"),
+        ("tangent_point_circle", "选择点和圆；再选切线"),
+        ("common_tangent_external", "选择两圆；再选外公切线"),
+        ("common_tangent_internal", "选择两圆；再选内公切线"),
+        ("tangent_circle_ttr", "选择两对象；再选定半径解"),
+        ("tangent_circle_3", "选择三对象；再选相切圆"),
+    ),
+)
+def test_construction_prompts_are_concise_and_keep_modifier_help(
+    app: QApplication,
+    tool: str,
+    expected_prompt: str,
+) -> None:
+    context = ConstructionContextWidget()
+    document = SimpleNamespace(id="concise-prompt-document")
+    host = SimpleNamespace(
+        _construction_context_widget=context,
+        _construction_tool_kind=tool,
+    )
+    host.current_document = MethodType(lambda self: document, host)
+
+    MainWindow._on_canvas_construction_command_changed(
+        host,
+        document.id,
+        {
+            "tool": tool,
+            "point_count": 0,
+            "source_count": 0,
+        },
+    )
+
+    assert context.promptLabel.text() == expected_prompt
+    assert len(expected_prompt) <= 32
+    assert not context.promptLabel.wordWrap()
+    context.close()
+
+
+def test_unchanged_construction_prompt_does_not_relayout_on_mouse_updates(
+    app: QApplication,
+) -> None:
+    context = ConstructionContextWidget()
+    document = SimpleNamespace(id="stable-prompt-document")
+    refresh_calls: list[bool] = []
+    host = SimpleNamespace(
+        _construction_context_widget=context,
+        _construction_tool_kind="segment",
+        _measurement_tool_strip=SimpleNamespace(
+            refreshContextLayout=lambda: refresh_calls.append(True)
+        ),
+    )
+    host.current_document = MethodType(lambda self: document, host)
+    payload = {
+        "tool": "segment",
+        "point_count": 0,
+        "source_count": 0,
+    }
+
+    MainWindow._on_canvas_construction_command_changed(host, document.id, payload)
+    MainWindow._on_canvas_construction_command_changed(host, document.id, payload)
+
+    assert refresh_calls == [True]
+    context.close()
+
+
+def test_completed_construction_prompt_stays_inline_after_layout_refresh(
+    app: QApplication,
+) -> None:
+    """A delayed size-hint refresh must not push the prompt onto a second row."""
+
+    strip = MeasurementToolStrip()
+    for index in range(8):
+        strip.addModeAction(f"mode-{index}", QAction(f"测量工具 {index + 1}", strip))
+    context = ConstructionContextWidget(strip)
+    strip.setConstructionContextWidget(context)
+    strip.setConstructionContextVisible(True)
+    document = SimpleNamespace(id="construction-context-layout-document")
+    host = SimpleNamespace(
+        _construction_context_widget=context,
+        _construction_tool_kind="segment",
+        _measurement_tool_strip=strip,
+    )
+    host.current_document = MethodType(lambda self: document, host)
+    try:
+        MainWindow._on_canvas_construction_command_changed(
+            host,
+            document.id,
+            {
+                "tool": "segment",
+                "point_count": 0,
+                "source_count": 0,
+            },
+        )
+        available_width = (
+            strip._expanded_primary_width()
+            + strip._top_row_layout.spacing()
+            + context.sizeHint().width()
+            + 80
+        )
+        strip.resize(available_width, strip.sizeHint().height())
+        strip.show()
+        strip.refreshContextLayout()
+        app.processEvents()
+
+        assert strip.isContextInline()
+
+        MainWindow._on_canvas_construction_command_changed(
+            host,
+            document.id,
+            {
+                "tool": "segment",
+                "point_count": 1,
+                "source_count": 0,
+            },
+        )
+        app.processEvents()
+        progress_prompt = context.promptLabel.text()
+        assert "1点" in progress_prompt
+        assert "0源" not in progress_prompt
+        assert strip.isContextInline()
+
+        MainWindow._on_canvas_construction_command_changed(
+            host,
+            document.id,
+            {
+                "tool": "segment",
+                "point_count": 0,
+                "source_count": 0,
+            },
+        )
+        app.processEvents()
+
+        assert "Shift 正交" in context.promptLabel.text()
+        assert "Ctrl 像素中心" in context.promptLabel.text()
+        assert strip.isContextInline()
+        assert not strip.isContextStacked()
+
+        # A longer validation message may legitimately need the second row,
+        # but returning to the short command prompt must shrink immediately;
+        # no window resize or other incidental layout event should be needed.
+        MainWindow._on_canvas_construction_command_changed(
+            host,
+            document.id,
+            {
+                "tool": "segment",
+                "point_count": 1,
+                "source_count": 0,
+                "invalid_reason": "当前对象暂时无法构造，请重新选择有效的几何来源" * 4,
+            },
+        )
+        app.processEvents()
+        assert strip.isContextStacked()
+
+        MainWindow._on_canvas_construction_command_changed(
+            host,
+            document.id,
+            {
+                "tool": "segment",
+                "point_count": 0,
+                "source_count": 0,
+            },
+        )
+        app.processEvents()
+
+        assert strip.isContextInline()
+        assert not strip.isContextStacked()
+    finally:
+        strip.close()
 
 
 def test_switching_canvas_republishes_document_local_command_state(

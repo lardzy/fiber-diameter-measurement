@@ -20995,36 +20995,42 @@ class MainWindow(QMainWindow):
             extend=payload.get("extend"),
         )
         prompts = {
-            "point": "单击放置自由点",
-            "midpoint": "请选择有限线段",
-            "intersection": "依次选择两个线/圆；多解时再选分支",
-            "segment": "依次指定两个端点 · Shift 锁定水平/垂直 · Ctrl 吸附像素中心",
-            "ray": "指定起点和方向 · Shift 锁定水平/垂直 · Ctrl 吸附像素中心",
-            "infinite_line": "指定直线上的两点 · Shift 锁定水平/垂直 · Ctrl 吸附像素中心",
-            "horizontal_line": "单击指定水平线通过点 · Ctrl 吸附像素中心",
-            "vertical_line": "单击指定垂直线通过点 · Ctrl 吸附像素中心",
-            "circle_center_radius": "指定圆心，再指定圆周点",
-            "circle_center_diameter": "指定圆心，再指定圆周点",
-            "circle_diameter_2p": "指定直径的两个端点",
-            "circle_3p": "依次指定圆上的三个点",
-            "parallel_through": "选择源线，再指定通过点",
-            "parallel_offset": "选择源线，再单击偏移侧",
-            "parallel_array": "选择源线，再单击阵列侧",
-            "perpendicular": "选择源线，再指定通过点",
-            "perpendicular_bisector": "请选择有限线段",
-            "concentric_circle": "选择源圆，再指定新圆周点",
-            "offset_circle": "选择源圆，再单击偏移侧",
-            "tangent_point_circle": "选择点对象，再选择圆；多解时选分支",
-            "common_tangent_external": "依次选择两个圆；再选择外公切线分支",
-            "common_tangent_internal": "依次选择两个圆；再选择内公切线分支",
-            "tangent_circle_ttr": "选择两个线/圆来源；再选择固定半径解",
-            "tangent_circle_3": "选择三个线/圆来源；再选择相切圆解",
+            "point": "单击放点",
+            "midpoint": "选择有限线段",
+            "intersection": "选两对象；再选交点",
+            "segment": "两端点 · Shift 正交 · Ctrl 像素中心",
+            "ray": "起点和方向 · Shift 正交 · Ctrl 像素中心",
+            "infinite_line": "直线两点 · Shift 正交 · Ctrl 像素中心",
+            "horizontal_line": "通过点 · Ctrl 像素中心",
+            "vertical_line": "通过点 · Ctrl 像素中心",
+            "circle_center_radius": "指定圆心和圆周点",
+            "circle_center_diameter": "指定圆心和圆周点",
+            "circle_diameter_2p": "指定直径两端点",
+            "circle_3p": "指定圆上三点",
+            "parallel_through": "选择源线和通过点",
+            "parallel_offset": "选择源线和偏移侧",
+            "parallel_array": "选择源线和阵列侧",
+            "perpendicular": "选择源线和通过点",
+            "perpendicular_bisector": "选择有限线段",
+            "concentric_circle": "选择源圆和新圆周点",
+            "offset_circle": "选择源圆和偏移侧",
+            "tangent_point_circle": "选择点和圆；再选切线",
+            "common_tangent_external": "选择两圆；再选外公切线",
+            "common_tangent_internal": "选择两圆；再选内公切线",
+            "tangent_circle_ttr": "选择两对象；再选定半径解",
+            "tangent_circle_3": "选择三对象；再选相切圆",
         }
-        progress = ""
-        if point_count or source_count:
-            progress = f" · 已选 {source_count} 个来源 / {point_count} 个点"
+        progress_parts: list[str] = []
+        if source_count:
+            progress_parts.append(f"{source_count}源")
+        if point_count:
+            progress_parts.append(f"{point_count}点")
+        progress = f" · {'/'.join(progress_parts)}" if progress_parts else ""
         prompt = invalid_reason or prompts.get(tool, "按提示创建辅助对象")
-        self._construction_context_widget.setPrompt(prompt + progress)
+        prompt_changed = self._construction_context_widget.setPrompt(prompt + progress)
+        strip = getattr(self, "_measurement_tool_strip", None)
+        if prompt_changed and strip is not None:
+            strip.refreshContextLayout()
 
     def _on_canvas_snap_candidate_changed(
         self,

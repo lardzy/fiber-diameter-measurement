@@ -267,9 +267,15 @@ class ConstructionContextWidget(QWidget):
         layout.addWidget(self.cancelButton)
         self.configure("")
 
-    def setPrompt(self, text: str) -> None:
-        self.promptLabel.setText(str(text or "辅助几何"))
-        self.promptLabel.setToolTip(self.promptLabel.text())
+    def setPrompt(self, text: str) -> bool:
+        prompt = str(text or "辅助几何")
+        if self.promptLabel.text() == prompt:
+            return False
+        self.promptLabel.setText(prompt)
+        self.promptLabel.setToolTip(prompt)
+        self.promptLabel.updateGeometry()
+        self.updateGeometry()
+        return True
 
     def configure(self, tool_kind: str) -> None:
         kind = str(tool_kind or "")

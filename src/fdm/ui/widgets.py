@@ -1263,6 +1263,13 @@ class MeasurementToolStrip(QWidget):
         self._sync_auto_compact_mode()
         self.updateGeometry()
 
+    def refreshContextLayout(self) -> None:
+        """Re-evaluate placement after the active context changes its hint."""
+
+        self._sync_auto_compact_mode()
+        self._update_context_host_metrics()
+        self._apply_strip_height()
+
     def _expanded_primary_width(self) -> int:
         if not self._primary_tools_visible:
             return 0
