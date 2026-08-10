@@ -590,6 +590,10 @@ class ScreenshotAgent(QObject):
         rect = record.rect
         payload = {
             "hwnd": int(record.hwnd),
+            "title": str(getattr(record, "title", "") or ""),
+            "class_name": str(getattr(record, "class_name", "") or ""),
+            "process_name": str(getattr(record, "process_name", "") or ""),
+            "control_id": getattr(record, "control_id", None),
             "rect": {
                 "x": int(rect.left),
                 "y": int(rect.top),
@@ -613,7 +617,16 @@ class ScreenshotAgent(QObject):
         from fdm.services.cu5_preview_locator import Cu5PreviewAmbiguousError
 
         try:
-            match = self._cu5_locator.locate()
+            locate_with_candidates = getattr(
+                self._cu5_locator,
+                "locate_with_candidates",
+                None,
+            )
+            if callable(locate_with_candidates):
+                match, candidates = locate_with_candidates()
+            else:
+                match = self._cu5_locator.locate()
+                candidates = (match,)
         except Cu5PreviewAmbiguousError as exc:
             raise AgentCommandError(
                 str(exc),
@@ -631,6 +644,10 @@ class ScreenshotAgent(QObject):
         return {
             "diagnostic": "ok",
             **self._cu5_candidate_payload(match),
+            "candidates": [
+                self._cu5_candidate_payload(candidate)
+                for candidate in tuple(candidates)[:8]
+            ],
         }
 
     def reload_settings(self, payload: Mapping[str, object] | None = None) -> dict[str, object]:
@@ -640,7 +657,7 @@ class ScreenshotAgent(QObject):
         if isinstance(supplied, Mapping):
             update = dict(supplied)
             # The standalone settings page edits user preferences only.  A
-            # capture or CU-5 diagnosis may have refreshed these runtime-owned
+            # capture or CU-family diagnosis may have refreshed these runtime-owned
             # values while the dialog was open.
             update.pop("last_region", None)
             update.pop("cu5_selector", None)
@@ -848,7 +865,12 @@ class ScreenshotAgent(QObject):
                             _parse_windows_hotkey(binding.sequence, identifier),
                         )
                     except Exception as exc:  # noqa: BLE001 - surface parse errors
-                        errors.append(f"{mode.value} 快捷键注册失败：{exc}")
+                        mode_label = (
+                            "CU 系列实时预览"
+                            if mode is CaptureMode.CU5
+                            else mode.value
+                        )
+                        errors.append(f"{mode_label} 快捷键注册失败：{exc}")
                         if failed_hotkey_modes is not None:
                             failed_hotkey_modes.add(mode)
                         retain_after_error[identifier] = mode
@@ -857,7 +879,12 @@ class ScreenshotAgent(QObject):
                 try:
                     manager.bind(binding)
                 except Exception as exc:  # noqa: BLE001 - manager restores old binding
-                    errors.append(f"{mode.value} 快捷键注册失败：{exc}")
+                    mode_label = (
+                        "CU 系列实时预览"
+                        if mode is CaptureMode.CU5
+                        else mode.value
+                    )
+                    errors.append(f"{mode_label} 快捷键注册失败：{exc}")
                     if failed_hotkey_modes is not None:
                         failed_hotkey_modes.add(mode)
                 if manager.binding(identifier) is not None:
@@ -973,7 +1000,7 @@ class ScreenshotAgent(QObject):
         buttons.rejected.connect(dialog.reject)
         layout.addWidget(buttons)
 
-        def diagnose() -> None:
+        def diagnose() -> bool:
             try:
                 result = self.diagnose_cu5()
                 rect = result["rect"]
@@ -982,10 +1009,50 @@ class ScreenshotAgent(QObject):
                     f"得分 {result['score']:.1f}",
                     success=True,
                 )
+                page.set_cu5_candidates(
+                    result.get("candidates", ()),
+                    selected_selector=result.get("selector"),
+                )
+                return True
             except AgentCommandError as exc:
                 page.set_cu5_diagnostic_status(str(exc), success=False)
+                page.set_cu5_candidates(
+                    exc.result.get("candidates", ()),
+                    selected_selector=None,
+                )
+                return False
+
+        def select_candidate(selector: object) -> None:
+            from fdm.services.cu5_preview_locator import Cu5PreviewSelector
+
+            stable_selector = Cu5PreviewSelector.from_value(selector)
+            if not stable_selector.active:
+                return
+            selector = stable_selector.to_dict()
+            previous_selector = dict(self._settings.cu5_selector)
+            try:
+                self.reload_settings({"cu5_selector": dict(selector)})
+            except AgentCommandError as exc:
+                page.set_cu5_diagnostic_status(str(exc), success=False)
+                return
+            if diagnose():
+                return
+            failure_message = page.cu5_status_label.text()
+            try:
+                self.reload_settings({"cu5_selector": previous_selector})
+            except AgentCommandError as exc:
+                page.set_cu5_diagnostic_status(
+                    f"所选对象验证失败，且恢复原预览对象失败：{exc}",
+                    success=False,
+                )
+            else:
+                page.set_cu5_diagnostic_status(
+                    f"{failure_message}；已恢复原预览对象。",
+                    success=False,
+                )
 
         page.cu5DiagnosticRequested.connect(diagnose)
+        page.cu5CandidateSelectionRequested.connect(select_candidate)
         dialog.destroyed.connect(lambda: self._clear_settings_window(dialog))
         self._settings_window = dialog
         dialog.show()
@@ -1025,7 +1092,7 @@ class ScreenshotAgent(QObject):
             ("当前显示器", CaptureMode.DISPLAY),
             ("全屏", CaptureMode.FULL_SCREEN),
             ("上次区域", CaptureMode.LAST_REGION),
-            ("CU-5 实时预览", CaptureMode.CU5),
+            ("CU 系列实时预览", CaptureMode.CU5),
         )
         for label, mode in modes:
             action = QAction(label, menu)
@@ -1057,9 +1124,14 @@ class ScreenshotAgent(QObject):
     def _begin_tray_capture(self, mode: CaptureMode) -> None:
         request = self._request(mode)
         minimum_delay = 0
-        if mode is CaptureMode.ACTIVE_WINDOW:
+        if mode in {
+            CaptureMode.REGION,
+            CaptureMode.SMART,
+            CaptureMode.WINDOW,
+            CaptureMode.ACTIVE_WINDOW,
+        }:
             # The tray menu itself is the foreground window while its action is
-            # firing.  Resolve the active target only after the menu has closed.
+            # firing. Resolve interactive targets only after the menu closes.
             minimum_delay = 150
         elif mode in {
             CaptureMode.DISPLAY,
@@ -1167,7 +1239,7 @@ class ScreenshotAgent(QObject):
             setter(self._settings.cu5_selector)
 
     def _remember_cu5_match(self, match: object | None) -> None:
-        """Persist only restart-stable CU-5 features, never native handles."""
+        """Persist only restart-stable CU-family features, never native handles."""
 
         if match is None or self._settings_read_only:
             return
@@ -1199,7 +1271,7 @@ class ScreenshotAgent(QObject):
                 self._settings_load_error = str(exc) or type(exc).__name__
             self.tray.showMessage(
                 "截图设置保存失败",
-                f"CU-5 预览特征未能持久化：{exc}",
+                f"CU 系列预览特征未能持久化：{exc}",
                 QSystemTrayIcon.MessageIcon.Warning,
             )
             return

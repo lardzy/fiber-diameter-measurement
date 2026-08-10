@@ -2149,10 +2149,10 @@ class MainWindow(QMainWindow):
             lambda: self._request_screenshot_capture(CaptureMode.SMART)
         )
 
-        self.screenshot_cu5_action = QAction("截取 CU-5 实时预览", self)
+        self.screenshot_cu5_action = QAction("截取 CU 系列实时预览", self)
         self.screenshot_cu5_action.setIcon(themed_icon("live_preview", color="#7BD389"))
         self.screenshot_cu5_action.setToolTip(
-            "自动识别 CU-5 中由 Microview 显示的视频画面区域，不截取完整窗口"
+            "自动识别 CU 系列软件中由 Microview 显示的视频画面区域，不截取完整窗口"
         )
         self.screenshot_cu5_action.triggered.connect(
             lambda: self._request_screenshot_capture(CaptureMode.CU5)
@@ -17582,6 +17582,9 @@ class MainWindow(QMainWindow):
         dialog.screenshotCu5DiagnosticRequested.connect(
             lambda: self._diagnose_cu5_preview(dialog)
         )
+        dialog.screenshotCu5CandidateSelectionRequested.connect(
+            lambda selector: self._select_cu5_preview_candidate(dialog, selector)
+        )
         apply_button = dialog.button_box.button(QDialogButtonBox.StandardButton.Apply)
         if apply_button is not None:
             apply_button.clicked.connect(lambda: self._apply_settings_dialog(dialog, close_after=False))
@@ -17688,7 +17691,7 @@ class MainWindow(QMainWindow):
         payload = self._screenshot_settings.to_dict()
         # Agent-owned runtime discoveries are merged from its current state.
         # Omitting them also avoids a full-settings update racing a just-saved
-        # last capture region or CU-5 selector fingerprint.
+        # last capture region or CU-family selector fingerprint.
         payload.pop("last_region", None)
         payload.pop("cu5_selector", None)
         return payload
@@ -17923,12 +17926,12 @@ class MainWindow(QMainWindow):
                         pass
             QMessageBox.warning(self, "截图失败", str(exc))
             return
-        label = "CU-5 实时预览" if mode is CaptureMode.CU5 else "截图"
+        label = "CU 系列实时预览" if mode is CaptureMode.CU5 else "截图"
         self.statusBar().showMessage(f"已向常驻工具发送{label}请求", 3000)
 
     def _diagnose_cu5_preview(self, dialog: SettingsDialog) -> None:
         page = dialog._screenshot_settings_widget
-        page.set_cu5_diagnostic_status("正在检测 CU-5 原生窗口层级...", success=False)
+        page.set_cu5_diagnostic_status("正在检测 CU 系列原生窗口层级...", success=False)
         QApplication.processEvents()
         was_running = self._screenshot_agent_client.status(timeout_ms=180).running
         started_temporarily = not was_running and not self._screenshot_settings.enabled
@@ -17952,8 +17955,86 @@ class MainWindow(QMainWindow):
                 f"屏幕位置 ({rect.get('x', 0)}, {rect.get('y', 0)})"
             )
         else:
-            summary = str(result.get("message") or "CU-5 检测请求已完成。")
+            summary = str(result.get("message") or "CU 系列检测请求已完成。")
         page.set_cu5_diagnostic_status(summary, success=bool(rect))
+        set_candidates = getattr(page, "set_cu5_candidates", None)
+        if callable(set_candidates):
+            set_candidates(
+                result.get("candidates", ()),
+                selected_selector=result.get("selector"),
+            )
+
+    def _select_cu5_preview_candidate(
+        self,
+        dialog: SettingsDialog,
+        selector: object,
+    ) -> None:
+        from fdm.services.cu5_preview_locator import Cu5PreviewSelector
+
+        stable_selector = Cu5PreviewSelector.from_value(selector)
+        if not stable_selector.active:
+            return
+        selector = stable_selector.to_dict()
+        page = dialog._screenshot_settings_widget
+        previous = self._screenshot_settings
+        self._screenshot_settings = replace(
+            previous,
+            cu5_selector=dict(selector),
+        ).normalized()
+        if not self._save_screenshot_settings(
+            parent=dialog,
+            preserve_agent_owned=False,
+        ):
+            self._screenshot_settings = previous
+            return
+        was_running = self._screenshot_agent_client.status(timeout_ms=180).running
+        started_temporarily = not was_running and not self._screenshot_settings.enabled
+        page.set_cu5_diagnostic_status("正在验证所选预览对象...", success=False)
+        QApplication.processEvents()
+        try:
+            self._screenshot_agent_client.ensure_started()
+            self._screenshot_agent_client.update_settings(
+                {"cu5_selector": dict(selector)},
+                timeout_ms=1_000,
+            )
+            response = self._send_cu5_diagnostic_with_selection(dialog)
+        except ScreenshotAgentClientError as exc:
+            self._screenshot_settings = previous
+            rolled_back = self._save_screenshot_settings(
+                parent=dialog,
+                preserve_agent_owned=False,
+            )
+            if was_running:
+                try:
+                    self._screenshot_agent_client.update_settings(
+                        {"cu5_selector": dict(previous.cu5_selector)},
+                        timeout_ms=1_000,
+                    )
+                except ScreenshotAgentClientError:
+                    rolled_back = False
+            suffix = "；已恢复原预览对象" if rolled_back else "；恢复原预览对象失败"
+            page.set_cu5_diagnostic_status(f"{exc}{suffix}", success=False)
+            return
+        finally:
+            if started_temporarily:
+                try:
+                    self._screenshot_agent_client.shutdown(timeout_ms=800)
+                except ScreenshotAgentClientError:
+                    pass
+        result = dict(response.result)
+        rect = result.get("rect")
+        if isinstance(rect, dict):
+            page.set_cu5_diagnostic_status(
+                f"已使用所选对象：{rect.get('width', 0)}×{rect.get('height', 0)} px，"
+                f"屏幕位置 ({rect.get('x', 0)}, {rect.get('y', 0)})",
+                success=True,
+            )
+        set_candidates = getattr(page, "set_cu5_candidates", None)
+        if callable(set_candidates):
+            set_candidates(
+                result.get("candidates", ()),
+                selected_selector=result.get("selector", selector),
+            )
 
     def _send_cu5_diagnostic_with_selection(
         self,
@@ -17968,25 +18049,36 @@ class MainWindow(QMainWindow):
             if result.get("diagnostic") != "ambiguous" or not isinstance(candidates, list):
                 raise
             choices: list[tuple[str, dict[str, object]]] = []
+            from fdm.services.cu5_preview_locator import Cu5PreviewSelector
+
             for index, candidate in enumerate(candidates, start=1):
                 if not isinstance(candidate, dict):
                     continue
-                selector = candidate.get("selector")
+                selector = Cu5PreviewSelector.from_value(candidate.get("selector"))
                 rect = candidate.get("rect")
-                if not isinstance(selector, dict) or not isinstance(rect, dict):
+                if not selector.active or not isinstance(rect, dict):
+                    continue
+                try:
+                    width = int(rect.get("width", 0))
+                    height = int(rect.get("height", 0))
+                    x = int(rect.get("x", 0))
+                    y = int(rect.get("y", 0))
+                    score = float(candidate.get("score", 0.0))
+                except (TypeError, ValueError, OverflowError):
+                    continue
+                if width <= 0 or height <= 0 or not math.isfinite(score):
                     continue
                 label = (
-                    f"候选 {index}：{rect.get('width', 0)}×{rect.get('height', 0)} px，"
-                    f"位置 ({rect.get('x', 0)}, {rect.get('y', 0)})，"
-                    f"得分 {float(candidate.get('score', 0.0)):.1f}"
+                    f"候选 {index}：{width}×{height} px，"
+                    f"位置 ({x}, {y})，得分 {score:.1f}"
                 )
-                choices.append((label, dict(selector)))
+                choices.append((label, selector.to_dict()))
             if not choices:
                 raise
             labels = [label for label, _selector in choices]
             selected, accepted = QInputDialog.getItem(
                 dialog,
-                "选择 CU-5 实时预览区域",
+                "选择 CU 系列实时预览区域",
                 "检测到多个相近的视频区域。请选择一次；软件会保存稳定的窗口特征，"
                 "后续无需手动框选：",
                 labels,
@@ -18004,7 +18096,7 @@ class MainWindow(QMainWindow):
                 parent=dialog,
                 preserve_agent_owned=False,
             ):
-                raise ScreenshotAgentClientError("未能保存 CU-5 预览区域特征。")
+                raise ScreenshotAgentClientError("未能保存 CU 系列预览区域特征。")
             self._screenshot_agent_client.update_settings(
                 {"cu5_selector": selector},
                 timeout_ms=1_000,

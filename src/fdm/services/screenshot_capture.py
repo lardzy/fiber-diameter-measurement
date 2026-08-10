@@ -497,7 +497,7 @@ class WindowsScreenshotBackend:
         return self._last_cu5_match
 
     def set_cu5_locator(self, locator: object | None) -> None:
-        """Use the agent-owned, settings-aware locator for CU-5 captures."""
+        """Use the agent-owned, settings-aware locator for CU-family captures."""
 
         self._cu5_locator = locator
         self._last_cu5_match = None
@@ -564,7 +564,7 @@ class WindowsScreenshotBackend:
         self._last_cu5_match = match
         candidate = self._candidate_from_record(match.record)
         if candidate is None:
-            raise RuntimeError("CU-5 实时预览区域为空。")
+            raise RuntimeError("CU 系列实时预览区域为空。")
         return replace(
             candidate,
             metadata={**candidate.metadata, "cu5_preview": True},
@@ -635,18 +635,115 @@ def candidate_at_point(
     candidates: Sequence[WindowCandidate],
     point: QPoint,
 ) -> tuple[WindowCandidate, ...]:
-    """Return nested candidates from the smallest/deepest to the largest."""
+    """Return the visible hit chain from the frontmost native window only.
 
-    hits = [candidate for candidate in candidates if candidate.visible and candidate.contains(point)]
-    hits.sort(
-        key=lambda candidate: (
-            -candidate.depth,
-            candidate.capture_rect.area,
-            candidate.z_order,
-            candidate.handle,
+    Win32 enumerates top-level and sibling windows in front-to-back Z order.
+    Depth must therefore only decide between ancestors inside the same visible
+    branch; otherwise a tiny child belonging to a covered background window
+    can incorrectly outrank the foreground window.
+    """
+
+    hits = [
+        candidate
+        for candidate in candidates
+        if (
+            candidate.visible
+            and not candidate.minimized
+            and candidate.capture_safe
+            and candidate.contains(point)
         )
+    ]
+    if not hits:
+        return ()
+    by_handle = {candidate.handle: candidate for candidate in candidates}
+    has_hierarchy = any(
+        candidate.parent_handle > 0
+        or int(candidate.metadata.get("root_handle", 0) or 0) > 0
+        for candidate in hits
     )
-    return tuple(hits)
+    if not has_hierarchy:
+        # Portable/injected providers may only supply depth. Preserve the old
+        # useful nesting behavior when no native ownership data exists.
+        hits.sort(
+            key=lambda candidate: (
+                -candidate.depth,
+                candidate.capture_rect.area,
+                candidate.z_order,
+                candidate.handle,
+            )
+        )
+        return tuple(hits)
+
+    def root_handle(candidate: WindowCandidate) -> int:
+        declared = int(candidate.metadata.get("root_handle", 0) or 0)
+        if declared > 0:
+            return declared
+        current = candidate
+        seen = {current.handle}
+        while current.parent_handle > 0 and current.parent_handle not in seen:
+            parent = by_handle.get(current.parent_handle)
+            if parent is None:
+                return current.parent_handle
+            current = parent
+            seen.add(current.handle)
+        return current.handle
+
+    groups: dict[int, list[WindowCandidate]] = {}
+    for candidate in hits:
+        groups.setdefault(root_handle(candidate), []).append(candidate)
+
+    def root_order(item: tuple[int, list[WindowCandidate]]) -> tuple[int, int]:
+        root, members = item
+        root_candidate = by_handle.get(root)
+        z_order = (
+            root_candidate.z_order
+            if root_candidate is not None
+            else min(member.z_order for member in members)
+        )
+        return z_order, root
+
+    selected_root, selected_hits = min(groups.items(), key=root_order)
+    selected_by_handle = {candidate.handle: candidate for candidate in selected_hits}
+    chain: list[WindowCandidate] = []
+    current_handle = selected_root
+    root_candidate = selected_by_handle.get(current_handle)
+    if root_candidate is not None:
+        chain.append(root_candidate)
+
+    while True:
+        children = [
+            candidate
+            for candidate in selected_hits
+            if candidate.parent_handle == current_handle
+        ]
+        if not children:
+            break
+        child = min(children, key=lambda item: (item.z_order, item.handle))
+        chain.append(child)
+        current_handle = child.handle
+
+    if not chain:
+        # A provider can omit the root itself. Pick the foremost shallow hit,
+        # then follow its visible descendants in the same way.
+        first = min(
+            selected_hits,
+            key=lambda item: (item.depth, item.z_order, item.handle),
+        )
+        chain.append(first)
+        current_handle = first.handle
+        while True:
+            children = [
+                candidate
+                for candidate in selected_hits
+                if candidate.parent_handle == current_handle
+            ]
+            if not children:
+                break
+            child = min(children, key=lambda item: (item.z_order, item.handle))
+            chain.append(child)
+            current_handle = child.handle
+
+    return tuple(reversed(chain))
 
 
 def rank_cu5_candidates(candidates: Sequence[WindowCandidate]) -> tuple[WindowCandidate, ...]:
@@ -875,12 +972,13 @@ class CaptureCoordinator(QObject):
             if target is not None and target.title == "用来显示SDK摄像头的窗口":
                 return CaptureSelection(target.capture_rect, candidate=target)
             if locator_error is not None:
-                raise RuntimeError(str(locator_error) or "CU-5 实时预览定位失败。") from locator_error
+                raise RuntimeError(str(locator_error) or "CU 系列实时预览定位失败。") from locator_error
             if ranked:
                 raise RuntimeError(
-                    f"CU-5 中有 {len(ranked)} 个候选区域，但无法可靠确认视频画面；请先运行 CU-5 诊断。"
+                    f"CU 系列软件中有 {len(ranked)} 个候选区域，但无法可靠确认视频画面；"
+                    "请先运行 CU 系列实时预览检测。"
                 )
-            raise RuntimeError("未识别到 CU-5 实时预览区域；请确认窗口可见且未最小化。")
+            raise RuntimeError("未识别到 CU 系列实时预览区域；请确认窗口可见且未最小化。")
         return None
 
     def _capture_selection(self, request: CaptureRequest, selection: CaptureSelection) -> None:
@@ -899,7 +997,7 @@ class CaptureCoordinator(QObject):
         if candidate is not None and candidate.minimized:
             raise RuntimeError("目标窗口已最小化，无法可靠截图。")
         if request.mode is CaptureMode.CU5 and candidate is not None:
-            # Every CU-5 route, including the legacy exact-title fallback,
+            # Every CU-family route, including the legacy exact-title fallback,
             # must request black/uniform-frame validation from the Windows
             # backend.  Otherwise a failed DirectDraw/overlay capture could be
             # silently published as a valid image.

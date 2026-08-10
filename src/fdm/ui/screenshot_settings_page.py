@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+import math
 from pathlib import Path
 
 from PySide6.QtCore import Signal
@@ -27,6 +28,7 @@ from fdm.screenshot_settings import (
     ScreenshotSettings,
 )
 from fdm.services.screenshot_capture import CaptureMode
+from fdm.services.cu5_preview_locator import Cu5PreviewSelector
 from fdm.ui.widgets import NoWheelComboBox, NoWheelSpinBox
 
 
@@ -35,7 +37,7 @@ _HOTKEY_ROWS = (
     (CaptureMode.WINDOW, "窗口 / 子窗口"),
     (CaptureMode.FULL_SCREEN, "全部屏幕"),
     (CaptureMode.LAST_REGION, "上次区域"),
-    (CaptureMode.CU5, "CU-5 实时预览"),
+    (CaptureMode.CU5, "CU 系列实时预览"),
 )
 
 
@@ -43,6 +45,7 @@ class ScreenshotSettingsPage(QWidget):
     """Preferences page for the independent screenshot companion process."""
 
     cu5DiagnosticRequested = Signal()
+    cu5CandidateSelectionRequested = Signal(object)
 
     def __init__(
         self,
@@ -185,24 +188,50 @@ class ScreenshotSettingsPage(QWidget):
         hotkey_form.addRow(hotkey_hint)
         layout.addWidget(hotkey_group)
 
-        cu5_group = QGroupBox("CU-5 / Microview 实时预览", self)
+        cu5_group = QGroupBox("CU 系列 / Microview 实时预览", self)
         cu5_layout = QVBoxLayout(cu5_group)
         cu5_description = QLabel(
-            "专用模式会按 CU-5.exe 的原生子窗口层级自动识别视频画面区域，"
-            "不会重新打开或抢占 Microview 设备，也不会截取完整 CU-5 窗口。",
+            "专用模式会按 CU 系列软件的原生子窗口层级自动识别视频画面区域，"
+            "不会重新打开或抢占 Microview 设备，也不会截取完整软件窗口。",
             cu5_group,
         )
         cu5_description.setWordWrap(True)
-        self.cu5_diagnostic_button = QPushButton("检测 CU-5 实时预览区域", cu5_group)
+        self.cu5_diagnostic_button = QPushButton("检测 CU 系列实时预览区域", cu5_group)
         self.cu5_diagnostic_button.clicked.connect(self.cu5DiagnosticRequested)
         self.cu5_status_label = QLabel(
-            "尚未在本机检测；需要在 Windows 设备上先打开 CU-5 实时预览。",
+            "尚未在本机检测；需要在 Windows 设备上先打开 CU 系列实时预览。",
             cu5_group,
         )
         self.cu5_status_label.setWordWrap(True)
+        candidate_row = QWidget(cu5_group)
+        candidate_layout = QHBoxLayout(candidate_row)
+        candidate_layout.setContentsMargins(0, 0, 0, 0)
+        candidate_label = QLabel("预览对象", candidate_row)
+        self.cu5_candidate_combo = NoWheelComboBox(candidate_row)
+        self.cu5_candidate_combo.setSizeAdjustPolicy(
+            NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon
+        )
+        self.cu5_candidate_combo.setMinimumContentsLength(24)
+        self.cu5_candidate_combo.addItem("请先检测实时预览区域", None)
+        self.cu5_candidate_combo.setEnabled(False)
+        self.cu5_candidate_apply_button = QPushButton("使用所选对象", candidate_row)
+        self.cu5_candidate_apply_button.setEnabled(False)
+        self.cu5_candidate_apply_button.clicked.connect(
+            self._request_cu5_candidate_selection
+        )
+        candidate_layout.addWidget(candidate_label)
+        candidate_layout.addWidget(self.cu5_candidate_combo, 1)
+        candidate_layout.addWidget(self.cu5_candidate_apply_button)
+        self.cu5_candidate_hint = QLabel(
+            "检测后会默认选中推荐对象；只有点击“使用所选对象”才会更改后续抓取目标。",
+            cu5_group,
+        )
+        self.cu5_candidate_hint.setWordWrap(True)
         cu5_layout.addWidget(cu5_description)
         cu5_layout.addWidget(self.cu5_diagnostic_button)
         cu5_layout.addWidget(self.cu5_status_label)
+        cu5_layout.addWidget(candidate_row)
+        cu5_layout.addWidget(self.cu5_candidate_hint)
         layout.addWidget(cu5_group)
         layout.addStretch(1)
 
@@ -303,6 +332,73 @@ class ScreenshotSettingsPage(QWidget):
         self.cu5_status_label.style().unpolish(self.cu5_status_label)
         self.cu5_status_label.style().polish(self.cu5_status_label)
 
+    def set_cu5_candidates(
+        self,
+        candidates: object,
+        *,
+        selected_selector: object = None,
+    ) -> None:
+        """Show adjustable native preview objects without changing settings."""
+
+        selected = Cu5PreviewSelector.from_value(selected_selector).to_dict()
+        entries = candidates if isinstance(candidates, (tuple, list)) else ()
+        self.cu5_candidate_combo.blockSignals(True)
+        try:
+            self.cu5_candidate_combo.clear()
+            selected_index = -1
+            for raw in entries:
+                if not isinstance(raw, dict):
+                    continue
+                selector = Cu5PreviewSelector.from_value(raw.get("selector"))
+                rect = raw.get("rect")
+                if not selector.active or not isinstance(rect, dict):
+                    continue
+                item_selector = selector.to_dict()
+                title = str(raw.get("title", "") or "").strip()
+                class_name = str(raw.get("class_name", "") or "").strip()
+                process_name = str(raw.get("process_name", "") or "").strip()
+                identity = title or class_name or process_name or "原生窗口对象"
+                if title and class_name and title.casefold() != class_name.casefold():
+                    identity = f"{title} · {class_name}"
+                width = _safe_int(rect.get("width"))
+                height = _safe_int(rect.get("height"))
+                x = _safe_int(rect.get("x"))
+                y = _safe_int(rect.get("y"))
+                score = _safe_float(raw.get("score"))
+                if (
+                    width is None
+                    or height is None
+                    or width <= 0
+                    or height <= 0
+                    or x is None
+                    or y is None
+                    or score is None
+                ):
+                    continue
+                recommended = bool(selected and item_selector == selected)
+                prefix = "推荐 · " if recommended else ""
+                self.cu5_candidate_combo.addItem(
+                    f"{prefix}{identity} · {width}×{height} · ({x}, {y}) · {score:.1f}",
+                    item_selector,
+                )
+                if recommended:
+                    selected_index = self.cu5_candidate_combo.count() - 1
+            if self.cu5_candidate_combo.count() == 0:
+                self.cu5_candidate_combo.addItem("未发现可调整的预览对象", None)
+            elif selected_index < 0:
+                selected_index = 0
+            self.cu5_candidate_combo.setCurrentIndex(max(0, selected_index))
+        finally:
+            self.cu5_candidate_combo.blockSignals(False)
+        available = isinstance(self.cu5_candidate_combo.currentData(), dict)
+        self.cu5_candidate_combo.setEnabled(available)
+        self.cu5_candidate_apply_button.setEnabled(available)
+
+    def _request_cu5_candidate_selection(self) -> None:
+        selector = self.cu5_candidate_combo.currentData()
+        if isinstance(selector, dict) and selector:
+            self.cu5CandidateSelectionRequested.emit(dict(selector))
+
     def _quality_for(self, image_format: ImageFormat) -> int:
         if image_format is ImageFormat.PNG:
             return max(1, min(100, round(100 - self._initial_settings.png_compression * 99 / 9)))
@@ -349,6 +445,25 @@ def _portable_sequence(value: str) -> str:
     # Qt calls the Print Screen key "Print" in PortableText.  Accept the more
     # familiar persisted spelling as a compatibility alias.
     return str(value or "").replace("PrintScreen", "Print")
+
+
+def _safe_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        return int(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+
+
+def _safe_float(value: object) -> float | None:
+    if isinstance(value, bool):
+        return None
+    try:
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return None
+    return number if math.isfinite(number) else None
 
 
 __all__ = ["ScreenshotSettingsPage"]

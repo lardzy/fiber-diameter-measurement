@@ -59,9 +59,26 @@ class _FakeScreenshotClient:
         return ScreenshotAgentStatus(self.running)
 
     def send(self, _command, **_kwargs) -> IPCResponse:
+        selector = {
+            "process_name": "cu-6.exe",
+            "class_name": "static",
+            "control_id": 1501,
+        }
         return IPCResponse.success(
             "diagnose",
-            {"rect": {"x": 10, "y": 20, "width": 768, "height": 576}},
+            {
+                "rect": {"x": 10, "y": 20, "width": 768, "height": 576},
+                "selector": selector,
+                "candidates": [
+                    {
+                        "rect": {"x": 10, "y": 20, "width": 768, "height": 576},
+                        "score": 250.0,
+                        "class_name": "Static",
+                        "process_name": "CU-6.exe",
+                        "selector": selector,
+                    }
+                ],
+            },
         )
 
 
@@ -103,6 +120,7 @@ class ScreenshotMainWindowTests(unittest.TestCase):
             self.assertIn(window.screenshot_tool_action, screenshot_menu.actions())
             self.assertIn(window.screenshot_region_action, screenshot_menu.actions())
             self.assertIn(window.screenshot_cu5_action, screenshot_menu.actions())
+            self.assertIn("CU 系列", window.screenshot_cu5_action.text())
             self.assertTrue(window.screenshot_tool_action.isCheckable())
             self.assertFalse(window.screenshot_tool_action.isChecked())
             with patch.object(window, "open_settings_dialog") as open_settings:
@@ -399,9 +417,13 @@ class ScreenshotMainWindowTests(unittest.TestCase):
         class _Page:
             def __init__(self) -> None:
                 self.messages: list[tuple[str, bool]] = []
+                self.candidates: list[tuple[object, object]] = []
 
             def set_cu5_diagnostic_status(self, message, *, success):
                 self.messages.append((str(message), bool(success)))
+
+            def set_cu5_candidates(self, candidates, *, selected_selector=None):
+                self.candidates.append((candidates, selected_selector))
 
         page = _Page()
         try:
@@ -413,6 +435,104 @@ class ScreenshotMainWindowTests(unittest.TestCase):
             self.assertFalse(client.running)
             self.assertTrue(page.messages[-1][1])
             self.assertIn("768×576", page.messages[-1][0])
+            self.assertEqual(page.candidates[-1][1]["control_id"], 1501)
+        finally:
+            window.close()
+
+    def test_adjusting_cu_preview_object_persists_and_revalidates_selection(self) -> None:
+        window = self._window()
+        client = _FakeScreenshotClient()
+        window._screenshot_agent_client = client  # noqa: SLF001
+
+        class _Page:
+            def __init__(self) -> None:
+                self.messages: list[tuple[str, bool]] = []
+                self.selected: object = None
+
+            def set_cu5_diagnostic_status(self, message, *, success):
+                self.messages.append((str(message), bool(success)))
+
+            def set_cu5_candidates(self, _candidates, *, selected_selector=None):
+                self.selected = selected_selector
+
+        selector = {
+            "process_name": "cu-6.exe",
+            "class_name": "static",
+            "control_id": 1501,
+        }
+        page = _Page()
+        dialog = SimpleNamespace(_screenshot_settings_widget=page)
+        try:
+            with patch(
+                "fdm.ui.main_window.ScreenshotSettingsIO.update",
+                side_effect=lambda mutator, *_args, **_kwargs: mutator(
+                    window._screenshot_settings  # noqa: SLF001
+                ),
+            ):
+                window._select_cu5_preview_candidate(dialog, selector)  # noqa: SLF001
+
+            self.assertEqual(
+                window._screenshot_settings.cu5_selector["control_id"],  # noqa: SLF001
+                1501,
+            )
+            self.assertEqual(client.updated[-1]["cu5_selector"], selector)
+            self.assertEqual(page.selected["control_id"], 1501)
+            self.assertTrue(page.messages[-1][1])
+            self.assertEqual(client.shutdown_calls, 1)
+        finally:
+            window.close()
+
+    def test_failed_cu_preview_adjustment_restores_previous_selector(self) -> None:
+        window = self._window()
+        previous_selector = {
+            "process_name": "cu.exe",
+            "class_name": "cwndforsdk",
+            "control_id": 1201,
+        }
+        window._screenshot_settings = ScreenshotSettings(  # noqa: SLF001
+            cu5_selector=previous_selector
+        )
+        client = _FakeScreenshotClient()
+        client.send = lambda *_args, **_kwargs: (_ for _ in ()).throw(  # type: ignore[method-assign]
+            ScreenshotAgentCommandError(
+                "所选对象已不可用",
+                response=IPCResponse.failure("diagnose", "所选对象已不可用"),
+            )
+        )
+        window._screenshot_agent_client = client  # noqa: SLF001
+
+        class _Page:
+            def __init__(self) -> None:
+                self.messages: list[tuple[str, bool]] = []
+
+            def set_cu5_diagnostic_status(self, message, *, success):
+                self.messages.append((str(message), bool(success)))
+
+        page = _Page()
+        requested = {
+            "process_name": "cu-6.exe",
+            "class_name": "static",
+            "control_id": 1501,
+        }
+        try:
+            with patch(
+                "fdm.ui.main_window.ScreenshotSettingsIO.update",
+                side_effect=lambda mutator, *_args, **_kwargs: mutator(
+                    window._screenshot_settings  # noqa: SLF001
+                ),
+            ):
+                window._select_cu5_preview_candidate(  # noqa: SLF001
+                    SimpleNamespace(_screenshot_settings_widget=page),
+                    requested,
+                )
+
+            self.assertEqual(
+                window._screenshot_settings.cu5_selector,  # noqa: SLF001
+                previous_selector,
+            )
+            self.assertEqual(client.updated[0]["cu5_selector"], requested)
+            self.assertEqual(client.shutdown_calls, 1)
+            self.assertIn("已恢复原预览对象", page.messages[-1][0])
         finally:
             window.close()
 

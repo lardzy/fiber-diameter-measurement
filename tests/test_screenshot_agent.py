@@ -36,6 +36,7 @@ from fdm.screenshot_protocol import (
 from fdm.screenshot_settings import HotkeyBinding, ScreenshotSettings, ScreenshotSettingsIO
 from fdm.services.cu5_preview_locator import (
     Cu5PreviewAmbiguousError,
+    Cu5PreviewNotFoundError,
     Cu5PreviewSelector,
 )
 from fdm.services.screenshot_capture import (
@@ -47,6 +48,7 @@ from fdm.services.screenshot_capture import (
     ScreenInfo,
 )
 from fdm.services.screenshot_output import OutputResult
+from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
 
 
 def _app() -> QApplication:
@@ -418,11 +420,18 @@ def test_agent_ui_requests_keep_all_overlay_candidates_and_settle_tray_menu(
         assert agent._request(CaptureMode.DISPLAY).cursor_position is not None
 
         with patch.object(coordinator, "start") as start:
-            agent._begin_tray_capture(CaptureMode.ACTIVE_WINDOW)
-        assert start.call_args.args[0].delay_ms >= 150
+            for mode in (
+                CaptureMode.REGION,
+                CaptureMode.SMART,
+                CaptureMode.WINDOW,
+                CaptureMode.ACTIVE_WINDOW,
+            ):
+                agent._begin_tray_capture(mode)
+                assert start.call_args.args[0].delay_ms >= 150
 
         menu_labels = [action.text() for action in agent.tray.contextMenu().actions()]
         assert "设置…" in menu_labels
+        assert "CU 系列实时预览" in menu_labels
     finally:
         agent.close()
 
@@ -658,6 +667,7 @@ def test_cu5_diagnostic_success_and_ambiguity_include_physical_candidate_details
         "coordinate_space": "physical_pixels",
     }
     assert success["score"] == 211.5 and len(success["reasons"]) == 2
+    assert success["candidates"][0]["hwnd"] == 77
 
     candidate = SimpleNamespace(record=_record(99), score=150.0, reasons=("候选",))
 
@@ -743,6 +753,67 @@ def test_agent_updates_locator_from_settings_and_persists_only_stable_cu5_signat
         )
         assert locator.selectors[-1]["control_id"] == 1401
     finally:
+        agent.close()
+
+
+def test_standalone_settings_restores_selector_when_adjustment_validation_fails(
+    tmp_path: Path,
+) -> None:
+    app = _app()
+    path = tmp_path / "settings.json"
+    previous = {
+        "process_name": "cu.exe",
+        "class_name": "cwndforsdk",
+        "control_id": 1201,
+    }
+    ScreenshotSettingsIO.save(ScreenshotSettings(cu5_selector=previous), path)
+
+    class _FailingLocator:
+        def __init__(self) -> None:
+            self.selector: dict[str, object] = {}
+
+        def set_selector(self, value) -> None:
+            self.selector = dict(value)
+
+        def locate(self):
+            if self.selector.get("control_id") == 1501:
+                raise Cu5PreviewNotFoundError("所选对象已不可用")
+            return SimpleNamespace(
+                record=_record(88),
+                score=200.0,
+                reasons=("原对象",),
+                selector=Cu5PreviewSelector.from_value(self.selector),
+            )
+
+    locator = _FailingLocator()
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=_OutputService(),
+        cu5_locator=locator,
+    )
+    try:
+        agent._show_settings_window()
+        dialog = agent._settings_window
+        assert dialog is not None
+        page = dialog.findChild(ScreenshotSettingsPage)
+        assert page is not None
+        page.cu5CandidateSelectionRequested.emit(
+            {
+                "process_name": "cu-6.exe",
+                "class_name": "static",
+                "control_id": 1501,
+            }
+        )
+
+        assert agent.settings.cu5_selector == previous
+        assert locator.selector == previous
+        assert ScreenshotSettingsIO.load(path).cu5_selector == previous
+        assert "已恢复原预览对象" in page.cu5_status_label.text()
+    finally:
+        if agent._settings_window is not None:
+            agent._settings_window.close()
         agent.close()
 
 

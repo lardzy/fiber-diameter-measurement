@@ -26,6 +26,7 @@ _RESOURCE_TEXT_TOKENS = (
 )
 _MINIMUM_SCORE = 75.0
 _DEFAULT_AMBIGUITY_MARGIN = 12.0
+_DIALOG_CONTAINER_CLASSES = frozenset({"#32770"})
 
 
 class Cu5PreviewLocatorError(RuntimeError):
@@ -65,10 +66,10 @@ def _canonical_class_name(value: object) -> str:
 
 @dataclass(frozen=True, slots=True)
 class Cu5PreviewSelector:
-    """Restart-stable hints for selecting CU-5's rendered preview child.
+    """Restart-stable hints for selecting a CU-family rendered preview child.
 
     Deliberately absent are HWNDs, PIDs and absolute desktop coordinates.  The
-    optional size is only a weak hint because CU-5 can be resized.
+    optional size is only a weak hint because CU software can be resized.
     """
 
     class_name: str = ""
@@ -186,6 +187,7 @@ class Cu5PreviewCandidate:
     record: WindowRecord
     score: float
     reasons: tuple[str, ...]
+    selector: Cu5PreviewSelector | None = None
 
 
 @dataclass(frozen=True, slots=True)
@@ -247,11 +249,42 @@ def _is_sdk_class(record: WindowRecord) -> bool:
     return class_name == "cwndforsdk" or "cwndforsdk" in class_name
 
 
-def _is_excluded_control(record: WindowRecord) -> bool:
-    if _is_sdk_class(record):
+def _has_preview_geometry(record: WindowRecord) -> bool:
+    width = record.rect.width
+    height = record.rect.height
+    if width < 320 or height < 240:
+        return False
+    return abs((width / height) - (4.0 / 3.0)) <= 0.04
+
+
+def _is_static_preview_host(
+    record: WindowRecord,
+    ancestors: Sequence[WindowRecord] = (),
+) -> bool:
+    if _normalized_class(record) != "static" or not _has_preview_geometry(record):
+        return False
+    return (record.rect.width, record.rect.height) == (768, 576) or any(
+        _normalized_class(ancestor) in _DIALOG_CONTAINER_CLASSES
+        for ancestor in ancestors
+    )
+
+
+def _is_preferred_preview_host(
+    record: WindowRecord,
+    ancestors: Sequence[WindowRecord] = (),
+) -> bool:
+    return _is_sdk_class(record) or _is_static_preview_host(record, ancestors)
+
+
+def _is_excluded_control(
+    record: WindowRecord,
+    ancestors: Sequence[WindowRecord] = (),
+) -> bool:
+    if _is_preferred_preview_host(record, ancestors):
         return False
     class_name = _normalized_class(record)
     return class_name in {
+        "#32770",
         "button",
         "static",
         "edit",
@@ -262,6 +295,27 @@ def _is_excluded_control(record: WindowRecord) -> bool:
         "msctls_statusbar32",
         "mdiclient",
     }
+
+
+def _has_preferred_preview_descendant(
+    candidate: WindowRecord,
+    snapshot: WindowSnapshot,
+) -> bool:
+    for descendant in snapshot.descendants(candidate.hwnd):
+        ancestors = [
+            snapshot.by_hwnd[hwnd]
+            for hwnd in descendant.ancestor_hwnds
+            if hwnd in snapshot.by_hwnd
+        ]
+        if (
+            descendant.visible
+            and not descendant.minimized
+            and not descendant.cloaked
+            and candidate.rect.contains_rect(descendant.rect)
+            and _is_preferred_preview_host(descendant, ancestors)
+        ):
+            return True
+    return False
 
 
 def _candidate_resource_score(
@@ -288,7 +342,7 @@ def _candidate_resource_score(
         return 40.0, ("预览资源文本位于祖先窗口",)
     if relationship == 1:
         return 30.0, ("同级资源文本指向实时预览",)
-    return 10.0, ("CU-5 视图包含预览资源文本",)
+    return 10.0, ("CU 系列视图包含预览资源文本",)
 
 
 def _geometry_score(
@@ -339,6 +393,12 @@ def _score_candidate(
     process_records: Sequence[WindowRecord],
     selector: Cu5PreviewSelector | None = None,
 ) -> Cu5PreviewCandidate | None:
+    ancestors = [
+        snapshot.by_hwnd[hwnd]
+        for hwnd in candidate.ancestor_hwnds
+        if hwnd in snapshot.by_hwnd
+    ]
+    preferred_preview_host = _is_preferred_preview_host(candidate, ancestors)
     if (
         candidate.parent_hwnd is None
         or not candidate.visible
@@ -346,7 +406,8 @@ def _score_candidate(
         or candidate.cloaked
         or candidate.rect.width < 160
         or candidate.rect.height < 120
-        or _is_excluded_control(candidate)
+        or _is_excluded_control(candidate, ancestors)
+        or _has_preferred_preview_descendant(candidate, snapshot)
     ):
         return None
 
@@ -355,12 +416,10 @@ def _score_candidate(
     if _is_sdk_class(candidate):
         score += 145.0
         reasons.append("匹配 CWndForSDK 视频宿主类")
+    elif _is_static_preview_host(candidate, ancestors):
+        score += 90.0
+        reasons.append("匹配 Static 视频子窗口")
 
-    ancestors = [
-        snapshot.by_hwnd[hwnd]
-        for hwnd in candidate.ancestor_hwnds
-        if hwnd in snapshot.by_hwnd
-    ]
     mdi_ancestors = [
         record
         for record in ancestors
@@ -395,18 +454,30 @@ def _score_candidate(
 
     if candidate.control_id not in (None, 0, -1):
         score += 3.0
-    selector_score, selector_reasons = _selector_score(candidate, ancestors, selector)
+    selector_score, selector_reasons = _selector_score(
+        candidate,
+        ancestors,
+        selector,
+        preferred_preview_host=preferred_preview_host,
+    )
     score += selector_score
     reasons.extend(selector_reasons)
     if score < _MINIMUM_SCORE:
         return None
-    return Cu5PreviewCandidate(candidate, score, tuple(reasons))
+    return Cu5PreviewCandidate(
+        candidate,
+        score,
+        tuple(reasons),
+        Cu5PreviewSelector.from_record(candidate, snapshot),
+    )
 
 
 def _selector_score(
     candidate: WindowRecord,
     ancestors: Sequence[WindowRecord],
     selector: Cu5PreviewSelector | None,
+    *,
+    preferred_preview_host: bool = False,
 ) -> tuple[float, tuple[str, ...]]:
     if selector is None or not selector.active:
         return 0.0, ()
@@ -415,12 +486,23 @@ def _selector_score(
     if selector.process_name:
         if candidate.process_name.casefold() == selector.process_name:
             score += 35.0
-            reasons.append("匹配已记忆的 CU-5 进程名")
+            reasons.append("匹配已记忆的 CU 系列进程名")
         else:
-            # A learned CU-5 signature must not exclude another CU-family
+            # A learned CU signature must not exclude another CU-family
             # application (for example CU-6).  Its child-window details belong
             # to the old process, so do not apply those details to this one.
             return -20.0, ("与已记忆进程不同，改用通用 CU 识别",)
+    if (
+        selector.class_name in _DIALOG_CONTAINER_CLASSES
+        and preferred_preview_host
+        and any(
+            _canonical_class_name(ancestor.class_name) == selector.class_name
+            for ancestor in ancestors
+        )
+    ):
+        score += 70.0
+        reasons.append("从已记忆容器下钻到视频子窗口")
+        return score, tuple(reasons)
     if selector.class_name:
         if _canonical_class_name(candidate.class_name) == selector.class_name:
             score += 110.0
@@ -516,7 +598,7 @@ def locate_cu5_preview(
         if _looks_like_cu5_root(record, stable_selector)
     ]
     if not roots:
-        raise Cu5PreviewNotFoundError("未找到正在运行的 CU-5.exe 主窗口。")
+        raise Cu5PreviewNotFoundError("未找到正在运行的 CU 系列软件主窗口。")
     available_roots = [
         record
         for record in roots
@@ -532,20 +614,20 @@ def locate_cu5_preview(
             states.append("不可见")
         detail = "、".join(states) or "不可用"
         raise Cu5PreviewUnavailableError(
-            f"CU-5 主窗口当前{detail}，无法可靠截取实时预览。"
+            f"CU 系列软件主窗口当前{detail}，无法可靠截取实时预览。"
         )
 
     ranked = rank_cu5_preview_candidates(snapshot, selector=stable_selector)
     if not ranked:
         raise Cu5PreviewNotFoundError(
-            "已找到 CU-5，但未识别到可靠的实时预览视频区域。"
+            "已找到 CU 系列软件，但未识别到可靠的实时预览视频区域。"
         )
     best = ranked[0]
     runner_up = ranked[1] if len(ranked) > 1 else None
     margin = max(0.0, float(ambiguity_margin))
     if runner_up is not None and best.score - runner_up.score < margin:
         raise Cu5PreviewAmbiguousError(
-            "CU-5 中存在多个相近的预览区域，已停止自动截图以避免截错。",
+            "CU 系列软件中存在多个相近的预览区域，已停止自动截图以避免截错。",
             candidates=ranked[:4],
         )
     return Cu5PreviewMatch(
@@ -558,10 +640,10 @@ def locate_cu5_preview(
 
 
 class Cu5PreviewLocator:
-    """Locates the already-rendered CU-5 video child window.
+    """Locates the already-rendered CU-family video child window.
 
     This service only inspects the Win32 window tree. It deliberately never
-    imports or opens Microview, because CU-5 may own the capture board.
+    imports or opens Microview, because the CU software may own the capture board.
     """
 
     def __init__(
@@ -595,6 +677,43 @@ class Cu5PreviewLocator:
             ambiguity_margin=self._ambiguity_margin,
             selector=self._selector,
         )
+
+    def locate_with_candidates(
+        self,
+        source: WindowSnapshot | Sequence[WindowRecord] | None = None,
+    ) -> tuple[Cu5PreviewMatch, tuple[Cu5PreviewCandidate, ...]]:
+        """Locate the preferred preview and expose credible alternatives.
+
+        The preferred match honors the remembered selector.  Alternatives are
+        ranked without that selector bias so a previously chosen object does
+        not hide other valid preview children from the adjustment control.
+        Both results are derived from the same native window snapshot.
+        """
+
+        snapshot = self._enumerate_snapshot() if source is None else source
+        match = locate_cu5_preview(
+            snapshot,
+            ambiguity_margin=self._ambiguity_margin,
+            selector=self._selector,
+        )
+        alternatives = list(rank_cu5_preview_candidates(snapshot, selector=None))
+        if not any(item.record.hwnd == match.record.hwnd for item in alternatives):
+            alternatives.append(
+                Cu5PreviewCandidate(
+                    match.record,
+                    match.score,
+                    match.reasons,
+                    match.selector,
+                )
+            )
+        alternatives.sort(
+            key=lambda item: (
+                item.record.hwnd != match.record.hwnd,
+                -item.score,
+                item.record.hwnd,
+            )
+        )
+        return match, tuple(alternatives)
 
 
 __all__ = [

@@ -205,6 +205,75 @@ def test_match_emits_restart_stable_selector_signature() -> None:
     ).to_dict() == payload
 
 
+def test_static_video_child_replaces_dialog_container_and_stale_selector() -> None:
+    records = _base_records()[:2]
+    records.extend(
+        [
+            _record(
+                40,
+                parent=2,
+                ancestors=(1, 2),
+                class_name="#32770",
+                control_id=1400,
+                rect=PhysicalRect(100, 100, 1296, 811),
+            ),
+            _record(
+                41,
+                parent=40,
+                ancestors=(1, 2, 40),
+                class_name="Static",
+                control_id=1501,
+                rect=PhysicalRect(106, 100, 874, 676),
+            ),
+        ]
+    )
+
+    ranked = rank_cu5_preview_candidates(
+        records,
+        selector={
+            "process_name": "cu-5.exe",
+            "class_name": "#32770",
+            "control_id": 1400,
+            "size": {"width": 1196, "height": 711},
+        },
+    )
+    match = locate_cu5_preview(
+        records,
+        selector={
+            "process_name": "cu-5.exe",
+            "class_name": "#32770",
+            "control_id": 1400,
+            "size": {"width": 1196, "height": 711},
+        },
+    )
+
+    assert [item.record.hwnd for item in ranked] == [41]
+    assert match.hwnd == 41
+    assert match.rect == PhysicalRect(106, 100, 874, 676)
+    assert match.selector is not None
+    assert match.selector.class_name == "static"
+    assert match.selector.width == 768 and match.selector.height == 576
+    assert "#32770" in match.selector.ancestor_classes
+    assert any("视频子窗口" in reason for reason in match.reasons)
+
+
+def test_generic_large_static_control_is_not_treated_as_video_without_context() -> None:
+    records = _base_records()[:2]
+    records.append(
+        _record(
+            50,
+            parent=2,
+            ancestors=(1, 2),
+            class_name="Static",
+            title="产品图示",
+            rect=PhysicalRect(220, 150, 860, 630),
+        )
+    )
+
+    with pytest.raises(Cu5PreviewNotFoundError):
+        locate_cu5_preview(records)
+
+
 @pytest.mark.parametrize(
     ("minimized", "cloaked", "visible", "message"),
     [
@@ -242,8 +311,39 @@ def test_non_cu5_process_is_not_mistaken_for_preview() -> None:
         rect=PhysicalRect(0, 0, 1280, 900),
     )
 
-    with pytest.raises(Cu5PreviewNotFoundError, match="CU-5.exe"):
+    with pytest.raises(Cu5PreviewNotFoundError, match="CU 系列"):
         locate_cu5_preview(records)
+
+
+def test_locator_exposes_unbiased_adjustment_candidates_after_a_saved_choice() -> None:
+    records = _base_records()
+    for hwnd, control_id, left in ((10, 1201, 180), (11, 1301, 210)):
+        records.append(
+            _record(
+                hwnd,
+                parent=2,
+                ancestors=(1, 2),
+                class_name="CWndForSDK",
+                control_id=control_id,
+                rect=PhysicalRect(left, 150, left + 768, 726),
+            )
+        )
+    locator = Cu5PreviewLocator(
+        enumerate_snapshot=lambda: WindowSnapshot.from_records(records),
+        selector={
+            "process_name": "cu-5.exe",
+            "class_name": "cwndforsdk",
+            "control_id": 1301,
+        },
+    )
+
+    match, candidates = locator.locate_with_candidates()
+
+    assert match.hwnd == 11
+    assert {item.record.hwnd for item in candidates} == {10, 11}
+    assert candidates[0].record.hwnd == 11
+    assert all(item.selector is not None for item in candidates)
+    assert {item.selector.control_id for item in candidates} == {1201, 1301}
 
 
 @pytest.mark.parametrize(

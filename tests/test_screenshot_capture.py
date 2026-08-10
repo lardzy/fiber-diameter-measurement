@@ -10,6 +10,12 @@ from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
+from fdm.platform.windows_window_locator import (
+    PhysicalRect,
+    WindowRecord,
+    WindowSnapshot,
+)
+from fdm.services.cu5_preview_locator import Cu5PreviewLocator
 from fdm.services.screenshot_capture import (
     CaptureCoordinator,
     CaptureMode,
@@ -99,6 +105,74 @@ def test_nested_hit_candidates_are_deepest_then_smallest() -> None:
     )
 
     assert [item.handle for item in candidate_at_point(candidates, QPoint(150, 150))] == [3, 2, 1]
+
+
+def test_hit_testing_never_prefers_a_deep_control_from_a_background_window() -> None:
+    candidates = (
+        WindowCandidate(
+            100,
+            CaptureRect(0, 0, 800, 600),
+            z_order=0,
+            metadata={"root_handle": 100},
+        ),
+        WindowCandidate(
+            200,
+            CaptureRect(0, 0, 800, 600),
+            z_order=1,
+            metadata={"root_handle": 200},
+        ),
+        WindowCandidate(
+            201,
+            CaptureRect(120, 120, 80, 60),
+            parent_handle=200,
+            depth=1,
+            z_order=2,
+            metadata={"root_handle": 200, "ancestor_handles": (200,)},
+        ),
+    )
+
+    assert [
+        item.handle for item in candidate_at_point(candidates, QPoint(150, 150))
+    ] == [100]
+
+
+def test_hit_testing_follows_only_the_frontmost_overlapping_sibling_branch() -> None:
+    candidates = (
+        WindowCandidate(
+            1,
+            CaptureRect(-300, 0, 900, 700),
+            z_order=0,
+            metadata={"root_handle": 1},
+        ),
+        WindowCandidate(
+            2,
+            CaptureRect(-200, 50, 500, 500),
+            parent_handle=1,
+            depth=1,
+            z_order=1,
+            metadata={"root_handle": 1, "ancestor_handles": (1,)},
+        ),
+        WindowCandidate(
+            3,
+            CaptureRect(-20, 100, 120, 100),
+            parent_handle=1,
+            depth=1,
+            z_order=2,
+            metadata={"root_handle": 1, "ancestor_handles": (1,)},
+        ),
+        WindowCandidate(
+            4,
+            CaptureRect(0, 120, 50, 40),
+            parent_handle=3,
+            depth=2,
+            z_order=3,
+            metadata={"root_handle": 1, "ancestor_handles": (1, 3)},
+        ),
+    )
+
+    assert [
+        item.handle for item in candidate_at_point(candidates, QPoint(20, 140))
+    ] == [2, 1]
 
 
 def test_coordinator_resolves_full_display_active_last_and_manual_selection() -> None:
@@ -307,6 +381,127 @@ def test_cu5_window_capture_enables_black_frame_validation() -> None:
     assert capture.options["validate"] is True
 
 
+def test_cu_preview_capture_uses_static_child_without_dialog_white_borders() -> None:
+    process_path = r"C:\CU-6\CU-6.exe"
+    records = (
+        WindowRecord(
+            20,
+            None,
+            20,
+            (),
+            77,
+            process_path,
+            "CU-6 直径实验",
+            "AfxFrame",
+            None,
+            PhysicalRect(0, 0, 1400, 900),
+            True,
+            False,
+            False,
+        ),
+        WindowRecord(
+            21,
+            20,
+            20,
+            (20,),
+            77,
+            process_path,
+            "",
+            "MDIClient",
+            None,
+            PhysicalRect(50, 50, 1350, 850),
+            True,
+            False,
+            False,
+        ),
+        WindowRecord(
+            30,
+            21,
+            20,
+            (20, 21),
+            77,
+            process_path,
+            "",
+            "#32770",
+            1400,
+            PhysicalRect(100, 100, 1296, 811),
+            True,
+            False,
+            False,
+        ),
+        WindowRecord(
+            31,
+            30,
+            20,
+            (20, 21, 30),
+            77,
+            process_path,
+            "",
+            "Static",
+            1501,
+            PhysicalRect(106, 100, 874, 676),
+            True,
+            False,
+            False,
+        ),
+    )
+    snapshot = WindowSnapshot.from_records(records)
+    locator = Cu5PreviewLocator(
+        enumerate_snapshot=lambda: snapshot,
+        selector={
+            "process_name": "cu-6.exe",
+            "class_name": "#32770",
+            "control_id": 1400,
+            "size": {"width": 1196, "height": 711},
+        },
+    )
+
+    class _Frame:
+        def __init__(self, width: int, height: int) -> None:
+            self.width = width
+            self.height = height
+
+        def to_qimage(self) -> QImage:
+            image = QImage(self.width, self.height, QImage.Format.Format_RGB32)
+            image.fill(QColor("#123456"))
+            return image
+
+    class _Capture:
+        def __init__(self) -> None:
+            self.calls: list[tuple[int, dict[str, object]]] = []
+
+        def capture_window(self, hwnd: int, **options):
+            self.calls.append((hwnd, dict(options)))
+            rect = options["rect"]
+            return SimpleNamespace(frame=_Frame(rect.width, rect.height))
+
+    native_capture = _Capture()
+    backend = WindowsScreenshotBackend(
+        screen_provider=lambda: (),
+        window_enumerator=lambda: snapshot,
+        screen_capture=native_capture,
+        active_window_provider=lambda: 0,
+        cu5_locator=locator,
+    )
+
+    frame = CaptureCoordinator(backend).capture_now(CaptureRequest(CaptureMode.CU5))
+
+    assert frame.target_handle == 31
+    assert frame.rect == CaptureRect(106, 100, 768, 576)
+    assert frame.image.size().toTuple() == (768, 576)
+    assert frame.image.pixelColor(767, 575) == QColor("#123456")
+    assert frame.metadata["source_class"] == "Static"
+    assert native_capture.calls == [
+        (
+            31,
+            {
+                "rect": PhysicalRect(106, 100, 874, 676),
+                "validate": True,
+            },
+        )
+    ]
+
+
 def test_cu5_legacy_title_fallback_also_marks_capture_for_validation() -> None:
     class _LegacyBackend(_Backend):
         def __init__(self) -> None:
@@ -405,5 +600,5 @@ def test_cu5_resolution_failure_is_explicit_and_never_falls_back_to_drag_box() -
 
     coordinator.start(CaptureRequest(CaptureMode.CU5))
 
-    assert failed and "CU-5" in failed[0]
+    assert failed and "CU 系列" in failed[0]
     assert selections == []

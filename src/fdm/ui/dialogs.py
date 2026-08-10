@@ -1663,6 +1663,7 @@ class _SettingsTabsCompatibility:
 
 class SettingsDialog(QDialog):
     screenshotCu5DiagnosticRequested = Signal()
+    screenshotCu5CandidateSelectionRequested = Signal(object)
 
     _NAVIGATION_DEFINITIONS = (
         ("常规", "主题与默认视图", "主题 深色 浅色 系统 打开 图片 默认 视图"),
@@ -1671,7 +1672,7 @@ class SettingsDialog(QDialog):
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
         ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
-        ("截图工具", "常驻截图、全局快捷键和 CU-5 实时预览", "截图 常驻 托盘 快捷键 开机启动 CU-5 Microview 窗口 区域"),
+        ("截图工具", "常驻截图、全局快捷键和 CU 系列实时预览", "截图 常驻 托盘 快捷键 开机启动 CU 系列 CU-5 CU-6 Microview 窗口 区域"),
         ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
     )
 
@@ -1709,6 +1710,9 @@ class SettingsDialog(QDialog):
         )
         self._screenshot_settings_widget.cu5DiagnosticRequested.connect(
             self.screenshotCu5DiagnosticRequested
+        )
+        self._screenshot_settings_widget.cu5CandidateSelectionRequested.connect(
+            self.screenshotCu5CandidateSelectionRequested
         )
         screenshot_page = self._wrap_settings_page(self._screenshot_settings_widget)
         screenshot_page.setProperty("redirectEditorWheel", True)

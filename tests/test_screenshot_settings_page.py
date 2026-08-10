@@ -21,6 +21,7 @@ from fdm.screenshot_settings import (
 )
 from fdm.services.screenshot_capture import CaptureMode
 from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
+from fdm.ui.widgets import NoWheelComboBox
 
 
 class ScreenshotSettingsPageTests(unittest.TestCase):
@@ -131,6 +132,81 @@ class ScreenshotSettingsPageTests(unittest.TestCase):
             self.assertTrue(page.cu5_status_label.property("diagnosticSuccess"))
             self.assertFalse(hasattr(page, "cu5_diagnostics_checkbox"))
             self.assertTrue(page.settings().cu5_diagnostics_enabled)
+        finally:
+            page.close()
+
+    def test_cu_preview_candidates_default_to_recommended_and_require_apply(self) -> None:
+        page = ScreenshotSettingsPage(ScreenshotSettings())
+        selected = {
+            "process_name": "cu-6.exe",
+            "class_name": "static",
+            "control_id": 1501,
+        }
+        requests: list[dict[str, object]] = []
+        page.cu5CandidateSelectionRequested.connect(requests.append)
+        try:
+            page.set_cu5_candidates(
+                [
+                    {
+                        "title": "",
+                        "class_name": "Static",
+                        "process_name": "CU-6.exe",
+                        "rect": {"x": 100, "y": 80, "width": 768, "height": 576},
+                        "score": 260.0,
+                        "selector": selected,
+                    },
+                    {
+                        "title": "实时预览",
+                        "class_name": "CWndForSDK",
+                        "process_name": "CU-6.exe",
+                        "rect": {"x": 120, "y": 90, "width": 640, "height": 480},
+                        "score": 190.0,
+                        "selector": {
+                            "process_name": "cu-6.exe",
+                            "class_name": "cwndforsdk",
+                            "control_id": 1601,
+                        },
+                    },
+                ],
+                selected_selector=selected,
+            )
+            self.assertIsInstance(page.cu5_candidate_combo, NoWheelComboBox)
+            self.assertEqual(page.cu5_candidate_combo.count(), 2)
+            self.assertIn("推荐", page.cu5_candidate_combo.currentText())
+            self.assertEqual(requests, [])
+
+            page.cu5_candidate_combo.setCurrentIndex(1)
+            self.assertEqual(requests, [])
+            page.cu5_candidate_apply_button.click()
+            self.assertEqual(requests[-1]["control_id"], 1601)
+            self.assertIn("CU 系列", page.cu5_diagnostic_button.text())
+        finally:
+            page.close()
+
+    def test_malformed_preview_candidate_is_ignored_without_breaking_settings(self) -> None:
+        page = ScreenshotSettingsPage(ScreenshotSettings())
+        try:
+            page.set_cu5_candidates(
+                [
+                    {
+                        "rect": {
+                            "x": object(),
+                            "y": 0,
+                            "width": "not-a-number",
+                            "height": 576,
+                        },
+                        "score": "--",
+                        "selector": {
+                            "process_name": "cu-6.exe",
+                            "class_name": "static",
+                        },
+                    }
+                ],
+                selected_selector=None,
+            )
+            self.assertEqual(page.cu5_candidate_combo.count(), 1)
+            self.assertFalse(page.cu5_candidate_combo.isEnabled())
+            self.assertFalse(page.cu5_candidate_apply_button.isEnabled())
         finally:
             page.close()
 
