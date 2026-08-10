@@ -244,3 +244,102 @@ def test_non_cu5_process_is_not_mistaken_for_preview() -> None:
 
     with pytest.raises(Cu5PreviewNotFoundError, match="CU-5.exe"):
         locate_cu5_preview(records)
+
+
+@pytest.mark.parametrize(
+    ("process_path", "title"),
+    [
+        (r"C:\CU\CU.exe", "实验引导"),
+        (r"C:\CU-6\CU-6.exe", "直径实验"),
+        (r"C:\CU6\CU6.exe", "直径实验"),
+        (r"C:\Vendor\capture.exe", "CU - 实时预览"),
+    ],
+)
+def test_cu_family_process_or_title_can_reuse_preview_detection(
+    process_path: str,
+    title: str,
+) -> None:
+    records = _base_records()
+    records[0] = _record(
+        1,
+        parent=None,
+        class_name=records[0].class_name,
+        title=title,
+        process_path=process_path,
+        rect=records[0].rect,
+    )
+    records.append(
+        _record(
+            4,
+            parent=2,
+            ancestors=(1, 2),
+            class_name="CWndForSDK",
+            process_path=process_path,
+            control_id=1201,
+            rect=PhysicalRect(220, 150, 988, 726),
+        )
+    )
+
+    assert locate_cu5_preview(records).hwnd == 4
+
+
+def test_saved_cu5_selector_does_not_block_cu6_root_discovery() -> None:
+    records = _base_records()
+    process_path = r"C:\CU-6\CU-6.exe"
+    records[0] = _record(
+        1,
+        parent=None,
+        class_name=records[0].class_name,
+        title="CU-6 纤维细度仪",
+        process_path=process_path,
+        rect=records[0].rect,
+    )
+    records.append(
+        _record(
+            4,
+            parent=2,
+            ancestors=(1, 2),
+            class_name="AfxWnd42",
+            process_path=process_path,
+            control_id=2202,
+            rect=PhysicalRect(220, 150, 988, 726),
+        )
+    )
+
+    match = locate_cu5_preview(
+        records,
+        selector={
+            "process_name": "cu-5.exe",
+            "class_name": "cwndforsdk",
+            "control_id": 1201,
+        },
+    )
+
+    assert match.hwnd == 4
+    assert any("通用 CU" in reason for reason in match.reasons)
+
+
+@pytest.mark.parametrize(
+    ("process_path", "title"),
+    [
+        (r"C:\Tools\Secure.exe", "Secure Capture"),
+        (r"C:\Tools\Cubic.exe", "Cubic Preview"),
+        (r"C:\Tools\document.exe", "Document Viewer"),
+    ],
+)
+def test_incidental_cu_letters_do_not_open_the_cu_family_gate(
+    process_path: str,
+    title: str,
+) -> None:
+    records = _base_records()
+    records[0] = _record(
+        1,
+        parent=None,
+        class_name="AfxFrame",
+        title=title,
+        process_path=process_path,
+        rect=PhysicalRect(0, 0, 1280, 900),
+    )
+
+    with pytest.raises(Cu5PreviewNotFoundError):
+        locate_cu5_preview(records)

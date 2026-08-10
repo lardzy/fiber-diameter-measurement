@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 import math
 from pathlib import PureWindowsPath
+import re
 from typing import Callable, Mapping, Sequence
 
 from fdm.platform.windows_window_locator import (
@@ -14,6 +15,7 @@ from fdm.platform.windows_window_locator import (
 
 
 CU5_PROCESS_NAMES = frozenset({"cu-5.exe", "cu5.exe"})
+_CU_FAMILY_MARKER = re.compile(r"(?<![a-z0-9])cu(?=$|[^a-z]|[0-9])", re.IGNORECASE)
 _RESOURCE_TEXT_TOKENS = (
     "实时预览",
     "视频预览",
@@ -212,17 +214,32 @@ def _contains_resource_text(value: str) -> bool:
     return any(token.casefold() in normalized for token in _RESOURCE_TEXT_TOKENS)
 
 
+def matches_cu_family_identity(process_path: object, title: object) -> bool:
+    """Return whether a process name or window title carries a CU marker.
+
+    The boundary-aware match accepts names such as ``CU.exe``, ``CU-6.exe``
+    and ``CU6`` while avoiding unrelated words that merely contain the letters
+    (for example ``Secure`` or ``Cubic``).
+    """
+
+    process_name = PureWindowsPath(str(process_path or "")).name
+    return bool(
+        process_name.casefold() in CU5_PROCESS_NAMES
+        or _CU_FAMILY_MARKER.search(process_name)
+        or _CU_FAMILY_MARKER.search(str(title or ""))
+    )
+
+
 def _looks_like_cu5_root(
     record: WindowRecord,
     selector: Cu5PreviewSelector | None = None,
 ) -> bool:
     process_name = PureWindowsPath(record.process_path).name.casefold()
-    if selector is not None and selector.process_name:
-        return record.parent_hwnd is None and process_name == selector.process_name
-    if process_name in CU5_PROCESS_NAMES:
+    if record.parent_hwnd is not None:
+        return False
+    if matches_cu_family_identity(process_name, record.title):
         return True
-    compact_title = record.title.casefold().replace(" ", "").replace("_", "")
-    return record.parent_hwnd is None and ("cu-5" in compact_title or "cu5" in compact_title)
+    return bool(selector is not None and selector.process_name == process_name)
 
 
 def _is_sdk_class(record: WindowRecord) -> bool:
@@ -400,7 +417,10 @@ def _selector_score(
             score += 35.0
             reasons.append("匹配已记忆的 CU-5 进程名")
         else:
-            score -= 180.0
+            # A learned CU-5 signature must not exclude another CU-family
+            # application (for example CU-6).  Its child-window details belong
+            # to the old process, so do not apply those details to this one.
+            return -20.0, ("与已记忆进程不同，改用通用 CU 识别",)
     if selector.class_name:
         if _canonical_class_name(candidate.class_name) == selector.class_name:
             score += 110.0
@@ -588,5 +608,6 @@ __all__ = [
     "Cu5PreviewSelector",
     "Cu5PreviewUnavailableError",
     "locate_cu5_preview",
+    "matches_cu_family_identity",
     "rank_cu5_preview_candidates",
 ]

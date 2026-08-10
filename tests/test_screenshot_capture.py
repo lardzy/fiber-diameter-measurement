@@ -20,6 +20,7 @@ from fdm.services.screenshot_capture import (
     WindowCandidate,
     WindowsScreenshotBackend,
     candidate_at_point,
+    rank_cu5_candidates,
 )
 
 
@@ -330,6 +331,19 @@ def test_cu5_legacy_title_fallback_also_marks_capture_for_validation() -> None:
     assert frame.valid
     assert backend.captured_candidate is not None
     assert backend.captured_candidate.metadata["cu5_preview"] is True
+
+
+def test_cu6_process_is_accepted_by_legacy_preview_fallback() -> None:
+    candidates = (
+        WindowCandidate(
+            7,
+            CaptureRect(20, 30, 768, 576),
+            title="用来显示SDK摄像头的窗口",
+            executable=r"C:\CU-6\CU-6.exe",
+        ),
+    )
+
+    assert rank_cu5_candidates(candidates) == candidates
 
 
 def test_capture_mode_parse_accepts_existing_enum() -> None:

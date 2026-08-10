@@ -650,6 +650,8 @@ def candidate_at_point(
 
 
 def rank_cu5_candidates(candidates: Sequence[WindowCandidate]) -> tuple[WindowCandidate, ...]:
+    from fdm.services.cu5_preview_locator import matches_cu_family_identity
+
     def score(candidate: WindowCandidate) -> tuple[float, int, int]:
         title = candidate.title.casefold()
         cls = candidate.class_name.casefold()
@@ -658,7 +660,7 @@ def rank_cu5_candidates(candidates: Sequence[WindowCandidate]) -> tuple[WindowCa
         height = max(1, candidate.capture_rect.height)
         ratio_error = abs(width / height - 4.0 / 3.0)
         value = 0.0
-        if executable.endswith("/cu-5.exe") or executable == "cu-5.exe":
+        if matches_cu_family_identity(executable, candidate.title):
             value += 100.0
         if candidate.title == "用来显示SDK摄像头的窗口":
             value += 80.0
@@ -685,9 +687,7 @@ def rank_cu5_candidates(candidates: Sequence[WindowCandidate]) -> tuple[WindowCa
         candidate
         for candidate in candidates
         if (
-            candidate.executable.replace("\\", "/").casefold().endswith("/cu-5.exe")
-            or candidate.executable.casefold() == "cu-5.exe"
-            or candidate.title.casefold().startswith("cu -")
+            matches_cu_family_identity(candidate.executable, candidate.title)
             or candidate.title == "用来显示SDK摄像头的窗口"
         )
     ]

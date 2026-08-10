@@ -56,6 +56,89 @@ from fdm.ui.screenshot_overlay import ScreenshotOverlay, logical_point_to_physic
 SCREENSHOT_AUTOSTART_VALUE_NAME = "FiberDiameterMeasurementScreenshotTool"
 
 
+# Qt's PortableText names are translated to the documented Win32 virtual-key
+# codes consumed by RegisterHotKey.  Keep aliases for hand-edited legacy
+# settings, but use Qt's canonical spellings as the primary keys.
+_WINDOWS_NAMED_VIRTUAL_KEYS = {
+    "cancel": 0x03,  # VK_CANCEL
+    "backspace": 0x08,  # VK_BACK
+    "tab": 0x09,  # VK_TAB
+    "clear": 0x0C,  # VK_CLEAR
+    "return": 0x0D,  # VK_RETURN
+    "enter": 0x0D,
+    "pause": 0x13,  # VK_PAUSE
+    "capslock": 0x14,  # VK_CAPITAL
+    "escape": 0x1B,  # VK_ESCAPE
+    "esc": 0x1B,
+    "space": 0x20,  # VK_SPACE
+    "pageup": 0x21,  # VK_PRIOR
+    "pgup": 0x21,
+    "pagedown": 0x22,  # VK_NEXT
+    "pgdown": 0x22,
+    "end": 0x23,  # VK_END
+    "home": 0x24,  # VK_HOME
+    "left": 0x25,  # VK_LEFT
+    "up": 0x26,  # VK_UP
+    "right": 0x27,  # VK_RIGHT
+    "down": 0x28,  # VK_DOWN
+    "select": 0x29,  # VK_SELECT
+    "execute": 0x2B,  # VK_EXECUTE
+    "insert": 0x2D,  # VK_INSERT
+    "ins": 0x2D,
+    "delete": 0x2E,  # VK_DELETE
+    "del": 0x2E,
+    "help": 0x2F,  # VK_HELP
+    # The physical context-menu key is VK_APPS.  VK_MENU is the Win32 name
+    # for Alt and must not be used for Qt's Key_Menu.
+    "menu": 0x5D,  # VK_APPS
+    "apps": 0x5D,
+    "application": 0x5D,
+    "context menu": 0x5D,
+    "application menu": 0x5D,
+    "sleep": 0x5F,  # VK_SLEEP
+    "standby": 0x5F,
+    "numlock": 0x90,  # VK_NUMLOCK
+    "scrolllock": 0x91,  # VK_SCROLL
+    "back": 0xA6,  # VK_BROWSER_BACK
+    "browser back": 0xA6,
+    "forward": 0xA7,  # VK_BROWSER_FORWARD
+    "browser forward": 0xA7,
+    "refresh": 0xA8,  # VK_BROWSER_REFRESH
+    "browser refresh": 0xA8,
+    "stop": 0xA9,  # VK_BROWSER_STOP
+    "browser stop": 0xA9,
+    "search": 0xAA,  # VK_BROWSER_SEARCH
+    "browser search": 0xAA,
+    "favorites": 0xAB,  # VK_BROWSER_FAVORITES
+    "browser favorites": 0xAB,
+    "home page": 0xAC,  # VK_BROWSER_HOME
+    "homepage": 0xAC,
+    "browser home": 0xAC,
+    "volume mute": 0xAD,  # VK_VOLUME_MUTE
+    "volume down": 0xAE,  # VK_VOLUME_DOWN
+    "volume up": 0xAF,  # VK_VOLUME_UP
+    "media next": 0xB0,  # VK_MEDIA_NEXT_TRACK
+    "media next track": 0xB0,
+    "media previous": 0xB1,  # VK_MEDIA_PREV_TRACK
+    "media previous track": 0xB1,
+    "media prev": 0xB1,
+    "media stop": 0xB2,  # VK_MEDIA_STOP
+    "media play": 0xB3,  # VK_MEDIA_PLAY_PAUSE
+    "media pause": 0xB3,
+    "media play/pause": 0xB3,
+    "toggle media play/pause": 0xB3,
+    "launch mail": 0xB4,  # VK_LAUNCH_MAIL
+    "launch media": 0xB5,  # VK_LAUNCH_MEDIA_SELECT
+    "launch media select": 0xB5,
+    "launch (0)": 0xB6,  # VK_LAUNCH_APP1
+    "launch app 1": 0xB6,
+    "launch (1)": 0xB7,  # VK_LAUNCH_APP2
+    "launch app 2": 0xB7,
+    "play": 0xFA,  # VK_PLAY
+    "zoom": 0xFB,  # VK_ZOOM
+}
+
+
 class AgentCommandError(RuntimeError):
     def __init__(self, message: str, *, result: Mapping[str, object] | None = None) -> None:
         super().__init__(message)
@@ -95,31 +178,6 @@ def _parse_windows_hotkey(sequence: str, identifier: int):
 
     modifiers = 0
     virtual_key = 0
-    named_keys = {
-        "backspace": 0x08,
-        "tab": 0x09,
-        "return": 0x0D,
-        "enter": 0x0D,
-        "pause": 0x13,
-        "capslock": 0x14,
-        "escape": 0x1B,
-        "esc": 0x1B,
-        "space": 0x20,
-        "pageup": 0x21,
-        "pgup": 0x21,
-        "pagedown": 0x22,
-        "pgdown": 0x22,
-        "end": 0x23,
-        "home": 0x24,
-        "left": 0x25,
-        "up": 0x26,
-        "right": 0x27,
-        "down": 0x28,
-        "insert": 0x2D,
-        "ins": 0x2D,
-        "delete": 0x2E,
-        "del": 0x2E,
-    }
     for part in (token.strip() for token in str(sequence).split("+") if token.strip()):
         token = part.casefold()
         if token in {"ctrl", "control"}:
@@ -132,8 +190,8 @@ def _parse_windows_hotkey(sequence: str, identifier: int):
             modifiers |= MOD_WIN
         elif token in {"print", "printscreen", "prtsc", "prtscn"}:
             virtual_key = 0x2C  # VK_SNAPSHOT
-        elif token in named_keys:
-            virtual_key = named_keys[token]
+        elif token in _WINDOWS_NAMED_VIRTUAL_KEYS:
+            virtual_key = _WINDOWS_NAMED_VIRTUAL_KEYS[token]
         elif len(token) == 1 and token.isascii() and token.isalnum():
             virtual_key = ord(token.upper())
         elif token.startswith("f") and token[1:].isdigit() and 1 <= int(token[1:]) <= 24:

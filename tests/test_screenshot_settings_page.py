@@ -9,10 +9,16 @@ import unittest
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from PySide6.QtCore import Qt
 from PySide6.QtGui import QKeySequence
 from PySide6.QtWidgets import QApplication
 
-from fdm.screenshot_settings import AfterCaptureTask, ImageFormat, ScreenshotSettings
+from fdm.screenshot_settings import (
+    AfterCaptureTask,
+    HotkeyBinding,
+    ImageFormat,
+    ScreenshotSettings,
+)
 from fdm.services.screenshot_capture import CaptureMode
 from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
 
@@ -64,6 +70,18 @@ class ScreenshotSettingsPageTests(unittest.TestCase):
             )
         finally:
             page.close()
+
+    def test_menu_key_is_preserved_by_the_settings_editor(self) -> None:
+        page = ScreenshotSettingsPage(ScreenshotSettings())
+        try:
+            page.hotkey_edits[CaptureMode.REGION].setKeySequence(
+                QKeySequence(Qt.Key.Key_Menu)
+            )
+            actual = page.settings()
+        finally:
+            page.close()
+
+        self.assertEqual(actual.hotkeys[CaptureMode.REGION], HotkeyBinding("Menu"))
 
     def test_switching_formats_preserves_each_formats_quality(self) -> None:
         page = ScreenshotSettingsPage(
