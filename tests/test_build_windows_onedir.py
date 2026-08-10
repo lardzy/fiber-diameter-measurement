@@ -53,12 +53,13 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         self.assertTrue(build_mock.call_args.kwargs["exclude_area_models"])
         self.assertTrue(build_mock.call_args.kwargs["exclude_content_templates"])
 
-    def test_spec_uses_flat_onedir_layout_for_both_executables(self) -> None:
+    def test_spec_uses_flat_onedir_layout_for_all_executables(self) -> None:
         spec_payload = (
             PROJECT_ROOT / "packaging" / "pyinstaller" / "fdm_onedir.spec"
         ).read_text(encoding="utf-8")
 
-        self.assertEqual(spec_payload.count('contents_directory="."'), 2)
+        self.assertEqual(spec_payload.count('contents_directory="."'), 3)
+        self.assertIn('name="FiberScreenshotTool"', spec_payload)
         self.assertIn("FDM_EXCLUDED_COMPONENTS", spec_payload)
         self.assertIn("collect_private_content_template_datas", spec_payload)
         self.assertIn("resolve_runtime_profile", spec_payload)
@@ -116,6 +117,12 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
         self.assertIn('LicenseFile={#ProjectRoot}\\LICENSE', installer_payload)
         self.assertIn('#ifnexist ProjectRoot + "\\LICENSE"', installer_payload)
+        self.assertIn('ScreenshotToolExeName "FiberScreenshotTool.exe"', installer_payload)
+        self.assertIn('Name: "{group}\\Fiber 截图工具"', installer_payload)
+        self.assertIn("procedure RemoveOwnedScreenshotAutostart();", installer_payload)
+        self.assertIn("CompareText(Trim(CurrentCommand), QuotedCommand)", installer_payload)
+        self.assertIn("CompareText(Trim(CurrentCommand), UnquotedCommand)", installer_payload)
+        self.assertIn("ScreenshotAutostartValueName", installer_payload)
 
     def test_packaged_self_check_rejects_contradictory_or_invalid_error_payloads(self) -> None:
         cases = (
@@ -147,6 +154,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 app_dir.mkdir(parents=True, exist_ok=True)
                 (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
                 (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "FiberScreenshotTool.exe").write_bytes(b"screenshot")
                 (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
                 return subprocess.CompletedProcess([], 0)
 
@@ -185,6 +193,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 app_dir.mkdir(parents=True, exist_ok=True)
                 (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
                 (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "FiberScreenshotTool.exe").write_bytes(b"screenshot")
                 (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
                 return subprocess.CompletedProcess([], 0)
 
@@ -213,6 +222,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 app_dir.mkdir(parents=True, exist_ok=True)
                 (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
                 (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "FiberScreenshotTool.exe").write_bytes(b"screenshot")
                 (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
                 return subprocess.CompletedProcess([], 0)
 
@@ -309,6 +319,7 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 app_dir.mkdir(parents=True, exist_ok=True)
                 (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
                 (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+                (app_dir / "FiberScreenshotTool.exe").write_bytes(b"screenshot")
                 (app_dir / "runtime_assets.toml").write_text("schema_version = 1\n", encoding="utf-8")
                 return subprocess.CompletedProcess([], 0)
 

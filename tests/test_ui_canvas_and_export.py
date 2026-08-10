@@ -6316,6 +6316,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 def app_settings(self) -> AppSettings:
                     return self._settings
 
+                def screenshot_settings(self):
+                    return window._screenshot_settings
+
                 def wants_scale_anchor_pick(self) -> bool:
                     return False
 
@@ -6323,6 +6326,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 patch("fdm.ui.main_window.refresh_widget_theme"),
                 patch.object(window, "_apply_theme_mode"),
                 patch.object(window, "_save_app_settings"),
+                patch.object(window, "_apply_screenshot_settings"),
             ):
                 window._apply_settings_dialog(FakeDialog(window._app_settings), close_after=False)
 
@@ -9066,10 +9070,11 @@ class CanvasAndExportTests(unittest.TestCase):
                     "图像与智能分析",
                     "面积识别",
                     "采集与数字切片",
+                    "截图工具",
                     "导出与模板",
                 ],
             )
-            self.assertEqual(dialog._settings_pages.count(), 7)
+            self.assertEqual(dialog._settings_pages.count(), 8)
             self.assertLessEqual(dialog.width(), 900)
             self.assertIsInstance(dialog._tabs.widget(0), QScrollArea)
             self.assertIsInstance(dialog._tabs.widget(1), QScrollArea)

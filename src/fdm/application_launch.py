@@ -276,9 +276,13 @@ class SingleInstanceCoordinator(QObject):
         )
 
     def close(self) -> None:
+        try:
+            self._server.newConnection.disconnect(self._accept_pending_connections)
+        except (RuntimeError, TypeError):
+            pass
         for socket, _buffer in list(self._connections.values()):
+            self._disconnect_connection_signals(socket)
             socket.abort()
-            socket.deleteLater()
         self._connections.clear()
         self._server.close()
         if self._instance_lock.isLocked():
@@ -286,24 +290,24 @@ class SingleInstanceCoordinator(QObject):
 
     def _forward_request(self, request: ApplicationOpenRequest, *, timeout_ms: int) -> bool:
         socket = QLocalSocket()
-        socket.connectToServer(self._server_name)
-        if not socket.waitForConnected(max(1, int(timeout_ms))):
-            socket.abort()
-            return False
         try:
+            socket.connectToServer(self._server_name)
+            if not socket.waitForConnected(max(1, int(timeout_ms))):
+                return False
             payload = encode_application_open_request(request)
-        except ApplicationOpenRequestError:
+            written = socket.write(payload)
+            if written != len(payload):
+                return False
+            if socket.bytesToWrite() > 0 and not socket.waitForBytesWritten(max(1, int(timeout_ms))):
+                return False
+            return True
+        finally:
+            # This is a synchronous one-shot transport.  Do not leave a
+            # disconnect notifier queued after the temporary Python wrapper
+            # has gone out of scope; on Qt's local-socket backends that stale
+            # notifier can otherwise surface much later in an unrelated event
+            # loop turn.
             socket.abort()
-            raise
-        written = socket.write(payload)
-        if written != len(payload):
-            socket.abort()
-            return False
-        if socket.bytesToWrite() > 0 and not socket.waitForBytesWritten(max(1, int(timeout_ms))):
-            socket.abort()
-            return False
-        socket.disconnectFromServer()
-        return True
 
     def _accept_pending_connections(self) -> None:
         while self._server.hasPendingConnections():
@@ -356,5 +360,14 @@ class SingleInstanceCoordinator(QObject):
         if connection is None:
             return
         socket, _buffer = connection
+        self._disconnect_connection_signals(socket)
         socket.abort()
         socket.deleteLater()
+
+    @staticmethod
+    def _disconnect_connection_signals(socket: QLocalSocket) -> None:
+        for signal in (socket.readyRead, socket.disconnected):
+            try:
+                signal.disconnect()
+            except (RuntimeError, TypeError):
+                pass

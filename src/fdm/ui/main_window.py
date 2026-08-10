@@ -12,6 +12,7 @@ import hashlib
 import json
 import math
 import shutil
+import sys
 import tempfile
 
 from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSize, Qt, QTimer, Signal
@@ -152,6 +153,12 @@ from fdm.project_roi import (
 )
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.release_manifest import packaged_runtime_features, runtime_capability_hint
+from fdm.screenshot_protocol import CommandType, IPCCommand
+from fdm.screenshot_settings import (
+    ScreenshotSettings,
+    ScreenshotSettingsIO,
+    UnsupportedScreenshotSettingsVersion,
+)
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_SUFFIX,
     DOCUMENT_KIND_DIGITAL_SLIDE,
@@ -175,6 +182,12 @@ from fdm.services.motion_control import (
     list_motion_ports,
     preferred_motion_port,
 )
+from fdm.services.screenshot_agent_client import (
+    ScreenshotAgentClient,
+    ScreenshotAgentClientError,
+    ScreenshotAgentCommandError,
+)
+from fdm.services.screenshot_capture import CaptureMode
 from fdm.settings import (
     AppSettings,
     AppSettingsIO,
@@ -1212,6 +1225,20 @@ class MainWindow(QMainWindow):
         self._runtime_capability_hint = runtime_capability_hint()
         self._project_path: Path | None = None
         self._app_settings = AppSettingsIO.load()
+        self._screenshot_settings_load_error = ""
+        self._screenshot_settings_read_only = False
+        try:
+            self._screenshot_settings = ScreenshotSettingsIO.load()
+        except UnsupportedScreenshotSettingsVersion as exc:
+            # A damaged or newer companion settings file must not prevent the
+            # measurement workspace from opening. The screenshot settings page
+            # remains available, but the unknown file is preserved until the
+            # user explicitly confirms replacing it.
+            self._screenshot_settings = ScreenshotSettings()
+            self._screenshot_settings_load_error = str(exc) or type(exc).__name__
+            self._screenshot_settings_read_only = True
+        self._screenshot_agent_client = ScreenshotAgentClient()
+        self._screenshot_action_update = False
         app = QApplication.instance()
         if app is not None:
             self._app_settings.theme_mode = apply_application_theme(app, self._app_settings.theme_mode)
@@ -1688,6 +1715,14 @@ class MainWindow(QMainWindow):
                 0,
                 lambda: self.statusBar().showMessage(self._runtime_capability_hint, 10_000),
             )
+        app = QApplication.instance()
+        if (
+            self._screenshot_settings.enabled
+            and sys.platform.startswith("win")
+            and app is not None
+            and app.platformName().casefold() != "offscreen"
+        ):
+            QTimer.singleShot(0, self._start_configured_screenshot_tool)
 
     @property
     def _load_thread(self):
@@ -2095,7 +2130,38 @@ class MainWindow(QMainWindow):
         self.settings_action.setMenuRole(QAction.MenuRole.NoRole)
         self.settings_action.setIcon(themed_icon("settings", color="#D7E3FC"))
         self.settings_action.setShortcut("Ctrl+,")
-        self.settings_action.triggered.connect(self.open_settings_dialog)
+        self.settings_action.triggered.connect(
+            lambda _checked=False: self.open_settings_dialog()
+        )
+
+        self.screenshot_tool_action = QAction("常驻截图工具", self)
+        self.screenshot_tool_action.setCheckable(True)
+        self.screenshot_tool_action.setChecked(bool(self._screenshot_settings.enabled))
+        self.screenshot_tool_action.setIcon(themed_icon("capture_frame", color="#7BD389"))
+        self.screenshot_tool_action.setToolTip(
+            "启动独立托盘截图工具；关闭测量工作台后仍可继续截图"
+        )
+        self.screenshot_tool_action.toggled.connect(self._toggle_screenshot_tool)
+
+        self.screenshot_region_action = QAction("区域 / 智能截图", self)
+        self.screenshot_region_action.setIcon(themed_icon("capture_frame", color="#F4D35E"))
+        self.screenshot_region_action.triggered.connect(
+            lambda: self._request_screenshot_capture(CaptureMode.SMART)
+        )
+
+        self.screenshot_cu5_action = QAction("截取 CU-5 实时预览", self)
+        self.screenshot_cu5_action.setIcon(themed_icon("live_preview", color="#7BD389"))
+        self.screenshot_cu5_action.setToolTip(
+            "自动识别 CU-5 中由 Microview 显示的视频画面区域，不截取完整窗口"
+        )
+        self.screenshot_cu5_action.triggered.connect(
+            lambda: self._request_screenshot_capture(CaptureMode.CU5)
+        )
+
+        self.screenshot_preferences_action = QAction("截图工具设置...", self)
+        self.screenshot_preferences_action.triggered.connect(
+            lambda: self.open_settings_dialog(initial_page=6)
+        )
 
         self.digital_slide_compression_action = QAction("压缩副本...", self)
         self.digital_slide_compression_action.triggered.connect(self.open_digital_slide_compression_dialog)
@@ -2650,6 +2716,14 @@ class MainWindow(QMainWindow):
         tool_menu = self.menuBar().addMenu("工具")
         for action in self._mode_actions.values():
             tool_menu.addAction(action)
+        tool_menu.addSeparator()
+        screenshot_menu = tool_menu.addMenu("截图工具")
+        screenshot_menu.addAction(self.screenshot_tool_action)
+        screenshot_menu.addSeparator()
+        screenshot_menu.addAction(self.screenshot_region_action)
+        screenshot_menu.addAction(self.screenshot_cu5_action)
+        screenshot_menu.addSeparator()
+        screenshot_menu.addAction(self.screenshot_preferences_action)
         tool_menu.addSeparator()
         digital_slide_tools_menu = tool_menu.addMenu("数字切片工具")
         digital_slide_tools_menu.addAction(self.digital_slide_compression_action)
@@ -17484,12 +17558,29 @@ class MainWindow(QMainWindow):
             label.deleteLater()
             self._fullscreen_hint_label = None
 
-    def open_settings_dialog(self) -> None:
+    def open_settings_dialog(self, *, initial_page: int = 0) -> None:
         dialog = SettingsDialog(
             self._app_settings,
             document=self.current_document(),
             digital_slide_locked=self._slide_acquisition_active(),
+            screenshot_settings=self._screenshot_settings,
             parent=self,
+        )
+        requested_page = max(0, min(dialog._settings_pages.count() - 1, int(initial_page)))
+        dialog._settings_navigation.setCurrentRow(requested_page)
+        screenshot_status = self._screenshot_agent_client.status(timeout_ms=180)
+        status_error = str(screenshot_status.error or "")
+        if self._screenshot_settings_load_error:
+            status_error = (
+                f"截图设置读取失败：{self._screenshot_settings_load_error}"
+                + (f"；{status_error}" if status_error else "")
+            )
+        dialog._screenshot_settings_widget.set_agent_status(
+            screenshot_status.running,
+            status_error,
+        )
+        dialog.screenshotCu5DiagnosticRequested.connect(
+            lambda: self._diagnose_cu5_preview(dialog)
         )
         apply_button = dialog.button_box.button(QDialogButtonBox.StandardButton.Apply)
         if apply_button is not None:
@@ -17514,11 +17605,13 @@ class MainWindow(QMainWindow):
 
     def _apply_settings_dialog(self, dialog: SettingsDialog, *, close_after: bool) -> None:
         new_settings = dialog.app_settings()
+        new_screenshot_settings = dialog.screenshot_settings()
         if self._slide_acquisition_active():
             new_settings = self._settings_with_locked_digital_slide_values(new_settings)
         self._activate_app_settings(new_settings)
         refresh_widget_theme(dialog)
         self._save_app_settings(context="设置")
+        self._apply_screenshot_settings(new_screenshot_settings, parent=dialog)
 
         should_pick_scale_anchor = dialog.wants_scale_anchor_pick()
         if should_pick_scale_anchor and self.current_document() is not None:
@@ -17528,6 +17621,398 @@ class MainWindow(QMainWindow):
             self._begin_scale_anchor_pick(self.current_document())
         elif close_after:
             self.statusBar().showMessage("设置已更新", 3000)
+
+    def _set_screenshot_tool_action_checked(self, checked: bool) -> None:
+        self._screenshot_action_update = True
+        try:
+            self.screenshot_tool_action.setChecked(bool(checked))
+        finally:
+            self._screenshot_action_update = False
+
+    def _save_screenshot_settings(
+        self,
+        *,
+        parent: QWidget | None = None,
+        preserve_agent_owned: bool = True,
+        allow_unsupported_replace: bool = False,
+    ) -> bool:
+        if self._screenshot_settings_read_only:
+            QMessageBox.warning(
+                parent or self,
+                "截图工具设置",
+                "截图设置由更新版本的软件写入，当前版本不会覆盖该文件。\n"
+                "如需重置，请在首选项的截图工具页面修改设置并确认替换。",
+            )
+            return False
+        try:
+            requested = self._screenshot_settings.normalized()
+
+            def merge_main_owned(persisted: ScreenshotSettings) -> ScreenshotSettings:
+                # These fields are learned by the detached agent. A candidate
+                # chooser may explicitly replace only the selector; it must
+                # still preserve the latest region captured by the companion.
+                return replace(
+                    requested,
+                    last_region=persisted.last_region,
+                    cu5_selector=(
+                        dict(persisted.cu5_selector)
+                        if preserve_agent_owned
+                        else dict(requested.cu5_selector)
+                    ),
+                ).normalized()
+
+            self._screenshot_settings = ScreenshotSettingsIO.update(
+                merge_main_owned,
+                allow_unsupported_replace=allow_unsupported_replace,
+            )
+        except UnsupportedScreenshotSettingsVersion as exc:
+            self._screenshot_settings_read_only = True
+            self._screenshot_settings_load_error = str(exc)
+            QMessageBox.warning(
+                parent or self,
+                "截图工具设置",
+                "截图设置刚刚由更新版本的软件写入，当前版本不会覆盖该文件。\n"
+                "请重新打开首选项；如需降级，请在截图工具页面明确确认重置。",
+            )
+            return False
+        except OSError as exc:
+            QMessageBox.warning(
+                parent or self,
+                "截图工具设置",
+                f"无法写入截图工具设置文件：\n{exc}",
+            )
+            return False
+        return True
+
+    def _screenshot_settings_update_payload(self) -> dict[str, object]:
+        payload = self._screenshot_settings.to_dict()
+        # Agent-owned runtime discoveries are merged from its current state.
+        # Omitting them also avoids a full-settings update racing a just-saved
+        # last capture region or CU-5 selector fingerprint.
+        payload.pop("last_region", None)
+        payload.pop("cu5_selector", None)
+        return payload
+
+    def _adopt_agent_owned_screenshot_settings(self, result: object) -> None:
+        if not isinstance(result, dict):
+            return
+        payload = result.get("settings")
+        if not isinstance(payload, dict):
+            return
+        try:
+            remote = ScreenshotSettings.from_dict(payload)
+        except (TypeError, ValueError):
+            return
+        self._screenshot_settings = replace(
+            self._screenshot_settings,
+            last_region=remote.last_region,
+            cu5_selector=dict(remote.cu5_selector),
+        ).normalized()
+
+    def _sync_screenshot_autostart(self, *, parent: QWidget | None = None) -> bool:
+        if not sys.platform.startswith("win"):
+            return True
+        try:
+            from fdm.platform.windows_autostart import WindowsAutostartManager
+
+            spec = self._screenshot_agent_client.launch_spec
+            manager = WindowsAutostartManager(
+                value_name="FiberDiameterMeasurementScreenshotTool",
+                executable=spec.program,
+                arguments=(*spec.arguments, "--background"),
+            )
+            status = manager.set_enabled(bool(self._screenshot_settings.autostart))
+            if self._screenshot_settings.autostart and not status.enabled:
+                raise RuntimeError("系统未确认开机启动项。")
+        except (OSError, RuntimeError, ValueError) as exc:
+            QMessageBox.warning(
+                parent or self,
+                "截图工具开机启动",
+                f"无法更新当前用户的开机启动项：\n{exc}",
+            )
+            return False
+        return True
+
+    def _start_configured_screenshot_tool(self, *, show_error: bool = False) -> bool:
+        started_by_request = False
+        try:
+            launch_status = self._screenshot_agent_client.ensure_started()
+            started_by_request = bool(launch_status.result.get("started", False))
+            response = self._screenshot_agent_client.update_settings(
+                self._screenshot_settings_update_payload()
+            )
+            self._adopt_agent_owned_screenshot_settings(response.result)
+        except ScreenshotAgentClientError as exc:
+            if started_by_request:
+                try:
+                    self._screenshot_agent_client.shutdown(timeout_ms=800)
+                except ScreenshotAgentClientError:
+                    pass
+            self.screenshot_tool_action.setToolTip(f"截图工具启动失败：{exc}")
+            if show_error:
+                QMessageBox.warning(self, "常驻截图工具", str(exc))
+            return False
+        integration_errors = response.result.get("integration_errors", [])
+        errors = (
+            [str(item) for item in integration_errors]
+            if isinstance(integration_errors, list)
+            else []
+        )
+        self._set_screenshot_tool_action_checked(True)
+        if errors:
+            summary = "；".join(errors)
+            self.screenshot_tool_action.setToolTip(
+                f"截图工具正在运行，但部分系统集成失败：{summary}"
+            )
+            if show_error:
+                QMessageBox.warning(
+                    self,
+                    "截图工具部分功能未启用",
+                    "截图工具已启动，但以下设置未能应用：\n\n"
+                    + "\n".join(f"• {item}" for item in errors),
+                )
+        else:
+            self.screenshot_tool_action.setToolTip(
+                "截图工具正在独立进程中运行；关闭测量工作台不会中断它"
+            )
+        return True
+
+    def _toggle_screenshot_tool(self, enabled: bool) -> None:
+        if self._screenshot_action_update:
+            return
+        if self._screenshot_settings_read_only:
+            self._set_screenshot_tool_action_checked(
+                bool(self._screenshot_settings.enabled)
+            )
+            self._save_screenshot_settings()
+            return
+        requested = bool(enabled)
+        previous = self._screenshot_settings.normalized()
+        self._screenshot_settings = replace(
+            previous,
+            enabled=requested,
+        )
+        if not requested:
+            # The main switch is authoritative: switching the companion off
+            # must not allow HKCU Run to silently resurrect it at next login.
+            self._screenshot_settings.autostart = False
+        self._screenshot_settings = self._screenshot_settings.normalized()
+        if not self._save_screenshot_settings():
+            self._screenshot_settings = previous
+            self._set_screenshot_tool_action_checked(previous.enabled)
+            return
+        self._sync_screenshot_autostart()
+        if requested:
+            if not self._start_configured_screenshot_tool(show_error=True):
+                self._screenshot_settings = previous
+                self._save_screenshot_settings()
+                self._set_screenshot_tool_action_checked(previous.enabled)
+                self._sync_screenshot_autostart()
+            return
+        try:
+            self._screenshot_agent_client.shutdown(timeout_ms=800)
+        except ScreenshotAgentClientError as exc:
+            self.statusBar().showMessage(f"截图工具退出请求失败：{exc}", 6000)
+        self.screenshot_tool_action.setToolTip("独立常驻截图工具已关闭")
+
+    def _apply_screenshot_settings(
+        self,
+        settings: ScreenshotSettings,
+        *,
+        parent: QWidget | None = None,
+    ) -> bool:
+        previous = self._screenshot_settings
+        previous_read_only = self._screenshot_settings_read_only
+        previous_load_error = self._screenshot_settings_load_error
+        normalized = settings.normalized()
+        replace_future_schema = False
+        if self._screenshot_settings_read_only:
+            if normalized.to_dict() == previous.normalized().to_dict():
+                return True
+            response = QMessageBox.question(
+                parent or self,
+                "重置截图工具设置",
+                "现有截图设置来自更新版本，当前版本无法完整读取。\n\n"
+                "是否确认用当前页面中的设置替换原文件？",
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return False
+            replace_future_schema = True
+            self._screenshot_settings_read_only = False
+            self._screenshot_settings_load_error = ""
+        if normalized.autostart:
+            normalized.enabled = True
+        self._screenshot_settings = normalized
+        if not self._save_screenshot_settings(
+            parent=parent,
+            allow_unsupported_replace=replace_future_schema,
+        ):
+            self._screenshot_settings = previous
+            self._screenshot_settings_read_only = previous_read_only
+            self._screenshot_settings_load_error = previous_load_error
+            return False
+        autostart_ok = self._sync_screenshot_autostart(parent=parent)
+        self._set_screenshot_tool_action_checked(normalized.enabled)
+        if normalized.enabled:
+            started = self._start_configured_screenshot_tool(show_error=True)
+            if not started:
+                self._screenshot_settings = previous
+                self._save_screenshot_settings(parent=parent)
+                self._set_screenshot_tool_action_checked(previous.enabled)
+                self._sync_screenshot_autostart(parent=parent)
+                return False
+        elif previous.enabled:
+            try:
+                self._screenshot_agent_client.shutdown(timeout_ms=800)
+            except ScreenshotAgentClientError as exc:
+                self.statusBar().showMessage(f"截图工具退出请求失败：{exc}", 6000)
+        return autostart_ok
+
+    def _request_screenshot_capture(self, mode: CaptureMode) -> None:
+        enabled_for_request = not self._screenshot_settings.enabled
+        previous = self._screenshot_settings.normalized()
+        started_by_request = False
+        settings_applied = False
+        if enabled_for_request:
+            self._screenshot_settings = replace(previous, enabled=True).normalized()
+            if not self._save_screenshot_settings():
+                self._screenshot_settings = previous
+                self._set_screenshot_tool_action_checked(previous.enabled)
+                return
+            self._set_screenshot_tool_action_checked(True)
+        try:
+            launch_status = self._screenshot_agent_client.ensure_started()
+            started_by_request = bool(launch_status.result.get("started", False))
+            response = self._screenshot_agent_client.update_settings(
+                self._screenshot_settings_update_payload()
+            )
+            settings_applied = True
+            self._adopt_agent_owned_screenshot_settings(response.result)
+            integration_errors = response.result.get("integration_errors", [])
+            if isinstance(integration_errors, list) and integration_errors:
+                QMessageBox.warning(
+                    self,
+                    "截图工具部分功能未启用",
+                    "\n".join(str(item) for item in integration_errors),
+                )
+            self._screenshot_agent_client.capture(
+                mode,
+                payload={
+                    "delay_ms": self._screenshot_settings.delay_ms,
+                    "open_editor": self._screenshot_settings.show_editor,
+                },
+            )
+        except ScreenshotAgentClientError as exc:
+            if enabled_for_request:
+                self._screenshot_settings = previous
+                self._save_screenshot_settings()
+                self._set_screenshot_tool_action_checked(previous.enabled)
+                if started_by_request:
+                    try:
+                        self._screenshot_agent_client.shutdown(timeout_ms=800)
+                    except ScreenshotAgentClientError:
+                        pass
+                elif settings_applied:
+                    try:
+                        self._screenshot_agent_client.update_settings(
+                            self._screenshot_settings_update_payload()
+                        )
+                    except ScreenshotAgentClientError:
+                        pass
+            QMessageBox.warning(self, "截图失败", str(exc))
+            return
+        label = "CU-5 实时预览" if mode is CaptureMode.CU5 else "截图"
+        self.statusBar().showMessage(f"已向常驻工具发送{label}请求", 3000)
+
+    def _diagnose_cu5_preview(self, dialog: SettingsDialog) -> None:
+        page = dialog._screenshot_settings_widget
+        page.set_cu5_diagnostic_status("正在检测 CU-5 原生窗口层级...", success=False)
+        QApplication.processEvents()
+        was_running = self._screenshot_agent_client.status(timeout_ms=180).running
+        started_temporarily = not was_running and not self._screenshot_settings.enabled
+        try:
+            self._screenshot_agent_client.ensure_started()
+            response = self._send_cu5_diagnostic_with_selection(dialog)
+        except ScreenshotAgentClientError as exc:
+            page.set_cu5_diagnostic_status(str(exc), success=False)
+            return
+        finally:
+            if started_temporarily:
+                try:
+                    self._screenshot_agent_client.shutdown(timeout_ms=800)
+                except ScreenshotAgentClientError:
+                    pass
+        result = dict(response.result)
+        rect = result.get("rect")
+        if isinstance(rect, dict):
+            summary = (
+                f"已识别视频区域：{rect.get('width', 0)}×{rect.get('height', 0)} px，"
+                f"屏幕位置 ({rect.get('x', 0)}, {rect.get('y', 0)})"
+            )
+        else:
+            summary = str(result.get("message") or "CU-5 检测请求已完成。")
+        page.set_cu5_diagnostic_status(summary, success=bool(rect))
+
+    def _send_cu5_diagnostic_with_selection(
+        self,
+        dialog: SettingsDialog,
+    ) -> object:
+        command = IPCCommand(command=CommandType.DIAGNOSE_CU5)
+        try:
+            return self._screenshot_agent_client.send(command, timeout_ms=2_000)
+        except ScreenshotAgentCommandError as exc:
+            result = dict(exc.response.result)
+            candidates = result.get("candidates")
+            if result.get("diagnostic") != "ambiguous" or not isinstance(candidates, list):
+                raise
+            choices: list[tuple[str, dict[str, object]]] = []
+            for index, candidate in enumerate(candidates, start=1):
+                if not isinstance(candidate, dict):
+                    continue
+                selector = candidate.get("selector")
+                rect = candidate.get("rect")
+                if not isinstance(selector, dict) or not isinstance(rect, dict):
+                    continue
+                label = (
+                    f"候选 {index}：{rect.get('width', 0)}×{rect.get('height', 0)} px，"
+                    f"位置 ({rect.get('x', 0)}, {rect.get('y', 0)})，"
+                    f"得分 {float(candidate.get('score', 0.0)):.1f}"
+                )
+                choices.append((label, dict(selector)))
+            if not choices:
+                raise
+            labels = [label for label, _selector in choices]
+            selected, accepted = QInputDialog.getItem(
+                dialog,
+                "选择 CU-5 实时预览区域",
+                "检测到多个相近的视频区域。请选择一次；软件会保存稳定的窗口特征，"
+                "后续无需手动框选：",
+                labels,
+                0,
+                False,
+            )
+            if not accepted or selected not in labels:
+                raise
+            selector = choices[labels.index(selected)][1]
+            self._screenshot_settings = replace(
+                self._screenshot_settings,
+                cu5_selector=selector,
+            ).normalized()
+            if not self._save_screenshot_settings(
+                parent=dialog,
+                preserve_agent_owned=False,
+            ):
+                raise ScreenshotAgentClientError("未能保存 CU-5 预览区域特征。")
+            self._screenshot_agent_client.update_settings(
+                {"cu5_selector": selector},
+                timeout_ms=1_000,
+            )
+            return self._screenshot_agent_client.send(
+                IPCCommand(command=CommandType.DIAGNOSE_CU5),
+                timeout_ms=2_000,
+            )
 
     def _settings_with_locked_digital_slide_values(self, settings: AppSettings) -> AppSettings:
         preserved = settings.normalized_copy()

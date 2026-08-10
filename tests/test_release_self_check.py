@@ -54,6 +54,7 @@ groups = []
 required_python_modules = []
 features = [
   "measurement",
+  "screenshot-tool",
   "image-export",
   "image-processing",
   "image-analysis",
@@ -71,6 +72,8 @@ features = ["area-inference", "magic-segmentation"]
     app_dir.mkdir(parents=True, exist_ok=True)
     (app_dir / "FiberDiameterMeasurement.exe").write_bytes(_minimal_pe_bytes())
     (app_dir / "FiberAreaWorker.exe").write_bytes(_minimal_pe_bytes())
+    if profile in {"core", "full"}:
+        (app_dir / "FiberScreenshotTool.exe").write_bytes(_minimal_pe_bytes())
     (app_dir / "runtime_assets.toml").write_text(config, encoding="utf-8")
     write_release_manifest(
         app_dir,
@@ -288,6 +291,8 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertTrue(report["functional_checks"]["core_measurement"])
             self.assertTrue(report["functional_checks"]["qt_local_ipc"])
             self.assertTrue(report["functional_checks"]["pe:FiberDiameterMeasurement.exe"])
+            self.assertTrue(report["functional_checks"]["pe:FiberScreenshotTool.exe"])
+            self.assertTrue(report["functional_checks"]["screenshot_tool"])
 
     def test_core_profile_runs_declared_image_feature_gates(self) -> None:
         with TemporaryDirectory() as tmpdir:

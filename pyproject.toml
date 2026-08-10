@@ -41,6 +41,7 @@ packaging = [
 
 [project.scripts]
 fdm = "fdm.app:main"
+fdm-screenshot-tool = "fdm.screenshot_agent:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

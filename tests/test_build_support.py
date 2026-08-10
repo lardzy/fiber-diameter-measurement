@@ -51,6 +51,7 @@ def _create_release_fixture(root: Path) -> tuple[Path, tuple[str, ...]]:
     app_dir.mkdir(parents=True, exist_ok=True)
     (app_dir / "FiberDiameterMeasurement.exe").write_bytes(b"main")
     (app_dir / "FiberAreaWorker.exe").write_bytes(b"worker")
+    (app_dir / "FiberScreenshotTool.exe").write_bytes(b"screenshot")
     (app_dir / "runtime_assets.toml").write_bytes(config_payload)
     write_release_manifest(
         app_dir,
@@ -439,6 +440,7 @@ license = "LicenseRef-Test"
                 {
                     "measurement",
                     "capture",
+                    "screenshot-tool",
                     "digital-slide",
                     "image-export",
                     "image-processing",
@@ -475,6 +477,7 @@ license = "LicenseRef-Test"
 
             self.assertIn("FiberDiameterMeasurement.exe", paths)
             self.assertIn("FiberAreaWorker.exe", paths)
+            self.assertIn("FiberScreenshotTool.exe", paths)
             self.assertIn("build-id.txt", paths)
             self.assertIn("runtime_assets.toml", paths)
             self.assertNotIn("release-manifest.json", paths)

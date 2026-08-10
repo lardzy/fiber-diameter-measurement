@@ -262,7 +262,10 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
 
     errors = report.setdefault("errors", [])
     warnings = report.setdefault("warnings", [])
-    for executable_name in ("FiberDiameterMeasurement.exe", "FiberAreaWorker.exe"):
+    executable_names = ["FiberDiameterMeasurement.exe", "FiberAreaWorker.exe"]
+    if "screenshot-tool" in set(str(item) for item in report.get("features", [])):
+        executable_names.append("FiberScreenshotTool.exe")
+    for executable_name in executable_names:
         executable_path = root / executable_name
         valid, reason = _validate_pe_executable(executable_path)
         functional_checks[f"pe:{executable_name}"] = valid
@@ -299,6 +302,34 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
         errors.append("Qt local IPC self-check is unavailable")
 
     features = set(str(item) for item in report.get("features", []))
+    if "screenshot-tool" in features:
+        try:
+            from PySide6.QtCore import Qt
+            from PySide6.QtGui import QImage
+
+            from fdm.screenshot_protocol import (
+                IPCCommand,
+                decode_command,
+                encode_ipc_message,
+            )
+            from fdm.screenshot_settings import ImageFormat, ScreenshotSettings
+            from fdm.services.screenshot_capture import CaptureMode
+            from fdm.services.screenshot_output import encode_qimage
+
+            command = IPCCommand.capture(CaptureMode.CU5, request_id="self-check")
+            protocol_ok = decode_command(encode_ipc_message(command)) == command
+            image = QImage(2, 2, QImage.Format.Format_ARGB32)
+            image.fill(Qt.GlobalColor.white)
+            encoded = encode_qimage(image, image_format=ImageFormat.PNG)
+            settings_ok = bool(ScreenshotSettings().normalized().output_directory)
+            screenshot_ok = protocol_ok and encoded.startswith(b"\x89PNG\r\n\x1a\n") and settings_ok
+        except Exception as exc:  # noqa: BLE001 - packaged feature boundary
+            screenshot_ok = False
+            errors.append(f"screenshot tool self-check failed: {exc}")
+        functional_checks["screenshot_tool"] = screenshot_ok
+        if not screenshot_ok and not any("screenshot tool" in str(item) for item in errors):
+            errors.append("screenshot tool self-check returned an unexpected value")
+
     versions = report.get("dependency_versions", {})
     raster_probe: dict[str, Any] = {}
     if "image-export" in features:

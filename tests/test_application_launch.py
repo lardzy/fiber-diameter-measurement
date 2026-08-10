@@ -12,6 +12,8 @@ import uuid
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
+import shiboken6
+from PySide6.QtCore import QCoreApplication, QEvent
 from PySide6.QtNetwork import QLocalSocket
 from PySide6.QtWidgets import QApplication
 
@@ -32,6 +34,12 @@ class ApplicationLaunchTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
+
+    def _drain_deferred_socket_deletes(self) -> None:
+        """Settle QLocalSocket.deleteLater() while owners are still alive."""
+
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        self.app.processEvents()
 
     def test_argument_parser_extracts_unicode_paths_and_keeps_qt_arguments(self) -> None:
         with TemporaryDirectory() as tmpdir:
@@ -174,6 +182,7 @@ class ApplicationLaunchTests(unittest.TestCase):
         finally:
             secondary.close()
             primary.close()
+            self._drain_deferred_socket_deletes()
 
     def test_secondary_without_paths_requests_activation(self) -> None:
         server_name = f"fdm-t-{uuid.uuid4().hex[:16]}"
@@ -198,6 +207,7 @@ class ApplicationLaunchTests(unittest.TestCase):
         finally:
             secondary.close()
             primary.close()
+            self._drain_deferred_socket_deletes()
 
     def test_listener_race_retries_forwarding(self) -> None:
         coordinator = SingleInstanceCoordinator(f"fdm-t-{uuid.uuid4().hex[:16]}")
@@ -271,6 +281,36 @@ class ApplicationLaunchTests(unittest.TestCase):
         finally:
             socket.abort()
             primary.close()
+            self._drain_deferred_socket_deletes()
+
+    def test_repeated_close_defers_child_destruction_to_coordinator_owner(self) -> None:
+        """Closing IPC repeatedly must not strand socket deletion events."""
+
+        for _index in range(12):
+            server_name = f"fdm-t-{uuid.uuid4().hex[:16]}"
+            primary = SingleInstanceCoordinator(server_name)
+            activation = build_application_open_request([], source="test")
+            result = primary.start_or_forward(activation, timeout_ms=100)
+            self.assertTrue(result.primary, result.error)
+
+            client = QLocalSocket()
+            client.connectToServer(server_name)
+            self.assertTrue(client.waitForConnected(500))
+            deadline = time.monotonic() + 1.0
+            while not primary._connections and time.monotonic() < deadline:
+                self.app.processEvents()
+            self.assertTrue(primary._connections)
+            accepted_socket = next(iter(primary._connections.values()))[0]
+
+            primary.close()
+            client.abort()
+            QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+            self.app.processEvents()
+            self.assertTrue(shiboken6.isValid(accepted_socket))
+
+            primary.deleteLater()
+            QCoreApplication.sendPostedEvents(primary, QEvent.Type.DeferredDelete)
+            self.assertFalse(shiboken6.isValid(accepted_socket))
 
     def test_microview_helper_keeps_priority_over_single_instance_startup(self) -> None:
         helper_module = types.ModuleType("fdm.microview_helper")

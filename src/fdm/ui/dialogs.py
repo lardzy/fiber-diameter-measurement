@@ -89,6 +89,8 @@ from fdm.services.digital_slide_store import (
     normalize_tile_codec,
 )
 from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
+from fdm.screenshot_settings import ScreenshotSettings
+from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
 
 
 RAW_RECORD_DATA_SOURCE_ITEMS = [
@@ -1660,6 +1662,8 @@ class _SettingsTabsCompatibility:
 
 
 class SettingsDialog(QDialog):
+    screenshotCu5DiagnosticRequested = Signal()
+
     _NAVIGATION_DEFINITIONS = (
         ("常规", "主题与默认视图", "主题 深色 浅色 系统 打开 图片 默认 视图"),
         ("测量与显示", "测量结果、计数和线条外观", "测量 结果 文字 标签 计数 编号 端点 颜色"),
@@ -1667,6 +1671,7 @@ class SettingsDialog(QDialog):
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
         ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
+        ("截图工具", "常驻截图、全局快捷键和 CU-5 实时预览", "截图 常驻 托盘 快捷键 开机启动 CU-5 Microview 窗口 区域"),
         ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
     )
 
@@ -1676,6 +1681,7 @@ class SettingsDialog(QDialog):
         *,
         document: ImageDocument | None,
         digital_slide_locked: bool = False,
+        screenshot_settings: ScreenshotSettings | None = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
@@ -1697,6 +1703,14 @@ class SettingsDialog(QDialog):
         image_processing_page = self._build_image_processing_tab(settings)
         area_models_page = self._build_area_models_tab(settings)
         digital_slide_page = self._build_digital_slide_tab(settings, locked=digital_slide_locked)
+        self._screenshot_settings_widget = ScreenshotSettingsPage(
+            screenshot_settings or ScreenshotSettings(),
+            self,
+        )
+        self._screenshot_settings_widget.cu5DiagnosticRequested.connect(
+            self.screenshotCu5DiagnosticRequested
+        )
+        screenshot_page = self._wrap_settings_page(self._screenshot_settings_widget)
         raw_record_page = self._build_raw_record_templates_tab(settings)
 
         self._settings_pages = QStackedWidget(self)
@@ -1708,6 +1722,7 @@ class SettingsDialog(QDialog):
             image_processing_page,
             area_models_page,
             digital_slide_page,
+            screenshot_page,
             raw_record_page,
         ]
         for page in navigation_pages:
@@ -1867,6 +1882,9 @@ class SettingsDialog(QDialog):
     def button_box(self) -> QDialogButtonBox:
         return self._button_box
 
+    def screenshot_settings(self) -> ScreenshotSettings:
+        return self._screenshot_settings_widget.settings()
+
     def _update_settings_navigation_item_sizes(self) -> None:
         """Keep navigation rows readable for the active system UI font."""
 
@@ -1979,6 +1997,7 @@ class SettingsDialog(QDialog):
             AppSettings(),
             document=self._document,
             digital_slide_locked=False,
+            screenshot_settings=ScreenshotSettings(),
             parent=self,
         )
         try:
@@ -1997,6 +2016,8 @@ class SettingsDialog(QDialog):
                     defaults_dialog._area_mapping_table,
                 )
             elif page_index == 6:
+                self._screenshot_settings_widget.restore_defaults()
+            elif page_index == 7:
                 self._raw_record_templates_data = []
                 self._raw_record_current_template_index = -1
                 self._raw_record_template_table.setRowCount(0)

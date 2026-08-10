@@ -28,6 +28,7 @@ from build_support import (
 
 entry_script = project_root / "src" / "fdm" / "app.py"
 worker_entry_script = project_root / "src" / "fdm" / "workers" / "area_worker.py"
+screenshot_entry_script = project_root / "src" / "fdm" / "screenshot_agent.py"
 app_icon = project_root / "packaging" / "assets" / "icons" / "app-icon.ico"
 console_mode = os.environ.get("FDM_PYINSTALLER_CONSOLE", "0") == "1"
 bootloader_debug = os.environ.get("FDM_PYINSTALLER_BOOTLOADER_DEBUG", "0") == "1"
@@ -163,8 +164,22 @@ worker_analysis = Analysis(
     noarchive=False,
     optimize=0,
 )
+screenshot_analysis = Analysis(
+    [str(screenshot_entry_script)],
+    pathex=[str(src_root)],
+    binaries=binaries,
+    datas=[],
+    hiddenimports=hiddenimports,
+    hookspath=[],
+    hooksconfig={},
+    runtime_hooks=[],
+    excludes=["matplotlib", "pytest", "IPython", "jupyter"],
+    noarchive=False,
+    optimize=0,
+)
 main_pyz = PYZ(main_analysis.pure)
 worker_pyz = PYZ(worker_analysis.pure)
+screenshot_pyz = PYZ(screenshot_analysis.pure)
 
 exe = EXE(
     main_pyz,
@@ -208,16 +223,41 @@ worker_exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+screenshot_exe = EXE(
+    screenshot_pyz,
+    screenshot_analysis.scripts,
+    [],
+    name="FiberScreenshotTool",
+    exclude_binaries=True,
+    debug=bootloader_debug,
+    bootloader_ignore_signals=False,
+    strip=False,
+    upx=False,
+    upx_exclude=[],
+    runtime_tmpdir=None,
+    console=console_mode,
+    icon=str(app_icon),
+    disable_windowed_traceback=False,
+    argv_emulation=False,
+    contents_directory=".",
+    target_arch=None,
+    codesign_identity=None,
+    entitlements_file=None,
+)
 
 coll = COLLECT(
     exe,
     worker_exe,
+    screenshot_exe,
     main_analysis.binaries,
     main_analysis.zipfiles,
     main_analysis.datas,
     worker_analysis.binaries,
     worker_analysis.zipfiles,
     worker_analysis.datas,
+    screenshot_analysis.binaries,
+    screenshot_analysis.zipfiles,
+    screenshot_analysis.datas,
     strip=False,
     upx=False,
     upx_exclude=[],

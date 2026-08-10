@@ -2,6 +2,8 @@
 #include "version.auto.iss"
 #define MyAppPublisher "LARD"
 #define MyAppExeName "FiberDiameterMeasurement.exe"
+#define ScreenshotToolExeName "FiberScreenshotTool.exe"
+#define ScreenshotAutostartValueName "FiberDiameterMeasurementScreenshotTool"
 #define MyAppShortcutName "特纤通用测量工具"
 #define ProjectProgId "LARD.FiberDiameterMeasurement.Project"
 #define DigitalSlideProgId "LARD.FiberDiameterMeasurement.DigitalSlide"
@@ -17,6 +19,10 @@
 
 #ifnexist MyAppSourceDir + "\release-manifest.json"
   #error "release-manifest.json not found. Build the onedir package through scripts/build_windows_onedir.py."
+#endif
+
+#ifnexist MyAppSourceDir + "\" + ScreenshotToolExeName
+  #error "FiberScreenshotTool.exe not found. Build the onedir package through scripts/build_windows_onedir.py."
 #endif
 
 #ifnexist MyAppSourceDir + "\build-id.txt"
@@ -69,6 +75,7 @@ Source: "{#MyAppSourceDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesub
 
 [Icons]
 Name: "{group}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"
+Name: "{group}\Fiber 截图工具"; Filename: "{app}\{#ScreenshotToolExeName}"; Parameters: "--show-settings"; IconFilename: "{app}\{#ScreenshotToolExeName}"
 Name: "{group}\卸载 {#MyAppShortcutName}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#MyAppShortcutName}"; Filename: "{app}\{#MyAppExeName}"; IconFilename: "{app}\{#MyAppExeName}"; Tasks: desktopicon
 
@@ -108,10 +115,38 @@ begin
   end;
 end;
 
+procedure RemoveOwnedScreenshotAutostart();
+var
+  CurrentCommand: String;
+  ScreenshotPath: String;
+  QuotedCommand: String;
+  UnquotedCommand: String;
+begin
+  ScreenshotPath := ExpandConstant('{app}\{#ScreenshotToolExeName}');
+  QuotedCommand := '"' + ScreenshotPath + '" --background';
+  UnquotedCommand := ScreenshotPath + ' --background';
+  if RegQueryStringValue(
+       HKEY_CURRENT_USER,
+       'Software\Microsoft\Windows\CurrentVersion\Run',
+       '{#ScreenshotAutostartValueName}',
+       CurrentCommand
+     ) and
+     ((CompareText(Trim(CurrentCommand), QuotedCommand) = 0) or
+      (CompareText(Trim(CurrentCommand), UnquotedCommand) = 0)) then
+  begin
+    RegDeleteValue(
+      HKEY_CURRENT_USER,
+      'Software\Microsoft\Windows\CurrentVersion\Run',
+      '{#ScreenshotAutostartValueName}'
+    );
+  end;
+end;
+
 procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then
   begin
+    RemoveOwnedScreenshotAutostart();
     RemoveOwnedExtensionDefault('.fdmproj', '{#ProjectProgId}');
     RemoveOwnedExtensionDefault('.fdmslide', '{#DigitalSlideProgId}');
   end;

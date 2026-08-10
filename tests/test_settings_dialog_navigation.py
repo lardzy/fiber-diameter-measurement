@@ -33,7 +33,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
     def setUpClass(cls) -> None:
         cls.app = QApplication.instance() or QApplication([])
 
-    def test_uses_seven_professional_preference_categories(self) -> None:
+    def test_uses_eight_professional_preference_categories(self) -> None:
         dialog = SettingsDialog(AppSettings(), document=None)
         try:
             labels = [
@@ -49,11 +49,12 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                     "图像与智能分析",
                     "面积识别",
                     "采集与数字切片",
+                    "截图工具",
                     "导出与模板",
                 ],
             )
             self.assertNotIn("当前图片", labels)
-            self.assertEqual(dialog._settings_pages.count(), 7)  # noqa: SLF001
+            self.assertEqual(dialog._settings_pages.count(), 8)  # noqa: SLF001
             self.assertEqual(dialog._settings_page_title.text(), "常规")  # noqa: SLF001
         finally:
             dialog.close()
@@ -122,7 +123,7 @@ class SettingsDialogNavigationTests(unittest.TestCase):
             ]
             self.assertEqual(visible_labels, ["导出与模板"])
             self.assertEqual(dialog._settings_page_title.text(), "导出与模板")  # noqa: SLF001
-            self.assertEqual(dialog._settings_pages.currentIndex(), 6)  # noqa: SLF001
+            self.assertEqual(dialog._settings_pages.currentIndex(), 7)  # noqa: SLF001
 
             dialog._settings_search.setText("不存在的设置项")  # noqa: SLF001
             self.app.processEvents()
@@ -145,6 +146,33 @@ class SettingsDialogNavigationTests(unittest.TestCase):
                 assert button is not None
                 self.assertEqual(button.text(), text)
             self.assertEqual(dialog._restore_page_defaults_button.text(), "恢复本页默认值")  # noqa: SLF001
+        finally:
+            dialog.close()
+
+    def test_screenshot_page_keeps_settings_outside_app_settings_payload(self) -> None:
+        from fdm.screenshot_settings import ImageFormat, ScreenshotSettings
+
+        dialog = SettingsDialog(
+            AppSettings(),
+            document=None,
+            screenshot_settings=ScreenshotSettings(
+                enabled=True,
+                autostart=True,
+                output_directory="/tmp/fdm-screenshots",
+                image_format=ImageFormat.JPEG,
+                jpeg_quality=84,
+            ),
+        )
+        try:
+            dialog._settings_navigation.setCurrentRow(6)  # noqa: SLF001
+            screenshot = dialog.screenshot_settings()
+            app_settings = dialog.app_settings()
+
+            self.assertTrue(screenshot.enabled)
+            self.assertTrue(screenshot.autostart)
+            self.assertEqual(screenshot.output_directory, "/tmp/fdm-screenshots")
+            self.assertEqual(screenshot.image_format, ImageFormat.JPEG)
+            self.assertNotIn("screenshot", app_settings.to_dict())
         finally:
             dialog.close()
 

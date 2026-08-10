@@ -271,6 +271,7 @@ def build(
         for path in (
             app_dir / "FiberDiameterMeasurement.exe",
             app_dir / "FiberAreaWorker.exe",
+            app_dir / "FiberScreenshotTool.exe",
             app_dir / "runtime_assets.toml",
         )
         if not path.is_file()
@@ -308,6 +309,7 @@ def build(
         print(f"Private content templates: {len(content_template_files)} files")
     print(f"Main executable: {app_dir / 'FiberDiameterMeasurement.exe'}")
     print(f"Area worker: {app_dir / 'FiberAreaWorker.exe'}")
+    print(f"Screenshot companion: {app_dir / 'FiberScreenshotTool.exe'}")
     print(f"Runtime assets: {app_dir / 'runtime'}")
     print(f"Release manifest: {manifest_path}")
     print(f"Installer version include: {installer_version_file}")
