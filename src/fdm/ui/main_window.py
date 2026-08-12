@@ -24244,7 +24244,10 @@ class MainWindow(QMainWindow):
     def keyPressEvent(self, event) -> None:
         canvas = self.current_canvas()
         if event.key() == Qt.Key.Key_Space:
-            if canvas is not None:
+            if (
+                canvas is not None
+                and not getattr(event, "isAutoRepeat", lambda: False)()
+            ):
                 canvas.set_temporary_grab_pressed(True)
             event.accept()
             return
@@ -24421,7 +24424,10 @@ class MainWindow(QMainWindow):
     def keyReleaseEvent(self, event) -> None:
         if event.key() == Qt.Key.Key_Space:
             canvas = self.current_canvas()
-            if canvas is not None:
+            if (
+                canvas is not None
+                and not getattr(event, "isAutoRepeat", lambda: False)()
+            ):
                 canvas.set_temporary_grab_pressed(False)
             event.accept()
             return

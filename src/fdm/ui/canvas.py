@@ -4055,7 +4055,7 @@ class DocumentCanvas(QWidget):
         self._space_pressed = pressed
         if not pressed and not self._panning:
             self._temporary_grab_active = False
-        elif pressed and not self._has_pointer_edit_operation():
+        elif pressed and self._can_activate_temporary_grab():
             self._temporary_grab_active = True
         if self._temporary_grab_active:
             self._set_hovered_line_endpoint(None)
@@ -4312,22 +4312,6 @@ class DocumentCanvas(QWidget):
             return
         self.setFocus(Qt.FocusReason.MouseFocusReason)
         self._last_mouse_pos = event.position()
-        if (
-            event.button() == Qt.MouseButton.RightButton
-            and self._tool_mode == "construction"
-            and not self._temporary_grab_active
-            and self._construction_session is not None
-            and (
-                self._construction_session.points
-                or self._construction_session.sources
-            )
-        ):
-            # CAD-style construction commands reserve right-click for backing
-            # up one acquisition step.  With no pending step, right-drag keeps
-            # the canvas pan behavior users already know.
-            self.construction_back_step()
-            event.accept()
-            return
         if event.button() in (Qt.MouseButton.MiddleButton, Qt.MouseButton.RightButton):
             self._begin_canvas_pan(event.button())
             self._update_cursor()
@@ -4722,6 +4706,14 @@ class DocumentCanvas(QWidget):
             self.update()
             return
 
+        # Holding Space temporarily suspends staged, click-based acquisition.
+        # Do not let its preview/snap path restore the line-tool crosshair while
+        # the hand cursor is active; the next left press starts canvas panning.
+        if self._temporary_grab_active:
+            self._last_mouse_pos = event.position()
+            self._update_cursor()
+            return
+
         if self._scale_anchor_pick_active:
             self._scale_anchor_preview_point = self._clamp_to_image(self.widget_to_image(event.position()), pixel_center=False)
             self.update()
@@ -5059,7 +5051,7 @@ class DocumentCanvas(QWidget):
             return
         if self._panning and self._pan_button == event.button():
             self._end_canvas_pan()
-            if self._space_pressed and not self._has_pointer_edit_operation():
+            if self._space_pressed and self._can_activate_temporary_grab():
                 self._temporary_grab_active = True
             elif not self._space_pressed:
                 self._temporary_grab_active = False
@@ -9332,6 +9324,42 @@ class DocumentCanvas(QWidget):
             )
         )
 
+    def _can_activate_temporary_grab(self) -> bool:
+        """Return whether Space may pause the current gesture for panning.
+
+        Drag-based edits must keep ownership of the pointer until release.
+        Staged line/construction commands, however, only retain confirmed
+        points between clicks and can be safely suspended without cancelling or
+        changing their preview geometry.
+        """
+
+        if (
+            self._roi_capture is not None
+            or self._drawing_freehand_active
+            or self._dragging_handle is not None
+            or self._dragging_area_handle is not None
+            or self._drawing_overlay_start is not None
+            or self._dragging_overlay_id is not None
+            or self._dragging_overlay_handle is not None
+            or self._scale_anchor_pick_active
+            or self._reference_instance.dragging
+            or self._dragging_construction_handle is not None
+        ):
+            return False
+        if self._drawing_anchor_raw is not None:
+            return (
+                self._tool_mode == "snap"
+                and self._line_commit_on_second_click
+            )
+        if self._drawing_polygon_points:
+            return self._tool_mode == "continuous_manual"
+        if self._construction_session is not None and (
+            self._construction_session.points
+            or self._construction_session.sources
+        ):
+            return self._tool_mode == "construction"
+        return not self._has_pointer_edit_operation()
+
     def _roi_capture_mouse_press(self, image_point: Point) -> None:
         session = self._roi_capture
         if session is None or not self._point_in_image(image_point):
@@ -9875,30 +9903,45 @@ class DocumentCanvas(QWidget):
             self.magicSegmentSessionChanged.emit(self._document.id)
 
     def _update_cursor(self) -> None:
+        cursor_shape: Qt.CursorShape | None
         if self._panning:
-            self.setCursor(Qt.CursorShape.ClosedHandCursor)
+            cursor_shape = Qt.CursorShape.ClosedHandCursor
         elif self._roi_capture is not None:
-            self.setCursor(Qt.CursorShape.CrossCursor)
+            cursor_shape = Qt.CursorShape.CrossCursor
         elif self._scale_anchor_pick_active:
-            self.setCursor(Qt.CursorShape.CrossCursor)
+            cursor_shape = Qt.CursorShape.CrossCursor
         elif self._read_only:
-            self.setCursor(Qt.CursorShape.OpenHandCursor if self._temporary_grab_active else Qt.CursorShape.ArrowCursor)
+            cursor_shape = (
+                Qt.CursorShape.OpenHandCursor
+                if self._temporary_grab_active
+                else Qt.CursorShape.ArrowCursor
+            )
         elif self._temporary_grab_active:
-            self.setCursor(Qt.CursorShape.OpenHandCursor)
+            cursor_shape = Qt.CursorShape.OpenHandCursor
         elif (
             self._dragging_handle is not None
             or self._dragging_construction_handle is not None
             or self._hovered_construction_handle is not None
             or self._hovered_line_endpoint is not None
         ):
-            self.setCursor(Qt.CursorShape.SizeAllCursor)
+            cursor_shape = Qt.CursorShape.SizeAllCursor
         elif self._tool_mode in {"manual", "construction"}:
-            self.setCursor(Qt.CursorShape.CrossCursor)
+            cursor_shape = Qt.CursorShape.CrossCursor
         elif self._tool_mode == "select":
-            self.setCursor(
+            cursor_shape = (
                 Qt.CursorShape.PointingHandCursor
                 if self._hovered_construction_id is not None
                 else Qt.CursorShape.ArrowCursor
             )
         else:
-            self.unsetCursor()
+            cursor_shape = None
+
+        cursor_is_explicit = self.testAttribute(
+            Qt.WidgetAttribute.WA_SetCursor
+        )
+        if cursor_shape is None:
+            if cursor_is_explicit:
+                self.unsetCursor()
+            return
+        if not cursor_is_explicit or self.cursor().shape() != cursor_shape:
+            self.setCursor(cursor_shape)

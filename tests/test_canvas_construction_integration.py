@@ -70,6 +70,21 @@ class _MouseEvent:
         self.accepted = True
 
 
+class _KeyEvent:
+    def __init__(self, key: Qt.Key) -> None:
+        self._key = key
+        self.accepted = False
+
+    def key(self) -> Qt.Key:
+        return self._key
+
+    def isAutoRepeat(self) -> bool:
+        return False
+
+    def accept(self) -> None:
+        self.accepted = True
+
+
 @pytest.fixture(scope="module")
 def app() -> QApplication:
     return QApplication.instance() or QApplication([])
@@ -406,11 +421,17 @@ def test_degenerate_three_point_circle_stays_in_session_until_solvable(
     assert isinstance(created[0].definition, CircleThreePointDefinition)
 
 
-def test_construction_right_click_steps_back_without_starting_pan(
+def test_construction_right_drag_pans_without_cancelling_pending_line(
     canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
 ) -> None:
     document, _image, canvas = canvas_fixture
+    created: list[ConstructionEntity] = []
     states: list[dict[str, object]] = []
+    canvas.constructionCreateRequested.connect(
+        lambda document_id, entity: (
+            document_id == document.id and created.append(entity)
+        )
+    )
     canvas.constructionCommandChanged.connect(
         lambda document_id, payload: (
             document_id == document.id and states.append(dict(payload))
@@ -420,13 +441,111 @@ def test_construction_right_click_steps_back_without_starting_pan(
     _click_image(canvas, Point(40.0, 35.0))
     assert states and states[-1]["point_count"] == 1
 
-    position = canvas.image_to_widget(Point(40.0, 35.0))
-    event = _MouseEvent(position, button=Qt.MouseButton.RightButton)
-    canvas.mousePressEvent(event)
+    start_pan = Point(canvas._pan.x, canvas._pan.y)  # noqa: SLF001
+    start = canvas.image_to_widget(Point(40.0, 35.0))
+    end = start + QPointF(35.0, 22.0)
+    canvas.mousePressEvent(
+        _MouseEvent(start, button=Qt.MouseButton.RightButton)
+    )
+    assert canvas._panning  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.ClosedHandCursor
 
-    assert event.accepted
-    assert states[-1]["point_count"] == 0
-    assert not canvas._panning  # noqa: SLF001 - right-click command contract
+    canvas.mouseMoveEvent(
+        _MouseEvent(end, button=Qt.MouseButton.RightButton)
+    )
+    canvas.mouseReleaseEvent(
+        _MouseEvent(end, button=Qt.MouseButton.RightButton)
+    )
+
+    assert not canvas._panning  # noqa: SLF001
+    assert (canvas._pan.x, canvas._pan.y) != (start_pan.x, start_pan.y)  # noqa: SLF001
+    assert states[-1]["point_count"] == 1
+    assert canvas.cursor().shape() == Qt.CursorShape.CrossCursor
+
+    _click_image(canvas, Point(85.0, 65.0))
+    assert len(created) == 1
+    assert isinstance(created[0].definition, LineDefinition)
+
+
+@pytest.mark.parametrize("construction_kind", ["segment", "ray", "infinite_line"])
+def test_space_pan_pauses_every_direct_construction_line_type(
+    canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
+    construction_kind: str,
+) -> None:
+    _document, _image, canvas = canvas_fixture
+    canvas.set_tool_mode(
+        "construction",
+        construction_kind=construction_kind,
+    )
+    _click_image(canvas, Point(35.0, 30.0))
+    session = canvas._construction_session  # noqa: SLF001
+    assert session is not None
+    assert session.points == [Point(35.0, 30.0)]
+
+    hover = canvas.image_to_widget(Point(85.0, 55.0))
+    canvas.mouseMoveEvent(_MouseEvent(hover))
+    preview_before_pan = session.hover_point
+
+    canvas.keyPressEvent(_KeyEvent(Qt.Key.Key_Space))
+    assert canvas._temporary_grab_active  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.OpenHandCursor
+
+    canvas.mouseMoveEvent(
+        _MouseEvent(canvas.image_to_widget(Point(110.0, 75.0)))
+    )
+    assert session.hover_point == preview_before_pan
+
+    start_pan = Point(canvas._pan.x, canvas._pan.y)  # noqa: SLF001
+    pan_start = QPointF(145.0, 100.0)
+    pan_end = QPointF(175.0, 125.0)
+    canvas.mousePressEvent(_MouseEvent(pan_start))
+    assert canvas._panning  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.ClosedHandCursor
+    canvas.mouseMoveEvent(_MouseEvent(pan_end))
+    canvas.mouseReleaseEvent(_MouseEvent(pan_end))
+
+    assert not canvas._panning  # noqa: SLF001
+    assert canvas._temporary_grab_active  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.OpenHandCursor
+    assert (canvas._pan.x, canvas._pan.y) != (start_pan.x, start_pan.y)  # noqa: SLF001
+    assert session.points == [Point(35.0, 30.0)]
+
+    canvas.keyReleaseEvent(_KeyEvent(Qt.Key.Key_Space))
+    assert not canvas._temporary_grab_active  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.CrossCursor
+    assert session.points == [Point(35.0, 30.0)]
+
+
+@pytest.mark.parametrize("tool_mode", ["snap", "continuous_manual"])
+def test_space_pan_preserves_staged_measurement_line_tools(
+    canvas_fixture: tuple[ImageDocument, QImage, DocumentCanvas],
+    tool_mode: str,
+) -> None:
+    _document, _image, canvas = canvas_fixture
+    canvas.set_tool_mode(tool_mode)
+    _click_image(canvas, Point(30.0, 28.0))
+    if tool_mode == "snap":
+        assert canvas._drawing_anchor_raw is not None  # noqa: SLF001
+        assert canvas._line_commit_on_second_click  # noqa: SLF001
+    else:
+        assert canvas._drawing_polygon_points == [Point(30.0, 28.0)]  # noqa: SLF001
+
+    canvas.keyPressEvent(_KeyEvent(Qt.Key.Key_Space))
+    assert canvas._temporary_grab_active  # noqa: SLF001
+    assert canvas.cursor().shape() == Qt.CursorShape.OpenHandCursor
+
+    start = QPointF(130.0, 90.0)
+    end = QPointF(155.0, 112.0)
+    canvas.mousePressEvent(_MouseEvent(start))
+    canvas.mouseMoveEvent(_MouseEvent(end))
+    canvas.mouseReleaseEvent(_MouseEvent(end))
+    canvas.keyReleaseEvent(_KeyEvent(Qt.Key.Key_Space))
+
+    if tool_mode == "snap":
+        assert canvas._drawing_anchor_raw is not None  # noqa: SLF001
+        assert canvas._line_commit_on_second_click  # noqa: SLF001
+    else:
+        assert canvas._drawing_polygon_points == [Point(30.0, 28.0)]  # noqa: SLF001
 
 
 def test_circle_can_finish_from_mouse_first_numeric_radius(
