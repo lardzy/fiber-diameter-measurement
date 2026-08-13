@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 from PySide6.QtWidgets import QApplication, QMessageBox
 
 from fdm.application_launch import build_application_open_request
-from fdm.lifecycle import TransitionIntent, TransitionResult
+from fdm.lifecycle import AcquisitionDisposition, TransitionIntent
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.ui.associated_file_controller import AssociatedSlideDisposition
 from fdm.ui.main_window import MainWindow
@@ -109,14 +109,60 @@ class AssociatedFileOpenTests(unittest.TestCase):
                         return_value=AssociatedSlideDisposition.STANDALONE_WORKSPACE,
                     ),
                     patch.object(window, "_confirm_close_documents", return_value=False),
+                    patch.object(window, "stop_live_preview") as stop_preview,
+                    patch.object(window, "_prepare_transition") as prepare_transition,
                     patch.object(window, "_reset_workspace") as reset_mock,
                     patch.object(window, "_open_image_requests") as open_mock,
                 ):
                     window.associated_file_open_controller._open_digital_slides([slide_path])
 
+                stop_preview.assert_not_called()
+                prepare_transition.assert_not_called()
                 reset_mock.assert_not_called()
                 open_mock.assert_not_called()
                 self.assertEqual(window._project_path, project_path)
+        finally:
+            window._reset_workspace()
+            window.close()
+
+    def test_active_acquisition_is_not_stopped_when_standalone_confirmation_is_cancelled(self) -> None:
+        window = MainWindow()
+        try:
+            with TemporaryDirectory() as tmpdir:
+                root = Path(tmpdir)
+                slide_path = root / "采集中取消独立.fdmslide"
+                _create_slide(slide_path)
+                window._project_path = root / "current.fdmproj"
+                call_order: list[str] = []
+
+                with (
+                    patch.object(
+                        window.associated_file_open_controller,
+                        "_choose_slide_disposition",
+                        return_value=AssociatedSlideDisposition.STANDALONE_WORKSPACE,
+                    ),
+                    patch.object(window, "_slide_acquisition_active", return_value=True),
+                    patch.object(
+                        window,
+                        "_preflight_acquisition_disposition",
+                        side_effect=lambda _intent: call_order.append("acquisition")
+                        or AcquisitionDisposition.KEEP_PARTIAL,
+                    ),
+                    patch.object(
+                        window,
+                        "_confirm_close_documents",
+                        side_effect=lambda _documents: call_order.append("confirm") or False,
+                    ),
+                    patch.object(window, "_prepare_transition") as prepare_transition,
+                    patch.object(window, "_reset_workspace") as reset_workspace,
+                    patch.object(window, "_open_image_requests") as open_requests,
+                ):
+                    window.associated_file_open_controller._open_digital_slides([slide_path])
+
+                self.assertEqual(call_order, ["acquisition", "confirm"])
+                prepare_transition.assert_not_called()
+                reset_workspace.assert_not_called()
+                open_requests.assert_not_called()
         finally:
             window._reset_workspace()
             window.close()
@@ -171,20 +217,20 @@ class AssociatedFileOpenTests(unittest.TestCase):
 
                 slide_path = root / "采集中.fdmslide"
                 _create_slide(slide_path)
-                transition = TransitionResult(
-                    intent=TransitionIntent.OPEN_DOCUMENT,
-                    completed=False,
-                    cancelled=True,
-                    reason="操作已取消。",
-                )
                 with (
                     patch.object(window, "_slide_acquisition_active", return_value=True),
-                    patch.object(window, "_prepare_transition", return_value=transition) as transition_mock,
+                    patch.object(
+                        window,
+                        "_preflight_acquisition_disposition",
+                        return_value=AcquisitionDisposition.CANCEL,
+                    ) as preflight_mock,
+                    patch.object(window, "_prepare_transition") as transition_mock,
                     patch.object(window, "_open_image_requests") as open_mock,
                 ):
                     window.associated_file_open_controller._open_digital_slides([slide_path])
 
-                transition_mock.assert_called_once_with(TransitionIntent.OPEN_DOCUMENT)
+                preflight_mock.assert_called_once_with(TransitionIntent.OPEN_DOCUMENT)
+                transition_mock.assert_not_called()
                 open_mock.assert_not_called()
                 self.assertEqual(window.project.documents, [])
         finally:

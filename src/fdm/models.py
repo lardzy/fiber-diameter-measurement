@@ -11,6 +11,8 @@ import math
 import statistics
 import uuid
 
+import numpy as np
+
 from fdm.analysis_artifacts import (
     AnalysisArtifact,
     AnalysisDependencySignature,
@@ -100,6 +102,116 @@ def utc_now_iso() -> str:
 
 def new_id(prefix: str) -> str:
     return f"{prefix}_{uuid.uuid4().hex[:12]}"
+
+
+_DEBUG_PAYLOAD_MAX_DEPTH = 64
+
+
+def _json_safe_debug_key(value: object) -> str | None:
+    """Return a deterministic JSON object key, or reject an unsafe key."""
+
+    if isinstance(value, np.generic):
+        if isinstance(value, np.bool_):
+            value = bool(value)
+        elif isinstance(value, np.integer):
+            value = int(value)
+        elif isinstance(value, np.floating):
+            value = float(value)
+        elif isinstance(value, np.str_):
+            value = str(value)
+        else:
+            return None
+    if isinstance(value, str):
+        return value
+    if value is None:
+        return "null"
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if isinstance(value, int):
+        return str(value)
+    if isinstance(value, float) and math.isfinite(value):
+        return str(value)
+    return None
+
+
+def _json_safe_debug_value(
+    value: object,
+    *,
+    active_container_ids: set[int] | None = None,
+    depth: int = 0,
+) -> object:
+    """Normalize diagnostic data without inventing scientific values.
+
+    Debug payloads are supplied by image-processing code and may contain NumPy
+    scalar values, non-finite intermediates or accidentally retained runtime
+    objects.  Project JSON must remain strict.  Finite scalar values and the
+    list/dict shape are preserved, while values that have no truthful JSON
+    representation become ``None``.  Container cycles and excessive nesting
+    are truncated in the same explicit way instead of blocking project save.
+    """
+
+    if value is None or isinstance(value, (str, bool, int)):
+        return value
+    if isinstance(value, float):
+        return value if math.isfinite(value) else None
+    if isinstance(value, np.generic):
+        if isinstance(value, np.bool_):
+            return bool(value)
+        if isinstance(value, np.integer):
+            return int(value)
+        if isinstance(value, np.floating):
+            scalar = float(value)
+            return scalar if math.isfinite(scalar) else None
+        if isinstance(value, np.str_):
+            return str(value)
+        return None
+    if depth >= _DEBUG_PAYLOAD_MAX_DEPTH:
+        return None
+
+    active_ids = active_container_ids if active_container_ids is not None else set()
+    if isinstance(value, dict):
+        identity = id(value)
+        if identity in active_ids:
+            return None
+        active_ids.add(identity)
+        try:
+            normalized: dict[str, object] = {}
+            for key, item in value.items():
+                normalized_key = _json_safe_debug_key(key)
+                if normalized_key is None:
+                    continue
+                normalized[normalized_key] = _json_safe_debug_value(
+                    item,
+                    active_container_ids=active_ids,
+                    depth=depth + 1,
+                )
+            return normalized
+        finally:
+            active_ids.remove(identity)
+    if isinstance(value, (list, tuple)):
+        identity = id(value)
+        if identity in active_ids:
+            return None
+        active_ids.add(identity)
+        try:
+            return [
+                _json_safe_debug_value(
+                    item,
+                    active_container_ids=active_ids,
+                    depth=depth + 1,
+                )
+                for item in value
+            ]
+        finally:
+            active_ids.remove(identity)
+    return None
+
+
+def _json_safe_debug_payload(value: object) -> dict[str, object]:
+    if not isinstance(value, dict):
+        return {}
+    normalized = _json_safe_debug_value(value)
+    return normalized if isinstance(normalized, dict) else {}
 
 
 def project_assets_root(project_path: str | Path) -> Path:
@@ -688,7 +800,7 @@ class Measurement:
             "confidence": self.confidence,
             "status": self.status,
             "created_at": self.created_at,
-            "debug_payload": self.debug_payload,
+            "debug_payload": _json_safe_debug_payload(self.debug_payload),
         }
         if self.appearance is not None and not self.appearance.is_empty():
             payload["appearance"] = self.appearance.to_dict()
@@ -743,7 +855,7 @@ class Measurement:
             confidence=float(payload.get("confidence", 0.0)),
             status=status,
             created_at=str(payload.get("created_at", utc_now_iso())),
-            debug_payload=dict(payload.get("debug_payload", {})),
+            debug_payload=_json_safe_debug_payload(payload.get("debug_payload", {})),
             appearance=_appearance_from_payload(payload.get("appearance")),
         )
 

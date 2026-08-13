@@ -23,7 +23,7 @@ from fdm.analysis_artifacts import (
     AnalysisRegionSnapshot,
     AnalysisSourceDescriptor,
 )
-from fdm.cancellation import CancellationTokenSource
+from fdm.cancellation import CancellationError, CancellationTokenSource
 from fdm.raster import RasterPixelType, RasterPlane
 from fdm.ui.image_analysis_controller import (
     MAX_ANALYSIS_WORKING_BYTES,
@@ -35,6 +35,7 @@ from fdm.ui.image_analysis_controller import (
     ImageAnalysisTaskResult,
     MaximaConversionPayload,
     ParticleConversionPayload,
+    _execute_kernel,
     estimate_analysis_resources,
     execute_analysis_task,
     rebuild_analysis_conversion_payload,
@@ -1047,6 +1048,80 @@ class AnalysisRequestAndPackagingTests(unittest.TestCase):
                 )
                 self.assertEqual(result.tool, tool)
                 self.assertEqual(result.request_id, f"{tool.value}-1")
+
+    def test_basic_kernel_dispatch_forwards_worker_cancellation_check(self) -> None:
+        cases = (
+            (AnalysisTool.SHAPE, "analyze_shape"),
+            (AnalysisTool.INTENSITY, "analyze_intensity"),
+            (AnalysisTool.HISTOGRAM, "calculate_histogram"),
+            (AnalysisTool.FFT_POWER_SPECTRUM, "calculate_fft_power_spectrum"),
+            (AnalysisTool.PROFILE, "sample_intensity_profile"),
+            (AnalysisTool.PARTICLES, "analyze_particles"),
+            (AnalysisTool.MAXIMA, "find_local_maxima"),
+        )
+
+        for tool, function_name in cases:
+            with self.subTest(tool=tool.value):
+                cancellation = CancellationTokenSource()
+                sentinel = object()
+                with patch(
+                    f"fdm.ui.image_analysis_controller.{function_name}",
+                    return_value=sentinel,
+                ) as kernel:
+                    result = _execute_kernel(
+                        tool,
+                        object(),
+                        cancellation_token=cancellation.token,
+                    )
+
+                self.assertIs(result, sentinel)
+                cancellation_check = kernel.call_args.kwargs["cancellation_check"]
+                cancellation.cancel()
+                with self.assertRaises(CancellationError):
+                    cancellation_check()
+
+    def test_profile_kernel_stops_during_real_sampling_after_cancellation(self) -> None:
+        cancellation = CancellationTokenSource()
+        sample_calls = 0
+
+        def cancel_after_first_sample(*_args, **_kwargs):
+            nonlocal sample_calls
+            sample_calls += 1
+            if sample_calls == 1:
+                cancellation.cancel()
+            return 1.0
+
+        request = ImageAnalysisTaskRequest(
+            tool=AnalysisTool.PROFILE,
+            request_id="cancel-profile-kernel",
+            generation=1,
+            document_id="doc",
+            source_pixel_revision=0,
+            plane=_gray_plane(width=512, height=1),
+            parameters={
+                "points": [[0.0, 0.0], [511.0, 0.0]],
+                "sample_spacing": 1.0,
+            },
+        )
+        phases: list[AnalysisTaskPhase] = []
+
+        with patch(
+            "fdm.services.image_analysis._bilinear_sample",
+            side_effect=cancel_after_first_sample,
+        ):
+            with self.assertRaises(CancellationError):
+                execute_analysis_task(
+                    request,
+                    cancellation.token,
+                    phases.append,
+                )
+
+        self.assertGreater(sample_calls, 0)
+        self.assertLess(sample_calls, 512)
+        self.assertEqual(
+            phases,
+            [AnalysisTaskPhase.PREPARING, AnalysisTaskPhase.ANALYZING],
+        )
 
     def test_skeleton_v2_preserves_tubeness_chain_audit_parameters(self) -> None:
         parameters = {

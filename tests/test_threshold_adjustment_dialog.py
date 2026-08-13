@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 import sys
 import unittest
+from unittest.mock import patch
 
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
@@ -13,6 +14,10 @@ try:
     from PySide6.QtWidgets import QApplication
 
     from fdm.raster import RasterPixelType, RasterPlane
+    from fdm.services.image_processing import (
+        ImageOperationRequest,
+        execute_image_operation,
+    )
     from fdm.ui.threshold_adjustment_dialog import (
         ThresholdAdjustmentDialog,
         ThresholdDerivationRequest,
@@ -88,6 +93,74 @@ class ThresholdAdjustmentDialogTests(unittest.TestCase):
                 self._gradient(),
                 roi_mask=np.ones((2, 2), dtype=np.bool_),
             )
+
+    def test_green_luminance_boundary_matches_threshold_output(self) -> None:
+        pixels = np.asarray([[[0, 255, 0]]], dtype=np.uint8)
+        source = RasterPlane(
+            width=1,
+            height=1,
+            pixel_type=RasterPixelType.RGB8,
+            data=pixels.tobytes(),
+        )
+        dialog = ThresholdAdjustmentDialog(source)
+        try:
+            dialog.lowerSpin.setValue(170.0)
+            dialog.upperSpin.setValue(255.0)
+
+            self.assertAlmostEqual(
+                float(dialog._channel_plane()[0, 0]),  # noqa: SLF001
+                255.0 * 0.7152,
+            )
+            preview_foreground = (
+                dialog.imagePreview._image.pixelColor(0, 0).red() > 128  # noqa: SLF001
+            )
+            operation = dialog.operation_spec()
+            output = execute_image_operation(
+                ImageOperationRequest.create(
+                    operation.operation_id,
+                    pixels,
+                    **operation.parameters,
+                )
+            ).image
+
+            self.assertTrue(preview_foreground)
+            self.assertEqual(preview_foreground, bool(output[0, 0] == 255))
+        finally:
+            dialog.close()
+
+    def test_preview_downsamples_before_luminance_conversion(self) -> None:
+        pixels = np.zeros((600, 1200, 3), dtype=np.uint8)
+        pixels[..., 1] = 255
+        source = RasterPlane(
+            width=1200,
+            height=600,
+            pixel_type=RasterPixelType.RGB8,
+            data=pixels.tobytes(),
+        )
+        dialog = ThresholdAdjustmentDialog(source)
+        converted_shapes: list[tuple[int, ...]] = []
+        original = dialog._channel_plane_from_array  # noqa: SLF001
+
+        def record_shape(array):
+            converted_shapes.append(tuple(array.shape))
+            return original(array)
+
+        try:
+            with patch.object(
+                dialog,
+                "_channel_plane_from_array",
+                side_effect=record_shape,
+            ):
+                dialog._refresh_image_preview(  # noqa: SLF001
+                    mode="black_white",
+                    invert=False,
+                )
+
+            self.assertEqual(len(converted_shapes), 1)
+            self.assertLessEqual(converted_shapes[0][0], 256)
+            self.assertLessEqual(converted_shapes[0][1], 512)
+        finally:
+            dialog.close()
 
 
 if __name__ == "__main__":

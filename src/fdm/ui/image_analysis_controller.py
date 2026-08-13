@@ -1287,21 +1287,40 @@ def _execute_kernel(
     cancellation_token: CancellationToken,
 ) -> object:
     if tool is AnalysisTool.SHAPE:
-        return analyze_shape(kernel_request)  # type: ignore[arg-type]
+        return analyze_shape(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.INTENSITY:
-        return analyze_intensity(kernel_request)  # type: ignore[arg-type]
+        return analyze_intensity(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.HISTOGRAM:
-        return calculate_histogram(kernel_request)  # type: ignore[arg-type]
+        return calculate_histogram(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.FFT_POWER_SPECTRUM:
         return calculate_fft_power_spectrum(  # type: ignore[arg-type]
-            kernel_request
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
         )
     if tool is AnalysisTool.PROFILE:
-        return sample_intensity_profile(kernel_request)  # type: ignore[arg-type]
+        return sample_intensity_profile(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.PARTICLES:
-        return analyze_particles(kernel_request)  # type: ignore[arg-type]
+        return analyze_particles(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.MAXIMA:
-        return find_local_maxima(kernel_request)  # type: ignore[arg-type]
+        return find_local_maxima(  # type: ignore[arg-type]
+            kernel_request,
+            cancellation_check=cancellation_token.raise_if_cancelled,
+        )
     if tool is AnalysisTool.DIRECTIONALITY:
         return analyze_fiber_directionality(
             kernel_request,  # type: ignore[arg-type]

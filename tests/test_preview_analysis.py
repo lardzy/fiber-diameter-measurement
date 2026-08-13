@@ -395,6 +395,89 @@ class PreviewAnalysisTests(unittest.TestCase):
         self.assertEqual(report.motion_state, "limit_reached")
         self.assertIn("1 张上限", report.limit_reason)
 
+    def test_candidate_fusion_inherits_configured_resource_limits(self) -> None:
+        left, _right = self._make_focus_frames()
+        prepared = preview_analysis._prepare_frame(left)  # noqa: SLF001
+        render_config = FocusStackRenderConfig(sharpen_strength=0)
+        estimated_high_resolution_bytes = 300 * preview_analysis.MIB
+
+        with patch.object(
+            FocusAccumulator,
+            "estimated_retained_bytes_for",
+            return_value=estimated_high_resolution_bytes,
+        ):
+            default_result = preview_analysis._fuse_prepared_frames(  # noqa: SLF001
+                [prepared],
+                render_config,
+            )
+            configured_result = preview_analysis._fuse_prepared_frames(  # noqa: SLF001
+                [prepared],
+                render_config,
+                limits=AnalysisResourceLimits(
+                    focus_max_retained_bytes=512 * preview_analysis.MIB,
+                ),
+            )
+
+        self.assertTrue(default_result.limit_reached)
+        self.assertIn("256 MiB", default_result.limit_reason)
+        self.assertFalse(configured_result.limit_reached)
+        self.assertIsNotNone(configured_result.bgr)
+
+    def test_candidate_fusion_budget_rejection_is_reported_as_map_limit(self) -> None:
+        left, _right = self._make_focus_frames()
+        prepared = preview_analysis._prepare_frame(left)  # noqa: SLF001
+        candidate = preview_analysis._prepare_map_motion_frame(left)  # noqa: SLF001
+        analyzer = MapBuildAnalyzer(
+            device_id="limit",
+            device_name="limit",
+            resource_limits=AnalysisResourceLimits(
+                focus_max_retained_bytes=384 * preview_analysis.MIB,
+            ),
+        )
+        reference = preview_analysis._TileRecord(  # noqa: SLF001
+            tile_id=-1,
+            bgr=prepared.bgr,
+            gray=prepared.gray,
+            x=0.0,
+            y=0.0,
+        )
+        fusion_limit = preview_analysis._FrameFusionResult(  # noqa: SLF001
+            None,
+            limit_reached=True,
+            limit_reason="景深保留数据已达到 384 MiB 上限",
+        )
+
+        with patch.object(
+            analyzer,
+            "_current_tile_preview_record",
+            return_value=reference,
+        ), patch.object(
+            analyzer,
+            "_promote_motion_frame",
+            return_value=prepared,
+        ), patch.object(
+            preview_analysis,
+            "_fuse_prepared_frames",
+            return_value=fusion_limit,
+        ) as fuse_frames:
+            analyzer._try_commit_candidate_tile(  # noqa: SLF001
+                [candidate],
+                coarse_dx=20.0,
+                coarse_dy=0.0,
+            )
+
+        report = analyzer._build_report()  # noqa: SLF001
+        self.assertTrue(report.limit_reached)
+        self.assertEqual(report.motion_state, "limit_reached")
+        self.assertIn("地图候选 tile", report.limit_reason)
+        self.assertIn("384 MiB", report.message)
+        self.assertNotIn("图像为空", report.message)
+        self.assertEqual(analyzer._rejected_registration_frames, 0)  # noqa: SLF001
+        self.assertEqual(
+            fuse_frames.call_args.kwargs["limits"],
+            analyzer._resource_limits,  # noqa: SLF001
+        )
+
     def test_map_build_analyzer_creates_reliable_mosaics_from_real_crops(self) -> None:
         scene = self._make_map_scene()
         for shift in (160, 208, 256):

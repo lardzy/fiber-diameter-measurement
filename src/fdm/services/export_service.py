@@ -16,7 +16,7 @@ import zipfile
 from xml.sax.saxutils import escape
 
 from fdm.area_display import area_derived_geometry_service
-from fdm.atomic_io import atomic_replace_file
+from fdm.atomic_io import atomic_replace_file, staged_path_for
 from fdm.models import ImageDocument, ProjectState, UNCATEGORIZED_COLOR, UNCATEGORIZED_LABEL
 from fdm.settings import RawRecordTemplate
 from fdm.services.raw_record_export import (
@@ -1067,11 +1067,13 @@ class ExportService:
 
     def _write_csv(self, path: Path, rows: list[dict[str, object]]) -> None:
         fieldnames = self._collect_fieldnames(rows)
-        with path.open("w", newline="", encoding="utf-8-sig") as file_obj:
-            writer = csv.DictWriter(file_obj, fieldnames=fieldnames)
-            writer.writeheader()
-            for row in rows:
-                writer.writerow(row)
+        with staged_path_for(path) as staged_path:
+            with staged_path.open("w", newline="", encoding="utf-8-sig") as file_obj:
+                writer = csv.DictWriter(file_obj, fieldnames=fieldnames)
+                writer.writeheader()
+                for row in rows:
+                    writer.writerow(row)
+            atomic_replace_file(staged_path, path)
 
     def _excel_export_filename(self, selection: ExportSelection) -> str:
         if selection.raw_record_template_path:
@@ -1089,14 +1091,16 @@ class ExportService:
         }.get(render_mode, "screen")
 
     def _write_xlsx(self, path: Path, sheets: dict[str, list[dict[str, object]]]) -> None:
-        with zipfile.ZipFile(path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
-            archive.writestr("[Content_Types].xml", self._content_types_xml(len(sheets)))
-            archive.writestr("_rels/.rels", self._root_rels_xml())
-            archive.writestr("xl/workbook.xml", self._workbook_xml(sheets))
-            archive.writestr("xl/_rels/workbook.xml.rels", self._workbook_rels_xml(len(sheets)))
-            archive.writestr("xl/styles.xml", self._styles_xml())
-            for index, (sheet_name, rows) in enumerate(sheets.items(), start=1):
-                archive.writestr(f"xl/worksheets/sheet{index}.xml", self._sheet_xml(rows))
+        with staged_path_for(path) as staged_path:
+            with zipfile.ZipFile(staged_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+                archive.writestr("[Content_Types].xml", self._content_types_xml(len(sheets)))
+                archive.writestr("_rels/.rels", self._root_rels_xml())
+                archive.writestr("xl/workbook.xml", self._workbook_xml(sheets))
+                archive.writestr("xl/_rels/workbook.xml.rels", self._workbook_rels_xml(len(sheets)))
+                archive.writestr("xl/styles.xml", self._styles_xml())
+                for index, (sheet_name, rows) in enumerate(sheets.items(), start=1):
+                    archive.writestr(f"xl/worksheets/sheet{index}.xml", self._sheet_xml(rows))
+            atomic_replace_file(staged_path, path)
 
     def _sheet_xml(self, rows: list[dict[str, object]]) -> str:
         headers = self._collect_fieldnames(rows)

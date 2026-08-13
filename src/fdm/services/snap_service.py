@@ -180,7 +180,7 @@ class SnapService:
         )
         status = "snapped" if confidence >= self.confidence_review_threshold else "manual_review"
         peak_strength = float((abs(float(gradient[left_index])) + abs(float(gradient[right_index]))) / 2.0)
-        return SnapResult(
+        result = SnapResult(
             status=status,
             original_line=line,
             snapped_line=snapped_line,

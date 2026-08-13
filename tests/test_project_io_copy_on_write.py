@@ -164,6 +164,44 @@ class ProjectIOCopyOnWriteTests(unittest.TestCase):
         self.assertIsNot(issues[1]["raw_payload"], invalid_preset)
         self.assertIsNot(issues[1]["raw_payload"]["legacy"], invalid_preset_nested)
 
+    def test_non_object_calibration_presets_are_quarantined(self) -> None:
+        first = _valid_preset("first")
+        second = _valid_preset("second")
+        presets: list[object] = [first, "broken", second, None]
+        payload = {
+            "documents": [],
+            "calibration_presets": presets,
+        }
+
+        sanitized, issues = _sanitize_invalid_calibration_payloads(payload)
+
+        self.assertEqual(sanitized["calibration_presets"], [first, second])
+        self.assertIsNot(sanitized["calibration_presets"], presets)
+        self.assertIs(sanitized["calibration_presets"][0], first)
+        self.assertIs(sanitized["calibration_presets"][1], second)
+        self.assertEqual(
+            [(issue["kind"], issue["index"]) for issue in issues],
+            [("calibration_preset", 1), ("calibration_preset", 3)],
+        )
+        self.assertEqual([issue["raw_payload"] for issue in issues], ["broken", None])
+        self.assertIs(payload["calibration_presets"], presets)
+
+    def test_non_list_calibration_preset_container_degrades_to_empty_list(self) -> None:
+        malformed_container = {"name": "not-a-list"}
+        payload = {
+            "documents": [],
+            "calibration_presets": malformed_container,
+        }
+
+        sanitized, issues = _sanitize_invalid_calibration_payloads(payload)
+
+        self.assertEqual(sanitized["calibration_presets"], [])
+        self.assertEqual(len(issues), 1)
+        self.assertEqual(issues[0]["kind"], "calibration_presets")
+        self.assertEqual(issues[0]["raw_payload"], malformed_container)
+        self.assertIsNot(issues[0]["raw_payload"], malformed_container)
+        self.assertIs(payload["calibration_presets"], malformed_container)
+
     def test_legacy_issue_registry_copies_only_raw_calibration_payload(self) -> None:
         raw_nested = {"source": "legacy-sidecar"}
         raw_payload = {

@@ -77,9 +77,14 @@ class CalibrationSidecarIO:
         document.sidecar_path = input_path.as_posix()
         if not input_path.exists():
             return False
-        payload = json.loads(input_path.read_text(encoding="utf-8"))
         try:
+            payload = json.loads(input_path.read_text(encoding="utf-8"))
             sidecar = CalibrationSidecar.from_dict(payload)
+        except (OSError, UnicodeError, json.JSONDecodeError) as exc:
+            document.calibration = None
+            document.calibration_load_error = str(exc)
+            document.calibration_load_payload = None
+            return False
         except (KeyError, TypeError, ValueError) as exc:
             document.calibration = None
             document.calibration_load_error = str(exc)

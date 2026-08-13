@@ -1581,6 +1581,88 @@ class ExportServiceTests(unittest.TestCase):
             self.assertEqual(outputs["xlsx"], custom_path)
             self.assertTrue(custom_path.exists())
 
+    def test_csv_and_xlsx_publish_failures_preserve_existing_targets(self) -> None:
+        document = ImageDocument(
+            id="atomic-tabular-export",
+            path="/tmp/atomic-tabular-export.png",
+            image_size=(20, 10),
+        )
+        document.initialize_runtime_state()
+        project = ProjectState(version="test", documents=[document])
+        cases = (
+            (
+                "csv",
+                ExportSelection(include_csv=True, scope=ExportScope.CURRENT),
+                CSV_IMAGE_SUMMARY_FILENAME,
+            ),
+            (
+                "xlsx",
+                ExportSelection(include_excel=True, scope=ExportScope.CURRENT),
+                XLSX_EXPORT_FILENAME,
+            ),
+        )
+
+        for label, selection, target_name in cases:
+            with self.subTest(label=label), TemporaryDirectory() as tmp_dir:
+                root = Path(tmp_dir)
+                target = root / target_name
+                target.write_bytes(b"existing-tabular-export")
+
+                with patch(
+                    "fdm.services.export_service.atomic_replace_file",
+                    side_effect=OSError(f"injected {label} publish failure"),
+                ):
+                    with self.assertRaisesRegex(OSError, f"{label} publish failure"):
+                        ExportService().export_project(
+                            project,
+                            root,
+                            selection=selection,
+                        )
+
+                self.assertEqual(target.read_bytes(), b"existing-tabular-export")
+                self.assertEqual(list(root.glob(f".{target.name}.*.tmp")), [])
+
+    def test_raw_record_publish_failure_preserves_existing_target(self) -> None:
+        document = ImageDocument(
+            id="atomic-raw-record-export",
+            path="/tmp/atomic-raw-record-export.png",
+            image_size=(20, 10),
+        )
+        document.initialize_runtime_state()
+        project = ProjectState(version="test", documents=[document])
+
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            template_path = root / "template.xlsx"
+            output_path = root / "existing.xlsx"
+            self._write_minimal_macro_template(template_path)
+            output_path.write_bytes(b"existing-raw-record")
+            template = RawRecordTemplate(
+                name="Raw",
+                path=str(template_path),
+                rules=[],
+            )
+
+            with patch(
+                "fdm.services.raw_record_export.atomic_replace_file",
+                side_effect=OSError("injected raw record publish failure"),
+            ):
+                with self.assertRaisesRegex(OSError, "raw record publish failure"):
+                    ExportService().export_project(
+                        project,
+                        root,
+                        selection=ExportSelection(
+                            include_excel=True,
+                            scope=ExportScope.CURRENT,
+                            raw_record_template_path=str(template_path),
+                        ),
+                        single_output_path=output_path,
+                        raw_record_template=template,
+                    )
+
+            self.assertEqual(output_path.read_bytes(), b"existing-raw-record")
+            self.assertEqual(list(root.glob(f".{output_path.stem}.*{output_path.suffix}")), [])
+
     def test_planned_outputs_resolve_single_excel_file(self) -> None:
         document = ImageDocument(
             id=new_id("image"),

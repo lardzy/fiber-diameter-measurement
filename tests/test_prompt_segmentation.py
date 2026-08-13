@@ -2,9 +2,10 @@ from __future__ import annotations
 
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from types import SimpleNamespace
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock, patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
@@ -13,6 +14,8 @@ from fdm.settings import ComplexMagicSegmentModelVariant, MagicSegmentModelVaria
 
 try:
     from fdm.services.prompt_segmentation import (
+        EfficientSamSPromptSegmentationService,
+        LightHQSamPromptSegmentationService,
         PromptSegmentationService,
         edge_sam_model_paths,
         finalize_magic_subtraction_mask,
@@ -28,6 +31,8 @@ try:
 
     PROMPT_SEGMENTATION_AVAILABLE = True
 except ModuleNotFoundError:
+    EfficientSamSPromptSegmentationService = object  # type: ignore[assignment]
+    LightHQSamPromptSegmentationService = object  # type: ignore[assignment]
     PromptSegmentationService = object  # type: ignore[assignment]
     edge_sam_model_paths = object  # type: ignore[assignment]
     finalize_magic_subtraction_mask = object  # type: ignore[assignment]
@@ -129,6 +134,117 @@ class PromptSegmentationTests(unittest.TestCase):
         self.assertEqual(result.area_rings_px, [])
         self.assertEqual(result.area_px, 0.0)
         self.assertEqual(result.metadata["reason"], "missing_positive_prompt")
+
+    def test_torch_backends_pre_cancelled_request_skips_forward(self) -> None:
+        light_hq = LightHQSamPromptSegmentationService(checkpoint_path="/tmp/light-hq.pth")
+        light_hq._predictor = SimpleNamespace(predict=Mock())  # noqa: SLF001
+        efficient = EfficientSamSPromptSegmentationService(checkpoint_path="/tmp/efficient.pt")
+        efficient._model = SimpleNamespace(predict_masks=Mock())  # noqa: SLF001
+
+        for service, forward in (
+            (light_hq, light_hq._predictor.predict),  # noqa: SLF001
+            (efficient, efficient._model.predict_masks),  # noqa: SLF001
+        ):
+            with self.subTest(service=type(service).__name__):
+                with self.assertRaisesRegex(RuntimeError, "请求已取消"):
+                    service.predict_polygon(
+                        image=object(),
+                        cache_key="cancelled",
+                        positive_points=[Point(2, 2)],
+                        negative_points=[],
+                        cancel_check=lambda: True,
+                    )
+                forward.assert_not_called()
+
+    def test_light_hq_cancellation_after_forward_is_observed(self) -> None:
+        try:
+            import numpy as np
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"numpy unavailable: {exc}")
+
+        cancelled = False
+
+        def fake_forward(**_kwargs):
+            nonlocal cancelled
+            cancelled = True
+            return (
+                np.zeros((1, 8, 8), dtype=np.float32),
+                np.asarray([1.0], dtype=np.float32),
+                None,
+            )
+
+        predictor = SimpleNamespace(predict=Mock(side_effect=fake_forward))
+        service = LightHQSamPromptSegmentationService(checkpoint_path="/tmp/light-hq.pth")
+        service._predictor = predictor  # noqa: SLF001
+        cache_entry = SimpleNamespace(
+            image_embeddings=None,
+            original_size=(8, 8),
+            input_size=(8, 8),
+            interm_features=None,
+        )
+
+        with (
+            patch(
+                "fdm.services.prompt_segmentation.qimage_to_rgb_array",
+                return_value=np.zeros((8, 8, 3), dtype=np.uint8),
+            ),
+            patch.object(service, "_embedding_for_rgb_array", return_value=cache_entry),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "请求已取消"):
+                service.predict_polygon(
+                    image=object(),
+                    cache_key="cancel-after-forward",
+                    positive_points=[Point(2, 2)],
+                    negative_points=[],
+                    cancel_check=lambda: cancelled,
+                )
+
+        predictor.predict.assert_called_once()
+
+    def test_efficient_sam_cancellation_after_forward_is_observed(self) -> None:
+        try:
+            import numpy as np
+            import torch
+        except ImportError as exc:  # pragma: no cover
+            self.skipTest(f"Torch runtime unavailable: {exc}")
+
+        cancelled = False
+
+        def fake_forward(*_args, **_kwargs):
+            nonlocal cancelled
+            cancelled = True
+            return (
+                torch.zeros((1, 1, 1, 8, 8), dtype=torch.float32),
+                torch.ones((1, 1, 1), dtype=torch.float32),
+            )
+
+        model = SimpleNamespace(predict_masks=Mock(side_effect=fake_forward))
+        service = EfficientSamSPromptSegmentationService(checkpoint_path="/tmp/efficient.pt")
+        service._model = model  # noqa: SLF001
+        cache_entry = SimpleNamespace(
+            image_embeddings=torch.zeros((1, 1), dtype=torch.float32),
+            original_size=(8, 8),
+            input_size=(8, 8),
+            interm_features=None,
+        )
+
+        with (
+            patch(
+                "fdm.services.prompt_segmentation.qimage_to_rgb_array",
+                return_value=np.zeros((8, 8, 3), dtype=np.uint8),
+            ),
+            patch.object(service, "_embedding_for_rgb_array", return_value=cache_entry),
+        ):
+            with self.assertRaisesRegex(RuntimeError, "请求已取消"):
+                service.predict_polygon(
+                    image=object(),
+                    cache_key="cancel-after-forward",
+                    positive_points=[Point(2, 2)],
+                    negative_points=[],
+                    cancel_check=lambda: cancelled,
+                )
+
+        model.predict_masks.assert_called_once()
 
     def test_predict_polygon_standard_mode_uses_full_image_path(self) -> None:
         try:

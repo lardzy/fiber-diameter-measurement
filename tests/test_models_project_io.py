@@ -7,6 +7,8 @@ import sys
 import unittest
 from unittest.mock import patch
 
+import numpy as np
+
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from fdm.area_display import ensure_measurement_display_geometry
@@ -274,6 +276,43 @@ class ModelsProjectIOTests(unittest.TestCase):
                 else:
                     self.assertEqual(reopened_scale, invalid)
 
+    def test_project_load_quarantines_malformed_calibration_preset_shapes(self) -> None:
+        cases = (
+            (
+                [
+                    {"name": "valid", "pixels_per_unit": 4.0, "unit": "um"},
+                    "broken",
+                ],
+                ["valid"],
+                "calibration_preset",
+            ),
+            ({"name": "not-a-list"}, [], "calibration_presets"),
+        )
+        with TemporaryDirectory() as tmp_dir:
+            root = Path(tmp_dir)
+            for index, (presets, expected_names, issue_kind) in enumerate(cases):
+                with self.subTest(issue_kind=issue_kind):
+                    source = root / f"malformed-presets-{index}.fdmproj"
+                    payload = ProjectState(version="test", documents=[]).to_dict()
+                    payload["calibration_presets"] = presets
+                    source.write_text(json.dumps(payload), encoding="utf-8")
+
+                    loaded = ProjectIO.load(source)
+
+                    self.assertEqual(
+                        [preset.name for preset in loaded.calibration_presets],
+                        expected_names,
+                    )
+                    self.assertEqual(len(loaded.load_issues), 1)
+                    self.assertEqual(loaded.load_issues[0]["kind"], issue_kind)
+                    expected_raw_payload = (
+                        presets[-1] if isinstance(presets, list) else presets
+                    )
+                    self.assertEqual(
+                        loaded.load_issues[0]["raw_payload"],
+                        expected_raw_payload,
+                    )
+
     def test_line_and_polyline_share_length_statistics(self) -> None:
         document = ImageDocument(id="image_stats", path="/tmp/stats.png", image_size=(100, 80))
         document.initialize_runtime_state()
@@ -393,6 +432,75 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertEqual(loaded_document.sorted_groups()[0].number, 1)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_px or 0.0, 8.0)
         self.assertAlmostEqual(loaded_document.measurements[0].diameter_unit or 0.0, 2.0)
+
+    def test_project_save_normalizes_unsafe_measurement_debug_payload(self) -> None:
+        document = ImageDocument(
+            id="image_debug_payload",
+            path="/tmp/debug-payload.png",
+            image_size=(100, 80),
+        )
+        document.initialize_runtime_state()
+        cycle: dict[str, object] = {}
+        cycle["self"] = cycle
+        unsupported_key = object()
+        runtime_debug_payload: dict[object, object] = {
+            "finite": {
+                "float": np.float32(1.25),
+                "integer": np.int64(7),
+                "boolean": np.bool_(True),
+            },
+            "non_finite": [
+                float("nan"),
+                float("inf"),
+                np.float32(float("-inf")),
+            ],
+            "tuple": (np.int32(2), "kept"),
+            "unknown": object(),
+            "cycle": cycle,
+            np.int64(5): "numeric key",
+            unsupported_key: "omitted key",
+        }
+        measurement = Measurement(
+            id="measurement_debug_payload",
+            image_id=document.id,
+            fiber_group_id=None,
+            mode="manual",
+            line_px=Line(Point(1, 2), Point(11, 2)),
+            debug_payload=runtime_debug_payload,  # type: ignore[arg-type]
+        )
+        document.add_measurement(measurement)
+
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "debug-payload.fdmproj"
+            ProjectIO.save(ProjectState(version="test", documents=[document]), path)
+            persisted = json.loads(
+                path.read_text(encoding="utf-8"),
+                parse_constant=lambda value: self.fail(
+                    f"non-finite JSON token: {value}"
+                ),
+            )
+            loaded = ProjectIO.load(path)
+
+        saved_debug = persisted["documents"][0]["measurements"][0]["debug_payload"]
+        self.assertAlmostEqual(saved_debug["finite"]["float"], 1.25)
+        self.assertEqual(saved_debug["finite"]["integer"], 7)
+        self.assertIs(saved_debug["finite"]["boolean"], True)
+        self.assertEqual(saved_debug["non_finite"], [None, None, None])
+        self.assertEqual(saved_debug["tuple"], [2, "kept"])
+        self.assertIsNone(saved_debug["unknown"])
+        self.assertEqual(saved_debug["cycle"], {"self": None})
+        self.assertEqual(saved_debug["5"], "numeric key")
+        self.assertNotIn(str(unsupported_key), saved_debug)
+        self.assertEqual(
+            loaded.documents[0].measurements[0].debug_payload,
+            saved_debug,
+        )
+
+        # Persistence normalization must not rewrite runtime diagnostics.
+        self.assertIs(measurement.debug_payload, runtime_debug_payload)
+        self.assertIs(runtime_debug_payload["cycle"], cycle)
+        self.assertIs(cycle["self"], cycle)
+        self.assertIsInstance(runtime_debug_payload["tuple"], tuple)
 
     def test_project_save_preserves_previous_file_when_atomic_replace_fails(self) -> None:
         project = ProjectState(version="0.1.0", documents=[])

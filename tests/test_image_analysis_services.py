@@ -272,6 +272,26 @@ class ImageAnalysisServiceTests(unittest.TestCase):
         np.testing.assert_allclose(result.values, np.arange(11), atol=1e-6)
         self.assertAlmostEqual(result.distances[-1], 5.0)
 
+    def test_long_polyline_profile_uses_linear_physical_prefix_lookup(self) -> None:
+        image = np.tile(np.arange(400, dtype=np.float32), (3, 1))
+        points = tuple((float(index), 1.0) for index in range(400))
+
+        result = sample_intensity_profile(
+            IntensityProfileRequest(
+                image=image,
+                points=points,
+                sample_spacing=1.0,
+                pixel_size_x=0.25,
+                pixel_size_y=1.0,
+            )
+        )
+
+        self.assertEqual(len(result.distances), 400)
+        np.testing.assert_allclose(
+            result.distances,
+            np.arange(400, dtype=np.float64) * 0.25,
+        )
+
     def test_rectangle_profile_supports_row_and_column_averages(self) -> None:
         image = np.arange(20, dtype=np.float32).reshape(4, 5)
 

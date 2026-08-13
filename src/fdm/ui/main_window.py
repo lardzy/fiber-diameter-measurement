@@ -19620,15 +19620,20 @@ class MainWindow(QMainWindow):
     def close_all_documents(self) -> None:
         if not self.project.documents and not self.project_session_controller.unresolved_documents():
             return
-        transition = self._prepare_transition(TransitionIntent.RESET_WORKSPACE)
+        intent = TransitionIntent.RESET_WORKSPACE
+        disposition = self._preflight_acquisition_disposition(intent)
+        if disposition == AcquisitionDisposition.CANCEL:
+            QMessageBox.information(self, "重置工作区", "操作已取消。")
+            return
+        if not self._confirm_close_documents(self.project.documents):
+            return
+        transition = self._prepare_transition(intent, disposition=disposition)
         if not transition.completed:
             QMessageBox.information(
                 self,
                 "重置工作区",
                 transition.reason or "资源尚未安全退出，已取消重置工作区。",
             )
-            return
-        if not self._confirm_close_documents(self.project.documents):
             return
         try:
             self._reset_workspace()
@@ -24471,6 +24476,21 @@ class MainWindow(QMainWindow):
             return AcquisitionDisposition.CANCEL
         return AcquisitionDisposition.CANCEL
 
+    def _preflight_acquisition_disposition(
+        self,
+        intent: TransitionIntent,
+    ) -> AcquisitionDisposition | None:
+        """Collect acquisition intent without stopping or mutating the session."""
+
+        if not self._slide_acquisition_active():
+            return None
+        previous_transition_state = self._transition_in_progress
+        self._transition_in_progress = True
+        try:
+            return self._choose_acquisition_transition_disposition(intent)
+        finally:
+            self._transition_in_progress = previous_transition_state
+
     def _wait_for_slide_acquisition_exit(self, timeout_ms: int = 10_000) -> bool:
         if not self._slide_acquisition_active():
             return True
@@ -24615,13 +24635,19 @@ class MainWindow(QMainWindow):
         return results
 
     def closeEvent(self, event: QCloseEvent) -> None:
-        transition = self._prepare_transition(TransitionIntent.CLOSE_WINDOW)
-        if not transition.completed:
-            if transition.reason:
-                self.statusBar().showMessage(transition.reason, 6000)
+        intent = TransitionIntent.CLOSE_WINDOW
+        disposition = self._preflight_acquisition_disposition(intent)
+        if disposition == AcquisitionDisposition.CANCEL:
+            self.statusBar().showMessage("操作已取消。", 6000)
             event.ignore()
             return
         if not self._confirm_close_documents(self.project.documents):
+            event.ignore()
+            return
+        transition = self._prepare_transition(intent, disposition=disposition)
+        if not transition.completed:
+            if transition.reason:
+                self.statusBar().showMessage(transition.reason, 6000)
             event.ignore()
             return
         if not self._close_image_processing_workbench(wait=True):

@@ -158,6 +158,13 @@ class _PreparedFrame:
     sharpness: float
 
 
+@dataclass(frozen=True, slots=True)
+class _FrameFusionResult:
+    bgr: Any | None
+    limit_reached: bool = False
+    limit_reason: str = ""
+
+
 @dataclass(slots=True)
 class _MapMotionFrame:
     image: QImage
@@ -921,7 +928,19 @@ class MapBuildAnalyzer:
             if prepared is None:
                 return
             prepared_candidates.append(prepared)
-        candidate_bgr = _fuse_prepared_frames(prepared_candidates, self._render_config)
+        fusion = _fuse_prepared_frames(
+            prepared_candidates,
+            self._render_config,
+            limits=self._resource_limits,
+        )
+        if fusion.limit_reached:
+            self._last_perf_metrics["registration_ms"] = (
+                perf_counter() - registration_started
+            ) * 1000.0
+            reason = fusion.limit_reason.replace("景深", "地图候选 tile", 1)
+            self._set_resource_limit(reason or "地图候选 tile 融合已达到资源上限")
+            return
+        candidate_bgr = fusion.bgr
         if reference_tile is None or candidate_bgr is None:
             self._last_perf_metrics["registration_ms"] = (perf_counter() - registration_started) * 1000.0
             self._reject_candidate("registration", "候选 tile 图像为空，未创建新 tile")
@@ -1144,18 +1163,29 @@ class MapBuildAnalyzer:
         return dict(self._last_perf_metrics)
 
 
-def _fuse_prepared_frames(frames: list[_PreparedFrame], render_config: FocusStackRenderConfig) -> Any | None:
+def _fuse_prepared_frames(
+    frames: list[_PreparedFrame],
+    render_config: FocusStackRenderConfig,
+    *,
+    limits: AnalysisResourceLimits | None = None,
+) -> _FrameFusionResult:
     if not frames:
-        return None
-    accumulator = FocusAccumulator()
+        return _FrameFusionResult(None)
+    accumulator = FocusAccumulator(limits=limits)
     for frame in frames:
         accumulator.add_prepared_frame(frame)
+        if accumulator.limit_reached:
+            return _FrameFusionResult(
+                None,
+                limit_reached=True,
+                limit_reason=accumulator.limit_reason,
+            )
     if not accumulator.has_frames():
-        accumulator.add_prepared_frame(frames[-1])
+        return _FrameFusionResult(None)
     image = accumulator.final_image(render_config)
     if image.isNull():
-        return None
-    return qimage_to_bgr_array(image)
+        return _FrameFusionResult(None)
+    return _FrameFusionResult(qimage_to_bgr_array(image))
 
 
 def _register_tile_translation(

@@ -278,6 +278,87 @@ class ImageProcessingServiceTests(unittest.TestCase):
         )
         self.assertEqual(corrected.dtype, source.dtype)
 
+    def test_geodesic_operations_reject_nonfinite_rasters_immediately(self) -> None:
+        source = np.zeros((8, 8), dtype=np.float32)
+        source[3, 4] = np.nan
+
+        with self.assertRaisesRegex(ValueError, "NaN/Inf"):
+            image_processing_service.morphological_reconstruction(source)
+        with self.assertRaisesRegex(ValueError, "NaN/Inf"):
+            image_processing_service.regional_extrema(source, h=1.0)
+
+    def test_geodesic_operations_receive_request_cancellation(self) -> None:
+        source = np.zeros((32, 32), dtype=np.uint8)
+        source[3:29, 3:29] = 255
+
+        class _Cancelled(RuntimeError):
+            pass
+
+        checks = 0
+
+        def cancel_during_reconstruction() -> None:
+            nonlocal checks
+            checks += 1
+            if checks >= 2:
+                raise _Cancelled("cancelled")
+
+        request = ImageOperationRequest.create(
+            ImageOperation.MORPHOLOGICAL_RECONSTRUCTION,
+            source,
+            method="opening",
+            radius=2,
+        )
+        with self.assertRaisesRegex(_Cancelled, "cancelled"):
+            execute_image_operation(
+                request,
+                cancellation_check=cancel_during_reconstruction,
+            )
+        self.assertEqual(checks, 2)
+
+        with self.assertRaisesRegex(_Cancelled, "cancelled"):
+            execute_image_operation(
+                ImageOperationRequest.create(
+                    ImageOperation.REGIONAL_EXTREMA,
+                    source,
+                    kind="maxima",
+                    h=5.0,
+                ),
+                cancellation_check=lambda: (_ for _ in ()).throw(
+                    _Cancelled("cancelled")
+                ),
+            )
+
+    def test_geodesic_reconstruction_preserves_long_sparse_branch_on_large_image(self) -> None:
+        # The previous fixed sample-work limit allowed only 953 passes for this
+        # 2048 x 2048 image and incorrectly rejected this valid 1200px branch.
+        source = np.zeros((2048, 2048), dtype=np.uint8)
+        source[1018:1031, 8:24] = 255
+        source[1024, 24:1224] = 255
+
+        reconstructed = image_processing_service.morphological_reconstruction(
+            source,
+            radius=2,
+        )
+
+        np.testing.assert_array_equal(reconstructed, source)
+
+    def test_fill_small_holes_vectorizes_many_labels_without_filling_border(self) -> None:
+        source = np.full((32, 32), 255, dtype=np.uint8)
+        source[:, 0] = 0
+        for y in range(3, 29, 4):
+            for x in range(3, 29, 4):
+                source[y, x] = 0
+        source[15:18, 15:18] = 0
+
+        filled = image_processing_service.fill_small_holes(
+            source,
+            maximum_area=1,
+        )
+
+        self.assertTrue(np.all(filled[:, 0] == 0))
+        self.assertEqual(int(filled[3, 3]), 255)
+        self.assertTrue(np.all(filled[15:18, 15:18] == 0))
+
     def test_image_calculator_copy_and_float32_result(self) -> None:
         left = np.asarray([[1, 2], [3, 4]], dtype=np.uint16)
         right = np.asarray([[5, 6], [7, 8]], dtype=np.uint16)

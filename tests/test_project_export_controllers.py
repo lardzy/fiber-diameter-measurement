@@ -13,6 +13,7 @@ from PySide6.QtGui import QColor, QImage
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
+from fdm.lifecycle import AcquisitionDisposition
 from fdm.models import (
     CalibrationPreset,
     ImageDocument,
@@ -920,6 +921,47 @@ class ProjectAndExportControllerTests(unittest.TestCase):
             self.assertEqual(result.path, project_path.resolve())
             load_mock.assert_not_called()
             self.assertFalse(host.stopped_preview)
+
+    def test_project_load_cancelled_confirmation_does_not_prepare_transition(self) -> None:
+        with TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            project_path = root / "next.fdmproj"
+            project_path.write_text("{}", encoding="utf-8")
+            loaded_project = ProjectState(version=PROJECT_VERSION, documents=[])
+
+            class Host(_ProjectHost):
+                def __init__(self) -> None:
+                    super().__init__(root)
+                    self.call_order: list[str] = []
+
+                def _preflight_acquisition_disposition(
+                    self,
+                    intent,
+                ) -> AcquisitionDisposition:
+                    self.call_order.append(f"acquisition:{intent.value}")
+                    return AcquisitionDisposition.KEEP_PARTIAL
+
+                def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
+                    del documents
+                    self.call_order.append("confirm")
+                    return False
+
+                def _prepare_transition(self, intent, *, disposition=None):
+                    self.call_order.append(f"prepare:{intent.value}:{disposition}")
+                    raise AssertionError("transition must not be prepared after cancellation")
+
+            host = Host()
+            with patch("fdm.ui.project_session_controller.ProjectIO.load", return_value=loaded_project):
+                result = ProjectSessionController(host).load_project_from_path(project_path)
+
+            self.assertFalse(result)
+            self.assertTrue(result.cancelled)
+            self.assertEqual(
+                host.call_order,
+                ["acquisition:open_project", "confirm"],
+            )
+            self.assertFalse(host.stopped_preview)
+            self.assertFalse(host.reset)
 
     def test_load_project_does_not_replace_current_project_when_workspace_reset_fails(self) -> None:
         with TemporaryDirectory() as tmp:

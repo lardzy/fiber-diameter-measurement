@@ -111,6 +111,26 @@ class HistoryAndSidecarTests(unittest.TestCase):
             self.assertIsNotNone(document.calibration_load_payload)
             self.assertEqual(sidecar_path.read_bytes(), original)
 
+    def test_malformed_sidecar_is_quarantined_without_aborting_image_load(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            image_path = Path(tmp_dir) / "fiber.png"
+            image_path.write_bytes(b"fake")
+            sidecar_path = CalibrationSidecarIO.sidecar_path_for_image(image_path)
+            original = b'{"calibration": invalid json}'
+            sidecar_path.write_bytes(original)
+            document = ImageDocument(
+                id="sidecar_malformed",
+                path=str(image_path),
+                image_size=(100, 80),
+            )
+            document.initialize_runtime_state()
+
+            self.assertFalse(CalibrationSidecarIO.load_document(document))
+            self.assertIsNone(document.calibration)
+            self.assertIsNotNone(document.calibration_load_error)
+            self.assertIsNone(document.calibration_load_payload)
+            self.assertEqual(sidecar_path.read_bytes(), original)
+
     def test_document_history_undo_redo(self) -> None:
         document = ImageDocument(
             id=new_id("image"),

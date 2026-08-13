@@ -24,6 +24,7 @@ except ModuleNotFoundError:
 from fdm.geometry import Line, Point, direction
 from fdm.raster import RasterImage, extract_rotated_roi
 from fdm.services.snap_service import SnapService
+import fdm.services.snap_service as snap_service_module
 
 
 def make_vertical_fiber_image(width: int = 120, height: int = 80, *, x0: int = 54, x1: int = 66) -> RasterImage:
@@ -81,6 +82,24 @@ class RasterAndSnapTests(unittest.TestCase):
         self.assertIsNotNone(result.diameter_px)
         self.assertAlmostEqual(result.diameter_px or 0.0, 12.0, delta=2.0)
         self.assertGreater(result.confidence, 0.1)
+
+    def test_snap_service_slow_success_path_emits_runtime_diagnostic(self) -> None:
+        image = make_vertical_fiber_image()
+        line = Line(Point(30, 40), Point(90, 40))
+
+        with (
+            patch.object(
+                snap_service_module,
+                "perf_counter",
+                side_effect=(1.0, 1.05),
+            ),
+            patch.object(snap_service_module, "append_runtime_log") as log_mock,
+        ):
+            result = SnapService().snap_measurement(image, line)
+
+        self.assertEqual(result.status, "snapped")
+        log_mock.assert_called_once()
+        self.assertIn("status=snapped", log_mock.call_args.args[1])
 
     def test_snap_service_rejects_too_short_line(self) -> None:
         image = make_vertical_fiber_image()

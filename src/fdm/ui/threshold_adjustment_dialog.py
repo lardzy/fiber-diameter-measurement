@@ -230,7 +230,12 @@ class ThresholdAdjustmentDialog(QDialog):
         return finite[np.isfinite(finite)]
 
     def _channel_plane(self) -> NDArray[np.generic]:
-        array = self._source_array()
+        return self._channel_plane_from_array(self._source_array())
+
+    def _channel_plane_from_array(
+        self,
+        array: NDArray[np.generic],
+    ) -> NDArray[np.generic]:
         channel = str(self.channelCombo.currentData() or "luminance")
         if array.ndim == 2:
             scalar = array
@@ -241,10 +246,12 @@ class ThresholdAdjustmentDialog(QDialog):
         elif channel == "blue":
             scalar = array[..., 2]
         else:
+            # Keep preview statistics and Auto aligned with the processing
+            # pipeline's weighted luminance channel (Rec. 709).
             scalar = (
-                array[..., 0].astype(np.float64) * 0.299
-                + array[..., 1].astype(np.float64) * 0.587
-                + array[..., 2].astype(np.float64) * 0.114
+                array[..., 0].astype(np.float64) * 0.2126
+                + array[..., 1].astype(np.float64) * 0.7152
+                + array[..., 2].astype(np.float64) * 0.0722
             )
         return np.asarray(scalar)
 
@@ -307,11 +314,15 @@ class ThresholdAdjustmentDialog(QDialog):
         self._refresh_image_preview(mode=mode, invert=invert)
 
     def _refresh_image_preview(self, *, mode: str, invert: bool) -> None:
-        scalar = self._channel_plane()
-        row_step = max(1, int(math.ceil(scalar.shape[0] / 256)))
-        column_step = max(1, int(math.ceil(scalar.shape[1] / 512)))
+        # The preview is at most 512 x 256.  Slice the native source first so
+        # RGB luminance does not allocate three full-resolution float64 planes
+        # on every threshold slider movement.
+        source = self._source_array()
+        row_step = max(1, int(math.ceil(source.shape[0] / 256)))
+        column_step = max(1, int(math.ceil(source.shape[1] / 512)))
+        sampled_source = source[::row_step, ::column_step]
         sample = np.asarray(
-            scalar[::row_step, ::column_step],
+            self._channel_plane_from_array(sampled_source),
             dtype=np.float64,
         )
         finite = np.isfinite(sample)

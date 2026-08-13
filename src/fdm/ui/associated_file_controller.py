@@ -9,7 +9,7 @@ from PySide6.QtCore import QObject, QTimer
 from PySide6.QtWidgets import QApplication, QMessageBox, QWidget
 
 from fdm.application_launch import ApplicationOpenRequest, build_application_open_request
-from fdm.lifecycle import TransitionIntent
+from fdm.lifecycle import AcquisitionDisposition, TransitionIntent
 from fdm.services.digital_slide_store import DigitalSlideStore
 
 
@@ -30,7 +30,16 @@ class AssociatedFileOpenHost(Protocol):
     def _set_current_document(self, document_id: str) -> None: ...
     def _load_project_from_path(self, path: str | Path): ...
     def _slide_acquisition_active(self) -> bool: ...
-    def _prepare_transition(self, intent: TransitionIntent): ...
+    def _prepare_transition(
+        self,
+        intent: TransitionIntent,
+        *,
+        disposition: AcquisitionDisposition | None = None,
+    ): ...
+    def _preflight_acquisition_disposition(
+        self,
+        intent: TransitionIntent,
+    ) -> AcquisitionDisposition | None: ...
     def stop_live_preview(self) -> None: ...
     def _confirm_close_documents(self, documents: list[object]) -> bool: ...
     def _reset_workspace(self) -> None: ...
@@ -148,8 +157,31 @@ class AssociatedFileOpenController(QObject):
         if disposition == AssociatedSlideDisposition.CANCEL:
             return
 
-        if self._host._slide_acquisition_active():
-            transition = self._host._prepare_transition(TransitionIntent.OPEN_DOCUMENT)
+        documents_to_close = (
+            list(getattr(self._host.project, "documents", []))
+            if disposition == AssociatedSlideDisposition.STANDALONE_WORKSPACE
+            else None
+        )
+        acquisition_active = self._host._slide_acquisition_active()
+        acquisition_disposition = (
+            self._host._preflight_acquisition_disposition(TransitionIntent.OPEN_DOCUMENT)
+            if acquisition_active
+            else None
+        )
+        if acquisition_disposition == AcquisitionDisposition.CANCEL:
+            self._host._show_status_message("操作已取消。", 6000)
+            return
+        if (
+            documents_to_close is not None
+            and not self._host._confirm_close_documents(documents_to_close)
+        ):
+            return
+
+        if acquisition_active:
+            transition = self._host._prepare_transition(
+                TransitionIntent.OPEN_DOCUMENT,
+                disposition=acquisition_disposition,
+            )
             if not bool(getattr(transition, "completed", False)):
                 reason = str(getattr(transition, "reason", "") or "资源尚未安全退出，已取消打开文件。")
                 self._host._show_status_message(reason, 6000)
@@ -158,9 +190,6 @@ class AssociatedFileOpenController(QObject):
             self._host.stop_live_preview()
 
         if disposition == AssociatedSlideDisposition.STANDALONE_WORKSPACE:
-            documents = list(getattr(self._host.project, "documents", []))
-            if not self._host._confirm_close_documents(documents):
-                return
             try:
                 self._host._reset_workspace()
             except RuntimeError as exc:

@@ -1950,8 +1950,10 @@ def _maximum_skeleton_geodesic(
             # 带支路的环图，直径端点可能位于环内的二度顶点。为避免低估，
             # 对全部顶点做精确最短路；超过预算时明确拒绝而不返回近似值。
             sources = list(component)
+            targets = component
         elif endpoints:
             sources = endpoints
+            targets = endpoints
         else:
             # 纯单环用累积弧长精确求顶点测地直径，避免加权环上的双扫描近似。
             maximum = max(
@@ -1972,7 +1974,7 @@ def _maximum_skeleton_geodesic(
             distances = _dijkstra(adjacency, source)
             maximum = max(
                 maximum,
-                max(distances[target] for target in endpoints),
+                max(distances[target] for target in targets),
             )
     return maximum
 

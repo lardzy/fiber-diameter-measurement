@@ -13,7 +13,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, replace
 import math
-from typing import Any, Iterable, Sequence, TypeAlias
+from typing import Any, Callable, Iterable, Sequence, TypeAlias
 
 import cv2
 import numpy as np
@@ -26,6 +26,7 @@ from fdm.services.image_processing import fft_power_spectrum
 Coordinate: TypeAlias = tuple[float, float]
 ImmutableRing: TypeAlias = tuple[Coordinate, ...]
 ImmutableRings: TypeAlias = tuple[ImmutableRing, ...]
+CancellationCheck: TypeAlias = Callable[[], None]
 
 
 @dataclass(frozen=True, slots=True)
@@ -578,7 +579,12 @@ class FindMaximaResult:
     generation: int = 0
 
 
-def analyze_shape(request: ShapeAnalysisRequest) -> ShapeAnalysisResult:
+def analyze_shape(
+    request: ShapeAnalysisRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> ShapeAnalysisResult:
+    _check_cancellation(cancellation_check)
     valid_rings = tuple(ring for ring in request.rings if len(ring) >= 3)
     if not valid_rings:
         raise ValueError("shape analysis requires at least one ring with three points.")
@@ -595,7 +601,11 @@ def analyze_shape(request: ShapeAnalysisRequest) -> ShapeAnalysisResult:
     area_scale = request.pixel_size_x * request.pixel_size_y
     area = area_px * area_scale
     vector_area = float(vector_area_px) * area_scale
-    topology = _classify_odd_even_rings(valid_rings)
+    topology = _classify_odd_even_rings(
+        valid_rings,
+        cancellation_check=cancellation_check,
+    )
+    _check_cancellation(cancellation_check)
     outer_rings = tuple(
         valid_rings[index]
         for index, depth in enumerate(topology.depths)
@@ -643,8 +653,15 @@ def analyze_shape(request: ShapeAnalysisRequest) -> ShapeAnalysisResult:
     )
     hull = _convex_hull(physical_outer)
     convex_area = abs(_signed_ring_area(tuple(map(tuple, hull.tolist())))) if len(hull) >= 3 else 0.0
-    feret_max, feret_angle = _maximum_feret(hull)
-    feret_min = _minimum_feret(hull)
+    feret_max, feret_angle = _maximum_feret(
+        hull,
+        cancellation_check=cancellation_check,
+    )
+    feret_min = _minimum_feret(
+        hull,
+        cancellation_check=cancellation_check,
+    )
+    _check_cancellation(cancellation_check)
     ellipse_major, ellipse_minor, ellipse_angle = _fit_ellipse(physical_outer)
     if ellipse_major is None or ellipse_minor is None:
         minimum_rectangle = cv2.minAreaRect(physical_outer.astype(np.float32))
@@ -692,7 +709,9 @@ def analyze_shape(request: ShapeAnalysisRequest) -> ShapeAnalysisResult:
         topology,
         pixel_size_x=request.pixel_size_x,
         pixel_size_y=request.pixel_size_y,
+        cancellation_check=cancellation_check,
     )
+    _check_cancellation(cancellation_check)
     centroid = (
         vector_centroid.x * request.pixel_size_x,
         vector_centroid.y * request.pixel_size_y,
@@ -747,7 +766,12 @@ def analyze_shape(request: ShapeAnalysisRequest) -> ShapeAnalysisResult:
     )
 
 
-def analyze_intensity(request: IntensityAnalysisRequest) -> IntensityAnalysisResult:
+def analyze_intensity(
+    request: IntensityAnalysisRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> IntensityAnalysisResult:
+    _check_cancellation(cancellation_check)
     if request.channel == "rgb":
         if request.image.ndim != 3 or request.image.shape[2] < 3:
             raise ValueError("RGB channel statistics require an RGB or RGBA image.")
@@ -765,21 +789,26 @@ def analyze_intensity(request: IntensityAnalysisRequest) -> IntensityAnalysisRes
         roi_mask=request.roi_mask,
         rings=request.rings,
     )
+    _check_cancellation(cancellation_check)
     selected = scalar[mask]
     included_count = int(selected.size)
     finite = np.isfinite(selected)
     values = selected[finite]
     valid_count = int(values.size)
     non_finite_count = included_count - valid_count
-    channel_statistics = tuple(
-        _intensity_channel_statistics(
-            name,
-            np.asarray(channel_values, dtype=np.float64)[mask],
-            threshold_low=request.threshold_low,
-            threshold_high=request.threshold_high,
+    channel_statistics_values: list[IntensityChannelStatistics] = []
+    for name, channel_values in named_channels:
+        _check_cancellation(cancellation_check)
+        channel_statistics_values.append(
+            _intensity_channel_statistics(
+                name,
+                np.asarray(channel_values, dtype=np.float64)[mask],
+                threshold_low=request.threshold_low,
+                threshold_high=request.threshold_high,
+                cancellation_check=cancellation_check,
+            )
         )
-        for name, channel_values in named_channels
-    )
+    channel_statistics = tuple(channel_statistics_values)
     if valid_count == 0:
         return IntensityAnalysisResult(
             included_pixel_count=included_count,
@@ -807,7 +836,9 @@ def analyze_intensity(request: IntensityAnalysisRequest) -> IntensityAnalysisRes
         values,
         threshold_low=request.threshold_low,
         threshold_high=request.threshold_high,
+        cancellation_check=cancellation_check,
     )
+    _check_cancellation(cancellation_check)
     y_coords, x_coords = np.nonzero(mask & np.isfinite(scalar))
     weights = scalar[y_coords, x_coords].astype(np.float64)
     total_weight = float(np.sum(weights, dtype=np.float64))
@@ -820,6 +851,7 @@ def analyze_intensity(request: IntensityAnalysisRequest) -> IntensityAnalysisRes
         else None
     )
     percentile_values = np.percentile(values, request.percentile_levels)
+    _check_cancellation(cancellation_check)
     return IntensityAnalysisResult(
         included_pixel_count=included_count,
         valid_pixel_count=valid_count,
@@ -856,7 +888,9 @@ def _intensity_channel_statistics(
     *,
     threshold_low: float | None,
     threshold_high: float | None,
+    cancellation_check: CancellationCheck | None = None,
 ) -> IntensityChannelStatistics:
+    _check_cancellation(cancellation_check)
     values = np.asarray(selected, dtype=np.float64)
     values = values[np.isfinite(values)]
     count = int(values.size)
@@ -878,6 +912,7 @@ def _intensity_channel_statistics(
     mean = float(np.mean(values))
     stddev = float(np.std(values, ddof=0))
     unique, counts = np.unique(values, return_counts=True)
+    _check_cancellation(cancellation_check)
     mode = float(unique[int(np.argmax(counts))])
     if stddev > 0:
         standardized = (values - mean) / stddev
@@ -886,6 +921,7 @@ def _intensity_channel_statistics(
     else:
         skewness = None
         excess_kurtosis = None
+    _check_cancellation(cancellation_check)
     threshold_fraction = None
     if threshold_low is not None or threshold_high is not None:
         low = -math.inf if threshold_low is None else threshold_low
@@ -907,13 +943,19 @@ def _intensity_channel_statistics(
     )
 
 
-def calculate_histogram(request: HistogramRequest) -> HistogramResult:
+def calculate_histogram(
+    request: HistogramRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> HistogramResult:
+    _check_cancellation(cancellation_check)
     scalar = _select_scalar_channel(request.image, request.channel).astype(np.float64)
     mask = _resolve_analysis_mask(
         scalar.shape,
         roi_mask=request.roi_mask,
         rings=request.rings,
     )
+    _check_cancellation(cancellation_check)
     selected = scalar[mask]
     finite = np.isfinite(selected)
     values = selected[finite]
@@ -930,6 +972,7 @@ def calculate_histogram(request: HistogramRequest) -> HistogramResult:
     else:
         value_range = request.value_range
     counts, edges = np.histogram(values, bins=request.bins, range=value_range)
+    _check_cancellation(cancellation_check)
     return HistogramResult(
         counts=tuple(int(value) for value in counts),
         display_counts=tuple(
@@ -948,6 +991,8 @@ def calculate_histogram(request: HistogramRequest) -> HistogramResult:
 
 def calculate_fft_power_spectrum(
     request: FftPowerSpectrumRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
 ) -> FftPowerSpectrumResult:
     """Calculate an FFT analysis asset without turning it into source pixels.
 
@@ -958,6 +1003,7 @@ def calculate_fft_power_spectrum(
     policy is persisted with the result because it affects spectral leakage.
     """
 
+    _check_cancellation(cancellation_check)
     scalar = _select_scalar_channel(request.image, request.channel)
     source_height, source_width = scalar.shape
     roi_applied = request.roi_mask is not None or bool(request.rings)
@@ -967,6 +1013,7 @@ def calculate_fft_power_spectrum(
             roi_mask=request.roi_mask,
             rings=request.rings,
         )
+        _check_cancellation(cancellation_check)
         y_indices, x_indices = np.nonzero(mask)
         if not x_indices.size:
             raise ValueError("FFT 功率谱的分析区域不包含任何像素。")
@@ -993,6 +1040,7 @@ def calculate_fft_power_spectrum(
         work = scalar
         bounds = (0, 0, source_width, source_height)
         mask_policy = "full_image"
+    _check_cancellation(cancellation_check)
     power = fft_power_spectrum(
         work,
         logarithmic=request.logarithmic,
@@ -1000,6 +1048,7 @@ def calculate_fft_power_spectrum(
         window=request.window,
         tukey_alpha=request.tukey_alpha,
     )
+    _check_cancellation(cancellation_check)
     return FftPowerSpectrumResult(
         power=power,
         source_size=(source_width, source_height),
@@ -1016,10 +1065,19 @@ def calculate_fft_power_spectrum(
     )
 
 
-def sample_intensity_profile(request: IntensityProfileRequest) -> IntensityProfileResult:
+def sample_intensity_profile(
+    request: IntensityProfileRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> IntensityProfileResult:
+    _check_cancellation(cancellation_check)
     scalar = _select_scalar_channel(request.image, request.channel).astype(np.float64)
     if request.aggregation != "line":
-        return _sample_rectangle_profile(request, scalar)
+        return _sample_rectangle_profile(
+            request,
+            scalar,
+            cancellation_check=cancellation_check,
+        )
     points = request.points
     segment_lengths = [
         math.hypot(points[index + 1][0] - points[index][0], points[index + 1][1] - points[index][1])
@@ -1065,7 +1123,15 @@ def sample_intensity_profile(request: IntensityProfileRequest) -> IntensityProfi
         )
         for index in range(len(points) - 1)
     ]
-    for target in target_distances:
+    physical_cumulative = np.concatenate(
+        (
+            [0.0],
+            np.cumsum(physical_segment_lengths, dtype=np.float64),
+        )
+    )
+    for target_index, target in enumerate(target_distances):
+        if target_index % 128 == 0:
+            _check_cancellation(cancellation_check)
         segment_index = min(
             len(segment_lengths) - 1,
             max(0, int(np.searchsorted(cumulative, target, side="right") - 1)),
@@ -1095,9 +1161,10 @@ def sample_intensity_profile(request: IntensityProfileRequest) -> IntensityProfi
             if finite_values
             else None
         )
-        physical_running = sum(physical_segment_lengths[:segment_index])
+        physical_running = float(physical_cumulative[segment_index])
         physical_running += physical_segment_lengths[segment_index] * fraction
         physical_distances.append(float(physical_running))
+    _check_cancellation(cancellation_check)
     return IntensityProfileResult(
         distances_px=tuple(float(value) for value in target_distances),
         distances=tuple(physical_distances),
@@ -1114,7 +1181,10 @@ def sample_intensity_profile(request: IntensityProfileRequest) -> IntensityProfi
 def _sample_rectangle_profile(
     request: IntensityProfileRequest,
     scalar: NDArray[np.float64],
+    *,
+    cancellation_check: CancellationCheck | None = None,
 ) -> IntensityProfileResult:
+    _check_cancellation(cancellation_check)
     (first_x, first_y), (last_x, last_y) = request.points[0], request.points[-1]
     height, width = scalar.shape
     x0 = max(0, min(width - 1, int(math.floor(min(first_x, last_x)))))
@@ -1132,7 +1202,9 @@ def _sample_rectangle_profile(
     )
     values: list[float | None] = []
     sample_points: list[Coordinate] = []
-    for index in indices:
+    for sample_index, index in enumerate(indices):
+        if sample_index % 128 == 0:
+            _check_cancellation(cancellation_check)
         selected = (
             scalar[index, x0 : x1 + 1]
             if along_rows
@@ -1146,6 +1218,7 @@ def _sample_rectangle_profile(
                 float(index if along_rows else (y0 + y1) / 2.0),
             )
         )
+    _check_cancellation(cancellation_check)
     origin = y0 if along_rows else x0
     distances_px = tuple(float(index - origin) for index in indices)
     scale = request.pixel_size_y if along_rows else request.pixel_size_x
@@ -1162,17 +1235,29 @@ def _sample_rectangle_profile(
     )
 
 
-def analyze_particles(request: ParticleAnalysisRequest) -> ParticleAnalysisResult:
+def analyze_particles(
+    request: ParticleAnalysisRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> ParticleAnalysisResult:
+    _check_cancellation(cancellation_check)
     working_mask = np.asarray(request.mask, dtype=bool)
     if request.include_holes:
-        working_mask = _fill_mask_holes(working_mask, connectivity=request.connectivity)
+        working_mask = _fill_mask_holes(
+            working_mask,
+            connectivity=request.connectivity,
+            cancellation_check=cancellation_check,
+        )
+    _check_cancellation(cancellation_check)
     foreground_pixel_count = int(np.count_nonzero(working_mask))
     count, labels, stats, centroids = _particle_components(
         working_mask,
         connectivity=request.connectivity,
         watershed=request.watershed,
         watershed_min_distance=request.watershed_min_distance,
+        cancellation_check=cancellation_check,
     )
+    _check_cancellation(cancellation_check)
     accepted: list[Particle] = []
     rejected_by_area = 0
     rejected_by_circularity = 0
@@ -1180,6 +1265,8 @@ def analyze_particles(request: ParticleAnalysisRequest) -> ParticleAnalysisResul
     accepted_source_labels: list[int] = []
     height, width = working_mask.shape
     for label in range(1, count):
+        if label % 32 == 1:
+            _check_cancellation(cancellation_check)
         x = int(stats[label, cv2.CC_STAT_LEFT])
         y = int(stats[label, cv2.CC_STAT_TOP])
         component_width = int(stats[label, cv2.CC_STAT_WIDTH])
@@ -1242,6 +1329,8 @@ def analyze_particles(request: ParticleAnalysisRequest) -> ParticleAnalysisResul
     label_image = np.zeros(labels.shape, dtype=np.int32)
     contour_image = np.zeros(labels.shape, dtype=bool)
     for index, (particle, source_label) in enumerate(ordered, start=1):
+        if index % 32 == 1:
+            _check_cancellation(cancellation_check)
         accepted.append(replace(particle, index=index))
         accepted_source_labels.append(source_label)
         component = labels == source_label
@@ -1252,6 +1341,7 @@ def analyze_particles(request: ParticleAnalysisRequest) -> ParticleAnalysisResul
             np.ones((3, 3), dtype=np.uint8),
         )
         contour_image |= contour.astype(bool)
+    _check_cancellation(cancellation_check)
     accepted_area = sum(particle.exact_area_px for particle in accepted)
     areas = np.asarray(
         [particle.area for particle in accepted],
@@ -1295,13 +1385,18 @@ def _particle_components(
     connectivity: int,
     watershed: bool,
     watershed_min_distance: int,
+    cancellation_check: CancellationCheck | None = None,
 ) -> tuple[int, NDArray[np.int32], NDArray[np.int32], NDArray[np.float64]]:
+    _check_cancellation(cancellation_check)
     if not watershed or not np.any(mask):
-        return cv2.connectedComponentsWithStats(
+        result = cv2.connectedComponentsWithStats(
             mask.astype(np.uint8),
             connectivity=connectivity,
         )
+        _check_cancellation(cancellation_check)
+        return result
     distance = cv2.distanceTransform(mask.astype(np.uint8), cv2.DIST_L2, 5)
+    _check_cancellation(cancellation_check)
     radius = max(1, int(watershed_min_distance))
     local_maximum = (
         distance
@@ -1315,11 +1410,14 @@ def _particle_components(
         local_maximum.astype(np.uint8),
         connectivity=8,
     )
+    _check_cancellation(cancellation_check)
     if seed_count <= 1:
-        return cv2.connectedComponentsWithStats(
+        result = cv2.connectedComponentsWithStats(
             mask.astype(np.uint8),
             connectivity=connectivity,
         )
+        _check_cancellation(cancellation_check)
+        return result
     # Marker-controlled watershed on the distance surface.  OpenCV's
     # ``distanceTransformWithLabels`` gives every foreground pixel to the
     # nearest connected peak marker, so watershed lines do not silently remove
@@ -1332,15 +1430,20 @@ def _particle_components(
         5,
         labelType=cv2.DIST_LABEL_CCOMP,
     )
+    _check_cancellation(cancellation_check)
     labels = np.where(mask, nearest_labels, 0).astype(np.int32)
     unique = tuple(int(value) for value in np.unique(labels) if value > 0)
     compact = np.zeros_like(labels)
     for compact_label, source_label in enumerate(unique, start=1):
+        if compact_label % 32 == 1:
+            _check_cancellation(cancellation_check)
         compact[labels == source_label] = compact_label
     count = len(unique) + 1
     stats = np.zeros((count, 5), dtype=np.int32)
     centroids = np.zeros((count, 2), dtype=np.float64)
     for label in range(1, count):
+        if label % 32 == 1:
+            _check_cancellation(cancellation_check)
         ys, xs = np.nonzero(compact == label)
         if xs.size == 0:
             continue
@@ -1350,10 +1453,16 @@ def _particle_components(
         stats[label, cv2.CC_STAT_HEIGHT] = int(np.max(ys) - np.min(ys) + 1)
         stats[label, cv2.CC_STAT_AREA] = int(xs.size)
         centroids[label] = (float(np.mean(xs)), float(np.mean(ys)))
+    _check_cancellation(cancellation_check)
     return count, compact, stats, centroids
 
 
-def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
+def find_local_maxima(
+    request: FindMaximaRequest,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> FindMaximaResult:
+    _check_cancellation(cancellation_check)
     source = _select_scalar_channel(request.image, request.channel).astype(np.float32)
     finite = np.isfinite(source)
     if not np.any(finite):
@@ -1372,6 +1481,7 @@ def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
     kernel = np.ones((radius * 2 + 1, radius * 2 + 1), dtype=np.uint8)
     local_max = cv2.dilate(safe, kernel, borderType=cv2.BORDER_REPLICATE)
     local_min = cv2.erode(safe, kernel, borderType=cv2.BORDER_REPLICATE)
+    _check_cancellation(cancellation_check)
     candidates = finite & np.isclose(safe, local_max, rtol=0.0, atol=1e-7)
     if request.algorithm_version == "1":
         candidates &= (safe - local_min) >= request.prominence
@@ -1388,8 +1498,11 @@ def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
         candidates.astype(np.uint8),
         connectivity=8,
     )
+    _check_cancellation(cancellation_check)
     plateau_maxima: list[LocalMaximum] = []
     for label in range(1, plateau_count):
+        if label % 32 == 1:
+            _check_cancellation(cancellation_check)
         ys, xs = np.nonzero(plateau_labels == label)
         if xs.size == 0:
             continue
@@ -1413,6 +1526,7 @@ def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
                 x=x,
                 y=y,
                 peak_value=best_value,
+                cancellation_check=cancellation_check,
             )
         )
         if resolved_prominence + 1e-12 < request.prominence:
@@ -1428,7 +1542,9 @@ def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
     plateau_maxima.sort(key=lambda item: (-item.value, item.y, item.x))
     accepted: list[LocalMaximum] = []
     minimum_distance_squared = request.min_distance * request.min_distance
-    for candidate in plateau_maxima:
+    for candidate_index, candidate in enumerate(plateau_maxima):
+        if candidate_index % 32 == 0:
+            _check_cancellation(cancellation_check)
         if any(
             (candidate.x - existing.x) ** 2 + (candidate.y - existing.y) ** 2
             < minimum_distance_squared
@@ -1438,6 +1554,7 @@ def find_local_maxima(request: FindMaximaRequest) -> FindMaximaResult:
         accepted.append(candidate)
         if request.max_points is not None and len(accepted) >= request.max_points:
             break
+    _check_cancellation(cancellation_check)
     return FindMaximaResult(
         maxima=tuple(accepted),
         candidate_plateau_count=max(0, plateau_count - 1),
@@ -1456,6 +1573,7 @@ def _topographic_prominence(
     x: int,
     y: int,
     peak_value: float,
+    cancellation_check: CancellationCheck | None = None,
 ) -> float:
     """Return peak prominence from the highest saddle path to a higher peak."""
 
@@ -1465,7 +1583,11 @@ def _topographic_prominence(
     best = np.full(values.shape, -np.inf, dtype=np.float32)
     best[y, x] = np.float32(peak_value)
     queue: list[tuple[float, int, int]] = [(-peak_value, y, x)]
+    visited_count = 0
     while queue:
+        if visited_count % 512 == 0:
+            _check_cancellation(cancellation_check)
+        visited_count += 1
         negative_capacity, current_y, current_x = heapq.heappop(queue)
         capacity = -negative_capacity
         if capacity + 1e-7 < float(best[current_y, current_x]):
@@ -1626,26 +1748,39 @@ class _RingTopology:
     parents: tuple[int | None, ...]
 
 
-def _classify_odd_even_rings(rings: ImmutableRings) -> _RingTopology:
+def _classify_odd_even_rings(
+    rings: ImmutableRings,
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> _RingTopology:
     """Classify unordered, disjoint-or-nested rings by odd-even containment."""
 
-    samples = tuple(_ring_interior_sample(ring) for ring in rings)
+    samples_list: list[Coordinate] = []
+    for index, ring in enumerate(rings):
+        if index % 16 == 0:
+            _check_cancellation(cancellation_check)
+        samples_list.append(_ring_interior_sample(ring))
+    samples = tuple(samples_list)
     magnitudes = tuple(abs(_signed_ring_area(ring)) for ring in rings)
     containers: list[tuple[int, ...]] = []
     for index, sample in enumerate(samples):
-        containing = tuple(
-            other_index
-            for other_index, other in enumerate(rings)
-            if other_index != index
-            and magnitudes[other_index] > magnitudes[index] + 1e-9
-            and cv2.pointPolygonTest(
-                np.asarray(other, dtype=np.float32),
-                sample,
-                False,
-            )
-            > 0
-        )
-        containers.append(containing)
+        _check_cancellation(cancellation_check)
+        containing: list[int] = []
+        for other_index, other in enumerate(rings):
+            if other_index % 64 == 0:
+                _check_cancellation(cancellation_check)
+            if (
+                other_index != index
+                and magnitudes[other_index] > magnitudes[index] + 1e-9
+                and cv2.pointPolygonTest(
+                    np.asarray(other, dtype=np.float32),
+                    sample,
+                    False,
+                )
+                > 0
+            ):
+                containing.append(other_index)
+        containers.append(tuple(containing))
     depths = tuple(len(items) for items in containers)
     parents = tuple(
         (
@@ -1705,6 +1840,7 @@ def _shape_component_table(
     *,
     pixel_size_x: float,
     pixel_size_y: float,
+    cancellation_check: CancellationCheck | None = None,
 ) -> tuple[ShapeComponentResult, ...]:
     area_scale = pixel_size_x * pixel_size_y
     outer_indices = tuple(
@@ -1714,6 +1850,7 @@ def _shape_component_table(
     )
     components: list[ShapeComponentResult] = []
     for component_index, outer_index in enumerate(outer_indices, start=1):
+        _check_cancellation(cancellation_check)
         outer_depth = topology.depths[outer_index]
         hole_indices = tuple(
             index
@@ -1797,12 +1934,18 @@ def _convex_hull(points: NDArray[np.float64]) -> NDArray[np.float64]:
     return hull.reshape(-1, 2).astype(np.float64)
 
 
-def _maximum_feret(hull: NDArray[np.float64]) -> tuple[float | None, float | None]:
+def _maximum_feret(
+    hull: NDArray[np.float64],
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> tuple[float | None, float | None]:
     if len(hull) < 2:
         return None, None
     maximum_squared = -1.0
     best: tuple[NDArray[np.float64], NDArray[np.float64]] | None = None
     for index in range(len(hull) - 1):
+        if index % 64 == 0:
+            _check_cancellation(cancellation_check)
         differences = hull[index + 1 :] - hull[index]
         distances = np.einsum("ij,ij->i", differences, differences)
         relative = int(np.argmax(distances))
@@ -1817,11 +1960,17 @@ def _maximum_feret(hull: NDArray[np.float64]) -> tuple[float | None, float | Non
     return math.sqrt(maximum_squared), angle
 
 
-def _minimum_feret(hull: NDArray[np.float64]) -> float | None:
+def _minimum_feret(
+    hull: NDArray[np.float64],
+    *,
+    cancellation_check: CancellationCheck | None = None,
+) -> float | None:
     if len(hull) < 3:
         return 0.0 if len(hull) == 2 else None
     minimum_width = math.inf
     for index in range(len(hull)):
+        if index % 64 == 0:
+            _check_cancellation(cancellation_check)
         start = hull[index]
         end = hull[(index + 1) % len(hull)]
         edge = end - start
@@ -1886,7 +2035,9 @@ def _fill_mask_holes(
     mask: NDArray[np.bool_],
     *,
     connectivity: int,
+    cancellation_check: CancellationCheck | None = None,
 ) -> NDArray[np.bool_]:
+    _check_cancellation(cancellation_check)
     inverse = (~mask).astype(np.uint8)
     count, labels = cv2.connectedComponents(inverse, connectivity=connectivity)
     border_labels = set(
@@ -1894,8 +2045,11 @@ def _fill_mask_holes(
     )
     filled = mask.copy()
     for label in range(1, count):
+        if label % 64 == 1:
+            _check_cancellation(cancellation_check)
         if label not in border_labels:
             filled[labels == label] = True
+    _check_cancellation(cancellation_check)
     return filled
 
 
@@ -1936,6 +2090,11 @@ def _component_rings(
             )
         )
     return tuple(rings)
+
+
+def _check_cancellation(cancellation_check: CancellationCheck | None) -> None:
+    if cancellation_check is not None:
+        cancellation_check()
 
 
 def _require_positive(name: str, value: float) -> None:

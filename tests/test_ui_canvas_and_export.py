@@ -442,6 +442,142 @@ class CanvasAndExportTests(unittest.TestCase):
             window._slide_acquisition_writer = None
             window.close()
 
+    def test_transition_preflight_does_not_stop_active_acquisition(self) -> None:
+        window = MainWindow()
+        try:
+            transition_states: list[bool] = []
+            with patch.object(window, "_slide_acquisition_active", return_value=True), patch.object(
+                window,
+                "_choose_acquisition_transition_disposition",
+                side_effect=lambda _intent: transition_states.append(window._transition_in_progress)
+                or AcquisitionDisposition.KEEP_PARTIAL,
+            ) as choose_disposition, patch.object(
+                window,
+                "_request_digital_slide_acquisition_finish",
+            ) as finish_acquisition, patch.object(
+                window,
+                "_request_digital_slide_acquisition_discard",
+            ) as discard_acquisition, patch.object(
+                window,
+                "_stop_image_batch_tasks",
+            ) as stop_image_batch, patch.object(
+                window,
+                "_stop_analysis_batch_tasks",
+            ) as stop_analysis_batch, patch.object(
+                window,
+                "_stop_image_analysis_tasks",
+            ) as stop_image_analysis, patch.object(
+                window._capture_manager,
+                "stop_preview",
+            ) as stop_preview, patch.object(
+                window._slide_motion,
+                "shutdown",
+            ) as shutdown_motion, patch.object(
+                window,
+                "_shutdown_background_threads",
+            ) as shutdown_background:
+                disposition = window._preflight_acquisition_disposition(
+                    TransitionIntent.CLOSE_WINDOW
+                )
+
+            self.assertEqual(disposition, AcquisitionDisposition.KEEP_PARTIAL)
+            self.assertEqual(transition_states, [True])
+            self.assertFalse(window._transition_in_progress)
+            choose_disposition.assert_called_once_with(TransitionIntent.CLOSE_WINDOW)
+            finish_acquisition.assert_not_called()
+            discard_acquisition.assert_not_called()
+            stop_image_batch.assert_not_called()
+            stop_analysis_batch.assert_not_called()
+            stop_image_analysis.assert_not_called()
+            stop_preview.assert_not_called()
+            shutdown_motion.assert_not_called()
+            shutdown_background.assert_not_called()
+        finally:
+            window.close()
+
+    def test_cancelled_unsaved_confirmation_never_prepares_close_or_reset(self) -> None:
+        window = MainWindow()
+        document = ImageDocument(id="doc-unsaved", path="unsaved.png", image_size=(10, 10))
+        document.initialize_runtime_state()
+        window.project.documents = [document]
+        try:
+            event = FakeCloseEvent()
+            call_order: list[str] = []
+            with patch.object(
+                window,
+                "_preflight_acquisition_disposition",
+                side_effect=lambda _intent: call_order.append("acquisition")
+                or AcquisitionDisposition.KEEP_PARTIAL,
+            ), patch.object(
+                window,
+                "_confirm_close_documents",
+                side_effect=lambda _documents: call_order.append("confirm") or False,
+            ), patch.object(window, "_prepare_transition") as prepare_transition:
+                window.closeEvent(event)
+
+            self.assertEqual(call_order, ["acquisition", "confirm"])
+            self.assertTrue(event.ignored)
+            self.assertFalse(event.accepted)
+            prepare_transition.assert_not_called()
+
+            call_order.clear()
+            with patch.object(
+                window,
+                "_preflight_acquisition_disposition",
+                side_effect=lambda _intent: call_order.append("acquisition")
+                or AcquisitionDisposition.DISCARD,
+            ), patch.object(
+                window,
+                "_confirm_close_documents",
+                side_effect=lambda _documents: call_order.append("confirm") or False,
+            ), patch.object(window, "_prepare_transition") as prepare_transition, patch.object(
+                window,
+                "_reset_workspace",
+            ) as reset_workspace:
+                window.close_all_documents()
+
+            self.assertEqual(call_order, ["acquisition", "confirm"])
+            prepare_transition.assert_not_called()
+            reset_workspace.assert_not_called()
+        finally:
+            window.project.documents = []
+            window.close()
+
+    def test_confirmed_close_reuses_preflight_acquisition_disposition(self) -> None:
+        window = MainWindow()
+        try:
+            event = FakeCloseEvent()
+            call_order: list[str] = []
+            transition = TransitionResult(
+                intent=TransitionIntent.CLOSE_WINDOW,
+                completed=False,
+                reason="test stop",
+            )
+            with patch.object(
+                window,
+                "_preflight_acquisition_disposition",
+                side_effect=lambda _intent: call_order.append("acquisition")
+                or AcquisitionDisposition.KEEP_PARTIAL,
+            ), patch.object(
+                window,
+                "_confirm_close_documents",
+                side_effect=lambda _documents: call_order.append("confirm") or True,
+            ), patch.object(
+                window,
+                "_prepare_transition",
+                side_effect=lambda *_args, **_kwargs: call_order.append("prepare") or transition,
+            ) as prepare_transition:
+                window.closeEvent(event)
+
+            self.assertEqual(call_order, ["acquisition", "confirm", "prepare"])
+            prepare_transition.assert_called_once_with(
+                TransitionIntent.CLOSE_WINDOW,
+                disposition=AcquisitionDisposition.KEEP_PARTIAL,
+            )
+            self.assertTrue(event.ignored)
+        finally:
+            window.close()
+
     def test_close_all_blocks_when_transition_or_slide_store_release_fails(self) -> None:
         class FailingStore:
             def close(self) -> None:

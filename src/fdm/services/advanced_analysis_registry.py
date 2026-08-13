@@ -656,7 +656,14 @@ def _scalar_image(
         return np.mean(color, axis=2)
     if normalized_channel not in {"luminance", "gray", "grey", "亮度"}:
         raise ValueError("通道只支持 luminance、average、red、green 或 blue")
-    return color[..., 0] * 0.299 + color[..., 1] * 0.587 + color[..., 2] * 0.114
+    # Match the luminance channel used by the basic analysis and image-
+    # processing services.  Explicit Rec.601 color conversion remains a
+    # separate, user-selected operation.
+    return (
+        color[..., 0] * 0.2126
+        + color[..., 1] * 0.7152
+        + color[..., 2] * 0.0722
+    )
 
 
 def _required_binary_mask(

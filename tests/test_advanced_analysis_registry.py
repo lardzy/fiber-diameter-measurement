@@ -114,6 +114,28 @@ class AdvancedAnalysisRegistryTests(unittest.TestCase):
         self.assertGreater(red.result.z_maximum, 0.0)
         self.assertEqual(blue.result.z_maximum, 0.0)
 
+    def test_luminance_matches_basic_analysis_rec709_definition(self) -> None:
+        rgb = np.asarray([[[0, 255, 0]]], dtype=np.uint8)
+        execution = self.registry.execute(
+            AdvancedAnalysisInvocation(
+                AdvancedAnalysisKind.INTENSITY_SURFACE,
+                request_id="luminance",
+                generation=1,
+                plane=numpy_to_raster_plane(rgb),
+                parameters={
+                    "channel": "luminance",
+                    "sample_step_x": 1,
+                    "sample_step_y": 1,
+                },
+            )
+        )
+
+        self.assertAlmostEqual(
+            execution.result.z_maximum,
+            255.0 * 0.7152,
+            places=4,
+        )
+
     def test_binary_algorithms_refuse_implicit_thresholding(self) -> None:
         plane = RasterPlane(
             width=4,

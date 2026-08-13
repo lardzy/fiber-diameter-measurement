@@ -18,7 +18,7 @@ from fdm.models import (
     ProjectState,
     project_assets_root,
 )
-from fdm.lifecycle import TransitionIntent
+from fdm.lifecycle import AcquisitionDisposition, TransitionIntent
 from fdm.project_io import ProjectIO, resolve_document_load_path
 from fdm.services.analysis_asset_io import (
     copy_verified_analysis_asset,
@@ -274,6 +274,16 @@ class ProjectSessionHost(Protocol):
     def _show_status_message(self, message: str, timeout_ms: int = 0) -> None: ...
     def is_image_loading(self) -> bool: ...
     def stop_live_preview(self) -> None: ...
+    def _preflight_acquisition_disposition(
+        self,
+        intent: TransitionIntent,
+    ) -> AcquisitionDisposition | None: ...
+    def _prepare_transition(
+        self,
+        intent: TransitionIntent,
+        *,
+        disposition: AcquisitionDisposition | None = None,
+    ): ...
 
 
 class ProjectSessionController:
@@ -688,9 +698,29 @@ class ProjectSessionController:
             host._show_project_warning("打开项目", message)
             return ProjectLoadResult(False, path=project_path, message=message)
 
+        intent = TransitionIntent.OPEN_PROJECT
+        preflight_disposition = getattr(host, "_preflight_acquisition_disposition", None)
+        disposition = preflight_disposition(intent) if callable(preflight_disposition) else None
+        if disposition == AcquisitionDisposition.CANCEL:
+            reason = "操作已取消。"
+            host._show_project_information("打开项目", reason)
+            return ProjectLoadResult(
+                False,
+                path=project_path,
+                cancelled=True,
+                message=reason,
+            )
+        if not host._confirm_close_documents(host.project.documents):
+            return ProjectLoadResult(
+                False,
+                path=project_path,
+                cancelled=True,
+                message="用户取消切换项目。",
+            )
+
         prepare_transition = getattr(host, "_prepare_transition", None)
         if callable(prepare_transition):
-            transition = prepare_transition(TransitionIntent.OPEN_PROJECT)
+            transition = prepare_transition(intent, disposition=disposition)
             if not bool(getattr(transition, "completed", False)):
                 reason = str(getattr(transition, "reason", "") or "资源尚未安全退出，已取消打开项目。")
                 host._show_project_information("打开项目", reason)
@@ -706,13 +736,6 @@ class ProjectSessionController:
             message = "图片加载任务尚未安全退出，已阻止项目切换。"
             host._show_project_information("打开项目", message)
             return ProjectLoadResult(False, path=project_path, message=message)
-        if not host._confirm_close_documents(host.project.documents):
-            return ProjectLoadResult(
-                False,
-                path=project_path,
-                cancelled=True,
-                message="用户取消切换项目。",
-            )
         recalculated_area_count = _recalculate_loaded_area_measurements(project)
         missing_paths: list[str] = []
         try:

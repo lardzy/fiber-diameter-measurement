@@ -71,6 +71,13 @@ class _TorchImageEntry:
     interm_features: object | None = None
 
 
+def _raise_if_torch_prompt_cancelled(
+    cancel_check: Callable[[], bool] | None,
+) -> None:
+    if cancel_check is not None and cancel_check():
+        raise RuntimeError("请求已取消。")
+
+
 def _normalize_backend_id(model_variant: str | None) -> str:
     token = str(model_variant or "").strip()
     if token in {
@@ -1881,12 +1888,21 @@ class LightHQSamPromptSegmentationService:
                 area_px=0.0,
                 metadata={"reason": "missing_positive_prompt"},
             )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         try:
             import numpy as np
         except ImportError as exc:
             raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
         predictor = self._ensure_predictor()
-        cache_entry = self._embedding_for_rgb_array(qimage_to_rgb_array(image), cache_key=cache_key)
+        _raise_if_torch_prompt_cancelled(cancel_check)
+        cv_image = qimage_to_rgb_array(image)
+        _raise_if_torch_prompt_cancelled(cancel_check)
+        cache_entry = self._embedding_for_rgb_array(
+            cv_image,
+            cache_key=cache_key,
+            cancel_check=cancel_check,
+        )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         self._restore_predictor_cache_entry(predictor, cache_entry)
         prompt_points = np.array(
             [[point.x, point.y] for point in positive_points + negative_points],
@@ -1896,7 +1912,10 @@ class LightHQSamPromptSegmentationService:
             [1] * len(positive_points) + [0] * len(negative_points),
             dtype=np.int32,
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         started_at = perf_counter()
+        # A single Torch forward cannot be interrupted safely; cancellation is
+        # observed immediately before and after the predictor call.
         masks, scores, _logits = predictor.predict(
             point_coords=prompt_points,
             point_labels=prompt_labels,
@@ -1904,13 +1923,16 @@ class LightHQSamPromptSegmentationService:
             hq_token_only=True,
         )
         inference_ms = (perf_counter() - started_at) * 1000.0
+        _raise_if_torch_prompt_cancelled(cancel_check)
         mask_index = int(scores.argmax()) if len(scores) else 0
         mask = np.asarray(masks[mask_index], dtype=bool)
+        _raise_if_torch_prompt_cancelled(cancel_check)
         selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
             mask,
             positive_points=positive_points,
             negative_points=negative_points,
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         return PromptSegmentationResult(
             mask=selected_mask.copy() if selected_mask is not None else None,
             polygon_px=polygon,
@@ -1953,21 +1975,32 @@ class LightHQSamPromptSegmentationService:
         self._predictor = SamPredictor(model)
         return self._predictor
 
-    def _embedding_for_rgb_array(self, cv_image, *, cache_key: str) -> _TorchImageEntry:
+    def _embedding_for_rgb_array(
+        self,
+        cv_image,
+        *,
+        cache_key: str,
+        cancel_check: Callable[[], bool] | None = None,
+    ) -> _TorchImageEntry:
+        _raise_if_torch_prompt_cancelled(cancel_check)
         key = str(cache_key)
         cached = self._embedding_cache.get(key)
         if cached is not None:
             self._embedding_cache.move_to_end(key)
             return cached
         predictor = self._ensure_predictor()
+        _raise_if_torch_prompt_cancelled(cancel_check)
         started_at = perf_counter()
+        # Predictor image encoding is likewise one non-interruptible forward.
         predictor.set_image(cv_image)
+        _raise_if_torch_prompt_cancelled(cancel_check)
         cached = _TorchImageEntry(
             image_embeddings=_clone_torch_cache_value(getattr(predictor, "features", None)),
             original_size=tuple(int(value) for value in getattr(predictor, "original_size", cv_image.shape[:2])),
             input_size=tuple(int(value) for value in getattr(predictor, "input_size", cv_image.shape[:2])),
             interm_features=_clone_torch_cache_value(getattr(predictor, "interm_features", None)),
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         self._embedding_cache[key] = cached
         self._embedding_cache.move_to_end(key)
         while len(self._embedding_cache) > self._max_cache_entries:
@@ -2039,13 +2072,22 @@ class EfficientSamSPromptSegmentationService:
                 area_px=0.0,
                 metadata={"reason": "missing_positive_prompt"},
             )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         try:
             import numpy as np
             import torch
         except ImportError as exc:
             raise RuntimeError("numpy 和 torch 是复杂孔洞魔棒所必需的依赖。") from exc
         model = self._ensure_model()
-        cache_entry = self._embedding_for_rgb_array(qimage_to_rgb_array(image), cache_key=cache_key)
+        _raise_if_torch_prompt_cancelled(cancel_check)
+        cv_image = qimage_to_rgb_array(image)
+        _raise_if_torch_prompt_cancelled(cancel_check)
+        cache_entry = self._embedding_for_rgb_array(
+            cv_image,
+            cache_key=cache_key,
+            cancel_check=cancel_check,
+        )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         prompt_points = torch.tensor(
             [[[[point.x, point.y] for point in positive_points + negative_points]]],
             dtype=torch.float32,
@@ -2054,7 +2096,10 @@ class EfficientSamSPromptSegmentationService:
             [[[1] * len(positive_points) + [0] * len(negative_points)]],
             dtype=torch.float32,
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         started_at = perf_counter()
+        # A single Torch forward cannot be interrupted safely; cancellation is
+        # observed immediately before and after the model call.
         with torch.no_grad():
             predicted_logits, predicted_iou = model.predict_masks(
                 cache_entry.image_embeddings,
@@ -2067,14 +2112,17 @@ class EfficientSamSPromptSegmentationService:
                 output_w=cache_entry.original_size[1],
             )
         inference_ms = (perf_counter() - started_at) * 1000.0
+        _raise_if_torch_prompt_cancelled(cancel_check)
         scores = predicted_iou[0, 0]
         mask_index = int(torch.argmax(scores).item()) if int(scores.numel()) > 0 else 0
         mask = torch.ge(predicted_logits[0, 0, mask_index], 0).cpu().numpy().astype(bool)
+        _raise_if_torch_prompt_cancelled(cancel_check)
         selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
             mask,
             positive_points=positive_points,
             negative_points=negative_points,
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         return PromptSegmentationResult(
             mask=selected_mask.copy() if selected_mask is not None else None,
             polygon_px=polygon,
@@ -2114,7 +2162,14 @@ class EfficientSamSPromptSegmentationService:
         self._model = model
         return model
 
-    def _embedding_for_rgb_array(self, cv_image, *, cache_key: str) -> _TorchImageEntry:
+    def _embedding_for_rgb_array(
+        self,
+        cv_image,
+        *,
+        cache_key: str,
+        cancel_check: Callable[[], bool] | None = None,
+    ) -> _TorchImageEntry:
+        _raise_if_torch_prompt_cancelled(cancel_check)
         key = str(cache_key)
         cached = self._embedding_cache.get(key)
         if cached is not None:
@@ -2125,15 +2180,20 @@ class EfficientSamSPromptSegmentationService:
         except ImportError as exc:
             raise RuntimeError("torch 是 EfficientSAM-S 复杂孔洞魔棒所必需的依赖。") from exc
         model = self._ensure_model()
+        _raise_if_torch_prompt_cancelled(cancel_check)
         image_tensor = torch.from_numpy(cv_image).permute(2, 0, 1).unsqueeze(0).float() / 255.0
+        _raise_if_torch_prompt_cancelled(cancel_check)
         started_at = perf_counter()
+        # Image embedding generation is one non-interruptible Torch forward.
         with torch.no_grad():
             image_embeddings = model.get_image_embeddings(image_tensor)
+        _raise_if_torch_prompt_cancelled(cancel_check)
         cached = _TorchImageEntry(
             image_embeddings=_clone_torch_cache_value(image_embeddings),
             original_size=(int(cv_image.shape[0]), int(cv_image.shape[1])),
             input_size=(int(cv_image.shape[0]), int(cv_image.shape[1])),
         )
+        _raise_if_torch_prompt_cancelled(cancel_check)
         self._embedding_cache[key] = cached
         self._embedding_cache.move_to_end(key)
         while len(self._embedding_cache) > self._max_cache_entries:

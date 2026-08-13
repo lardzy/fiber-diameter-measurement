@@ -20,6 +20,7 @@ from openpyxl.utils.cell import (
 )
 from openpyxl.utils.exceptions import CellCoordinatesException
 
+from fdm.atomic_io import atomic_replace_file
 from fdm.models import ImageDocument, UNCATEGORIZED_LABEL
 from fdm.settings import (
     RawRecordDataSource,
@@ -196,7 +197,7 @@ def write_raw_record_template(
             source_suffix=template_path.suffix.lower(),
             output_suffix=target_path.suffix.lower(),
         )
-        Path(temp_name).replace(target_path)
+        atomic_replace_file(temp_name, target_path)
     except Exception:
         if temp_name:
             try:

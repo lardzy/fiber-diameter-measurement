@@ -451,12 +451,29 @@ def _sanitize_invalid_calibration_payloads(payload: object) -> tuple[dict, list[
             sanitized["documents"] = sanitized_documents
 
     presets = payload.get("calibration_presets", [])
-    if isinstance(presets, list):
+    if not isinstance(presets, list):
+        issues.append(
+            {
+                "kind": "calibration_presets",
+                "message": "calibration_presets 必须是列表，已忽略",
+                "raw_payload": copy.deepcopy(presets),
+            }
+        )
+        sanitized["calibration_presets"] = []
+    else:
         valid_presets: list[object] | None = None
         for index, preset in enumerate(presets):
             if not isinstance(preset, dict):
-                if valid_presets is not None:
-                    valid_presets.append(preset)
+                if valid_presets is None:
+                    valid_presets = list(presets[:index])
+                issues.append(
+                    {
+                        "kind": "calibration_preset",
+                        "index": index,
+                        "message": "标定预设必须是 JSON 对象，已忽略",
+                        "raw_payload": copy.deepcopy(preset),
+                    }
+                )
                 continue
             try:
                 CalibrationPreset.from_dict(preset)

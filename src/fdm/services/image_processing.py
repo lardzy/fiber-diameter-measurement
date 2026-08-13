@@ -13,6 +13,7 @@ modification.
 
 from __future__ import annotations
 
+from collections import deque
 from dataclasses import dataclass
 from enum import Enum
 import math
@@ -207,6 +208,13 @@ class ImageExecutionMode(str, Enum):
 
 MAX_TILED_HALO_FRACTION = 0.25
 MAX_TILED_CPU_AMPLIFICATION = 2.0
+
+# Vectorized whole-image passes are fastest while geodesic propagation is
+# dense.  Once only a bounded frontier changes, a queue finishes the exact
+# reconstruction without rescanning a multi-megapixel image for every pixel of
+# a long thin branch.  This is a performance switch, never an accuracy limit.
+_GEODESIC_SPARSE_QUEUE_AFTER_PASSES = 8
+_GEODESIC_SPARSE_QUEUE_MAX_SEEDS = 1_000_000
 
 
 @dataclass(frozen=True, slots=True)
@@ -1721,6 +1729,7 @@ def execute_image_operation(
             method=str(params.get("method", "opening")),
             radius=int(params.get("radius", 1)),
             connectivity=int(params.get("connectivity", 8)),
+            cancellation_check=cancellation_check,
         )
         processed = _blend_roi(scalar, processed, request.roi_mask)
     elif operation is ImageOperation.REGIONAL_EXTREMA:
@@ -1736,6 +1745,7 @@ def execute_image_operation(
             kind=extrema_kind,
             h=float(params.get("h", 0.0)),
             connectivity=int(params.get("connectivity", 8)),
+            cancellation_check=cancellation_check,
         )
         processed = _blend_roi(
             _cast_like(scalar, processed.dtype),
@@ -3568,12 +3578,14 @@ def morphological_reconstruction(
     method: str = "opening",
     radius: int = 1,
     connectivity: int = 8,
+    cancellation_check: Callable[[], None] | None = None,
 ) -> NDArray[Any]:
     """Opening/closing by geodesic morphological reconstruction."""
 
     source = _validate_raster(image)
     if source.ndim != 2:
         raise ValueError("形态学重建需要单通道图像。")
+    _require_finite_geodesic_raster(source, operation_name="形态学重建")
     if radius < 1 or radius > 255:
         raise ValueError("形态学重建半径必须在 1 到 255 之间。")
     _validate_connectivity(connectivity)
@@ -3590,43 +3602,40 @@ def morphological_reconstruction(
         if connectivity == 4
         else np.ones((3, 3), dtype=np.uint8)
     )
+    if cancellation_check is not None:
+        cancellation_check()
     if resolved == "opening":
         marker = cv2.erode(
             source,
             seed_kernel,
             borderType=cv2.BORDER_REFLECT_101,
         )
-        for _iteration in range(source.size):
-            updated = np.minimum(
-                cv2.dilate(
-                    marker,
-                    geodesic_kernel,
-                    borderType=cv2.BORDER_REFLECT_101,
-                ),
-                source,
-            )
-            if np.array_equal(updated, marker):
-                return updated
-            marker = updated
+        return _geodesic_reconstruct(
+            marker,
+            source,
+            dilation=True,
+            connectivity=connectivity,
+            kernel=geodesic_kernel,
+            border_type=cv2.BORDER_REFLECT_101,
+            cancellation_check=cancellation_check,
+            operation_name="形态学重建",
+        )
     else:
         marker = cv2.dilate(
             source,
             seed_kernel,
             borderType=cv2.BORDER_REFLECT_101,
         )
-        for _iteration in range(source.size):
-            updated = np.maximum(
-                cv2.erode(
-                    marker,
-                    geodesic_kernel,
-                    borderType=cv2.BORDER_REFLECT_101,
-                ),
-                source,
-            )
-            if np.array_equal(updated, marker):
-                return updated
-            marker = updated
-    raise RuntimeError("形态学重建未在有限迭代内收敛。")
+        return _geodesic_reconstruct(
+            marker,
+            source,
+            dilation=False,
+            connectivity=connectivity,
+            kernel=geodesic_kernel,
+            border_type=cv2.BORDER_REFLECT_101,
+            cancellation_check=cancellation_check,
+            operation_name="形态学重建",
+        )
 
 
 def regional_extrema(
@@ -3635,12 +3644,14 @@ def regional_extrema(
     kind: str = "maxima",
     h: float = 0.0,
     connectivity: int = 8,
+    cancellation_check: Callable[[], None] | None = None,
 ) -> NDArray[Any]:
     """Regional or h-extended extrema as a binary raster."""
 
     source = _validate_raster(image)
     if source.ndim != 2:
         raise ValueError("区域极值需要单通道图像。")
+    _require_finite_geodesic_raster(source, operation_name="区域极值")
     _validate_connectivity(connectivity)
     _require_finite("扩展极值高度 h", h)
     if h < 0:
@@ -3654,22 +3665,34 @@ def regional_extrema(
         else np.ones((3, 3), dtype=np.uint8)
     )
     work = source.astype(np.float32)
+    if cancellation_check is not None:
+        cancellation_check()
     if h > 0:
         if resolved == "maxima":
             marker = work - float(h)
-            for _iteration in range(source.size):
-                updated = np.minimum(cv2.dilate(marker, kernel), work)
-                if np.array_equal(updated, marker):
-                    break
-                marker = updated
+            marker = _geodesic_reconstruct(
+                marker,
+                work,
+                dilation=True,
+                connectivity=connectivity,
+                kernel=kernel,
+                border_type=None,
+                cancellation_check=cancellation_check,
+                operation_name="扩展区域极大值",
+            )
             extrema = marker == cv2.dilate(marker, kernel)
         else:
             marker = work + float(h)
-            for _iteration in range(source.size):
-                updated = np.maximum(cv2.erode(marker, kernel), work)
-                if np.array_equal(updated, marker):
-                    break
-                marker = updated
+            marker = _geodesic_reconstruct(
+                marker,
+                work,
+                dilation=False,
+                connectivity=connectivity,
+                kernel=kernel,
+                border_type=None,
+                cancellation_check=cancellation_check,
+                operation_name="扩展区域极小值",
+            )
             extrema = marker == cv2.erode(marker, kernel)
     elif resolved == "maxima":
         extrema = work == cv2.dilate(work, kernel)
@@ -3680,6 +3703,147 @@ def regional_extrema(
         source.dtype,
         foreground_is_high=True,
     )
+
+
+def _require_finite_geodesic_raster(
+    source: NDArray[Any],
+    *,
+    operation_name: str,
+) -> None:
+    """Reject NaN/Inf before equality-based geodesic convergence checks."""
+
+    if np.issubdtype(source.dtype, np.floating) and not bool(
+        np.all(np.isfinite(source))
+    ):
+        raise ValueError(
+            f"{operation_name}不接受 NaN/Inf；请先使用 NaN/Inf 修复操作。"
+        )
+
+
+def _geodesic_reconstruct(
+    marker: NDArray[Any],
+    mask: NDArray[Any],
+    *,
+    dilation: bool,
+    connectivity: int,
+    kernel: NDArray[np.uint8],
+    border_type: int | None,
+    cancellation_check: Callable[[], None] | None,
+    operation_name: str,
+) -> NDArray[Any]:
+    """Exact geodesic reconstruction with a sparse-frontier queue fallback."""
+
+    current = np.ascontiguousarray(marker)
+    pixel_count = max(1, int(current.size))
+    for iteration in range(pixel_count):
+        if cancellation_check is not None:
+            cancellation_check()
+        morphology_kwargs = (
+            {}
+            if border_type is None
+            else {"borderType": int(border_type)}
+        )
+        if dilation:
+            updated = np.minimum(
+                cv2.dilate(current, kernel, **morphology_kwargs),
+                mask,
+            )
+        else:
+            updated = np.maximum(
+                cv2.erode(current, kernel, **morphology_kwargs),
+                mask,
+            )
+        changed = updated != current
+        changed_count = int(np.count_nonzero(changed))
+        if changed_count == 0:
+            return updated
+        current = updated
+        if (
+            iteration + 1 >= _GEODESIC_SPARSE_QUEUE_AFTER_PASSES
+            and changed_count <= _GEODESIC_SPARSE_QUEUE_MAX_SEEDS
+        ):
+            return _finish_sparse_geodesic_reconstruction(
+                current,
+                mask,
+                changed,
+                dilation=dilation,
+                connectivity=connectivity,
+                cancellation_check=cancellation_check,
+            )
+    # Finite monotone reconstruction on a finite raster must converge within
+    # this graph bound.  Reaching it indicates an internal/kernel defect rather
+    # than a user image that should be approximated silently.
+    raise RuntimeError(f"{operation_name}未在有限图传播上界内收敛。")
+
+
+def _finish_sparse_geodesic_reconstruction(
+    marker: NDArray[Any],
+    mask: NDArray[Any],
+    changed: NDArray[np.bool_],
+    *,
+    dilation: bool,
+    connectivity: int,
+    cancellation_check: Callable[[], None] | None,
+) -> NDArray[Any]:
+    """Propagate the last changed frontier without further whole-image scans."""
+
+    height, width = marker.shape
+    result = np.ascontiguousarray(marker).copy()
+    result_flat = result.reshape(-1)
+    mask_flat = np.asarray(mask).reshape(-1)
+    seed_indices = np.flatnonzero(changed)
+    pending: deque[int] = deque(int(index) for index in seed_indices)
+    queued = np.zeros(result_flat.size, dtype=np.bool_)
+    queued[seed_indices] = True
+    processed = 0
+    diagonal = connectivity == 8
+    while pending:
+        if processed % 4096 == 0 and cancellation_check is not None:
+            cancellation_check()
+        processed += 1
+        index = pending.popleft()
+        queued[index] = False
+        y, x = divmod(index, width)
+        neighbors: list[int] = []
+        if x > 0:
+            neighbors.append(index - 1)
+        if x + 1 < width:
+            neighbors.append(index + 1)
+        if y > 0:
+            neighbors.append(index - width)
+            if diagonal:
+                if x > 0:
+                    neighbors.append(index - width - 1)
+                if x + 1 < width:
+                    neighbors.append(index - width + 1)
+        if y + 1 < height:
+            neighbors.append(index + width)
+            if diagonal:
+                if x > 0:
+                    neighbors.append(index + width - 1)
+                if x + 1 < width:
+                    neighbors.append(index + width + 1)
+        source_value = result_flat[index]
+        for neighbor in neighbors:
+            candidate = (
+                min(source_value, mask_flat[neighbor])
+                if dilation
+                else max(source_value, mask_flat[neighbor])
+            )
+            improves = (
+                candidate > result_flat[neighbor]
+                if dilation
+                else candidate < result_flat[neighbor]
+            )
+            if not improves:
+                continue
+            result_flat[neighbor] = candidate
+            if not queued[neighbor]:
+                queued[neighbor] = True
+                pending.append(neighbor)
+    if cancellation_check is not None:
+        cancellation_check()
+    return result
 
 
 def fill_binary_holes(
@@ -3776,18 +3940,18 @@ def fill_small_holes(
         background.astype(np.uint8),
         connectivity=connectivity,
     )
-    border_labels = set(
+    border_labels = np.unique(
         np.concatenate(
             (labels[0, :], labels[-1, :], labels[:, 0], labels[:, -1])
-        ).tolist()
+        )
     )
-    holes = np.zeros_like(foreground)
-    for label in range(1, count):
-        if (
-            label not in border_labels
-            and int(stats[label, cv2.CC_STAT_AREA]) <= maximum_area
-        ):
-            holes |= labels == label
+    fillable_labels = np.zeros(count, dtype=bool)
+    if count > 1:
+        fillable_labels[1:] = (
+            stats[1:, cv2.CC_STAT_AREA] <= maximum_area
+        )
+    fillable_labels[border_labels] = False
+    holes = fillable_labels[labels]
     return _mask_to_binary_values(
         foreground | holes,
         source.dtype,

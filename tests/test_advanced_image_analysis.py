@@ -195,6 +195,37 @@ class SkeletonNetworkAnalysisTests(unittest.TestCase):
         self.assertAlmostEqual(result.total_length, 24.0)
         self.assertAlmostEqual(result.maximum_geodesic_distance, 12.0)
 
+    def test_connected_double_ring_without_endpoints_has_exact_geodesic(self) -> None:
+        mask = np.zeros((12, 20), dtype=np.uint8)
+        cv2.rectangle(mask, (2, 2), (7, 8), 1, thickness=1)
+        cv2.rectangle(mask, (11, 2), (16, 8), 1, thickness=1)
+        mask[5, 7:12] = 1
+
+        result = analyze_skeleton_network(
+            SkeletonNetworkRequest(mask=mask, already_skeletonized=True)
+        )
+
+        self.assertEqual(result.endpoint_count, 0)
+        self.assertEqual(result.loop_count, 2)
+        # 两个周长 22 的环各走半周，再经过长度 4 的连接段。
+        self.assertAlmostEqual(result.maximum_geodesic_distance, 26.0)
+
+    def test_loop_network_with_terminal_branch_uses_internal_diameter(self) -> None:
+        mask = np.zeros((12, 20), dtype=np.uint8)
+        cv2.rectangle(mask, (2, 2), (7, 8), 1, thickness=1)
+        cv2.rectangle(mask, (11, 2), (16, 8), 1, thickness=1)
+        mask[5, 7:12] = 1
+        mask[4, 9] = 1
+
+        result = analyze_skeleton_network(
+            SkeletonNetworkRequest(mask=mask, already_skeletonized=True)
+        )
+
+        self.assertEqual(result.endpoint_count, 1)
+        self.assertEqual(result.loop_count, 2)
+        # 末梢到图内最远点只有 14；真实直径位于两个环的内部顶点之间。
+        self.assertAlmostEqual(result.maximum_geodesic_distance, 26.0)
+
     def test_thick_bar_is_skeletonized_before_network_analysis(self) -> None:
         mask = np.zeros((25, 40), dtype=bool)
         mask[9:16, 5:35] = True
