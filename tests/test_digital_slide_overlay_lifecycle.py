@@ -542,6 +542,60 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
+    def test_stale_overview_never_replaces_current_focus_thumbnail(self) -> None:
+        canvas = self._canvas()
+        canvas._focus_index = 1  # noqa: SLF001
+        canvas._overview_request_id = 2  # noqa: SLF001
+        emitted: list[QImage] = []
+        canvas.overviewImageChanged.connect(emitted.append)
+        stale = QImage(32, 16, QImage.Format.Format_RGB32)
+        stale.fill(0xFFCC0000)
+        current = QImage(32, 16, QImage.Format.Format_RGB32)
+        current.fill(0xFF00CC00)
+        try:
+            canvas._on_overview_rendered(1, 0, stale, "ok", "")  # noqa: SLF001
+            self.assertTrue(canvas.overview_image().isNull())
+            self.assertEqual(emitted, [])
+
+            canvas._on_overview_rendered(2, 1, current, "ok", "")  # noqa: SLF001
+            self.assertFalse(canvas.overview_image().isNull())
+            self.assertEqual(len(emitted), 1)
+            self.assertGreater(
+                canvas.overview_image().pixelColor(5, 5).green(),
+                150,
+            )
+
+            canvas._focus_index = 2  # noqa: SLF001
+            canvas._overview_request_id = 3  # noqa: SLF001
+            canvas._on_overview_rendered(3, 2, QImage(), "empty", "")  # noqa: SLF001
+            self.assertTrue(canvas.overview_image().isNull())
+            self.assertEqual(len(emitted), 2)
+            self.assertTrue(emitted[-1].isNull())
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
+    def test_disabled_overview_does_not_start_background_reader(self) -> None:
+        canvas = self._canvas()
+        canvas._slide_store = SimpleNamespace(  # type: ignore[assignment]  # noqa: SLF001
+            path=Path("/tmp/not-read.fdmslide")
+        )
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=4096,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[0],
+        )
+        try:
+            with patch.object(canvas, "isVisible", return_value=True):
+                canvas.request_overview()
+            self.assertIsNone(canvas._overview_thread)  # noqa: SLF001
+        finally:
+            canvas.clear_document()
+            canvas.close()
+
 
 if __name__ == "__main__":
     unittest.main()

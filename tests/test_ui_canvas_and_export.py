@@ -2287,7 +2287,12 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertEqual(canvas.navigation_mode(), "step")
                 canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
                 self.assertEqual(canvas.navigation_mode(), "smooth")
-                press = FakeKeyEvent(Qt.Key.Key_Right)
+                # Cocoa marks ordinary arrow keys as NumericPad, which Qt
+                # exposes as KeypadModifier even without a physical keypad.
+                press = FakeKeyEvent(
+                    Qt.Key.Key_Right,
+                    modifiers=Qt.KeyboardModifier.KeypadModifier,
+                )
                 canvas.keyPressEvent(press)
                 self.assertTrue(press.accepted)
                 self.assertTrue(canvas._smooth_nav_timer.isActive())
@@ -2295,6 +2300,22 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas.keyReleaseEvent(release)
                 self.assertTrue(release.accepted)
                 self.assertFalse(canvas._smooth_nav_timer.isActive())
+
+                canvas.set_navigation_mode("step")
+                before_shift_step = canvas.viewport_origin()
+                shift_step = FakeKeyEvent(
+                    Qt.Key.Key_Down,
+                    modifiers=(
+                        Qt.KeyboardModifier.ShiftModifier
+                        | Qt.KeyboardModifier.KeypadModifier
+                    ),
+                )
+                canvas.keyPressEvent(shift_step)
+                self.assertTrue(shift_step.accepted)
+                self.assertGreater(
+                    canvas.viewport_origin().y,
+                    before_shift_step.y,
+                )
             finally:
                 store.close()
 
@@ -2330,12 +2351,12 @@ class CanvasAndExportTests(unittest.TestCase):
                 press = QKeyEvent(
                     QEvent.Type.KeyPress,
                     Qt.Key.Key_Right,
-                    Qt.KeyboardModifier.NoModifier,
+                    Qt.KeyboardModifier.KeypadModifier,
                 )
                 release = QKeyEvent(
                     QEvent.Type.KeyRelease,
                     Qt.Key.Key_Right,
-                    Qt.KeyboardModifier.NoModifier,
+                    Qt.KeyboardModifier.KeypadModifier,
                 )
                 QApplication.sendEvent(window.image_list, press)
                 QApplication.sendEvent(window.image_list, release)
@@ -2344,6 +2365,78 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertFalse(canvas.is_navigation_key_active(Qt.Key.Key_Right))
                 self.assertFalse(canvas._smooth_nav_timer.isActive())  # noqa: SLF001
                 self.assertIs(self.app.focusWidget(), window.image_list)
+
+                before_modified = canvas.viewport_origin()
+                modified_press = QKeyEvent(
+                    QEvent.Type.KeyPress,
+                    Qt.Key.Key_Right,
+                    (
+                        Qt.KeyboardModifier.ControlModifier
+                        | Qt.KeyboardModifier.KeypadModifier
+                    ),
+                )
+                QApplication.sendEvent(window.image_list, modified_press)
+                self.assertEqual(canvas.viewport_origin(), before_modified)
+        finally:
+            window.close()
+
+    def test_digital_slide_navigator_receives_whole_slide_thumbnail(self) -> None:
+        window = MainWindow()
+        window.show()
+        self.app.processEvents()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "navigator-overview.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1,
+                        width=400,
+                        height=200,
+                        viewport_width=100,
+                        viewport_height=100,
+                        focus_levels=[0],
+                    ),
+                )
+                left_tile = QImage(200, 200, QImage.Format.Format_RGB32)
+                left_tile.fill(QColor("#D02020"))
+                right_tile = QImage(200, 200, QImage.Format.Format_RGB32)
+                right_tile.fill(QColor("#20D020"))
+                store.write_tile(
+                    DigitalSlideTile(0, 0, 0, 200, 200),
+                    left_tile,
+                )
+                store.write_tile(
+                    DigitalSlideTile(0, 200, 0, 200, 200),
+                    right_tile,
+                )
+                store.close()
+
+                window._add_digital_slide_document_from_path(
+                    slide_path,
+                    document=None,
+                )
+                document = window.current_document()
+                self.assertIsNotNone(document)
+                assert document is not None
+                navigator = window._canvas_navigators[document.id]  # noqa: SLF001
+                deadline = time.monotonic() + 3.0
+                while navigator._thumbnail.isNull() and time.monotonic() < deadline:  # noqa: SLF001
+                    self.app.processEvents()
+                    time.sleep(0.01)
+
+                self.assertFalse(navigator._thumbnail.isNull())  # noqa: SLF001
+                thumbnail = navigator._thumbnail  # noqa: SLF001
+                self.assertLessEqual(thumbnail.width(), 256)
+                self.assertLessEqual(thumbnail.height(), 256)
+                self.assertGreater(
+                    thumbnail.pixelColor(thumbnail.width() // 4, thumbnail.height() // 2).red(),
+                    150,
+                )
+                self.assertGreater(
+                    thumbnail.pixelColor((thumbnail.width() * 3) // 4, thumbnail.height() // 2).green(),
+                    150,
+                )
         finally:
             window.close()
 

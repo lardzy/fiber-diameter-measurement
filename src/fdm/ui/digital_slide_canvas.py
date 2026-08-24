@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import OrderedDict
 from threading import Event, Thread
 from time import perf_counter
 from weakref import ref
@@ -17,11 +18,18 @@ from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
 from fdm.ui.view_transform import CanvasZoomMode
 
 
+_OVERVIEW_MAX_EDGE = 256
+_OVERVIEW_CACHE_LIMIT = 3
+_OVERVIEW_FOCUS_DEBOUNCE_MS = 180
+
+
 class DigitalSlideCanvas(DocumentCanvas):
     viewportChanged = Signal(int, int, int)
     navigationModeChanged = Signal(str)
     viewportBufferFailed = Signal(str)
+    overviewImageChanged = Signal(QImage)
     _bufferRendered = Signal(int, int, int, int, QImage, str, str)
+    _overviewRendered = Signal(int, int, QImage, str, str)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
@@ -50,13 +58,38 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._viewport_last_publish_at = 0.0
+        self._overview_image = QImage()
+        self._overview_focus_index = -1
+        self._overview_enabled = False
+        self._overview_cache: OrderedDict[int, QImage] = OrderedDict()
+        self._overview_failed_focuses: set[int] = set()
+        self._overview_request_id = 0
+        self._overview_thread: Thread | None = None
+        self._overview_thread_request_id: int | None = None
+        self._overview_thread_focus_index: int | None = None
+        self._overview_cancel = Event()
+        self._overview_pending = False
+        self._overview_debounce_timer = QTimer(self)
+        self._overview_debounce_timer.setSingleShot(True)
+        self._overview_debounce_timer.setInterval(_OVERVIEW_FOCUS_DEBOUNCE_MS)
+        self._overview_debounce_timer.timeout.connect(self.request_overview)
         # Pointer drags are constrained to the raster that is currently
         # mounted in the canvas.  Keep this separate from the whole-slide
         # coordinate system used by navigation and programmatic locating.
         self._clamp_pointer_to_mounted_viewport = False
         self._bufferRendered.connect(self._on_viewport_buffer_rendered)
+        self._overviewRendered.connect(self._on_overview_rendered)
 
     def set_slide_document(self, document: ImageDocument, store: DigitalSlideStore) -> None:
+        self._overview_debounce_timer.stop()
+        self._overview_cancel.set()
+        self._overview_request_id += 1
+        self._overview_pending = False
+        self._overview_image = QImage()
+        self._overview_focus_index = -1
+        self._overview_cache.clear()
+        self._overview_failed_focuses.clear()
+        self.overviewImageChanged.emit(QImage())
         self._slide_store = store
         self._slide_manifest = store.read_manifest()
         document.image_size = (self._slide_manifest.width, self._slide_manifest.height)
@@ -76,11 +109,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._clamp_viewport()
         self._request_viewport_buffer()
         self.schedule_initial_fit()
+        if self._overview_enabled and self.isVisible():
+            QTimer.singleShot(0, self.request_overview)
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
+        self._overview_debounce_timer.stop()
+        self._overview_cancel.set()
+        self._overview_request_id += 1
+        self._overview_pending = False
+        self._overview_enabled = False
         self._cancel_overlay_requests()
         self._invalidate_viewport_buffer()
         thread = self._viewport_buffer_thread
@@ -92,6 +132,17 @@ class DigitalSlideCanvas(DocumentCanvas):
         if thread is None or not thread.is_alive():
             self._viewport_buffer_thread = None
             self._viewport_buffer_thread_request_id = None
+        overview_thread = self._overview_thread
+        if overview_thread is not None and overview_thread.is_alive():
+            overview_thread.join(timeout=2.0)
+        if overview_thread is None or not overview_thread.is_alive():
+            self._overview_thread = None
+            self._overview_thread_request_id = None
+            self._overview_thread_focus_index = None
+        self._overview_image = QImage()
+        self._overview_focus_index = -1
+        self._overview_cache.clear()
+        self._overview_failed_focuses.clear()
         self._slide_store = None
         self._slide_manifest = None
 
@@ -101,6 +152,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
         self._smooth_nav_last_at = 0.0
+        self._overview_debounce_timer.stop()
+        self._overview_cancel.set()
+        self._overview_pending = False
         self._invalidate_viewport_buffer()
         super().hideEvent(event)
 
@@ -108,6 +162,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         super().showEvent(event)
         self._allow_viewport_buffer_retry()
         self._request_viewport_buffer()
+        self.request_overview()
 
     def set_image(self, image: QImage) -> None:
         self._image = image
@@ -125,6 +180,22 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def navigation_mode_label(self) -> str:
         return "平滑移动" if self._navigation_mode == "smooth" else "步进移动"
+
+    def overview_image(self) -> QImage:
+        return QImage(self._overview_image)
+
+    def set_overview_enabled(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if enabled == self._overview_enabled:
+            return
+        self._overview_enabled = enabled
+        if not enabled:
+            self._overview_debounce_timer.stop()
+            self._overview_cancel.set()
+            self._overview_pending = False
+            return
+        if self.isVisible():
+            QTimer.singleShot(0, self.request_overview)
 
     def is_navigation_key_active(self, key: int | Qt.Key) -> bool:
         return int(key) in self._smooth_nav_keys
@@ -215,6 +286,30 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_index = focus_index
         self._invalidate_viewport_buffer()
         self._reload_viewport()
+        if not self._overview_enabled:
+            self._overview_image = QImage()
+            self._overview_focus_index = -1
+            self.overviewImageChanged.emit(QImage())
+            return
+        if (
+            self._overview_thread is not None
+            and self._overview_thread.is_alive()
+            and self._overview_thread_focus_index != focus_index
+        ):
+            self._overview_cancel.set()
+        cached = self._overview_cache.get(focus_index)
+        if cached is not None:
+            self._overview_cache.move_to_end(focus_index)
+            self._overview_image = cached
+            self._overview_focus_index = focus_index
+            self.overviewImageChanged.emit(cached)
+            return
+        if focus_index in self._overview_failed_focuses:
+            self._overview_image = QImage()
+            self._overview_focus_index = -1
+            self.overviewImageChanged.emit(QImage())
+            return
+        self._overview_debounce_timer.start()
 
     def widget_to_image(self, position: QPointF) -> Point:
         local = super().widget_to_image(position)
@@ -297,11 +392,14 @@ class DigitalSlideCanvas(DocumentCanvas):
         event.accept()
 
     def keyPressEvent(self, event: QKeyEvent) -> None:
-        if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_M:
+        # Cocoa tags the ordinary arrow keys as NumericPad.  KeypadModifier is
+        # therefore a platform-origin flag here, not a user shortcut modifier.
+        modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+        if modifiers == Qt.KeyboardModifier.NoModifier and event.key() == Qt.Key.Key_M:
             self.toggle_navigation_mode()
             event.accept()
             return
-        if event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() in {
+        if modifiers == Qt.KeyboardModifier.NoModifier and event.key() in {
             Qt.Key.Key_Left,
             Qt.Key.Key_Right,
             Qt.Key.Key_Up,
@@ -322,7 +420,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 self.move_viewport_by(0, step_y)
             event.accept()
             return
-        if event.modifiers() == Qt.KeyboardModifier.ShiftModifier and event.key() in {
+        if modifiers == Qt.KeyboardModifier.ShiftModifier and event.key() in {
             Qt.Key.Key_Left,
             Qt.Key.Key_Right,
             Qt.Key.Key_Up,
@@ -477,7 +575,8 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._allow_viewport_buffer_retry()
             self._cancel_overlay_requests()
         self._smooth_nav_keys.add(int(event.key()))
-        self._smooth_nav_shift = event.modifiers() == Qt.KeyboardModifier.ShiftModifier
+        modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
+        self._smooth_nav_shift = modifiers == Qt.KeyboardModifier.ShiftModifier
         self._smooth_nav_last_at = perf_counter()
         if not self._smooth_nav_timer.isActive():
             self._smooth_nav_timer.start()
@@ -824,6 +923,159 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.update()
         if self._viewport_buffer_pending or self._viewport_needs_buffer_refresh():
             self._request_viewport_buffer()
+
+    def request_overview(self) -> None:
+        """Load a small whole-slide preview for the settled focus plane."""
+
+        if (
+            not self._overview_enabled
+            or self._slide_store is None
+            or self._slide_manifest is None
+        ):
+            return
+        if not self.isVisible():
+            return
+        focus_index = int(self._focus_index)
+        cached = self._overview_cache.get(focus_index)
+        if cached is not None:
+            self._overview_cache.move_to_end(focus_index)
+            if self._overview_focus_index != focus_index:
+                self._overview_image = cached
+                self._overview_focus_index = focus_index
+                self.overviewImageChanged.emit(cached)
+            return
+        if focus_index in self._overview_failed_focuses:
+            return
+
+        thread = self._overview_thread
+        if thread is not None and thread.is_alive():
+            if (
+                self._overview_thread_focus_index == focus_index
+                and not self._overview_cancel.is_set()
+            ):
+                return
+            self._overview_cancel.set()
+            self._overview_pending = True
+            return
+
+        store_path = self._slide_store.path
+        self._overview_request_id += 1
+        request_id = self._overview_request_id
+        self._overview_pending = False
+        cancellation = Event()
+        self._overview_cancel = cancellation
+        canvas_ref = ref(self)
+
+        def render() -> None:
+            store: DigitalSlideStore | None = None
+            status = "ok"
+            error = ""
+            try:
+                store = DigitalSlideStore(store_path)
+                image = store.render_overview(
+                    z_index=focus_index,
+                    maximum_edge=_OVERVIEW_MAX_EDGE,
+                    cancellation_requested=cancellation.is_set,
+                )
+            except Exception as exc:  # noqa: BLE001 - publish worker failure
+                image = QImage()
+                status = "error"
+                error = f"{type(exc).__name__}: {exc}"
+            finally:
+                if store is not None:
+                    try:
+                        store.close()
+                    except Exception as exc:  # noqa: BLE001 - report close failure
+                        image = QImage()
+                        status = "error"
+                        error = f"{type(exc).__name__}: {exc}"
+            canvas = canvas_ref()
+            if canvas is None or not is_qobject_valid(canvas):
+                return
+            if cancellation.is_set() and status == "ok":
+                image = QImage()
+                status = "cancelled"
+            elif image.isNull() and status == "ok":
+                status = "empty"
+            canvas._overviewRendered.emit(
+                request_id,
+                focus_index,
+                image,
+                status,
+                error,
+            )
+
+        thread = Thread(
+            target=render,
+            name=f"fdm-slide-overview-{store_path.name}",
+            daemon=True,
+        )
+        self._overview_thread = thread
+        self._overview_thread_request_id = request_id
+        self._overview_thread_focus_index = focus_index
+        thread.start()
+
+    def _on_overview_rendered(
+        self,
+        request_id: int,
+        focus_index: int,
+        image: QImage,
+        status: str,
+        error: str,
+    ) -> None:
+        if request_id == self._overview_thread_request_id:
+            self._overview_thread = None
+            self._overview_thread_request_id = None
+            self._overview_thread_focus_index = None
+
+        stale = (
+            request_id != self._overview_request_id
+            or focus_index != self._focus_index
+        )
+        if not stale and status == "ok" and not image.isNull():
+            self._overview_cache[focus_index] = image
+            self._overview_cache.move_to_end(focus_index)
+            while len(self._overview_cache) > _OVERVIEW_CACHE_LIMIT:
+                self._overview_cache.popitem(last=False)
+            self._overview_image = image
+            self._overview_focus_index = focus_index
+            self._overview_failed_focuses.discard(focus_index)
+            self.overviewImageChanged.emit(image)
+        elif not stale and status in {"empty", "error"}:
+            # Return to the schematic navigator rather than displaying pixels
+            # from a different focus plane, and avoid retrying the same broken
+            # plane on every tab show event.
+            self._overview_failed_focuses.add(focus_index)
+            self._overview_image = QImage()
+            self._overview_focus_index = -1
+            self.overviewImageChanged.emit(QImage())
+            if status == "error":
+                store_path = (
+                    self._slide_store.path if self._slide_store is not None else ""
+                )
+                append_runtime_log(
+                    "数字切片导航缩略图读取失败",
+                    (
+                        f"path={store_path}\n"
+                        f"request_id={request_id}, focus_index={focus_index}\n"
+                        f"error={error or 'unknown overview rendering failure'}"
+                    ),
+                )
+
+        should_retry = (
+            not self._overview_debounce_timer.isActive()
+            and (self._overview_pending or status == "cancelled")
+        )
+        self._overview_pending = False
+        if (
+            should_retry
+            and self._overview_enabled
+            and self._slide_store is not None
+            and self.isVisible()
+            and self._focus_index not in self._overview_cache
+            and self._focus_index not in self._overview_failed_focuses
+        ):
+            QTimer.singleShot(0, self.request_overview)
 
     def _publish_viewport_state(self, *, throttled: bool) -> None:
         now = perf_counter()

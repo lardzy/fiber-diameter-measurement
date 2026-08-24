@@ -444,6 +444,53 @@ def test_digital_slide_store_writes_manifest_and_renders_viewport(tmp_path: Path
         store.close()
 
 
+def test_digital_slide_store_streams_bounded_overview_for_selected_focus(
+    tmp_path: Path,
+) -> None:
+    slide_path = tmp_path / "overview.fdmslide"
+    store = DigitalSlideStore.create(
+        slide_path,
+        DigitalSlideManifest(
+            version=1,
+            width=400,
+            height=200,
+            viewport_width=200,
+            viewport_height=200,
+            focus_levels=[-100, 100],
+        ),
+    )
+    try:
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=0, y=0, width=200, height=200),
+            _solid_image(200, 200, "#FF0000"),
+        )
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=200, y=0, width=200, height=200),
+            _solid_image(200, 200, "#00FF00"),
+        )
+        store.write_tile(
+            DigitalSlideTile(z_index=1, x=0, y=0, width=400, height=200),
+            _solid_image(400, 200, "#0000FF"),
+        )
+
+        overview = store.render_overview(z_index=0, maximum_edge=100)
+
+        assert (overview.width(), overview.height()) == (100, 50)
+        assert overview.pixelColor(20, 25).red() > 200
+        assert overview.pixelColor(80, 25).green() > 200
+        assert overview.pixelColor(20, 25).blue() < 30
+
+        cancelled = store.render_overview(
+            z_index=1,
+            maximum_edge=100,
+            cancellation_requested=lambda: True,
+        )
+        assert cancelled.isNull()
+        assert store.render_overview(z_index=99, maximum_edge=100).isNull()
+    finally:
+        store.close()
+
+
 def test_digital_slide_store_writes_and_reads_jpeg_tiles(tmp_path: Path) -> None:
     slide_path = tmp_path / "jpeg.fdmslide"
     store = DigitalSlideStore.create(

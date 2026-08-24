@@ -683,6 +683,90 @@ class DigitalSlideStore:
         painter.end()
         return output
 
+    def render_overview(
+        self,
+        *,
+        z_index: int,
+        maximum_edge: int = 256,
+        cancellation_requested: Callable[[], bool] | None = None,
+    ) -> QImage:
+        """Compose a bounded whole-slide preview without a full-size raster.
+
+        Tile payloads are streamed from SQLite and painted directly into the
+        small output image.  Memory use therefore depends on one decoded tile
+        plus the overview, rather than on the dimensions of the complete
+        digital slide.  Callers can cancel between tile decodes when a tab is
+        closed or the requested focus plane changes.
+        """
+
+        manifest = self.read_manifest()
+        max_edge = max(1, min(int(maximum_edge), 1024))
+        scale = min(
+            1.0,
+            max_edge / max(1, int(manifest.width)),
+            max_edge / max(1, int(manifest.height)),
+        )
+        output_width = max(1, int(round(manifest.width * scale)))
+        output_height = max(1, int(round(manifest.height * scale)))
+        if cancellation_requested is not None and cancellation_requested():
+            return QImage()
+
+        output = QImage(
+            output_width,
+            output_height,
+            QImage.Format.Format_RGB32,
+        )
+        output.fill(QColor("#101820"))
+        painter = QPainter(output)
+        if not painter.isActive():
+            return QImage()
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+        output_bounds = QRectF(output.rect())
+
+        conn = self._connection()
+        self._initialize_schema()
+        rows = conn.execute(
+            """
+            SELECT x, y, width, height, image_png, codec
+            FROM tiles
+            WHERE z_index = ?
+            ORDER BY id ASC
+            """,
+            (int(z_index),),
+        )
+        drawn_tiles = 0
+        cancelled = False
+        try:
+            for row in rows:
+                if cancellation_requested is not None and cancellation_requested():
+                    cancelled = True
+                    break
+                image = image_bytes_to_qimage(
+                    bytes(row["image_png"]),
+                    codec=str(row["codec"] or "png"),
+                )
+                if cancellation_requested is not None and cancellation_requested():
+                    cancelled = True
+                    break
+                if image.isNull():
+                    continue
+                target = QRectF(
+                    float(row["x"]) * scale,
+                    float(row["y"]) * scale,
+                    float(row["width"]) * scale,
+                    float(row["height"]) * scale,
+                )
+                if target.isEmpty() or not target.intersects(output_bounds):
+                    continue
+                painter.drawImage(target, image)
+                drawn_tiles += 1
+        finally:
+            painter.end()
+
+        if cancelled or drawn_tiles == 0:
+            return QImage()
+        return output
+
 
 def copy_slide_file(source: str | Path, target: str | Path) -> Path:
     source_path = Path(source).expanduser()

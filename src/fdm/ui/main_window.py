@@ -2130,7 +2130,7 @@ class MainWindow(QMainWindow):
             themed_icon("navigator", color="#E7ECEF")
         )
         self.toggle_canvas_navigator_action.setToolTip(
-            "放大图片后，在画布右上角显示当前视场位置"
+            "在画布右上角显示整图缩略图和当前视场位置"
         )
         self.toggle_canvas_navigator_action.triggered.connect(
             self._toggle_canvas_navigator
@@ -12010,11 +12010,13 @@ class MainWindow(QMainWindow):
             return None
         if not isinstance(watched, QWidget) or watched.window() is not self:
             return None
+        # On macOS Qt carries Cocoa's NumericPad flag on ordinary arrow keys.
+        # Ignore that platform detail while preserving Ctrl/Option/Cmd/Shift.
         modifiers = getattr(
             event,
             "modifiers",
             lambda: Qt.KeyboardModifier.NoModifier,
-        )()
+        )() & ~Qt.KeyboardModifier.KeypadModifier
         if modifiers not in {
             Qt.KeyboardModifier.NoModifier,
             Qt.KeyboardModifier.ShiftModifier,
@@ -17248,6 +17250,14 @@ class MainWindow(QMainWindow):
             bool(self._app_settings.show_canvas_navigator)
         )
         navigator.set_source_image(source_image)
+        if isinstance(canvas, DigitalSlideCanvas):
+            canvas.overviewImageChanged.connect(navigator.set_source_image)
+            canvas.set_overview_enabled(
+                bool(self._app_settings.show_canvas_navigator)
+            )
+            overview = canvas.overview_image()
+            if not overview.isNull():
+                navigator.set_source_image(overview)
         navigator.centerRequested.connect(
             lambda point, target_id=document_id: self._on_canvas_navigator_center_requested(
                 target_id,
@@ -17678,9 +17688,12 @@ class MainWindow(QMainWindow):
             self._pending_navigator_center = None
         for navigator in self._canvas_navigators.values():
             navigator.set_navigator_enabled(enabled)
+        for canvas in self._canvases.values():
+            if isinstance(canvas, DigitalSlideCanvas):
+                canvas.set_overview_enabled(enabled)
         self._save_app_settings(context="导航概览")
         self.statusBar().showMessage(
-            "放大时将显示导航概览" if enabled else "导航概览已隐藏",
+            "已显示整图缩略图和视场位置" if enabled else "导航概览已隐藏",
             2500,
         )
 
