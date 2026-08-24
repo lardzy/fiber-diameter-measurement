@@ -14,8 +14,11 @@ from fdm.services.analysis_batch import (
     AnalysisSourceKind,
     AnalysisToolInvocation,
     AnalysisViewport,
+    BasicAnalysisInvocation,
+    BasicAnalysisKind,
     builtin_plane_analysis_recipes,
     execute_analysis_batch,
+    resolve_basic_analysis_parameters,
 )
 from fdm.services.raster_io import numpy_to_raster_plane
 
@@ -145,14 +148,34 @@ def test_builtin_plane_recipes_include_a_safe_multi_tool_recipe() -> None:
         AdvancedAnalysisKind.TUBENESS,
         AdvancedAnalysisKind.GLCM_HARALICK,
         AdvancedAnalysisKind.INTENSITY_SURFACE,
+        BasicAnalysisKind.INTENSITY,
+        BasicAnalysisKind.HISTOGRAM,
+        BasicAnalysisKind.INTENSITY,
+        BasicAnalysisKind.FFT_POWER_SPECTRUM,
+        BasicAnalysisKind.PARTICLES,
+        BasicAnalysisKind.MAXIMA,
         AdvancedAnalysisKind.DIRECTIONALITY,
     )
     assert all(recipe.all_required_inputs == ("plane",) for recipe in recipes)
-    assert tuple(step.kind for step in recipes[-1].invocations) == (
+    common_recipe = next(
+        recipe
+        for recipe in recipes
+        if recipe.recipe_id == "intensity-and-histogram-v2"
+    )
+    assert tuple(step.kind for step in common_recipe.invocations) == (
+        BasicAnalysisKind.INTENSITY,
+        BasicAnalysisKind.HISTOGRAM,
+    )
+    advanced_recipe = next(
+        recipe
+        for recipe in recipes
+        if recipe.recipe_id == "directionality-and-glcm-v2"
+    )
+    assert tuple(step.kind for step in advanced_recipe.invocations) == (
         AdvancedAnalysisKind.DIRECTIONALITY,
         AdvancedAnalysisKind.GLCM_HARALICK,
     )
-    assert recipes[-1].invocations[0].parameters["algorithm_version"] == 2
+    assert advanced_recipe.invocations[0].parameters["algorithm_version"] == 2
 
 
 @pytest.mark.parametrize("recipe", builtin_plane_analysis_recipes())
@@ -161,14 +184,20 @@ def test_each_builtin_plane_recipe_executes_without_auxiliary_inputs(
 ) -> None:
     rows, columns = np.indices((32, 32))
     image = ((rows * 13 + columns * 7) % 256).astype(np.uint8)
+    plane = numpy_to_raster_plane(image)
+    invocation_type = (
+        BasicAnalysisInvocation
+        if isinstance(recipe.kind, BasicAnalysisKind)
+        else AdvancedAnalysisInvocation
+    )
     invocation = AnalysisInvocation(
         item_id="plane-only",
         display_name="普通图片",
-        analysis=AdvancedAnalysisInvocation(
+        analysis=invocation_type(
             recipe.kind,
             request_id=f"request-{recipe.recipe_id}",
             generation=1,
-            plane=numpy_to_raster_plane(image),
+            plane=plane,
         ),
     )
 
@@ -186,6 +215,98 @@ def test_each_builtin_plane_recipe_executes_without_auxiliary_inputs(
     assert result.item_results[0].execution is not None
     assert result.item_results[0].execution.kind is recipe.kind
     assert len(result.item_results[0].executions) == len(recipe.invocations)
+
+
+def test_histogram_recipe_returns_the_canonical_basic_kernel_result() -> None:
+    recipe = next(
+        item
+        for item in builtin_plane_analysis_recipes()
+        if item.recipe_id == "histogram-v2"
+    )
+    plane = numpy_to_raster_plane(np.arange(256, dtype=np.uint8).reshape(16, 16))
+    invocation = AnalysisInvocation(
+        item_id="histogram",
+        display_name="直方图来源",
+        analysis=BasicAnalysisInvocation(
+            BasicAnalysisKind.HISTOGRAM,
+            request_id="histogram-source",
+            generation=2,
+            plane=plane,
+        ),
+    )
+
+    result = execute_analysis_batch(
+        AnalysisBatchRequest(
+            request_id="histogram-batch",
+            generation=2,
+            recipe=recipe,
+            invocations=(invocation,),
+        )
+    )
+
+    execution = result.item_results[0].execution
+    assert execution is not None
+    assert execution.tool_spec.tool_id == "fdm.histogram"
+    assert execution.algorithm_version == "2"
+    assert sum(execution.result.counts) == 256
+    assert len(execution.result.counts) == 256
+
+
+def test_basic_histogram_honors_frozen_roi_mask_and_raw_rings() -> None:
+    recipe = next(
+        item
+        for item in builtin_plane_analysis_recipes()
+        if item.recipe_id == "histogram-v2"
+    )
+    plane = numpy_to_raster_plane(np.arange(100, dtype=np.uint8).reshape(10, 10))
+    roi_mask = np.ones((10, 10), dtype=bool)
+    invocation = AnalysisInvocation(
+        item_id="roi-histogram",
+        display_name="ROI 直方图",
+        analysis=BasicAnalysisInvocation(
+            BasicAnalysisKind.HISTOGRAM,
+            request_id="roi-histogram-source",
+            generation=4,
+            plane=plane,
+            roi_mask=roi_mask,
+            raw_rings=(((2.0, 2.0), (5.0, 2.0), (5.0, 5.0), (2.0, 5.0)),),
+        ),
+    )
+
+    result = execute_analysis_batch(
+        AnalysisBatchRequest(
+            request_id="roi-histogram-batch",
+            generation=4,
+            recipe=recipe,
+            invocations=(invocation,),
+        )
+    )
+
+    execution = result.item_results[0].execution
+    assert execution is not None
+    assert execution.result.included_pixel_count == 16
+    assert sum(execution.result.counts) == 16
+
+
+@pytest.mark.parametrize(
+    ("dtype", "expected"),
+    (
+        (np.uint8, 127.0),
+        (np.uint16, 32767.0),
+        (np.float32, 0.5),
+    ),
+)
+def test_particle_recipe_resolves_pixel_type_specific_default_threshold(
+    dtype: np.dtype,
+    expected: float,
+) -> None:
+    plane = numpy_to_raster_plane(np.zeros((4, 4), dtype=dtype))
+
+    assert resolve_basic_analysis_parameters(
+        BasicAnalysisKind.PARTICLES,
+        {},
+        plane,
+    )["threshold"] == expected
 
 
 def test_multi_tool_recipe_executes_every_step_in_recipe_order() -> None:

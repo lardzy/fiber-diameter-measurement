@@ -445,6 +445,44 @@ class MainWindowAnalysisBatchTests(unittest.TestCase):
         )
         self.assertIn("已一次提交 2 项", dialog.summary_label.text())
 
+    def test_histogram_batch_commits_one_result_per_selected_image(self) -> None:
+        window, _root = self._window()
+        first = self._mount(window, "histogram-first", self._plane(3))
+        second = self._mount(window, "histogram-second", self._plane(9))
+        window._open_analysis_batch_dialog()
+        dialog = window._analysis_batch_dialog
+        assert dialog is not None
+
+        self.assertEqual(window.analysis_batch_action.text(), "批量分析…")
+        self.assertEqual(dialog.windowTitle(), "批量分析")
+        with patch.object(
+            window,
+            "_open_analysis_results_center",
+            return_value=None,
+        ):
+            window._start_analysis_batch(dialog, "histogram-v2")
+            self.assertTrue(window.analysis_batch_controller.wait_for_done())
+            self._events(30)
+
+        self.assertEqual(len(window.project.analysis_artifacts), 2)
+        self.assertEqual(
+            {
+                artifact.source_document_id
+                for artifact in window.project.analysis_artifacts
+            },
+            {first.id, second.id},
+        )
+        self.assertTrue(
+            all(
+                artifact.tool_id == "fdm.histogram"
+                and artifact.tool_version == "2"
+                and artifact.curves
+                and artifact.tables
+                for artifact in window.project.analysis_artifacts
+            )
+        )
+        self.assertIn("已一次提交 2 项", dialog.summary_label.text())
+
     def test_multi_tool_recipe_commits_all_steps_for_one_source_atomically(
         self,
     ) -> None:

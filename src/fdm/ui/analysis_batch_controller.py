@@ -1,4 +1,4 @@
-"""Single-worker Qt controller for advanced-analysis batches."""
+"""Single-worker Qt controller for deterministic analysis batches."""
 
 from __future__ import annotations
 

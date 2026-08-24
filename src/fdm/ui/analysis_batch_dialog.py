@@ -42,7 +42,7 @@ class AnalysisBatchDialog(QDialog):
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
-        self.setWindowTitle("批量高级分析")
+        self.setWindowTitle("批量分析")
         self.setObjectName("analysisBatchDialog")
         self.resize(720, 480)
         self._recipes: dict[str, AnalysisRecipe] = {}

@@ -296,8 +296,11 @@ from fdm.services.analysis_batch import (
     AnalysisRecipe,
     AnalysisSourceKind,
     AnalysisViewport,
+    BasicAnalysisInvocation,
+    BasicAnalysisKind,
     analysis_step_request_id,
     builtin_plane_analysis_recipes,
+    resolve_basic_analysis_parameters,
 )
 from fdm.services.image_recipe_presets import (
     ImageRecipePresetError,
@@ -2352,9 +2355,9 @@ class MainWindow(QMainWindow):
         self.analysis_results_center_action.triggered.connect(
             self._open_analysis_results_center
         )
-        self.analysis_batch_action = QAction("批量高级分析…", self)
+        self.analysis_batch_action = QAction("批量分析…", self)
         self.analysis_batch_action.setToolTip(
-            "对矩阵中勾选的普通图片执行同一高级分析配方"
+            "对矩阵中勾选的图片或 ROI 执行同一分析配方"
         )
         self.analysis_batch_action.triggered.connect(
             self._open_analysis_batch_dialog
@@ -7331,13 +7334,36 @@ class MainWindow(QMainWindow):
         return True
 
     @staticmethod
-    def _analysis_batch_tool(kind: AdvancedAnalysisKind) -> AnalysisTool:
-        return {
+    def _analysis_batch_tool(
+        kind: BasicAnalysisKind | AdvancedAnalysisKind,
+    ) -> AnalysisTool:
+        mapping = {
+            BasicAnalysisKind.INTENSITY: AnalysisTool.INTENSITY,
+            BasicAnalysisKind.HISTOGRAM: AnalysisTool.HISTOGRAM,
+            BasicAnalysisKind.FFT_POWER_SPECTRUM: (
+                AnalysisTool.FFT_POWER_SPECTRUM
+            ),
+            BasicAnalysisKind.PARTICLES: AnalysisTool.PARTICLES,
+            BasicAnalysisKind.MAXIMA: AnalysisTool.MAXIMA,
             AdvancedAnalysisKind.DIRECTIONALITY: AnalysisTool.DIRECTIONALITY,
             AdvancedAnalysisKind.TUBENESS: AnalysisTool.TUBENESS,
             AdvancedAnalysisKind.GLCM_HARALICK: AnalysisTool.GLCM,
             AdvancedAnalysisKind.INTENSITY_SURFACE: AnalysisTool.SURFACE,
-        }[AdvancedAnalysisKind(kind)]
+        }
+        try:
+            return mapping[kind]
+        except KeyError as exc:
+            raise ValueError(f"不支持的批量分析类型：{kind.value}") from exc
+
+    @staticmethod
+    def _analysis_batch_input(
+        kind: BasicAnalysisKind | AdvancedAnalysisKind,
+        **kwargs: object,
+    ) -> BasicAnalysisInvocation | AdvancedAnalysisInvocation:
+        if isinstance(kind, BasicAnalysisKind):
+            return BasicAnalysisInvocation(kind, **kwargs)
+        kwargs.pop("raw_rings", None)
+        return AdvancedAnalysisInvocation(kind, **kwargs)
 
     def _analysis_batch_source_options(
         self,
@@ -7419,7 +7445,7 @@ class MainWindow(QMainWindow):
                         display_name=frozen_viewport.display_name,
                         source_kind=AnalysisSourceKind.DIGITAL_SLIDE,
                         viewport=frozen_viewport.viewport,
-                        analysis=AdvancedAnalysisInvocation(
+                        analysis=self._analysis_batch_input(
                             recipe.kind,
                             request_id=f"{request_id}:{item_id}",
                             generation=generation,
@@ -7445,6 +7471,7 @@ class MainWindow(QMainWindow):
                 )
             calibration = self._analysis_calibration_snapshot(document)
             roi_mask = None
+            raw_rings: tuple[tuple[tuple[float, float], ...], ...] = ()
             scope_name = "整张图片"
             if roi_id is not None:
                 roi = self.project.get_project_roi(roi_id)
@@ -7463,6 +7490,7 @@ class MainWindow(QMainWindow):
                 )
                 if not bool(roi_mask.any()):
                     raise ValueError(f"批量分析 ROI“{roi.name}”没有有效像素。")
+                raw_rings = self._analysis_roi_snapshot_rings(roi)
                 scope_name = f"ROI：{roi.name}"
             invocations.append(
                 AnalysisInvocation(
@@ -7475,12 +7503,13 @@ class MainWindow(QMainWindow):
                             f"{scope_name}"
                         )
                     ),
-                    analysis=AdvancedAnalysisInvocation(
+                    analysis=self._analysis_batch_input(
                         recipe.kind,
                         request_id=f"{request_id}:{document.id}",
                         generation=generation,
                         plane=plane,
                         roi_mask=roi_mask,
+                        raw_rings=raw_rings,
                         pixel_size_x=calibration.pixel_size_x,
                         pixel_size_y=calibration.pixel_size_y,
                         unit=calibration.unit,
@@ -7500,7 +7529,7 @@ class MainWindow(QMainWindow):
         if not document_ids and not unavailable:
             QMessageBox.information(
                 self,
-                "批量高级分析",
+                "批量分析",
                 "当前没有可批量分析的已挂载图片或数字化切片。",
             )
             return
@@ -7517,7 +7546,7 @@ class MainWindow(QMainWindow):
                 else ()
             )
         except (TypeError, ValueError) as exc:
-            QMessageBox.warning(self, "批量高级分析", str(exc))
+            QMessageBox.warning(self, "批量分析", str(exc))
             return
         dialog = AnalysisBatchDialog(self)
         dialog.set_recipes(self._analysis_batch_recipes)
@@ -7728,7 +7757,7 @@ class MainWindow(QMainWindow):
                 display_name=display_name,
                 source_kind=AnalysisSourceKind.DIGITAL_SLIDE,
                 viewport=viewport,
-                analysis=AdvancedAnalysisInvocation(
+                analysis=self._analysis_batch_input(
                     recipe.kind,
                     request_id=f"analysis-batch-preview:{item_id}",
                     generation=0,
@@ -7863,6 +7892,12 @@ class MainWindow(QMainWindow):
                         # Preserve the historical per-source override contract
                         # used by AnalysisBatchRequest execution.
                         merged_parameters.update(invocation.analysis.parameters)
+                    if isinstance(recipe_invocation.kind, BasicAnalysisKind):
+                        merged_parameters = resolve_basic_analysis_parameters(
+                            recipe_invocation.kind,
+                            merged_parameters,
+                            plane,
+                        )
                     region_snapshot = self._analysis_region_snapshot(
                         tool=tool,
                         document=document,
@@ -7933,7 +7968,7 @@ class MainWindow(QMainWindow):
         )
         dialog.set_busy(True)
         self.statusBar().showMessage(
-            f"批量高级分析：已冻结 {len(invocations)} 个输入，正在执行…",
+            f"批量分析：已冻结 {len(invocations)} 个输入，正在执行…",
             0,
         )
         self._update_action_states()
@@ -8083,7 +8118,7 @@ class MainWindow(QMainWindow):
             self._analysis_batch_dialog.show_task_failure(message)
         QMessageBox.warning(
             self,
-            "批量高级分析",
+            "批量分析",
             f"批量分析失败，未提交任何结果：\n{message}",
         )
         self._update_action_states()
@@ -8104,7 +8139,7 @@ class MainWindow(QMainWindow):
         if self._analysis_batch_dialog is not None:
             self._analysis_batch_dialog.show_cancelled()
         self.statusBar().showMessage(
-            "批量高级分析已取消，未提交任何结果。",
+            "批量分析已取消，未提交任何结果。",
             5000,
         )
         self._update_action_states()
@@ -8125,7 +8160,7 @@ class MainWindow(QMainWindow):
         if self._analysis_batch_dialog is not None:
             self._analysis_batch_dialog.show_stale_discard()
         self.statusBar().showMessage(
-            "批量高级分析结果已过期，未提交任何结果。",
+            "批量分析结果已过期，未提交任何结果。",
             5000,
         )
         self._update_action_states()
@@ -8388,7 +8423,7 @@ class MainWindow(QMainWindow):
         if not self._stop_analysis_batch_tasks(wait=wait):
             QMessageBox.warning(
                 self,
-                "批量高级分析",
+                "批量分析",
                 "批量分析任务尚未安全退出，已阻止当前转换。",
             )
             return False
@@ -22933,7 +22968,7 @@ class MainWindow(QMainWindow):
         self.analysis_batch_action.setToolTip(
             (
                 "对矩阵中勾选的普通图片或显式冻结的切片视窗"
-                "执行同一高级分析配方"
+                "执行同一分析配方"
                 if has_batch_raster
                 else (
                     "当前只有数字化切片或像素不可用的来源；"

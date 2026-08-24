@@ -11,6 +11,8 @@ from fdm.services.analysis_batch import (
     AnalysisBatchRequest,
     AnalysisBatchResult,
     AnalysisInvocation,
+    BasicAnalysisInvocation,
+    BasicAnalysisKind,
     builtin_plane_analysis_recipes,
     execute_analysis_batch,
 )
@@ -96,6 +98,36 @@ def _multi_tool_batch_result() -> AnalysisBatchResult:
                         recipe.kind,
                         request_id="batch-multi-export:doc_multi",
                         generation=3,
+                        plane=plane,
+                    ),
+                ),
+            ),
+        )
+    )
+
+
+def _histogram_batch_result() -> AnalysisBatchResult:
+    recipe = next(
+        item
+        for item in builtin_plane_analysis_recipes()
+        if item.recipe_id == "histogram-v2"
+    )
+    plane = numpy_to_raster_plane(
+        np.arange(256, dtype=np.uint8).reshape(16, 16)
+    )
+    return execute_analysis_batch(
+        AnalysisBatchRequest(
+            request_id="batch-histogram-export",
+            generation=4,
+            recipe=recipe,
+            invocations=(
+                AnalysisInvocation(
+                    item_id="doc_histogram",
+                    display_name="直方图图像",
+                    analysis=BasicAnalysisInvocation(
+                        BasicAnalysisKind.HISTOGRAM,
+                        request_id="batch-histogram-export:doc_histogram",
+                        generation=4,
                         plane=plane,
                     ),
                 ),
@@ -247,6 +279,33 @@ def test_multi_tool_batch_expands_each_execution_with_auditable_step(
         ) == ("纤维方向性", "Haralick GLCM 纹理")
         assert workbook["总览"]["E2"].value == 1
         assert workbook["总览"]["J2"].value == 2
+    finally:
+        workbook.close()
+
+
+def test_basic_histogram_batch_is_available_to_workbook_export(
+    tmp_path: Path,
+) -> None:
+    result = _histogram_batch_result()
+    rows = build_analysis_batch_export_rows(result)
+
+    assert len(rows) == 1
+    assert rows[0].tool_name == "直方图"
+    assert dict(rows[0].scalar_report)["included_pixel_count"] == 256
+    exported = export_analysis_batch_workbook(
+        result,
+        tmp_path / "histogram.xlsx",
+    )
+    assert exported.success
+    workbook = load_workbook(exported.path, data_only=False)
+    try:
+        sheet = workbook["逐图片"]
+        headers = _header_indexes(sheet)
+        assert sheet.cell(2, headers["分析工具"]).value == "直方图"
+        assert sheet.cell(
+            2,
+            headers["指标·included_pixel_count"],
+        ).value == 256
     finally:
         workbook.close()
 
