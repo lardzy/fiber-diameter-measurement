@@ -12,13 +12,17 @@ from shiboken6 import isValid as is_qobject_valid
 from fdm.geometry import Point
 from fdm.models import ImageDocument
 from fdm.runtime_logging import append_runtime_log
-from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
+from fdm.services.digital_slide_store import (
+    DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
+    DigitalSlideManifest,
+    DigitalSlideStore,
+)
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
 from fdm.ui.view_transform import CanvasZoomMode
 
 
-_OVERVIEW_MAX_EDGE = 256
+_OVERVIEW_MAX_EDGE = DIGITAL_SLIDE_OVERVIEW_MAX_EDGE
 _OVERVIEW_CACHE_LIMIT = 3
 _OVERVIEW_FOCUS_DEBOUNCE_MS = 180
 

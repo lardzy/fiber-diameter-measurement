@@ -298,6 +298,54 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertFalse(worker.is_running())
             self.assertEqual(written, [])
 
+    def test_digital_slide_writer_prestores_focus_overviews(self) -> None:
+        with TemporaryDirectory() as tmp_dir:
+            path = Path(tmp_dir) / "writer-overviews.fdmslide"
+            store = DigitalSlideStore.create(
+                path,
+                DigitalSlideManifest(1, 8, 4, 4, 4, [0, 1]),
+            )
+            store.close()
+            worker = DigitalSlideWriteWorker(path)
+            first = QImage(8, 4, QImage.Format.Format_RGB32)
+            first.fill(QColor("#CC2200"))
+            second = QImage(8, 4, QImage.Format.Format_RGB32)
+            second.fill(QColor("#0044CC"))
+            self.assertTrue(
+                worker.enqueue(
+                    DigitalSlideTile(z_index=0, x=0, y=0, width=8, height=4),
+                    first,
+                )
+            )
+            self.assertTrue(
+                worker.enqueue(
+                    DigitalSlideTile(z_index=1, x=0, y=0, width=8, height=4),
+                    second,
+                )
+            )
+
+            worker.start()
+            worker.finish()
+            worker.wait(timeout_ms=2000)
+            self.assertFalse(worker.is_running())
+
+            stored = DigitalSlideStore(path)
+            try:
+                stored.open()
+                with patch.object(
+                    stored,
+                    "_render_overview_from_tiles",
+                    side_effect=AssertionError(
+                        "capture writer should persist focus overviews"
+                    ),
+                ):
+                    first_overview = stored.render_overview(z_index=0)
+                    second_overview = stored.render_overview(z_index=1)
+                self.assertGreater(first_overview.pixelColor(2, 2).red(), 150)
+                self.assertGreater(second_overview.pixelColor(2, 2).blue(), 150)
+            finally:
+                stored.close()
+
     def test_digital_slide_budget_rejects_hard_image_limit_before_disk_work(self) -> None:
         window = MainWindow()
         try:

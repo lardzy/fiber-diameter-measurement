@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from collections.abc import Iterator
+from collections.abc import Iterator, Mapping
 from collections import OrderedDict
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF
+from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF, Qt
 from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 
 from fdm.atomic_io import atomic_replace_file, staged_path_for
@@ -21,6 +21,7 @@ DOCUMENT_KIND_IMAGE = "image"
 DOCUMENT_KIND_DIGITAL_SLIDE = "digital_slide"
 DIGITAL_SLIDE_TILE_CODEC_PNG = "png"
 DIGITAL_SLIDE_TILE_CODEC_JPEG = "jpeg"
+DIGITAL_SLIDE_OVERVIEW_MAX_EDGE = 256
 SUPPORTED_DIGITAL_SLIDE_TILE_CODECS = {
     DIGITAL_SLIDE_TILE_CODEC_PNG,
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
@@ -178,6 +179,62 @@ class DigitalSlideTile:
     focus_z: int = 0
     sharpness: float = 0.0
     status: str = "ready"
+
+
+class DigitalSlideOverviewAccumulator:
+    """Build small per-focus overviews while decoded capture tiles are available."""
+
+    def __init__(
+        self,
+        manifest: DigitalSlideManifest,
+        *,
+        maximum_edge: int = DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
+    ) -> None:
+        max_edge = max(1, min(int(maximum_edge), 1024))
+        self._scale = min(
+            1.0,
+            max_edge / max(1, int(manifest.width)),
+            max_edge / max(1, int(manifest.height)),
+        )
+        self._width = max(1, int(round(manifest.width * self._scale)))
+        self._height = max(1, int(round(manifest.height * self._scale)))
+        self._images: dict[int, QImage] = {}
+
+    def add_tile(self, tile: DigitalSlideTile, image: QImage) -> None:
+        if image.isNull():
+            return
+        target = QRectF(
+            float(tile.x) * self._scale,
+            float(tile.y) * self._scale,
+            float(tile.width) * self._scale,
+            float(tile.height) * self._scale,
+        )
+        if target.isEmpty() or not target.intersects(
+            QRectF(0.0, 0.0, float(self._width), float(self._height))
+        ):
+            return
+        focus_index = int(tile.z_index)
+        overview = self._images.get(focus_index)
+        if overview is None:
+            overview = QImage(
+                self._width,
+                self._height,
+                QImage.Format.Format_RGB32,
+            )
+            overview.fill(QColor("#101820"))
+            self._images[focus_index] = overview
+        painter = QPainter(overview)
+        if not painter.isActive():
+            return
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+        painter.drawImage(target, image)
+        painter.end()
+
+    def images(self) -> dict[int, QImage]:
+        return {
+            focus_index: QImage(image)
+            for focus_index, image in self._images.items()
+        }
 
 
 def is_digital_slide_path(path: str | Path) -> bool:
@@ -364,6 +421,14 @@ class DigitalSlideStore:
                 quality INTEGER
             );
             CREATE INDEX IF NOT EXISTS idx_tiles_view ON tiles(z_index, x, y, width, height);
+            CREATE TABLE IF NOT EXISTS focus_overviews (
+                z_index INTEGER PRIMARY KEY,
+                width INTEGER NOT NULL,
+                height INTEGER NOT NULL,
+                image_png BLOB NOT NULL,
+                codec TEXT NOT NULL DEFAULT 'png',
+                updated_at TEXT NOT NULL
+            );
             """
         )
         self._ensure_tile_codec_columns(conn)
@@ -408,6 +473,67 @@ class DigitalSlideStore:
         row = conn.execute("SELECT COUNT(*) AS total FROM tiles").fetchone()
         return int(row["total"] if row is not None else 0)
 
+    def read_focus_overview(
+        self,
+        z_index: int,
+        *,
+        maximum_edge: int = DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
+    ) -> QImage:
+        conn = self._connection()
+        self._initialize_schema()
+        row = conn.execute(
+            "SELECT image_png, codec FROM focus_overviews WHERE z_index = ?",
+            (int(z_index),),
+        ).fetchone()
+        if row is None:
+            return QImage()
+        image = image_bytes_to_qimage(
+            bytes(row["image_png"]),
+            codec=str(row["codec"] or DIGITAL_SLIDE_TILE_CODEC_PNG),
+        )
+        return _bounded_overview_image(image, maximum_edge=maximum_edge)
+
+    def write_focus_overviews(
+        self,
+        overviews: Mapping[int, QImage],
+    ) -> int:
+        conn = self._connection()
+        self._initialize_schema()
+        updated_at = datetime.now().isoformat(timespec="seconds")
+        rows: list[tuple[int, int, int, bytes, str, str]] = []
+        for focus_index, source in sorted(overviews.items()):
+            image = _bounded_overview_image(
+                source,
+                maximum_edge=DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
+            )
+            if image.isNull():
+                continue
+            rows.append(
+                (
+                    int(focus_index),
+                    int(image.width()),
+                    int(image.height()),
+                    qimage_to_image_bytes(
+                        image,
+                        codec=DIGITAL_SLIDE_TILE_CODEC_PNG,
+                    ),
+                    DIGITAL_SLIDE_TILE_CODEC_PNG,
+                    updated_at,
+                )
+            )
+        if not rows:
+            return 0
+        conn.executemany(
+            """
+            INSERT OR REPLACE INTO focus_overviews(
+                z_index, width, height, image_png, codec, updated_at
+            ) VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            rows,
+        )
+        conn.commit()
+        return len(rows)
+
     def write_tile(
         self,
         tile: DigitalSlideTile,
@@ -424,6 +550,10 @@ class DigitalSlideStore:
         normalized_codec = normalize_tile_codec(codec)
         normalized_quality = normalize_jpeg_quality(quality) if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
         payload = qimage_to_image_bytes(image, codec=normalized_codec, quality=normalized_quality)
+        conn.execute(
+            "DELETE FROM focus_overviews WHERE z_index = ?",
+            (int(tile.z_index),),
+        )
         conn.execute(
             """
             INSERT INTO tiles(
@@ -690,6 +820,43 @@ class DigitalSlideStore:
         maximum_edge: int = 256,
         cancellation_requested: Callable[[], bool] | None = None,
     ) -> QImage:
+        """Load a stored focus preview, generating it once for legacy slides."""
+
+        max_edge = max(1, min(int(maximum_edge), 1024))
+        if cancellation_requested is not None and cancellation_requested():
+            return QImage()
+        stored = self.read_focus_overview(
+            z_index,
+            maximum_edge=max_edge,
+        )
+        if not stored.isNull():
+            return stored
+
+        # Legacy slides do not contain focus_overviews. Generate a canonical
+        # preview once, persist it when possible, and retain bounded streaming
+        # as the compatibility path for existing files.
+        rendered = self._render_overview_from_tiles(
+            z_index=z_index,
+            maximum_edge=max(max_edge, DIGITAL_SLIDE_OVERVIEW_MAX_EDGE),
+            cancellation_requested=cancellation_requested,
+        )
+        if rendered.isNull():
+            return rendered
+        if cancellation_requested is not None and cancellation_requested():
+            return QImage()
+        try:
+            self.write_focus_overviews({int(z_index): rendered})
+        except Exception:  # noqa: BLE001 - optional migration must not hide preview
+            pass
+        return _bounded_overview_image(rendered, maximum_edge=max_edge)
+
+    def _render_overview_from_tiles(
+        self,
+        *,
+        z_index: int,
+        maximum_edge: int,
+        cancellation_requested: Callable[[], bool] | None = None,
+    ) -> QImage:
         """Compose a bounded whole-slide preview without a full-size raster.
 
         Tile payloads are streamed from SQLite and painted directly into the
@@ -768,6 +935,20 @@ class DigitalSlideStore:
         return output
 
 
+def _bounded_overview_image(image: QImage, *, maximum_edge: int) -> QImage:
+    if image.isNull():
+        return QImage()
+    max_edge = max(1, min(int(maximum_edge), 1024))
+    if image.width() <= max_edge and image.height() <= max_edge:
+        return QImage(image)
+    return image.scaled(
+        max_edge,
+        max_edge,
+        Qt.AspectRatioMode.KeepAspectRatio,
+        Qt.TransformationMode.SmoothTransformation,
+    )
+
+
 def copy_slide_file(source: str | Path, target: str | Path) -> Path:
     source_path = Path(source).expanduser()
     target_path = Path(target).expanduser()
@@ -824,6 +1005,7 @@ def compress_slide_file(
             created_at=source_manifest.created_at,
             metadata=metadata,
         )
+        overview_accumulator = DigitalSlideOverviewAccumulator(target_manifest)
         with staged_path_for(target_path, suffix=".fdmslide.tmp") as staged_path:
             target_store: DigitalSlideStore | None = None
             try:
@@ -837,12 +1019,14 @@ def compress_slide_file(
                         quality=normalized_quality,
                         update_manifest=False,
                     )
+                    overview_accumulator.add_tile(tile, image)
                     completed += 1
                     if progress_callback is not None:
                         progress_callback(completed, total)
                 target_manifest.tile_count = target_store.tile_count()
                 target_manifest.status = source_manifest.status
                 target_store.write_manifest(target_manifest)
+                target_store.write_focus_overviews(overview_accumulator.images())
                 target_store.close()
                 target_store = None
                 _make_staged_database_standalone(staged_path)

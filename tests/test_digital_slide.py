@@ -17,6 +17,7 @@ from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
     DIGITAL_SLIDE_TILE_CODEC_PNG,
     DigitalSlideManifest,
+    DigitalSlideOverviewAccumulator,
     DigitalSlideStore,
     DigitalSlideTile,
     compress_slide_file,
@@ -491,6 +492,115 @@ def test_digital_slide_store_streams_bounded_overview_for_selected_focus(
         store.close()
 
 
+def test_prestored_focus_overviews_load_without_rescanning_tiles(
+    tmp_path: Path,
+) -> None:
+    slide_path = tmp_path / "prestored-overviews.fdmslide"
+    manifest = DigitalSlideManifest(
+        version=1,
+        width=400,
+        height=200,
+        viewport_width=200,
+        viewport_height=200,
+        focus_levels=[-100, 100],
+    )
+    store = DigitalSlideStore.create(slide_path, manifest)
+    accumulator = DigitalSlideOverviewAccumulator(manifest)
+    try:
+        samples = (
+            (
+                DigitalSlideTile(z_index=0, x=0, y=0, width=200, height=200),
+                _solid_image(200, 200, "#FF0000"),
+            ),
+            (
+                DigitalSlideTile(z_index=0, x=200, y=0, width=200, height=200),
+                _solid_image(200, 200, "#00FF00"),
+            ),
+            (
+                DigitalSlideTile(z_index=1, x=0, y=0, width=400, height=200),
+                _solid_image(400, 200, "#0000FF"),
+            ),
+        )
+        for tile, image in samples:
+            store.write_tile(tile, image)
+            accumulator.add_tile(tile, image)
+        assert store.write_focus_overviews(accumulator.images()) == 2
+
+        with patch.object(
+            store,
+            "_render_overview_from_tiles",
+            side_effect=AssertionError("pre-stored overview should avoid tile scan"),
+        ):
+            first = store.render_overview(z_index=0, maximum_edge=100)
+            second = store.render_overview(z_index=1, maximum_edge=100)
+
+        assert (first.width(), first.height()) == (100, 50)
+        assert first.pixelColor(20, 25).red() > 200
+        assert first.pixelColor(80, 25).green() > 200
+        assert second.pixelColor(50, 25).blue() > 200
+    finally:
+        store.close()
+
+
+def test_legacy_overview_is_generated_and_persisted_only_once(tmp_path: Path) -> None:
+    slide_path = tmp_path / "legacy-overview.fdmslide"
+    store = DigitalSlideStore.create(
+        slide_path,
+        DigitalSlideManifest(1, 200, 100, 100, 100, [0]),
+    )
+    try:
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=0, y=0, width=200, height=100),
+            _solid_image(200, 100, "#33AA66"),
+        )
+        # Simulate a v0.4.1-era slide whose schema predates focus_overviews.
+        store._connection().execute("DROP TABLE focus_overviews")  # noqa: SLF001
+        store._connection().commit()  # noqa: SLF001
+        store._schema_initialized = False  # noqa: SLF001
+        assert store.read_focus_overview(0).isNull()
+
+        with patch.object(
+            store,
+            "_render_overview_from_tiles",
+            wraps=store._render_overview_from_tiles,
+        ) as compose:
+            first = store.render_overview(z_index=0, maximum_edge=100)
+            second = store.render_overview(z_index=0, maximum_edge=80)
+
+        assert not first.isNull()
+        assert not second.isNull()
+        assert compose.call_count == 1
+        assert not store.read_focus_overview(0).isNull()
+    finally:
+        store.close()
+
+
+def test_writing_a_tile_invalidates_its_prestored_focus_overview(
+    tmp_path: Path,
+) -> None:
+    slide_path = tmp_path / "invalidate-overview.fdmslide"
+    store = DigitalSlideStore.create(
+        slide_path,
+        DigitalSlideManifest(1, 100, 100, 100, 100, [0, 1]),
+    )
+    try:
+        store.write_focus_overviews(
+            {
+                0: _solid_image(100, 100, "#FF0000"),
+                1: _solid_image(100, 100, "#00FF00"),
+            }
+        )
+        store.write_tile(
+            DigitalSlideTile(z_index=0, x=0, y=0, width=100, height=100),
+            _solid_image(100, 100, "#0000FF"),
+        )
+
+        assert store.read_focus_overview(0).isNull()
+        assert not store.read_focus_overview(1).isNull()
+    finally:
+        store.close()
+
+
 def test_digital_slide_store_writes_and_reads_jpeg_tiles(tmp_path: Path) -> None:
     slide_path = tmp_path / "jpeg.fdmslide"
     store = DigitalSlideStore.create(
@@ -583,6 +693,14 @@ def test_compress_slide_file_writes_copy_without_changing_source(tmp_path: Path)
         target_tiles = list(target_store.iter_tiles())
         assert target_tiles[0][2] == DIGITAL_SLIDE_TILE_CODEC_JPEG
         assert target_tiles[0][3] == 80
+        with patch.object(
+            target_store,
+            "_render_overview_from_tiles",
+            side_effect=AssertionError("compressed slide should contain overview"),
+        ):
+            overview = target_store.render_overview(z_index=0)
+        assert not overview.isNull()
+        assert overview.pixelColor(10, 10).green() > 100
     finally:
         source_store.close()
         target_store.close()

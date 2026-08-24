@@ -167,6 +167,7 @@ from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_TILE_CODEC_JPEG,
     DIGITAL_SLIDE_TILE_CODEC_PNG,
     DigitalSlideManifest,
+    DigitalSlideOverviewAccumulator,
     DigitalSlideStore,
     DigitalSlideTile,
     is_digital_slide_path,
@@ -713,6 +714,9 @@ class DigitalSlideWriteWorker(QObject):
         store = DigitalSlideStore(self._path)
         try:
             store.open()
+            overview_accumulator = DigitalSlideOverviewAccumulator(
+                store.read_manifest()
+            )
             while True:
                 with self._lock:
                     cancel_requested = self._cancel_requested
@@ -733,8 +737,13 @@ class DigitalSlideWriteWorker(QObject):
                 with self._lock:
                     if self._cancel_requested:
                         break
+                overview_accumulator.add_tile(tile, image)
                 self._written_count += 1
                 self.tileWritten.emit(self._written_count, write_ms)
+            with self._lock:
+                cancelled = self._cancel_requested
+            if not cancelled:
+                store.write_focus_overviews(overview_accumulator.images())
         except Exception as exc:
             self.failed.emit(str(exc))
         finally:
