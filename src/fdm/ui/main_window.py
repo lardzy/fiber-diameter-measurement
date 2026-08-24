@@ -495,6 +495,7 @@ from fdm.ui.widgets import (
     FlowLayout,
     MeasurementToolStrip,
     NoWheelComboBox,
+    NoWheelSpinBox,
     OverlayToolSplitButton,
 )
 from fdm.ui.workspace import AdaptiveLayoutController, WorkspaceDockWidget, WorkspaceMode
@@ -633,6 +634,74 @@ DIGITAL_SLIDE_CONFIRM_IMAGES = 2_000
 DIGITAL_SLIDE_CONFIRM_BYTES = 10 * 1024**3
 DIGITAL_SLIDE_CONFIRM_DURATION_MS = 2 * 60 * 60 * 1000
 DIGITAL_SLIDE_MIN_FREE_BYTES = 2 * 1024**3
+DIGITAL_SLIDE_UNBOUNDED_COMMAND_LIMIT = 10_000_000
+DIGITAL_SLIDE_MAP_DETAILED_CELL_LIMIT = 400
+
+
+DIGITAL_SLIDE_RANGE_MODE_GRID = "grid"
+DIGITAL_SLIDE_RANGE_MODE_BOUNDARY = "boundary"
+DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO = "command_zero"
+DIGITAL_SLIDE_GRID_ORIGIN_RECORDED = "recorded_position"
+
+
+@dataclass(frozen=True, slots=True)
+class DigitalSlideCapturePlanPreview:
+    range_mode: str
+    origin_stage_x: int
+    origin_stage_y: int
+    stage_delta_x: int
+    stage_delta_y: int
+    cols: int
+    rows: int
+    focus_count: int
+    viewport_width_px: int
+    viewport_height_px: int
+    pixel_stride_x: int
+    pixel_stride_y: int
+    planned_stage_bounds: dict[str, int]
+    planned_map_bounds: dict[str, int]
+    requested_map_bounds: dict[str, int]
+    overshoot: dict[str, int]
+    blockers: tuple[str, ...] = ()
+    warnings: tuple[str, ...] = ()
+
+    @property
+    def image_count(self) -> int:
+        return max(0, self.cols) * max(0, self.rows) * max(0, self.focus_count)
+
+    @property
+    def output_size(self) -> tuple[int, int]:
+        return (
+            self.viewport_width_px + (max(0, self.cols - 1) * self.pixel_stride_x),
+            self.viewport_height_px + (max(0, self.rows - 1) * self.pixel_stride_y),
+        )
+
+    def stage_target(self, col: int, row: int) -> tuple[int, int]:
+        return (
+            self.origin_stage_x + (int(col) * self.stage_delta_x),
+            self.origin_stage_y + (int(row) * self.stage_delta_y),
+        )
+
+
+class DigitalSlideCountSpinBox(NoWheelSpinBox):
+    """Nullable count editor with legacy text helpers used by UI integrations."""
+
+    def __init__(self, parent: QWidget | None = None) -> None:
+        super().__init__(parent)
+        self.setRange(0, 20_000)
+        self.setSpecialValueText("未设置")
+        self.setValue(0)
+
+    def setText(self, value: str) -> None:  # noqa: N802 - legacy QLineEdit surface
+        token = str(value or "").strip()
+        try:
+            numeric = int(token) if token else 0
+        except ValueError:
+            numeric = 0
+        self.setValue(max(0, numeric))
+
+    def text(self) -> str:
+        return "" if self.value() <= 0 else str(self.value())
 
 
 class DigitalSlideWriteWorker(QObject):
@@ -648,11 +717,17 @@ class DigitalSlideWriteWorker(QObject):
         max_queue_bytes: int = 64 * 1024 * 1024,
         codec: str = DIGITAL_SLIDE_TILE_CODEC_PNG,
         quality: int | None = None,
+        overview_focus_indices: set[int] | None = None,
     ) -> None:
         super().__init__()
         self._path = Path(path)
         self._codec = normalize_tile_codec(codec)
         self._quality = normalize_jpeg_quality(quality) if self._codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        self._overview_focus_indices = (
+            {int(index) for index in overview_focus_indices}
+            if overview_focus_indices is not None
+            else None
+        )
         self._queue: Queue[tuple[DigitalSlideTile, QImage, int]] = Queue(maxsize=max(1, int(max_queue_size)))
         self._max_queue_bytes = max(1, int(max_queue_bytes))
         self._queued_bytes = 0
@@ -661,6 +736,15 @@ class DigitalSlideWriteWorker(QObject):
         self._finish_requested = False
         self._cancel_requested = False
         self._written_count = 0
+
+    def set_overview_focus_indices(self, focus_indices: set[int] | None) -> None:
+        if self.is_running():
+            raise RuntimeError("数字切片写入启动后不能更改缩略图焦层策略。")
+        self._overview_focus_indices = (
+            {int(index) for index in focus_indices}
+            if focus_indices is not None
+            else None
+        )
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -715,7 +799,8 @@ class DigitalSlideWriteWorker(QObject):
         try:
             store.open()
             overview_accumulator = DigitalSlideOverviewAccumulator(
-                store.read_manifest()
+                store.read_manifest(),
+                focus_indices=self._overview_focus_indices,
             )
             while True:
                 with self._lock:
@@ -755,40 +840,124 @@ class DigitalSlideWriteWorker(QObject):
 
 
 class DigitalSlideZRangeRail(QFrame):
+    targetChanged = Signal(int)
+    moveRequested = Signal(int)
+    boundPreviewChanged = Signal(str, int)
+    boundCommitted = Signal(str, int)
+
     def __init__(self, parent: QWidget | None = None) -> None:
         super().__init__(parent)
-        self.setMinimumSize(180, 176)
+        self.setMinimumSize(180, 210)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+        self.setFocusPolicy(Qt.FocusPolicy.StrongFocus)
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.setToolTip(
+            "拖动橙色命令位置可预览目标，松手仅发送一次移动命令；"
+            "右侧蓝色/绿色手柄只调整采集上下限。"
+        )
         self._soft_limit = 200_000
+        self._configured_soft_limit = 200_000
         self._current_z = 0
+        self._target_z = 0
         self._lower_z: int | None = None
         self._upper_z: int | None = None
+        self._focus_step = 1
+        self._movement_enabled = False
+        self._bounds_enabled = True
+        self._drag_kind: str | None = None
+        self._drag_display_limit: int | None = None
+        self._target_pending = False
 
-    def set_state(self, *, soft_limit: int, current_z: int, lower_z: int | None, upper_z: int | None) -> None:
-        self._soft_limit = max(1, abs(int(soft_limit)))
+    def set_state(
+        self,
+        *,
+        soft_limit: int,
+        current_z: int,
+        lower_z: int | None,
+        upper_z: int | None,
+        focus_step: int = 1,
+        movement_enabled: bool = False,
+        bounds_enabled: bool = True,
+    ) -> None:
+        configured_limit = abs(int(soft_limit))
+        self._configured_soft_limit = configured_limit
+        self._soft_limit = (
+            configured_limit
+            if configured_limit > 0
+            else DIGITAL_SLIDE_UNBOUNDED_COMMAND_LIMIT
+        )
         self._current_z = int(current_z)
         self._lower_z = int(lower_z) if lower_z is not None else None
         self._upper_z = int(upper_z) if upper_z is not None else None
+        self._focus_step = max(1, abs(int(focus_step)))
+        self._movement_enabled = bool(movement_enabled)
+        self._bounds_enabled = bool(bounds_enabled)
+        if self._target_z == self._current_z:
+            self._target_pending = False
+        if self._drag_kind != "target" and not self._target_pending:
+            self._target_z = self._current_z
+        self.setCursor(
+            Qt.CursorShape.PointingHandCursor
+            if self._movement_enabled or self._bounds_enabled
+            else Qt.CursorShape.ArrowCursor
+        )
         self.update()
+
+    def target_value(self) -> int:
+        return int(self._target_z)
+
+    def set_target_value(self, value: int, *, pending: bool = True) -> None:
+        value = self._snap_value(value)
+        changed = value != self._target_z
+        self._target_z = value
+        self._target_pending = bool(pending and value != self._current_z)
+        if changed:
+            self.targetChanged.emit(value)
+        self.update()
+
+    def reset_target(self) -> None:
+        self.set_target_value(self._current_z, pending=False)
+
+    def _rail_geometry(self) -> tuple[int, int, int, QRect]:
+        rect = self.rect().adjusted(10, 8, -10, -8)
+        rail_x = rect.left() + max(62, int(rect.width() * 0.36))
+        top = rect.top() + 24
+        bottom = rect.bottom() - 58
+        if bottom <= top:
+            top = rect.top()
+            bottom = rect.bottom()
+        return rail_x, top, bottom, rect
 
     def paintEvent(self, event) -> None:  # noqa: N802
         super().paintEvent(event)
         painter = QPainter(self)
         if not painter.isActive():
             return
-        rect = self.rect().adjusted(8, 8, -8, -8)
-        rail_x = rect.center().x()
-        top = rect.top() + 20
-        bottom = rect.bottom() - 32
-        if bottom <= top:
-            top = rect.top()
-            bottom = rect.bottom()
+        rail_x, top, bottom, rect = self._rail_geometry()
+        display_limit = self._display_limit()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        if self.hasFocus():
+            painter.setPen(QPen(QColor("#38BDF8"), 1))
+            painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -2, -2), 6, 6)
         painter.setPen(QPen(QColor("#64748B"), 2))
         painter.drawLine(rail_x, top, rail_x, bottom)
         painter.setPen(QPen(QColor("#94A3B8"), 1))
-        painter.drawText(QRectF(rect.left(), rect.top(), rect.width(), 20), Qt.AlignmentFlag.AlignLeft, f"+{self._soft_limit}")
-        painter.drawText(QRectF(rect.left(), bottom - 2, rect.width(), 20), Qt.AlignmentFlag.AlignLeft, f"-{self._soft_limit}")
+        painter.drawText(
+            QRectF(rect.left(), rect.top(), 72, 20),
+            Qt.AlignmentFlag.AlignLeft,
+            f"+{display_limit}",
+        )
+        painter.drawText(
+            QRectF(rect.left(), bottom - 8, 72, 20),
+            Qt.AlignmentFlag.AlignLeft,
+            f"-{display_limit}",
+        )
+        if self._configured_soft_limit <= 0:
+            painter.drawText(
+                QRectF(rect.right() - 90, rect.top(), 90, 20),
+                Qt.AlignmentFlag.AlignRight,
+                "无软限位",
+            )
 
         lower = self._lower_z
         upper = self._upper_z
@@ -797,16 +966,18 @@ class DigitalSlideZRangeRail(QFrame):
             y2 = self._value_to_y(lower, top, bottom)
             painter.fillRect(QRectF(rail_x - 10, min(y1, y2), 20, abs(y2 - y1)), QColor(96, 165, 250, 70))
         for value, label, color in (
-            (upper, "上限", QColor("#60A5FA")),
-            (lower, "下限", QColor("#34D399")),
+            (upper, "命令上限", QColor("#60A5FA")),
+            (lower, "命令下限", QColor("#34D399")),
         ):
             if value is None:
                 continue
             y = self._value_to_y(value, top, bottom)
             painter.setPen(QPen(color, 2))
-            painter.drawLine(rail_x - 24, y, rail_x + 24, y)
+            painter.setBrush(color)
+            painter.drawRect(QRectF(rail_x + 5, y - 5, 12, 10))
+            painter.drawLine(rail_x - 7, y, rail_x + 24, y)
             painter.drawText(
-                QRectF(rail_x + 30, y - 10, max(40, rect.right() - rail_x - 30), 20),
+                QRectF(rail_x + 28, y - 10, max(40, rect.right() - rail_x - 28), 20),
                 Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
                 f"{label} {value}",
             )
@@ -814,18 +985,177 @@ class DigitalSlideZRangeRail(QFrame):
         painter.setBrush(QColor("#F97316"))
         painter.setPen(QPen(QColor("#FED7AA"), 2))
         painter.drawEllipse(QPoint(rail_x, current_y), 6, 6)
+        target_y = self._value_to_y(self._target_z, top, bottom)
+        if self._target_z != self._current_z or self._drag_kind == "target":
+            target_pen = QPen(QColor("#C084FC"), 2, Qt.PenStyle.DashLine)
+            painter.setPen(target_pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawLine(rail_x - 20, target_y, rail_x + 20, target_y)
+            painter.drawEllipse(QPoint(rail_x, target_y), 8, 8)
+            painter.drawText(
+                QRectF(rect.left(), target_y - 25, max(54, rail_x - rect.left() - 10), 20),
+                Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+                f"目标 {self._target_z}",
+            )
         painter.setPen(QPen(QColor("#F97316"), 1))
         painter.drawText(
-            QRectF(rect.left(), rect.bottom() - 18, rect.width(), 18),
+            QRectF(rect.left(), rect.bottom() - 50, rect.width(), 18),
             Qt.AlignmentFlag.AlignCenter,
-            f"当前 Z={self._current_z}",
+            f"当前命令位置 Z={self._current_z}",
+        )
+        painter.setPen(QPen(QColor("#94A3B8"), 1))
+        if self._movement_enabled:
+            interaction_hint = (
+                "方向键微调 · PgUp/PgDn 快调\n"
+                "Enter 移动 · Esc 取消"
+            )
+        elif self._bounds_enabled:
+            interaction_hint = "当前不可移动 Z 轴\n仍可拖动上下限手柄"
+        else:
+            interaction_hint = "Z 轨道已锁定"
+        painter.drawText(
+            QRectF(rect.left(), rect.bottom() - 32, rect.width(), 32),
+            Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap,
+            interaction_hint,
         )
 
+    def mousePressEvent(self, event) -> None:  # noqa: N802
+        if event.button() != Qt.MouseButton.LeftButton:
+            super().mousePressEvent(event)
+            return
+        self.setFocus(Qt.FocusReason.MouseFocusReason)
+        self._drag_display_limit = self._display_limit()
+        rail_x, top, bottom, _rect = self._rail_geometry()
+        position = event.position()
+        candidates: list[tuple[float, str]] = []
+        # Bound handles live on the right of the rail.  Restrict their hit
+        # target to that handle lane so a click on the current/target marker
+        # cannot be stolen by a nearby upper or lower bound.
+        if (
+            self._bounds_enabled
+            and rail_x + 2 <= position.x() <= rail_x + 26
+        ):
+            if self._upper_z is not None:
+                candidates.append((abs(position.y() - self._value_to_y(self._upper_z, top, bottom)), "upper"))
+            if self._lower_z is not None:
+                candidates.append((abs(position.y() - self._value_to_y(self._lower_z, top, bottom)), "lower"))
+        nearest = min(candidates, default=(999.0, ""), key=lambda item: item[0])
+        if nearest[0] <= 13.0:
+            self._drag_kind = nearest[1]
+        elif self._movement_enabled:
+            self._drag_kind = "target"
+            self.set_target_value(self._y_to_value(position.y(), top, bottom))
+        else:
+            self._drag_display_limit = None
+            event.ignore()
+            return
+        event.accept()
+        self.update()
+
+    def mouseMoveEvent(self, event) -> None:  # noqa: N802
+        if self._drag_kind is None:
+            super().mouseMoveEvent(event)
+            return
+        _rail_x, top, bottom, _rect = self._rail_geometry()
+        value = self._snap_value(self._y_to_value(event.position().y(), top, bottom))
+        if self._drag_kind == "target":
+            self.set_target_value(value)
+        elif self._drag_kind == "lower":
+            if self._upper_z is not None:
+                value = min(value, self._upper_z)
+            self._lower_z = value
+            self.boundPreviewChanged.emit("lower", value)
+            self.update()
+        elif self._drag_kind == "upper":
+            if self._lower_z is not None:
+                value = max(value, self._lower_z)
+            self._upper_z = value
+            self.boundPreviewChanged.emit("upper", value)
+            self.update()
+        event.accept()
+
+    def mouseReleaseEvent(self, event) -> None:  # noqa: N802
+        if event.button() != Qt.MouseButton.LeftButton or self._drag_kind is None:
+            super().mouseReleaseEvent(event)
+            return
+        drag_kind = self._drag_kind
+        self._drag_kind = None
+        if drag_kind == "target":
+            if self._movement_enabled and self._target_z != self._current_z:
+                self._target_pending = True
+                self.moveRequested.emit(self._target_z)
+        elif drag_kind == "lower" and self._lower_z is not None:
+            self.boundCommitted.emit("lower", self._lower_z)
+        elif drag_kind == "upper" and self._upper_z is not None:
+            self.boundCommitted.emit("upper", self._upper_z)
+        self._drag_display_limit = None
+        event.accept()
+        self.update()
+
+    def keyPressEvent(self, event) -> None:  # noqa: N802
+        key = event.key()
+        if key == Qt.Key.Key_Escape:
+            self.reset_target()
+            event.accept()
+            return
+        if key in {Qt.Key.Key_Return, Qt.Key.Key_Enter}:
+            if self._movement_enabled and self._target_z != self._current_z:
+                self._target_pending = True
+                self.moveRequested.emit(self._target_z)
+            event.accept()
+            return
+        direction = 0
+        multiplier = 1
+        if key in {Qt.Key.Key_Up, Qt.Key.Key_Right}:
+            direction = 1
+        elif key in {Qt.Key.Key_Down, Qt.Key.Key_Left}:
+            direction = -1
+        elif key == Qt.Key.Key_PageUp:
+            direction = 1
+            multiplier = 10
+        elif key == Qt.Key.Key_PageDown:
+            direction = -1
+            multiplier = 10
+        if direction and self._movement_enabled:
+            self.set_target_value(self._target_z + (direction * multiplier * self._focus_step))
+            event.accept()
+            return
+        super().keyPressEvent(event)
+
+    def _display_limit(self) -> int:
+        if self._drag_display_limit is not None:
+            return max(1, int(self._drag_display_limit))
+        if self._configured_soft_limit > 0:
+            return max(1, int(self._configured_soft_limit))
+        values = [self._current_z, self._target_z]
+        if self._lower_z is not None:
+            values.append(self._lower_z)
+        if self._upper_z is not None:
+            values.append(self._upper_z)
+        largest = max(
+            1_000,
+            self._focus_step * 20,
+            *(abs(int(value)) for value in values),
+        )
+        padding = max(self._focus_step * 5, largest // 5)
+        return min(self._soft_limit, largest + padding)
+
     def _value_to_y(self, value: int, top: int, bottom: int) -> int:
-        limit = max(1, self._soft_limit)
+        limit = self._display_limit()
         clamped = max(-limit, min(limit, int(value)))
         ratio = (clamped + limit) / (2.0 * limit)
         return int(round(bottom - (ratio * (bottom - top))))
+
+    def _y_to_value(self, y: float, top: int, bottom: int) -> int:
+        span = max(1, bottom - top)
+        ratio = max(0.0, min(1.0, (bottom - float(y)) / span))
+        limit = self._display_limit()
+        return int(round(-limit + (ratio * 2.0 * limit)))
+
+    def _snap_value(self, value: int) -> int:
+        step = max(1, self._focus_step)
+        snapped = int(round(int(value) / step) * step)
+        return max(-self._soft_limit, min(self._soft_limit, snapped))
 
 
 class DigitalSlideRangeMap(QFrame):
@@ -834,28 +1164,57 @@ class DigitalSlideRangeMap(QFrame):
         self.setMinimumSize(200, 140)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._current_rect: dict[str, int] = {"left": 0, "right": 1, "top": 0, "bottom": 1}
-        self._bounds: dict[str, int] = {}
+        self._requested_bounds: dict[str, int] = {}
+        self._partial_bounds: dict[str, int] = {}
+        self._planned_bounds: dict[str, int] = {}
         self._active_rect: dict[str, int] = {}
         self._completed_rects: list[dict[str, int]] = []
+        self._start_rect: dict[str, int] = {}
+        self._end_rect: dict[str, int] = {}
+        self._cols = 0
+        self._rows = 0
+        self._has_overshoot = False
         self._axis_hint = "X→ / Y↓"
 
     def set_state(
         self,
         *,
         current_rect: dict[str, int],
-        bounds: dict[str, int],
+        bounds: dict[str, int] | None = None,
+        requested_bounds: dict[str, int] | None = None,
+        partial_bounds: dict[str, int] | None = None,
+        planned_bounds: dict[str, int] | None = None,
+        start_rect: dict[str, int] | None = None,
+        end_rect: dict[str, int] | None = None,
+        cols: int = 0,
+        rows: int = 0,
+        has_overshoot: bool = False,
         active_rect: dict[str, int] | None = None,
         completed_rects: list[dict[str, int]] | None = None,
         axis_hint: str = "X→ / Y↓",
     ) -> None:
         self._current_rect = self._normalized_rect_dict(current_rect)
-        self._bounds = self._normalized_rect_dict(bounds) if self._has_full_bounds(bounds) else {}
+        legacy_bounds = bounds or {}
+        requested = requested_bounds if requested_bounds is not None else legacy_bounds
+        planned = planned_bounds if planned_bounds is not None else legacy_bounds
+        self._requested_bounds = self._normalized_rect_dict(requested or {}) if self._has_full_bounds(requested or {}) else {}
+        self._partial_bounds = {
+            key: int(value)
+            for key, value in (partial_bounds or {}).items()
+            if key in {"left", "right", "top", "bottom"}
+        }
+        self._planned_bounds = self._normalized_rect_dict(planned or {}) if self._has_full_bounds(planned or {}) else {}
         self._active_rect = self._normalized_rect_dict(active_rect or {}) if self._has_full_bounds(active_rect or {}) else {}
         self._completed_rects = [
             self._normalized_rect_dict(item)
             for item in (completed_rects or [])
             if self._has_full_bounds(item)
         ]
+        self._start_rect = self._normalized_rect_dict(start_rect or {}) if self._has_full_bounds(start_rect or {}) else {}
+        self._end_rect = self._normalized_rect_dict(end_rect or {}) if self._has_full_bounds(end_rect or {}) else {}
+        self._cols = max(0, int(cols))
+        self._rows = max(0, int(rows))
+        self._has_overshoot = bool(has_overshoot)
         self._axis_hint = str(axis_hint or "X→ / Y↓")
         self.update()
 
@@ -884,10 +1243,11 @@ class DigitalSlideRangeMap(QFrame):
         if not painter.isActive():
             return
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        rect = self.rect().adjusted(10, 10, -10, -10)
-        painter.fillRect(rect, QColor("#0F172A") if self.palette().window().color().lightness() < 128 else QColor("#F8FAFC"))
+        frame_rect = self.rect().adjusted(10, 10, -10, -10)
+        painter.fillRect(frame_rect, QColor("#0F172A") if self.palette().window().color().lightness() < 128 else QColor("#F8FAFC"))
         painter.setPen(QPen(QColor("#64748B"), 1))
-        painter.drawRect(rect)
+        painter.drawRect(frame_rect)
+        rect = frame_rect.adjusted(10, 28, -10, -30)
 
         def corners(bounds: dict[str, int]) -> list[tuple[int, int]]:
             return [
@@ -898,8 +1258,19 @@ class DigitalSlideRangeMap(QFrame):
             ]
 
         points: list[tuple[int, int]] = corners(self._current_rect)
-        if self._has_full_bounds(self._bounds):
-            points.extend(corners(self._bounds))
+        if self._has_full_bounds(self._requested_bounds):
+            points.extend(corners(self._requested_bounds))
+        if self._has_full_bounds(self._planned_bounds):
+            points.extend(corners(self._planned_bounds))
+        for key, value in self._partial_bounds.items():
+            if key in {"left", "right"}:
+                points.extend(
+                    [(value, self._current_rect["top"]), (value, self._current_rect["bottom"])]
+                )
+            else:
+                points.extend(
+                    [(self._current_rect["left"], value), (self._current_rect["right"], value)]
+                )
         if self._has_full_bounds(self._active_rect):
             points.extend(corners(self._active_rect))
         for completed_bounds in self._completed_rects:
@@ -927,13 +1298,98 @@ class DigitalSlideRangeMap(QFrame):
             py = rect.top() + ((y - min_y) / max(1, max_y - min_y)) * rect.height()
             return QPointF(px, py)
 
-        if self._has_full_bounds(self._bounds):
-            p1 = map_point(self._bounds["left"], self._bounds["top"])
-            p2 = map_point(self._bounds["right"], self._bounds["bottom"])
-            selected = QRectF(p1, p2).normalized()
-            painter.fillRect(selected, QColor(96, 165, 250, 55))
-            painter.setPen(QPen(QColor("#60A5FA"), 2))
-            painter.drawRect(selected)
+        if self._has_full_bounds(self._requested_bounds):
+            p1 = map_point(self._requested_bounds["left"], self._requested_bounds["top"])
+            p2 = map_point(self._requested_bounds["right"], self._requested_bounds["bottom"])
+            requested_rect = QRectF(p1, p2).normalized()
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.setPen(QPen(QColor("#A78BFA"), 2, Qt.PenStyle.DashLine))
+            painter.drawRect(requested_rect)
+        elif self._partial_bounds:
+            painter.setPen(QPen(QColor("#A78BFA"), 2, Qt.PenStyle.DashLine))
+            for key, value in self._partial_bounds.items():
+                if key in {"left", "right"}:
+                    painter.drawLine(map_point(value, min_y), map_point(value, max_y))
+                else:
+                    painter.drawLine(map_point(min_x, value), map_point(max_x, value))
+        if self._has_full_bounds(self._planned_bounds):
+            p1 = map_point(self._planned_bounds["left"], self._planned_bounds["top"])
+            p2 = map_point(self._planned_bounds["right"], self._planned_bounds["bottom"])
+            planned_rect = QRectF(p1, p2).normalized()
+            painter.fillRect(planned_rect, QColor(59, 130, 246, 42))
+            painter.setPen(
+                QPen(
+                    QColor("#EF4444") if self._has_overshoot else QColor("#3B82F6"),
+                    2,
+                    Qt.PenStyle.DashLine if self._has_overshoot else Qt.PenStyle.SolidLine,
+                )
+            )
+            painter.drawRect(planned_rect)
+            if self._has_overshoot and self._has_full_bounds(self._requested_bounds):
+                requested_p1 = map_point(
+                    self._requested_bounds["left"],
+                    self._requested_bounds["top"],
+                )
+                requested_p2 = map_point(
+                    self._requested_bounds["right"],
+                    self._requested_bounds["bottom"],
+                )
+                requested_rect = QRectF(requested_p1, requested_p2).normalized()
+                overshoot_color = QColor(239, 68, 68, 70)
+                if planned_rect.left() < requested_rect.left():
+                    painter.fillRect(
+                        QRectF(
+                            planned_rect.left(),
+                            planned_rect.top(),
+                            requested_rect.left() - planned_rect.left(),
+                            planned_rect.height(),
+                        ),
+                        overshoot_color,
+                    )
+                if planned_rect.right() > requested_rect.right():
+                    painter.fillRect(
+                        QRectF(
+                            requested_rect.right(),
+                            planned_rect.top(),
+                            planned_rect.right() - requested_rect.right(),
+                            planned_rect.height(),
+                        ),
+                        overshoot_color,
+                    )
+                middle_left = max(planned_rect.left(), requested_rect.left())
+                middle_right = min(planned_rect.right(), requested_rect.right())
+                if middle_right > middle_left and planned_rect.top() < requested_rect.top():
+                    painter.fillRect(
+                        QRectF(
+                            middle_left,
+                            planned_rect.top(),
+                            middle_right - middle_left,
+                            requested_rect.top() - planned_rect.top(),
+                        ),
+                        overshoot_color,
+                    )
+                if middle_right > middle_left and planned_rect.bottom() > requested_rect.bottom():
+                    painter.fillRect(
+                        QRectF(
+                            middle_left,
+                            requested_rect.bottom(),
+                            middle_right - middle_left,
+                            planned_rect.bottom() - requested_rect.bottom(),
+                        ),
+                        overshoot_color,
+                    )
+            if (
+                self._cols > 1
+                and self._rows > 0
+                and self._cols * self._rows <= DIGITAL_SLIDE_MAP_DETAILED_CELL_LIMIT
+            ):
+                painter.setPen(QPen(QColor(96, 165, 250, 100), 1))
+                for col in range(1, self._cols):
+                    x = planned_rect.left() + planned_rect.width() * col / self._cols
+                    painter.drawLine(QPointF(x, planned_rect.top()), QPointF(x, planned_rect.bottom()))
+                for row in range(1, self._rows):
+                    y = planned_rect.top() + planned_rect.height() * row / self._rows
+                    painter.drawLine(QPointF(planned_rect.left(), y), QPointF(planned_rect.right(), y))
         for completed_bounds in self._completed_rects:
             p1 = map_point(completed_bounds["left"], completed_bounds["top"])
             p2 = map_point(completed_bounds["right"], completed_bounds["bottom"])
@@ -954,12 +1410,35 @@ class DigitalSlideRangeMap(QFrame):
         if view_rect.width() < 8 or view_rect.height() < 8:
             center = map_point(self._current_rect["left"], self._current_rect["top"])
             view_rect = QRectF(center.x() - 6, center.y() - 6, 12, 12)
-        painter.setPen(QPen(QColor("#22C55E"), 2))
+        for marker_rect, label in ((self._start_rect, "S"), (self._end_rect, "E")):
+            if not self._has_full_bounds(marker_rect):
+                continue
+            center = map_point(marker_rect["left"], marker_rect["top"])
+            marker_color = QColor("#4F46E5") if label == "S" else QColor("#D97706")
+            painter.setBrush(QColor("#F8FAFC"))
+            painter.setPen(QPen(marker_color, 2))
+            painter.drawEllipse(center, 8, 8)
+            painter.setPen(marker_color)
+            painter.drawText(QRectF(center.x() - 8, center.y() - 8, 16, 16), Qt.AlignmentFlag.AlignCenter, label)
+        painter.setPen(QPen(QColor("#06B6D4"), 2))
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(view_rect)
         painter.setPen(QPen(QColor("#94A3B8"), 1))
-        painter.drawText(rect.left() + 8, rect.top() + 18, "绿框: 当前视场")
-        painter.drawText(rect.left() + 8, rect.bottom() - 8, f"蓝: 范围  橙: 当前  绿: 已采集    {self._axis_hint}")
+        painter.drawText(
+            QRectF(frame_rect.left() + 10, frame_rect.top() + 4, frame_rect.width() / 2, 20),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            "青: 当前视场",
+        )
+        painter.drawText(
+            QRectF(frame_rect.center().x(), frame_rect.top() + 4, frame_rect.width() / 2 - 10, 20),
+            Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter,
+            self._axis_hint,
+        )
+        painter.drawText(
+            QRectF(frame_rect.left() + 10, frame_rect.bottom() - 24, frame_rect.width() - 20, 20),
+            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter,
+            "蓝 计划 · 紫 边界 · 红 超出 · 橙 活动 · 绿 完成",
+        )
 
 
 @dataclass(frozen=True)
@@ -1460,8 +1939,17 @@ class MainWindow(QMainWindow):
         self._digital_slide_z_upper_edit: QLineEdit | None = None
         self._digital_slide_z_layers_label: QLabel | None = None
         self._digital_slide_z_rail: DigitalSlideZRangeRail | None = None
-        self._digital_slide_cols_edit: QLineEdit | None = None
-        self._digital_slide_rows_edit: QLineEdit | None = None
+        self._digital_slide_z_target_spin: QSpinBox | None = None
+        self._digital_slide_z_target_controls: list[QWidget] = []
+        self._digital_slide_cols_edit: QSpinBox | None = None
+        self._digital_slide_rows_edit: QSpinBox | None = None
+        self._digital_slide_range_mode_combo: QComboBox | None = None
+        self._digital_slide_grid_origin_combo: QComboBox | None = None
+        self._digital_slide_record_origin_button: QPushButton | None = None
+        self._digital_slide_range_mode = DIGITAL_SLIDE_RANGE_MODE_GRID
+        self._digital_slide_grid_origin_mode = DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+        self._digital_slide_grid_origin_stage: tuple[int, int] | None = None
+        self._digital_slide_plan_preview: DigitalSlideCapturePlanPreview | None = None
         self._digital_slide_range_map: DigitalSlideRangeMap | None = None
         self._digital_slide_region_edge_marks: dict[str, int] = {}
         self._digital_slide_region_bounds: dict[str, int] = {}
@@ -1474,6 +1962,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_locked_controls: list[QWidget] = []
         self._digital_slide_motion_controls: list[QWidget] = []
         self._digital_slide_direction_buttons: dict[str, QPushButton] = {}
+        self._digital_slide_boundary_controls: list[QWidget] = []
         self._group_header_labels: list[QLabel] = []
         self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
         self._fiber_quick_geometry_request_ids: set[tuple[str, int]] = set()
@@ -1612,6 +2101,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_focus_level_count = 0
         self._slide_acquisition_completed_view_counts: dict[tuple[int, int], int] = {}
         self._slide_acquisition_completed_view_rects: dict[tuple[int, int], dict[str, int]] = {}
+        self._slide_acquisition_completed_map_bounds: dict[str, int] = {}
         self._slide_acquisition_active_view_rect: dict[str, int] = {}
         self._slide_acquisition_generation = 0
         self._active_slide_acquisition: DigitalSlideAcquisitionSession | None = None
@@ -3721,12 +4211,13 @@ class MainWindow(QMainWindow):
     def _build_digital_slide_capture_box(self, parent: QWidget) -> QWidget:
         self._digital_slide_locked_controls = []
         self._digital_slide_direction_buttons = {}
+        self._digital_slide_boundary_controls = []
         container = QWidget(parent)
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(8)
 
-        z_box = QGroupBox("Z 采集范围", container)
+        z_box = QGroupBox("Z 采集范围（命令位置）", container)
         z_layout = QVBoxLayout(z_box)
         z_layout.setSpacing(8)
         z_form = QFormLayout()
@@ -3769,8 +4260,8 @@ class MainWindow(QMainWindow):
         bound_buttons.setSpacing(6)
         bound_buttons.addWidget(set_upper_button)
         bound_buttons.addWidget(set_lower_button)
-        z_form.addRow("Z 上限", self._digital_slide_z_upper_edit)
-        z_form.addRow("Z 下限", self._digital_slide_z_lower_edit)
+        z_form.addRow("命令上限", self._digital_slide_z_upper_edit)
+        z_form.addRow("命令下限", self._digital_slide_z_lower_edit)
         z_form.addRow("Z 步距", self._digital_slide_z_step_spin)
         self._digital_slide_z_layers_label = QLabel("预计层数: -", z_box)
         self._digital_slide_z_layers_label.setStyleSheet(f"color: {self._status_color('muted')}; font-weight: 700;")
@@ -3778,26 +4269,129 @@ class MainWindow(QMainWindow):
         z_form.addRow(bound_buttons)
         z_layout.addLayout(z_form)
         self._digital_slide_z_rail = DigitalSlideZRangeRail(z_box)
+        self._digital_slide_z_rail.targetChanged.connect(
+            self._on_digital_slide_z_target_preview_changed
+        )
+        self._digital_slide_z_rail.moveRequested.connect(
+            self._move_digital_slide_z_to
+        )
+        self._digital_slide_z_rail.boundPreviewChanged.connect(
+            self._preview_digital_slide_z_bound
+        )
+        self._digital_slide_z_rail.boundCommitted.connect(
+            self._commit_digital_slide_z_bound
+        )
         z_layout.addWidget(self._digital_slide_z_rail)
+        target_row = QWidget(z_box)
+        target_layout = QHBoxLayout(target_row)
+        target_layout.setContentsMargins(0, 0, 0, 0)
+        target_layout.setSpacing(6)
+        self._digital_slide_z_target_spin = NoWheelSpinBox(target_row)
+        z_soft_limit = (
+            abs(int(self._app_settings.digital_slide_z_soft_limit))
+            or DIGITAL_SLIDE_UNBOUNDED_COMMAND_LIMIT
+        )
+        self._digital_slide_z_target_spin.setRange(-z_soft_limit, z_soft_limit)
+        self._digital_slide_z_target_spin.setSingleStep(
+            max(1, int(self._app_settings.digital_slide_z_jog_step))
+        )
+        self._digital_slide_z_target_spin.setSuffix(" steps")
+        self._digital_slide_z_target_spin.valueChanged.connect(
+            self._on_digital_slide_z_target_spin_changed
+        )
+        move_target_button = QPushButton("到目标", target_row)
+        move_target_button.clicked.connect(
+            lambda _checked=False: self._move_digital_slide_z_to(
+                self._digital_slide_z_target_spin.value()
+                if self._digital_slide_z_target_spin is not None
+                else int(self._slide_motion.relative_pos.get(AXIS_Z, 0))
+            )
+        )
+        target_layout.addWidget(self._digital_slide_z_target_spin, 1)
+        target_layout.addWidget(move_target_button)
+        limit_move_row = QHBoxLayout()
+        move_upper_button = QPushButton("到上限", z_box)
+        move_upper_button.clicked.connect(
+            lambda _checked=False: self._move_digital_slide_z_to_bound("upper")
+        )
+        move_lower_button = QPushButton("到下限", z_box)
+        move_lower_button.clicked.connect(
+            lambda _checked=False: self._move_digital_slide_z_to_bound("lower")
+        )
+        limit_move_row.addWidget(move_upper_button)
+        limit_move_row.addWidget(move_lower_button)
+        self._digital_slide_z_target_controls = [
+            self._digital_slide_z_target_spin,
+            move_target_button,
+            move_upper_button,
+            move_lower_button,
+        ]
+        for widget in (move_target_button, move_upper_button, move_lower_button):
+            widget.setMinimumWidth(0)
+            widget.setSizePolicy(
+                QSizePolicy.Policy.Ignored,
+                QSizePolicy.Policy.Fixed,
+            )
+        self._digital_slide_z_target_spin.setMinimumWidth(0)
+        z_form.addRow("目标命令位置", target_row)
+        z_form.addRow(limit_move_row)
         layout.addWidget(z_box)
 
         range_box = QGroupBox("采集范围", container)
         range_layout = QVBoxLayout(range_box)
+        mode_form = QFormLayout()
+        self._digital_slide_range_mode_combo = NoWheelComboBox(range_box)
+        self._digital_slide_range_mode_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._digital_slide_range_mode_combo.addItem("按行列", DIGITAL_SLIDE_RANGE_MODE_GRID)
+        self._digital_slide_range_mode_combo.addItem("按地图边界", DIGITAL_SLIDE_RANGE_MODE_BOUNDARY)
+        self._digital_slide_range_mode_combo.currentIndexChanged.connect(
+            self._on_digital_slide_range_mode_changed
+        )
+        self._digital_slide_grid_origin_combo = NoWheelComboBox(range_box)
+        self._digital_slide_grid_origin_combo.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._digital_slide_grid_origin_combo.addItem("XY 命令原点", DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO)
+        self._digital_slide_grid_origin_combo.addItem("已记录当前位置", DIGITAL_SLIDE_GRID_ORIGIN_RECORDED)
+        self._digital_slide_grid_origin_combo.currentIndexChanged.connect(
+            self._on_digital_slide_grid_origin_changed
+        )
+        origin_row = QWidget(range_box)
+        origin_row.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+        origin_layout = QHBoxLayout(origin_row)
+        origin_layout.setContentsMargins(0, 0, 0, 0)
+        origin_layout.addWidget(self._digital_slide_grid_origin_combo, 1)
+        self._digital_slide_record_origin_button = QPushButton("记录当前位置", origin_row)
+        self._digital_slide_record_origin_button.setMinimumWidth(0)
+        self._digital_slide_record_origin_button.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Fixed,
+        )
+        self._digital_slide_record_origin_button.clicked.connect(
+            self._record_digital_slide_grid_origin
+        )
+        origin_layout.addWidget(self._digital_slide_record_origin_button)
+        mode_form.addRow("范围方式", self._digital_slide_range_mode_combo)
+        mode_form.addRow("行列起点", origin_row)
+        range_layout.addLayout(mode_form)
         count_grid = QGridLayout()
         count_grid.setHorizontalSpacing(6)
         count_grid.setVerticalSpacing(4)
-        self._digital_slide_cols_edit = QLineEdit(range_box)
-        self._digital_slide_cols_edit.setPlaceholderText("列数")
+        self._digital_slide_cols_edit = DigitalSlideCountSpinBox(range_box)
         self._digital_slide_cols_edit.setMinimumWidth(0)
-        self._digital_slide_cols_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._digital_slide_rows_edit = QLineEdit(range_box)
-        self._digital_slide_rows_edit.setPlaceholderText("行数")
+        self._digital_slide_cols_edit.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self._digital_slide_rows_edit = DigitalSlideCountSpinBox(range_box)
         self._digital_slide_rows_edit.setMinimumWidth(0)
-        self._digital_slide_rows_edit.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
-        self._digital_slide_cols_edit.textEdited.connect(self._on_digital_slide_rows_cols_edited)
-        self._digital_slide_rows_edit.textEdited.connect(self._on_digital_slide_rows_cols_edited)
-        self._digital_slide_cols_edit.textChanged.connect(self._sync_digital_slide_task_state)
-        self._digital_slide_rows_edit.textChanged.connect(self._sync_digital_slide_task_state)
+        self._digital_slide_rows_edit.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self._digital_slide_cols_edit.valueChanged.connect(self._on_digital_slide_rows_cols_edited)
+        self._digital_slide_rows_edit.valueChanged.connect(self._on_digital_slide_rows_cols_edited)
         count_grid.addWidget(QLabel("列", range_box), 0, 0)
         count_grid.addWidget(self._digital_slide_cols_edit, 0, 1)
         count_grid.addWidget(QLabel("行", range_box), 0, 2)
@@ -3807,6 +4401,37 @@ class MainWindow(QMainWindow):
         range_layout.addLayout(count_grid)
         self._digital_slide_locked_controls.extend([self._digital_slide_cols_edit, self._digital_slide_rows_edit])
         self._digital_slide_range_map = DigitalSlideRangeMap(range_box)
+        primary_boundary_row = QGridLayout()
+        primary_boundary_row.setHorizontalSpacing(6)
+        primary_boundary_row.setVerticalSpacing(6)
+        set_top_left_button = QPushButton("记录左上视场", range_box)
+        set_top_left_button.setToolTip("记录当前视场为采集边界的左上视场")
+        set_top_left_button.clicked.connect(
+            lambda _checked=False: self._mark_digital_slide_region("top_left")
+        )
+        set_bottom_right_button = QPushButton("记录右下视场", range_box)
+        set_bottom_right_button.setToolTip("记录当前视场为采集边界的右下视场")
+        set_bottom_right_button.clicked.connect(
+            lambda _checked=False: self._mark_digital_slide_region("bottom_right")
+        )
+        clear_boundary_button = QPushButton("清除边界", range_box)
+        clear_boundary_button.setToolTip("清除已记录的地图边界")
+        clear_boundary_button.clicked.connect(self._clear_digital_slide_region)
+        for button in (
+            set_top_left_button,
+            set_bottom_right_button,
+            clear_boundary_button,
+        ):
+            button.setMinimumWidth(0)
+            button.setSizePolicy(
+                QSizePolicy.Policy.Ignored,
+                QSizePolicy.Policy.Fixed,
+            )
+        primary_boundary_row.addWidget(set_top_left_button, 0, 0)
+        primary_boundary_row.addWidget(set_bottom_right_button, 0, 1)
+        primary_boundary_row.addWidget(clear_boundary_button, 1, 0, 1, 2)
+        primary_boundary_row.setColumnStretch(0, 1)
+        primary_boundary_row.setColumnStretch(1, 1)
         direction_grid = QGridLayout()
         direction_grid.setHorizontalSpacing(6)
         direction_grid.setVerticalSpacing(6)
@@ -3835,12 +4460,48 @@ class MainWindow(QMainWindow):
             self._digital_slide_locked_controls.append(button)
             direction_grid.addWidget(button, row, col)
         range_layout.addWidget(self._digital_slide_range_map)
+        range_layout.addLayout(primary_boundary_row)
+        fine_boundary_toggle = QToolButton(range_box)
+        fine_boundary_toggle.setText("精细边界（可选）")
+        fine_boundary_toggle.setCheckable(True)
+        fine_boundary_toggle.setChecked(False)
+        fine_boundary_toggle.setArrowType(Qt.ArrowType.RightArrow)
+        fine_boundary_toggle.setToolButtonStyle(
+            Qt.ToolButtonStyle.ToolButtonTextBesideIcon
+        )
+        range_layout.addWidget(fine_boundary_toggle)
+        fine_boundary_content = QWidget(range_box)
         direction_row = QHBoxLayout()
+        direction_row.setContentsMargins(0, 0, 0, 0)
         direction_row.addStretch(1)
         direction_row.addLayout(direction_grid)
         direction_row.addStretch(1)
-        range_layout.addLayout(direction_row)
+        fine_boundary_content.setLayout(direction_row)
+        fine_boundary_content.hide()
+        fine_boundary_toggle.toggled.connect(
+            lambda checked: (
+                fine_boundary_toggle.setArrowType(
+                    Qt.ArrowType.DownArrow if checked else Qt.ArrowType.RightArrow
+                ),
+                fine_boundary_content.setVisible(checked),
+            )
+        )
+        range_layout.addWidget(fine_boundary_content)
         layout.addWidget(range_box)
+
+        self._digital_slide_locked_controls.extend(
+            [
+                self._digital_slide_range_mode_combo,
+                self._digital_slide_grid_origin_combo,
+                self._digital_slide_record_origin_button,
+                set_top_left_button,
+                set_bottom_right_button,
+                clear_boundary_button,
+            ]
+        )
+        self._digital_slide_boundary_controls.extend(
+            [set_top_left_button, set_bottom_right_button, clear_boundary_button]
+        )
 
         self._sync_digital_slide_task_state()
         return container
@@ -12036,7 +12697,14 @@ class MainWindow(QMainWindow):
         focus_widget = QApplication.focusWidget() or watched
         if isinstance(
             focus_widget,
-            (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox, QSlider),
+            (
+                QLineEdit,
+                QTextEdit,
+                QPlainTextEdit,
+                QAbstractSpinBox,
+                QSlider,
+                DigitalSlideZRangeRail,
+            ),
         ):
             return None
         if isinstance(focus_widget, QComboBox):
@@ -13553,6 +14221,7 @@ class MainWindow(QMainWindow):
                 self._digital_slide_motor_enable.blockSignals(False)
             self._slide_motion.enabled = False
             QMessageBox.warning(self, "数字化切片", f"无法启用电机输出：\n{exc}")
+        self._sync_digital_slide_task_state()
 
     def _on_digital_slide_motion_status(self, message: str) -> None:
         self._set_digital_slide_status(message)
@@ -13716,9 +14385,12 @@ class MainWindow(QMainWindow):
             Qt.TransformationMode.SmoothTransformation,
         )
 
-    def _parse_optional_int_edit(self, edit: QLineEdit | None) -> int | None:
+    def _parse_optional_int_edit(self, edit: QLineEdit | QSpinBox | None) -> int | None:
         if edit is None:
             return None
+        if isinstance(edit, QSpinBox):
+            value = int(edit.value())
+            return value if value > 0 or not isinstance(edit, DigitalSlideCountSpinBox) else None
         token = edit.text().strip()
         if not token:
             return None
@@ -13850,8 +14522,186 @@ class MainWindow(QMainWindow):
         self._remember_digital_slide_z_capture_settings()
         self._sync_digital_slide_task_state()
 
-    def _on_digital_slide_rows_cols_edited(self) -> None:
-        self._digital_slide_rows_cols_manual = True
+    def _preview_digital_slide_z_bound(self, bound: str, value: int) -> None:
+        edit = (
+            self._digital_slide_z_upper_edit
+            if bound == "upper"
+            else self._digital_slide_z_lower_edit
+        )
+        if edit is None:
+            return
+        edit.blockSignals(True)
+        self._set_optional_int_edit(edit, int(value))
+        edit.blockSignals(False)
+        self._sync_digital_slide_z_layers_label()
+
+    def _commit_digital_slide_z_bound(self, bound: str, value: int) -> None:
+        self._preview_digital_slide_z_bound(bound, value)
+        self._remember_digital_slide_z_capture_settings()
+        self._sync_digital_slide_task_state()
+
+    def _on_digital_slide_z_target_preview_changed(self, value: int) -> None:
+        spinbox = self._digital_slide_z_target_spin
+        if spinbox is None or spinbox.value() == int(value):
+            return
+        spinbox.blockSignals(True)
+        spinbox.setValue(int(value))
+        spinbox.blockSignals(False)
+
+    def _on_digital_slide_z_target_spin_changed(self, value: int) -> None:
+        if self._digital_slide_z_rail is not None:
+            self._digital_slide_z_rail.set_target_value(int(value))
+
+    def _move_digital_slide_z_to_bound(self, bound: str) -> None:
+        target = self._parse_optional_int_edit(
+            self._digital_slide_z_upper_edit
+            if bound == "upper"
+            else self._digital_slide_z_lower_edit
+        )
+        if target is None:
+            self._set_digital_slide_status(
+                "请先设置 Z 命令上限。" if bound == "upper" else "请先设置 Z 命令下限。"
+            )
+            return
+        if self._digital_slide_z_rail is not None:
+            self._digital_slide_z_rail.set_target_value(target)
+        self._move_digital_slide_z_to(target)
+
+    def _digital_slide_z_motion_allowed(self, target: int | None = None) -> tuple[bool, str]:
+        if not self._digital_slide_mode:
+            return False, "仅可在数字化切片模式下移动 Z 轴。"
+        if self._slide_acquisition_active():
+            return False, "采集中不能手动移动 Z 轴。"
+        if not self._slide_motion.enabled:
+            return False, "请先启用电机输出。"
+        if target is not None:
+            limit = max(0, int(self._app_settings.digital_slide_z_soft_limit))
+            if limit > 0 and abs(int(target)) > limit:
+                return False, f"目标命令位置超过 Z 软限位 +/-{limit} steps。"
+        return True, ""
+
+    def _move_digital_slide_z_to(self, target: int) -> None:
+        target = int(target)
+        allowed, message = self._digital_slide_z_motion_allowed(target)
+        if not allowed:
+            self._set_digital_slide_status(message)
+            if self._digital_slide_z_rail is not None:
+                self._digital_slide_z_rail.reset_target()
+            return
+        try:
+            moved = self._slide_motion.move_to(
+                AXIS_Z,
+                target,
+                label="Z 目标命令位置",
+            )
+        except Exception as exc:
+            moved = False
+            message = f"Z 轴移动失败：{exc}"
+        if not moved:
+            self._set_digital_slide_status(message or f"Z 轴未能移动到 {target} steps。")
+            if self._digital_slide_z_rail is not None:
+                self._digital_slide_z_rail.reset_target()
+        else:
+            self._set_digital_slide_status(f"已发送 Z 目标命令位置 {target} steps。")
+        self._sync_digital_slide_visuals()
+
+    def _on_digital_slide_rows_cols_edited(self, _value: int | None = None) -> None:
+        if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_GRID:
+            self._digital_slide_rows_cols_manual = True
+        self._sync_digital_slide_task_state()
+
+    def _on_digital_slide_range_mode_changed(self, _index: int) -> None:
+        mode = (
+            str(self._digital_slide_range_mode_combo.currentData())
+            if self._digital_slide_range_mode_combo is not None
+            else DIGITAL_SLIDE_RANGE_MODE_GRID
+        )
+        mode = (
+            DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+            if mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+            else DIGITAL_SLIDE_RANGE_MODE_GRID
+        )
+        if mode == self._digital_slide_range_mode:
+            self._sync_digital_slide_range_mode_controls()
+            return
+        self._digital_slide_range_mode = mode
+        self._digital_slide_rows_cols_manual = mode == DIGITAL_SLIDE_RANGE_MODE_GRID
+        if mode == DIGITAL_SLIDE_RANGE_MODE_GRID:
+            self._digital_slide_region_edge_marks.clear()
+            self._digital_slide_region_bounds.clear()
+            self._digital_slide_region_anchor_points.clear()
+        else:
+            self._digital_slide_grid_origin_stage = None
+            self._digital_slide_grid_origin_mode = DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+            if self._digital_slide_grid_origin_combo is not None:
+                self._digital_slide_grid_origin_combo.blockSignals(True)
+                origin_index = self._digital_slide_grid_origin_combo.findData(
+                    DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+                )
+                self._digital_slide_grid_origin_combo.setCurrentIndex(max(0, origin_index))
+                self._digital_slide_grid_origin_combo.blockSignals(False)
+            for spinbox in (self._digital_slide_cols_edit, self._digital_slide_rows_edit):
+                if spinbox is not None:
+                    spinbox.blockSignals(True)
+                    spinbox.setValue(0)
+                    spinbox.blockSignals(False)
+        self._sync_digital_slide_range_mode_controls()
+        self._sync_digital_slide_task_state()
+
+    def _sync_digital_slide_range_mode_controls(self) -> None:
+        grid_mode = self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_GRID
+        boundary_enabled = not grid_mode and not self._slide_acquisition_active()
+        for widget in (
+            self._digital_slide_grid_origin_combo,
+            self._digital_slide_record_origin_button,
+        ):
+            if widget is not None:
+                widget.setEnabled(grid_mode and not self._slide_acquisition_active())
+        for spinbox in (self._digital_slide_cols_edit, self._digital_slide_rows_edit):
+            if spinbox is not None:
+                spinbox.setReadOnly(not grid_mode)
+        for key, button in self._digital_slide_direction_buttons.items():
+            button.setEnabled(boundary_enabled)
+        for widget in self._digital_slide_boundary_controls:
+            widget.setEnabled(boundary_enabled)
+
+    def _on_digital_slide_grid_origin_changed(self, _index: int) -> None:
+        mode = (
+            str(self._digital_slide_grid_origin_combo.currentData())
+            if self._digital_slide_grid_origin_combo is not None
+            else DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+        )
+        self._digital_slide_grid_origin_mode = (
+            DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+            if mode == DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+            else DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+        )
+        if (
+            self._digital_slide_grid_origin_mode == DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+            and self._digital_slide_grid_origin_stage is None
+        ):
+            self._record_digital_slide_grid_origin()
+            return
+        self._sync_digital_slide_task_state()
+
+    def _record_digital_slide_grid_origin(self) -> None:
+        self._digital_slide_grid_origin_stage = (
+            int(self._slide_motion.relative_pos.get(AXIS_X, 0)),
+            int(self._slide_motion.relative_pos.get(AXIS_Y, 0)),
+        )
+        self._digital_slide_grid_origin_mode = DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+        if self._digital_slide_grid_origin_combo is not None:
+            self._digital_slide_grid_origin_combo.blockSignals(True)
+            index = self._digital_slide_grid_origin_combo.findData(
+                DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+            )
+            self._digital_slide_grid_origin_combo.setCurrentIndex(max(0, index))
+            self._digital_slide_grid_origin_combo.blockSignals(False)
+        self._set_digital_slide_status(
+            "已记录行列起点："
+            f"X={self._digital_slide_grid_origin_stage[0]}  "
+            f"Y={self._digital_slide_grid_origin_stage[1]}"
+        )
         self._sync_digital_slide_task_state()
 
     def _digital_slide_axis_multiplier(self, axis: str, settings: AppSettings | None = None) -> int:
@@ -13936,9 +14786,17 @@ class MainWindow(QMainWindow):
         }
 
     def _mark_digital_slide_region(self, marker: str) -> None:
+        if self._digital_slide_range_mode != DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            self._digital_slide_range_mode = DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+            if self._digital_slide_range_mode_combo is not None:
+                self._digital_slide_range_mode_combo.blockSignals(True)
+                index = self._digital_slide_range_mode_combo.findData(
+                    DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+                )
+                self._digital_slide_range_mode_combo.setCurrentIndex(max(0, index))
+                self._digital_slide_range_mode_combo.blockSignals(False)
+            self._sync_digital_slide_range_mode_controls()
         current_rect = self._digital_slide_current_view_map_rect()
-        if not self._digital_slide_region_bounds:
-            self._digital_slide_region_bounds = dict(current_rect)
         self._digital_slide_region_anchor_points[marker] = (current_rect["left"], current_rect["top"])
         if "left" in marker:
             self._digital_slide_region_edge_marks["left"] = current_rect["left"]
@@ -13952,7 +14810,10 @@ class MainWindow(QMainWindow):
         if "bottom" in marker:
             self._digital_slide_region_edge_marks["bottom"] = current_rect["bottom"]
             self._digital_slide_region_bounds["bottom"] = current_rect["bottom"]
-        self._digital_slide_region_bounds = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds)
+        if {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_edge_marks):
+            self._digital_slide_region_bounds = self._normalize_digital_slide_bounds(
+                dict(self._digital_slide_region_edge_marks)
+            )
         self._update_digital_slide_region_counts_from_bounds()
         self._sync_digital_slide_task_state()
 
@@ -13960,11 +14821,13 @@ class MainWindow(QMainWindow):
         self._digital_slide_region_edge_marks.clear()
         self._digital_slide_region_anchor_points.clear()
         self._digital_slide_region_bounds.clear()
-        self._digital_slide_rows_cols_manual = False
-        if self._digital_slide_cols_edit is not None:
-            self._digital_slide_cols_edit.clear()
-        if self._digital_slide_rows_edit is not None:
-            self._digital_slide_rows_edit.clear()
+        if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            self._digital_slide_rows_cols_manual = False
+            for spinbox in (self._digital_slide_cols_edit, self._digital_slide_rows_edit):
+                if spinbox is not None:
+                    spinbox.blockSignals(True)
+                    spinbox.setValue(0)
+                    spinbox.blockSignals(False)
         self._sync_digital_slide_task_state()
 
     def _update_digital_slide_region_counts_from_bounds(self) -> None:
@@ -13980,12 +14843,178 @@ class MainWindow(QMainWindow):
         rows = max(1, int(math.ceil(max(0, height - view_height) / stride_y)) + 1)
         if not self._digital_slide_rows_cols_manual:
             if self._digital_slide_cols_edit is not None:
-                self._digital_slide_cols_edit.setText(str(cols))
+                self._digital_slide_cols_edit.blockSignals(True)
+                self._digital_slide_cols_edit.setValue(cols)
+                self._digital_slide_cols_edit.blockSignals(False)
             if self._digital_slide_rows_edit is not None:
-                self._digital_slide_rows_edit.setText(str(rows))
+                self._digital_slide_rows_edit.blockSignals(True)
+                self._digital_slide_rows_edit.setValue(rows)
+                self._digital_slide_rows_edit.blockSignals(False)
 
     def _digital_slide_has_region(self) -> bool:
-        return bool(self._digital_slide_region_edge_marks) and {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_bounds)
+        return {"left", "right", "top", "bottom"}.issubset(
+            self._digital_slide_region_edge_marks
+        ) and {"left", "right", "top", "bottom"}.issubset(
+            self._digital_slide_region_bounds
+        )
+
+    def _build_digital_slide_plan_preview(
+        self,
+        *,
+        settings: AppSettings,
+        cols: int,
+        rows: int,
+        focus_count: int,
+        viewport_width_px: int,
+        viewport_height_px: int,
+        pixel_stride_x: int,
+        pixel_stride_y: int,
+    ) -> DigitalSlideCapturePlanPreview:
+        blockers: list[str] = []
+        warnings: list[str] = []
+        cols = max(0, int(cols))
+        rows = max(0, int(rows))
+        focus_count = max(0, int(focus_count))
+        range_mode = self._digital_slide_range_mode
+        requested_bounds: dict[str, int] = {}
+        if range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            if not self._digital_slide_has_region():
+                blockers.append("地图边界尚未完成，请至少记录左上和右下视场。")
+                origin_x = 0
+                origin_y = 0
+            else:
+                requested_bounds = self._normalize_digital_slide_bounds(
+                    self._digital_slide_region_bounds
+                )
+                view_stage_width, view_stage_height = self._digital_slide_view_map_size(settings)
+                configured_delta_x = int(settings.digital_slide_x_stage_step)
+                configured_delta_y = int(settings.digital_slide_y_stage_step)
+                map_delta_x = self._digital_slide_stage_to_map_axis(
+                    AXIS_X,
+                    configured_delta_x,
+                    settings,
+                )
+                map_delta_y = self._digital_slide_stage_to_map_axis(
+                    AXIS_Y,
+                    configured_delta_y,
+                    settings,
+                )
+                origin_map_x = (
+                    requested_bounds["left"]
+                    if map_delta_x >= 0
+                    else requested_bounds["right"] - view_stage_width
+                )
+                origin_map_y = (
+                    requested_bounds["top"]
+                    if map_delta_y >= 0
+                    else requested_bounds["bottom"] - view_stage_height
+                )
+                origin_x = self._digital_slide_map_to_stage_axis(
+                    AXIS_X,
+                    origin_map_x,
+                    settings,
+                )
+                origin_y = self._digital_slide_map_to_stage_axis(
+                    AXIS_Y,
+                    origin_map_y,
+                    settings,
+                )
+            stage_delta_x = int(settings.digital_slide_x_stage_step)
+            stage_delta_y = int(settings.digital_slide_y_stage_step)
+        else:
+            if (
+                self._digital_slide_grid_origin_mode == DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+                and self._digital_slide_grid_origin_stage is not None
+            ):
+                origin_x, origin_y = self._digital_slide_grid_origin_stage
+            else:
+                origin_x = 0
+                origin_y = 0
+            stage_delta_x = int(settings.digital_slide_x_stage_step)
+            stage_delta_y = int(settings.digital_slide_y_stage_step)
+
+        if cols <= 0 or rows <= 0:
+            blockers.append("请先设置有效的列数和行数。")
+        if focus_count <= 0:
+            blockers.append("请先设置有效的 Z 采集范围。")
+        if cols > 1 and stage_delta_x == 0:
+            blockers.append("列数大于 1 时，X 行内步距不能为 0。")
+        if rows > 1 and stage_delta_y == 0:
+            blockers.append("行数大于 1 时，Y 换行步距不能为 0。")
+
+        last_x = int(origin_x + (max(0, cols - 1) * stage_delta_x))
+        last_y = int(origin_y + (max(0, rows - 1) * stage_delta_y))
+        stage_bounds = {
+            "left": min(int(origin_x), last_x),
+            "right": max(int(origin_x), last_x),
+            "top": min(int(origin_y), last_y),
+            "bottom": max(int(origin_y), last_y),
+        }
+        view_stage_width, view_stage_height = self._digital_slide_view_map_size(settings)
+        map_x_values = [
+            self._digital_slide_stage_to_map_axis(AXIS_X, int(origin_x), settings),
+            self._digital_slide_stage_to_map_axis(AXIS_X, last_x, settings),
+        ]
+        map_y_values = [
+            self._digital_slide_stage_to_map_axis(AXIS_Y, int(origin_y), settings),
+            self._digital_slide_stage_to_map_axis(AXIS_Y, last_y, settings),
+        ]
+        planned_map_bounds = (
+            {
+                "left": min(map_x_values),
+                "right": max(map_x_values) + view_stage_width,
+                "top": min(map_y_values),
+                "bottom": max(map_y_values) + view_stage_height,
+            }
+            if cols > 0 and rows > 0
+            else {}
+        )
+        overshoot: dict[str, int] = {}
+        if requested_bounds and planned_map_bounds:
+            overshoot = {
+                "left": max(0, requested_bounds["left"] - planned_map_bounds["left"]),
+                "right": max(0, planned_map_bounds["right"] - requested_bounds["right"]),
+                "top": max(0, requested_bounds["top"] - planned_map_bounds["top"]),
+                "bottom": max(0, planned_map_bounds["bottom"] - requested_bounds["bottom"]),
+            }
+            if any(overshoot.values()):
+                warnings.append("固定采集步距会使计划范围超出所标记边界，地图已用虚线标出。")
+
+        xy_limit = int(settings.digital_slide_xy_soft_limit)
+        if xy_limit > 0:
+            for axis_name, value in (
+                ("X 起点", origin_x),
+                ("X 终点", last_x),
+                ("Y 起点", origin_y),
+                ("Y 终点", last_y),
+            ):
+                if abs(int(value)) > xy_limit:
+                    blockers.append(f"{axis_name} {value} 超过 XY 软限位 +/-{xy_limit} steps。")
+        image_count = cols * rows * focus_count
+        if image_count > DIGITAL_SLIDE_MAX_IMAGES:
+            blockers.append(
+                f"采集计划包含 {image_count} 张，超过 {DIGITAL_SLIDE_MAX_IMAGES} 张硬上限。"
+            )
+        return DigitalSlideCapturePlanPreview(
+            range_mode=range_mode,
+            origin_stage_x=int(origin_x),
+            origin_stage_y=int(origin_y),
+            stage_delta_x=int(stage_delta_x),
+            stage_delta_y=int(stage_delta_y),
+            cols=cols,
+            rows=rows,
+            focus_count=focus_count,
+            viewport_width_px=max(1, int(viewport_width_px)),
+            viewport_height_px=max(1, int(viewport_height_px)),
+            pixel_stride_x=max(1, int(pixel_stride_x)),
+            pixel_stride_y=max(1, int(pixel_stride_y)),
+            planned_stage_bounds=stage_bounds,
+            planned_map_bounds=planned_map_bounds,
+            requested_map_bounds=requested_bounds,
+            overshoot=overshoot,
+            blockers=tuple(dict.fromkeys(blockers)),
+            warnings=tuple(dict.fromkeys(warnings)),
+        )
 
     def _digital_slide_readiness(self) -> DigitalSlideReadiness:
         blockers: list[str] = []
@@ -14011,9 +15040,9 @@ class MainWindow(QMainWindow):
         )
         focus_levels: list[int] | None = None
         if z_lower is None or z_upper is None:
-            blockers.append("请先设置 Z 上限和 Z 下限。")
+            blockers.append("请先设置 Z 命令上限和命令下限。")
         elif z_upper < z_lower:
-            blockers.append("Z 上限不能小于 Z 下限。")
+            blockers.append("Z 命令上限不能小于命令下限。")
         else:
             z_limit = int(settings.digital_slide_z_soft_limit)
             if z_limit > 0 and (abs(z_lower) > z_limit or abs(z_upper) > z_limit):
@@ -14030,54 +15059,60 @@ class MainWindow(QMainWindow):
                 else:
                     current_z = int(self._slide_motion.relative_pos.get(AXIS_Z, 0))
                     if current_z < z_lower or current_z > z_upper:
-                        warnings.append(f"当前 Z={current_z}，开始后会先移动到采集范围。")
+                        warnings.append(f"当前 Z 命令位置={current_z}，开始后会先移动到采集范围。")
 
+        if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            self._update_digital_slide_region_counts_from_bounds()
         cols = self._parse_optional_int_edit(self._digital_slide_cols_edit)
         rows = self._parse_optional_int_edit(self._digital_slide_rows_edit)
-        if cols is None or rows is None or cols <= 0 or rows <= 0:
-            blockers.append("请先设置有效的列数和行数。")
+        view_width = 1
+        view_height = 1
+        if frame is not None and not frame.isNull():
+            view_width, view_height, _capture_scale = self._digital_slide_scaled_size(
+                frame.width(),
+                frame.height(),
+                settings,
+            )
+        overlap = int(settings.digital_slide_overlap_percent) / 100.0
+        auto_pixel_stride_x = max(1, int(round(view_width * (1.0 - overlap))))
+        auto_pixel_stride_y = max(1, int(round(view_height * (1.0 - overlap))))
+        if self._digital_slide_pixel_stride_mode(settings) == "manual_pixels":
+            pixel_stride_x = int(settings.digital_slide_x_pixel_stride)
+            pixel_stride_y = int(settings.digital_slide_y_pixel_stride)
         else:
-            x_stage_step = int(settings.digital_slide_x_stage_step)
-            y_stage_step = int(settings.digital_slide_y_stage_step)
-            if cols > 1 and x_stage_step == 0:
-                blockers.append("列数大于 1 时，X 行内步距不能为 0。")
-            if rows > 1 and y_stage_step == 0:
-                blockers.append("行数大于 1 时，Y 换行步距不能为 0。")
-            map_region = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds) if self._digital_slide_has_region() else None
-            stage_region = self._digital_slide_stage_region_from_map_bounds(map_region, settings)
-            if stage_region is not None:
-                xy_limit = int(settings.digital_slide_xy_soft_limit)
-                for label, value in (("X 左", stage_region["left"]), ("X 右", stage_region["right"])):
-                    if xy_limit > 0 and abs(int(value)) > xy_limit:
-                        blockers.append(f"{label} 边界超过 XY 软限位 +/-{xy_limit} steps。")
-                        break
-                for label, value in (("Y 上", stage_region["top"]), ("Y 下", stage_region["bottom"])):
-                    if xy_limit > 0 and abs(int(value)) > xy_limit:
-                        blockers.append(f"{label} 边界超过 XY 软限位 +/-{xy_limit} steps。")
-                        break
+            pixel_stride_x = auto_pixel_stride_x
+            pixel_stride_y = auto_pixel_stride_y
+        preview = self._build_digital_slide_plan_preview(
+            settings=settings,
+            cols=int(cols or 0),
+            rows=int(rows or 0),
+            focus_count=len(focus_levels or ()),
+            viewport_width_px=view_width,
+            viewport_height_px=view_height,
+            pixel_stride_x=pixel_stride_x,
+            pixel_stride_y=pixel_stride_y,
+        )
+        self._digital_slide_plan_preview = preview
+        blockers.extend(preview.blockers)
+        warnings.extend(preview.warnings)
 
         summary = "采集规模: 请补全列/行与 Z 范围"
-        if cols is not None and rows is not None and cols > 0 and rows > 0 and focus_levels:
-            total_images = int(cols) * int(rows) * len(focus_levels)
-            summary = f"采集规模: {cols}列 x {rows}行 x {len(focus_levels)}层 = {total_images}张"
-            if frame is not None and not frame.isNull():
-                view_width, view_height, _capture_scale = self._digital_slide_scaled_size(
-                    frame.width(),
-                    frame.height(),
-                    settings,
+        if preview.cols > 0 and preview.rows > 0 and preview.focus_count > 0:
+            image_width, image_height = preview.output_size
+            origin_label = (
+                "地图边界"
+                if preview.range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+                else (
+                    "已记录当前位置"
+                    if self._digital_slide_grid_origin_mode == DIGITAL_SLIDE_GRID_ORIGIN_RECORDED
+                    else "命令原点"
                 )
-                overlap = int(settings.digital_slide_overlap_percent) / 100.0
-                auto_pixel_stride_x = max(1, int(round(view_width * (1.0 - overlap))))
-                auto_pixel_stride_y = max(1, int(round(view_height * (1.0 - overlap))))
-                if self._digital_slide_pixel_stride_mode(settings) == "manual_pixels":
-                    pixel_stride_x = int(settings.digital_slide_x_pixel_stride)
-                    pixel_stride_y = int(settings.digital_slide_y_pixel_stride)
-                else:
-                    pixel_stride_x = auto_pixel_stride_x
-                    pixel_stride_y = auto_pixel_stride_y
-                image_width = view_width + ((int(cols) - 1) * pixel_stride_x)
-                image_height = view_height + ((int(rows) - 1) * pixel_stride_y)
-                summary = f"{summary} / 输出 {image_width}x{image_height}px"
+            )
+            summary = (
+                f"采集规模: {preview.cols}列 x {preview.rows}行 x {preview.focus_count}层 = "
+                f"{preview.image_count}张 / 输出 {image_width}x{image_height}px / "
+                f"起点 {origin_label} ({preview.origin_stage_x}, {preview.origin_stage_y})"
+            )
 
         has_path = self._digital_slide_output_path() is not None
         if not has_path:
@@ -14091,16 +15126,17 @@ class MainWindow(QMainWindow):
         )
 
     def _sync_digital_slide_task_state(self) -> None:
+        readiness = self._digital_slide_readiness()
         self._sync_digital_slide_visuals()
         if self._digital_slide_start_button is None:
             return
-        readiness = self._digital_slide_readiness()
         has_path = readiness.has_output_path
         active = self._slide_acquisition_active()
         for widget in self._digital_slide_locked_controls:
             widget.setEnabled(not active)
         for widget in self._digital_slide_motion_controls:
             widget.setEnabled(not active)
+        self._sync_digital_slide_range_mode_controls()
         self._sync_digital_slide_storage_quality_visibility()
         self._digital_slide_start_button.setText("采集中" if active else readiness.button_text)
         self._digital_slide_start_button.setEnabled(not active and not readiness.blockers)
@@ -14190,19 +15226,78 @@ class MainWindow(QMainWindow):
         upper = self._parse_optional_int_edit(self._digital_slide_z_upper_edit)
         current_z = int(self._slide_motion.relative_pos.get(AXIS_Z, 0))
         self._sync_digital_slide_z_layers_label()
+        z_motion_allowed, _z_motion_message = self._digital_slide_z_motion_allowed()
+        z_bounds_enabled = bool(
+            self._digital_slide_mode and not self._slide_acquisition_active()
+        )
         if self._digital_slide_z_rail is not None:
             self._digital_slide_z_rail.set_state(
                 soft_limit=self._app_settings.digital_slide_z_soft_limit,
                 current_z=current_z,
                 lower_z=lower,
                 upper_z=upper,
+                focus_step=self._app_settings.digital_slide_z_jog_step,
+                movement_enabled=z_motion_allowed,
+                bounds_enabled=z_bounds_enabled,
             )
+        if self._digital_slide_z_target_spin is not None:
+            limit = (
+                abs(int(self._app_settings.digital_slide_z_soft_limit))
+                or DIGITAL_SLIDE_UNBOUNDED_COMMAND_LIMIT
+            )
+            target = (
+                self._digital_slide_z_rail.target_value()
+                if self._digital_slide_z_rail is not None
+                else current_z
+            )
+            self._digital_slide_z_target_spin.blockSignals(True)
+            self._digital_slide_z_target_spin.setRange(-limit, limit)
+            self._digital_slide_z_target_spin.setSingleStep(
+                max(1, int(self._app_settings.digital_slide_z_jog_step))
+            )
+            self._digital_slide_z_target_spin.setValue(target)
+            self._digital_slide_z_target_spin.blockSignals(False)
+        for widget in self._digital_slide_z_target_controls:
+            widget.setEnabled(z_motion_allowed)
         if self._digital_slide_range_map is not None:
+            preview = self._digital_slide_plan_preview
+            start_rect: dict[str, int] = {}
+            end_rect: dict[str, int] = {}
+            if preview is not None and preview.cols > 0 and preview.rows > 0:
+                start_x, start_y = preview.stage_target(0, 0)
+                last_col = preview.cols - 1 if (preview.rows - 1) % 2 == 0 else 0
+                end_x, end_y = preview.stage_target(last_col, preview.rows - 1)
+                start_rect = self._digital_slide_plan_item_map_rect(
+                    {"stage_x": start_x, "stage_y": start_y},
+                    self._app_settings,
+                )
+                end_rect = self._digital_slide_plan_item_map_rect(
+                    {"stage_x": end_x, "stage_y": end_y},
+                    self._app_settings,
+                )
+            completed_rects = (
+                list(self._slide_acquisition_completed_view_rects.values())
+                if len(self._slide_acquisition_completed_view_rects)
+                <= DIGITAL_SLIDE_MAP_DETAILED_CELL_LIMIT
+                else [dict(self._slide_acquisition_completed_map_bounds)]
+            )
             self._digital_slide_range_map.set_state(
                 current_rect=self._digital_slide_current_view_map_rect(),
-                bounds=self._digital_slide_region_bounds,
+                requested_bounds=(preview.requested_map_bounds if preview is not None else self._digital_slide_region_bounds),
+                partial_bounds=(
+                    self._digital_slide_region_edge_marks
+                    if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+                    and not self._digital_slide_has_region()
+                    else {}
+                ),
+                planned_bounds=(preview.planned_map_bounds if preview is not None else {}),
+                start_rect=start_rect,
+                end_rect=end_rect,
+                cols=(preview.cols if preview is not None else 0),
+                rows=(preview.rows if preview is not None else 0),
+                has_overshoot=bool(preview and any(preview.overshoot.values())),
                 active_rect=self._slide_acquisition_active_view_rect,
-                completed_rects=list(self._slide_acquisition_completed_view_rects.values()),
+                completed_rects=completed_rects,
                 axis_hint=self._digital_slide_axis_hint(),
             )
         self._sync_digital_slide_motion_settings_label()
@@ -14290,6 +15385,16 @@ class MainWindow(QMainWindow):
         if axes is None:
             axes = (AXIS_X, AXIS_Y, AXIS_Z)
         self._clear_digital_slide_region()
+        if AXIS_X in axes or AXIS_Y in axes:
+            self._digital_slide_grid_origin_stage = None
+            self._digital_slide_grid_origin_mode = DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+            if self._digital_slide_grid_origin_combo is not None:
+                self._digital_slide_grid_origin_combo.blockSignals(True)
+                origin_index = self._digital_slide_grid_origin_combo.findData(
+                    DIGITAL_SLIDE_GRID_ORIGIN_COMMAND_ZERO
+                )
+                self._digital_slide_grid_origin_combo.setCurrentIndex(max(0, origin_index))
+                self._digital_slide_grid_origin_combo.blockSignals(False)
         self._slide_motion.reset_relative_zero(axes=axes)
         self._sync_digital_slide_position_label()
         self._sync_digital_slide_visuals()
@@ -14298,7 +15403,7 @@ class MainWindow(QMainWindow):
         elif set(axes) == {AXIS_X, AXIS_Y}:
             message = "已将当前 XY 位置设为样品台原点"
         else:
-            message = "已将当前 Z 位置设为高度原点"
+            message = "已将当前 Z 命令位置设为高度原点"
         self._set_digital_slide_status(message)
 
     def _digital_slide_manual_step(self, axis: str) -> int:
@@ -14435,11 +15540,11 @@ class MainWindow(QMainWindow):
         z_lower = self._parse_optional_int_edit(self._digital_slide_z_lower_edit)
         z_upper = self._parse_optional_int_edit(self._digital_slide_z_upper_edit)
         if z_lower is None or z_upper is None:
-            QMessageBox.warning(self, "数字化切片", "请先设置 Z 上限和 Z 下限。")
+            QMessageBox.warning(self, "数字化切片", "请先设置 Z 命令上限和命令下限。")
             return
         z_step = self._digital_slide_z_step_spin.value() if self._digital_slide_z_step_spin is not None else acquisition_settings.digital_slide_z_capture_step
         if z_upper < z_lower:
-            QMessageBox.warning(self, "数字化切片", "Z 上限不能小于 Z 下限。")
+            QMessageBox.warning(self, "数字化切片", "Z 命令上限不能小于命令下限。")
             return
         z_limit = int(acquisition_settings.digital_slide_z_soft_limit)
         if z_limit > 0 and (abs(z_lower) > z_limit or abs(z_upper) > z_limit):
@@ -14449,10 +15554,10 @@ class MainWindow(QMainWindow):
         if current_z < z_lower or current_z > z_upper:
             response = QMessageBox.question(
                 self,
-                "当前 Z 不在采集范围内",
+                "当前 Z 命令位置不在采集范围内",
                 (
-                    f"当前 Z={current_z} steps，不在采集范围 {z_lower} ~ {z_upper} steps 内。\n"
-                    "开始后设备会按采集流程移动到 Z 下限并继续采集，是否继续？"
+                    f"当前 Z 命令位置={current_z} steps，不在采集范围 {z_lower} ~ {z_upper} steps 内。\n"
+                    "开始后设备会按采集流程移动到 Z 命令下限并继续采集，是否继续？"
                 ),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No,
@@ -14492,18 +15597,22 @@ class MainWindow(QMainWindow):
         if rows > 1 and y_stage_step == 0:
             QMessageBox.warning(self, "数字化切片", "行数大于 1 时，Y 换行步距不能为 0。")
             return
-        map_region = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds) if self._digital_slide_has_region() else None
-        stage_region = self._digital_slide_stage_region_from_map_bounds(map_region, acquisition_settings)
-        if stage_region is not None:
-            xy_limit = int(acquisition_settings.digital_slide_xy_soft_limit)
-            for label, value in (("X 左", stage_region["left"]), ("X 右", stage_region["right"])):
-                if xy_limit > 0 and abs(int(value)) > xy_limit:
-                    QMessageBox.warning(self, "数字化切片", f"{label} 边界超过 XY 软限位 +/-{xy_limit} steps。")
-                    return
-            for label, value in (("Y 上", stage_region["top"]), ("Y 下", stage_region["bottom"])):
-                if xy_limit > 0 and abs(int(value)) > xy_limit:
-                    QMessageBox.warning(self, "数字化切片", f"{label} 边界超过 XY 软限位 +/-{xy_limit} steps。")
-                    return
+        capture_preview = self._build_digital_slide_plan_preview(
+            settings=acquisition_settings,
+            cols=cols,
+            rows=rows,
+            focus_count=len(focus_levels),
+            viewport_width_px=view_width,
+            viewport_height_px=view_height,
+            pixel_stride_x=pixel_stride_x,
+            pixel_stride_y=pixel_stride_y,
+        )
+        if capture_preview.blockers:
+            QMessageBox.warning(self, "数字化切片", capture_preview.blockers[0])
+            return
+        # Freeze the exact plan that readiness and the range map just displayed.
+        # No position or preference changes after this point may reinterpret it.
+        self._digital_slide_plan_preview = capture_preview
         xy_settle_ms = int(acquisition_settings.digital_slide_xy_settle_ms)
         xy_post_settle_ms = int(acquisition_settings.digital_slide_xy_post_settle_ms)
         z_settle_ms = int(acquisition_settings.digital_slide_z_settle_ms)
@@ -14513,8 +15622,7 @@ class MainWindow(QMainWindow):
         blend_width = int(acquisition_settings.digital_slide_blend_width)
         tile_codec = self._digital_slide_storage_codec(acquisition_settings)
         tile_quality = self._digital_slide_storage_quality(acquisition_settings) if tile_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
-        image_width = view_width + ((cols - 1) * pixel_stride_x)
-        image_height = view_height + ((rows - 1) * pixel_stride_y)
+        image_width, image_height = capture_preview.output_size
         output_path = output_path.expanduser()
         output_path.parent.mkdir(parents=True, exist_ok=True)
         capture_plan = self._build_digital_slide_capture_plan(
@@ -14523,7 +15631,7 @@ class MainWindow(QMainWindow):
             focus_levels=focus_levels,
             pixel_stride_x=pixel_stride_x,
             pixel_stride_y=pixel_stride_y,
-            map_region=map_region,
+            plan_preview=capture_preview,
             settings=acquisition_settings,
         )
         estimated_total_ms = self._estimate_digital_slide_total_ms(
@@ -14621,10 +15729,25 @@ class MainWindow(QMainWindow):
                 "output_path": str(output_path),
                 "preview_max_width": settings_snapshot["preview_max_width"],
                 "settings_snapshot": settings_snapshot,
-                "region_bounds": dict(stage_region or {}),
-                "map_region_bounds": dict(map_region or {}),
+                "range_mode": capture_preview.range_mode,
+                "capture_origin_stage": [
+                    capture_preview.origin_stage_x,
+                    capture_preview.origin_stage_y,
+                ],
+                "capture_stage_delta": [
+                    capture_preview.stage_delta_x,
+                    capture_preview.stage_delta_y,
+                ],
+                "region_bounds": dict(capture_preview.planned_stage_bounds),
+                "map_region_bounds": dict(capture_preview.requested_map_bounds),
+                "planned_map_bounds": dict(capture_preview.planned_map_bounds),
+                "boundary_overshoot": dict(capture_preview.overshoot),
                 "region_anchors": dict(self._digital_slide_region_anchor_points),
-                "row_column_source": "manual" if self._digital_slide_rows_cols_manual else ("region" if map_region else "manual"),
+                "row_column_source": (
+                    "map_boundary"
+                    if capture_preview.range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY
+                    else "manual_grid"
+                ),
             },
         )
         try:
@@ -14648,6 +15771,18 @@ class MainWindow(QMainWindow):
             codec=tile_codec,
             quality=tile_quality,
         )
+        overview_focus_indices = (
+            None
+            if acquisition_settings.digital_slide_dynamic_focus_overview_enabled
+            else {len(focus_levels) // 2}
+        )
+        set_overview_focus_indices = getattr(
+            writer,
+            "set_overview_focus_indices",
+            None,
+        )
+        if callable(set_overview_focus_indices):
+            set_overview_focus_indices(overview_focus_indices)
         self._slide_acquisition_store = store
         self._slide_acquisition_settings = acquisition_settings
         self._slide_acquisition_writer = writer
@@ -14711,6 +15846,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_focus_level_count = len(focus_levels)
         self._slide_acquisition_completed_view_counts.clear()
         self._slide_acquisition_completed_view_rects.clear()
+        self._slide_acquisition_completed_map_bounds.clear()
         self._slide_acquisition_active_view_rect = {}
         self._slide_acquisition_started_at = perf_counter()
         self._slide_acquisition_initial_estimated_total_ms = estimated_total_ms
@@ -14738,6 +15874,7 @@ class MainWindow(QMainWindow):
         pixel_stride_x: int,
         pixel_stride_y: int,
         map_region: dict[str, int] | None = None,
+        plan_preview: DigitalSlideCapturePlanPreview | None = None,
         settings: AppSettings | None = None,
     ) -> list[dict[str, int]]:
         active_settings = settings or self._digital_slide_effective_settings()
@@ -14747,12 +15884,16 @@ class MainWindow(QMainWindow):
         normalized_map_region = self._normalize_digital_slide_bounds(map_region) if map_region else None
 
         def target_x_for_col(col: int) -> int:
+            if plan_preview is not None:
+                return plan_preview.stage_target(col, 0)[0]
             if normalized_map_region is not None:
                 map_x = int(normalized_map_region["left"]) + (int(col) * view_width)
                 return self._digital_slide_map_to_stage_axis(AXIS_X, map_x, active_settings)
             return int(col * x_stage_step)
 
         def target_y_for_row(row: int) -> int:
+            if plan_preview is not None:
+                return plan_preview.stage_target(0, row)[1]
             if normalized_map_region is not None:
                 map_y = int(normalized_map_region["top"]) + (int(row) * view_height)
                 return self._digital_slide_map_to_stage_axis(AXIS_Y, map_y, active_settings)
@@ -15085,10 +16226,19 @@ class MainWindow(QMainWindow):
         completed_count = self._slide_acquisition_completed_view_counts.get(view_key, 0) + 1
         self._slide_acquisition_completed_view_counts[view_key] = completed_count
         if completed_count >= max(1, self._slide_acquisition_focus_level_count):
-            self._slide_acquisition_completed_view_rects[view_key] = self._digital_slide_plan_item_map_rect(
+            completed_rect = self._digital_slide_plan_item_map_rect(
                 item,
                 self._digital_slide_effective_settings(),
             )
+            self._slide_acquisition_completed_view_rects[view_key] = completed_rect
+            if not self._slide_acquisition_completed_map_bounds:
+                self._slide_acquisition_completed_map_bounds = dict(completed_rect)
+            else:
+                aggregate = self._slide_acquisition_completed_map_bounds
+                aggregate["left"] = min(aggregate["left"], completed_rect["left"])
+                aggregate["right"] = max(aggregate["right"], completed_rect["right"])
+                aggregate["top"] = min(aggregate["top"], completed_rect["top"])
+                aggregate["bottom"] = max(aggregate["bottom"], completed_rect["bottom"])
         self._slide_acquisition_index += 1
         self._set_digital_slide_progress(
             f"已排队 {self._slide_acquisition_index}/{len(self._slide_acquisition_plan)} 张 "
@@ -15775,11 +16925,20 @@ class MainWindow(QMainWindow):
             canvas.fit_to_view()
 
     def _save_app_settings(self, *, context: str) -> bool:
+        persisted = self._app_settings.normalized_copy()
         try:
-            AppSettingsIO.save(self._app_settings)
+            AppSettingsIO.save(persisted)
         except OSError as exc:
             QMessageBox.warning(self, context, f"无法写入设置文件：\n{exc}")
             return False
+        # Workbench edits (for example capture codec or Z step) update the
+        # active named profile at the same time as the compatibility fields.
+        self._app_settings.digital_slide_profiles = copy.deepcopy(
+            persisted.digital_slide_profiles
+        )
+        self._app_settings.digital_slide_active_profile_id = (
+            persisted.digital_slide_active_profile_id
+        )
         return True
 
     def _on_object_snap_enabled_changed(self, enabled: bool) -> None:
@@ -17263,6 +18422,9 @@ class MainWindow(QMainWindow):
         navigator.set_source_image(source_image)
         if isinstance(canvas, DigitalSlideCanvas):
             canvas.overviewImageChanged.connect(navigator.set_source_image)
+            canvas.set_dynamic_focus_overview_enabled(
+                self._app_settings.digital_slide_dynamic_focus_overview_enabled
+            )
             canvas.set_overview_enabled(
                 bool(self._app_settings.show_canvas_navigator)
             )
@@ -17455,6 +18617,9 @@ class MainWindow(QMainWindow):
         target_document.mark_calibration_saved()
 
         canvas = DigitalSlideCanvas()
+        canvas.set_dynamic_focus_overview_enabled(
+            self._app_settings.digital_slide_dynamic_focus_overview_enabled
+        )
         try:
             canvas.set_slide_document(target_document, store)
         except Exception as exc:
@@ -17918,10 +19083,25 @@ class MainWindow(QMainWindow):
             label.deleteLater()
 
     def open_settings_dialog(self, *, initial_page: int = 0) -> None:
+        current_document = self.current_document()
+        digital_slide_source_path: Path | None = None
+        if current_document is not None and current_document.is_digital_slide():
+            current_store = self._slide_stores.get(current_document.id)
+            # A network slide is already backed by a session-owned local
+            # mirror.  Reuse that exact snapshot for calibration instead of
+            # copying the original SMB file a second time.
+            candidate = (
+                current_store.path
+                if current_store is not None
+                else self._resolved_document_path(current_document)
+            )
+            if candidate.suffix.lower() == DIGITAL_SLIDE_SUFFIX:
+                digital_slide_source_path = candidate
         dialog = SettingsDialog(
             self._app_settings,
-            document=self.current_document(),
+            document=current_document,
             digital_slide_locked=self._slide_acquisition_active(),
+            digital_slide_source_path=digital_slide_source_path,
             screenshot_settings=self._screenshot_settings,
             parent=self,
         )
@@ -18477,6 +19657,7 @@ class MainWindow(QMainWindow):
         self._activate_app_settings(settings)
 
     def _activate_app_settings(self, settings: AppSettings) -> None:
+        settings = settings.normalized_copy()
         self._app_settings = settings
         if self._object_snap_status_button is not None:
             self._object_snap_status_button.setSnapState(
@@ -18550,6 +19731,10 @@ class MainWindow(QMainWindow):
         for canvas in self._canvases.values():
             canvas.set_settings(self._app_settings)
             canvas.set_show_area_fill(self._show_area_fill)
+            if isinstance(canvas, DigitalSlideCanvas):
+                canvas.set_dynamic_focus_overview_enabled(
+                    self._app_settings.digital_slide_dynamic_focus_overview_enabled
+                )
         navigator_enabled = bool(self._app_settings.show_canvas_navigator)
         for navigator in self._canvas_navigators.values():
             navigator.set_navigator_enabled(navigator_enabled)

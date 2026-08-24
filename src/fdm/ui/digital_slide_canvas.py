@@ -65,6 +65,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_image = QImage()
         self._overview_focus_index = -1
         self._overview_enabled = False
+        self._dynamic_focus_overview_enabled = True
         self._overview_cache: OrderedDict[int, QImage] = OrderedDict()
         self._overview_failed_focuses: set[int] = set()
         self._overview_request_id = 0
@@ -201,6 +202,43 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self.isVisible():
             QTimer.singleShot(0, self.request_overview)
 
+    def set_dynamic_focus_overview_enabled(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if enabled == self._dynamic_focus_overview_enabled:
+            return
+        old_target = self._overview_target_focus_index()
+        self._dynamic_focus_overview_enabled = enabled
+        new_target = self._overview_target_focus_index()
+        if old_target == new_target:
+            return
+        self._overview_debounce_timer.stop()
+        self._overview_cancel.set()
+        self._overview_request_id += 1
+        self._overview_pending = False
+        cached = self._overview_cache.get(new_target)
+        if cached is not None:
+            self._overview_cache.move_to_end(new_target)
+            self._overview_image = cached
+            self._overview_focus_index = new_target
+            self.overviewImageChanged.emit(cached)
+            return
+        self._overview_image = QImage()
+        self._overview_focus_index = -1
+        self.overviewImageChanged.emit(QImage())
+        if self._overview_enabled and self.isVisible():
+            QTimer.singleShot(0, self.request_overview)
+
+    def dynamic_focus_overview_enabled(self) -> bool:
+        return self._dynamic_focus_overview_enabled
+
+    def _overview_target_focus_index(self) -> int:
+        if self._dynamic_focus_overview_enabled or self._slide_manifest is None:
+            return int(self._focus_index)
+        levels = self._slide_manifest.focus_levels
+        if not levels:
+            return 0
+        return max(0, len(levels) // 2)
+
     def is_navigation_key_active(self, key: int | Qt.Key) -> bool:
         return int(key) in self._smooth_nav_keys
 
@@ -295,25 +333,27 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_focus_index = -1
             self.overviewImageChanged.emit(QImage())
             return
+        overview_focus_index = self._overview_target_focus_index()
         if (
             self._overview_thread is not None
             and self._overview_thread.is_alive()
-            and self._overview_thread_focus_index != focus_index
+            and self._overview_thread_focus_index != overview_focus_index
         ):
             self._overview_cancel.set()
-        cached = self._overview_cache.get(focus_index)
+        cached = self._overview_cache.get(overview_focus_index)
         if cached is not None:
-            self._overview_cache.move_to_end(focus_index)
+            self._overview_cache.move_to_end(overview_focus_index)
             self._overview_image = cached
-            self._overview_focus_index = focus_index
+            self._overview_focus_index = overview_focus_index
             self.overviewImageChanged.emit(cached)
             return
-        if focus_index in self._overview_failed_focuses:
+        if overview_focus_index in self._overview_failed_focuses:
             self._overview_image = QImage()
             self._overview_focus_index = -1
             self.overviewImageChanged.emit(QImage())
             return
-        self._overview_debounce_timer.start()
+        if self._dynamic_focus_overview_enabled:
+            self._overview_debounce_timer.start()
 
     def widget_to_image(self, position: QPointF) -> Point:
         local = super().widget_to_image(position)
@@ -818,7 +858,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         if desired.isEmpty():
             return
         store_path = self._slide_store.path
-        focus_index = int(self._focus_index)
+        focus_index = self._overview_target_focus_index()
         metadata = self._slide_manifest.metadata if isinstance(self._slide_manifest.metadata, dict) else {}
         try:
             blend_width = int(metadata.get("blend_width", 0) or 0)
@@ -939,7 +979,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         if not self.isVisible():
             return
-        focus_index = int(self._focus_index)
+        focus_index = self._overview_target_focus_index()
         cached = self._overview_cache.get(focus_index)
         if cached is not None:
             self._overview_cache.move_to_end(focus_index)
@@ -1034,7 +1074,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
         stale = (
             request_id != self._overview_request_id
-            or focus_index != self._focus_index
+            or focus_index != self._overview_target_focus_index()
         )
         if not stale and status == "ok" and not image.isNull():
             self._overview_cache[focus_index] = image
@@ -1076,8 +1116,8 @@ class DigitalSlideCanvas(DocumentCanvas):
             and self._overview_enabled
             and self._slide_store is not None
             and self.isVisible()
-            and self._focus_index not in self._overview_cache
-            and self._focus_index not in self._overview_failed_focuses
+            and self._overview_target_focus_index() not in self._overview_cache
+            and self._overview_target_focus_index() not in self._overview_failed_focuses
         ):
             QTimer.singleShot(0, self.request_overview)
 

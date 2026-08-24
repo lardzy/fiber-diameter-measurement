@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 from pathlib import Path
 from threading import Thread
+from uuid import uuid4
 
 from PySide6.QtCore import QEvent, QLineF, QObject, QPointF, QRectF, QSize, Qt, Signal
 from PySide6.QtGui import QColor, QFont, QFontDatabase, QFontInfo, QFontMetrics, QPainter, QPainterPath, QPalette, QPen
@@ -17,6 +18,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFontComboBox,
     QFormLayout,
+    QGridLayout,
     QGroupBox,
     QAbstractScrollArea,
     QAbstractItemView,
@@ -34,6 +36,7 @@ from PySide6.QtWidgets import (
     QSpinBox,
     QHeaderView,
     QFrame,
+    QInputDialog,
     QListWidget,
     QListWidgetItem,
     QStackedWidget,
@@ -54,6 +57,9 @@ from fdm.settings import (
     AreaModelMapping,
     AppSettings,
     DEFAULT_MEASUREMENT_LABEL_COLOR,
+    DIGITAL_SLIDE_PROFILE_FIELDS,
+    DigitalSlideAcquisitionProfile,
+    DigitalSlideAcquisitionProfileIO,
     FocusStackProfile,
     MagicSegmentModelVariant,
     MeasurementEndpointStyle,
@@ -290,13 +296,33 @@ class DigitalSlideCompressionWorker(QObject):
     finished = Signal(str)
     failed = Signal(str)
 
-    def __init__(self, source: Path, target: Path, *, codec: str, quality: int | None) -> None:
+    def __init__(
+        self,
+        source: Path,
+        target: Path,
+        *,
+        codec: str,
+        quality: int | None,
+        dynamic_focus_overview_enabled: bool = True,
+    ) -> None:
         super().__init__()
         self._source = source
         self._target = target
         self._codec = normalize_tile_codec(codec)
         self._quality = normalize_jpeg_quality(quality) if self._codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
+        self._dynamic_focus_overview_enabled = bool(dynamic_focus_overview_enabled)
         self._thread: Thread | None = None
+
+    def set_dynamic_focus_overview_enabled(self, enabled: bool) -> None:
+        """Configure overview generation before the worker is started.
+
+        Keeping this as a setter preserves the established worker constructor
+        contract for integrations and test doubles.
+        """
+
+        if self.is_running():
+            return
+        self._dynamic_focus_overview_enabled = bool(enabled)
 
     def start(self) -> None:
         if self._thread is not None and self._thread.is_alive():
@@ -314,6 +340,7 @@ class DigitalSlideCompressionWorker(QObject):
                 self._target,
                 codec=self._codec,
                 quality=self._quality,
+                dynamic_focus_overview_enabled=self._dynamic_focus_overview_enabled,
                 progress_callback=lambda completed, total: self.progress.emit(int(completed), int(total)),
             )
         except Exception as exc:
@@ -347,9 +374,16 @@ class DigitalSlideCompressionDialog(QDialog):
     ) -> None:
         super().__init__(parent)
         self.setWindowTitle("压缩数字化切片副本")
-        self.resize(680, 360)
-        self.setMinimumSize(560, 320)
+        # Two file rows, the codec form and the progress/actions must never be
+        # compressed into one another.  420 logical pixels is still compact on
+        # a 720 px-high workspace, while remaining stable with 150% scaling and
+        # larger system fonts.
+        self.resize(680, 420)
+        self.setMinimumSize(560, 420)
         self._worker: DigitalSlideCompressionWorker | None = None
+        self._dynamic_focus_overview_enabled = bool(
+            settings.digital_slide_dynamic_focus_overview_enabled
+        )
         self._running = False
         self._completed_path: Path | None = None
 
@@ -363,6 +397,10 @@ class DigitalSlideCompressionDialog(QDialog):
         hint.setWordWrap(True)
 
         paths_group = QGroupBox("文件", self)
+        paths_group.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         paths_layout = QVBoxLayout(paths_group)
         source_row = QHBoxLayout()
         self._source_edit = QLineEdit(paths_group)
@@ -383,6 +421,10 @@ class DigitalSlideCompressionDialog(QDialog):
         paths_layout.addLayout(target_row)
 
         options_group = QGroupBox("压缩选项", self)
+        options_group.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
         options_form = QFormLayout(options_group)
         self._codec_combo = NoWheelComboBox(options_group)
         self._codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
@@ -542,7 +584,19 @@ class DigitalSlideCompressionDialog(QDialog):
         self._progress.setRange(0, 1)
         self._progress.setValue(0)
         self._progress.setFormat("准备压缩...")
-        worker = DigitalSlideCompressionWorker(source, target, codec=codec, quality=quality)
+        worker = DigitalSlideCompressionWorker(
+            source,
+            target,
+            codec=codec,
+            quality=quality,
+        )
+        configure_overview = getattr(
+            worker,
+            "set_dynamic_focus_overview_enabled",
+            None,
+        )
+        if callable(configure_overview):
+            configure_overview(self._dynamic_focus_overview_enabled)
         self._worker = worker
         worker.progress.connect(self._on_progress)
         worker.finished.connect(self._on_finished)
@@ -1682,10 +1736,12 @@ class SettingsDialog(QDialog):
         *,
         document: ImageDocument | None,
         digital_slide_locked: bool = False,
+        digital_slide_source_path: str | Path | None = None,
         screenshot_settings: ScreenshotSettings | None = None,
         parent=None,
     ) -> None:
         super().__init__(parent)
+        settings = settings.normalized_copy()
         self.setWindowTitle("首选项")
         # Keep the pre-show size compatible with callers that inspect a newly
         # constructed dialog.  The preferred clamped size is applied when the
@@ -1694,6 +1750,21 @@ class SettingsDialog(QDialog):
         self._preferred_size_applied = False
         self._initial_settings = replace(settings)
         self._document = document
+        self._digital_slide_source_path = (
+            Path(digital_slide_source_path).expanduser()
+            if digital_slide_source_path
+            else None
+        )
+        self._digital_slide_profiles_draft = [
+            DigitalSlideAcquisitionProfile(
+                profile_id=profile.profile_id,
+                name=profile.name,
+                values=dict(profile.values),
+            )
+            for profile in settings.digital_slide_profiles
+        ]
+        self._digital_slide_active_profile_id = settings.digital_slide_active_profile_id
+        self._digital_slide_profile_switching = False
         self._request_scale_anchor_pick = False
         self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
         self._raw_record_current_template_index = -1
@@ -2075,6 +2146,7 @@ class SettingsDialog(QDialog):
                     target.setItem(row, column, item.clone())
 
     def app_settings(self) -> AppSettings:
+        self._store_current_digital_slide_profile()
         length_label_style = MeasurementLabelStyleSettings(
             enabled=self._show_length_measurement_labels.isChecked(),
             font_family=self._font_combo_family_value(self._length_measurement_label_font),
@@ -2164,7 +2236,7 @@ class SettingsDialog(QDialog):
             digital_slide_z_jog_step=self._digital_slide_z_jog_step_spin.value(),
             digital_slide_z_capture_lower=self._initial_settings.digital_slide_z_capture_lower,
             digital_slide_z_capture_upper=self._initial_settings.digital_slide_z_capture_upper,
-            digital_slide_z_capture_step=self._initial_settings.digital_slide_z_capture_step,
+            digital_slide_z_capture_step=self._digital_slide_z_capture_step_spin.value(),
             digital_slide_jog_rate=self._digital_slide_jog_rate_spin.value(),
             digital_slide_motor_output_enabled=self._digital_slide_motor_output_checkbox.isChecked(),
             digital_slide_x_stage_step=self._digital_slide_x_stage_step_spin.value(),
@@ -2183,6 +2255,16 @@ class SettingsDialog(QDialog):
             digital_slide_first_tile_extra_wait_ms=self._digital_slide_first_tile_extra_wait_spin.value(),
             digital_slide_discard_frames=self._digital_slide_discard_frames_spin.value(),
             digital_slide_focus_wheel_step=self._digital_slide_focus_wheel_slider.value(),
+            digital_slide_dynamic_focus_overview_enabled=self._digital_slide_dynamic_focus_overview_checkbox.isChecked(),
+            digital_slide_profiles=[
+                DigitalSlideAcquisitionProfile(
+                    profile_id=profile.profile_id,
+                    name=profile.name,
+                    values=dict(profile.values),
+                )
+                for profile in self._digital_slide_profiles_draft
+            ],
+            digital_slide_active_profile_id=self._digital_slide_active_profile_id,
         )
 
     def area_model_mappings(self) -> list[AreaModelMapping]:
@@ -2741,6 +2823,10 @@ class SettingsDialog(QDialog):
     def _build_digital_slide_tab(self, settings: AppSettings, *, locked: bool = False) -> QWidget:
         page = QWidget()
         layout = QVBoxLayout(page)
+        # The settings sidebar leaves a narrow content viewport on small/high-DPI
+        # screens.  Keep this page's outer gutter compact; the group boxes retain
+        # their own padding and the form rows wrap independently below.
+        layout.setContentsMargins(4, 9, 4, 9)
         if locked:
             locked_hint = QLabel("数字化切片正在采集中，本页参数已锁定；本次采集会继续使用开始时的参数快照。")
             locked_hint.setWordWrap(True)
@@ -2749,6 +2835,10 @@ class SettingsDialog(QDialog):
 
         capture_group = QGroupBox("采集与预览")
         capture_form = QFormLayout(capture_group)
+        capture_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        capture_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self._digital_slide_preview_width_combo = NoWheelComboBox()
         self._add_digital_slide_width_options(
             self._digital_slide_preview_width_combo,
@@ -2773,7 +2863,11 @@ class SettingsDialog(QDialog):
         self._digital_slide_capture_quality_slider.setRange(70, 95)
         self._digital_slide_capture_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
         self._digital_slide_capture_quality_label = QLabel()
-        self._digital_slide_capture_quality_label.setMinimumWidth(150)
+        self._digital_slide_capture_quality_label.setMinimumWidth(72)
+        self._digital_slide_capture_quality_label.setSizePolicy(
+            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Preferred,
+        )
         self._digital_slide_capture_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self._digital_slide_capture_quality_slider.valueChanged.connect(self._update_digital_slide_capture_quality_label)
         self._digital_slide_capture_codec_combo.currentIndexChanged.connect(self._sync_digital_slide_capture_quality_visibility)
@@ -2797,6 +2891,10 @@ class SettingsDialog(QDialog):
 
         motion_group = QGroupBox("运动控制")
         motion_form = QFormLayout(motion_group)
+        motion_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        motion_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self._digital_slide_xy_soft_limit_spin = NoWheelSpinBox()
         self._digital_slide_xy_soft_limit_spin.setRange(0, 10_000_000)
         self._digital_slide_xy_soft_limit_spin.setSingleStep(10_000)
@@ -2821,7 +2919,10 @@ class SettingsDialog(QDialog):
         self._digital_slide_jog_rate_spin.setRange(1, 50)
         self._digital_slide_jog_rate_spin.setSuffix(" 次/秒")
         self._digital_slide_jog_rate_spin.setValue(settings.digital_slide_jog_rate)
-        self._digital_slide_motor_output_checkbox = QCheckBox("进入数字化切片界面后自动启用电机输出")
+        self._digital_slide_motor_output_checkbox = QCheckBox("进入模式时自动启用电机")
+        self._digital_slide_motor_output_checkbox.setToolTip(
+            "进入数字化切片界面后，尝试自动启用电机输出"
+        )
         self._digital_slide_motor_output_checkbox.setChecked(settings.digital_slide_motor_output_enabled)
         self._digital_slide_reverse_x_axis_checkbox = QCheckBox("左右方向反转")
         self._digital_slide_reverse_x_axis_checkbox.setChecked(settings.digital_slide_reverse_x_axis)
@@ -2838,6 +2939,10 @@ class SettingsDialog(QDialog):
 
         advanced_group = QGroupBox("高级采集")
         advanced_form = QFormLayout(advanced_group)
+        advanced_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        advanced_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         self._digital_slide_x_stage_step_spin = NoWheelSpinBox()
         self._digital_slide_x_stage_step_spin.setRange(-10_000_000, 10_000_000)
         self._digital_slide_x_stage_step_spin.setSingleStep(100)
@@ -2878,6 +2983,11 @@ class SettingsDialog(QDialog):
         self._digital_slide_z_post_settle_spin.setRange(0, 5000)
         self._digital_slide_z_post_settle_spin.setSuffix(" ms")
         self._digital_slide_z_post_settle_spin.setValue(settings.digital_slide_z_post_settle_ms)
+        self._digital_slide_z_capture_step_spin = NoWheelSpinBox()
+        self._digital_slide_z_capture_step_spin.setRange(1, 1_000_000)
+        self._digital_slide_z_capture_step_spin.setSingleStep(100)
+        self._digital_slide_z_capture_step_spin.setSuffix(" steps")
+        self._digital_slide_z_capture_step_spin.setValue(settings.digital_slide_z_capture_step)
         self._digital_slide_first_tile_extra_wait_spin = NoWheelSpinBox()
         self._digital_slide_first_tile_extra_wait_spin.setRange(0, 60_000)
         self._digital_slide_first_tile_extra_wait_spin.setSingleStep(500)
@@ -2896,11 +3006,16 @@ class SettingsDialog(QDialog):
         advanced_form.addRow("XY 停稳后等待", self._digital_slide_xy_post_settle_spin)
         advanced_form.addRow("Z 停稳等待", self._digital_slide_z_settle_spin)
         advanced_form.addRow("Z 停稳后等待", self._digital_slide_z_post_settle_spin)
+        advanced_form.addRow("Z 采集步距", self._digital_slide_z_capture_step_spin)
         advanced_form.addRow("首张额外等待", self._digital_slide_first_tile_extra_wait_spin)
         advanced_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
 
         browsing_group = QGroupBox("浏览与快捷键")
         browsing_form = QFormLayout(browsing_group)
+        browsing_form.setFieldGrowthPolicy(
+            QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
+        )
+        browsing_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
         wheel_row = QWidget()
         wheel_layout = QHBoxLayout(wheel_row)
         wheel_layout.setContentsMargins(0, 0, 0, 0)
@@ -2916,17 +3031,387 @@ class SettingsDialog(QDialog):
         wheel_layout.addWidget(self._digital_slide_focus_wheel_value_label)
         shortcuts = QLabel("M 切换步进/平滑移动；方向键移动视场；Shift+方向键按整视场移动；Ctrl+滚轮缩放；普通滚轮切换焦层。")
         shortcuts.setWordWrap(True)
+        self._digital_slide_dynamic_focus_overview_checkbox = QCheckBox(
+            "动态焦层缩略图"
+        )
+        self._digital_slide_dynamic_focus_overview_checkbox.setChecked(
+            settings.digital_slide_dynamic_focus_overview_enabled
+        )
+        self._digital_slide_dynamic_focus_overview_checkbox.setToolTip(
+            "关闭后固定显示中间焦层；新切片也只预存该焦层的缩略图"
+        )
         browsing_form.addRow("焦层滚轮速度", wheel_row)
+        browsing_form.addRow("焦层缩略图", self._digital_slide_dynamic_focus_overview_checkbox)
         browsing_form.addRow("快捷键", shortcuts)
 
+        profile_group = QGroupBox("采集参数配置")
+        profile_layout = QVBoxLayout(profile_group)
+        profile_hint = QLabel(
+            "为不同镜头保存采集与预览、运动控制和高级采集参数；切换后需点击“应用”或“确定”才会生效。"
+        )
+        profile_hint.setWordWrap(True)
+        profile_layout.addWidget(profile_hint)
+        self._digital_slide_profile_combo = NoWheelComboBox(profile_group)
+        self._digital_slide_profile_combo.setSizePolicy(
+            QSizePolicy.Policy.Expanding,
+            QSizePolicy.Policy.Fixed,
+        )
+        profile_layout.addWidget(self._digital_slide_profile_combo)
+        profile_actions = QGridLayout()
+        profile_actions.setHorizontalSpacing(6)
+        for index, (label, slot) in enumerate((
+            ("新增", self._add_digital_slide_profile),
+            ("复制", self._duplicate_digital_slide_profile),
+            ("重命名", self._rename_digital_slide_profile),
+            ("删除", self._delete_digital_slide_profile),
+        )):
+            button = QPushButton(label, profile_group)
+            button.clicked.connect(slot)
+            button.setMinimumWidth(0)
+            button.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
+            profile_actions.addWidget(button, index // 2, index % 2)
+        profile_layout.addLayout(profile_actions)
+        exchange_actions = QGridLayout()
+        exchange_actions.setHorizontalSpacing(6)
+        exchange_actions.setVerticalSpacing(6)
+        import_button = QPushButton("导入 JSON", profile_group)
+        import_button.clicked.connect(self._import_digital_slide_profile)
+        export_button = QPushButton("导出 JSON", profile_group)
+        export_button.setToolTip("导出当前选中的配置")
+        export_button.clicked.connect(self._export_digital_slide_profile)
+        self._digital_slide_calibration_button = QPushButton("打开校准辅助…", profile_group)
+        self._digital_slide_calibration_button.clicked.connect(
+            self._open_digital_slide_calibration_assistant
+        )
+        for button in (
+            import_button,
+            export_button,
+            self._digital_slide_calibration_button,
+        ):
+            button.setMinimumWidth(0)
+            button.setSizePolicy(
+                QSizePolicy.Policy.Expanding,
+                QSizePolicy.Policy.Fixed,
+            )
+        exchange_actions.addWidget(import_button, 0, 0)
+        exchange_actions.addWidget(export_button, 0, 1)
+        exchange_actions.addWidget(self._digital_slide_calibration_button, 1, 0, 1, 2)
+        profile_layout.addLayout(exchange_actions)
+        self._populate_digital_slide_profile_combo()
+        self._digital_slide_profile_combo.currentIndexChanged.connect(
+            self._on_digital_slide_profile_changed
+        )
+
+        layout.addWidget(profile_group)
         layout.addWidget(capture_group)
         layout.addWidget(motion_group)
         layout.addWidget(advanced_group)
         layout.addWidget(browsing_group)
         layout.addStretch(1)
-        for group in (capture_group, motion_group, advanced_group, browsing_group):
+        for group in (profile_group, capture_group, motion_group, advanced_group, browsing_group):
             group.setEnabled(not locked)
         return self._wrap_settings_page(page)
+
+    def _current_digital_slide_profile_values(self) -> dict[str, object]:
+        return {
+            "digital_slide_preview_max_width": int(self._digital_slide_preview_width_combo.currentData() or 0),
+            "digital_slide_capture_max_width": int(self._digital_slide_capture_width_combo.currentData() or 0),
+            "digital_slide_capture_tile_codec": normalize_tile_codec(self._digital_slide_capture_codec_combo.currentData()),
+            "digital_slide_capture_jpeg_quality": self._digital_slide_capture_quality_slider.value(),
+            "digital_slide_xy_soft_limit": self._digital_slide_xy_soft_limit_spin.value(),
+            "digital_slide_z_soft_limit": self._digital_slide_z_soft_limit_spin.value(),
+            "digital_slide_xy_jog_step": self._digital_slide_xy_jog_step_spin.value(),
+            "digital_slide_z_jog_step": self._digital_slide_z_jog_step_spin.value(),
+            "digital_slide_z_capture_step": self._digital_slide_z_capture_step_spin.value(),
+            "digital_slide_jog_rate": self._digital_slide_jog_rate_spin.value(),
+            "digital_slide_motor_output_enabled": self._digital_slide_motor_output_checkbox.isChecked(),
+            "digital_slide_x_stage_step": self._digital_slide_x_stage_step_spin.value(),
+            "digital_slide_y_stage_step": self._digital_slide_y_stage_step_spin.value(),
+            "digital_slide_reverse_x_axis": self._digital_slide_reverse_x_axis_checkbox.isChecked(),
+            "digital_slide_reverse_y_axis": self._digital_slide_reverse_y_axis_checkbox.isChecked(),
+            "digital_slide_overlap_percent": self._digital_slide_overlap_spin.value(),
+            "digital_slide_pixel_stride_mode": str(self._digital_slide_pixel_stride_mode_combo.currentData()),
+            "digital_slide_x_pixel_stride": self._digital_slide_x_pixel_stride_spin.value(),
+            "digital_slide_y_pixel_stride": self._digital_slide_y_pixel_stride_spin.value(),
+            "digital_slide_blend_width": self._digital_slide_blend_width_spin.value(),
+            "digital_slide_xy_settle_ms": self._digital_slide_xy_settle_spin.value(),
+            "digital_slide_xy_post_settle_ms": self._digital_slide_xy_post_settle_spin.value(),
+            "digital_slide_z_settle_ms": self._digital_slide_z_settle_spin.value(),
+            "digital_slide_z_post_settle_ms": self._digital_slide_z_post_settle_spin.value(),
+            "digital_slide_first_tile_extra_wait_ms": self._digital_slide_first_tile_extra_wait_spin.value(),
+            "digital_slide_discard_frames": self._digital_slide_discard_frames_spin.value(),
+        }
+
+    def _store_current_digital_slide_profile(self) -> None:
+        active_id = str(self._digital_slide_active_profile_id or "")
+        values = self._current_digital_slide_profile_values()
+        self._digital_slide_profiles_draft = [
+            DigitalSlideAcquisitionProfile(
+                profile_id=profile.profile_id,
+                name=profile.name,
+                values=(values if profile.profile_id == active_id else dict(profile.values)),
+            )
+            for profile in self._digital_slide_profiles_draft
+        ]
+
+    @staticmethod
+    def _set_combo_data(combo: QComboBox, value: object) -> None:
+        index = combo.findData(value)
+        if index >= 0:
+            combo.setCurrentIndex(index)
+
+    def _load_digital_slide_profile_values(self, values: dict[str, object]) -> None:
+        self._set_combo_data(self._digital_slide_preview_width_combo, int(values["digital_slide_preview_max_width"]))
+        self._set_combo_data(self._digital_slide_capture_width_combo, int(values["digital_slide_capture_max_width"]))
+        self._set_combo_data(self._digital_slide_capture_codec_combo, normalize_tile_codec(values["digital_slide_capture_tile_codec"]))
+        self._digital_slide_capture_quality_slider.setValue(int(values["digital_slide_capture_jpeg_quality"]))
+        self._digital_slide_xy_soft_limit_spin.setValue(int(values["digital_slide_xy_soft_limit"]))
+        self._digital_slide_z_soft_limit_spin.setValue(int(values["digital_slide_z_soft_limit"]))
+        self._digital_slide_xy_jog_step_spin.setValue(int(values["digital_slide_xy_jog_step"]))
+        self._digital_slide_z_jog_step_spin.setValue(int(values["digital_slide_z_jog_step"]))
+        self._digital_slide_z_capture_step_spin.setValue(int(values["digital_slide_z_capture_step"]))
+        self._digital_slide_jog_rate_spin.setValue(int(values["digital_slide_jog_rate"]))
+        self._digital_slide_motor_output_checkbox.setChecked(bool(values["digital_slide_motor_output_enabled"]))
+        self._digital_slide_x_stage_step_spin.setValue(int(values["digital_slide_x_stage_step"]))
+        self._digital_slide_y_stage_step_spin.setValue(int(values["digital_slide_y_stage_step"]))
+        self._digital_slide_reverse_x_axis_checkbox.setChecked(bool(values["digital_slide_reverse_x_axis"]))
+        self._digital_slide_reverse_y_axis_checkbox.setChecked(bool(values["digital_slide_reverse_y_axis"]))
+        self._digital_slide_overlap_spin.setValue(int(values["digital_slide_overlap_percent"]))
+        self._set_combo_data(self._digital_slide_pixel_stride_mode_combo, str(values["digital_slide_pixel_stride_mode"]))
+        self._digital_slide_x_pixel_stride_spin.setValue(int(values["digital_slide_x_pixel_stride"]))
+        self._digital_slide_y_pixel_stride_spin.setValue(int(values["digital_slide_y_pixel_stride"]))
+        self._digital_slide_blend_width_spin.setValue(int(values["digital_slide_blend_width"]))
+        self._digital_slide_xy_settle_spin.setValue(int(values["digital_slide_xy_settle_ms"]))
+        self._digital_slide_xy_post_settle_spin.setValue(int(values["digital_slide_xy_post_settle_ms"]))
+        self._digital_slide_z_settle_spin.setValue(int(values["digital_slide_z_settle_ms"]))
+        self._digital_slide_z_post_settle_spin.setValue(int(values["digital_slide_z_post_settle_ms"]))
+        self._digital_slide_first_tile_extra_wait_spin.setValue(int(values["digital_slide_first_tile_extra_wait_ms"]))
+        self._digital_slide_discard_frames_spin.setValue(int(values["digital_slide_discard_frames"]))
+        self._sync_digital_slide_capture_quality_visibility()
+
+    def _populate_digital_slide_profile_combo(self) -> None:
+        combo = self._digital_slide_profile_combo
+        self._digital_slide_profile_switching = True
+        combo.blockSignals(True)
+        combo.clear()
+        for profile in self._digital_slide_profiles_draft:
+            combo.addItem(profile.name, profile.profile_id)
+        index = combo.findData(self._digital_slide_active_profile_id)
+        combo.setCurrentIndex(index if index >= 0 else 0)
+        if combo.currentIndex() >= 0:
+            self._digital_slide_active_profile_id = str(combo.currentData())
+        combo.blockSignals(False)
+        self._digital_slide_profile_switching = False
+
+    def _on_digital_slide_profile_changed(self, _index: int) -> None:
+        if self._digital_slide_profile_switching:
+            return
+        self._store_current_digital_slide_profile()
+        target_id = str(self._digital_slide_profile_combo.currentData() or "")
+        target = next(
+            (profile for profile in self._digital_slide_profiles_draft if profile.profile_id == target_id),
+            None,
+        )
+        if target is None:
+            return
+        self._digital_slide_active_profile_id = target.profile_id
+        self._load_digital_slide_profile_values(target.values)
+
+    def _unique_digital_slide_profile_name(self, proposed: str) -> str:
+        base = AppSettings._normalize_digital_slide_profile_name(proposed) or "采集配置"
+        names = {profile.name.casefold() for profile in self._digital_slide_profiles_draft}
+        candidate = base
+        suffix = 2
+        while candidate.casefold() in names:
+            candidate = f"{base} ({suffix})"
+            suffix += 1
+        return candidate
+
+    def _prompt_digital_slide_profile_name(
+        self,
+        title: str,
+        initial: str,
+        *,
+        exclude_profile_id: str | None = None,
+    ) -> str | None:
+        name, accepted = QInputDialog.getText(self, title, "配置名称", text=initial)
+        if not accepted:
+            return None
+        normalized = AppSettings._normalize_digital_slide_profile_name(name)
+        if not normalized:
+            QMessageBox.information(self, title, "配置名称不能为空。")
+            return None
+        duplicate = next(
+            (
+                profile
+                for profile in self._digital_slide_profiles_draft
+                if profile.name.casefold() == normalized.casefold()
+                and profile.profile_id != exclude_profile_id
+            ),
+            None,
+        )
+        if duplicate is not None:
+            QMessageBox.information(self, title, "配置名称已存在。")
+            return None
+        return normalized
+
+    def _add_digital_slide_profile(self) -> None:
+        self._store_current_digital_slide_profile()
+        name = self._prompt_digital_slide_profile_name("新增采集配置", "新镜头配置")
+        if name is None:
+            return
+        profile = DigitalSlideAcquisitionProfile(
+            profile_id=uuid4().hex,
+            name=name,
+            values=self._current_digital_slide_profile_values(),
+        )
+        self._digital_slide_profiles_draft.append(profile)
+        self._digital_slide_active_profile_id = profile.profile_id
+        self._populate_digital_slide_profile_combo()
+
+    def _duplicate_digital_slide_profile(self) -> None:
+        self._store_current_digital_slide_profile()
+        current = next(
+            profile
+            for profile in self._digital_slide_profiles_draft
+            if profile.profile_id == self._digital_slide_active_profile_id
+        )
+        name = self._prompt_digital_slide_profile_name(
+            "复制采集配置",
+            self._unique_digital_slide_profile_name(f"{current.name} 副本"),
+        )
+        if name is None:
+            return
+        copied = DigitalSlideAcquisitionProfile(uuid4().hex, name, dict(current.values))
+        self._digital_slide_profiles_draft.append(copied)
+        self._digital_slide_active_profile_id = copied.profile_id
+        self._populate_digital_slide_profile_combo()
+
+    def _rename_digital_slide_profile(self) -> None:
+        current = next(
+            profile
+            for profile in self._digital_slide_profiles_draft
+            if profile.profile_id == self._digital_slide_active_profile_id
+        )
+        name = self._prompt_digital_slide_profile_name(
+            "重命名采集配置",
+            current.name,
+            exclude_profile_id=current.profile_id,
+        )
+        if name is None:
+            return
+        current.name = name
+        self._populate_digital_slide_profile_combo()
+
+    def _delete_digital_slide_profile(self) -> None:
+        if len(self._digital_slide_profiles_draft) <= 1:
+            QMessageBox.information(self, "删除采集配置", "至少需要保留一个采集配置。")
+            return
+        current_index = next(
+            index
+            for index, profile in enumerate(self._digital_slide_profiles_draft)
+            if profile.profile_id == self._digital_slide_active_profile_id
+        )
+        current = self._digital_slide_profiles_draft[current_index]
+        response = QMessageBox.question(
+            self,
+            "删除采集配置",
+            f"确定删除“{current.name}”吗？",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+        del self._digital_slide_profiles_draft[current_index]
+        next_index = min(current_index, len(self._digital_slide_profiles_draft) - 1)
+        target = self._digital_slide_profiles_draft[next_index]
+        self._digital_slide_active_profile_id = target.profile_id
+        self._load_digital_slide_profile_values(target.values)
+        self._populate_digital_slide_profile_combo()
+
+    def _import_digital_slide_profile(self) -> None:
+        path, _selected_filter = QFileDialog.getOpenFileName(
+            self,
+            "导入数字切片采集配置",
+            "",
+            "采集配置 JSON (*.json)",
+        )
+        if not path:
+            return
+        try:
+            profile = DigitalSlideAcquisitionProfileIO.load(
+                path,
+                fallback=self._initial_settings,
+            )
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "导入采集配置", str(exc))
+            return
+        profile.profile_id = uuid4().hex
+        profile.name = self._unique_digital_slide_profile_name(profile.name)
+        self._store_current_digital_slide_profile()
+        self._digital_slide_profiles_draft.append(profile)
+        self._digital_slide_active_profile_id = profile.profile_id
+        self._load_digital_slide_profile_values(profile.values)
+        self._populate_digital_slide_profile_combo()
+
+    def _export_digital_slide_profile(self) -> None:
+        self._store_current_digital_slide_profile()
+        current = next(
+            profile
+            for profile in self._digital_slide_profiles_draft
+            if profile.profile_id == self._digital_slide_active_profile_id
+        )
+        suggested_stem = "".join(
+            character
+            if character.isalnum() or character in {"-", "_", " "}
+            else "_"
+            for character in current.name
+        ).strip(" ._") or "digital-slide-profile"
+        path, _selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "导出数字切片采集配置",
+            f"{suggested_stem}.json",
+            "采集配置 JSON (*.json)",
+        )
+        if not path:
+            return
+        output = Path(path)
+        if output.suffix.lower() != ".json":
+            output = output.with_suffix(".json")
+        try:
+            DigitalSlideAcquisitionProfileIO.save(
+                current,
+                output,
+                fallback=self._initial_settings,
+            )
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "导出采集配置", str(exc))
+            return
+        QMessageBox.information(self, "导出采集配置", f"配置已导出到：\n{output}")
+
+    def _open_digital_slide_calibration_assistant(self) -> None:
+        try:
+            from fdm.ui.digital_slide_calibration import DigitalSlideCalibrationDialog
+        except ImportError as exc:
+            QMessageBox.warning(self, "校准辅助", f"校准辅助组件无法加载：\n{exc}")
+            return
+        dialog = DigitalSlideCalibrationDialog(
+            self.app_settings(),
+            source_path=self._digital_slide_source_path,
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        values = dialog.applied_profile_values()
+        if not values:
+            return
+        merged = self._current_digital_slide_profile_values()
+        merged.update({key: value for key, value in values.items() if key in DIGITAL_SLIDE_PROFILE_FIELDS})
+        self._load_digital_slide_profile_values(merged)
+        self._store_current_digital_slide_profile()
 
     def _add_digital_slide_width_options(self, combo: QComboBox, *, current: int, options: tuple[int, ...]) -> None:
         for width in options:

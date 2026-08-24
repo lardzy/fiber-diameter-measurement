@@ -1209,7 +1209,7 @@ class ModelsProjectIOTests(unittest.TestCase):
         payload = settings.to_dict()
         loaded = AppSettings.from_dict(payload)
 
-        self.assertEqual(payload["version"], 2)
+        self.assertEqual(payload["version"], 3)
         self.assertEqual(
             loaded.length_measurement_label_style,
             settings.length_measurement_label_style,

@@ -181,6 +181,21 @@ class DigitalSlideTile:
     status: str = "ready"
 
 
+@dataclass(frozen=True, slots=True)
+class DigitalSlideTileDescriptor:
+    tile_id: int
+    z_index: int
+    x: int
+    y: int
+    width: int
+    height: int
+    stage_x: int
+    stage_y: int
+    focus_z: int
+    sharpness: float = 0.0
+    status: str = "ready"
+
+
 class DigitalSlideOverviewAccumulator:
     """Build small per-focus overviews while decoded capture tiles are available."""
 
@@ -189,6 +204,7 @@ class DigitalSlideOverviewAccumulator:
         manifest: DigitalSlideManifest,
         *,
         maximum_edge: int = DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
+        focus_indices: set[int] | None = None,
     ) -> None:
         max_edge = max(1, min(int(maximum_edge), 1024))
         self._scale = min(
@@ -199,9 +215,16 @@ class DigitalSlideOverviewAccumulator:
         self._width = max(1, int(round(manifest.width * self._scale)))
         self._height = max(1, int(round(manifest.height * self._scale)))
         self._images: dict[int, QImage] = {}
+        self._focus_indices = (
+            {int(index) for index in focus_indices}
+            if focus_indices is not None
+            else None
+        )
 
     def add_tile(self, tile: DigitalSlideTile, image: QImage) -> None:
         if image.isNull():
+            return
+        if self._focus_indices is not None and int(tile.z_index) not in self._focus_indices:
             return
         target = QRectF(
             float(tile.x) * self._scale,
@@ -298,6 +321,7 @@ class DigitalSlideStore:
     def __init__(self, path: str | Path) -> None:
         self.path = Path(path)
         self._conn: sqlite3.Connection | None = None
+        self._read_only = False
         self._schema_initialized = False
         self._image_cache: OrderedDict[tuple[int, str], QImage] = OrderedDict()
         self._image_cache_limit = 64
@@ -328,7 +352,16 @@ class DigitalSlideStore:
             return
         self._conn = sqlite3.connect(str(self.path))
         self._conn.row_factory = sqlite3.Row
+        self._read_only = False
         self._schema_initialized = False
+
+    def open_read_only(self) -> None:
+        if self._conn is not None:
+            return
+        self._conn = _connect_sqlite_read_only(self.path)
+        self._conn.row_factory = sqlite3.Row
+        self._read_only = True
+        self._schema_initialized = True
 
     def is_open(self) -> bool:
         return self._conn is not None
@@ -358,10 +391,11 @@ class DigitalSlideStore:
         first_error: Exception | None = None
         closed = connection is None
         if connection is not None:
-            try:
-                connection.commit()
-            except Exception as exc:  # noqa: BLE001 - still attempt physical close
-                first_error = exc
+            if not self._read_only:
+                try:
+                    connection.commit()
+                except Exception as exc:  # noqa: BLE001 - still attempt physical close
+                    first_error = exc
             try:
                 connection.close()
                 closed = True
@@ -370,6 +404,7 @@ class DigitalSlideStore:
                     first_error = exc
         if closed:
             self._conn = None
+            self._read_only = False
             self._schema_initialized = False
         self._image_cache.clear()
         self._image_cache_bytes = 0
@@ -460,6 +495,51 @@ class DigitalSlideStore:
         manifest = DigitalSlideManifest.from_dict(json.loads(str(row["value"])))
         manifest.tile_count = self.tile_count()
         return manifest
+
+    def list_tile_descriptors(self, *, z_index: int) -> list[DigitalSlideTileDescriptor]:
+        conn = self._connection()
+        self._initialize_schema()
+        rows = conn.execute(
+            """
+            SELECT id, z_index, x, y, width, height, stage_x, stage_y,
+                   focus_z, sharpness, status
+            FROM tiles
+            WHERE z_index = ?
+            ORDER BY y ASC, x ASC, id ASC
+            """,
+            (int(z_index),),
+        ).fetchall()
+        return [
+            DigitalSlideTileDescriptor(
+                tile_id=int(row["id"]),
+                z_index=int(row["z_index"]),
+                x=int(row["x"]),
+                y=int(row["y"]),
+                width=int(row["width"]),
+                height=int(row["height"]),
+                stage_x=int(row["stage_x"]),
+                stage_y=int(row["stage_y"]),
+                focus_z=int(row["focus_z"]),
+                sharpness=float(row["sharpness"]),
+                status=str(row["status"]),
+            )
+            for row in rows
+        ]
+
+    def read_tile_image(self, tile_id: int) -> QImage:
+        conn = self._connection()
+        self._initialize_schema()
+        row = conn.execute(
+            "SELECT image_png, codec FROM tiles WHERE id = ?",
+            (int(tile_id),),
+        ).fetchone()
+        if row is None:
+            return QImage()
+        return self._decode_tile_image(
+            int(tile_id),
+            bytes(row["image_png"]),
+            str(row["codec"] or DIGITAL_SLIDE_TILE_CODEC_PNG),
+        )
 
     def update_status(self, status: str) -> None:
         manifest = self.read_manifest()
@@ -970,6 +1050,7 @@ def compress_slide_file(
     *,
     codec: str = DIGITAL_SLIDE_TILE_CODEC_JPEG,
     quality: int | None = 90,
+    dynamic_focus_overview_enabled: bool = True,
     progress_callback: Any | None = None,
 ) -> Path:
     source_path = Path(source).expanduser()
@@ -1005,7 +1086,13 @@ def compress_slide_file(
             created_at=source_manifest.created_at,
             metadata=metadata,
         )
-        overview_accumulator = DigitalSlideOverviewAccumulator(target_manifest)
+        overview_focus_indices = None
+        if not dynamic_focus_overview_enabled and target_manifest.focus_levels:
+            overview_focus_indices = {len(target_manifest.focus_levels) // 2}
+        overview_accumulator = DigitalSlideOverviewAccumulator(
+            target_manifest,
+            focus_indices=overview_focus_indices,
+        )
         with staged_path_for(target_path, suffix=".fdmslide.tmp") as staged_path:
             target_store: DigitalSlideStore | None = None
             try:

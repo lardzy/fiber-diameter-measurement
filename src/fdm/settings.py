@@ -6,6 +6,7 @@ import json
 import os
 import runpy
 import sys
+from uuid import uuid4
 
 from fdm.atomic_io import atomic_write_json
 from fdm.models import (
@@ -159,6 +160,75 @@ class FocusStackProfile:
     SHARP = "sharp"
     BALANCED = "balanced"
     SOFT = "soft"
+
+
+DIGITAL_SLIDE_PROFILE_FILE_KIND = "fdm.digital_slide_acquisition_profile"
+DIGITAL_SLIDE_PROFILE_FILE_VERSION = 1
+DIGITAL_SLIDE_PROFILE_FIELDS = (
+    "digital_slide_preview_max_width",
+    "digital_slide_capture_max_width",
+    "digital_slide_capture_tile_codec",
+    "digital_slide_capture_jpeg_quality",
+    "digital_slide_xy_soft_limit",
+    "digital_slide_z_soft_limit",
+    "digital_slide_xy_jog_step",
+    "digital_slide_z_jog_step",
+    "digital_slide_z_capture_step",
+    "digital_slide_jog_rate",
+    "digital_slide_motor_output_enabled",
+    "digital_slide_x_stage_step",
+    "digital_slide_y_stage_step",
+    "digital_slide_reverse_x_axis",
+    "digital_slide_reverse_y_axis",
+    "digital_slide_overlap_percent",
+    "digital_slide_pixel_stride_mode",
+    "digital_slide_x_pixel_stride",
+    "digital_slide_y_pixel_stride",
+    "digital_slide_blend_width",
+    "digital_slide_xy_settle_ms",
+    "digital_slide_xy_post_settle_ms",
+    "digital_slide_z_settle_ms",
+    "digital_slide_z_post_settle_ms",
+    "digital_slide_first_tile_extra_wait_ms",
+    "digital_slide_discard_frames",
+)
+
+
+@dataclass(slots=True)
+class DigitalSlideAcquisitionProfile:
+    """Named, portable capture parameters for one optical configuration."""
+
+    profile_id: str
+    name: str
+    values: dict[str, object] = field(default_factory=dict)
+
+    def to_dict(self) -> dict[str, object]:
+        return {
+            "id": str(self.profile_id),
+            "name": str(self.name),
+            "values": {
+                key: self.values[key]
+                for key in DIGITAL_SLIDE_PROFILE_FIELDS
+                if key in self.values
+            },
+        }
+
+    @classmethod
+    def from_dict(cls, payload: object) -> "DigitalSlideAcquisitionProfile":
+        if not isinstance(payload, dict):
+            raise ValueError("采集配置不是有效的对象。")
+        raw_values = payload.get("values", {})
+        if not isinstance(raw_values, dict):
+            raise ValueError("采集配置参数不是有效的对象。")
+        return cls(
+            profile_id=str(payload.get("id", "")).strip(),
+            name=str(payload.get("name", "")).strip(),
+            values={
+                key: raw_values[key]
+                for key in DIGITAL_SLIDE_PROFILE_FIELDS
+                if key in raw_values
+            },
+        )
 
 
 class MagicSegmentModelVariant:
@@ -719,6 +789,9 @@ class AppSettings:
     digital_slide_first_tile_extra_wait_ms: int = 3000
     digital_slide_discard_frames: int = 2
     digital_slide_focus_wheel_step: int = 1
+    digital_slide_dynamic_focus_overview_enabled: bool = True
+    digital_slide_profiles: list[DigitalSlideAcquisitionProfile] = field(default_factory=list)
+    digital_slide_active_profile_id: str = ""
 
     def __post_init__(self) -> None:
         legacy_visibility_was_explicit = (
@@ -875,7 +948,179 @@ class AppSettings:
         )
         normalized.digital_slide_discard_frames = self._normalize_int_range(self.digital_slide_discard_frames, default=2, minimum=0, maximum=20)
         normalized.digital_slide_focus_wheel_step = self._normalize_int_range(self.digital_slide_focus_wheel_step, default=1, minimum=1, maximum=10)
+        normalized.digital_slide_dynamic_focus_overview_enabled = bool(
+            self.digital_slide_dynamic_focus_overview_enabled
+        )
+        profiles = self._normalize_digital_slide_profiles(
+            self.digital_slide_profiles,
+            fallback=normalized,
+        )
+        requested_active = str(self.digital_slide_active_profile_id or "").strip()
+        profile_ids = {profile.profile_id for profile in profiles}
+        active_id = requested_active if requested_active in profile_ids else ""
+        if not profiles:
+            profiles = [
+                DigitalSlideAcquisitionProfile(
+                    profile_id="default",
+                    name="默认配置",
+                    values=self._digital_slide_profile_values_from_settings(normalized),
+                )
+            ]
+            active_id = "default"
+        elif not active_id:
+            active_id = profiles[0].profile_id
+            # When a profile collection has no valid active id, its first
+            # entry is authoritative rather than unrelated legacy flat values.
+            self._apply_digital_slide_profile_values(normalized, profiles[0].values)
+        active_values = self._digital_slide_profile_values_from_settings(normalized)
+        normalized.digital_slide_profiles = [
+            DigitalSlideAcquisitionProfile(
+                profile_id=profile.profile_id,
+                name=profile.name,
+                values=(active_values if profile.profile_id == active_id else dict(profile.values)),
+            )
+            for profile in profiles
+        ]
+        normalized.digital_slide_active_profile_id = active_id
         return normalized
+
+    @staticmethod
+    def _normalize_digital_slide_profile_name(value: object) -> str:
+        token = " ".join(str(value or "").strip().split())
+        token = "".join(character for character in token if ord(character) >= 32)
+        return token[:80]
+
+    @classmethod
+    def _normalize_digital_slide_profile_values(
+        cls,
+        values: object,
+        *,
+        fallback: "AppSettings",
+    ) -> dict[str, object]:
+        source = values if isinstance(values, dict) else {}
+
+        def item(name: str) -> object:
+            return source.get(name, getattr(fallback, name))
+
+        return {
+            "digital_slide_preview_max_width": cls._normalize_optional_width(item("digital_slide_preview_max_width"), default=1280),
+            "digital_slide_capture_max_width": cls._normalize_optional_width(item("digital_slide_capture_max_width"), default=1600),
+            "digital_slide_capture_tile_codec": cls._normalize_digital_slide_tile_codec(item("digital_slide_capture_tile_codec")),
+            "digital_slide_capture_jpeg_quality": cls._normalize_int_range(item("digital_slide_capture_jpeg_quality"), default=90, minimum=70, maximum=95),
+            "digital_slide_xy_soft_limit": cls._normalize_int_range(item("digital_slide_xy_soft_limit"), default=1_000_000, minimum=0, maximum=10_000_000),
+            "digital_slide_z_soft_limit": cls._normalize_int_range(item("digital_slide_z_soft_limit"), default=200_000, minimum=0, maximum=10_000_000),
+            "digital_slide_xy_jog_step": cls._normalize_int_range(item("digital_slide_xy_jog_step"), default=5000, minimum=1, maximum=1_000_000),
+            "digital_slide_z_jog_step": cls._normalize_int_range(item("digital_slide_z_jog_step"), default=1000, minimum=1, maximum=1_000_000),
+            "digital_slide_z_capture_step": cls._normalize_int_range(item("digital_slide_z_capture_step"), default=1000, minimum=1, maximum=1_000_000),
+            "digital_slide_jog_rate": cls._normalize_int_range(item("digital_slide_jog_rate"), default=12, minimum=1, maximum=50),
+            "digital_slide_motor_output_enabled": bool(item("digital_slide_motor_output_enabled")),
+            "digital_slide_x_stage_step": cls._normalize_signed_int_range(item("digital_slide_x_stage_step"), default=5000, minimum=-10_000_000, maximum=10_000_000),
+            "digital_slide_y_stage_step": cls._normalize_signed_int_range(item("digital_slide_y_stage_step"), default=5000, minimum=-10_000_000, maximum=10_000_000),
+            "digital_slide_reverse_x_axis": bool(item("digital_slide_reverse_x_axis")),
+            "digital_slide_reverse_y_axis": bool(item("digital_slide_reverse_y_axis")),
+            "digital_slide_overlap_percent": cls._normalize_int_range(item("digital_slide_overlap_percent"), default=0, minimum=0, maximum=90),
+            "digital_slide_pixel_stride_mode": cls._normalize_digital_slide_pixel_stride_mode(item("digital_slide_pixel_stride_mode")),
+            "digital_slide_x_pixel_stride": cls._normalize_int_range(item("digital_slide_x_pixel_stride"), default=1280, minimum=1, maximum=100_000),
+            "digital_slide_y_pixel_stride": cls._normalize_int_range(item("digital_slide_y_pixel_stride"), default=960, minimum=1, maximum=100_000),
+            "digital_slide_blend_width": cls._normalize_int_range(item("digital_slide_blend_width"), default=0, minimum=0, maximum=10_000),
+            "digital_slide_xy_settle_ms": cls._normalize_int_range(item("digital_slide_xy_settle_ms"), default=200, minimum=0, maximum=10_000),
+            "digital_slide_xy_post_settle_ms": cls._normalize_int_range(item("digital_slide_xy_post_settle_ms"), default=100, minimum=0, maximum=5000),
+            "digital_slide_z_settle_ms": cls._normalize_int_range(item("digital_slide_z_settle_ms"), default=80, minimum=0, maximum=10_000),
+            "digital_slide_z_post_settle_ms": cls._normalize_int_range(item("digital_slide_z_post_settle_ms"), default=40, minimum=0, maximum=5000),
+            "digital_slide_first_tile_extra_wait_ms": cls._normalize_int_range(item("digital_slide_first_tile_extra_wait_ms"), default=3000, minimum=0, maximum=60_000),
+            "digital_slide_discard_frames": cls._normalize_int_range(item("digital_slide_discard_frames"), default=2, minimum=0, maximum=20),
+        }
+
+    @classmethod
+    def _normalize_digital_slide_profiles(
+        cls,
+        profiles: object,
+        *,
+        fallback: "AppSettings",
+    ) -> list[DigitalSlideAcquisitionProfile]:
+        if not isinstance(profiles, (list, tuple)):
+            return []
+        normalized: list[DigitalSlideAcquisitionProfile] = []
+        used_ids: set[str] = set()
+        used_names: set[str] = set()
+        for raw_profile in profiles:
+            try:
+                profile = (
+                    raw_profile
+                    if isinstance(raw_profile, DigitalSlideAcquisitionProfile)
+                    else DigitalSlideAcquisitionProfile.from_dict(raw_profile)
+                )
+            except (TypeError, ValueError):
+                continue
+            name = cls._normalize_digital_slide_profile_name(profile.name)
+            if not name:
+                continue
+            base_name = name
+            suffix = 2
+            while name.casefold() in used_names:
+                name = f"{base_name} ({suffix})"
+                suffix += 1
+            profile_id = str(profile.profile_id or "").strip()
+            if not profile_id or profile_id in used_ids:
+                profile_id = uuid4().hex
+            used_ids.add(profile_id)
+            used_names.add(name.casefold())
+            normalized.append(
+                DigitalSlideAcquisitionProfile(
+                    profile_id=profile_id,
+                    name=name,
+                    values=cls._normalize_digital_slide_profile_values(
+                        profile.values,
+                        fallback=fallback,
+                    ),
+                )
+            )
+        return normalized
+
+    @staticmethod
+    def _digital_slide_profile_values_from_settings(settings: "AppSettings") -> dict[str, object]:
+        return {name: getattr(settings, name) for name in DIGITAL_SLIDE_PROFILE_FIELDS}
+
+    @staticmethod
+    def _apply_digital_slide_profile_values(
+        settings: "AppSettings",
+        values: dict[str, object],
+    ) -> None:
+        for name in DIGITAL_SLIDE_PROFILE_FIELDS:
+            if name in values:
+                setattr(settings, name, values[name])
+
+    def activate_digital_slide_profile(self, profile_id: str) -> bool:
+        normalized = self.normalized_copy()
+        target = next(
+            (
+                profile
+                for profile in normalized.digital_slide_profiles
+                if profile.profile_id == str(profile_id)
+            ),
+            None,
+        )
+        if target is None:
+            return False
+        self.digital_slide_profiles = [
+            DigitalSlideAcquisitionProfile(
+                profile_id=profile.profile_id,
+                name=profile.name,
+                values=dict(profile.values),
+            )
+            for profile in normalized.digital_slide_profiles
+        ]
+        self.digital_slide_active_profile_id = target.profile_id
+        self._apply_digital_slide_profile_values(self, target.values)
+        return True
+
+    def active_digital_slide_profile(self) -> DigitalSlideAcquisitionProfile:
+        normalized = self.normalized_copy()
+        return next(
+            profile
+            for profile in normalized.digital_slide_profiles
+            if profile.profile_id == normalized.digital_slide_active_profile_id
+        )
 
     def resolved_area_weights_dir(self) -> Path:
         return resolve_resource_relative_path(
@@ -1178,7 +1423,7 @@ class AppSettings:
     def to_dict(self) -> dict[str, object]:
         normalized = self.normalized_copy()
         return {
-            "version": 2,
+            "version": 3,
             "theme_mode": normalized.theme_mode,
             "length_measurement_label_style": normalized.length_measurement_label_style.to_dict(),
             "area_measurement_label_style": normalized.area_measurement_label_style.to_dict(),
@@ -1277,6 +1522,12 @@ class AppSettings:
             "digital_slide_first_tile_extra_wait_ms": normalized.digital_slide_first_tile_extra_wait_ms,
             "digital_slide_discard_frames": normalized.digital_slide_discard_frames,
             "digital_slide_focus_wheel_step": normalized.digital_slide_focus_wheel_step,
+            "digital_slide_dynamic_focus_overview_enabled": normalized.digital_slide_dynamic_focus_overview_enabled,
+            "digital_slide_profiles": [
+                profile.to_dict()
+                for profile in normalized.digital_slide_profiles
+            ],
+            "digital_slide_active_profile_id": normalized.digital_slide_active_profile_id,
         }
 
     @classmethod
@@ -1696,7 +1947,49 @@ class AppSettings:
             minimum=1,
             maximum=10,
         )
-        return settings
+        settings.digital_slide_dynamic_focus_overview_enabled = bool(
+            payload.get(
+                "digital_slide_dynamic_focus_overview_enabled",
+                settings.digital_slide_dynamic_focus_overview_enabled,
+            )
+        )
+        raw_profiles = payload.get("digital_slide_profiles")
+        parsed_profiles: list[DigitalSlideAcquisitionProfile] = []
+        if isinstance(raw_profiles, list):
+            for index, item in enumerate(raw_profiles):
+                try:
+                    parsed_profiles.append(DigitalSlideAcquisitionProfile.from_dict(item))
+                except (TypeError, ValueError) as exc:
+                    settings.load_issues.append(
+                        {
+                            "kind": "digital_slide_profile",
+                            "index": index,
+                            "message": str(exc),
+                            "raw_payload": item,
+                        }
+                    )
+        settings.digital_slide_profiles = cls._normalize_digital_slide_profiles(
+            parsed_profiles,
+            fallback=settings,
+        )
+        settings.digital_slide_active_profile_id = str(
+            payload.get("digital_slide_active_profile_id", "") or ""
+        ).strip()
+        if settings.digital_slide_profiles:
+            active_id = settings.digital_slide_active_profile_id
+            if not any(
+                profile.profile_id == active_id
+                for profile in settings.digital_slide_profiles
+            ):
+                active_id = settings.digital_slide_profiles[0].profile_id
+            target = next(
+                profile
+                for profile in settings.digital_slide_profiles
+                if profile.profile_id == active_id
+            )
+            settings.digital_slide_active_profile_id = active_id
+            cls._apply_digital_slide_profile_values(settings, target.values)
+        return settings.normalized_copy()
 
 
 def settings_directory() -> Path:
@@ -1767,6 +2060,70 @@ class AppSettingsIO:
         # that our canonical settings format explicitly forbids.
         atomic_write_json(target_path, settings.to_dict(), ensure_ascii=False, indent=2)
         return settings, target_path
+
+
+class DigitalSlideAcquisitionProfileIO:
+    @staticmethod
+    def save(
+        profile: DigitalSlideAcquisitionProfile,
+        path: str | Path,
+        *,
+        fallback: AppSettings | None = None,
+    ) -> Path:
+        target = Path(path).expanduser()
+        base = (fallback or AppSettings()).normalized_copy()
+        normalized_profiles = AppSettings._normalize_digital_slide_profiles(
+            [profile],
+            fallback=base,
+        )
+        if not normalized_profiles:
+            raise ValueError("采集配置无效，无法导出。")
+        target.parent.mkdir(parents=True, exist_ok=True)
+        atomic_write_json(
+            target,
+            {
+                "kind": DIGITAL_SLIDE_PROFILE_FILE_KIND,
+                "version": DIGITAL_SLIDE_PROFILE_FILE_VERSION,
+                "profile": normalized_profiles[0].to_dict(),
+            },
+            ensure_ascii=False,
+            indent=2,
+        )
+        return target
+
+    @staticmethod
+    def load(
+        path: str | Path,
+        *,
+        fallback: AppSettings | None = None,
+    ) -> DigitalSlideAcquisitionProfile:
+        source = Path(path).expanduser()
+        try:
+            payload = json.loads(
+                source.read_text(encoding="utf-8"),
+                parse_constant=_reject_non_finite_json_constant,
+            )
+        except (OSError, json.JSONDecodeError, ValueError) as exc:
+            raise ValueError("采集配置文件不是有效的 JSON。") from exc
+        if not isinstance(payload, dict):
+            raise ValueError("采集配置文件内容不是有效的对象。")
+        if payload.get("kind") != DIGITAL_SLIDE_PROFILE_FILE_KIND:
+            raise ValueError("所选 JSON 不是数字切片采集配置。")
+        try:
+            version = int(payload.get("version", 0))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("采集配置版本无效。") from exc
+        if version != DIGITAL_SLIDE_PROFILE_FILE_VERSION:
+            raise ValueError(f"暂不支持采集配置版本 {version}。")
+        profile = DigitalSlideAcquisitionProfile.from_dict(payload.get("profile"))
+        base = (fallback or AppSettings()).normalized_copy()
+        normalized_profiles = AppSettings._normalize_digital_slide_profiles(
+            [profile],
+            fallback=base,
+        )
+        if not normalized_profiles:
+            raise ValueError("采集配置缺少有效名称或参数。")
+        return normalized_profiles[0]
 
 
 def _reject_non_finite_json_constant(value: str) -> object:

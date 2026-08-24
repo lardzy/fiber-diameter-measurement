@@ -249,6 +249,18 @@ class _RegistrationResult:
     reason: str = "registration"
 
 
+@dataclass(frozen=True, slots=True)
+class TileTranslationEstimate:
+    accepted: bool
+    dx: float = 0.0
+    dy: float = 0.0
+    response: float = 0.0
+    ncc: float = 0.0
+    overlap: float = 0.0
+    confidence: float = 0.0
+    reason: str = "registration"
+
+
 class FocusAccumulator:
     def __init__(self, *, limits: AnalysisResourceLimits | None = None) -> None:
         self._best_bgr = None
@@ -1247,6 +1259,53 @@ def _register_tile_translation(
         ncc=best.ncc,
         overlap=best.overlap,
         weight=weight,
+    )
+
+
+def estimate_tile_translation(
+    reference_image: QImage,
+    candidate_image: QImage,
+    *,
+    coarse_dx: float,
+    coarse_dy: float,
+) -> TileTranslationEstimate:
+    """Estimate one adjacent tile displacement without retaining a mosaic."""
+
+    if reference_image.isNull() or candidate_image.isNull():
+        return TileTranslationEstimate(False, reason="empty")
+    reference_bgr = qimage_to_bgr_array(reference_image)
+    candidate_bgr = qimage_to_bgr_array(candidate_image)
+    reference = _TileRecord(
+        tile_id=0,
+        bgr=reference_bgr,
+        gray=_to_gray(reference_bgr),
+        x=0.0,
+        y=0.0,
+    )
+    candidate = _TileRecord(
+        tile_id=1,
+        bgr=candidate_bgr,
+        gray=_to_gray(candidate_bgr),
+        x=float(coarse_dx),
+        y=float(coarse_dy),
+    )
+    result = _register_tile_translation(
+        reference,
+        candidate,
+        config=_MapRegistrationConfig(),
+        coarse_dx=float(coarse_dx),
+        coarse_dy=float(coarse_dy),
+        last_delta=None,
+    )
+    return TileTranslationEstimate(
+        accepted=result.accepted,
+        dx=result.dx,
+        dy=result.dy,
+        response=result.response,
+        ncc=result.ncc,
+        overlap=result.overlap,
+        confidence=result.weight,
+        reason=result.reason,
     )
 
 

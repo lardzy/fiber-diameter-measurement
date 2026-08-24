@@ -2842,29 +2842,22 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertIsNotNone(window._digital_slide_rows_edit)
 
             window._slide_motion.relative_pos = {AXIS_X: 1000, AXIS_Y: 2000, AXIS_Z: 0}
-            window._mark_digital_slide_region("left")
+            window._mark_digital_slide_region("top_left")
             self.assertEqual(
                 window._digital_slide_region_bounds,
-                {"left": 1000, "right": 1100, "top": 2000, "bottom": 2050},
+                {"left": 1000, "top": 2000},
             )
-            self.assertEqual(window._digital_slide_cols_edit.text(), "1")
-            self.assertEqual(window._digital_slide_rows_edit.text(), "1")
-
-            window._slide_motion.relative_pos = {AXIS_X: 1300, AXIS_Y: 2000, AXIS_Z: 0}
-            window._mark_digital_slide_region("right")
-            self.assertEqual(
-                window._digital_slide_region_bounds,
-                {"left": 1000, "right": 1400, "top": 2000, "bottom": 2050},
-            )
-            self.assertEqual(window._digital_slide_cols_edit.text(), "4")
-            self.assertEqual(window._digital_slide_rows_edit.text(), "1")
+            self.assertFalse(window._digital_slide_has_region())
+            self.assertEqual(window._digital_slide_cols_edit.text(), "")
+            self.assertEqual(window._digital_slide_rows_edit.text(), "")
 
             window._slide_motion.relative_pos = {AXIS_X: 1300, AXIS_Y: 2100, AXIS_Z: 0}
-            window._mark_digital_slide_region("bottom")
+            window._mark_digital_slide_region("bottom_right")
             self.assertEqual(
                 window._digital_slide_region_bounds,
                 {"left": 1000, "right": 1400, "top": 2000, "bottom": 2150},
             )
+            self.assertTrue(window._digital_slide_has_region())
             self.assertEqual(window._digital_slide_cols_edit.text(), "4")
             self.assertEqual(window._digital_slide_rows_edit.text(), "3")
 
@@ -3089,7 +3082,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     window._start_digital_slide_acquisition()
 
             question_mock.assert_called_once()
-            self.assertIn("当前 Z=500", question_mock.call_args.args[2])
+            self.assertIn("当前 Z 命令位置=500", question_mock.call_args.args[2])
             self.assertIsNone(window._slide_acquisition_store)
         finally:
             window.close()
@@ -9525,7 +9518,7 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 4),
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集参数配置", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertEqual(dialog._digital_slide_preview_width_combo.currentData(), 1280)
             self.assertEqual(dialog._digital_slide_capture_width_combo.currentData(), 1600)
@@ -9567,7 +9560,7 @@ class CanvasAndExportTests(unittest.TestCase):
             groups = [group for group in content.findChildren(QGroupBox) if group.title()]
             self.assertEqual(
                 [group.title() for group in groups],
-                ["采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集参数配置", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertTrue(any(isinstance(label, QLabel) and "参数已锁定" in label.text() for label in content.findChildren(QLabel)))
             self.assertTrue(groups)
