@@ -10,10 +10,11 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
-from PySide6.QtCore import QByteArray, Qt
+from PySide6.QtCore import QByteArray, QCoreApplication, QEvent, Qt
 from PySide6.QtGui import QColor, QImage, QKeyEvent
 from PySide6.QtWidgets import QApplication
 from PySide6.QtTest import QTest
+from shiboken6 import isValid as is_qobject_valid
 
 from fdm.geometry import Point
 from fdm.models import (
@@ -186,6 +187,70 @@ class MainWindowViewExperienceTests(unittest.TestCase):
                 not window._inspector_dock.isHidden(),
                 inspector_visible,
             )
+
+    def test_fullscreen_hint_is_recreated_after_its_canvas_is_removed(self) -> None:
+        window = self._window()
+        self._mount_document(window, name="fullscreen-hint-first")
+
+        window.fullscreen_measurement_action.trigger()
+        self._process_events()
+        old_hint = window._fullscreen_hint_label
+        self.assertIsNotNone(old_hint)
+        assert old_hint is not None
+        self.assertTrue(is_qobject_valid(old_hint))
+
+        # Exit cleanup must release the member before the parent canvas is
+        # deleted; this was the stale-wrapper sequence reported by PySide.
+        window.fullscreen_measurement_action.trigger()
+        self.assertIsNone(window._fullscreen_hint_label)
+        window._reset_workspace()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        self._process_events()
+        self.assertFalse(is_qobject_valid(old_hint))
+
+        self._mount_document(window, name="fullscreen-hint-second")
+        window.fullscreen_measurement_action.trigger()
+        self._process_events()
+        new_hint = window._fullscreen_hint_label
+        self.assertIsNotNone(new_hint)
+        assert new_hint is not None
+        self.assertTrue(is_qobject_valid(new_hint))
+        self.assertIsNot(new_hint, old_hint)
+
+        window._fullscreen_hint_timer.stop()
+        window._fade_fullscreen_hint()
+        animation = window._fullscreen_hint_animation
+        self.assertIsNotNone(animation)
+        assert animation is not None
+        animation.setDuration(1)
+        QTest.qWait(20)
+        self._process_events()
+        self.assertIsNone(window._fullscreen_hint_label)
+
+    def test_destroying_active_hint_parent_cancels_delayed_callbacks(self) -> None:
+        window = self._window()
+        self._mount_document(window, name="fullscreen-hint-parent-delete")
+        window.fullscreen_measurement_action.trigger()
+        self._process_events()
+        hint = window._fullscreen_hint_label
+        self.assertIsNotNone(hint)
+        assert hint is not None
+
+        window._fullscreen_hint_timer.stop()
+        window._fade_fullscreen_hint()
+        self.assertIsNotNone(window._fullscreen_hint_animation)
+        window._reset_workspace()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        self._process_events()
+
+        self.assertFalse(is_qobject_valid(hint))
+        self.assertIsNone(window._fullscreen_hint_label)
+        self.assertIsNone(window._fullscreen_hint_animation)
+        self.assertFalse(window._fullscreen_hint_timer.isActive())
+        # Every queued entry point must now be an idempotent no-op.
+        window._position_fullscreen_hint()
+        window._fade_fullscreen_hint()
+        window._hide_fullscreen_hint(delete=True)
 
     def test_escape_cancels_drawing_before_leaving_fullscreen(self) -> None:
         window = self._window()

@@ -67,6 +67,7 @@ from PySide6.QtWidgets import (
     QWidget,
     QWidgetAction,
 )
+from shiboken6 import isValid as is_qobject_valid
 
 from fdm import __version__
 from fdm.analysis_artifacts import (
@@ -1362,6 +1363,7 @@ class MainWindow(QMainWindow):
         self._fullscreen_controller: FullscreenMeasurementController | None = None
         self._fullscreen_hint_label: QLabel | None = None
         self._fullscreen_hint_animation: QPropertyAnimation | None = None
+        self._fullscreen_hint_generation = 0
         self._fullscreen_hint_timer = QTimer(self)
         self._fullscreen_hint_timer.setSingleShot(True)
         self._fullscreen_hint_timer.timeout.connect(self._fade_fullscreen_hint)
@@ -17777,7 +17779,7 @@ class MainWindow(QMainWindow):
             QTimer.singleShot(0, self._show_fullscreen_hint)
             QTimer.singleShot(0, self._focus_current_canvas)
         else:
-            self._hide_fullscreen_hint()
+            self._hide_fullscreen_hint(delete=True)
         self._update_action_states()
 
     def _show_fullscreen_hint(self) -> None:
@@ -17806,7 +17808,14 @@ class MainWindow(QMainWindow):
                 " border-radius: 8px; padding: 9px 15px; font-weight: 600; }"
             )
         label.adjustSize()
+        self._fullscreen_hint_generation += 1
+        generation = self._fullscreen_hint_generation
         self._fullscreen_hint_label = label
+        label.destroyed.connect(
+            lambda _object=None, token=generation: self._on_fullscreen_hint_destroyed(
+                token
+            )
+        )
         self._position_fullscreen_hint()
         label.show()
         label.raise_()
@@ -17820,7 +17829,16 @@ class MainWindow(QMainWindow):
     def _position_fullscreen_hint(self) -> None:
         label = self._fullscreen_hint_label
         canvas = self.current_canvas()
-        if label is None or canvas is None or label.parentWidget() is not canvas:
+        if label is None:
+            return
+        if not is_qobject_valid(label):
+            self._on_fullscreen_hint_destroyed(self._fullscreen_hint_generation)
+            return
+        if (
+            canvas is None
+            or not is_qobject_valid(canvas)
+            or label.parentWidget() is not canvas
+        ):
             return
         label.move(
             max(12, (canvas.width() - label.width()) // 2),
@@ -17830,8 +17848,15 @@ class MainWindow(QMainWindow):
 
     def _fade_fullscreen_hint(self) -> None:
         label = self._fullscreen_hint_label
-        if label is None or not label.isVisible():
+        if label is None:
             return
+        if not is_qobject_valid(label):
+            self._on_fullscreen_hint_destroyed(self._fullscreen_hint_generation)
+            return
+        if not label.isVisible():
+            self._hide_fullscreen_hint(delete=True)
+            return
+        self._discard_fullscreen_hint_animation()
         effect = label.graphicsEffect()
         if not isinstance(effect, QGraphicsOpacityEffect):
             effect = QGraphicsOpacityEffect(label)
@@ -17842,23 +17867,46 @@ class MainWindow(QMainWindow):
         animation.setStartValue(float(effect.opacity()))
         animation.setEndValue(0.0)
         animation.setEasingCurve(QEasingCurve.Type.OutCubic)
-        animation.finished.connect(label.hide)
+        animation.finished.connect(self._finish_fullscreen_hint_fade)
         self._fullscreen_hint_animation = animation
         animation.start()
 
-    def _hide_fullscreen_hint(self, *, delete: bool = False) -> None:
-        self._fullscreen_hint_timer.stop()
+    def _finish_fullscreen_hint_fade(self) -> None:
+        self._hide_fullscreen_hint(delete=True)
+
+    def _discard_fullscreen_hint_animation(self) -> None:
         animation = self._fullscreen_hint_animation
-        if animation is not None:
-            animation.stop()
         self._fullscreen_hint_animation = None
+        if animation is None or not is_qobject_valid(animation):
+            return
+        animation.stop()
+        animation.deleteLater()
+
+    def _on_fullscreen_hint_destroyed(self, generation: int) -> None:
+        if generation != self._fullscreen_hint_generation:
+            return
+        self._fullscreen_hint_label = None
+        if is_qobject_valid(self._fullscreen_hint_timer):
+            self._fullscreen_hint_timer.stop()
+        self._discard_fullscreen_hint_animation()
+
+    def _hide_fullscreen_hint(self, *, delete: bool = True) -> None:
+        if is_qobject_valid(self._fullscreen_hint_timer):
+            self._fullscreen_hint_timer.stop()
+        self._discard_fullscreen_hint_animation()
         label = self._fullscreen_hint_label
         if label is None:
+            return
+        if delete:
+            # Clear ownership before touching Qt so a re-entrant transition or
+            # a parent-driven delete cannot expose this wrapper again.
+            self._fullscreen_hint_label = None
+        if not is_qobject_valid(label):
+            self._fullscreen_hint_label = None
             return
         label.hide()
         if delete:
             label.deleteLater()
-            self._fullscreen_hint_label = None
 
     def open_settings_dialog(self, *, initial_page: int = 0) -> None:
         dialog = SettingsDialog(
