@@ -589,6 +589,34 @@ class AnalysisRequestAndPackagingTests(unittest.TestCase):
         )
         self.assertGreaterEqual(len(maxima_result.conversion_payload.points), 1)
 
+    def test_particle_foreground_legacy_aliases_match_canonical_directions(self) -> None:
+        results = {
+            foreground: _execute(
+                ImageAnalysisTaskRequest(
+                    tool=AnalysisTool.PARTICLES,
+                    request_id=f"particle-foreground-{foreground}",
+                    generation=1,
+                    document_id="doc",
+                    source_pixel_revision=0,
+                    plane=_gray_plane(),
+                    parameters={
+                        "threshold": 128,
+                        "foreground": foreground,
+                    },
+                )
+            )
+            for foreground in ("above", "below", "bright", "dark")
+        }
+
+        self.assertEqual(
+            results["bright"].scalars["foreground_pixel_count"],
+            results["above"].scalars["foreground_pixel_count"],
+        )
+        self.assertEqual(
+            results["dark"].scalars["foreground_pixel_count"],
+            results["below"].scalars["foreground_pixel_count"],
+        )
+
     def test_v2_results_package_new_statistics_assets_and_versions(self) -> None:
         intensity = _execute(
             ImageAnalysisTaskRequest(

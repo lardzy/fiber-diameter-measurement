@@ -349,6 +349,12 @@ class AnalysisParameterField:
             if self.nullable:
                 return None
             value = self.default
+        if self.key == "foreground" and isinstance(value, str):
+            token = value.strip().lower()
+            value = {
+                "bright": "above",
+                "dark": "below",
+            }.get(token, token)
         if self.kind is AnalysisParameterKind.BOOLEAN:
             return bool(value)
         if self.kind is AnalysisParameterKind.INTEGER:
@@ -467,7 +473,7 @@ CHANNELS = (
     ("蓝色", "blue"),
 )
 RGB_CHANNELS = CHANNELS + (("RGB 三通道统计", "rgb"),)
-FOREGROUND = (("亮前景", "bright"), ("暗前景", "dark"))
+FOREGROUND = (("亮前景", "above"), ("暗前景", "below"))
 
 
 def _field(
@@ -498,7 +504,7 @@ def _binary_fields() -> tuple[AnalysisParameterField, ...]:
             "foreground",
             "前景极性",
             AnalysisParameterKind.CHOICE,
-            "bright",
+            "above",
             choices=FOREGROUND,
         ),
     )

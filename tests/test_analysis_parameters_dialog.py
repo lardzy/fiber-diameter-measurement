@@ -76,6 +76,32 @@ def test_dialog_uses_schema_defaults_and_returns_typed_parameters() -> None:
     app.processEvents()
 
 
+def test_particle_foreground_uses_kernel_tokens_and_migrates_legacy_aliases() -> None:
+    schema = analysis_parameter_schema(AnalysisTool.PARTICLES)
+    foreground_field = next(
+        field for field in schema.fields if field.key == "foreground"
+    )
+
+    assert schema.defaults()["foreground"] == "above"
+    assert [value for _label, value in foreground_field.choices] == [
+        "above",
+        "below",
+    ]
+    assert schema.validate({"foreground": "bright"})["foreground"] == "above"
+    assert schema.validate({"foreground": "dark"})["foreground"] == "below"
+
+    app = QApplication.instance() or QApplication([])
+    dialog = AnalysisParametersDialog(
+        AnalysisTool.PARTICLES,
+        {"foreground": "bright"},
+    )
+    assert dialog.parameters()["foreground"] == "above"
+    dialog.set_parameters({"foreground": "dark"})
+    assert dialog.parameters()["foreground"] == "below"
+    dialog.close()
+    app.processEvents()
+
+
 def test_core_analysis_output_fields_are_independent_and_default_to_all() -> None:
     app = QApplication.instance() or QApplication([])
     dialog = AnalysisParametersDialog(

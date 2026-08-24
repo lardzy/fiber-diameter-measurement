@@ -3077,6 +3077,10 @@ def _binary_input_mask(
         if not math.isfinite(value):
             raise ValueError("二值阈值必须是有限数")
         foreground = str(parameters.get("foreground", "above")).strip().lower()
+        foreground = {
+            "bright": "above",
+            "dark": "below",
+        }.get(foreground, foreground)
         if foreground == "above":
             result = np.asarray(scalar >= value, dtype=bool)
         elif foreground == "below":
