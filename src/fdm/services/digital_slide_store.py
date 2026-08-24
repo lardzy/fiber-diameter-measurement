@@ -13,6 +13,7 @@ from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRect
 from PySide6.QtGui import QColor, QImage, QPainter, QRegion
 
 from fdm.atomic_io import atomic_replace_file, staged_path_for
+from fdm.services.digital_slide_cache import is_network_file_path
 
 
 DIGITAL_SLIDE_SUFFIX = ".fdmslide"
@@ -41,6 +42,32 @@ def _quick_check_connection(connection: sqlite3.Connection) -> None:
     if messages != ["ok"]:
         detail = "; ".join(messages) or "no result"
         raise sqlite3.DatabaseError(f"SQLite quick_check failed: {detail}")
+
+
+def _connect_sqlite_read_only(path: str | Path) -> sqlite3.Connection:
+    """Open an existing database read-only, including Windows UNC paths.
+
+    SQLite URI filenames reject a non-local ``file://server/...`` authority in
+    standard builds.  ``Path.as_uri()`` produces exactly that form for a UNC
+    path, so network files use the native filename plus ``query_only`` instead.
+    An existence check guards the ordinary filename connection from being used
+    as a create path, while the pragma prevents SQL writes during the short
+    manifest validation connection.
+    """
+
+    slide_path = Path(path).expanduser()
+    if not slide_path.is_file():
+        raise FileNotFoundError(slide_path)
+    if is_network_file_path(slide_path):
+        connection = sqlite3.connect(str(slide_path))
+        try:
+            connection.execute("PRAGMA query_only=ON")
+        except Exception:
+            connection.close()
+            raise
+        return connection
+    resolved = slide_path.resolve(strict=True)
+    return sqlite3.connect(f"{resolved.as_uri()}?mode=ro", uri=True)
 
 
 def _make_staged_database_standalone(path: Path) -> None:
@@ -253,8 +280,8 @@ class DigitalSlideStore:
     def read_manifest_read_only(path: str | Path) -> DigitalSlideManifest:
         """Validate an existing slide without creating or migrating its schema."""
 
-        slide_path = Path(path).expanduser().resolve(strict=False)
-        connection = sqlite3.connect(f"{slide_path.as_uri()}?mode=ro", uri=True)
+        slide_path = Path(path).expanduser()
+        connection = _connect_sqlite_read_only(slide_path)
         connection.row_factory = sqlite3.Row
         try:
             row = connection.execute(

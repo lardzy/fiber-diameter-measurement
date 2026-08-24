@@ -12,8 +12,8 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 try:
-    from PySide6.QtCore import QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
-    from PySide6.QtGui import QAction, QImage, QColor, QPainter, QPalette
+    from PySide6.QtCore import QEvent, QPoint, QPointF, QRectF, Qt, QThread, QItemSelectionModel
+    from PySide6.QtGui import QAction, QImage, QColor, QKeyEvent, QPainter, QPalette
     from PySide6.QtWidgets import QApplication, QAbstractItemView, QComboBox, QDialog, QGroupBox, QLabel, QListView, QMenu, QMessageBox, QPushButton, QScrollArea, QSizePolicy, QSplitter, QStyleOptionViewItem, QTableView, QToolBar, QToolButton
 
     PYSIDE_AVAILABLE = True
@@ -42,6 +42,7 @@ from fdm.settings import (
 )
 from fdm.services.area_inference import AreaInstanceResult
 from fdm.services.capture import CaptureStopResult
+from fdm.services.digital_slide_cache import DigitalSlideSessionCache
 from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore, DigitalSlideTile
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.fiber_quick_geometry import DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
@@ -2281,6 +2282,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertAlmostEqual(global_after.x, global_before.x)
                 self.assertAlmostEqual(global_after.y, global_before.y)
 
+                self.assertEqual(canvas.navigation_mode(), "smooth")
+                canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
+                self.assertEqual(canvas.navigation_mode(), "step")
                 canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
                 self.assertEqual(canvas.navigation_mode(), "smooth")
                 press = FakeKeyEvent(Qt.Key.Key_Right)
@@ -2293,6 +2297,160 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertFalse(canvas._smooth_nav_timer.isActive())
             finally:
                 store.close()
+
+    def test_digital_slide_window_arrow_binding_works_before_canvas_focus(self) -> None:
+        window = MainWindow()
+        window.show()
+        self.app.processEvents()
+        try:
+            with TemporaryDirectory() as tmp_dir:
+                slide_path = Path(tmp_dir) / "window-arrow.fdmslide"
+                store = DigitalSlideStore.create(
+                    slide_path,
+                    DigitalSlideManifest(
+                        version=1,
+                        width=1200,
+                        height=900,
+                        viewport_width=200,
+                        viewport_height=150,
+                        focus_levels=[0],
+                    ),
+                )
+                store.close()
+                window._add_digital_slide_document_from_path(slide_path, document=None)
+                canvas = window.current_canvas()
+                self.assertIsInstance(canvas, DigitalSlideCanvas)
+                assert isinstance(canvas, DigitalSlideCanvas)
+                self.assertEqual(canvas.navigation_mode(), "smooth")
+
+                window.image_list.setFocus(Qt.FocusReason.OtherFocusReason)
+                self.app.processEvents()
+                self.assertIs(self.app.focusWidget(), window.image_list)
+                before = canvas.viewport_origin()
+                press = QKeyEvent(
+                    QEvent.Type.KeyPress,
+                    Qt.Key.Key_Right,
+                    Qt.KeyboardModifier.NoModifier,
+                )
+                release = QKeyEvent(
+                    QEvent.Type.KeyRelease,
+                    Qt.Key.Key_Right,
+                    Qt.KeyboardModifier.NoModifier,
+                )
+                QApplication.sendEvent(window.image_list, press)
+                QApplication.sendEvent(window.image_list, release)
+
+                self.assertGreater(canvas.viewport_origin().x, before.x)
+                self.assertFalse(canvas.is_navigation_key_active(Qt.Key.Key_Right))
+                self.assertFalse(canvas._smooth_nav_timer.isActive())  # noqa: SLF001
+                self.assertIs(self.app.focusWidget(), window.image_list)
+        finally:
+            window.close()
+
+    def test_network_digital_slide_keeps_source_identity_but_reads_local_copy(self) -> None:
+        window = MainWindow()
+        temp_dir = TemporaryDirectory()
+        try:
+            temp_root = Path(temp_dir.name)
+            source_path = temp_root / "network" / "source.fdmslide"
+            source_path.parent.mkdir()
+            store = DigitalSlideStore.create(
+                source_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=640,
+                    height=480,
+                    viewport_width=160,
+                    viewport_height=120,
+                    focus_levels=[0],
+                ),
+            )
+            store.close()
+            cache_root = temp_root / "local-cache"
+            window._digital_slide_local_cache.cleanup()
+            window._digital_slide_local_cache = DigitalSlideSessionCache(
+                root=cache_root,
+                network_path_predicate=lambda _path: True,
+            )
+
+            window._add_digital_slide_document_from_path(source_path, document=None)
+
+            document = window.current_document()
+            self.assertIsNotNone(document)
+            assert document is not None
+            interaction_store = window._slide_stores[document.id]
+            self.assertEqual(Path(document.path), source_path.resolve())
+            self.assertEqual(Path(document.absolute_path), source_path.resolve())
+            self.assertNotEqual(interaction_store.path, source_path.resolve())
+            self.assertEqual(interaction_store.path.parent, cache_root)
+            self.assertTrue(interaction_store.path.is_file())
+        finally:
+            window.close()
+            temp_dir.cleanup()
+
+    def test_network_capture_publishes_after_local_sqlite_writes_finish(self) -> None:
+        window = MainWindow()
+        temp_dir = TemporaryDirectory()
+        working_path: Path | None = None
+        try:
+            temp_root = Path(temp_dir.name)
+            network_target = temp_root / "server" / "capture.fdmslide"
+            network_target.parent.mkdir()
+            network_target.write_bytes(b"previous-network-version")
+            staging_root = temp_root / "local-staging"
+            window._digital_slide_local_cache.cleanup()
+            window._digital_slide_local_cache = DigitalSlideSessionCache(
+                output_staging_root=staging_root,
+                network_path_predicate=lambda _path: True,
+            )
+            working_path = window._digital_slide_local_cache.working_output_path(
+                network_target,
+                reserve_bytes=0,
+            )
+            store = DigitalSlideStore.create(
+                working_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=40,
+                    height=30,
+                    viewport_width=40,
+                    viewport_height=30,
+                    focus_levels=[0],
+                ),
+            )
+            store.write_tile(
+                DigitalSlideTile(0, 0, 0, 40, 30),
+                QImage(40, 30, QImage.Format.Format_RGB32),
+            )
+            store.close()
+            window._slide_acquisition_store = store
+            window._slide_acquisition_path = working_path
+            window._slide_acquisition_publish_path = network_target
+            window._slide_acquisition_document_path = str(network_target)
+            window._slide_acquisition_metadata = {}
+            window._slide_acquisition_plan = [{"x": 0, "y": 0}]
+
+            window._finish_digital_slide_acquisition(
+                status="failed",
+                message="测试保留的切片",
+            )
+
+            manifest = DigitalSlideStore.read_manifest_read_only(network_target)
+            self.assertEqual(manifest.tile_count, 1)
+            document = window.current_document()
+            self.assertIsNotNone(document)
+            assert document is not None
+            self.assertEqual(Path(document.path), network_target.resolve())
+            self.assertEqual(
+                window._slide_stores[document.id].path,
+                working_path.resolve(),
+            )
+            self.assertTrue(working_path.is_file())
+        finally:
+            window.close()
+            if working_path is not None:
+                self.assertFalse(working_path.exists())
+            temp_dir.cleanup()
 
     def test_digital_slide_fits_after_preview_is_stopped(self) -> None:
         window = MainWindow()

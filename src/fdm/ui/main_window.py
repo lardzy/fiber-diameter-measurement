@@ -19,6 +19,7 @@ from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
     QAbstractItemView,
+    QAbstractSpinBox,
     QApplication,
     QCheckBox,
     QComboBox,
@@ -171,6 +172,10 @@ from fdm.services.digital_slide_store import (
     normalize_jpeg_quality,
     normalize_tile_codec,
 )
+from fdm.services.digital_slide_cache import (
+    DigitalSlideCacheCancelled,
+    DigitalSlideSessionCache,
+)
 from fdm.services.motion_control import (
     AXIS_X,
     AXIS_Y,
@@ -200,6 +205,7 @@ from fdm.settings import (
     is_magic_toolbar_tool_mode,
     is_magic_segment_tool_mode,
     is_reference_propagation_tool_mode,
+    settings_directory,
     settings_file_path,
 )
 from fdm.services.area_inference import AreaInferenceService, parse_area_model_labels
@@ -1297,6 +1303,11 @@ class MainWindow(QMainWindow):
         self._canvases: dict[str, DocumentCanvas] = {}
         self._canvas_navigators: dict[str, CanvasNavigatorWidget] = {}
         self._slide_stores: dict[str, DigitalSlideStore] = {}
+        self._digital_slide_local_cache = DigitalSlideSessionCache(
+            output_staging_root=settings_directory() / "digital-slide-staging",
+        )
+        self._digital_slide_local_cache.cleanup_abandoned_once()
+        self._application_key_filter_installed = False
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
         self._manual_tool_mode = "manual"
@@ -1546,6 +1557,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_index = 0
         self._slide_acquisition_store: DigitalSlideStore | None = None
         self._slide_acquisition_path: Path | None = None
+        self._slide_acquisition_publish_path: Path | None = None
         self._slide_acquisition_document_path: str = ""
         self._slide_acquisition_metadata: dict[str, object] = {}
         self._slide_acquisition_settings: AppSettings | None = None
@@ -1710,6 +1722,9 @@ class MainWindow(QMainWindow):
         self._restore_initial_window_geometry()
         self._update_ui_for_current_document()
         self._mark_project_saved()
+        if app is not None:
+            app.installEventFilter(self)
+            self._application_key_filter_installed = True
         if self._runtime_capability_hint:
             QTimer.singleShot(
                 0,
@@ -11913,9 +11928,72 @@ class MainWindow(QMainWindow):
         return None
 
     def eventFilter(self, watched, event) -> bool:  # noqa: N802
+        if event.type() in {QEvent.Type.KeyPress, QEvent.Type.KeyRelease}:
+            canvas = self._digital_slide_canvas_for_window_key(watched, event)
+            if canvas is not None:
+                if event.type() == QEvent.Type.KeyPress:
+                    canvas.keyPressEvent(event)
+                else:
+                    canvas.keyReleaseEvent(event)
+                return bool(event.isAccepted())
         if event.type() == QEvent.Type.Wheel and self._should_intercept_digital_slide_preview_wheel(watched):
             return self._handle_digital_slide_focus_wheel(event)
         return super().eventFilter(watched, event)
+
+    def _digital_slide_canvas_for_window_key(
+        self,
+        watched: object,
+        event: object,
+    ) -> DigitalSlideCanvas | None:
+        """Route viewer arrows before a side panel consumes them.
+
+        The canvas keeps ownership of the actual smooth/step implementation.
+        This application event filter only widens the binding to the active
+        main window.  Editors and modal/popup surfaces retain their native
+        cursor-key behaviour.
+        """
+
+        key = getattr(event, "key", lambda: None)()
+        if key not in {
+            Qt.Key.Key_Left,
+            Qt.Key.Key_Right,
+            Qt.Key.Key_Up,
+            Qt.Key.Key_Down,
+        }:
+            return None
+        canvas = self._current_digital_slide_canvas()
+        if canvas is None or watched is canvas:
+            return None
+        event_type = getattr(event, "type", lambda: None)()
+        if event_type == QEvent.Type.KeyRelease and canvas.is_navigation_key_active(key):
+            # Always terminate a held navigation gesture, even if focus moved
+            # into a dialog/editor after the key press.
+            return canvas
+        if self._preview_active:
+            return None
+        if QApplication.activeModalWidget() is not None or QApplication.activePopupWidget() is not None:
+            return None
+        if not isinstance(watched, QWidget) or watched.window() is not self:
+            return None
+        modifiers = getattr(
+            event,
+            "modifiers",
+            lambda: Qt.KeyboardModifier.NoModifier,
+        )()
+        if modifiers not in {
+            Qt.KeyboardModifier.NoModifier,
+            Qt.KeyboardModifier.ShiftModifier,
+        }:
+            return None
+        focus_widget = QApplication.focusWidget() or watched
+        if isinstance(
+            focus_widget,
+            (QLineEdit, QTextEdit, QPlainTextEdit, QAbstractSpinBox, QSlider),
+        ):
+            return None
+        if isinstance(focus_widget, QComboBox):
+            return None
+        return canvas
 
     def _should_intercept_digital_slide_preview_wheel(self, watched: object) -> bool:
         if not (self._digital_slide_mode and self._preview_active) or self._slide_acquisition_active():
@@ -14418,6 +14496,24 @@ class MainWindow(QMainWindow):
             estimated_total_ms=estimated_total_ms,
         ):
             return
+        publish_path = (
+            output_path
+            if self._digital_slide_local_cache.requires_local_copy(output_path)
+            else None
+        )
+        try:
+            working_output_path = self._digital_slide_local_cache.working_output_path(
+                output_path,
+                expected_bytes=estimated_bytes,
+                reserve_bytes=DIGITAL_SLIDE_MIN_FREE_BYTES,
+            )
+        except Exception as exc:  # noqa: BLE001 - normalize local staging failures
+            QMessageBox.warning(
+                self,
+                "数字化切片",
+                f"无法准备本机切片暂存文件：\n{exc}",
+            )
+            return
         self._remember_digital_slide_output_path(output_path)
         capture_max_width = self._digital_slide_capture_max_width(acquisition_settings)
         settings_snapshot = {
@@ -14484,9 +14580,12 @@ class MainWindow(QMainWindow):
             },
         )
         try:
-            store = DigitalSlideStore.create(output_path, manifest)
+            store = DigitalSlideStore.create(working_output_path, manifest)
             store.close()
         except Exception as exc:
+            if publish_path is not None:
+                self._delete_slide_path(working_output_path)
+                self._digital_slide_local_cache.forget_output(working_output_path)
             QMessageBox.warning(self, "数字化切片", f"无法创建切片文件：\n{exc}")
             return
         self._slide_acquisition_generation += 1
@@ -14495,11 +14594,17 @@ class MainWindow(QMainWindow):
             request_id=new_id("slide-acquisition"),
             output_path=output_path,
         )
-        writer = DigitalSlideWriteWorker(output_path, max_queue_size=3, codec=tile_codec, quality=tile_quality)
+        writer = DigitalSlideWriteWorker(
+            working_output_path,
+            max_queue_size=3,
+            codec=tile_codec,
+            quality=tile_quality,
+        )
         self._slide_acquisition_store = store
         self._slide_acquisition_settings = acquisition_settings
         self._slide_acquisition_writer = writer
-        self._slide_acquisition_path = output_path
+        self._slide_acquisition_path = working_output_path
+        self._slide_acquisition_publish_path = publish_path
         self._active_slide_acquisition = session
         writer.tileWritten.connect(
             lambda count, write_ms, generation=session.generation, request_id=session.request_id:
@@ -14521,7 +14626,7 @@ class MainWindow(QMainWindow):
         initial_focus_index = max(0, len(focus_levels) // 2)
         self._slide_acquisition_metadata = {
             "digital_slide": {
-                "working_path": str(output_path),
+                "working_path": str(working_output_path),
                 "viewport_origin": [0, 0],
                 "focus_index": initial_focus_index,
                 "capture_scale": capture_scale,
@@ -14566,7 +14671,10 @@ class MainWindow(QMainWindow):
             self._digital_slide_start_button.setEnabled(False)
         if self._digital_slide_stop_button is not None:
             self._digital_slide_stop_button.setEnabled(True)
-        self._set_digital_slide_progress(f"开始采集，共 {len(self._slide_acquisition_plan)} 张")
+        staging_note = "（先写入本机暂存）" if publish_path is not None else ""
+        self._set_digital_slide_progress(
+            f"开始采集{staging_note}，共 {len(self._slide_acquisition_plan)} 张"
+        )
         self._set_digital_slide_progress_value(0, len(self._slide_acquisition_plan))
         self._update_digital_slide_eta()
         self._set_digital_slide_timing("耗时: 等待第一步移动")
@@ -15118,6 +15226,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_timer.stop()
         self._active_slide_acquisition = None
         self._slide_acquisition_path = None
+        self._slide_acquisition_publish_path = None
         self._slide_acquisition_document_path = ""
         self._sync_digital_slide_task_state()
         if self._digital_slide_stop_button is not None:
@@ -15126,6 +15235,7 @@ class MainWindow(QMainWindow):
     def _finish_digital_slide_acquisition(self, *, status: str, message: str) -> None:
         store = self._slide_acquisition_store
         path = self._slide_acquisition_path
+        publish_path = self._slide_acquisition_publish_path
         relative_path = self._slide_acquisition_document_path
         metadata = dict(self._slide_acquisition_metadata)
         elapsed_ms = (
@@ -15148,13 +15258,41 @@ class MainWindow(QMainWindow):
                 self._clear_digital_slide_acquisition_session()
             QMessageBox.warning(self, "数字化切片", failure_message)
             return
-        self._clear_digital_slide_acquisition_session()
         if tile_count <= 0:
+            self._clear_digital_slide_acquisition_session()
             self._delete_slide_path(path)
+            self._digital_slide_local_cache.forget_output(path)
             self._set_digital_slide_progress("没有采集到有效图像。")
             self._reset_digital_slide_eta()
             self._clear_digital_slide_output_path()
             return
+        document_source_path = path
+        interaction_path_override: Path | None = None
+        completion_message = message
+        completion_status = status
+        publish_succeeded = False
+        if publish_path is not None:
+            try:
+                self._publish_network_digital_slide(path, publish_path)
+            except Exception as exc:  # noqa: BLE001 - retain local recovery on any publish failure
+                recovery_path = self._digital_slide_local_cache.retain_output(path)
+                relative_path = str(recovery_path)
+                completion_status = "interrupted"
+                completion_message = "网络发布失败，已保留本机恢复副本"
+                QMessageBox.warning(
+                    self,
+                    "数字化切片网络发布失败",
+                    (
+                        f"无法写入局域网目标：\n{publish_path}\n\n"
+                        f"本机恢复副本：\n{recovery_path}\n\n{exc}"
+                    ),
+                )
+            else:
+                document_source_path = publish_path
+                relative_path = str(publish_path)
+                interaction_path_override = path
+                publish_succeeded = True
+        self._clear_digital_slide_acquisition_session()
         metadata.setdefault("digital_slide", {})
         if isinstance(metadata["digital_slide"], dict):
             metadata["digital_slide"]["capture_status"] = status
@@ -15162,24 +15300,28 @@ class MainWindow(QMainWindow):
             if self._slide_acquisition_reset_failed_message:
                 metadata["digital_slide"]["z_reset_warning"] = self._slide_acquisition_reset_failed_message
         self._add_digital_slide_document_from_path(
-            path,
+            document_source_path,
             document=None,
             source_type="filesystem",
             document_path=relative_path,
             metadata=metadata,
-            tooltip=str(path),
+            tooltip=str(document_source_path),
+            interaction_path_override=interaction_path_override,
         )
         self._slide_acquisition_index = tile_count
-        self._set_digital_slide_progress(f"{message}，已生成 {tile_count} 张采集图像。")
+        publish_note = "，已发布到局域网目录" if publish_succeeded else ""
+        self._set_digital_slide_progress(
+            f"{completion_message}，已生成 {tile_count} 张采集图像{publish_note}。"
+        )
         self._set_digital_slide_progress_value(tile_count, max(tile_count, len(self._slide_acquisition_plan)))
         self._set_digital_slide_finished_eta(elapsed_ms)
         if status in {"ready", "interrupted", "device_lost"}:
             self._clear_digital_slide_output_path()
         if status in {"ready", "interrupted", "device_lost"} and not self._transition_in_progress:
             self._show_digital_slide_completion_dialog(
-                status=status,
-                message=message,
-                path=path,
+                status=completion_status,
+                message=completion_message,
+                path=document_source_path,
                 tile_count=tile_count,
                 elapsed_ms=elapsed_ms,
             )
@@ -15199,6 +15341,7 @@ class MainWindow(QMainWindow):
         self._clear_digital_slide_acquisition_session()
         if path is not None:
             self._delete_slide_path(path)
+            self._digital_slide_local_cache.forget_output(path)
         self._set_digital_slide_progress(message)
         self._set_digital_slide_progress_value(0, max(1, len(self._slide_acquisition_plan)))
         self._set_digital_slide_timing("耗时: -")
@@ -15206,12 +15349,53 @@ class MainWindow(QMainWindow):
         self._clear_digital_slide_output_path()
 
     def _delete_slide_path(self, path: Path) -> None:
-        for candidate in (path, Path(f"{path}-wal"), Path(f"{path}-shm")):
+        for candidate in (
+            path,
+            Path(f"{path}-wal"),
+            Path(f"{path}-shm"),
+            Path(f"{path}-journal"),
+        ):
             try:
                 if candidate.exists():
                     candidate.unlink()
             except OSError:
                 pass
+
+    def _publish_network_digital_slide(self, source: Path, target: Path) -> None:
+        progress = QProgressDialog(
+            "正在将本机切片发布到局域网目录…",
+            "",
+            0,
+            1000,
+            self,
+        )
+        progress.setCancelButton(None)
+        progress.setWindowTitle("发布数字化切片")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(250)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+
+        def update_progress(copied: int, total: int) -> None:
+            denominator = max(1, int(total))
+            progress.setValue(
+                min(1000, int(round((int(copied) / denominator) * 1000)))
+            )
+            progress.setLabelText(
+                "正在将本机切片发布到局域网目录…\n"
+                f"{target.name}\n"
+                f"{int(copied) / (1024**2):.1f} / {int(total) / (1024**2):.1f} MiB"
+            )
+            self._pump_modal_progress_events()
+
+        try:
+            self._digital_slide_local_cache.publish(
+                source,
+                target,
+                progress_callback=update_progress,
+            )
+        finally:
+            self._close_progress_dialog(progress)
 
     def _stop_digital_slide_writer(self, *, cancel: bool) -> TaskStopResult:
         writer = self._slide_acquisition_writer
@@ -16704,16 +16888,11 @@ class MainWindow(QMainWindow):
             )
             return
         if selected_is_slide:
-            probe: DigitalSlideStore | None = None
             try:
-                probe = DigitalSlideStore(source_path)
-                probe.read_manifest()
+                DigitalSlideStore.read_manifest_read_only(source_path)
             except Exception as exc:
                 QMessageBox.warning(self, "重新定位项目文档", f"数字化切片无法读取：\n{exc}")
                 return
-            finally:
-                if probe is not None:
-                    probe.close()
             self._add_digital_slide_document_from_path(
                 source_path,
                 document=document,
@@ -17152,9 +17331,26 @@ class MainWindow(QMainWindow):
         document_path: str | None = None,
         metadata: dict[str, object] | None = None,
         tooltip: str | None = None,
+        interaction_path_override: str | Path | None = None,
     ) -> None:
         source_path = Path(path).expanduser().resolve()
-        store = DigitalSlideStore(source_path)
+        try:
+            interaction_path = (
+                Path(interaction_path_override).expanduser().resolve()
+                if interaction_path_override is not None
+                else self._localize_digital_slide_source(source_path)
+            )
+        except DigitalSlideCacheCancelled:
+            self.statusBar().showMessage("已取消打开网络数字化切片。", 5000)
+            return
+        except Exception as exc:  # noqa: BLE001 - normalize network/cache failures
+            QMessageBox.warning(
+                self,
+                "打开数字化切片",
+                f"无法准备数字化切片的本机读取副本：\n{source_path}\n\n{exc}",
+            )
+            return
+        store = DigitalSlideStore(interaction_path)
         try:
             manifest = store.read_manifest()
         except Exception as exc:
@@ -17185,7 +17381,9 @@ class MainWindow(QMainWindow):
             target_document.metadata = merged
         slide_meta = dict(target_document.metadata.get("digital_slide", {})) if isinstance(target_document.metadata.get("digital_slide"), dict) else {}
         if target_document.source_type == "project_asset":
-            slide_meta["working_path"] = str(source_path)
+            # A project loaded from a network share should also be saved from
+            # the consistent local snapshot, not reread tile-by-tile over SMB.
+            slide_meta["working_path"] = str(interaction_path)
         target_document.metadata["digital_slide"] = slide_meta
         target_document.initialize_runtime_state()
         if target_document.history is not None:
@@ -17201,7 +17399,21 @@ class MainWindow(QMainWindow):
         target_document.mark_calibration_saved()
 
         canvas = DigitalSlideCanvas()
-        canvas.set_slide_document(target_document, store)
+        try:
+            canvas.set_slide_document(target_document, store)
+        except Exception as exc:
+            canvas.shutdown()
+            try:
+                store.close()
+            except Exception:
+                pass
+            canvas.deleteLater()
+            QMessageBox.warning(
+                self,
+                "打开数字化切片",
+                f"无法初始化数字化切片视图：\n{source_path}\n\n{exc}",
+            )
+            return
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(
             self._tool_mode,
@@ -17258,6 +17470,48 @@ class MainWindow(QMainWindow):
         self.image_list.setCurrentRow(tab_index)
         canvas.schedule_initial_fit()
         self._update_ui_for_current_document()
+        if interaction_path != source_path:
+            self.statusBar().showMessage(
+                f"已从本机临时副本打开网络切片：{source_path.name}",
+                6000,
+            )
+
+    def _localize_digital_slide_source(self, source_path: Path) -> Path:
+        cache = self._digital_slide_local_cache
+        if not cache.requires_local_copy(source_path):
+            return source_path
+        progress = QProgressDialog(
+            "正在将网络数字化切片复制到本机临时目录…",
+            "取消",
+            0,
+            1000,
+            self,
+        )
+        progress.setWindowTitle("打开网络数字化切片")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(250)
+        progress.setAutoClose(False)
+        progress.setAutoReset(False)
+
+        def update_progress(copied: int, total: int) -> None:
+            denominator = max(1, int(total))
+            progress.setValue(min(1000, int(round((int(copied) / denominator) * 1000))))
+            progress.setLabelText(
+                "正在将网络数字化切片复制到本机临时目录…\n"
+                f"{source_path.name}\n"
+                f"{int(copied) / (1024**2):.1f} / {int(total) / (1024**2):.1f} MiB"
+            )
+            QApplication.processEvents()
+
+        try:
+            return cache.localize(
+                source_path,
+                progress_callback=update_progress,
+                cancellation_requested=progress.wasCanceled,
+            )
+        finally:
+            progress.close()
+            progress.deleteLater()
 
     def _on_digital_slide_viewport_changed(self, x: int, y: int, focus_index: int) -> None:
         document = self.current_document()
@@ -24688,4 +24942,9 @@ class MainWindow(QMainWindow):
         if self._analysis_results_center is not None:
             self._analysis_results_center.close()
         self._cleanup_session_analysis_assets()
+        self._digital_slide_local_cache.cleanup()
+        app = QApplication.instance()
+        if self._application_key_filter_installed and app is not None:
+            app.removeEventFilter(self)
+            self._application_key_filter_installed = False
         event.accept()

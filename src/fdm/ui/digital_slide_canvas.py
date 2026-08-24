@@ -32,7 +32,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_pending = False
         self._initial_fit_done = False
         self._initial_fit_attempts = 0
-        self._navigation_mode = "step"
+        self._navigation_mode = "smooth"
         self._smooth_nav_keys: set[int] = set()
         self._smooth_nav_shift = False
         self._smooth_nav_last_at = 0.0
@@ -125,6 +125,9 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def navigation_mode_label(self) -> str:
         return "平滑移动" if self._navigation_mode == "smooth" else "步进移动"
+
+    def is_navigation_key_active(self, key: int | Qt.Key) -> bool:
+        return int(key) in self._smooth_nav_keys
 
     def set_navigation_mode(self, mode: str) -> None:
         mode = "smooth" if mode == "smooth" else "step"
