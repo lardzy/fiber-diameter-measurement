@@ -16,6 +16,8 @@ from fdm.models import ImageDocument
 from fdm.services.digital_slide_cache import DigitalSlideSessionCache
 from fdm.services.digital_slide_calibration import (
     CALIBRATION_AXIS_X,
+    CALIBRATION_AXIS_Y,
+    DigitalSlideCalibrationPair,
     DigitalSlideCalibrationSession,
 )
 from fdm.services.digital_slide_store import (
@@ -23,6 +25,7 @@ from fdm.services.digital_slide_store import (
     DigitalSlideOverviewAccumulator,
     DigitalSlideStore,
     DigitalSlideTile,
+    DigitalSlideTileDescriptor,
     compress_slide_file,
 )
 from fdm.settings import (
@@ -746,6 +749,107 @@ def test_calibration_short_layout_keeps_long_result_above_guarded_option(
             < dialog._apply_stage_checkbox.geometry().top()
         )
         assert dialog._preview.height() >= dialog._preview.minimumHeight()
+    finally:
+        dialog.close()
+
+
+def test_calibration_selection_changes_preserve_manual_offsets(
+    qapp: QApplication,
+) -> None:
+    def descriptor(
+        tile_id: int,
+        z_index: int,
+        x: int,
+        y: int,
+    ) -> DigitalSlideTileDescriptor:
+        return DigitalSlideTileDescriptor(
+            tile_id=tile_id,
+            z_index=z_index,
+            x=x,
+            y=y,
+            width=100,
+            height=80,
+            stage_x=x * 100,
+            stage_y=y * 100,
+            focus_z=z_index * 10,
+        )
+
+    x0 = descriptor(1, 0, 0, 0)
+    x1 = descriptor(2, 0, 60, 0)
+    x2 = descriptor(3, 0, 120, 0)
+    y1 = descriptor(4, 0, 0, 50)
+    z1_x0 = descriptor(5, 1, 0, 0)
+    z1_x1 = descriptor(6, 1, 62, 0)
+    pairs = {
+        (0, CALIBRATION_AXIS_X): [
+            DigitalSlideCalibrationPair(x0, x1, CALIBRATION_AXIS_X),
+            DigitalSlideCalibrationPair(x1, x2, CALIBRATION_AXIS_X),
+        ],
+        (0, CALIBRATION_AXIS_Y): [
+            DigitalSlideCalibrationPair(x0, y1, CALIBRATION_AXIS_Y),
+        ],
+        (1, CALIBRATION_AXIS_X): [
+            DigitalSlideCalibrationPair(z1_x0, z1_x1, CALIBRATION_AXIS_X),
+        ],
+        (1, CALIBRATION_AXIS_Y): [],
+    }
+
+    dialog = DigitalSlideCalibrationDialog(AppSettings())
+    try:
+        dialog._focus_combo.addItem("第 1 层", 0)
+        dialog._focus_combo.addItem("第 2 层", 1)
+        with (
+            patch.object(
+                dialog._session,
+                "adjacent_pairs",
+                side_effect=lambda focus, axis: pairs[(focus, axis)],
+            ),
+            patch.object(
+                dialog._session,
+                "read_pair",
+                return_value=(
+                    _solid_image(100, 80, "#A8B4C6"),
+                    _solid_image(100, 80, "#52647C"),
+                ),
+            ),
+        ):
+            dialog._refresh_pairs()
+            dialog._set_offsets(17, -9)
+
+            dialog._pair_combo.setCurrentIndex(1)
+            assert (
+                dialog._offset_x_spin.value(),
+                dialog._offset_y_spin.value(),
+            ) == (17, -9)
+            assert (dialog._preview._offset_x, dialog._preview._offset_y) == (17, -9)
+            assert "手动当前视场对" in dialog._result_label.toPlainText()
+
+            dialog._axis_combo.setCurrentIndex(
+                dialog._axis_combo.findData(CALIBRATION_AXIS_Y)
+            )
+            assert (
+                dialog._offset_x_spin.value(),
+                dialog._offset_y_spin.value(),
+            ) == (17, -9)
+            assert (dialog._preview._offset_x, dialog._preview._offset_y) == (17, -9)
+
+            # Even a temporary selection without an adjacent pair must not
+            # destroy the adjustment before the user switches back.
+            dialog._focus_combo.setCurrentIndex(1)
+            assert dialog._current_pair is None
+            assert (
+                dialog._offset_x_spin.value(),
+                dialog._offset_y_spin.value(),
+            ) == (17, -9)
+            dialog._axis_combo.setCurrentIndex(
+                dialog._axis_combo.findData(CALIBRATION_AXIS_X)
+            )
+            assert (
+                dialog._offset_x_spin.value(),
+                dialog._offset_y_spin.value(),
+            ) == (17, -9)
+            assert (dialog._preview._offset_x, dialog._preview._offset_y) == (17, -9)
+            assert "手动当前视场对" in dialog._result_label.toPlainText()
     finally:
         dialog.close()
 

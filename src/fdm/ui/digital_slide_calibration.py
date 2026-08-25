@@ -967,12 +967,18 @@ class DigitalSlideCalibrationDialog(QDialog):
                 f"({pair.candidate.x}, {pair.candidate.y})"
             )
             self._pair_combo.addItem(label, pair)
-        self._pair_combo.blockSignals(False)
         self._pair_combo.setCurrentIndex(0 if pairs else -1)
+        self._pair_combo.blockSignals(False)
         self._load_selected_pair()
 
     def _load_selected_pair(self, _index: int = -1) -> None:
         self._invalidate_auto_estimate()
+        # The offsets are calibration parameters shared while the user samples
+        # different focus levels, axes, and adjacent field pairs.  Loading a
+        # different pair must replace only the compared images; resetting these
+        # values here made iterative calibration lose the user's work.
+        offset_x = self._offset_x_spin.value()
+        offset_y = self._offset_y_spin.value()
         pair = self._pair_combo.currentData()
         self._current_pair = pair if isinstance(pair, DigitalSlideCalibrationPair) else None
         self._current_estimate = None
@@ -993,7 +999,7 @@ class DigitalSlideCalibrationDialog(QDialog):
             nominal_dx=self._current_pair.nominal_dx,
             nominal_dy=self._current_pair.nominal_dy,
         )
-        self._set_offsets(0, 0)
+        self._set_offsets(offset_x, offset_y)
         self._update_preview_controls_enabled()
 
     def _set_offsets(self, x: int, y: int) -> None:
