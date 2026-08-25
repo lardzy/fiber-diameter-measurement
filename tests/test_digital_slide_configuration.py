@@ -7,8 +7,8 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from PySide6.QtCore import QPoint, Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtCore import QEvent, QPoint, QPointF, Qt
+from PySide6.QtGui import QColor, QImage, QMouseEvent, QWheelEvent
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QMessageBox
 
@@ -33,7 +33,10 @@ from fdm.settings import (
     DigitalSlideAcquisitionProfileIO,
 )
 from fdm.ui.dialogs import DigitalSlideCompressionDialog, SettingsDialog
-from fdm.ui.digital_slide_calibration import DigitalSlideCalibrationDialog
+from fdm.ui.digital_slide_calibration import (
+    CalibrationPairPreview,
+    DigitalSlideCalibrationDialog,
+)
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.main_window import (
     DIGITAL_SLIDE_GRID_ORIGIN_RECORDED,
@@ -735,7 +738,7 @@ def test_calibration_short_layout_keeps_long_result_above_guarded_option(
             "注意：自动结果置信度不足；检测到回程间隙。"
         )
         dialog.show()
-        dialog.resize(820, 600)
+        dialog.resize(dialog.minimumSize())
         qapp.processEvents()
 
         assert (
@@ -743,6 +746,213 @@ def test_calibration_short_layout_keeps_long_result_above_guarded_option(
             < dialog._apply_stage_checkbox.geometry().top()
         )
         assert dialog._preview.height() >= dialog._preview.minimumHeight()
+    finally:
+        dialog.close()
+
+
+def test_calibration_preview_separates_view_pan_from_offset_drag(
+    qapp: QApplication,
+) -> None:
+    preview = CalibrationPairPreview()
+    preview.resize(640, 320)
+    preview.set_pair(
+        _solid_image(320, 240, "#A8B4C6"),
+        _solid_image(320, 240, "#52647C"),
+        nominal_dx=260,
+        nominal_dy=0,
+    )
+    preview.show()
+    qapp.processEvents()
+    preview.set_view_zoom(2.0)
+    offsets: list[tuple[int, int]] = []
+    preview.offsetChanged.connect(lambda x, y: offsets.append((x, y)))
+
+    def drag(start: QPointF, end: QPointF) -> None:
+        QApplication.sendEvent(
+            preview,
+            QMouseEvent(
+                QEvent.Type.MouseButtonPress,
+                start,
+                start,
+                start,
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
+        QApplication.sendEvent(
+            preview,
+            QMouseEvent(
+                QEvent.Type.MouseMove,
+                end,
+                end,
+                end,
+                Qt.MouseButton.NoButton,
+                Qt.MouseButton.LeftButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
+        QApplication.sendEvent(
+            preview,
+            QMouseEvent(
+                QEvent.Type.MouseButtonRelease,
+                end,
+                end,
+                end,
+                Qt.MouseButton.LeftButton,
+                Qt.MouseButton.NoButton,
+                Qt.KeyboardModifier.NoModifier,
+            ),
+        )
+
+    preview.set_pan_mode(True)
+    center_before = QPointF(preview._view_center)
+    drag(QPointF(300, 150), QPointF(340, 170))
+    assert preview._view_center != center_before
+    assert offsets == []
+    assert (preview._offset_x, preview._offset_y) == (0, 0)
+
+    preview.set_pan_mode(False)
+    center_before_offset_drag = QPointF(preview._view_center)
+    drag(QPointF(300, 150), QPointF(340, 170))
+    assert offsets[-1] == (20, 10)
+    assert preview._view_center == center_before_offset_drag
+    preview.close()
+
+
+def test_calibration_preview_supports_wheel_zoom_and_keyboard_view_shortcuts(
+    qapp: QApplication,
+) -> None:
+    preview = CalibrationPairPreview()
+    preview.resize(640, 320)
+    preview.set_pair(
+        _solid_image(320, 240, "#A8B4C6"),
+        _solid_image(320, 240, "#52647C"),
+        nominal_dx=260,
+        nominal_dy=0,
+    )
+    preview.show()
+    preview.setFocus()
+    qapp.processEvents()
+
+    fit_zoom = preview.view_zoom()
+    QApplication.sendEvent(
+        preview,
+        QWheelEvent(
+            QPointF(320, 160),
+            QPointF(320, 160),
+            QPoint(),
+            QPoint(0, 120),
+            Qt.MouseButton.NoButton,
+            Qt.KeyboardModifier.NoModifier,
+            Qt.ScrollPhase.ScrollUpdate,
+            False,
+        ),
+    )
+    assert preview.view_mode() == "custom"
+    assert preview.view_zoom() > fit_zoom
+
+    QTest.keyClick(preview, Qt.Key.Key_1)
+    assert preview.view_mode() == "actual"
+    assert preview.view_zoom() == pytest.approx(1.0)
+    QTest.keyClick(preview, Qt.Key.Key_0)
+    assert preview.view_mode() == "fit"
+    QTest.keyPress(preview, Qt.Key.Key_Space)
+    assert preview._space_pan is True
+    QTest.keyRelease(preview, Qt.Key.Key_Space)
+    assert preview._space_pan is False
+    preview.close()
+
+
+def test_calibration_dialog_provides_complete_preview_controls_and_focus_mode(
+    qapp: QApplication,
+) -> None:
+    dialog = DigitalSlideCalibrationDialog(AppSettings())
+    try:
+        dialog._preview.set_pair(
+            _solid_image(320, 240, "#A8B4C6"),
+            _solid_image(320, 240, "#52647C"),
+            nominal_dx=260,
+            nominal_dy=0,
+        )
+        dialog._update_preview_controls_enabled()
+        dialog.resize(dialog.minimumSize())
+        dialog.show()
+        qapp.processEvents()
+
+        QTest.mouseClick(dialog._actual_button, Qt.MouseButton.LeftButton)
+        assert dialog._preview.view_mode() == "actual"
+        assert dialog._zoom_spin.value() == 100
+        QTest.mouseClick(dialog._zoom_in_button, Qt.MouseButton.LeftButton)
+        assert dialog._preview.view_mode() == "custom"
+        assert dialog._zoom_spin.value() == 125
+
+        dialog._opacity_slider.setValue(73)
+        assert dialog._preview.overlay_opacity() == pytest.approx(0.73)
+        split_index = dialog._mode_combo.findData("split")
+        dialog._mode_combo.setCurrentIndex(split_index)
+        assert dialog._opacity_slider.isEnabled() is False
+        assert dialog._split_slider.isEnabled() is True
+        dialog._split_slider.setValue(35)
+        assert dialog._preview.split_fraction() == pytest.approx(0.35)
+
+        dialog._pan_button.setChecked(True)
+        QTest.mouseClick(dialog._reset_view_button, Qt.MouseButton.LeftButton)
+        assert dialog._preview.view_mode() == "fit"
+        assert dialog._opacity_slider.value() == 52
+        assert dialog._split_slider.value() == 50
+        assert dialog._pan_button.isChecked() is False
+
+        normal_preview_height = dialog._preview.height()
+        dialog._focus_preview_button.setChecked(True)
+        qapp.processEvents()
+        assert dialog._preview_focus_mode is True
+        assert dialog._heading.isHidden() is True
+        assert dialog._selection_container.isHidden() is True
+        assert dialog._preview.height() > normal_preview_height + 200
+        assert dialog._focus_preview_button.text() == "返回校准"
+
+        dialog._preview.escapeRequested.emit()
+        qapp.processEvents()
+        assert dialog._preview_focus_mode is False
+        assert dialog._heading.isVisible() is True
+        assert dialog._selection_container.isVisible() is True
+        assert dialog._focus_preview_button.text() == "展开预览"
+    finally:
+        dialog.close()
+
+
+def test_calibration_preview_toolbar_fits_minimum_dialog_width(
+    qapp: QApplication,
+) -> None:
+    dialog = DigitalSlideCalibrationDialog(AppSettings())
+    try:
+        dialog.resize(dialog.minimumSize())
+        dialog.show()
+        qapp.processEvents()
+
+        controls = dialog._preview_controls
+        for widget in (
+            dialog._zoom_out_button,
+            dialog._zoom_spin,
+            dialog._zoom_in_button,
+            dialog._fit_button,
+            dialog._actual_button,
+            dialog._center_button,
+            dialog._pan_button,
+            dialog._reset_view_button,
+            dialog._focus_preview_button,
+            dialog._opacity_slider,
+            dialog._split_slider,
+            dialog._split_value_label,
+        ):
+            top_left = widget.mapTo(controls, QPoint())
+            assert top_left.x() >= 0
+            assert top_left.y() >= 0
+            assert top_left.x() + widget.width() <= controls.width()
+            assert top_left.y() + widget.height() <= controls.height()
+        assert controls.geometry().bottom() < dialog._preview.geometry().top()
+        assert dialog._preview.geometry().bottom() < dialog._button_box.geometry().top()
     finally:
         dialog.close()
 
