@@ -43,6 +43,50 @@ def test_defaults_are_safe_and_supply_required_portable_hotkeys() -> None:
             QKeySequence.SequenceFormat.PortableText,
         )
         assert not parsed.isEmpty()
+    assert settings.show_editor is False
+    assert settings.annotation_styles["schema_version"] == 1
+    assert "rectangle" in settings.annotation_styles["tools"]
+
+
+def test_legacy_settings_migrate_versioned_annotation_styles_without_losing_show_editor() -> None:
+    settings = ScreenshotSettings.from_dict(
+        {
+            "schema_version": 1,
+            "show_editor": True,
+            "output_directory": "/tmp/captures",
+        }
+    )
+
+    assert settings.show_editor is True
+    assert settings.annotation_styles["schema_version"] == 1
+    assert settings.annotation_styles["active_tool"] == "rectangle"
+
+
+def test_annotation_styles_are_bounded_and_future_style_payload_falls_back() -> None:
+    settings = ScreenshotSettings(
+        annotation_styles={
+            "schema_version": 1,
+            "active_tool": "arrow",
+            "tools": {
+                "arrow": {
+                    "color": "#123456",
+                    "stroke_width": 999,
+                    "opacity": -3,
+                    "arrow_size": 999,
+                }
+            },
+        }
+    ).normalized()
+    arrow = settings.annotation_styles["tools"]["arrow"]
+    assert arrow["stroke_width"] == 64
+    assert arrow["opacity"] == pytest.approx(0.05)
+    assert arrow["arrow_size"] == 96
+    assert settings.annotation_styles["active_tool"] == "arrow"
+
+    future = ScreenshotSettings(
+        annotation_styles={"schema_version": 999, "tools": {"arrow": {"color": "bad"}}}
+    ).normalized()
+    assert future.annotation_styles["active_tool"] == "rectangle"
 
 
 def test_settings_round_trip_all_domain_values(tmp_path: Path) -> None:
@@ -120,6 +164,25 @@ def test_from_dict_normalizes_invalid_values_and_legacy_printscreen() -> None:
     assert ScreenshotSettings(
         filename_template="{counter:999999999d}"
     ).normalized().filename_template == "Screenshot_{date}_{time}"
+
+
+@pytest.mark.parametrize(
+    ("sequence", "expected"),
+    [
+        ("Ctrl+Print Screen", "Ctrl+Print"),
+        ("Ctrl+Prt Sc", "Ctrl+Print"),
+        ("Snapshot", "Print"),
+        ("SysReq", "Print"),
+        ("Ctrl++", "Ctrl++"),
+        ("Num+Plus", "Num++"),
+        ("Ctrl+·", "Ctrl+·"),
+    ],
+)
+def test_hotkey_normalization_preserves_extended_common_keys(
+    sequence: str,
+    expected: str,
+) -> None:
+    assert HotkeyBinding(sequence).normalized() == HotkeyBinding(expected)
 
 
 def test_load_recovers_from_corruption_but_protects_future_versions(tmp_path: Path) -> None:

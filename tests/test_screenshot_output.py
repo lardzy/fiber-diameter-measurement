@@ -108,6 +108,18 @@ def test_copy_only_does_not_create_output_directory(tmp_path: Path) -> None:
     assert len(copied) == 1
 
 
+def test_save_as_uses_explicit_path_suffix_and_configured_encoder_quality(tmp_path: Path) -> None:
+    service = ScreenshotOutputService()
+    settings = ScreenshotSettings(jpeg_quality=73, png_compression=8)
+
+    jpeg = service.save_image_as(_sample_image(), tmp_path / "chosen.jpg", settings)
+    default_png = service.save_image_as(_sample_image(), tmp_path / "without-extension", settings)
+
+    assert jpeg == tmp_path / "chosen.jpg" and jpeg.read_bytes().startswith(b"\xff\xd8")
+    assert default_png == tmp_path / "without-extension.png"
+    assert default_png.read_bytes().startswith(b"\x89PNG")
+
+
 def test_save_failure_still_attempts_clipboard_and_returns_partial_error(
     tmp_path: Path,
 ) -> None:

@@ -188,6 +188,9 @@ def test_coordinator_resolves_full_display_active_last_and_manual_selection() ->
     region = coordinator.capture_now(
         CaptureRequest(CaptureMode.REGION, region=CaptureRect(-100, 50, 30, 20))
     )
+    # Pixel capture alone is not a successful output; the agent records this
+    # only after save/copy succeeds.
+    coordinator.set_last_region(region.rect)
     last = coordinator.capture_now(CaptureRequest(CaptureMode.LAST_REGION))
 
     assert full.rect == CaptureRect(-2560, 0, 4480, 1440)
@@ -206,6 +209,29 @@ def test_coordinator_resolves_full_display_active_last_and_manual_selection() ->
     )
     assert ready[-1].target_handle == 2
     assert app is QApplication.instance()
+
+
+def test_missing_last_region_fails_explicitly_without_opening_selector() -> None:
+    coordinator = CaptureCoordinator(_Backend())
+    failures: list[str] = []
+    selections: list[object] = []
+    coordinator.captureFailed.connect(failures.append)
+    coordinator.selectionRequested.connect(lambda *args: selections.append(args))
+
+    coordinator.start(CaptureRequest(CaptureMode.LAST_REGION))
+
+    assert failures == ["尚无可用的上次区域。"]
+    assert selections == []
+
+
+def test_capture_request_preserves_omitted_editor_and_parses_explicit_false() -> None:
+    inherited = CaptureRequest.from_mapping({"mode": "region"})
+    disabled = CaptureRequest.from_mapping({"mode": "region", "open_editor": "false"})
+    enabled = CaptureRequest.from_mapping({"mode": "region", "open_editor": True})
+
+    assert inherited.open_editor is None
+    assert disabled.open_editor is False
+    assert enabled.open_editor is True
 
 
 def test_region_candidates_skip_window_enumeration_while_smart_keeps_candidates() -> None:

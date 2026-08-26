@@ -42,6 +42,7 @@ from fdm.services.screenshot_capture import (
     CaptureMode,
     CaptureRequest,
     ScreenInfo,
+    should_open_annotation,
 )
 from fdm.screenshot_settings import (
     ScreenshotSettings,
@@ -49,7 +50,8 @@ from fdm.screenshot_settings import (
     UnsupportedScreenshotSettingsVersion,
 )
 from fdm.services.screenshot_output import OutputResult, ScreenshotOutputService
-from fdm.ui.screenshot_editor import ScreenshotEditor
+from fdm.ui.screenshot_editor import ScreenshotEditModel, ScreenshotEditor
+from fdm.ui.screenshot_annotation_overlay import InlineAnnotationOverlay
 from fdm.ui.screenshot_overlay import ScreenshotOverlay, logical_point_to_physical
 
 
@@ -67,6 +69,7 @@ _WINDOWS_NAMED_VIRTUAL_KEYS = {
     "return": 0x0D,  # VK_RETURN
     "enter": 0x0D,
     "pause": 0x13,  # VK_PAUSE
+    "break": 0x13,
     "capslock": 0x14,  # VK_CAPITAL
     "escape": 0x1B,  # VK_ESCAPE
     "esc": 0x1B,
@@ -88,6 +91,8 @@ _WINDOWS_NAMED_VIRTUAL_KEYS = {
     "delete": 0x2E,  # VK_DELETE
     "del": 0x2E,
     "help": 0x2F,  # VK_HELP
+    "power off": 0x5E,  # VK_POWER
+    "poweroff": 0x5E,
     # The physical context-menu key is VK_APPS.  VK_MENU is the Win32 name
     # for Alt and must not be used for Qt's Key_Menu.
     "menu": 0x5D,  # VK_APPS
@@ -138,6 +143,71 @@ _WINDOWS_NAMED_VIRTUAL_KEYS = {
     "zoom": 0xFB,  # VK_ZOOM
 }
 
+# Qt preserves printable keys in PortableText instead of naming the physical
+# Windows key. RegisterHotKey accepts virtual-key codes, so translate common
+# US/Chinese-layout glyphs back to their OEM keys. In particular, the top-left
+# ` key may be reported as the middle dot used by a Chinese IME.
+_WINDOWS_PRINTABLE_VIRTUAL_KEYS = {
+    "`": 0xC0,  # VK_OEM_3
+    "~": 0xC0,
+    "·": 0xC0,
+    "-": 0xBD,  # VK_OEM_MINUS
+    "_": 0xBD,
+    "=": 0xBB,  # VK_OEM_PLUS
+    "+": 0xBB,
+    "[": 0xDB,  # VK_OEM_4
+    "{": 0xDB,
+    "]": 0xDD,  # VK_OEM_6
+    "}": 0xDD,
+    "\\": 0xDC,  # VK_OEM_5
+    "|": 0xDC,
+    ";": 0xBA,  # VK_OEM_1
+    ":": 0xBA,
+    "'": 0xDE,  # VK_OEM_7
+    '"': 0xDE,
+    ",": 0xBC,  # VK_OEM_COMMA
+    "<": 0xBC,
+    ".": 0xBE,  # VK_OEM_PERIOD
+    ">": 0xBE,
+    "/": 0xBF,  # VK_OEM_2
+    "?": 0xBF,
+}
+
+_WINDOWS_KEYPAD_VIRTUAL_KEYS = {
+    "0": 0x60,  # VK_NUMPAD0
+    "1": 0x61,
+    "2": 0x62,
+    "3": 0x63,
+    "4": 0x64,
+    "5": 0x65,
+    "6": 0x66,
+    "7": 0x67,
+    "8": 0x68,
+    "9": 0x69,
+    "*": 0x6A,  # VK_MULTIPLY
+    "+": 0x6B,  # VK_ADD
+    "-": 0x6D,  # VK_SUBTRACT
+    ".": 0x6E,  # VK_DECIMAL
+    "/": 0x6F,  # VK_DIVIDE
+    "insert": 0x60,
+    "ins": 0x60,
+    "end": 0x61,
+    "down": 0x62,
+    "pagedown": 0x63,
+    "pgdown": 0x63,
+    "left": 0x64,
+    "clear": 0x65,
+    "right": 0x66,
+    "home": 0x67,
+    "up": 0x68,
+    "pageup": 0x69,
+    "pgup": 0x69,
+    "delete": 0x6E,
+    "del": 0x6E,
+    "enter": 0x0D,  # RegisterHotKey cannot distinguish keypad Enter.
+    "return": 0x0D,
+}
+
 
 class AgentCommandError(RuntimeError):
     def __init__(self, message: str, *, result: Mapping[str, object] | None = None) -> None:
@@ -176,9 +246,18 @@ def _parse_windows_hotkey(sequence: str, identifier: int):
         MOD_WIN,
     )
 
+    raw_sequence = str(sequence or "").strip()
+    plus_key = raw_sequence.endswith("+")
+    split_source = raw_sequence[:-1] if plus_key else raw_sequence
+    parts = [part.strip() for part in split_source.split("+") if part.strip()]
+    if plus_key:
+        parts.append("+")
+
     modifiers = 0
-    virtual_key = 0
-    for part in (token.strip() for token in str(sequence).split("+") if token.strip()):
+    keypad = False
+    key_token = ""
+    key_label = ""
+    for part in parts:
         token = part.casefold()
         if token in {"ctrl", "control"}:
             modifiers |= MOD_CONTROL
@@ -186,20 +265,47 @@ def _parse_windows_hotkey(sequence: str, identifier: int):
             modifiers |= MOD_ALT
         elif token == "shift":
             modifiers |= MOD_SHIFT
-        elif token in {"win", "windows", "meta"}:
+        elif token in {"win", "windows", "meta", "super", "cmd", "command"}:
             modifiers |= MOD_WIN
-        elif token in {"print", "printscreen", "prtsc", "prtscn"}:
-            virtual_key = 0x2C  # VK_SNAPSHOT
-        elif token in _WINDOWS_NAMED_VIRTUAL_KEYS:
-            virtual_key = _WINDOWS_NAMED_VIRTUAL_KEYS[token]
-        elif len(token) == 1 and token.isascii() and token.isalnum():
-            virtual_key = ord(token.upper())
-        elif token.startswith("f") and token[1:].isdigit() and 1 <= int(token[1:]) <= 24:
-            virtual_key = 0x70 + int(token[1:]) - 1
+        elif token in {"num", "keypad", "numpad"}:
+            keypad = True
         else:
-            raise ValueError(f"不支持的全局快捷键按键：{part}")
-    if not virtual_key:
+            if key_token:
+                raise ValueError("全局快捷键只能包含一个主按键。")
+            key_token = token
+            key_label = part
+
+    if not key_token:
         raise ValueError("全局快捷键缺少主按键。")
+
+    compact_key = re.sub(r"[\s_-]+", "", key_token)
+    if keypad:
+        virtual_key = _WINDOWS_KEYPAD_VIRTUAL_KEYS.get(key_token, 0)
+    elif compact_key in {
+        "print",
+        "printscreen",
+        "prtsc",
+        "prtscn",
+        "snapshot",
+        "sysreq",
+    }:
+        virtual_key = 0x2C  # VK_SNAPSHOT
+    elif key_token in _WINDOWS_NAMED_VIRTUAL_KEYS:
+        virtual_key = _WINDOWS_NAMED_VIRTUAL_KEYS[key_token]
+    elif key_token in _WINDOWS_PRINTABLE_VIRTUAL_KEYS:
+        virtual_key = _WINDOWS_PRINTABLE_VIRTUAL_KEYS[key_token]
+    elif len(key_token) == 1 and key_token.isascii() and key_token.isalnum():
+        virtual_key = ord(key_token.upper())
+    elif (
+        key_token.startswith("f")
+        and key_token[1:].isdigit()
+        and 1 <= int(key_token[1:]) <= 24
+    ):
+        virtual_key = 0x70 + int(key_token[1:]) - 1
+    else:
+        virtual_key = 0
+    if not virtual_key:
+        raise ValueError(f"不支持的全局快捷键按键：{key_label}")
     return NativeHotkeyBinding(identifier, modifiers, virtual_key).normalized()
 
 
@@ -473,6 +579,14 @@ class ScreenshotAgent(QObject):
         self._overlay: ScreenshotOverlay | None = None
         self._settings_window: QDialog | None = None
         self._editors: list[ScreenshotEditor] = []
+        self._annotation_session: QWidget | None = None
+        self._annotation_frame: CapturedFrame | None = None
+        self._last_output_error = ""
+        self._pending_annotation_styles: dict[str, object] | None = None
+        self._annotation_style_timer = QTimer(self)
+        self._annotation_style_timer.setSingleShot(True)
+        self._annotation_style_timer.setInterval(250)
+        self._annotation_style_timer.timeout.connect(self._persist_annotation_styles)
         self._ipc_capture_queue: deque[CaptureRequest] = deque()
         self._ipc_capture_timer = QTimer(self)
         self._ipc_capture_timer.setSingleShot(True)
@@ -499,6 +613,10 @@ class ScreenshotAgent(QObject):
         return tuple(self._editors)
 
     @property
+    def annotation_session(self) -> QWidget | None:
+        return self._annotation_session
+
+    @property
     def settings(self) -> ScreenshotSettings:
         return self._settings.normalized()
 
@@ -511,6 +629,9 @@ class ScreenshotAgent(QObject):
         self.tray.show()
 
     def close(self) -> None:
+        self._annotation_style_timer.stop()
+        if self._pending_annotation_styles is not None:
+            self._persist_annotation_styles()
         self._ipc_capture_timer.stop()
         self._ipc_capture_queue.clear()
         manager = self._hotkey_manager
@@ -524,14 +645,17 @@ class ScreenshotAgent(QObject):
             self._hotkey_receiver.close()
             self._hotkey_receiver.deleteLater()
             self._hotkey_receiver = None
+        session = self._annotation_session
+        self._annotation_session = None
+        self._annotation_frame = None
+        if session is not None:
+            session.close()
 
     def handle_command(self, command: IPCCommand) -> Mapping[str, object]:
         if command.command is CommandType.CAPTURE:
             payload = dict(command.payload)
             payload["mode"] = command.capture_mode.value if command.capture_mode is not None else CaptureMode.REGION.value
             request = CaptureRequest.from_mapping(payload)
-            if "open_editor" not in command.payload:
-                request = replace(request, open_editor=self._settings.show_editor)
             if "include_cursor" not in command.payload:
                 request = replace(
                     request,
@@ -568,6 +692,7 @@ class ScreenshotAgent(QObject):
             "background_resident": self._settings.background_resident,
             "autostart": self._settings.autostart,
             "registered_hotkeys": len(self._hotkey_modes),
+            "annotation_active": self._annotation_session is not None,
             "integration_errors": list(self._integration_errors),
             "last_region": (
                 {
@@ -661,6 +786,7 @@ class ScreenshotAgent(QObject):
             # values while the dialog was open.
             update.pop("last_region", None)
             update.pop("cu5_selector", None)
+            update.pop("annotation_styles", None)
         elif raw and not bool(raw.get("reload", False)):
             update = {
                 key: value
@@ -934,6 +1060,21 @@ class ScreenshotAgent(QObject):
             self._ipc_capture_timer.start()
 
     def begin_capture(self, request: CaptureRequest) -> None:
+        session = self._annotation_session
+        if session is not None:
+            activate = getattr(session, "activate_session", None)
+            if callable(activate):
+                activate("已有截图正在标注，请先完成或取消。")
+            else:
+                session.show()
+                session.raise_()
+                session.activateWindow()
+            self.tray.showMessage(
+                "截图标注尚未完成",
+                "请先完成或取消当前标注，再开始新的截图。",
+                QSystemTrayIcon.MessageIcon.Information,
+            )
+            return
         previous_overlay = self._overlay
         if previous_overlay is not None:
             # Starting a second command must retire the old selector before an
@@ -943,7 +1084,16 @@ class ScreenshotAgent(QObject):
             self._overlay = None
             previous_overlay.hide()
             previous_overlay.close()
-        metadata = {**request.metadata, "open_editor": request.open_editor}
+        open_editor = should_open_annotation(
+            request.mode,
+            request.open_editor,
+            default=self._settings.show_editor,
+        )
+        metadata = {
+            **request.metadata,
+            "open_editor": open_editor,
+            "open_editor_explicit": request.open_editor is not None,
+        }
         if request.delay_ms == 0 and self._default_delay_ms:
             request = replace(request, delay_ms=self._default_delay_ms, metadata=metadata)
         else:
@@ -962,7 +1112,7 @@ class ScreenshotAgent(QObject):
             mode=mode,
             delay_ms=self._default_delay_ms if delay_ms is None else max(0, int(delay_ms)),
             cursor_position=physical_cursor,
-            open_editor=self._settings.show_editor,
+            open_editor=None,
             include_cursor=self._settings.include_cursor,
         )
 
@@ -1191,47 +1341,270 @@ class ScreenshotAgent(QObject):
             self._remember_cu5_match(
                 getattr(self._coordinator.backend, "last_cu5_match", None)
             )
-        last_region = self._coordinator.last_region
-        if (
-            not self._settings_read_only
-            and last_region is not None
-            and last_region != self._settings.last_region
-        ):
-            try:
-                self._settings = ScreenshotSettingsIO.update(
-                    lambda persisted: replace(
-                        persisted,
-                        last_region=last_region,
-                    ).normalized(),
-                    self._settings_path,
-                )
-            except (OSError, UnsupportedScreenshotSettingsVersion) as exc:
-                if isinstance(exc, UnsupportedScreenshotSettingsVersion):
-                    self._settings_read_only = True
-                    self._settings_load_error = str(exc) or type(exc).__name__
-                self.tray.showMessage(
-                    "截图设置保存失败",
-                    f"上次截图区域未能持久化：{exc}",
-                    QSystemTrayIcon.MessageIcon.Warning,
-                )
-
-        if bool(frame.metadata.get("open_editor", self._settings.show_editor)):
-            editor = ScreenshotEditor(frame.image)
-            editor.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
-            self._editors.append(editor)
-            editor.destroyed.connect(lambda: self._forget_editor(editor))
-            editor.completed.connect(
-                lambda image, item=editor, mode=frame.mode: self._complete_editor(
-                    item,
-                    image,
-                    mode,
-                )
-            )
-            editor.show()
-            editor.raise_()
-            editor.activateWindow()
+        open_editor = should_open_annotation(
+            frame.mode,
+            bool(frame.metadata.get("open_editor", self._settings.show_editor)),
+            default=self._settings.show_editor,
+        )
+        if open_editor:
+            self._open_inline_annotation(frame)
             return
-        self._publish_capture(frame.image, frame.mode)
+        self._publish_capture(frame.image, frame.mode, capture_rect=frame.rect)
+
+    def _open_inline_annotation(self, frame: CapturedFrame) -> None:
+        if self._annotation_session is not None:
+            self._annotation_session.raise_()
+            self._annotation_session.activateWindow()
+            return
+        screens = self._coordinator.screens()
+        if not screens or not any(
+            frame.rect.intersection(screen.physical_rect) is not None
+            for screen in screens
+        ):
+            self._open_fallback_editor(
+                ScreenshotEditModel(frame.image),
+                frame,
+                reason="当前显示器布局无法安全映射原截图位置。",
+            )
+            return
+        overlay = InlineAnnotationOverlay(
+            frame,
+            screens,
+            styles=self._settings.annotation_styles,
+            screens_provider=self._coordinator.screens,
+        )
+        self._annotation_session = overlay
+        self._annotation_frame = frame
+        overlay.completed.connect(
+            lambda image, item=overlay, captured=frame: self._complete_annotation(
+                item, image, captured, "configured"
+            )
+        )
+        overlay.copyRequested.connect(
+            lambda image, item=overlay, captured=frame: self._complete_annotation(
+                item, image, captured, "copy"
+            )
+        )
+        overlay.saveRequested.connect(
+            lambda image, item=overlay, captured=frame: self._complete_annotation(
+                item, image, captured, "save"
+            )
+        )
+        overlay.saveAsRequested.connect(
+            lambda image, path, item=overlay, captured=frame: self._complete_annotation(
+                item, image, captured, "save_as", path=path
+            )
+        )
+        overlay.cancelled.connect(lambda item=overlay: self._cancel_annotation(item))
+        overlay.stylesChanged.connect(self._queue_annotation_styles)
+        overlay.fallbackRequested.connect(
+            lambda model, item=overlay, captured=frame: self._fallback_annotation(
+                item, model, captured
+            )
+        )
+        overlay.destroyed.connect(lambda: self._clear_annotation_session(overlay))
+        overlay.begin()
+
+    def _complete_annotation(
+        self,
+        session: InlineAnnotationOverlay,
+        image: object,
+        frame: CapturedFrame,
+        operation: str,
+        *,
+        path: str = "",
+    ) -> None:
+        if session is not self._annotation_session:
+            return
+        if not isinstance(image, QImage) or image.isNull():
+            session.output_failed("编辑器返回了空截图。")
+            return
+        if operation == "configured":
+            success = self._publish_capture(
+                image,
+                frame.mode,
+                capture_rect=frame.rect,
+                require_all_outputs=True,
+            )
+            if not success:
+                session.output_failed(self._last_output_error or "截图输出失败。")
+                return
+            session.output_succeeded()
+            return
+        try:
+            saved_path = None
+            copied = False
+            if operation == "copy":
+                self._output_service.copy_to_clipboard(image)
+                copied = True
+            elif operation == "save":
+                saved_path = self._output_service.save_image(
+                    image,
+                    self._settings,
+                    mode=frame.mode,
+                )
+            elif operation == "save_as":
+                saved_path = self._output_service.save_image_as(
+                    image,
+                    path,
+                    self._settings,
+                )
+            else:
+                raise ValueError(f"未知截图输出操作：{operation}")
+        except Exception as exc:  # noqa: BLE001 - retain editable state for retry
+            message = str(exc) or type(exc).__name__
+            session.output_failed(message)
+            self._capture_failed(message)
+            return
+        self._remember_last_region_after_success(frame.mode, frame.rect)
+        if self._settings.notification:
+            detail = f"已保存到 {saved_path}" if saved_path is not None else "已复制到剪贴板" if copied else "截图处理完成。"
+            self.tray.showMessage("截图完成", detail)
+        session.output_succeeded()
+
+    def _cancel_annotation(self, session: InlineAnnotationOverlay) -> None:
+        if session is not self._annotation_session:
+            return
+        self._clear_annotation_session(session)
+
+    def _fallback_annotation(
+        self,
+        overlay: InlineAnnotationOverlay,
+        model: object,
+        frame: CapturedFrame,
+    ) -> None:
+        if overlay is not self._annotation_session or not isinstance(model, ScreenshotEditModel):
+            return
+        overlay.close()
+        self._open_fallback_editor(
+            model,
+            frame,
+            reason="显示器布局已变化。",
+        )
+
+    def _open_fallback_editor(
+        self,
+        model: ScreenshotEditModel,
+        frame: CapturedFrame,
+        *,
+        reason: str,
+    ) -> None:
+        editor = ScreenshotEditor(frame.image, model=model, managed_output=True)
+        editor.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
+        self._annotation_session = editor
+        self._annotation_frame = frame
+        self._editors.append(editor)
+        editor.destroyed.connect(lambda: self._clear_fallback_editor(editor))
+        editor.completed.connect(
+            lambda image, item=editor, captured=frame: self._complete_fallback_editor(
+                item, image, captured
+            )
+        )
+        editor.copyOutputRequested.connect(
+            lambda image, item=editor, captured=frame: self._complete_fallback_output(
+                item, image, captured, "copy"
+            )
+        )
+        editor.saveAsOutputRequested.connect(
+            lambda image, path, item=editor, captured=frame: self._complete_fallback_output(
+                item, image, captured, "save_as", path=path
+            )
+        )
+        editor.cancelled.connect(editor.close)
+        editor.show()
+        editor.raise_()
+        editor.activateWindow()
+        self.tray.showMessage(
+            "已切换到独立标注窗口",
+            f"{reason}已保留截图和全部标注。",
+            QSystemTrayIcon.MessageIcon.Information,
+        )
+
+    def _complete_fallback_editor(
+        self,
+        editor: ScreenshotEditor,
+        image: object,
+        frame: CapturedFrame,
+    ) -> None:
+        if not isinstance(image, QImage) or image.isNull():
+            self._capture_failed("编辑器返回了空截图。")
+            return
+        if self._publish_capture(
+            image,
+            frame.mode,
+            capture_rect=frame.rect,
+            require_all_outputs=True,
+        ):
+            editor.close()
+
+    def _complete_fallback_output(
+        self,
+        editor: ScreenshotEditor,
+        image: object,
+        frame: CapturedFrame,
+        operation: str,
+        *,
+        path: str = "",
+    ) -> None:
+        if editor is not self._annotation_session:
+            return
+        if not isinstance(image, QImage) or image.isNull():
+            self._capture_failed("编辑器返回了空截图。")
+            return
+        try:
+            if operation == "copy":
+                self._output_service.copy_to_clipboard(image)
+                detail = "已复制到剪贴板"
+            elif operation == "save_as":
+                saved = self._output_service.save_image_as(image, path, self._settings)
+                detail = f"已保存到 {saved}"
+            else:
+                raise ValueError(f"未知截图输出操作：{operation}")
+        except Exception as exc:  # noqa: BLE001 - keep fallback editor for retry
+            self._capture_failed(str(exc) or type(exc).__name__)
+            return
+        self._remember_last_region_after_success(frame.mode, frame.rect)
+        if self._settings.notification:
+            self.tray.showMessage("截图完成", detail)
+        editor.close()
+
+    def _clear_fallback_editor(self, editor: ScreenshotEditor) -> None:
+        self._forget_editor(editor)
+        self._clear_annotation_session(editor)
+
+    def _clear_annotation_session(self, session: QWidget) -> None:
+        if self._annotation_session is session:
+            self._annotation_session = None
+            self._annotation_frame = None
+
+    def _queue_annotation_styles(self, styles: object) -> None:
+        if not isinstance(styles, dict):
+            return
+        self._pending_annotation_styles = dict(styles)
+        self._annotation_style_timer.start()
+
+    def _persist_annotation_styles(self) -> None:
+        styles = self._pending_annotation_styles
+        self._pending_annotation_styles = None
+        if styles is None or self._settings_read_only:
+            return
+        try:
+            self._settings = ScreenshotSettingsIO.update(
+                lambda persisted: replace(
+                    persisted,
+                    annotation_styles=styles,
+                ).normalized(),
+                self._settings_path,
+            )
+        except (OSError, UnsupportedScreenshotSettingsVersion) as exc:
+            if isinstance(exc, UnsupportedScreenshotSettingsVersion):
+                self._settings_read_only = True
+                self._settings_load_error = str(exc) or type(exc).__name__
+            self.tray.showMessage(
+                "截图设置保存失败",
+                f"标注样式未能持久化：{exc}",
+                QSystemTrayIcon.MessageIcon.Warning,
+            )
 
     def _update_cu5_locator_selector(self) -> None:
         setter = getattr(self._cu5_locator, "set_selector", None)
@@ -1278,19 +1651,15 @@ class ScreenshotAgent(QObject):
         self._settings = updated
         self._update_cu5_locator_selector()
 
-    def _complete_editor(
+    def _publish_capture(
         self,
-        editor: ScreenshotEditor,
-        image: object,
+        image: QImage,
         mode: CaptureMode,
-    ) -> None:
-        if not isinstance(image, QImage) or image.isNull():
-            self._capture_failed("编辑器返回了空截图。")
-            return
-        if self._publish_capture(image, mode):
-            editor.close()
-
-    def _publish_capture(self, image: QImage, mode: CaptureMode) -> bool:
+        *,
+        capture_rect: object | None = None,
+        require_all_outputs: bool = False,
+    ) -> bool:
+        self._last_output_error = ""
         try:
             result: OutputResult = self._output_service.process_capture(
                 image,
@@ -1298,7 +1667,8 @@ class ScreenshotAgent(QObject):
                 mode=mode,
             )
         except Exception as exc:  # noqa: BLE001 - user-facing output pipeline
-            self._capture_failed(str(exc) or type(exc).__name__)
+            self._last_output_error = str(exc) or type(exc).__name__
+            self._capture_failed(self._last_output_error)
             return False
         if result.errors:
             completed: list[str] = []
@@ -1312,7 +1682,9 @@ class ScreenshotAgent(QObject):
                 f"{prefix}；{result.failure_summary}",
                 QSystemTrayIcon.MessageIcon.Warning,
             )
-            return True
+            self._remember_last_region_after_success(mode, capture_rect)
+            self._last_output_error = result.failure_summary
+            return not require_all_outputs
         if result.notification_requested:
             details: list[str] = []
             if result.saved_path is not None:
@@ -1320,7 +1692,38 @@ class ScreenshotAgent(QObject):
             if result.copied_to_clipboard:
                 details.append("已复制到剪贴板")
             self.tray.showMessage("截图完成", "；".join(details) or "截图处理完成。")
+        self._remember_last_region_after_success(mode, capture_rect)
         return True
+
+    def _remember_last_region_after_success(
+        self,
+        mode: CaptureMode,
+        capture_rect: object | None,
+    ) -> None:
+        from fdm.services.screenshot_capture import CaptureRect
+
+        if mode is not CaptureMode.REGION or not isinstance(capture_rect, CaptureRect):
+            return
+        rect = capture_rect.normalized()
+        if not rect.valid:
+            return
+        self._coordinator.set_last_region(rect)
+        if self._settings_read_only or rect == self._settings.last_region:
+            return
+        try:
+            self._settings = ScreenshotSettingsIO.update(
+                lambda persisted: replace(persisted, last_region=rect).normalized(),
+                self._settings_path,
+            )
+        except (OSError, UnsupportedScreenshotSettingsVersion) as exc:
+            if isinstance(exc, UnsupportedScreenshotSettingsVersion):
+                self._settings_read_only = True
+                self._settings_load_error = str(exc) or type(exc).__name__
+            self.tray.showMessage(
+                "截图设置保存失败",
+                f"上次截图区域未能持久化：{exc}",
+                QSystemTrayIcon.MessageIcon.Warning,
+            )
 
     def _forget_editor(self, editor: ScreenshotEditor) -> None:
         if editor in self._editors:
@@ -1336,10 +1739,9 @@ def build_initial_command(arguments: argparse.Namespace) -> IPCCommand:
     if arguments.show_settings:
         return IPCCommand(CommandType.SHOW_SETTINGS)
     if arguments.capture:
-        payload = {
-            "delay_ms": max(0, int(arguments.delay_ms)),
-            "open_editor": not bool(arguments.no_editor),
-        }
+        payload = {"delay_ms": max(0, int(arguments.delay_ms))}
+        if arguments.editor is not None:
+            payload["open_editor"] = bool(arguments.editor)
         return IPCCommand.capture(arguments.capture, payload=payload)
     return IPCCommand(CommandType.STATUS)
 
@@ -1348,7 +1750,10 @@ def build_argument_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog=SCREENSHOT_EXECUTABLE_NAME)
     parser.add_argument("--capture", choices=[mode.value for mode in CaptureMode])
     parser.add_argument("--delay-ms", type=int, default=0)
-    parser.add_argument("--no-editor", action="store_true")
+    editor_group = parser.add_mutually_exclusive_group()
+    editor_group.add_argument("--editor", dest="editor", action="store_true")
+    editor_group.add_argument("--no-editor", dest="editor", action="store_false")
+    parser.set_defaults(editor=None)
     parser.add_argument("--background", action="store_true")
     parser.add_argument("--show-settings", action="store_true")
     parser.add_argument("--shutdown", action="store_true")

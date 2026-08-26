@@ -69,6 +69,8 @@ class UiSnapshotScenarioTests(unittest.TestCase):
         self.assertIn("image-batch", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("analysis-results", UI_SNAPSHOT_SCENARIOS)
         self.assertIn("advanced-analysis", UI_SNAPSHOT_SCENARIOS)
+        self.assertIn("screenshot-annotation", UI_SNAPSHOT_SCENARIOS)
+        self.assertIn("screenshot-annotation-small", UI_SNAPSHOT_SCENARIOS)
 
     def test_processing_snapshot_default_remains_gaussian_blur(self) -> None:
         args = _parse_args(["--scenario", "image-processing"])
@@ -78,6 +80,13 @@ class UiSnapshotScenarioTests(unittest.TestCase):
             _processing_snapshot_operation_id(args.processing_operation),
             "gaussian_blur",
         )
+
+    def test_settings_snapshot_can_open_screenshot_tool_page(self) -> None:
+        args = _parse_args(
+            ["--scenario", "settings", "--settings-page", "screenshot"]
+        )
+
+        self.assertEqual(args.settings_page, "screenshot")
 
     def test_measurement_export_snapshot_exposes_both_pages(self) -> None:
         default_args = _parse_args(["--scenario", "measurement-export"])

@@ -136,6 +136,39 @@ class ScreenshotOutputService:
         atomic_write_bytes(target, encoded)
         return target
 
+    def save_image_as(
+        self,
+        image: QImage,
+        path: str | Path,
+        settings: ScreenshotSettings,
+    ) -> Path:
+        """Save one edited result to an explicit path using configured quality."""
+
+        if not isinstance(image, QImage) or image.isNull():
+            raise ScreenshotOutputError("cannot save a null screenshot")
+        target = Path(path).expanduser()
+        suffix = target.suffix.casefold()
+        image_format = {
+            ".jpg": ImageFormat.JPEG,
+            ".jpeg": ImageFormat.JPEG,
+            ".webp": ImageFormat.WEBP,
+            ".png": ImageFormat.PNG,
+        }.get(suffix)
+        if image_format is None:
+            target = target.with_suffix(".png")
+            image_format = ImageFormat.PNG
+        normalized = settings.normalized()
+        target.parent.mkdir(parents=True, exist_ok=True)
+        payload = encode_qimage(
+            image,
+            image_format=image_format,
+            png_compression=normalized.png_compression,
+            jpeg_quality=normalized.jpeg_quality,
+            webp_quality=normalized.webp_quality,
+        )
+        atomic_write_bytes(target, payload)
+        return target
+
     def resolve_output_path(
         self,
         settings: ScreenshotSettings,

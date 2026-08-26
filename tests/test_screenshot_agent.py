@@ -960,13 +960,45 @@ def test_editor_completion_publishes_edited_image_through_output_service(
             metadata={"open_editor": True},
         )
     )
-    editor = agent.editors[0]
-
-    editor.complete()
+    editor = agent.annotation_session
+    assert editor is not None
+    editor.request_complete()
 
     assert len(output.calls) == 1
     assert output.calls[0][2] is CaptureMode.REGION
     agent.close()
+
+
+def test_missing_screen_mapping_uses_managed_fallback_editor(tmp_path: Path) -> None:
+    from fdm.ui.screenshot_editor import ScreenshotEditor
+
+    app = _app()
+
+    class _NoScreensBackend(_CaptureBackend):
+        def screens(self):
+            return ()
+
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_NoScreensBackend()),
+        settings_path=tmp_path / "settings.json",
+        output_service=_OutputService(),
+        cu5_locator=_Locator(),
+    )
+    try:
+        agent._capture_ready(
+            CapturedFrame(
+                _image(),
+                CaptureRect(0, 0, 12, 8),
+                CaptureMode.REGION,
+                metadata={"open_editor": True},
+            )
+        )
+
+        assert isinstance(agent.annotation_session, ScreenshotEditor)
+        assert agent.annotation_session._managed_output is True
+    finally:
+        agent.close()
 
 
 def test_partial_output_failure_warns_but_still_completes_capture(
@@ -1089,3 +1121,238 @@ def test_cli_background_show_settings_and_stable_autostart_identity() -> None:
         is CommandType.SHOW_SETTINGS
     )
     assert SCREENSHOT_AUTOSTART_VALUE_NAME == "FiberDiameterMeasurementScreenshotTool"
+
+
+def test_cli_editor_switch_is_tristate_and_mutually_exclusive() -> None:
+    parser = build_argument_parser()
+    inherited = build_initial_command(parser.parse_args(["--capture", "region"]))
+    enabled = build_initial_command(parser.parse_args(["--capture", "region", "--editor"]))
+    disabled = build_initial_command(parser.parse_args(["--capture", "region", "--no-editor"]))
+
+    assert "open_editor" not in inherited.payload
+    assert enabled.payload["open_editor"] is True
+    assert disabled.payload["open_editor"] is False
+    with pytest.raises(SystemExit):
+        parser.parse_args(["--capture", "region", "--editor", "--no-editor"])
+
+
+def test_inline_annotation_mode_policy_and_instant_mode_bypass(tmp_path: Path) -> None:
+    app = _app()
+    path = tmp_path / "settings.json"
+    ScreenshotSettingsIO.save(ScreenshotSettings(show_editor=True), path)
+    output = _OutputService()
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=output,
+        cu5_locator=_Locator(),
+    )
+    try:
+        for mode in (CaptureMode.CU5, CaptureMode.LAST_REGION):
+            agent._capture_ready(
+                CapturedFrame(
+                    _image(),
+                    CaptureRect(0, 0, 12, 8),
+                    mode,
+                    metadata={"open_editor": True},
+                )
+            )
+            assert agent.annotation_session is None
+        assert [call[2] for call in output.calls] == [CaptureMode.CU5, CaptureMode.LAST_REGION]
+
+        agent._capture_ready(
+            CapturedFrame(
+                _image(),
+                CaptureRect(0, 0, 12, 8),
+                CaptureMode.FULL_SCREEN,
+                metadata={"open_editor": True},
+            )
+        )
+        session = agent.annotation_session
+        assert session is not None
+        session.request_cancel()
+        QTest.qWait(1)
+        assert agent.annotation_session is None
+    finally:
+        agent.close()
+
+
+def test_explicit_editor_override_and_single_session_guard(tmp_path: Path, monkeypatch) -> None:
+    app = _app()
+    coordinator = CaptureCoordinator(_CaptureBackend())
+    agent = ScreenshotAgent(
+        app,
+        coordinator,
+        settings_path=tmp_path / "settings.json",
+        output_service=_OutputService(),
+        cu5_locator=_Locator(),
+    )
+    try:
+        agent._capture_ready(
+            CapturedFrame(
+                _image(),
+                CaptureRect(0, 0, 12, 8),
+                CaptureMode.REGION,
+                metadata={"open_editor": True},
+            )
+        )
+        first = agent.annotation_session
+        assert first is not None
+        starts: list[CaptureRequest] = []
+        monkeypatch.setattr(coordinator, "start", starts.append)
+
+        agent.begin_capture(CaptureRequest(CaptureMode.FULL_SCREEN, open_editor=True))
+
+        assert starts == []
+        assert agent.annotation_session is first
+        first.request_cancel()
+        assert ScreenshotSettingsIO.load(tmp_path / "settings.json").last_region is None
+    finally:
+        agent.close()
+
+
+def test_output_failure_retains_annotation_and_does_not_replace_last_region(tmp_path: Path) -> None:
+    app = _app()
+
+    class _FailingOutput:
+        def process_capture(self, *_args, **_kwargs):
+            raise RuntimeError("disk unavailable")
+
+    path = tmp_path / "settings.json"
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=_FailingOutput(),
+        cu5_locator=_Locator(),
+    )
+    try:
+        frame = CapturedFrame(
+            _image(),
+            CaptureRect(20, 30, 12, 8),
+            CaptureMode.REGION,
+            metadata={"open_editor": True},
+        )
+        agent._capture_ready(frame)
+        session = agent.annotation_session
+        assert session is not None
+
+        session.request_complete()
+
+        assert agent.annotation_session is session
+        assert session.output_pending is False
+        assert agent.coordinator.last_region is None
+        assert ScreenshotSettingsIO.load(path).last_region is None
+        session.request_cancel()
+    finally:
+        agent.close()
+
+
+def test_partial_output_retains_annotation_for_retry_but_records_successful_region(
+    tmp_path: Path,
+) -> None:
+    app = _app()
+
+    class _PartialOutput:
+        def process_capture(self, *_args, **_kwargs):
+            return OutputResult(
+                copied_to_clipboard=True,
+                errors=("保存文件失败：disk full",),
+            )
+
+    path = tmp_path / "settings.json"
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=_PartialOutput(),
+        cu5_locator=_Locator(),
+    )
+    frame = CapturedFrame(
+        _image(),
+        CaptureRect(20, 30, 12, 8),
+        CaptureMode.REGION,
+        metadata={"open_editor": True},
+    )
+    try:
+        agent._capture_ready(frame)
+        session = agent.annotation_session
+        assert session is not None
+
+        session.request_complete()
+
+        assert agent.annotation_session is session
+        assert session.output_pending is False
+        assert agent.coordinator.last_region == frame.rect
+        assert ScreenshotSettingsIO.load(path).last_region == frame.rect
+        session.request_cancel()
+    finally:
+        agent.close()
+
+
+def test_recent_annotation_style_persists_across_sessions(tmp_path: Path) -> None:
+    from fdm.ui.screenshot_editor import EditorTool
+
+    app = _app()
+    path = tmp_path / "settings.json"
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=_OutputService(),
+        cu5_locator=_Locator(),
+    )
+    try:
+        agent._capture_ready(
+            CapturedFrame(
+                _image(),
+                CaptureRect(0, 0, 12, 8),
+                CaptureMode.REGION,
+                metadata={"open_editor": True},
+            )
+        )
+        session = agent.annotation_session
+        assert session is not None
+        session.set_tool(EditorTool.ARROW)
+        session.arrow_spin.setValue(27)
+        session.width_spin.setValue(6)
+        QTest.qWait(300)
+
+        persisted = ScreenshotSettingsIO.load(path).annotation_styles
+        assert persisted["active_tool"] == "arrow"
+        assert persisted["tools"]["arrow"]["arrow_size"] == 27
+        assert persisted["tools"]["arrow"]["stroke_width"] == 6
+        session.request_cancel()
+    finally:
+        agent.close()
+
+
+def test_full_settings_reload_does_not_overwrite_agent_owned_annotation_styles(tmp_path: Path) -> None:
+    app = _app()
+    path = tmp_path / "settings.json"
+    persisted = ScreenshotSettings(
+        annotation_styles={
+            "schema_version": 1,
+            "active_tool": "arrow",
+            "tools": {"arrow": {"color": "#123456", "arrow_size": 31}},
+        }
+    )
+    ScreenshotSettingsIO.save(persisted, path)
+    agent = ScreenshotAgent(
+        app,
+        CaptureCoordinator(_CaptureBackend()),
+        settings_path=path,
+        output_service=_OutputService(),
+        cu5_locator=_Locator(),
+    )
+    try:
+        dialog_draft = ScreenshotSettings(show_editor=True).to_dict()
+        agent.reload_settings({"settings": dialog_draft})
+
+        loaded = ScreenshotSettingsIO.load(path)
+        assert loaded.show_editor is True
+        assert loaded.annotation_styles["active_tool"] == "arrow"
+        assert loaded.annotation_styles["tools"]["arrow"]["arrow_size"] == 31
+    finally:
+        agent.close()

@@ -89,6 +89,75 @@ def test_menu_key_keeps_modifiers() -> None:
 
 
 @pytest.mark.parametrize(
+    ("sequence", "expected_virtual_key"),
+    [
+        ("Print", 0x2C),
+        ("Print Screen", 0x2C),
+        ("PrtSc", 0x2C),
+        ("Prt Scn", 0x2C),
+        ("Snapshot", 0x2C),
+        ("SysReq", 0x2C),
+        ("·", 0xC0),
+        ("`", 0xC0),
+        ("~", 0xC0),
+        (";", 0xBA),
+        ("=", 0xBB),
+        (",", 0xBC),
+        ("-", 0xBD),
+        (".", 0xBE),
+        ("/", 0xBF),
+        ("[", 0xDB),
+        ("\\", 0xDC),
+        ("]", 0xDD),
+        ("'", 0xDE),
+    ],
+)
+def test_print_screen_aliases_and_common_printable_keys_map_to_windows_vk(
+    sequence: str,
+    expected_virtual_key: int,
+) -> None:
+    binding = _parse_windows_hotkey(sequence, 0x5F01)
+
+    assert binding.virtual_key == expected_virtual_key
+
+
+def test_middle_dot_and_plus_keys_keep_modifiers() -> None:
+    middle_dot = _parse_windows_hotkey("Ctrl+·", 0x5F01)
+    plus = _parse_windows_hotkey("Ctrl++", 0x5F02)
+
+    assert middle_dot.virtual_key == 0xC0
+    assert middle_dot.modifiers & MOD_CONTROL
+    assert plus.virtual_key == 0xBB
+    assert plus.modifiers & MOD_CONTROL
+
+
+@pytest.mark.parametrize(
+    ("sequence", "expected_virtual_key"),
+    [
+        ("Num+0", 0x60),
+        ("Num+9", 0x69),
+        ("Num+*", 0x6A),
+        ("Num++", 0x6B),
+        ("Num+-", 0x6D),
+        ("Num+Del", 0x6E),
+        ("Num+/", 0x6F),
+    ],
+)
+def test_numeric_keypad_chords_map_to_distinct_windows_keys(
+    sequence: str,
+    expected_virtual_key: int,
+) -> None:
+    binding = _parse_windows_hotkey(sequence, 0x5F01)
+
+    assert binding.virtual_key == expected_virtual_key
+
+
+def test_hotkey_rejects_multiple_primary_keys() -> None:
+    with pytest.raises(ValueError, match="只能包含一个主按键"):
+        _parse_windows_hotkey("Ctrl+A+B", 0x5F01)
+
+
+@pytest.mark.parametrize(
     ("qt_key", "expected_virtual_key"),
     [
         (Qt.Key.Key_Cancel, 0x03),

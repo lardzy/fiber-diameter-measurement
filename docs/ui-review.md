@@ -21,8 +21,10 @@
 - `acquisition`：实时采集工作区。
 - `digital-slide`：数字切片采集工作区。
 - `settings`：首选项窗口。
+- `screenshot-annotation`：常规选区的内联标注、对象控制柄、上下文属性栏和完整工具栏。
+- `screenshot-annotation-small`：窄选区的“更多”溢出菜单、完成按钮可达性和工具栏翻转。
 
-`settings` 场景可再传 `--settings-page general|measurement|annotation|analysis|area|acquisition|export`，用于检查长页面、样式预览和底部固定按钮。
+`settings` 场景可再传 `--settings-page general|measurement|annotation|analysis|area|acquisition|screenshot|export`，用于检查长页面、样式预览和底部固定按钮。
 
 `measurement-results` 可传 `--results-tab records|statistics|distribution`，分别检查记录模型、描述统计和无额外依赖的分布图。
 

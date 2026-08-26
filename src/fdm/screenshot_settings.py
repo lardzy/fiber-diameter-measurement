@@ -15,12 +15,40 @@ from fdm.atomic_io import atomic_write_json
 from fdm.services.screenshot_capture import CaptureMode, CaptureRect
 
 
-SCREENSHOT_SETTINGS_SCHEMA_VERSION = 1
+SCREENSHOT_SETTINGS_SCHEMA_VERSION = 2
+ANNOTATION_STYLE_SCHEMA_VERSION = 1
 SCREENSHOT_SETTINGS_FILE_NAME = "screenshot-settings.json"
 SCREENSHOT_SETTINGS_LOCK_TIMEOUT_MS = 5_000
 DEFAULT_FILENAME_TEMPLATE = "Screenshot_{date}_{time}"
 _ALLOWED_FILENAME_FIELDS = frozenset({"date", "time", "datetime", "mode", "counter"})
 _MISSING = object()
+
+
+def default_annotation_styles() -> dict[str, object]:
+    """Versioned, JSON-safe recent styles used by the inline editor."""
+
+    return {
+        "schema_version": ANNOTATION_STYLE_SCHEMA_VERSION,
+        "active_tool": "rectangle",
+        "tools": {
+            "rectangle": {"color": "#e53935", "fill_color": "", "stroke_width": 3, "opacity": 1.0},
+            "ellipse": {"color": "#e53935", "fill_color": "", "stroke_width": 3, "opacity": 1.0},
+            "line": {"color": "#e53935", "stroke_width": 3, "opacity": 1.0},
+            "arrow": {"color": "#e53935", "stroke_width": 3, "opacity": 1.0, "arrow_size": 12},
+            "pen": {"color": "#e53935", "stroke_width": 3, "opacity": 1.0},
+            "text": {
+                "color": "#e53935", "font_family": "", "font_size": 18,
+                "bold": False, "italic": False, "background_color": "",
+                "opacity": 1.0,
+            },
+            "number": {"color": "#e53935", "font_size": 16, "number_start": 1, "opacity": 1.0},
+            "highlight": {"color": "#fff176", "stroke_width": 18, "opacity": 0.35},
+            "mosaic": {"block_size": 12},
+            "blur": {"block_size": 15},
+            "crop": {},
+            "select": {},
+        },
+    }
 
 
 class UnsupportedScreenshotSettingsVersion(ValueError):
@@ -110,15 +138,13 @@ class HotkeyBinding:
     enabled: bool = True
 
     def normalized(self) -> "HotkeyBinding":
-        sequence = "+".join(
-            part.strip()
-            for part in str(self.sequence or "").split("+")
-            if part.strip()
-        )
-        sequence = "+".join(
-            "Print" if part.casefold() in {"printscreen", "prtsc", "prtscn"} else part
-            for part in sequence.split("+")
-        )
+        raw_sequence = str(self.sequence or "").strip()
+        plus_key = raw_sequence.endswith("+")
+        split_source = raw_sequence[:-1] if plus_key else raw_sequence
+        parts = [part.strip() for part in split_source.split("+") if part.strip()]
+        if plus_key:
+            parts.append("+")
+        sequence = "+".join(_canonical_hotkey_token(part) for part in parts)
         return HotkeyBinding(sequence=sequence, enabled=bool(self.enabled and sequence))
 
     def to_dict(self) -> dict[str, object]:
@@ -157,9 +183,26 @@ def default_hotkeys() -> dict[CaptureMode, HotkeyBinding]:
     }
 
 
+def _canonical_hotkey_token(value: str) -> str:
+    token = str(value or "").strip()
+    compact = re.sub(r"[\s_-]+", "", token.casefold())
+    if compact in {
+        "print",
+        "printscreen",
+        "prtsc",
+        "prtscn",
+        "snapshot",
+        "sysreq",
+    }:
+        return "Print"
+    if compact in {"plus", "add"}:
+        return "+"
+    return token
+
+
 @dataclass(slots=True)
 class ScreenshotSettings:
-    """Version-one persistent settings owned by the screenshot companion.
+    """Persistent settings owned by the screenshot companion.
 
     ``last_region`` always uses native desktop pixels.  It may therefore have a
     negative origin on a display positioned left or above the primary display.
@@ -185,6 +228,7 @@ class ScreenshotSettings:
     cu5_selector: dict[str, object] = field(default_factory=dict)
     cu5_diagnostics_enabled: bool = False
     last_region: CaptureRect | None = None
+    annotation_styles: dict[str, object] = field(default_factory=default_annotation_styles)
 
     @property
     def schema_version(self) -> int:
@@ -221,6 +265,7 @@ class ScreenshotSettings:
         hotkeys = _normalize_hotkeys(self.hotkeys)
         last_region = _normalize_capture_rect(self.last_region)
         selector = _normalize_json_object(self.cu5_selector)
+        annotation_styles = _normalize_annotation_styles(self.annotation_styles)
         return ScreenshotSettings(
             enabled=_normalize_bool(self.enabled, False),
             autostart=_normalize_bool(self.autostart, False),
@@ -240,6 +285,7 @@ class ScreenshotSettings:
             cu5_selector=selector,
             cu5_diagnostics_enabled=_normalize_bool(self.cu5_diagnostics_enabled, False),
             last_region=last_region,
+            annotation_styles=annotation_styles,
         )
 
     def to_dict(self) -> dict[str, object]:
@@ -276,6 +322,7 @@ class ScreenshotSettings:
             "cu5_selector": settings.cu5_selector,
             "cu5_diagnostics_enabled": settings.cu5_diagnostics_enabled,
             "last_region": last_region,
+            "annotation_styles": settings.annotation_styles,
         }
 
     @classmethod
@@ -334,6 +381,9 @@ class ScreenshotSettings:
                 payload.get("cu5_diagnostics_enabled"), False
             ),
             last_region=_normalize_capture_rect(payload.get("last_region")),
+            annotation_styles=_normalize_annotation_styles(
+                payload.get("annotation_styles")
+            ),
         ).normalized()
 
 
@@ -513,6 +563,53 @@ def _normalize_after_capture_tasks(value: object) -> tuple[AfterCaptureTask, ...
     return tuple(result) or (AfterCaptureTask.SAVE,)
 
 
+def _normalize_annotation_styles(value: object) -> dict[str, object]:
+    defaults = default_annotation_styles()
+    payload = _normalize_json_object(value)
+    version = _bounded_int(payload.get("schema_version"), 0, 1_000_000, 0)
+    # An unknown future style schema must not poison the main settings file;
+    # retain safe defaults while the rest of the screenshot preferences load.
+    if version > ANNOTATION_STYLE_SCHEMA_VERSION:
+        return defaults
+    active_tool = str(payload.get("active_tool", defaults["active_tool"]) or "rectangle")
+    allowed_tools = set(defaults["tools"])
+    if active_tool not in allowed_tools:
+        active_tool = "rectangle"
+    raw_tools = payload.get("tools")
+    if not isinstance(raw_tools, dict):
+        raw_tools = {}
+    normalized_tools: dict[str, object] = {}
+    for tool, fallback in defaults["tools"].items():
+        merged = dict(fallback)
+        candidate = raw_tools.get(tool)
+        if isinstance(candidate, dict):
+            merged.update(_normalize_json_object(candidate))
+        for key in ("color", "fill_color", "background_color", "font_family"):
+            if key in merged:
+                merged[key] = str(merged[key] or "")[:160]
+        if "stroke_width" in merged:
+            merged["stroke_width"] = _bounded_float(merged["stroke_width"], 0.5, 64.0, float(fallback.get("stroke_width", 3)))
+        if "opacity" in merged:
+            merged["opacity"] = _bounded_float(merged["opacity"], 0.05, 1.0, float(fallback.get("opacity", 1.0)))
+        if "arrow_size" in merged:
+            merged["arrow_size"] = _bounded_float(merged["arrow_size"], 4.0, 96.0, float(fallback.get("arrow_size", 12)))
+        if "font_size" in merged:
+            merged["font_size"] = _bounded_int(merged["font_size"], 8, 160, int(fallback.get("font_size", 18)))
+        if "number_start" in merged:
+            merged["number_start"] = _bounded_int(merged["number_start"], 1, 9999, int(fallback.get("number_start", 1)))
+        if "block_size" in merged:
+            merged["block_size"] = _bounded_int(merged["block_size"], 2, 96, int(fallback.get("block_size", 12)))
+        for key in ("bold", "italic"):
+            if key in merged:
+                merged[key] = _normalize_bool(merged[key], bool(fallback.get(key, False)))
+        normalized_tools[tool] = merged
+    return {
+        "schema_version": ANNOTATION_STYLE_SCHEMA_VERSION,
+        "active_tool": active_tool,
+        "tools": normalized_tools,
+    }
+
+
 def _normalize_capture_rect(value: object) -> CaptureRect | None:
     if isinstance(value, CaptureRect):
         rect = value.normalized()
@@ -555,6 +652,23 @@ def _bounded_int(value: object, minimum: int, maximum: int, default: int) -> int
     return max(minimum, min(maximum, number))
 
 
+def _bounded_float(
+    value: object,
+    minimum: float,
+    maximum: float,
+    default: float,
+) -> float:
+    try:
+        if isinstance(value, bool):
+            raise ValueError
+        number = float(value)
+    except (TypeError, ValueError, OverflowError):
+        return float(default)
+    if not math.isfinite(number):
+        return float(default)
+    return max(float(minimum), min(float(maximum), number))
+
+
 def _normalize_json_object(value: object) -> dict[str, object]:
     if not isinstance(value, dict):
         return {}
@@ -595,6 +709,7 @@ def _reject_non_finite_json_constant(value: str) -> object:
 
 
 __all__ = [
+    "ANNOTATION_STYLE_SCHEMA_VERSION",
     "AfterCaptureTask",
     "CaptureMode",
     "CollisionPolicy",
@@ -609,6 +724,7 @@ __all__ = [
     "ScreenshotSettingsIO",
     "UnsupportedScreenshotSettingsVersion",
     "default_hotkeys",
+    "default_annotation_styles",
     "screenshot_settings_directory",
     "screenshot_settings_file_path",
     "settings_file_path",

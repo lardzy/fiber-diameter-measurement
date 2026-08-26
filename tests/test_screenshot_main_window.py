@@ -536,11 +536,16 @@ class ScreenshotMainWindowTests(unittest.TestCase):
         finally:
             window.close()
 
-    def test_main_settings_save_preserves_agent_owned_region_and_cu5_selector(self) -> None:
+    def test_main_settings_save_preserves_agent_owned_runtime_fields(self) -> None:
         window = self._window()
         persisted = ScreenshotSettings(
             last_region=CaptureRect(-20, 30, 400, 300),
             cu5_selector={"class_name": "cwndforsdk", "control_id": 1201},
+            annotation_styles={
+                "schema_version": 1,
+                "active_tool": "arrow",
+                "tools": {"arrow": {"color": "#123456", "arrow_size": 24}},
+            },
         )
         try:
             window._screenshot_settings.enabled = True  # noqa: SLF001
@@ -557,9 +562,11 @@ class ScreenshotMainWindowTests(unittest.TestCase):
             self.assertTrue(saved.enabled)
             self.assertEqual(saved.last_region, persisted.last_region)
             self.assertEqual(saved.cu5_selector, persisted.cu5_selector)
+            self.assertEqual(saved.annotation_styles, persisted.normalized().annotation_styles)
             payload = window._screenshot_settings_update_payload()  # noqa: SLF001
             self.assertNotIn("last_region", payload)
             self.assertNotIn("cu5_selector", payload)
+            self.assertNotIn("annotation_styles", payload)
         finally:
             window.close()
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import replace
 import math
 from pathlib import Path
+import re
 
 from PySide6.QtCore import Signal
 from PySide6.QtGui import QKeySequence
@@ -149,8 +150,12 @@ class ScreenshotSettingsPage(QWidget):
         behavior_row = QWidget(output_group)
         behavior_layout = QHBoxLayout(behavior_row)
         behavior_layout.setContentsMargins(0, 0, 0, 0)
-        self.editor_checkbox = QCheckBox("打开标注编辑器", behavior_row)
+        self.editor_checkbox = QCheckBox("交互截图后进入标注", behavior_row)
         self.editor_checkbox.setChecked(self._initial_settings.show_editor)
+        self.editor_checkbox.setToolTip(
+            "适用于区域、智能窗口、窗口、活动窗口、显示器和全屏截图；"
+            "CU 系列实时预览与上次区域始终即时输出。"
+        )
         self.notification_checkbox = QCheckBox("显示完成通知", behavior_row)
         self.notification_checkbox.setChecked(self._initial_settings.notification)
         self.cursor_checkbox = QCheckBox("包含鼠标指针", behavior_row)
@@ -160,6 +165,13 @@ class ScreenshotSettingsPage(QWidget):
         behavior_layout.addWidget(self.cursor_checkbox)
         behavior_layout.addStretch(1)
         output_form.addRow("行为", behavior_row)
+        editor_hint = QLabel(
+            "标注关闭时，交互截图会按保存与复制设置立即输出；"
+            "“CU 系列实时预览”和“上次区域”不进入标注。",
+            output_group,
+        )
+        editor_hint.setWordWrap(True)
+        output_form.addRow("标注范围", editor_hint)
 
         self.delay_spin = NoWheelSpinBox(output_group)
         self.delay_spin.setRange(0, 60_000)
@@ -181,7 +193,8 @@ class ScreenshotSettingsPage(QWidget):
             self.hotkey_edits[mode] = edit
             hotkey_form.addRow(label, edit)
         hotkey_hint = QLabel(
-            "快捷键由常驻进程在 Windows 全局注册；若被其它软件占用，会保留原绑定并明确提示。",
+            "可直接按下 Print Screen、Menu、` / ·、字母数字、F1–F24、"
+            "导航键、数字小键盘及常见媒体键；若组合被占用，会保留原绑定并提示。",
             hotkey_group,
         )
         hotkey_hint.setWordWrap(True)
@@ -444,7 +457,11 @@ class ScreenshotSettingsPage(QWidget):
 def _portable_sequence(value: str) -> str:
     # Qt calls the Print Screen key "Print" in PortableText.  Accept the more
     # familiar persisted spelling as a compatibility alias.
-    return str(value or "").replace("PrintScreen", "Print")
+    return re.sub(
+        r"(?i)(?:print[\s_-]*screen|prt[\s_-]*scn?|snapshot|sysreq)",
+        "Print",
+        str(value or ""),
+    )
 
 
 def _safe_int(value: object) -> int | None:

@@ -42,6 +42,49 @@ class CaptureMode(str, Enum):
         return cls(token)
 
 
+INSTANT_CAPTURE_MODES = frozenset({CaptureMode.LAST_REGION, CaptureMode.CU5})
+ANNOTATABLE_CAPTURE_MODES = frozenset(
+    {
+        CaptureMode.REGION,
+        CaptureMode.SMART,
+        CaptureMode.WINDOW,
+        CaptureMode.ACTIVE_WINDOW,
+        CaptureMode.DISPLAY,
+        CaptureMode.FULL_SCREEN,
+    }
+)
+
+
+def should_open_annotation(
+    mode: CaptureMode | str,
+    requested: bool | None,
+    *,
+    default: bool = False,
+) -> bool:
+    """Resolve the single annotation policy shared by every capture entrypoint."""
+
+    parsed = CaptureMode.parse(mode)
+    if parsed in INSTANT_CAPTURE_MODES:
+        return False
+    if parsed not in ANNOTATABLE_CAPTURE_MODES:
+        return False
+    return bool(default if requested is None else requested)
+
+
+def _optional_bool(value: object) -> bool:
+    if isinstance(value, bool):
+        return value
+    if isinstance(value, int) and value in (0, 1):
+        return bool(value)
+    if isinstance(value, str):
+        token = value.strip().casefold()
+        if token in {"true", "1", "yes", "on"}:
+            return True
+        if token in {"false", "0", "no", "off"}:
+            return False
+    return bool(value)
+
+
 @dataclass(frozen=True, slots=True)
 class CaptureRect:
     """A rectangle in native desktop pixels.
@@ -168,7 +211,10 @@ class CaptureRequest:
     target_handle: int = 0
     display_name: str = ""
     cursor_position: QPoint | None = None
-    open_editor: bool = True
+    # ``None`` deliberately means "follow the persisted preference".  Keeping
+    # this tri-state prevents IPC/CLI defaults from accidentally becoming an
+    # explicit request to open the editor.
+    open_editor: bool | None = None
     metadata: dict[str, object] = field(default_factory=dict, compare=False, hash=False)
     include_cursor: bool = False
 
@@ -193,7 +239,11 @@ class CaptureRequest:
             target_handle=max(0, int(payload.get("target_handle", 0) or 0)),
             display_name=str(payload.get("display_name", "") or ""),
             include_cursor=bool(payload.get("include_cursor", False)),
-            open_editor=bool(payload.get("open_editor", True)),
+            open_editor=(
+                _optional_bool(payload.get("open_editor"))
+                if "open_editor" in payload
+                else None
+            ),
             metadata={key: value for key, value in payload.items() if key not in {
                 "mode", "delay_ms", "region", "target_handle", "display_name",
                 "include_cursor", "open_editor"
@@ -927,7 +977,9 @@ class CaptureCoordinator(QObject):
         if request.mode is CaptureMode.REGION:
             return CaptureSelection(request.region) if request.region is not None and request.region.valid else None
         if request.mode is CaptureMode.LAST_REGION:
-            return CaptureSelection(self._last_region) if self._last_region is not None else None
+            if self._last_region is None:
+                raise RuntimeError("尚无可用的上次区域。")
+            return CaptureSelection(self._last_region)
         if request.mode is CaptureMode.FULL_SCREEN:
             desktop = union_rect(screen.physical_rect for screen in self.screens())
             return CaptureSelection(desktop) if desktop is not None else None
@@ -1018,8 +1070,6 @@ class CaptureCoordinator(QObject):
         image = _capture_with_optional_cursor(method, argument, request.include_cursor)
         if image is None or image.isNull():
             raise RuntimeError("未能取得有效截图。")
-        if request.mode in {CaptureMode.REGION, CaptureMode.LAST_REGION}:
-            self._last_region = rect
         return CapturedFrame(
             image=image.copy(),
             rect=rect,
@@ -1055,12 +1105,14 @@ def _capture_with_optional_cursor(method, argument, include_cursor: bool) -> QIm
 
 
 __all__ = [
+    "ANNOTATABLE_CAPTURE_MODES",
     "CaptureCoordinator",
     "CaptureMode",
     "CaptureRect",
     "CaptureRequest",
     "CaptureSelection",
     "CapturedFrame",
+    "INSTANT_CAPTURE_MODES",
     "QtScreenshotBackend",
     "ScreenInfo",
     "ScreenshotBackend",
@@ -1070,6 +1122,7 @@ __all__ = [
     "default_screenshot_backend",
     "qt_screen_infos",
     "rank_cu5_candidates",
+    "should_open_annotation",
     "union_rect",
     "windows_screen_infos",
 ]

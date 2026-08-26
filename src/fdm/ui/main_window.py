@@ -19196,6 +19196,7 @@ class MainWindow(QMainWindow):
                 return replace(
                     requested,
                     last_region=persisted.last_region,
+                    annotation_styles=dict(persisted.annotation_styles),
                     cu5_selector=(
                         dict(persisted.cu5_selector)
                         if preserve_agent_owned
@@ -19233,6 +19234,7 @@ class MainWindow(QMainWindow):
         # last capture region or CU-family selector fingerprint.
         payload.pop("last_region", None)
         payload.pop("cu5_selector", None)
+        payload.pop("annotation_styles", None)
         return payload
 
     def _adopt_agent_owned_screenshot_settings(self, result: object) -> None:

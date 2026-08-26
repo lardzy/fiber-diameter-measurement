@@ -84,6 +84,28 @@ class ScreenshotSettingsPageTests(unittest.TestCase):
 
         self.assertEqual(actual.hotkeys[CaptureMode.REGION], HotkeyBinding("Menu"))
 
+    def test_middle_dot_key_is_preserved_by_the_settings_editor(self) -> None:
+        page = ScreenshotSettingsPage(ScreenshotSettings())
+        try:
+            page.hotkey_edits[CaptureMode.REGION].setKeySequence(QKeySequence("·"))
+            actual = page.settings()
+        finally:
+            page.close()
+
+        self.assertEqual(actual.hotkeys[CaptureMode.REGION], HotkeyBinding("·"))
+
+    def test_hotkey_hint_lists_extended_physical_keys(self) -> None:
+        page = ScreenshotSettingsPage(ScreenshotSettings())
+        try:
+            hints = [
+                label.text()
+                for label in page.findChildren(type(page.agent_status_label))
+            ]
+        finally:
+            page.close()
+
+        self.assertTrue(any("Print Screen" in text and "·" in text for text in hints))
+
     def test_switching_formats_preserves_each_formats_quality(self) -> None:
         page = ScreenshotSettingsPage(
             ScreenshotSettings(

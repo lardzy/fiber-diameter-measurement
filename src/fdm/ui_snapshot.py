@@ -10,7 +10,7 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 from PySide6.QtCore import QEventLoop, QPoint, QTimer  # noqa: E402
-from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter  # noqa: E402
+from PySide6.QtGui import QColor, QImage, QLinearGradient, QPainter, QPen  # noqa: E402
 from PySide6.QtWidgets import QApplication  # noqa: E402
 
 from fdm.analysis_artifacts import (  # noqa: E402
@@ -48,6 +48,12 @@ from fdm.services.image_batch import (  # noqa: E402
     BatchItemResourceEstimate,
     BatchResourceEstimate,
 )
+from fdm.services.screenshot_capture import (  # noqa: E402
+    CaptureMode,
+    CaptureRect,
+    CapturedFrame,
+    ScreenInfo,
+)
 from fdm.services.raster_export import RasterExportFormat  # noqa: E402
 from fdm.services.raster_io import qimage_to_raster_plane  # noqa: E402
 from fdm.settings import AppSettings, RawRecordTemplate  # noqa: E402
@@ -70,6 +76,8 @@ from fdm.ui.advanced_analysis_dialog import (  # noqa: E402
 from fdm.ui.image_analysis_controller import AnalysisTool  # noqa: E402
 from fdm.ui.raster_export_dialog import CurrentImageExportDialog  # noqa: E402
 from fdm.ui.theme import apply_application_theme  # noqa: E402
+from fdm.ui.screenshot_annotation_overlay import InlineAnnotationOverlay  # noqa: E402
+from fdm.ui.screenshot_editor import EditCommand, EditorTool  # noqa: E402
 
 
 UI_SNAPSHOT_SCENARIOS = (
@@ -93,6 +101,8 @@ UI_SNAPSHOT_SCENARIOS = (
     "roi-workspace",
     "analysis-results",
     "advanced-analysis",
+    "screenshot-annotation",
+    "screenshot-annotation-small",
 )
 
 IMAGE_PROCESSING_SNAPSHOT_OPERATIONS = {
@@ -329,7 +339,7 @@ def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument(
         "--settings-page",
-        choices=("general", "measurement", "annotation", "analysis", "area", "acquisition", "export"),
+        choices=("general", "measurement", "annotation", "analysis", "area", "acquisition", "screenshot", "export"),
         default="general",
     )
     parser.add_argument(
@@ -392,6 +402,82 @@ def _apply_measurement_fullscreen_scene(window: MainWindow) -> bool:
     return bool(controller is not None and controller.is_active)
 
 
+def _demo_screenshot_annotation(
+    *,
+    width: int,
+    height: int,
+    scale: float,
+    small: bool,
+) -> InlineAnnotationOverlay:
+    logical_width = max(640, int(width))
+    logical_height = max(480, int(height))
+    physical_width = max(1, round(logical_width * scale))
+    physical_height = max(1, round(logical_height * scale))
+    screen = ScreenInfo(
+        "review",
+        CaptureRect(0, 0, logical_width, logical_height),
+        CaptureRect(0, 0, physical_width, physical_height),
+        scale,
+        True,
+    )
+    capture_logical_width = 180 if small else min(980, logical_width - 220)
+    capture_logical_height = 110 if small else min(560, logical_height - 230)
+    capture_logical_x = max(20, (logical_width - capture_logical_width) // 2)
+    capture_logical_y = max(20, (logical_height - capture_logical_height) // 2 - 20)
+    capture = CaptureRect(
+        round(capture_logical_x * scale),
+        round(capture_logical_y * scale),
+        round(capture_logical_width * scale),
+        round(capture_logical_height * scale),
+    )
+    image = QImage(capture.width, capture.height, QImage.Format.Format_ARGB32)
+    painter = QPainter(image)
+    gradient = QLinearGradient(0, 0, image.width(), image.height())
+    gradient.setColorAt(0.0, QColor("#d6e4ea"))
+    gradient.setColorAt(0.55, QColor("#8fb2bd"))
+    gradient.setColorAt(1.0, QColor("#4d6a72"))
+    painter.fillRect(image.rect(), gradient)
+    painter.setPen(QPen(QColor(255, 255, 255, 42), max(1, round(scale))))
+    for offset in range(-image.height(), image.width(), max(30, round(70 * scale))):
+        painter.drawLine(offset, 0, offset + image.height(), image.height())
+    painter.end()
+    frame = CapturedFrame(image, capture, CaptureMode.REGION)
+    overlay = InlineAnnotationOverlay(frame, (screen,))
+    if not small:
+        overlay.model.add_command(
+            EditCommand.from_drag(
+                EditorTool.RECTANGLE,
+                (70 * scale, 62 * scale),
+                (360 * scale, 250 * scale),
+                color="#ff5252",
+                stroke_width=3 * scale,
+            )
+        )
+        overlay.model.add_command(
+            EditCommand(
+                EditorTool.ARROW,
+                points=((410 * scale, 120 * scale), (650 * scale, 245 * scale)),
+                color="#ffca28",
+                stroke_width=4 * scale,
+                arrow_size=18 * scale,
+            )
+        )
+        overlay.model.add_command(
+            EditCommand(
+                EditorTool.TEXT,
+                points=((390 * scale, 80 * scale),),
+                rect=(380 * scale, 40 * scale, 310 * scale, 70 * scale),
+                text="内联标注 · 中文多行\nShift+Enter 换行",
+                color="#ffffff",
+                background_color="#B31A222A",
+                font_size=round(20 * scale),
+            )
+        )
+        overlay.set_tool(EditorTool.SELECT)
+        overlay.model.set_selection((overlay.model.commands[1].id,))
+    return overlay
+
+
 def main() -> int:
     args = _parse_args()
     if not 0.75 <= args.scale <= 3.0:
@@ -444,9 +530,16 @@ def main() -> int:
         patch("fdm.ui.main_window.AppSettingsIO.load", return_value=settings),
         patch("fdm.ui.main_window.AppSettingsIO.save", return_value=None),
     ):
-        if args.scenario == "settings":
+        if args.scenario in {"screenshot-annotation", "screenshot-annotation-small"}:
+            widget = _demo_screenshot_annotation(
+                width=args.width,
+                height=args.height,
+                scale=args.scale,
+                small=args.scenario.endswith("-small"),
+            )
+        elif args.scenario == "settings":
             widget = SettingsDialog(settings, document=document)
-            page_order = ("general", "measurement", "annotation", "analysis", "area", "acquisition", "export")
+            page_order = ("general", "measurement", "annotation", "analysis", "area", "acquisition", "screenshot", "export")
             widget._settings_navigation.setCurrentRow(page_order.index(args.settings_page))
         elif args.scenario == "current-image-export":
             widget = CurrentImageExportDialog(
