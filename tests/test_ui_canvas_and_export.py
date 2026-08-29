@@ -9515,7 +9515,10 @@ class CanvasAndExportTests(unittest.TestCase):
                 ["直径/长度结果", "面积结果", "计数点编号", "测量线与端点"],
             )
             self.assertEqual(self._group_titles_in_tab(dialog, 1), ["默认视图", "位置与长度", "样式"])
-            self.assertEqual(self._group_titles_in_tab(dialog, 2), ["景深合成默认参数", "魔棒分割"])
+            self.assertEqual(
+                self._group_titles_in_tab(dialog, 2),
+                ["景深合成默认参数", "魔棒分割", "离线分割引擎（高级）"],
+            )
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 4),
                 ["采集参数配置", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],

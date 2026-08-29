@@ -79,7 +79,9 @@ from fdm.settings import (
     resolve_resource_relative_path,
     to_app_relative_path,
     to_resource_relative_path,
+    settings_directory,
 )
+from fdm.services.segmentation_engines import OfflineSegmentationEngineService
 from fdm.services.export_service import ExportImageRenderMode, ExportScope, ExportSelection
 from fdm.services.raster_export import (
     RasterEncodingOptions,
@@ -97,6 +99,7 @@ from fdm.services.digital_slide_store import (
 from fdm.services.raw_record_export import RAW_RECORD_FIELD_NAMES
 from fdm.screenshot_settings import ScreenshotSettings
 from fdm.ui.screenshot_settings_page import ScreenshotSettingsPage
+from fdm.ui.segmentation_engine_settings import OfflineSegmentationEngineDialog
 
 
 RAW_RECORD_DATA_SOURCE_ITEMS = [
@@ -1765,6 +1768,10 @@ class SettingsDialog(QDialog):
         ]
         self._digital_slide_active_profile_id = settings.digital_slide_active_profile_id
         self._digital_slide_profile_switching = False
+        self._offline_segmentation_engine_packs_draft = [
+            pack.normalized_copy()
+            for pack in settings.offline_segmentation_engine_packs
+        ]
         self._request_scale_anchor_pick = False
         self._raw_record_templates_data = [template.normalized_copy() for template in settings.raw_record_templates]
         self._raw_record_current_template_index = -1
@@ -2091,6 +2098,9 @@ class SettingsDialog(QDialog):
                     self._area_mapping_table,
                     defaults_dialog._area_mapping_table,
                 )
+            elif page_index == 3:
+                self._offline_segmentation_engine_packs_draft = []
+                self._update_offline_engine_summary()
             elif page_index == 6:
                 self._screenshot_settings_widget.restore_defaults()
             elif page_index == 7:
@@ -2210,6 +2220,10 @@ class SettingsDialog(QDialog):
             fiber_quick_roi_enabled=self._fiber_quick_roi_checkbox.isChecked(),
             fiber_quick_edge_trim_enabled=self._fiber_quick_edge_trim_checkbox.isChecked(),
             fiber_quick_line_extension_px=self._fiber_quick_line_extension_spin.value(),
+            offline_segmentation_engine_packs=[
+                pack.normalized_copy()
+                for pack in self._offline_segmentation_engine_packs_draft
+            ],
             recent_export_dir=self._initial_settings.recent_export_dir,
             recent_project_dir=self._initial_settings.recent_project_dir,
             area_model_mappings=self.area_model_mappings(),
@@ -2676,10 +2690,60 @@ class SettingsDialog(QDialog):
         magic_segment_form.addRow("", quick_hint)
         magic_segment_form.addRow("", magic_hint)
 
+        offline_engine_group = QGroupBox("离线分割引擎（高级）")
+        offline_engine_layout = QVBoxLayout(offline_engine_group)
+        offline_engine_hint = QLabel(
+            "离线导入、校验和诊断 SAM3 / μSAM 引擎包。此处仅管理资源，"
+            "不会改变现有同类扩选或标准 EdgeSAM 工具。"
+        )
+        offline_engine_hint.setWordWrap(True)
+        self._offline_engine_summary_label = QLabel()
+        self._offline_engine_summary_label.setWordWrap(True)
+        self._offline_engine_manage_button = QPushButton("管理离线引擎…")
+        self._offline_engine_manage_button.clicked.connect(
+            self._open_offline_segmentation_engine_manager
+        )
+        offline_engine_layout.addWidget(offline_engine_hint)
+        offline_engine_layout.addWidget(self._offline_engine_summary_label)
+        offline_engine_layout.addWidget(self._offline_engine_manage_button)
+        self._update_offline_engine_summary()
+
         layout.addWidget(focus_stack_group)
         layout.addWidget(magic_segment_group)
+        layout.addWidget(offline_engine_group)
         layout.addStretch(1)
         return self._wrap_settings_page(page)
+
+    def _update_offline_engine_summary(self) -> None:
+        label = getattr(self, "_offline_engine_summary_label", None)
+        if label is None:
+            return
+        by_id = {
+            pack.engine_id: f"{pack.display_name} {pack.version}"
+            for pack in self._offline_segmentation_engine_packs_draft
+        }
+        label.setText(
+            "；".join(
+                (
+                    f"SAM3：{by_id.get('sam3', '未配置')}",
+                    f"μSAM：{by_id.get('micro_sam', '未配置')}",
+                )
+            )
+        )
+
+    def _open_offline_segmentation_engine_manager(self) -> None:
+        service = OfflineSegmentationEngineService(
+            settings_directory() / "segmentation-engines"
+        )
+        dialog = OfflineSegmentationEngineDialog(
+            self._offline_segmentation_engine_packs_draft,
+            service=service,
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        self._offline_segmentation_engine_packs_draft = dialog.records()
+        self._update_offline_engine_summary()
 
     def _build_scale_overlay_tab(self, settings: AppSettings) -> QWidget:
         page = QWidget()

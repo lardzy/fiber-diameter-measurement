@@ -29,6 +29,7 @@ _OVERVIEW_FOCUS_DEBOUNCE_MS = 180
 
 class DigitalSlideCanvas(DocumentCanvas):
     viewportChanged = Signal(int, int, int)
+    focusChanged = Signal(int)
     navigationModeChanged = Signal(str)
     viewportBufferFailed = Signal(str)
     overviewImageChanged = Signal(QImage)
@@ -180,6 +181,9 @@ class DigitalSlideCanvas(DocumentCanvas):
     def viewport_origin(self) -> Point:
         return Point(self._viewport_origin.x, self._viewport_origin.y)
 
+    def mounted_image_origin(self) -> Point:
+        return self.viewport_origin()
+
     def navigation_mode(self) -> str:
         return self._navigation_mode
 
@@ -326,6 +330,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         if focus_index == self._focus_index:
             return
         self._focus_index = focus_index
+        self.focusChanged.emit(focus_index)
         self._invalidate_viewport_buffer()
         self._reload_viewport()
         if not self._overview_enabled:
@@ -858,7 +863,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         if desired.isEmpty():
             return
         store_path = self._slide_store.path
-        focus_index = self._overview_target_focus_index()
+        # The navigation overview may intentionally stay on the middle focus
+        # plane, but the mounted viewport must always render the actual focus
+        # selected by the user.
+        focus_index = int(self._focus_index)
         metadata = self._slide_manifest.metadata if isinstance(self._slide_manifest.metadata, dict) else {}
         try:
             blend_width = int(metadata.get("blend_width", 0) or 0)

@@ -4,6 +4,7 @@ from dataclasses import dataclass, field, replace
 from pathlib import Path
 import json
 import os
+import re
 import runpy
 import sys
 from uuid import uuid4
@@ -239,6 +240,65 @@ class MagicSegmentModelVariant:
 class ComplexMagicSegmentModelVariant:
     LIGHT_HQ_SAM = "light_hq_sam"
     EFFICIENTSAM_S = "efficientsam_s"
+
+
+@dataclass(slots=True)
+class OfflineSegmentationEnginePack:
+    engine_id: str
+    display_name: str
+    version: str
+    path: str
+    manifest_sha256: str = ""
+    device: str = "cpu"
+    managed: bool = False
+
+    def normalized_copy(self) -> "OfflineSegmentationEnginePack":
+        engine_id = str(self.engine_id or "").strip().lower()
+        if engine_id not in {"sam3", "micro_sam"}:
+            raise ValueError(f"不支持的离线分割引擎：{self.engine_id}")
+        path = str(self.path or "").strip()
+        if not path:
+            raise ValueError("离线分割引擎路径不能为空。")
+        manifest_sha256 = str(self.manifest_sha256 or "").strip().lower()
+        if not re.fullmatch(r"[0-9a-f]{64}", manifest_sha256):
+            raise ValueError("离线分割引擎 manifest SHA-256 无效。")
+        if str(self.device or "cpu").strip().lower() != "cpu":
+            raise ValueError("离线分割引擎配置必须提供纯 CPU 路径。")
+        return OfflineSegmentationEnginePack(
+            engine_id=engine_id,
+            display_name=str(self.display_name or engine_id).strip()[:120] or engine_id,
+            version=str(self.version or "unknown").strip()[:80] or "unknown",
+            path=str(Path(path).expanduser()),
+            manifest_sha256=manifest_sha256,
+            device="cpu",
+            managed=bool(self.managed),
+        )
+
+    def to_dict(self) -> dict[str, object]:
+        value = self.normalized_copy()
+        return {
+            "engine_id": value.engine_id,
+            "display_name": value.display_name,
+            "version": value.version,
+            "path": value.path,
+            "manifest_sha256": value.manifest_sha256,
+            "device": value.device,
+            "managed": value.managed,
+        }
+
+    @classmethod
+    def from_dict(cls, payload: object) -> "OfflineSegmentationEnginePack":
+        if not isinstance(payload, dict):
+            raise ValueError("离线分割引擎配置不是有效对象。")
+        return cls(
+            engine_id=str(payload.get("engine_id", "")),
+            display_name=str(payload.get("display_name", "")),
+            version=str(payload.get("version", "")),
+            path=str(payload.get("path", "")),
+            manifest_sha256=str(payload.get("manifest_sha256", "")),
+            device=str(payload.get("device", "cpu")),
+            managed=bool(payload.get("managed", False)),
+        ).normalized_copy()
 
 
 class MagicSegmentToolMode:
@@ -741,6 +801,9 @@ class AppSettings:
     fiber_quick_roi_enabled: bool = True
     fiber_quick_edge_trim_enabled: bool = True
     fiber_quick_line_extension_px: float = 0.0
+    offline_segmentation_engine_packs: list[OfflineSegmentationEnginePack] = field(
+        default_factory=list
+    )
     main_window_geometry: str = ""
     main_window_state: str = ""
     measurement_results_header_state: str = ""
@@ -901,6 +964,21 @@ class AppSettings:
             self.magic_segment_small_object_roi_area_threshold_px
         )
         normalized.fiber_quick_line_extension_px = self._normalize_fiber_quick_line_extension_px(self.fiber_quick_line_extension_px)
+        normalized.offline_segmentation_engine_packs = []
+        seen_engine_ids: set[str] = set()
+        for pack in self.offline_segmentation_engine_packs:
+            try:
+                normalized_pack = (
+                    pack.normalized_copy()
+                    if isinstance(pack, OfflineSegmentationEnginePack)
+                    else OfflineSegmentationEnginePack.from_dict(pack)
+                )
+            except (TypeError, ValueError):
+                continue
+            if normalized_pack.engine_id in seen_engine_ids:
+                continue
+            seen_engine_ids.add(normalized_pack.engine_id)
+            normalized.offline_segmentation_engine_packs.append(normalized_pack)
         normalized.recent_export_dir = self._normalize_recent_directory(self.recent_export_dir)
         normalized.recent_project_dir = self._normalize_recent_directory(self.recent_project_dir)
         normalized.area_weights_dir = self._normalize_weights_dir(self.area_weights_dir)
@@ -1475,6 +1553,10 @@ class AppSettings:
             "fiber_quick_roi_enabled": normalized.fiber_quick_roi_enabled,
             "fiber_quick_edge_trim_enabled": normalized.fiber_quick_edge_trim_enabled,
             "fiber_quick_line_extension_px": normalized.fiber_quick_line_extension_px,
+            "offline_segmentation_engine_packs": [
+                pack.to_dict()
+                for pack in normalized.offline_segmentation_engine_packs
+            ],
             "main_window_geometry": normalized.main_window_geometry,
             "main_window_state": normalized.main_window_state,
             "measurement_results_header_state": normalized.measurement_results_header_state,
@@ -1664,6 +1746,21 @@ class AppSettings:
         settings.magic_segment_model_variant = cls._normalize_magic_segment_model_variant(
             payload.get("magic_segment_model_variant", settings.magic_segment_model_variant)
         )
+        raw_engine_packs = payload.get("offline_segmentation_engine_packs", [])
+        if isinstance(raw_engine_packs, list):
+            for index, item in enumerate(raw_engine_packs):
+                try:
+                    settings.offline_segmentation_engine_packs.append(
+                        OfflineSegmentationEnginePack.from_dict(item)
+                    )
+                except (TypeError, ValueError) as exc:
+                    settings.load_issues.append(
+                        {
+                            "kind": "offline_segmentation_engine_pack",
+                            "index": index,
+                            "message": str(exc),
+                        }
+                    )
         settings.magic_segment_fill_draft_holes_enabled = bool(
             payload.get(
                 "magic_segment_fill_draft_holes_enabled",

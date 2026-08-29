@@ -2724,10 +2724,15 @@ class DocumentCanvas(QWidget):
             points.extend(self._magic_segment.primary_polygon)
         if len(points) < 3:
             return None
-        min_x = max(0, int(math.floor(min(point.x for point in points))))
-        min_y = max(0, int(math.floor(min(point.y for point in points))))
-        max_x = min(self._image.width(), int(math.ceil(max(point.x for point in points))) + 1)
-        max_y = min(self._image.height(), int(math.ceil(max(point.y for point in points))) + 1)
+        origin_x, origin_y = self._magic_source_origin(
+            self._magic_segment.primary_debug_payload
+        )
+        source_right = origin_x + self._image.width()
+        source_bottom = origin_y + self._image.height()
+        min_x = max(origin_x, int(math.floor(min(point.x for point in points))))
+        min_y = max(origin_y, int(math.floor(min(point.y for point in points))))
+        max_x = min(source_right, int(math.ceil(max(point.x for point in points))) + 1)
+        max_y = min(source_bottom, int(math.ceil(max(point.y for point in points))) + 1)
         if max_x <= min_x or max_y <= min_y:
             return None
         return min_x, min_y, max_x, max_y
@@ -3062,6 +3067,7 @@ class DocumentCanvas(QWidget):
         self._magic_segment.busy = False
         stage = self._magic_segment.pending_stage
         debug_payload = dict(debug_payload or {})
+        origin_x, origin_y = self._magic_source_origin(debug_payload)
         if stage == MagicSegmentOperationMode.SUBTRACT:
             self._update_magic_small_object_workspace(debug_payload)
             if mask is None and debug_payload.get("small_object_reject_reason"):
@@ -3081,9 +3087,17 @@ class DocumentCanvas(QWidget):
             selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(draft_mask)
             draft_mask = selected_mask
             if selected_rings:
-                draft_rings = self._clone_magic_rings(selected_rings)
+                draft_rings = self._translate_magic_rings(
+                    selected_rings,
+                    origin_x,
+                    origin_y,
+                )
             if len(selected_polygon) >= 3:
-                draft_polygon = self._clone_magic_polygon(selected_polygon)
+                draft_polygon = self._translate_magic_polygon(
+                    selected_polygon,
+                    origin_x,
+                    origin_y,
+                )
         if (
             draft_mask is not None
             and self._tool_mode == MagicSegmentToolMode.STANDARD
@@ -3092,8 +3106,16 @@ class DocumentCanvas(QWidget):
             filled_mask = fill_magic_draft_internal_holes(draft_mask)
             selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(filled_mask)
             draft_mask = selected_mask
-            draft_rings = self._clone_magic_rings(selected_rings)
-            draft_polygon = self._clone_magic_polygon(selected_polygon)
+            draft_rings = self._translate_magic_rings(
+                selected_rings,
+                origin_x,
+                origin_y,
+            )
+            draft_polygon = self._translate_magic_polygon(
+                selected_polygon,
+                origin_x,
+                origin_y,
+            )
         if len(draft_polygon) < 3 and draft_rings:
             draft_polygon = self._clone_magic_polygon(draft_rings[0])
         if len(draft_polygon) < 3 and not draft_rings:
@@ -3341,6 +3363,7 @@ class DocumentCanvas(QWidget):
         document_id = self._document.id if self._document is not None else None
         primary_polygon = self._clone_magic_polygon(self._magic_segment.primary_polygon)
         primary_mask = normalize_magic_draft_mask(self._magic_segment.primary_mask)
+        primary_debug_payload = dict(self._magic_segment.primary_debug_payload)
         result: dict[str, object] = {
             "committed": False,
             "hole_count": 0,
@@ -3371,10 +3394,21 @@ class DocumentCanvas(QWidget):
             self.clear_magic_segment_session()
             result["result_empty"] = True
             return result
+        origin_x, origin_y = self._magic_source_origin(
+            primary_debug_payload
+        )
         if selected_rings:
-            area_rings_points = self._clone_magic_rings(selected_rings)
+            area_rings_points = self._translate_magic_rings(
+                selected_rings,
+                origin_x,
+                origin_y,
+            )
         if len(selected_polygon) >= 3:
-            polygon_points = self._clone_magic_polygon(selected_polygon)
+            polygon_points = self._translate_magic_polygon(
+                selected_polygon,
+                origin_x,
+                origin_y,
+            )
         result["hole_count"] = int(geometry_stats.get("hole_count", 0) or 0)
         self.clear_magic_segment_session()
         if document_id is None or len(polygon_points) < 3:
@@ -3388,6 +3422,7 @@ class DocumentCanvas(QWidget):
                 "polygon_px": polygon_points,
                 "area_rings_px": area_rings_points,
                 "exact_area_px": magic_mask_area_px(selected_mask),
+                "debug_payload": primary_debug_payload,
             },
         )
         result["committed"] = True
@@ -3419,7 +3454,51 @@ class DocumentCanvas(QWidget):
                 normalized.append(cloned)
         return normalized
 
-    def _magic_polygon_to_mask(self, polygon_points: list[Point]):
+    @staticmethod
+    def _magic_source_origin(payload: dict[str, object] | None) -> tuple[int, int]:
+        source = payload.get("segmentation_source") if isinstance(payload, dict) else None
+        origin = source.get("origin_px") if isinstance(source, dict) else None
+        if not isinstance(origin, (list, tuple)) or len(origin) < 2:
+            return 0, 0
+        try:
+            return int(round(float(origin[0]))), int(round(float(origin[1])))
+        except (TypeError, ValueError):
+            return 0, 0
+
+    def _translate_magic_polygon(
+        self,
+        points: list[Point],
+        origin_x: int,
+        origin_y: int,
+    ) -> list[Point]:
+        return [
+            Point(float(point.x) + origin_x, float(point.y) + origin_y)
+            for point in points
+        ]
+
+    def _translate_magic_rings(
+        self,
+        rings: list[list[Point]],
+        origin_x: int,
+        origin_y: int,
+    ) -> list[list[Point]]:
+        return [
+            self._translate_magic_polygon(ring, origin_x, origin_y)
+            for ring in rings
+        ]
+
+    def mounted_image_origin(self) -> Point:
+        """Return the whole-document coordinate of the mounted raster's top-left."""
+
+        return Point(0.0, 0.0)
+
+    def _polygon_to_mounted_image_mask(
+        self,
+        polygon_points: list[Point],
+        *,
+        origin_x: int,
+        origin_y: int,
+    ):
         if self._image is None or len(polygon_points) < 3:
             return None
         try:
@@ -3430,8 +3509,8 @@ class DocumentCanvas(QWidget):
         contour = np.array(
             [
                 [
-                    int(clamp(round(point.x), 0, self._image.width() - 1)),
-                    int(clamp(round(point.y), 0, self._image.height() - 1)),
+                    int(clamp(round(point.x - origin_x), 0, self._image.width() - 1)),
+                    int(clamp(round(point.y - origin_y), 0, self._image.height() - 1)),
                 ]
                 for point in polygon_points
             ],
@@ -3443,6 +3522,28 @@ class DocumentCanvas(QWidget):
         if not mask.any():
             return None
         return mask.astype(bool)
+
+    def _magic_polygon_to_mask(self, polygon_points: list[Point]):
+        source_payload = self._magic_segment.primary_debug_payload.get(
+            "segmentation_source"
+        )
+        has_frozen_origin = (
+            isinstance(source_payload, dict)
+            and isinstance(source_payload.get("origin_px"), (list, tuple))
+            and len(source_payload.get("origin_px", ())) >= 2
+        )
+        origin_x, origin_y = self._magic_source_origin(
+            self._magic_segment.primary_debug_payload
+        )
+        if not has_frozen_origin:
+            mounted_origin = self.mounted_image_origin()
+            origin_x = int(round(mounted_origin.x))
+            origin_y = int(round(mounted_origin.y))
+        return self._polygon_to_mounted_image_mask(
+            polygon_points,
+            origin_x=origin_x,
+            origin_y=origin_y,
+        )
 
     def _selected_area_measurement(self) -> Measurement | None:
         if self._document is None:
@@ -3490,14 +3591,33 @@ class DocumentCanvas(QWidget):
         self._magic_segment.subtract_negative_points.clear()
         self._magic_segment.subtract_prompt_type = "positive"
         self._magic_segment.subtract_mask = self._clone_magic_mask(selected_mask)
-        self._magic_segment.subtract_rings = self._clone_magic_rings(selected_rings)
+        origin_x, origin_y = self._magic_source_origin(
+            self._magic_segment.primary_debug_payload
+        )
+        global_rings = self._translate_magic_rings(
+            selected_rings,
+            origin_x,
+            origin_y,
+        )
+        global_polygon = self._translate_magic_polygon(
+            selected_polygon if len(selected_polygon) >= 3 else selected_rings[0],
+            origin_x,
+            origin_y,
+        )
+        self._magic_segment.subtract_rings = self._clone_magic_rings(global_rings)
         self._magic_segment.subtract_polygon = self._clone_magic_polygon(
-            selected_polygon if len(selected_polygon) >= 3 else selected_rings[0]
+            global_polygon
         )
         self._magic_segment.subtract_debug_payload = {
             "manual_subtract_input_mode": self.current_magic_subtract_input_mode(),
             "manual_subtract_point_count": len(polygon_points),
             "manual_subtract_stats": stats,
+            "segmentation_source": dict(
+                self._magic_segment.primary_debug_payload.get(
+                    "segmentation_source",
+                    {},
+                )
+            ),
         }
         self._magic_segment.small_object_workspace_box = None
         self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
@@ -3509,13 +3629,16 @@ class DocumentCanvas(QWidget):
         if self._image is None:
             return None
         mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
+        mounted_origin = self.mounted_image_origin()
+        origin_x = int(round(mounted_origin.x))
+        origin_y = int(round(mounted_origin.y))
 
         def contour(points: list[Point]):
             return np.array(
                 [
                     [
-                        int(clamp(round(point.x), 0, self._image.width() - 1)),
-                        int(clamp(round(point.y), 0, self._image.height() - 1)),
+                        int(clamp(round(point.x - origin_x), 0, self._image.width() - 1)),
+                        int(clamp(round(point.y - origin_y), 0, self._image.height() - 1)),
                     ]
                     for point in points
                 ],
@@ -3551,7 +3674,14 @@ class DocumentCanvas(QWidget):
         if self._document is None or measurement is None or len(polygon_points) < 3:
             return False
         source_mask = self._area_measurement_to_mask(measurement)
-        subtract_mask = self._magic_polygon_to_mask(polygon_points)
+        mounted_origin = self.mounted_image_origin()
+        origin_x = int(round(mounted_origin.x))
+        origin_y = int(round(mounted_origin.y))
+        subtract_mask = self._polygon_to_mounted_image_mask(
+            polygon_points,
+            origin_x=origin_x,
+            origin_y=origin_y,
+        )
         if source_mask is None or subtract_mask is None:
             return self._reject_area_subtract("剔除区域无效，未修改")
         if not np.any(source_mask & subtract_mask):
@@ -3569,6 +3699,16 @@ class DocumentCanvas(QWidget):
             return self._reject_area_subtract("剔除结果无有效面积，未修改")
         if result_rings and len(result_polygon) < 3:
             result_polygon = list(result_rings[0])
+        result_polygon = self._translate_magic_polygon(
+            result_polygon,
+            origin_x,
+            origin_y,
+        )
+        result_rings = self._translate_magic_rings(
+            result_rings,
+            origin_x,
+            origin_y,
+        )
         self._cancel_area_drawing()
         self.measurementEdited.emit(
             self._document.id,

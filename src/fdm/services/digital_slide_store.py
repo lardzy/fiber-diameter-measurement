@@ -742,6 +742,50 @@ class DigitalSlideStore:
             )
         return tiles
 
+    def viewport_coverage_mask(
+        self,
+        *,
+        x: int,
+        y: int,
+        width: int,
+        height: int,
+        z_index: int,
+    ):
+        """Return valid stored-pixel coverage without decoding tile payloads."""
+
+        import numpy as np
+
+        width = max(1, int(width))
+        height = max(1, int(height))
+        x = int(x)
+        y = int(y)
+        x2 = x + width
+        y2 = y + height
+        conn = self._connection()
+        self._initialize_schema()
+        rows = conn.execute(
+            """
+            SELECT x, y, width, height
+            FROM tiles
+            WHERE z_index = ?
+              AND x < ?
+              AND y < ?
+              AND (x + width) > ?
+              AND (y + height) > ?
+            ORDER BY id ASC
+            """,
+            (int(z_index), x2, y2, x, y),
+        ).fetchall()
+        coverage = np.zeros((height, width), dtype=bool)
+        for row in rows:
+            left = max(0, int(row["x"]) - x)
+            top = max(0, int(row["y"]) - y)
+            right = min(width, int(row["x"]) + int(row["width"]) - x)
+            bottom = min(height, int(row["y"]) + int(row["height"]) - y)
+            if right > left and bottom > top:
+                coverage[top:bottom, left:right] = True
+        return coverage
+
     def iter_tiles(self) -> Iterator[tuple[DigitalSlideTile, QImage, str, int | None]]:
         conn = self._connection()
         self._initialize_schema()

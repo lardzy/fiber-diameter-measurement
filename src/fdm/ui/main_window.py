@@ -15,6 +15,8 @@ import shutil
 import sys
 import tempfile
 
+import numpy as np
+
 from PySide6.QtCore import QByteArray, QBuffer, QEasingCurve, QEvent, QEventLoop, QIODevice, QItemSelectionModel, QModelIndex, QObject, QPoint, QPointF, QPropertyAnimation, QRect, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QActionGroup, QColor, QCloseEvent, QFont, QGuiApplication, QIcon, QImage, QKeySequence, QPainter, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import (
@@ -246,7 +248,13 @@ from fdm.services.prompt_segmentation import (
     interactive_segmentation_model_paths,
     interactive_segmentation_models_ready,
     interactive_segmentation_runtime_root,
+    qimage_to_rgb_array,
     resolve_interactive_segmentation_backend,
+)
+from fdm.services.segmentation_source import (
+    SegmentationSourceSnapshot,
+    digital_slide_segmentation_snapshot,
+    image_segmentation_snapshot,
 )
 from fdm.services.reference_instance_propagation import (
     ReferenceInstancePropagationResult,
@@ -260,6 +268,7 @@ from fdm.services.raster_export import (
 from fdm.services.raster_io import (
     RasterMetadata,
     qimage_to_raster_plane,
+    raster_plane_to_numpy,
     raster_plane_to_qimage,
     read_raster_file,
     recommended_native_asset_suffix,
@@ -315,6 +324,14 @@ from fdm.services.analysis_asset_io import (
     write_safe_analysis_npz,
 )
 from fdm.services.analysis_export import AnalysisExportService
+from fdm.services.dataset_export import (
+    DatasetExportRequest,
+    DatasetExportService,
+    DatasetInstance,
+    DatasetIssueSeverity,
+    DatasetPreflightIssue,
+    DatasetSample,
+)
 from fdm.services.tubeness_chain import (
     TUBENESS_THRESHOLD_MASK_SCHEMA,
     TubenessChainError,
@@ -340,6 +357,10 @@ from fdm.ui.construction_widgets import (
 )
 from fdm.ui.construction_rendering import draw_construction_entities
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
+from fdm.ui.dataset_export_dialog import (
+    DatasetDocumentOption,
+    DatasetExportDialog,
+)
 from fdm.ui.dialogs import (
     AreaAutoRecognitionDialog,
     CalibrationInputDialog,
@@ -1965,6 +1986,15 @@ class MainWindow(QMainWindow):
         self._digital_slide_boundary_controls: list[QWidget] = []
         self._group_header_labels: list[QLabel] = []
         self._prompt_request_tool_modes: dict[tuple[str, int], str] = {}
+        self._segmentation_source_sessions: dict[
+            tuple[str, str], SegmentationSourceSnapshot
+        ] = {}
+        self._prompt_request_sources: dict[
+            tuple[str, int], SegmentationSourceSnapshot
+        ] = {}
+        self._fiber_quick_geometry_sources: dict[
+            tuple[str, int], SegmentationSourceSnapshot
+        ] = {}
         self._fiber_quick_geometry_request_ids: set[tuple[str, int]] = set()
         self._fiber_quick_background_job_serial = 0
         self._fiber_quick_background_jobs: dict[tuple[str, int], dict[str, object]] = {}
@@ -2127,6 +2157,7 @@ class MainWindow(QMainWindow):
         ]
 
         self.export_service = ExportService()
+        self.dataset_export_service = DatasetExportService()
         self.analysis_export_service = AnalysisExportService()
         self.image_analysis_task_controller = ImageAnalysisTaskController(
             parent=self,
@@ -2509,6 +2540,13 @@ class MainWindow(QMainWindow):
         )
         self.export_current_image_action.triggered.connect(
             self.export_current_image
+        )
+        self.export_training_dataset_action = QAction("训练数据…", self)
+        self.export_training_dataset_action.setToolTip(
+            "将已确认的面积标注导出为 COCO、YOLO 或标签图；不依赖分割模型"
+        )
+        self.export_training_dataset_action.triggered.connect(
+            self._open_training_dataset_export_dialog
         )
 
         self.image_information_action = QAction("图像信息与属性…", self)
@@ -3068,6 +3106,8 @@ class MainWindow(QMainWindow):
         export_menu.addSeparator()
         for action in self.export_actions:
             export_menu.addAction(action)
+        export_menu.addSeparator()
+        export_menu.addAction(self.export_training_dataset_action)
 
         edit_menu = self.menuBar().addMenu("编辑")
         edit_menu.addAction(self.undo_action)
@@ -13454,6 +13494,533 @@ class MainWindow(QMainWindow):
                 path = path.with_suffix(default_suffix)
         return path
 
+    def _training_dataset_category_names(self) -> list[str]:
+        names: list[str] = []
+        seen: set[str] = set()
+        for document in self.project.documents:
+            for measurement in document.measurements:
+                if measurement.measurement_kind != "area":
+                    continue
+                group = document.get_group(measurement.fiber_group_id)
+                name = normalize_group_label(group.label) if group is not None else ""
+                name = name or UNCATEGORIZED_LABEL
+                key = name.casefold()
+                if key not in seen:
+                    seen.add(key)
+                    names.append(name)
+        return names
+
+    @staticmethod
+    def _dataset_instance_for_measurement(
+        document: ImageDocument,
+        measurement: Measurement,
+        *,
+        origin: Point,
+        source_verified: bool,
+    ) -> DatasetInstance | None:
+        rings = measurement.area_rings_px or (
+            [measurement.polygon_px] if len(measurement.polygon_px) >= 3 else []
+        )
+        normalized_rings = [
+            [
+                (float(point.x - origin.x), float(point.y - origin.y))
+                for point in ring
+            ]
+            for ring in rings
+            if len(ring) >= 3
+        ]
+        if not normalized_rings:
+            return None
+        group = document.get_group(measurement.fiber_group_id)
+        category_name = normalize_group_label(group.label) if group is not None else ""
+        segmentation_source = (
+            measurement.debug_payload.get("segmentation_source")
+            if isinstance(measurement.debug_payload, dict)
+            else None
+        )
+        truncated = bool(
+            isinstance(segmentation_source, dict)
+            and segmentation_source.get("boundary_truncated")
+        )
+        return DatasetInstance(
+            instance_id=measurement.id,
+            category_name=category_name or UNCATEGORIZED_LABEL,
+            rings_px=normalized_rings,
+            source_object_id=measurement.id,
+            confidence=float(measurement.confidence),
+            truncated=truncated,
+            source_verified=source_verified,
+        )
+
+    def _training_dataset_normal_sample(
+        self,
+        document: ImageDocument,
+        *,
+        annotation_complete: bool,
+        issues: list[DatasetPreflightIssue],
+    ) -> DatasetSample | None:
+        plane = self._rasters.get(document.id)
+        if plane is None:
+            try:
+                path = self._resolved_document_path(document)
+            except (OSError, RuntimeError, ValueError) as exc:
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "source_unavailable",
+                        f"无法定位源图“{self._document_display_name(document)}”，已跳过：{exc}",
+                        sample_id=document.id,
+                    )
+                )
+                return None
+            read_result = read_raster_file(path)
+            if read_result.success:
+                plane = read_result.plane
+            else:
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "source_unavailable",
+                        f"无法读取源图“{self._document_display_name(document)}”，已跳过。",
+                        sample_id=document.id,
+                    )
+                )
+                return None
+        if plane is None or plane.is_empty:
+            return None
+        instances = [
+            instance
+            for measurement in document.measurements
+            if measurement.measurement_kind == "area"
+            if (
+                instance := self._dataset_instance_for_measurement(
+                    document,
+                    measurement,
+                    origin=Point(0.0, 0.0),
+                    source_verified=True,
+                )
+            ) is not None
+        ]
+        skipped_non_area = sum(
+            measurement.measurement_kind != "area"
+            for measurement in document.measurements
+        )
+        if skipped_non_area:
+            issues.append(
+                DatasetPreflightIssue(
+                    DatasetIssueSeverity.INFO,
+                    "non_area_skipped",
+                    f"{skipped_non_area} 个线段、折线或计数点不属于面积实例，将跳过。",
+                    sample_id=document.id,
+                    count=skipped_non_area,
+                )
+            )
+        source_group_id = (
+            document.derivation.source_document_id
+            if document.derivation is not None
+            and document.derivation.source_document_id
+            else document.id
+        )
+        try:
+            source_path = str(self._resolved_document_path(document))
+        except (OSError, RuntimeError, ValueError):
+            source_path = str(document.absolute_path or document.path or "")
+        return DatasetSample(
+            sample_id=document.id,
+            source_group_id=source_group_id,
+            source_name=self._document_display_name(document),
+            image=np.array(raster_plane_to_numpy(plane), copy=True),
+            instances=instances,
+            annotation_complete=annotation_complete,
+            source_metadata={
+                "kind": "image",
+                "document_id": document.id,
+                "pixel_type": plane.pixel_type.value,
+                "path": source_path,
+            },
+        )
+
+    def _training_dataset_slide_samples(
+        self,
+        document: ImageDocument,
+        *,
+        annotation_complete: bool,
+        issues: list[DatasetPreflightIssue],
+    ) -> list[DatasetSample]:
+        store = self._slide_stores.get(document.id)
+        canvas = self._canvases.get(document.id)
+        if store is None or not isinstance(canvas, DigitalSlideCanvas):
+            issues.append(
+                DatasetPreflightIssue(
+                    DatasetIssueSeverity.WARNING,
+                    "slide_source_unavailable",
+                    f"数字切片“{self._document_display_name(document)}”尚未挂载，已跳过。",
+                    sample_id=document.id,
+                )
+            )
+            return []
+        manifest = store.read_manifest()
+        groups: dict[
+            tuple[int, int, int, int, int, bool, str],
+            list[Measurement],
+        ] = {}
+        area_measurements = [
+            measurement
+            for measurement in document.measurements
+            if measurement.measurement_kind == "area"
+        ]
+        for measurement in area_measurements:
+            source = (
+                measurement.debug_payload.get("segmentation_source")
+                if isinstance(measurement.debug_payload, dict)
+                else None
+            )
+            verified = False
+            recorded_version = ""
+            focus_index = canvas.focus_index()
+            origin_x = int(round(canvas.viewport_origin().x))
+            origin_y = int(round(canvas.viewport_origin().y))
+            width = int(manifest.viewport_width)
+            height = int(manifest.viewport_height)
+            if isinstance(source, dict) and source.get("kind") == "digital_slide_viewport":
+                origin = source.get("origin_px")
+                size = source.get("size_px")
+                try:
+                    if (
+                        isinstance(origin, (list, tuple))
+                        and len(origin) >= 2
+                        and isinstance(size, (list, tuple))
+                        and len(size) >= 2
+                        and source.get("focus_index") is not None
+                    ):
+                        origin_x = int(round(float(origin[0])))
+                        origin_y = int(round(float(origin[1])))
+                        width = int(size[0])
+                        height = int(size[1])
+                        focus_index = int(source["focus_index"])
+                        if width <= 0 or height <= 0:
+                            raise ValueError("数字切片局部范围尺寸无效")
+                        recorded_version = str(source.get("version", "") or "").strip()
+                        verified = True
+                except (TypeError, ValueError, OverflowError):
+                    verified = False
+                    focus_index = canvas.focus_index()
+                    origin_x = int(round(canvas.viewport_origin().x))
+                    origin_y = int(round(canvas.viewport_origin().y))
+                    width = int(manifest.viewport_width)
+                    height = int(manifest.viewport_height)
+                    recorded_version = ""
+            groups.setdefault(
+                (
+                    focus_index,
+                    origin_x,
+                    origin_y,
+                    width,
+                    height,
+                    verified,
+                    recorded_version,
+                ),
+                [],
+            ).append(measurement)
+
+        skipped_non_area = len(document.measurements) - len(area_measurements)
+        if skipped_non_area:
+            issues.append(
+                DatasetPreflightIssue(
+                    DatasetIssueSeverity.INFO,
+                    "non_area_skipped",
+                    f"{skipped_non_area} 个线段、折线或计数点不属于面积实例，将跳过。",
+                    sample_id=document.id,
+                    count=skipped_non_area,
+                )
+            )
+        if not groups:
+            groups[
+                (
+                    canvas.focus_index(),
+                    int(round(canvas.viewport_origin().x)),
+                    int(round(canvas.viewport_origin().y)),
+                    int(manifest.viewport_width),
+                    int(manifest.viewport_height),
+                    False,
+                    "",
+                )
+            ] = []
+
+        samples: list[DatasetSample] = []
+        slide_group_id = str(document.absolute_path or document.path or document.id)
+        for (
+            focus_index,
+            origin_x,
+            origin_y,
+            width,
+            height,
+            coordinates_verified,
+            recorded_version,
+        ) in groups:
+            if not (0 <= focus_index < max(1, len(manifest.focus_levels))):
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "unknown_focus",
+                        "历史数字切片对象记录的焦层无效，已跳过对应局部样本。",
+                        sample_id=document.id,
+                    )
+                )
+                continue
+            try:
+                snapshot = digital_slide_segmentation_snapshot(
+                    document,
+                    store,
+                    origin_px=Point(float(origin_x), float(origin_y)),
+                    width=width,
+                    height=height,
+                    focus_index=focus_index,
+                )
+            except (OSError, RuntimeError, ValueError) as exc:
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "slide_roi_unavailable",
+                        f"数字切片局部来源无法读取，已跳过：{exc}",
+                        sample_id=document.id,
+                    )
+                )
+                continue
+            origin = snapshot.origin_px
+            current_version = snapshot.source_version
+            version_verified = bool(recorded_version) and recorded_version == current_version
+            source_verified = coordinates_verified and version_verified
+            instances = [
+                instance
+                for measurement in groups[
+                    (
+                        focus_index,
+                        origin_x,
+                        origin_y,
+                        width,
+                        height,
+                        coordinates_verified,
+                        recorded_version,
+                    )
+                ]
+                if (
+                    instance := self._dataset_instance_for_measurement(
+                        document,
+                        measurement,
+                        origin=origin,
+                        source_verified=source_verified,
+                    )
+                ) is not None
+            ]
+            if not coordinates_verified and instances:
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "legacy_slide_focus_unverified",
+                        "历史数字切片面积对象没有记录焦层；本次按当前焦层/视野导出，并标记为未核实。",
+                        sample_id=document.id,
+                        count=len(instances),
+                    )
+                )
+            elif not version_verified and instances:
+                issues.append(
+                    DatasetPreflightIssue(
+                        DatasetIssueSeverity.WARNING,
+                        "slide_source_changed",
+                        "数字切片来源自标注后已变化或缺少版本记录；局部图像已重建，但来源未核实。",
+                        sample_id=document.id,
+                        count=len(instances),
+                    )
+                )
+            samples.append(
+                DatasetSample(
+                    sample_id=(
+                        f"{document.id}_z{focus_index}_x{origin_x}_y{origin_y}"
+                    ),
+                    source_group_id=slide_group_id,
+                    source_name=(
+                        f"{self._document_display_name(document)} · 焦层 {focus_index + 1}"
+                    ),
+                    image=qimage_to_rgb_array(snapshot.image),
+                    instances=instances,
+                    valid_coverage=snapshot.valid_coverage,
+                    focus_index=focus_index,
+                    origin_px=(origin_x, origin_y),
+                    annotation_complete=annotation_complete,
+                    source_metadata={
+                        **snapshot.source_metadata(),
+                        "document_id": document.id,
+                        "source_verified": source_verified,
+                    },
+                )
+            )
+        return samples
+
+    def _build_training_dataset_samples(
+        self,
+        document_ids: tuple[str, ...],
+        *,
+        annotation_complete: bool,
+    ) -> tuple[list[DatasetSample], list[DatasetPreflightIssue]]:
+        samples: list[DatasetSample] = []
+        issues: list[DatasetPreflightIssue] = []
+        for document_id in document_ids:
+            document = self.project.get_document(document_id)
+            if document is None:
+                continue
+            if document.is_digital_slide():
+                samples.extend(
+                    self._training_dataset_slide_samples(
+                        document,
+                        annotation_complete=annotation_complete,
+                        issues=issues,
+                    )
+                )
+            else:
+                sample = self._training_dataset_normal_sample(
+                    document,
+                    annotation_complete=annotation_complete,
+                    issues=issues,
+                )
+                if sample is not None:
+                    samples.append(sample)
+        return samples, issues
+
+    @staticmethod
+    def _format_dataset_preflight_issues(
+        issues: list[DatasetPreflightIssue],
+        *,
+        maximum: int = 12,
+    ) -> str:
+        severity_labels = {
+            DatasetIssueSeverity.ERROR: "错误",
+            DatasetIssueSeverity.WARNING: "注意",
+            DatasetIssueSeverity.INFO: "信息",
+        }
+        lines: list[str] = []
+        for issue in issues[:maximum]:
+            suffix = f"（{issue.count} 项）" if issue.count > 1 else ""
+            lines.append(f"• [{severity_labels[issue.severity]}] {issue.message}{suffix}")
+        if len(issues) > maximum:
+            lines.append(f"• 另有 {len(issues) - maximum} 类问题，完整内容会写入导出报告。")
+        return "\n".join(lines)
+
+    def _open_training_dataset_export_dialog(self) -> None:
+        if not self.project.documents:
+            QMessageBox.information(self, "导出训练数据", "请先打开图片或数字切片。")
+            return
+        current = self.current_document()
+        document_options: list[DatasetDocumentOption] = []
+        for document in self.project.documents:
+            available = document.id in self._rasters or document.id in self._slide_stores
+            if not available:
+                try:
+                    available = self._resolved_document_path(document).is_file()
+                except (OSError, RuntimeError, ValueError):
+                    available = False
+            document_options.append(
+                DatasetDocumentOption(
+                    document_id=document.id,
+                    label=self._document_display_name(document),
+                    is_current=current is not None and document.id == current.id,
+                    is_available=available,
+                )
+            )
+        dialog = DatasetExportDialog(
+            document_options,
+            self._training_dataset_category_names(),
+            initial_directory=(self._app_settings.recent_export_dir or Path.home()),
+            parent=self,
+        )
+        if dialog.exec() != QDialog.DialogCode.Accepted:
+            return
+        options = dialog.options()
+        samples, source_issues = self._build_training_dataset_samples(
+            options.document_ids,
+            annotation_complete=options.annotation_complete,
+        )
+        request = DatasetExportRequest(
+            output_directory=options.output_directory,
+            samples=samples,
+            formats=options.formats,
+            category_mapping=options.category_mapping,
+            split_train_validation=options.split_train_validation,
+            yolo_complex_policy=options.yolo_complex_policy,
+            convert_high_bit_to_uint8=options.convert_high_bit_to_uint8,
+            source_issues=source_issues,
+        )
+        issues = self.dataset_export_service.preflight(request)
+        errors = [issue for issue in issues if issue.severity is DatasetIssueSeverity.ERROR]
+        if errors:
+            QMessageBox.warning(
+                self,
+                "导出训练数据",
+                "导出检查未通过：\n\n" + self._format_dataset_preflight_issues(errors),
+            )
+            return
+        confirmable = [
+            issue
+            for issue in issues
+            if issue.severity in {DatasetIssueSeverity.WARNING, DatasetIssueSeverity.INFO}
+        ]
+        if confirmable:
+            response = QMessageBox.question(
+                self,
+                "确认训练数据风险",
+                (
+                    "导出检查发现以下情况：\n\n"
+                    + self._format_dataset_preflight_issues(confirmable)
+                    + "\n\n是否确认继续？"
+                ),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+                QMessageBox.StandardButton.No,
+            )
+            if response != QMessageBox.StandardButton.Yes:
+                return
+        progress = QProgressDialog("正在导出训练数据…", "取消", 0, 1000, self)
+        progress.setWindowTitle("导出训练数据")
+        progress.setWindowModality(Qt.WindowModality.WindowModal)
+        progress.setMinimumDuration(0)
+        progress.setValue(0)
+
+        def update_progress(current_step: int, total_steps: int, message: str) -> None:
+            progress.setLabelText(message)
+            progress.setValue(
+                min(1000, int(round((current_step / max(1, total_steps)) * 1000)))
+            )
+            QApplication.processEvents()
+
+        try:
+            result = self.dataset_export_service.export(
+                request,
+                cancellation_requested=progress.wasCanceled,
+                progress_callback=update_progress,
+            )
+        except RuntimeError as exc:
+            if progress.wasCanceled() or "已取消" in str(exc):
+                self.statusBar().showMessage("已取消训练数据导出，未发布不完整目录。", 5000)
+            else:
+                QMessageBox.warning(self, "导出训练数据", f"导出失败：\n{exc}")
+            return
+        except (OSError, ValueError) as exc:
+            QMessageBox.warning(self, "导出训练数据", f"导出失败：\n{exc}")
+            return
+        finally:
+            progress.close()
+            progress.deleteLater()
+        self._app_settings.recent_export_dir = str(result.output_directory.parent)
+        self._save_app_settings(context="训练数据导出")
+        QMessageBox.information(
+            self,
+            "导出训练数据",
+            (
+                f"已导出 {result.sample_count} 个样本、{result.instance_count} 个实例。\n"
+                f"跳过 {result.skipped_instance_count} 个无法映射或无效对象。\n\n"
+                f"{result.output_directory}"
+            ),
+        )
+
     def _single_export_dialog_filter(self, filename: str) -> str:
         suffix = Path(filename).suffix.lower()
         return {
@@ -18666,6 +19233,11 @@ class MainWindow(QMainWindow):
         self._connect_canvas_roi_signals(canvas)
         self._connect_canvas_construction_signals(canvas)
         canvas.viewportChanged.connect(self._on_digital_slide_viewport_changed)
+        canvas.focusChanged.connect(
+            lambda focus_index, document_id=target_document.id: (
+                self._on_digital_slide_focus_changed(document_id, focus_index)
+            )
+        )
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
 
         self._remove_unresolved_placeholder_ui(target_document.id)
@@ -18739,6 +19311,29 @@ class MainWindow(QMainWindow):
         if document is None or not document.is_digital_slide():
             return
         self._update_image_resolution_label(document)
+
+    def _on_digital_slide_focus_changed(
+        self,
+        document_id: str,
+        focus_index: int,
+    ) -> None:
+        canvas = self._canvases.get(document_id)
+        if not isinstance(canvas, DigitalSlideCanvas):
+            return
+        had_session = canvas.has_magic_segment_session() or canvas.has_fiber_quick_session()
+        if self._prompt_seg_worker is not None:
+            self._prompt_seg_worker.cancel_document(document_id)
+        if self._fiber_quick_geometry_worker is not None:
+            self._fiber_quick_geometry_worker.cancel_document(document_id)
+        canvas.clear_magic_segment_session()
+        canvas.clear_fiber_quick_session()
+        self._release_segmentation_source_session(document_id)
+        if had_session:
+            self.statusBar().showMessage(
+                f"焦层已切换到 {int(focus_index) + 1}；旧焦层的未确认魔棒结果已取消。",
+                5000,
+            )
+        self._update_magic_segment_controls()
 
     def _current_digital_slide_canvas(self) -> DigitalSlideCanvas | None:
         document = self.current_document()
@@ -20750,28 +21345,119 @@ class MainWindow(QMainWindow):
 
         self._apply_document_change(document, "导入自动面积识别结果", mutate)
 
+    def _segmentation_source_for_request(
+        self,
+        document: ImageDocument,
+        canvas: DocumentCanvas,
+        tool_mode: str,
+    ) -> SegmentationSourceSnapshot:
+        session_key = (document.id, tool_mode)
+        existing = self._segmentation_source_sessions.get(session_key)
+        if existing is not None:
+            if (
+                not document.is_digital_slide()
+                or (
+                    isinstance(canvas, DigitalSlideCanvas)
+                    and existing.focus_index == canvas.focus_index()
+                )
+            ):
+                return existing
+            self._segmentation_source_sessions.pop(session_key, None)
+
+        if document.is_digital_slide():
+            if not isinstance(canvas, DigitalSlideCanvas):
+                raise ValueError("数字切片画布尚未挂载。")
+            store = self._slide_stores.get(document.id)
+            if store is None:
+                raise ValueError("数字切片来源尚未挂载。")
+            manifest = store.read_manifest()
+            snapshot = digital_slide_segmentation_snapshot(
+                document,
+                store,
+                origin_px=canvas.viewport_origin(),
+                width=manifest.viewport_width,
+                height=manifest.viewport_height,
+                focus_index=canvas.focus_index(),
+            )
+        else:
+            image = self._images.get(document.id)
+            if image is None or image.isNull():
+                raise ValueError("当前图片还未完成加载。")
+            snapshot = image_segmentation_snapshot(document, image)
+        self._segmentation_source_sessions[session_key] = snapshot
+        return snapshot
+
+    def _release_segmentation_source_session(
+        self,
+        document_id: str,
+        tool_mode: str | None = None,
+    ) -> None:
+        for key in list(self._segmentation_source_sessions):
+            if key[0] == document_id and (tool_mode is None or key[1] == tool_mode):
+                self._segmentation_source_sessions.pop(key, None)
+        for key in list(self._prompt_request_sources):
+            if key[0] == document_id:
+                self._prompt_request_sources.pop(key, None)
+                self._prompt_request_tool_modes.pop(key, None)
+        for key in list(self._fiber_quick_geometry_sources):
+            if key[0] == document_id:
+                self._fiber_quick_geometry_sources.pop(key, None)
+
+    @staticmethod
+    def _source_result_metadata(
+        source: SegmentationSourceSnapshot,
+        result: PromptSegmentationResult,
+    ) -> dict[str, object]:
+        metadata = source.source_metadata()
+        metadata["boundary_truncated"] = bool(
+            result.metadata.get("coverage_clipped")
+            or result.metadata.get("segmentation_crop_touches_boundary")
+        )
+        return metadata
+
     def _on_canvas_magic_segment_requested(self, document_id: str, payload: object) -> None:
         canvas = self._canvases.get(document_id)
         document = self.project.get_document(document_id)
         if canvas is None or document is None or not isinstance(payload, dict):
             return
-        image = self._images.get(document_id)
         request_id = int(payload.get("request_id", 0))
         tool_mode = str(payload.get("tool_mode", self._tool_mode) or self._tool_mode)
         if not is_magic_toolbar_tool_mode(tool_mode):
             tool_mode = MagicSegmentToolMode.STANDARD
         tool_label = self._magic_tool_label(tool_mode)
-        if image is None or image.isNull():
-            if is_reference_propagation_tool_mode(tool_mode):
+        source: SegmentationSourceSnapshot | None = None
+        if is_reference_propagation_tool_mode(tool_mode):
+            image = self._images.get(document_id)
+            if image is None or image.isNull():
                 canvas.fail_reference_instance_result(request_id)
-            elif is_fiber_quick_tool_mode(tool_mode):
-                canvas.fail_fiber_quick_result(request_id)
-            else:
-                canvas.fail_magic_segment_result(request_id)
-            self._update_magic_segment_controls()
-            QMessageBox.warning(self, tool_label, "当前图片还未完成加载，暂时无法进行分割。")
-            return
-        cache_key = f"{document_id}:{int(image.cacheKey())}"
+                self._update_magic_segment_controls()
+                QMessageBox.warning(
+                    self,
+                    tool_label,
+                    "当前图片还未完成加载，暂时无法进行分割。",
+                )
+                return
+            cache_key = f"{document_id}:{int(image.cacheKey())}"
+        else:
+            try:
+                source = self._segmentation_source_for_request(document, canvas, tool_mode)
+            except (OSError, RuntimeError, ValueError) as exc:
+                if is_fiber_quick_tool_mode(tool_mode):
+                    canvas.fail_fiber_quick_result(request_id)
+                else:
+                    canvas.fail_magic_segment_result(request_id)
+                self._update_magic_segment_controls()
+                QMessageBox.warning(self, tool_label, f"当前来源暂时无法用于分割：\n{exc}")
+                return
+            loaded_image = self._images.get(document_id)
+            image = (
+                loaded_image
+                if source.source_kind == "image"
+                and loaded_image is not None
+                and not loaded_image.isNull()
+                else source.image
+            )
+            cache_key = source.cache_key
         requested_variant = self._app_settings.magic_segment_model_variant
         resolved_variant, _fallback_message = resolve_interactive_segmentation_backend(requested_variant)
         if not interactive_segmentation_models_ready(resolved_variant):
@@ -20835,8 +21521,25 @@ class MainWindow(QMainWindow):
             )
             self._update_magic_segment_controls()
             return
-        positive_points = list(payload.get("positive_points", []))
-        negative_points = list(payload.get("negative_points", []))
+        assert source is not None
+        global_positive_points = list(payload.get("positive_points", []))
+        global_negative_points = list(payload.get("negative_points", []))
+        if any(
+            not isinstance(point, Point) or not source.contains_global_point(point)
+            for point in (*global_positive_points, *global_negative_points)
+        ):
+            if is_fiber_quick_tool_mode(tool_mode):
+                canvas.fail_fiber_quick_result(request_id)
+            else:
+                canvas.fail_magic_segment_result(request_id)
+            self._update_magic_segment_controls()
+            self.statusBar().showMessage(
+                "采样点超出本次冻结视野或落在缺失图块中，请回到原视野继续，或取消后重新开始。",
+                6000,
+            )
+            return
+        positive_points = source.to_local_points(global_positive_points)
+        negative_points = source.to_local_points(global_negative_points)
         active_stage = str(payload.get("active_stage", MagicSegmentOperationMode.ADD) or MagicSegmentOperationMode.ADD)
         roi_enabled = self._current_magic_roi_enabled(tool_mode, operation_mode=active_stage)
         roi_constraint_box = None
@@ -20848,10 +21551,11 @@ class MainWindow(QMainWindow):
             and roi_enabled
             and self._app_settings.magic_segment_restrict_subtract_roi_to_primary_bounds
         ):
-            roi_constraint_box = canvas.magic_segment_primary_bounds()
+            global_roi_constraint_box = canvas.magic_segment_primary_bounds()
+            roi_constraint_box = source.to_local_box(global_roi_constraint_box)
             if roi_constraint_box is not None and any(
-                not canvas.point_in_box(point, roi_constraint_box)
-                for point in positive_points
+                not canvas.point_in_box(point, global_roi_constraint_box)
+                for point in global_positive_points
             ):
                 canvas.reject_magic_segment_subtract_points_outside_primary_bounds(request_id)
                 self._update_magic_segment_controls()
@@ -20862,11 +21566,18 @@ class MainWindow(QMainWindow):
                 workspace_payload = payload.get("small_object_workspace_box")
                 if isinstance(workspace_payload, (tuple, list)) and len(workspace_payload) == 4:
                     try:
-                        small_object_workspace_box = tuple(int(round(float(value))) for value in workspace_payload)
+                        global_workspace_box = tuple(
+                            int(round(float(value))) for value in workspace_payload
+                        )
+                        small_object_workspace_box = source.to_local_box(
+                            global_workspace_box
+                        )
                     except (TypeError, ValueError):
                         small_object_workspace_box = None
                 if small_object_workspace_box is None:
-                    small_object_workspace_box = canvas.magic_segment_small_object_workspace_box()
+                    small_object_workspace_box = source.to_local_box(
+                        canvas.magic_segment_small_object_workspace_box()
+                    )
         if not positive_points:
             if is_fiber_quick_tool_mode(tool_mode):
                 canvas.fail_fiber_quick_result(request_id)
@@ -20894,6 +21605,7 @@ class MainWindow(QMainWindow):
             self._update_magic_segment_controls()
             return
         self._prompt_request_tool_modes[(document_id, request_id)] = tool_mode
+        self._prompt_request_sources[(document_id, request_id)] = source
         self._prompt_seg_worker.register_request(document_id, request_id)
         self._prompt_seg_worker.requested.emit(
             PromptSegmentationRequest(
@@ -20911,6 +21623,8 @@ class MainWindow(QMainWindow):
                 small_object_enhancement_enabled=small_object_enhancement_enabled,
                 small_object_roi_area_threshold_px=self._app_settings.magic_segment_small_object_roi_area_threshold_px,
                 small_object_workspace_box=small_object_workspace_box,
+                source_token=source.cache_key,
+                valid_coverage=source.valid_coverage,
             )
         )
         self._update_magic_segment_controls()
@@ -20952,26 +21666,53 @@ class MainWindow(QMainWindow):
         return True
 
     def _on_prompt_segmentation_succeeded(self, document_id: str, request_id: int, result: object) -> None:
+        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), None)
+        source = self._prompt_request_sources.pop((document_id, request_id), None)
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
-        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), None)
         if isinstance(result, PromptSegmentationResult):
             tool_mode = str(tool_mode or result.metadata.get("tool_mode", MagicSegmentToolMode.STANDARD) or MagicSegmentToolMode.STANDARD)
+            document = self.project.get_document(document_id)
+            if source is None and document is not None and not document.is_digital_slide():
+                image = self._images.get(document_id)
+                if image is not None and not image.isNull():
+                    source = image_segmentation_snapshot(document, image)
+            source_token = str(result.metadata.get("source_token", ""))
+            source_mismatch = source is None or (
+                bool(source_token) and source_token != source.cache_key
+            )
+            if (
+                source is not None
+                and source.source_kind == "digital_slide_viewport"
+                and not source_token
+            ):
+                source_mismatch = True
+            if source_mismatch:
+                if is_fiber_quick_tool_mode(tool_mode):
+                    canvas.fail_fiber_quick_result(request_id, stage="segmentation")
+                else:
+                    canvas.fail_magic_segment_result(request_id)
+                self._update_magic_segment_controls()
+                return
+            global_polygon = source.to_global_points(result.polygon_px)
+            global_rings = source.to_global_rings(result.area_rings_px)
+            source_metadata = self._source_result_metadata(source, result)
             if is_fiber_quick_tool_mode(tool_mode):
                 debug_payload = {
                     "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
                     "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
                     "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
                     "component_area_px": result.metadata.get("component_area_px"),
+                    "segmentation_source": source_metadata,
                 }
                 if bool(debug_payload.get("segmentation_used_full_image")):
                     debug_payload.pop("segmentation_crop_box", None)
                 apply_result = canvas.apply_fiber_quick_segmentation_result(
                     request_id,
                     mask=result.mask,
-                    preview_polygon_points=result.polygon_px,
-                    preview_area_rings_points=result.area_rings_px,
+                    preview_polygon_points=global_polygon,
+                    preview_area_rings_points=global_rings,
                     debug_payload=debug_payload,
                 )
                 if apply_result is None:
@@ -20995,6 +21736,7 @@ class MainWindow(QMainWindow):
                     return
                 canvas.begin_fiber_quick_geometry(request_id)
                 self._fiber_quick_geometry_request_ids.add((document_id, request_id))
+                self._fiber_quick_geometry_sources[(document_id, request_id)] = source
                 self._fiber_quick_geometry_worker.register_request(document_id, request_id)
                 self._fiber_quick_geometry_worker.requested.emit(
                     FiberQuickGeometryRequest(
@@ -21018,15 +21760,45 @@ class MainWindow(QMainWindow):
             else:
                 small_object_used = bool(result.metadata.get("small_object_enhancement_used"))
                 small_object_reject_reason = str(result.metadata.get("small_object_reject_reason", "") or "").strip()
+                small_object_workspace_box = result.metadata.get(
+                    "small_object_workspace_box"
+                )
+                if (
+                    isinstance(small_object_workspace_box, (tuple, list))
+                    and len(small_object_workspace_box) == 4
+                ):
+                    try:
+                        local_x0, local_y0, local_x1, local_y1 = (
+                            int(round(float(value)))
+                            for value in small_object_workspace_box
+                        )
+                        origin_x = int(round(source.origin_px.x))
+                        origin_y = int(round(source.origin_px.y))
+                        small_object_workspace_box = (
+                            local_x0 + origin_x,
+                            local_y0 + origin_y,
+                            local_x1 + origin_x,
+                            local_y1 + origin_y,
+                        )
+                    except (TypeError, ValueError):
+                        small_object_workspace_box = None
                 if small_object_used:
-                    self._show_small_object_preview(canvas, result.metadata, result.polygon_px)
+                    preview_metadata = dict(result.metadata)
+                    preview_metadata["small_object_workspace_box"] = (
+                        small_object_workspace_box
+                    )
+                    self._show_small_object_preview(
+                        canvas,
+                        preview_metadata,
+                        global_polygon,
+                    )
                 else:
                     self._hide_small_object_preview()
                 apply_result = canvas.apply_magic_segment_result(
                     request_id,
                     result.mask,
-                    result.polygon_px,
-                    result.area_rings_px,
+                    global_polygon,
+                    global_rings,
                     {
                         "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
                         "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
@@ -21034,10 +21806,11 @@ class MainWindow(QMainWindow):
                         "component_area_px": result.metadata.get("component_area_px"),
                         "reason": result.metadata.get("reason"),
                         "small_object_enhancement_used": result.metadata.get("small_object_enhancement_used"),
-                        "small_object_workspace_box": result.metadata.get("small_object_workspace_box"),
+                        "small_object_workspace_box": small_object_workspace_box,
                         "small_object_scale": result.metadata.get("small_object_scale"),
                         "small_object_enhanced_size": result.metadata.get("small_object_enhanced_size"),
                         "small_object_reject_reason": result.metadata.get("small_object_reject_reason"),
+                        "segmentation_source": source_metadata,
                     },
                 )
                 if apply_result is None:
@@ -21062,10 +21835,11 @@ class MainWindow(QMainWindow):
         self._update_magic_segment_controls()
 
     def _on_prompt_segmentation_failed(self, document_id: str, request_id: int, reason: str) -> None:
+        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), self._tool_mode)
+        self._prompt_request_sources.pop((document_id, request_id), None)
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
-        tool_mode = self._prompt_request_tool_modes.pop((document_id, request_id), self._tool_mode)
         if is_fiber_quick_tool_mode(tool_mode):
             canvas.fail_fiber_quick_result(request_id, stage="segmentation")
             self._dispatch_pending_fiber_quick_request(document_id, request_id)
@@ -21078,13 +21852,17 @@ class MainWindow(QMainWindow):
 
     def _on_fiber_quick_geometry_succeeded(self, document_id: str, request_id: int, result: object) -> None:
         self._fiber_quick_geometry_request_ids.discard((document_id, request_id))
+        source = self._fiber_quick_geometry_sources.pop((document_id, request_id), None)
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
         if hasattr(result, "line_px"):
+            preview_line = result.line_px if isinstance(result.line_px, Line) else None
+            if source is not None:
+                preview_line = source.translate_line_to_global(preview_line)
             apply_result = canvas.apply_fiber_quick_geometry_result(
                 request_id,
-                preview_line=result.line_px if isinstance(result.line_px, Line) else None,
+                preview_line=preview_line,
                 confidence=float(getattr(result, "confidence", 0.0) or 0.0),
                 debug_payload=dict(getattr(result, "debug_payload", {}))
                 if isinstance(getattr(result, "debug_payload", {}), dict)
@@ -21111,6 +21889,7 @@ class MainWindow(QMainWindow):
 
     def _on_fiber_quick_geometry_failed(self, document_id: str, request_id: int, reason: str) -> None:
         self._fiber_quick_geometry_request_ids.discard((document_id, request_id))
+        self._fiber_quick_geometry_sources.pop((document_id, request_id), None)
         canvas = self._canvases.get(document_id)
         if canvas is None:
             return
@@ -21688,6 +22467,7 @@ class MainWindow(QMainWindow):
         navigator = self._canvas_navigators.pop(document_id, None)
         if navigator is not None:
             navigator.clear()
+        self._release_segmentation_source_session(document_id)
         store = self._slide_stores.pop(document_id, None)
         if store is not None:
             store.close()
@@ -22176,6 +22956,7 @@ class MainWindow(QMainWindow):
                 exact_area_px=float(payload["exact_area_px"]) if payload.get("exact_area_px") is not None else None,
                 confidence=1.0,
                 status="manual" if mode != "auto_instance" else "auto_instance",
+                debug_payload=dict(payload.get("debug_payload", {})),
             )
             if mode == "magic_segment":
                 ensure_measurement_display_geometry(measurement)
@@ -25222,6 +26003,11 @@ class MainWindow(QMainWindow):
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
             return False
         commit_result = canvas.commit_magic_segment_preview()
+        if canvas.document_id is not None and not canvas.has_magic_segment_session():
+            self._release_segmentation_source_session(
+                canvas.document_id,
+                MagicSegmentToolMode.STANDARD,
+            )
         committed = bool(commit_result.get("committed", False))
         messages: list[str] = []
         if committed:
@@ -25328,6 +26114,11 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
             return False
         commit_result = canvas.commit_fiber_quick_preview()
+        if canvas.document_id is not None:
+            self._release_segmentation_source_session(
+                canvas.document_id,
+                MagicSegmentToolMode.FIBER_QUICK,
+            )
         committed = bool(commit_result.get("committed", False))
         pending = bool(commit_result.get("pending", False))
         if committed:
@@ -25356,9 +26147,34 @@ class MainWindow(QMainWindow):
             return
         self._fiber_quick_background_job_serial += 1
         job_id = self._fiber_quick_background_job_serial
+        debug_payload = dict(snapshot.get("debug_payload", {}))
+        source_metadata = debug_payload.get("segmentation_source")
+        origin_payload = (
+            source_metadata.get("origin_px")
+            if isinstance(source_metadata, dict)
+            else None
+        )
+        try:
+            origin = Point(
+                float(origin_payload[0]),
+                float(origin_payload[1]),
+            ) if isinstance(origin_payload, (list, tuple)) and len(origin_payload) >= 2 else Point(0.0, 0.0)
+        except (TypeError, ValueError):
+            origin = Point(0.0, 0.0)
+
+        def localize_points(values: object) -> list[Point]:
+            if not isinstance(values, list):
+                return []
+            return [
+                Point(point.x - origin.x, point.y - origin.y)
+                for point in values
+                if isinstance(point, Point)
+            ]
+
         self._fiber_quick_background_jobs[(document_id, job_id)] = {
             "fiber_group_id": document.active_group_id,
-            "debug_payload": dict(snapshot.get("debug_payload", {})),
+            "debug_payload": debug_payload,
+            "source_origin": origin,
         }
         self._fiber_quick_commit_geometry_worker.register_request(document_id, job_id)
         self._fiber_quick_commit_geometry_worker.requested.emit(
@@ -25366,10 +26182,14 @@ class MainWindow(QMainWindow):
                 document_id=document_id,
                 request_id=job_id,
                 mask=snapshot.get("mask"),
-                preview_polygon_px=list(snapshot.get("polygon_px", [])) if isinstance(snapshot.get("polygon_px"), list) else [],
-                preview_area_rings_px=[list(ring) for ring in snapshot.get("area_rings_px", [])] if isinstance(snapshot.get("area_rings_px"), list) else [],
-                positive_points=list(snapshot.get("positive_points", [])) if isinstance(snapshot.get("positive_points"), list) else [],
-                negative_points=list(snapshot.get("negative_points", [])) if isinstance(snapshot.get("negative_points"), list) else [],
+                preview_polygon_px=localize_points(snapshot.get("polygon_px")),
+                preview_area_rings_px=[
+                    localize_points(list(ring))
+                    for ring in snapshot.get("area_rings_px", [])
+                    if isinstance(ring, list)
+                ] if isinstance(snapshot.get("area_rings_px"), list) else [],
+                positive_points=localize_points(snapshot.get("positive_points")),
+                negative_points=localize_points(snapshot.get("negative_points")),
                 edge_trim_enabled=bool(self._app_settings.fiber_quick_edge_trim_enabled),
                 line_extension_px=float(self._app_settings.fiber_quick_line_extension_px),
                 timeout_ms=DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
@@ -25386,6 +26206,13 @@ class MainWindow(QMainWindow):
         merged_debug_payload = dict(job_meta.get("debug_payload", {}))
         if isinstance(getattr(result, "debug_payload", None), dict):
             merged_debug_payload.update(getattr(result, "debug_payload", {}))
+        line_px = result.line_px
+        origin = job_meta.get("source_origin")
+        if isinstance(origin, Point):
+            line_px = Line(
+                start=Point(line_px.start.x + origin.x, line_px.start.y + origin.y),
+                end=Point(line_px.end.x + origin.x, line_px.end.y + origin.y),
+            )
 
         def mutate() -> None:
             measurement = Measurement(
@@ -25393,7 +26220,7 @@ class MainWindow(QMainWindow):
                 image_id=document.id,
                 fiber_group_id=job_meta.get("fiber_group_id"),
                 mode="fiber_quick",
-                line_px=result.line_px,
+                line_px=line_px,
                 confidence=float(getattr(result, "confidence", 0.0) or 0.0),
                 status=str(getattr(result, "status", "fiber_quick") or "fiber_quick"),
                 debug_payload=merged_debug_payload,
@@ -25423,6 +26250,11 @@ class MainWindow(QMainWindow):
             return
         if canvas.has_magic_segment_session():
             canvas.clear_magic_segment_session()
+            if canvas.document_id is not None:
+                self._release_segmentation_source_session(
+                    canvas.document_id,
+                    MagicSegmentToolMode.STANDARD,
+                )
             self._hide_small_object_preview()
             self.statusBar().showMessage("已放弃当前魔棒遮罩", 2500)
         self._update_magic_segment_controls()
@@ -25458,6 +26290,11 @@ class MainWindow(QMainWindow):
             self._prompt_seg_worker.cancel_document(canvas.document_id)
         if canvas.has_fiber_quick_session():
             canvas.clear_fiber_quick_session()
+            if canvas.document_id is not None:
+                self._release_segmentation_source_session(
+                    canvas.document_id,
+                    MagicSegmentToolMode.FIBER_QUICK,
+                )
             self.statusBar().showMessage("已放弃当前快速测径", 2500)
         self._update_magic_segment_controls()
         self._focus_current_canvas()
@@ -25471,6 +26308,10 @@ class MainWindow(QMainWindow):
                 if self._prompt_seg_worker is not None:
                     self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_magic_segment_session()
+                self._release_segmentation_source_session(
+                    document_id,
+                    MagicSegmentToolMode.STANDARD,
+                )
                 should_hide_small_object_preview = True
             if canvas.has_reference_instance_session():
                 canvas.clear_reference_instance_session()
@@ -25480,6 +26321,10 @@ class MainWindow(QMainWindow):
                 if self._prompt_seg_worker is not None:
                     self._prompt_seg_worker.cancel_document(document_id)
                 canvas.clear_fiber_quick_session()
+                self._release_segmentation_source_session(
+                    document_id,
+                    MagicSegmentToolMode.FIBER_QUICK,
+                )
         if should_hide_small_object_preview:
             self._hide_small_object_preview()
 
@@ -26178,6 +27023,9 @@ class MainWindow(QMainWindow):
             self._fiber_quick_geometry_request_ids.clear()
             self._fiber_quick_background_jobs.clear()
             self._prompt_request_tool_modes.clear()
+            self._segmentation_source_sessions.clear()
+            self._prompt_request_sources.clear()
+            self._fiber_quick_geometry_sources.clear()
         return results
 
     def closeEvent(self, event: QCloseEvent) -> None:

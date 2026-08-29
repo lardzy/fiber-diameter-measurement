@@ -12,7 +12,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QImage
+from PySide6.QtGui import QColor, QImage
 from PySide6.QtWidgets import QApplication, QTabWidget, QWidget
 
 from fdm.construction_geometry import ConstructionEntity, FreePointDefinition
@@ -536,6 +536,52 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             self.assertEqual(len(results), 1)
             self.assertEqual(results[0][5], "error")
             self.assertIn("OSError: permanent tile read failure", results[0][6])
+        finally:
+            canvas._viewport_buffer_thread = None  # noqa: SLF001
+            canvas._viewport_buffer_thread_request_id = None  # noqa: SLF001
+            canvas.clear_document()
+            canvas.close()
+
+    def test_static_overview_never_changes_viewport_buffer_focus(self) -> None:
+        canvas = self._canvas()
+        canvas._slide_store = SimpleNamespace(path=Path("/tmp/focus.fdmslide"))  # type: ignore[assignment]  # noqa: SLF001
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=1024,
+            height=768,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[-20, -10, 0, 10, 20],
+        )
+        canvas._dynamic_focus_overview_enabled = False  # noqa: SLF001
+        canvas._focus_index = 4  # noqa: SLF001
+        rendered_focus: list[int] = []
+
+        class RecordingStore:
+            def __init__(self, _path) -> None:
+                pass
+
+            def render_viewport(self, **kwargs):
+                rendered_focus.append(int(kwargs["z_index"]))
+                image = QImage(640, 480, QImage.Format.Format_RGB32)
+                image.fill(QColor("#ffffff"))
+                return image
+
+            def close(self) -> None:
+                pass
+
+        try:
+            with (
+                patch.object(canvas, "isVisible", return_value=True),
+                patch("fdm.ui.digital_slide_canvas.DigitalSlideStore", RecordingStore),
+            ):
+                canvas._request_viewport_buffer()  # noqa: SLF001
+                thread = canvas._viewport_buffer_thread  # noqa: SLF001
+                self.assertIsNotNone(thread)
+                thread.join(timeout=1.0)
+
+            self.assertEqual(canvas._overview_target_focus_index(), 2)  # noqa: SLF001
+            self.assertEqual(rendered_focus, [4])
         finally:
             canvas._viewport_buffer_thread = None  # noqa: SLF001
             canvas._viewport_buffer_thread_request_id = None  # noqa: SLF001

@@ -10,6 +10,8 @@ from fdm.geometry import Point
 from fdm.services.prompt_segmentation import (
     PromptSegmentationService,
     create_interactive_segmentation_service,
+    magic_mask_area_px,
+    magic_mask_to_geometry,
     resolve_interactive_segmentation_backend,
 )
 
@@ -30,6 +32,8 @@ class PromptSegmentationRequest:
     small_object_enhancement_enabled: bool = False
     small_object_roi_area_threshold_px: int = 160000
     small_object_workspace_box: tuple[int, int, int, int] | None = None
+    source_token: str = ""
+    valid_coverage: object | None = None
 
 
 class PromptSegmentationWorker(QObject):
@@ -82,6 +86,33 @@ class PromptSegmentationWorker(QObject):
                 small_object_workspace_box=request.small_object_workspace_box,
                 cancel_check=lambda: self._is_request_cancelled(request.document_id),
             )
+            if result.mask is not None and request.valid_coverage is not None:
+                import numpy as np
+
+                mask = np.asarray(result.mask, dtype=bool)
+                coverage = np.asarray(request.valid_coverage, dtype=bool)
+                if mask.shape != coverage.shape:
+                    raise RuntimeError(
+                        f"分割结果与有效图块覆盖尺寸不一致：{mask.shape} != {coverage.shape}。"
+                    )
+                clipped = np.ascontiguousarray(mask & coverage)
+                selected_mask, rings, polygon, stats = magic_mask_to_geometry(
+                    clipped,
+                    positive_points=list(request.positive_points),
+                    negative_points=list(request.negative_points),
+                )
+                result.mask = selected_mask
+                result.area_rings_px = rings
+                result.polygon_px = polygon
+                result.area_px = (
+                    magic_mask_area_px(selected_mask)
+                    if selected_mask is not None
+                    else 0.0
+                )
+                result.metadata["coverage_clipped"] = bool(
+                    np.any(mask & ~coverage)
+                )
+                result.metadata.update(stats)
             if self._is_request_cancelled(request.document_id):
                 return
             result.metadata["tool_mode"] = request.tool_mode
@@ -90,6 +121,7 @@ class PromptSegmentationWorker(QObject):
             result.metadata["resolved_model_variant"] = resolved_variant
             result.metadata["positive_points_px"] = list(request.positive_points)
             result.metadata["negative_points_px"] = list(request.negative_points)
+            result.metadata["source_token"] = request.source_token
             if fallback_message:
                 result.metadata["model_fallback_message"] = fallback_message
             self.succeeded.emit(request.document_id, request.request_id, result)
