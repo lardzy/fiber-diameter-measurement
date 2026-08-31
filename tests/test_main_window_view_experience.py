@@ -12,7 +12,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QByteArray, QCoreApplication, QEvent, Qt
 from PySide6.QtGui import QColor, QImage, QKeyEvent
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QToolButton
 from PySide6.QtTest import QTest
 from shiboken6 import isValid as is_qobject_valid
 
@@ -23,6 +23,7 @@ from fdm.models import (
     OverlayTextSizeSpace,
     new_id,
 )
+from fdm.services.digital_slide_store import DigitalSlideManifest, DigitalSlideStore
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.settings import AppSettings, MagicSegmentToolMode
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
@@ -49,7 +50,7 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             return_value=None,
         )
         self.load_patch.start()
-        self.save_patch.start()
+        self.save_mock = self.save_patch.start()
         self.addCleanup(self.load_patch.stop)
         self.addCleanup(self.save_patch.stop)
 
@@ -328,6 +329,71 @@ class MainWindowViewExperienceTests(unittest.TestCase):
         self.assertFalse(window._canvas_navigators[second.id].navigator_enabled)
         self.assertTrue(window._canvas_navigators[first.id].isHidden())
         self.assertTrue(window._canvas_navigators[second.id].isHidden())
+
+    def test_digital_slide_navigation_toggles_restore_apply_and_persist(self) -> None:
+        self.settings.digital_slide_smooth_navigation_enabled = False
+        self.settings.digital_slide_shift_navigation_enabled = True
+        window = self._window()
+        self.save_mock.reset_mock()
+
+        with TemporaryDirectory() as tmp_dir:
+            slide_path = Path(tmp_dir) / "navigation-preferences.fdmslide"
+            store = DigitalSlideStore.create(
+                slide_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=1200,
+                    height=900,
+                    viewport_width=200,
+                    viewport_height=150,
+                    focus_levels=[0],
+                ),
+            )
+            store.close()
+            window._add_digital_slide_document_from_path(slide_path, document=None)
+            self._process_events()
+
+            canvas = window.current_canvas()
+            self.assertIsInstance(canvas, DigitalSlideCanvas)
+            assert isinstance(canvas, DigitalSlideCanvas)
+            self.assertEqual(canvas.navigation_mode(), "step")
+            self.assertTrue(canvas.shift_navigation_enabled())
+            self.assertFalse(window.digital_slide_smooth_navigation_action.isChecked())
+            self.assertTrue(window.digital_slide_shift_navigation_action.isChecked())
+            self.assertTrue(window.digital_slide_smooth_navigation_action.isEnabled())
+            self.assertTrue(window.digital_slide_shift_navigation_action.isEnabled())
+
+            controls = [
+                button.defaultAction()
+                for button in window._document_view_controls.findChildren(QToolButton)
+            ]
+            smooth_index = controls.index(
+                window.digital_slide_smooth_navigation_action
+            )
+            self.assertIs(
+                controls[smooth_index + 1],
+                window.digital_slide_shift_navigation_action,
+            )
+
+            window.digital_slide_smooth_navigation_action.trigger()
+            self.assertTrue(
+                window._app_settings.digital_slide_smooth_navigation_enabled
+            )
+            self.assertEqual(canvas.navigation_mode(), "smooth")
+
+            window.digital_slide_shift_navigation_action.trigger()
+            self.assertFalse(
+                window._app_settings.digital_slide_shift_navigation_enabled
+            )
+            self.assertFalse(canvas.shift_navigation_enabled())
+
+            canvas.toggle_navigation_mode()
+            self.assertFalse(
+                window._app_settings.digital_slide_smooth_navigation_enabled
+            )
+            self.assertFalse(window.digital_slide_smooth_navigation_action.isChecked())
+
+        self.assertEqual(self.save_mock.call_count, 3)
 
     def test_low_zoom_text_and_viewport_export_use_exact_scale(self) -> None:
         window = self._window()

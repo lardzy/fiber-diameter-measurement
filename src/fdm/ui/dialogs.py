@@ -1662,7 +1662,8 @@ class ShortcutHelpDialog(QDialog):
                     "数字化切片浏览",
                     "M  切换步进移动 / 平滑移动",
                     "方向键  移动当前视场",
-                    "Shift+方向键  按整视场移动",
+                    "Shift+方向键  平滑模式快速移动；步进模式按整视场移动",
+                    "右上角“快速/整视场移动”  保持 Shift+方向键效果",
                     "鼠标滚轮  切换焦层",
                     "Ctrl+鼠标滚轮  缩放当前视场",
                     "",
@@ -2270,6 +2271,8 @@ class SettingsDialog(QDialog):
             digital_slide_discard_frames=self._digital_slide_discard_frames_spin.value(),
             digital_slide_focus_wheel_step=self._digital_slide_focus_wheel_slider.value(),
             digital_slide_dynamic_focus_overview_enabled=self._digital_slide_dynamic_focus_overview_checkbox.isChecked(),
+            digital_slide_smooth_navigation_enabled=self._initial_settings.digital_slide_smooth_navigation_enabled,
+            digital_slide_shift_navigation_enabled=self._initial_settings.digital_slide_shift_navigation_enabled,
             digital_slide_profiles=[
                 DigitalSlideAcquisitionProfile(
                     profile_id=profile.profile_id,
@@ -3093,7 +3096,11 @@ class SettingsDialog(QDialog):
         self._update_digital_slide_focus_wheel_label(self._digital_slide_focus_wheel_slider.value())
         wheel_layout.addWidget(self._digital_slide_focus_wheel_slider, 1)
         wheel_layout.addWidget(self._digital_slide_focus_wheel_value_label)
-        shortcuts = QLabel("M 切换步进/平滑移动；方向键移动视场；Shift+方向键按整视场移动；Ctrl+滚轮缩放；普通滚轮切换焦层。")
+        shortcuts = QLabel(
+            "M 切换步进/平滑移动；方向键移动视场；Shift+方向键在平滑模式下快速移动、"
+            "在步进模式下按整视场移动；右上角开关可保持 Shift 效果；Ctrl+滚轮缩放；"
+            "普通滚轮切换焦层。"
+        )
         shortcuts.setWordWrap(True)
         self._digital_slide_dynamic_focus_overview_checkbox = QCheckBox(
             "动态焦层缩略图"

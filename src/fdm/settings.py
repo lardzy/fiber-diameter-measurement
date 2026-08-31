@@ -853,6 +853,8 @@ class AppSettings:
     digital_slide_discard_frames: int = 2
     digital_slide_focus_wheel_step: int = 1
     digital_slide_dynamic_focus_overview_enabled: bool = True
+    digital_slide_smooth_navigation_enabled: bool = True
+    digital_slide_shift_navigation_enabled: bool = False
     digital_slide_profiles: list[DigitalSlideAcquisitionProfile] = field(default_factory=list)
     digital_slide_active_profile_id: str = ""
 
@@ -1028,6 +1030,12 @@ class AppSettings:
         normalized.digital_slide_focus_wheel_step = self._normalize_int_range(self.digital_slide_focus_wheel_step, default=1, minimum=1, maximum=10)
         normalized.digital_slide_dynamic_focus_overview_enabled = bool(
             self.digital_slide_dynamic_focus_overview_enabled
+        )
+        normalized.digital_slide_smooth_navigation_enabled = bool(
+            self.digital_slide_smooth_navigation_enabled
+        )
+        normalized.digital_slide_shift_navigation_enabled = bool(
+            self.digital_slide_shift_navigation_enabled
         )
         profiles = self._normalize_digital_slide_profiles(
             self.digital_slide_profiles,
@@ -1605,6 +1613,8 @@ class AppSettings:
             "digital_slide_discard_frames": normalized.digital_slide_discard_frames,
             "digital_slide_focus_wheel_step": normalized.digital_slide_focus_wheel_step,
             "digital_slide_dynamic_focus_overview_enabled": normalized.digital_slide_dynamic_focus_overview_enabled,
+            "digital_slide_smooth_navigation_enabled": normalized.digital_slide_smooth_navigation_enabled,
+            "digital_slide_shift_navigation_enabled": normalized.digital_slide_shift_navigation_enabled,
             "digital_slide_profiles": [
                 profile.to_dict()
                 for profile in normalized.digital_slide_profiles
@@ -2048,6 +2058,18 @@ class AppSettings:
             payload.get(
                 "digital_slide_dynamic_focus_overview_enabled",
                 settings.digital_slide_dynamic_focus_overview_enabled,
+            )
+        )
+        settings.digital_slide_smooth_navigation_enabled = bool(
+            payload.get(
+                "digital_slide_smooth_navigation_enabled",
+                settings.digital_slide_smooth_navigation_enabled,
+            )
+        )
+        settings.digital_slide_shift_navigation_enabled = bool(
+            payload.get(
+                "digital_slide_shift_navigation_enabled",
+                settings.digital_slide_shift_navigation_enabled,
             )
         )
         raw_profiles = payload.get("digital_slide_profiles")

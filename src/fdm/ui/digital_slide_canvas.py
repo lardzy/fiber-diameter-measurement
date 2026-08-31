@@ -31,6 +31,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     viewportChanged = Signal(int, int, int)
     focusChanged = Signal(int)
     navigationModeChanged = Signal(str)
+    shiftNavigationEnabledChanged = Signal(bool)
     viewportBufferFailed = Signal(str)
     overviewImageChanged = Signal(QImage)
     _bufferRendered = Signal(int, int, int, int, QImage, str, str)
@@ -46,8 +47,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._initial_fit_done = False
         self._initial_fit_attempts = 0
         self._navigation_mode = "smooth"
+        self._shift_navigation_enabled = False
         self._smooth_nav_keys: set[int] = set()
-        self._smooth_nav_shift = False
+        self._smooth_nav_keyboard_shift = False
         self._smooth_nav_last_at = 0.0
         self._smooth_nav_timer = QTimer(self)
         self._smooth_nav_timer.setInterval(16)
@@ -121,6 +123,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
         self._smooth_nav_keys.clear()
+        self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
         self._overview_debounce_timer.stop()
         self._overview_cancel.set()
@@ -188,7 +191,12 @@ class DigitalSlideCanvas(DocumentCanvas):
         return self._navigation_mode
 
     def navigation_mode_label(self) -> str:
-        return "平滑移动" if self._navigation_mode == "smooth" else "步进移动"
+        if self._navigation_mode == "smooth":
+            return "平滑移动（快速）" if self._shift_navigation_enabled else "平滑移动"
+        return "步进移动（整视场）" if self._shift_navigation_enabled else "步进移动"
+
+    def shift_navigation_enabled(self) -> bool:
+        return self._shift_navigation_enabled
 
     def overview_image(self) -> QImage:
         return QImage(self._overview_image)
@@ -255,6 +263,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._cancel_overlay_requests()
         self._navigation_mode = mode
         self._smooth_nav_keys.clear()
+        self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
         self._smooth_nav_last_at = 0.0
         if navigation_was_active:
@@ -266,6 +275,13 @@ class DigitalSlideCanvas(DocumentCanvas):
     def toggle_navigation_mode(self) -> str:
         self.set_navigation_mode("smooth" if self._navigation_mode != "smooth" else "step")
         return self._navigation_mode
+
+    def set_shift_navigation_enabled(self, enabled: bool) -> None:
+        enabled = bool(enabled)
+        if enabled == self._shift_navigation_enabled:
+            return
+        self._shift_navigation_enabled = enabled
+        self.shiftNavigationEnabledChanged.emit(enabled)
 
     def move_viewport_by(self, dx: float, dy: float, *, throttled: bool = False) -> None:
         if dx or dy:
@@ -448,7 +464,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             self.toggle_navigation_mode()
             event.accept()
             return
-        if modifiers == Qt.KeyboardModifier.NoModifier and event.key() in {
+        if modifiers in {
+            Qt.KeyboardModifier.NoModifier,
+            Qt.KeyboardModifier.ShiftModifier,
+        } and event.key() in {
             Qt.Key.Key_Left,
             Qt.Key.Key_Right,
             Qt.Key.Key_Up,
@@ -458,29 +477,15 @@ class DigitalSlideCanvas(DocumentCanvas):
                 self._begin_smooth_navigation(event)
                 event.accept()
                 return
-            step_x, step_y = self._navigation_step()
-            if event.key() == Qt.Key.Key_Left:
-                self.move_viewport_by(-step_x, 0)
-            elif event.key() == Qt.Key.Key_Right:
-                self.move_viewport_by(step_x, 0)
-            elif event.key() == Qt.Key.Key_Up:
-                self.move_viewport_by(0, -step_y)
+            shift_navigation = (
+                self._shift_navigation_enabled
+                or modifiers == Qt.KeyboardModifier.ShiftModifier
+            )
+            if shift_navigation:
+                step_x = float(self._image.width() if self._image is not None else 0)
+                step_y = float(self._image.height() if self._image is not None else 0)
             else:
-                self.move_viewport_by(0, step_y)
-            event.accept()
-            return
-        if modifiers == Qt.KeyboardModifier.ShiftModifier and event.key() in {
-            Qt.Key.Key_Left,
-            Qt.Key.Key_Right,
-            Qt.Key.Key_Up,
-            Qt.Key.Key_Down,
-        }:
-            if self._navigation_mode == "smooth":
-                self._begin_smooth_navigation(event)
-                event.accept()
-                return
-            step_x = float(self._image.width() if self._image is not None else 0)
-            step_y = float(self._image.height() if self._image is not None else 0)
+                step_x, step_y = self._navigation_step()
             if event.key() == Qt.Key.Key_Left:
                 self.move_viewport_by(-step_x, 0)
             elif event.key() == Qt.Key.Key_Right:
@@ -501,6 +506,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             if not getattr(event, "isAutoRepeat", lambda: False)():
                 self._smooth_nav_keys.discard(int(event.key()))
                 if not self._smooth_nav_keys:
+                    self._smooth_nav_keyboard_shift = False
                     self._smooth_nav_timer.stop()
                     self._smooth_nav_last_at = 0.0
                     self._publish_viewport_state(throttled=False)
@@ -625,7 +631,9 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._cancel_overlay_requests()
         self._smooth_nav_keys.add(int(event.key()))
         modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
-        self._smooth_nav_shift = modifiers == Qt.KeyboardModifier.ShiftModifier
+        self._smooth_nav_keyboard_shift = (
+            modifiers == Qt.KeyboardModifier.ShiftModifier
+        )
         self._smooth_nav_last_at = perf_counter()
         if not self._smooth_nav_timer.isActive():
             self._smooth_nav_timer.start()
@@ -636,12 +644,17 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self._image is None or not self._smooth_nav_keys:
             self._smooth_nav_timer.stop()
             self._smooth_nav_last_at = 0.0
+            self._smooth_nav_keyboard_shift = False
             return
         now = perf_counter()
         previous = self._smooth_nav_last_at or now
         self._smooth_nav_last_at = now
         dt = max(0.001, min(0.12, now - previous))
-        multiplier = 3.0 if self._smooth_nav_shift else 1.0
+        multiplier = (
+            3.0
+            if self._shift_navigation_enabled or self._smooth_nav_keyboard_shift
+            else 1.0
+        )
         speed = 0.75 * multiplier
         step_x = max(1.0, self._image.width() * speed * dt)
         step_y = max(1.0, self._image.height() * speed * dt)

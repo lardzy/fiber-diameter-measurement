@@ -1821,6 +1821,7 @@ class MainWindow(QMainWindow):
         )
         self._digital_slide_local_cache.cleanup_abandoned_once()
         self._application_key_filter_installed = False
+        self._syncing_digital_slide_navigation_preferences = False
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
         self._manual_tool_mode = "manual"
@@ -1925,6 +1926,7 @@ class MainWindow(QMainWindow):
         self._digital_slide_mode = False
         self.digital_slide_action: QAction | None = None
         self.digital_slide_smooth_navigation_action: QAction | None = None
+        self.digital_slide_shift_navigation_action: QAction | None = None
         self._digital_slide_status_label: QLabel | None = None
         self._digital_slide_camera_label: QLabel | None = None
         self._digital_slide_readiness_label: QLabel | None = None
@@ -2677,11 +2679,32 @@ class MainWindow(QMainWindow):
 
         self.digital_slide_smooth_navigation_action = QAction("平滑移动", self)
         self.digital_slide_smooth_navigation_action.setCheckable(True)
+        self.digital_slide_smooth_navigation_action.setChecked(
+            self._app_settings.digital_slide_smooth_navigation_enabled
+        )
         self.digital_slide_smooth_navigation_action.setShortcut("M")
         self.digital_slide_smooth_navigation_action.setIcon(themed_icon("select", color="#D7E3FC"))
-        self.digital_slide_smooth_navigation_action.setToolTip("切换数字化切片方向键步进/平滑移动")
+        self.digital_slide_smooth_navigation_action.setToolTip(
+            "切换数字化切片方向键的步进/平滑移动（自动记住）"
+        )
         self.digital_slide_smooth_navigation_action.triggered.connect(self._set_current_digital_slide_smooth_navigation)
         self.digital_slide_smooth_navigation_action.setEnabled(False)
+
+        self.digital_slide_shift_navigation_action = QAction("快速/整视场移动", self)
+        self.digital_slide_shift_navigation_action.setCheckable(True)
+        self.digital_slide_shift_navigation_action.setChecked(
+            self._app_settings.digital_slide_shift_navigation_enabled
+        )
+        self.digital_slide_shift_navigation_action.setIcon(
+            themed_icon("direction_right", color="#D7E3FC")
+        )
+        self.digital_slide_shift_navigation_action.setToolTip(
+            "保持 Shift+方向键效果：平滑模式快速移动，步进模式一次移动整个视场（自动记住）"
+        )
+        self.digital_slide_shift_navigation_action.triggered.connect(
+            self._set_current_digital_slide_shift_navigation
+        )
+        self.digital_slide_shift_navigation_action.setEnabled(False)
 
         self.settings_action = QAction("首选项...", self)
         self.settings_action.setMenuRole(QAction.MenuRole.NoRole)
@@ -3294,6 +3317,7 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.actual_size_action)
         view_menu.addAction(self.fullscreen_measurement_action)
         view_menu.addAction(self.digital_slide_smooth_navigation_action)
+        view_menu.addAction(self.digital_slide_shift_navigation_action)
         view_menu.addAction(self.toggle_canvas_navigator_action)
         view_menu.addSeparator()
         view_menu.addAction(self.toggle_project_panel_action)
@@ -4684,6 +4708,7 @@ class MainWindow(QMainWindow):
             self.actual_size_action,
             self.fullscreen_measurement_action,
             self.digital_slide_smooth_navigation_action,
+            self.digital_slide_shift_navigation_action,
         ):
             button = QToolButton(view_controls)
             button.setDefaultAction(action)
@@ -19184,6 +19209,14 @@ class MainWindow(QMainWindow):
         target_document.mark_calibration_saved()
 
         canvas = DigitalSlideCanvas()
+        canvas.set_navigation_mode(
+            "smooth"
+            if self._app_settings.digital_slide_smooth_navigation_enabled
+            else "step"
+        )
+        canvas.set_shift_navigation_enabled(
+            self._app_settings.digital_slide_shift_navigation_enabled
+        )
         canvas.set_dynamic_focus_overview_enabled(
             self._app_settings.digital_slide_dynamic_focus_overview_enabled
         )
@@ -19239,6 +19272,9 @@ class MainWindow(QMainWindow):
             )
         )
         canvas.navigationModeChanged.connect(self._on_digital_slide_navigation_mode_changed)
+        canvas.shiftNavigationEnabledChanged.connect(
+            self._on_digital_slide_shift_navigation_changed
+        )
 
         self._remove_unresolved_placeholder_ui(target_document.id)
         insert_index = self.project_session_controller.ui_insert_index(target_document.id, self._document_order)
@@ -19347,24 +19383,91 @@ class MainWindow(QMainWindow):
         if canvas is None:
             self._sync_digital_slide_navigation_action()
             return
-        canvas.set_navigation_mode("smooth" if checked else "step")
-        self._sync_digital_slide_navigation_action()
-        self._update_image_resolution_label()
+        self._app_settings.digital_slide_smooth_navigation_enabled = bool(checked)
+        self._apply_digital_slide_navigation_preferences()
+        self._save_app_settings(context="数字切片浏览")
+
+    def _set_current_digital_slide_shift_navigation(self, checked: bool) -> None:
+        canvas = self._current_digital_slide_canvas()
+        if canvas is None:
+            self._sync_digital_slide_navigation_action()
+            return
+        self._app_settings.digital_slide_shift_navigation_enabled = bool(checked)
+        self._apply_digital_slide_navigation_preferences()
+        self._save_app_settings(context="数字切片浏览")
 
     def _on_digital_slide_navigation_mode_changed(self, mode: str) -> None:
+        if self._syncing_digital_slide_navigation_preferences:
+            return
+        enabled = mode == "smooth"
+        if self._app_settings.digital_slide_smooth_navigation_enabled == enabled:
+            self._sync_digital_slide_navigation_action()
+            self._update_image_resolution_label()
+            return
+        self._app_settings.digital_slide_smooth_navigation_enabled = enabled
+        self._apply_digital_slide_navigation_preferences()
+        self._save_app_settings(context="数字切片浏览")
+
+    def _on_digital_slide_shift_navigation_changed(self, enabled: bool) -> None:
+        if self._syncing_digital_slide_navigation_preferences:
+            return
+        enabled = bool(enabled)
+        if self._app_settings.digital_slide_shift_navigation_enabled == enabled:
+            self._sync_digital_slide_navigation_action()
+            self._update_image_resolution_label()
+            return
+        self._app_settings.digital_slide_shift_navigation_enabled = enabled
+        self._apply_digital_slide_navigation_preferences()
+        self._save_app_settings(context="数字切片浏览")
+
+    def _apply_digital_slide_navigation_preferences(self) -> None:
+        if self._syncing_digital_slide_navigation_preferences:
+            return
+        mode = (
+            "smooth"
+            if self._app_settings.digital_slide_smooth_navigation_enabled
+            else "step"
+        )
+        shift_enabled = bool(
+            self._app_settings.digital_slide_shift_navigation_enabled
+        )
+        self._syncing_digital_slide_navigation_preferences = True
+        try:
+            for candidate in self._canvases.values():
+                if not isinstance(candidate, DigitalSlideCanvas):
+                    continue
+                candidate.set_navigation_mode(mode)
+                candidate.set_shift_navigation_enabled(shift_enabled)
+        finally:
+            self._syncing_digital_slide_navigation_preferences = False
         self._sync_digital_slide_navigation_action()
         self._update_image_resolution_label()
 
     def _sync_digital_slide_navigation_action(self) -> None:
-        action = self.digital_slide_smooth_navigation_action
-        if action is None:
+        smooth_action = self.digital_slide_smooth_navigation_action
+        shift_action = self.digital_slide_shift_navigation_action
+        if smooth_action is None or shift_action is None:
             return
         canvas = self._current_digital_slide_canvas()
         enabled = canvas is not None and not self._preview_active
-        action.blockSignals(True)
-        action.setEnabled(enabled)
-        action.setChecked(bool(canvas is not None and canvas.navigation_mode() == "smooth"))
-        action.blockSignals(False)
+        smooth_checked = (
+            canvas.navigation_mode() == "smooth"
+            if canvas is not None
+            else self._app_settings.digital_slide_smooth_navigation_enabled
+        )
+        shift_checked = (
+            canvas.shift_navigation_enabled()
+            if canvas is not None
+            else self._app_settings.digital_slide_shift_navigation_enabled
+        )
+        for action, checked in (
+            (smooth_action, smooth_checked),
+            (shift_action, shift_checked),
+        ):
+            action.blockSignals(True)
+            action.setEnabled(enabled)
+            action.setChecked(bool(checked))
+            action.blockSignals(False)
 
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
         return self.project_session_controller.save_project(path)
@@ -20332,6 +20435,7 @@ class MainWindow(QMainWindow):
                 canvas.set_dynamic_focus_overview_enabled(
                     self._app_settings.digital_slide_dynamic_focus_overview_enabled
                 )
+        self._apply_digital_slide_navigation_preferences()
         navigator_enabled = bool(self._app_settings.show_canvas_navigator)
         for navigator in self._canvas_navigators.values():
             navigator.set_navigator_enabled(navigator_enabled)

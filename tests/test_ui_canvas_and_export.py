@@ -2367,6 +2367,51 @@ class CanvasAndExportTests(unittest.TestCase):
             finally:
                 store.close()
 
+    def test_digital_slide_shift_navigation_toggle_matches_shift_behavior(self) -> None:
+        canvas = DigitalSlideCanvas()
+        canvas._image = QImage(200, 100, QImage.Format.Format_RGB32)  # noqa: SLF001
+        try:
+            canvas.set_navigation_mode("step")
+            self.assertFalse(canvas.shift_navigation_enabled())
+
+            before = canvas.viewport_origin()
+            canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Right))
+            regular_delta = canvas.viewport_origin().x - before.x
+            self.assertAlmostEqual(regular_delta, 50.0)
+
+            canvas.set_shift_navigation_enabled(True)
+            before = canvas.viewport_origin()
+            canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Right))
+            full_field_delta = canvas.viewport_origin().x - before.x
+            self.assertAlmostEqual(full_field_delta, 200.0)
+            self.assertEqual(canvas.navigation_mode_label(), "步进移动（整视场）")
+
+            canvas.set_navigation_mode("smooth")
+            canvas.set_shift_navigation_enabled(False)
+            canvas._smooth_nav_keys = {int(Qt.Key.Key_Right)}  # noqa: SLF001
+            canvas._smooth_nav_last_at = 1.0  # noqa: SLF001
+            with (
+                patch("fdm.ui.digital_slide_canvas.perf_counter", return_value=1.1),
+                patch.object(canvas, "move_viewport_by") as move_regular,
+            ):
+                canvas._apply_smooth_navigation()  # noqa: SLF001
+            regular_smooth_delta = move_regular.call_args.args[0]
+
+            canvas.set_shift_navigation_enabled(True)
+            canvas._smooth_nav_last_at = 2.0  # noqa: SLF001
+            with (
+                patch("fdm.ui.digital_slide_canvas.perf_counter", return_value=2.1),
+                patch.object(canvas, "move_viewport_by") as move_fast,
+            ):
+                canvas._apply_smooth_navigation()  # noqa: SLF001
+            fast_smooth_delta = move_fast.call_args.args[0]
+
+            self.assertAlmostEqual(fast_smooth_delta, regular_smooth_delta * 3.0)
+            self.assertEqual(canvas.navigation_mode_label(), "平滑移动（快速）")
+        finally:
+            canvas.shutdown()
+            canvas.close()
+
     def test_digital_slide_window_arrow_binding_works_before_canvas_focus(self) -> None:
         window = MainWindow()
         window.show()
@@ -5186,6 +5231,7 @@ class CanvasAndExportTests(unittest.TestCase):
                     window.actual_size_action,
                     window.fullscreen_measurement_action,
                     window.digital_slide_smooth_navigation_action,
+                    window.digital_slide_shift_navigation_action,
                     window.toggle_canvas_navigator_action,
                     window.toggle_project_panel_action,
                     window.toggle_inspector_panel_action,
@@ -9618,7 +9664,13 @@ class CanvasAndExportTests(unittest.TestCase):
             dialog.close()
 
     def test_settings_dialog_roundtrips_digital_slide_axis_reversal(self) -> None:
-        dialog = SettingsDialog(AppSettings(), document=None)
+        dialog = SettingsDialog(
+            AppSettings(
+                digital_slide_smooth_navigation_enabled=False,
+                digital_slide_shift_navigation_enabled=True,
+            ),
+            document=None,
+        )
         try:
             dialog._digital_slide_reverse_x_axis_checkbox.setChecked(True)
             dialog._digital_slide_reverse_y_axis_checkbox.setChecked(True)
@@ -9629,10 +9681,14 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertTrue(collected.digital_slide_reverse_x_axis)
             self.assertTrue(collected.digital_slide_reverse_y_axis)
             self.assertEqual(collected.digital_slide_first_tile_extra_wait_ms, 9000)
+            self.assertFalse(collected.digital_slide_smooth_navigation_enabled)
+            self.assertTrue(collected.digital_slide_shift_navigation_enabled)
             restored = AppSettings.from_dict(collected.to_dict())
             self.assertTrue(restored.digital_slide_reverse_x_axis)
             self.assertTrue(restored.digital_slide_reverse_y_axis)
             self.assertEqual(restored.digital_slide_first_tile_extra_wait_ms, 9000)
+            self.assertFalse(restored.digital_slide_smooth_navigation_enabled)
+            self.assertTrue(restored.digital_slide_shift_navigation_enabled)
         finally:
             dialog.close()
 

@@ -1185,6 +1185,21 @@ class ModelsProjectIOTests(unittest.TestCase):
         self.assertTrue(loaded.workspace_layout.object_properties_expanded)
         self.assertTrue(loaded.main_window_is_maximized)
 
+    def test_digital_slide_navigation_preferences_default_and_roundtrip(self) -> None:
+        defaults = AppSettings.from_dict({})
+        self.assertTrue(defaults.digital_slide_smooth_navigation_enabled)
+        self.assertFalse(defaults.digital_slide_shift_navigation_enabled)
+
+        loaded = AppSettings.from_dict(
+            AppSettings(
+                digital_slide_smooth_navigation_enabled=False,
+                digital_slide_shift_navigation_enabled=True,
+            ).to_dict()
+        )
+
+        self.assertFalse(loaded.digital_slide_smooth_navigation_enabled)
+        self.assertTrue(loaded.digital_slide_shift_navigation_enabled)
+
     def test_measurement_label_styles_roundtrip_independently(self) -> None:
         settings = AppSettings(
             length_measurement_label_style=MeasurementLabelStyleSettings(
