@@ -490,6 +490,12 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             document = window.current_document()
             self.assertIsNotNone(document)
             assert document is not None
+            self.assertIsNotNone(window._manual_tool_button)
+            self.assertIsNotNone(window._add_group_button)
+            assert window._manual_tool_button is not None
+            assert window._add_group_button is not None
+            self.assertTrue(window._manual_tool_button.isEnabled())
+            self.assertTrue(window._add_group_button.isEnabled())
             messages: list[str] = []
             window.statusBar().messageChanged.connect(messages.append)
 
@@ -497,8 +503,12 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertFalse(canvas.pixel_work_enabled())
             self.assertEqual(window._tool_mode, "manual")
             self.assertNotIn(document.id, window._digital_slide_suspended_tools)
+            self.assertTrue(window._manual_tool_button.isEnabled())
+            self.assertTrue(window._add_group_button.isEnabled())
             for _ in range(200):
                 self._process_events(1)
+                self.assertTrue(window._manual_tool_button.isEnabled())
+                self.assertTrue(window._add_group_button.isEnabled())
                 if canvas.pixel_work_enabled():
                     break
                 QTest.qWait(5)
@@ -509,8 +519,12 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertFalse(canvas.pixel_work_enabled())
             self.assertEqual(window._tool_mode, "manual")
             self.assertNotIn(document.id, window._digital_slide_suspended_tools)
+            self.assertTrue(window._manual_tool_button.isEnabled())
+            self.assertTrue(window._add_group_button.isEnabled())
             for _ in range(200):
                 self._process_events(1)
+                self.assertTrue(window._manual_tool_button.isEnabled())
+                self.assertTrue(window._add_group_button.isEnabled())
                 if canvas.pixel_work_enabled():
                     break
                 QTest.qWait(5)

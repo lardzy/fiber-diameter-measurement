@@ -1826,6 +1826,7 @@ class MainWindow(QMainWindow):
             str, tuple[str, str, str]
         ] = {}
         self._digital_slide_active_suspension_document_id: str | None = None
+        self._digital_slide_pixel_controls_blocked: dict[str, bool] = {}
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
         self._manual_tool_mode = "manual"
@@ -19440,7 +19441,7 @@ class MainWindow(QMainWindow):
                 f"焦层已切换到 {int(focus_index) + 1}；旧焦层的未确认魔棒结果已取消。",
                 5000,
             )
-        self._update_magic_segment_controls()
+            self._update_magic_segment_controls()
 
     def _on_digital_slide_pixel_work_availability_changed(
         self,
@@ -19498,7 +19499,18 @@ class MainWindow(QMainWindow):
                     construction_kind=construction_kind,
                 )
                 self.statusBar().showMessage("原生工作视场已就绪，已恢复此前工具。", 3000)
-        if is_current:
+        controls_blocked = bool(
+            isinstance(canvas, DigitalSlideCanvas)
+            and (
+                canvas.pixel_work_controls_blocked()
+                or document_id in self._digital_slide_suspended_tools
+            )
+        )
+        previous_controls_blocked = self._digital_slide_pixel_controls_blocked.get(
+            document_id
+        )
+        self._digital_slide_pixel_controls_blocked[document_id] = controls_blocked
+        if is_current and previous_controls_blocked != controls_blocked:
             self._update_action_states()
 
     def _sync_digital_slide_pixel_work_tool(self) -> None:
@@ -22622,6 +22634,7 @@ class MainWindow(QMainWindow):
         self._canvases.clear()
         self._digital_slide_suspended_tools.clear()
         self._digital_slide_active_suspension_document_id = None
+        self._digital_slide_pixel_controls_blocked.clear()
         for navigator in self._canvas_navigators.values():
             navigator.clear()
         self._canvas_navigators.clear()
@@ -22750,6 +22763,7 @@ class MainWindow(QMainWindow):
         self._raster_metadata.pop(document_id, None)
         self._display_cache_transforms.pop(document_id, None)
         self._digital_slide_suspended_tools.pop(document_id, None)
+        self._digital_slide_pixel_controls_blocked.pop(document_id, None)
         if self._digital_slide_active_suspension_document_id == document_id:
             self._digital_slide_active_suspension_document_id = None
         session_asset = self._session_processed_assets.pop(document_id, None)
@@ -25197,8 +25211,14 @@ class MainWindow(QMainWindow):
         has_document = document is not None
         preview_active = self._preview_active
         active_canvas = self.current_canvas()
-        pixel_work_enabled = not isinstance(active_canvas, DigitalSlideCanvas) or (
-            active_canvas.pixel_work_enabled()
+        # A focus/move reload remains protected by the exact operation guards,
+        # but does not flip the disabled palette across the whole workspace.
+        pixel_work_enabled = not isinstance(active_canvas, DigitalSlideCanvas) or not (
+            active_canvas.pixel_work_controls_blocked()
+            or (
+                document is not None
+                and document.id in self._digital_slide_suspended_tools
+            )
         )
         can_pixel_work = has_document and not preview_active and pixel_work_enabled
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None

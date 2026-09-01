@@ -486,12 +486,15 @@ def test_focus_change_keeps_a_painted_handoff_and_indicator_is_zoom_only(
         )
         first_frame = canvas._render_frame  # noqa: SLF001
         assert first_frame is not None
+        assert not canvas.pixel_work_controls_blocked()
 
         canvas._hide_native_viewport_indicator()  # noqa: SLF001
         canvas.set_focus_index(target_focus)
         assert canvas._render_frame is None  # noqa: SLF001
         assert canvas._focus_transition_frame is first_frame  # noqa: SLF001
         assert not canvas.native_viewport_indicator_visible()
+        assert not canvas.pixel_work_enabled()
+        assert not canvas.pixel_work_controls_blocked()
 
         painted = QImage(canvas.size(), QImage.Format.Format_RGB32)
         painted.fill(QColor("#000000"))

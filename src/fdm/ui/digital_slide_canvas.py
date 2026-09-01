@@ -86,6 +86,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._latest_overview_request_id = 0
         self._native_frame_key: tuple[int, int, int] | None = None
         self._native_frame_pending_key: tuple[int, int, int] | None = None
+        self._native_frame_ever_ready = False
         self._pixel_work_enabled = True
         self._pixel_work_reason = ""
         self._navigation_velocity = Point(0.0, 0.0)
@@ -150,6 +151,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.overviewImageChanged.emit(QImage())
         self._slide_store = store
         self._slide_manifest = store.read_manifest()
+        self._native_frame_ever_ready = False
         document.image_size = (self._slide_manifest.width, self._slide_manifest.height)
         slide_meta = dict(document.metadata.get("digital_slide", {})) if isinstance(document.metadata.get("digital_slide"), dict) else {}
         origin = slide_meta.get("viewport_origin")
@@ -245,6 +247,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._update_native_viewport_origin()
         self._native_frame_key = None
         self._native_frame_pending_key = None
+        self._native_frame_ever_ready = False
         self._start_renderer()
         self._request_display_frame()
         self._update_pixel_work_state()
@@ -281,6 +284,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_native_rect = None
         self._native_frame_key = None
         self._native_frame_pending_key = None
+        self._native_frame_ever_ready = False
         self._slide_store = None
         self._slide_manifest = None
 
@@ -388,6 +392,22 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def native_viewport_indicator_visible(self) -> bool:
         return bool(self._native_viewport_indicator_visible)
+
+    def pixel_work_controls_blocked(self) -> bool:
+        """Return whether pixel-tool controls should visibly enter a blocked state.
+
+        A native frame reload after movement or focus change is normally very
+        short.  Exact operations remain guarded by ``pixel_work_enabled()``,
+        but keeping the controls visually stable avoids disabling and enabling
+        the whole toolbar for every focus tick.
+        """
+
+        return bool(
+            self._slide_manifest is None
+            or not self._native_frame_ever_ready
+            or self.large_area_browse_active()
+            or self._viewport_buffer_error_blocked
+        )
 
     def renderer_stats(self) -> DigitalSlideRendererStats | None:
         renderer = self._renderer
@@ -816,6 +836,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._image = frame.image
         self._native_frame_key = key
         self._native_frame_pending_key = None
+        self._native_frame_ever_ready = True
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
