@@ -9,8 +9,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF, Qt
-from PySide6.QtGui import QColor, QImage, QPainter, QRegion
+from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF, QSize, Qt
+from PySide6.QtGui import QColor, QImage, QImageReader, QPainter, QRegion
 
 from fdm.atomic_io import atomic_replace_file, staged_path_for
 from fdm.services.digital_slide_cache import is_network_file_path
@@ -553,6 +553,59 @@ class DigitalSlideStore:
             for row in rows
         ]
 
+    def list_tile_descriptors_in_rect(
+        self,
+        *,
+        z_index: int,
+        x: float,
+        y: float,
+        width: float,
+        height: float,
+    ) -> list[DigitalSlideTileDescriptor]:
+        """Return descriptor-only rows intersecting one source rectangle.
+
+        Interactive rendering uses this query so visiting a new focus plane
+        does not materialize and sort every descriptor in that plane merely to
+        display one native field.  Tile BLOBs are deliberately excluded.
+        """
+
+        if float(width) <= 0.0 or float(height) <= 0.0:
+            return []
+        conn = self._connection()
+        self._initialize_schema()
+        x2 = float(x) + float(width)
+        y2 = float(y) + float(height)
+        rows = conn.execute(
+            """
+            SELECT id, z_index, x, y, width, height, stage_x, stage_y,
+                   focus_z, sharpness, status
+            FROM tiles
+            WHERE z_index = ?
+              AND x < ?
+              AND y < ?
+              AND (x + width) > ?
+              AND (y + height) > ?
+            ORDER BY y ASC, x ASC, id ASC
+            """,
+            (int(z_index), x2, y2, float(x), float(y)),
+        )
+        return [
+            DigitalSlideTileDescriptor(
+                tile_id=int(row["id"]),
+                z_index=int(row["z_index"]),
+                x=int(row["x"]),
+                y=int(row["y"]),
+                width=int(row["width"]),
+                height=int(row["height"]),
+                stage_x=int(row["stage_x"]),
+                stage_y=int(row["stage_y"]),
+                focus_z=int(row["focus_z"]),
+                sharpness=float(row["sharpness"]),
+                status=str(row["status"]),
+            )
+            for row in rows
+        ]
+
     def read_tile_image(self, tile_id: int) -> QImage:
         conn = self._connection()
         self._initialize_schema()
@@ -566,6 +619,52 @@ class DigitalSlideStore:
             int(tile_id),
             bytes(row["image_png"]),
             str(row["codec"] or DIGITAL_SLIDE_TILE_CODEC_PNG),
+        )
+
+    def read_tile_image_scaled(
+        self,
+        tile_id: int,
+        *,
+        width: int,
+        height: int,
+    ) -> QImage:
+        """Decode a display-only tile near its requested LOD dimensions."""
+
+        conn = self._connection()
+        self._initialize_schema()
+        row = conn.execute(
+            "SELECT image_png, codec FROM tiles WHERE id = ?",
+            (int(tile_id),),
+        ).fetchone()
+        if row is None:
+            return QImage()
+        payload = bytes(row["image_png"])
+        codec = normalize_tile_codec(
+            str(row["codec"] or DIGITAL_SLIDE_TILE_CODEC_PNG)
+        )
+        image_format = (
+            b"JPG" if codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else b"PNG"
+        )
+        buffer = QBuffer()
+        buffer.setData(QByteArray(payload))
+        if buffer.open(QIODevice.OpenModeFlag.ReadOnly):
+            reader = QImageReader(buffer, image_format)
+            reader.setAutoTransform(True)
+            reader.setScaledSize(
+                QSize(max(1, int(width)), max(1, int(height)))
+            )
+            image = reader.read()
+            buffer.close()
+            if not image.isNull():
+                return image
+        image = image_bytes_to_qimage(payload, codec=codec)
+        if image.isNull():
+            return image
+        return image.scaled(
+            max(1, int(width)),
+            max(1, int(height)),
+            Qt.AspectRatioMode.IgnoreAspectRatio,
+            Qt.TransformationMode.SmoothTransformation,
         )
 
     def update_status(self, status: str) -> None:

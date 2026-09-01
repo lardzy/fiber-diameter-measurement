@@ -253,6 +253,14 @@ class _BenchmarkDigitalSlideCanvas(DigitalSlideCanvas):
         self.viewport_buffer_request_count += 1
         super()._request_display_frame()
 
+    def _request_native_frame(self) -> None:
+        self.viewport_buffer_request_count += 1
+        super()._request_native_frame()
+
+    def _request_coarse_frame(self) -> None:
+        self.viewport_buffer_request_count += 1
+        super()._request_coarse_frame()
+
 
 class _BenchmarkDigitalSlideStore:
     """Owned temporary SQLite/PNG/JPEG fixture for renderer benchmarks."""
@@ -2022,10 +2030,10 @@ def _set_benchmark_document(
     return store
 
 
-def _wait_for_digital_slide_request(
+def _wait_for_digital_slide_generation(
     app: QApplication,
     canvas: _BenchmarkDigitalSlideCanvas,
-    request_id: int,
+    generation: int,
     *,
     timeout_seconds: float = 5.0,
 ) -> float:
@@ -2034,7 +2042,15 @@ def _wait_for_digital_slide_request(
     while time.perf_counter() < deadline:
         app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 10)
         frame = canvas._render_frame  # noqa: SLF001 - benchmark probe
-        if frame is not None and frame.request_id >= request_id:
+        if (
+            frame is not None
+            and frame.generation == int(generation)
+            and frame.quality == "final"
+            and (
+                canvas.large_area_browse_active()
+                or frame.pixel_exact
+            )
+        ):
             break
         time.sleep(0.001)
     return (time.perf_counter() - started) * 1000.0
@@ -2053,8 +2069,8 @@ def _benchmark_digital_slide_camera(
         started = time.perf_counter()
         canvas.set_view_zoom(native_zoom * ratio)
         input_ms = (time.perf_counter() - started) * 1000.0
-        request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
-        final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
+        generation = int(canvas._view_generation)  # noqa: SLF001
+        final_ms = _wait_for_digital_slide_generation(app, canvas, generation)
         frame = canvas._render_frame  # noqa: SLF001
         visible = canvas.visible_slide_rect()
         zoom_phases[name] = {
@@ -2067,8 +2083,8 @@ def _benchmark_digital_slide_camera(
     started = time.perf_counter()
     canvas.fit_to_view()
     input_ms = (time.perf_counter() - started) * 1000.0
-    request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
-    final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
+    generation = int(canvas._view_generation)  # noqa: SLF001
+    final_ms = _wait_for_digital_slide_generation(app, canvas, generation)
     frame = canvas._render_frame  # noqa: SLF001
     visible = canvas.visible_slide_rect()
     zoom_phases["whole"] = {
@@ -2090,35 +2106,42 @@ def _benchmark_digital_slide_camera(
         "down_right": (1.0, 1.0),
     }
     navigation: dict[str, object] = {}
+    fast_navigation: dict[str, object] = {}
     manifest = canvas._slide_manifest  # noqa: SLF001
     assert manifest is not None
-    for name, (unit_x, unit_y) in directions.items():
-        canvas.fit_native_viewport()
-        canvas.center_on_image_point(
-            Point(float(manifest.width) / 2.0, float(manifest.height) / 2.0)
-        )
-        source = canvas._source_view_rect()  # noqa: SLF001
-        dx = source.width() * 0.25 * unit_x
-        dy = source.height() * 0.25 * unit_y
-        if dx and dy:
-            dx /= math.sqrt(2.0)
-            dy /= math.sqrt(2.0)
-        started = time.perf_counter()
-        canvas.move_viewport_by(dx, dy)
-        input_ms = (time.perf_counter() - started) * 1000.0
-        request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
-        final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
-        navigation[name] = {
-            "input_ms": round(input_ms, 3),
-            "final_frame_ms": round(final_ms, 3),
-        }
+    for result, fraction in ((navigation, 0.25), (fast_navigation, 1.0)):
+        for name, (unit_x, unit_y) in directions.items():
+            canvas.fit_native_viewport()
+            canvas.center_on_image_point(
+                Point(float(manifest.width) / 2.0, float(manifest.height) / 2.0)
+            )
+            source = canvas._source_view_rect()  # noqa: SLF001
+            dx = source.width() * fraction * unit_x
+            dy = source.height() * fraction * unit_y
+            if dx and dy:
+                dx /= math.sqrt(2.0)
+                dy /= math.sqrt(2.0)
+            started = time.perf_counter()
+            canvas.move_viewport_by(dx, dy)
+            input_ms = (time.perf_counter() - started) * 1000.0
+            generation = int(canvas._view_generation)  # noqa: SLF001
+            final_ms = _wait_for_digital_slide_generation(
+                app,
+                canvas,
+                generation,
+            )
+            result[name] = {
+                "input_ms": round(input_ms, 3),
+                "final_frame_ms": round(final_ms, 3),
+            }
 
     canvas.fit_native_viewport()
-    request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
-    _wait_for_digital_slide_request(app, canvas, request_id)
+    generation = int(canvas._view_generation)  # noqa: SLF001
+    _wait_for_digital_slide_generation(app, canvas, generation)
     return {
         "zoom_levels": zoom_phases,
         "directions": navigation,
+        "fast_directions": fast_navigation,
     }
 
 

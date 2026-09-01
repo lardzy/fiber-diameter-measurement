@@ -267,16 +267,15 @@ class CanvasViewTransformTests(unittest.TestCase):
         try:
             canvas.fit_to_view()
             zoom_before = canvas.view_zoom()
-            with (
-                patch.object(canvas, "_request_display_frame") as display_request,
-                patch.object(canvas, "_request_native_frame") as native_request,
-            ):
+            with patch.object(
+                canvas,
+                "_request_interactive_frames",
+            ) as interactive_request:
                 canvas.center_on_image_point(Point(2000.0, 1500.0))
 
             self.assertEqual(canvas.zoom_mode(), CanvasZoomMode.FIT)
             self.assertAlmostEqual(canvas.view_zoom(), zoom_before)
-            display_request.assert_called_once_with()
-            native_request.assert_called_once_with()
+            interactive_request.assert_called_once_with()
             self.assertEqual(canvas.browse_view().center_px, Point(2048.0, 1536.0))
             mapped = canvas.image_to_widget(Point(2048.0, 1536.0))
             self.assertAlmostEqual(mapped.x(), canvas.width() / 2.0)

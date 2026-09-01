@@ -5677,6 +5677,10 @@ class MainWindow(QMainWindow):
             mode != "select"
             and isinstance(active_canvas, DigitalSlideCanvas)
             and not active_canvas.pixel_work_enabled()
+            and not (
+                mode in {"manual", "snap", "continuous_manual"}
+                and active_canvas.vector_measurement_controls_enabled()
+            )
         ):
             self.statusBar().showMessage(
                 active_canvas.pixel_work_unavailable_reason()
@@ -25220,6 +25224,10 @@ class MainWindow(QMainWindow):
                 and document.id in self._digital_slide_suspended_tools
             )
         )
+        vector_measurement_enabled = (
+            not isinstance(active_canvas, DigitalSlideCanvas)
+            or active_canvas.vector_measurement_controls_enabled()
+        )
         can_pixel_work = has_document and not preview_active and pixel_work_enabled
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
         has_selected_rows = bool(selection_model and selection_model.selectedRows())
@@ -25490,12 +25498,19 @@ class MainWindow(QMainWindow):
         self.optimize_capture_signal_action.setVisible(can_optimize_signal)
         self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active and not self._digital_slide_mode)
         for mode, action in self._mode_actions.items():
+            mode_enabled = (
+                vector_measurement_enabled
+                if mode in {"manual", "snap", "continuous_manual"}
+                else pixel_work_enabled
+            )
             action.setEnabled(
                 mode == "select"
-                or (not preview_active and pixel_work_enabled)
+                or (not preview_active and mode_enabled)
             )
         if self._manual_tool_button is not None:
-            self._manual_tool_button.setEnabled(not preview_active and pixel_work_enabled)
+            self._manual_tool_button.setEnabled(
+                not preview_active and vector_measurement_enabled
+            )
         if self._area_tool_button is not None:
             self._area_tool_button.setEnabled(not preview_active and pixel_work_enabled)
         if self._magic_tool_button is not None:

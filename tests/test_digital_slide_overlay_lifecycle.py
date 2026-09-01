@@ -224,13 +224,13 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             self.assertFalse(canvas._smooth_nav_timer.isActive())  # noqa: SLF001
 
             with (
-                patch.object(canvas, "_request_display_frame") as display_request,
-                patch.object(canvas, "_request_native_frame") as native_request,
+                patch.object(canvas, "_request_presentation_preview") as preview_request,
+                patch.object(canvas, "_request_interactive_frames") as interactive_request,
             ):
                 tabs.setCurrentIndex(0)
                 self.app.processEvents()
-            display_request.assert_called_once_with()
-            native_request.assert_called_once_with()
+            preview_request.assert_called_once_with()
+            interactive_request.assert_called_once_with()
         finally:
             tabs.close()
             canvas.clear_document()
@@ -573,7 +573,7 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             self.assertEqual(canvas._overview_target_focus_index(), 2)  # noqa: SLF001
             self.assertEqual(
                 [(request.purpose, request.focus_index) for request in renderer.requests],
-                [("display", 4), ("native", 4), ("overview", 2)],
+                [("native", 4), ("overview", 2)],
             )
         finally:
             canvas._renderer = None  # noqa: SLF001

@@ -597,6 +597,7 @@ class CanvasBenchmarkTests(unittest.TestCase):
         camera = slide["camera_benchmark"]
         self.assertEqual(set(camera["zoom_levels"]), {"100", "50", "25", "whole"})
         self.assertEqual(len(camera["directions"]), 8)
+        self.assertEqual(len(camera["fast_directions"]), 8)
         self.assertGreater(
             camera["zoom_levels"]["25"]["visible_width"],
             camera["zoom_levels"]["100"]["visible_width"],

@@ -1,13 +1,22 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from time import perf_counter
 from weakref import ref
 
-from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QPainter, QPen, QWheelEvent
+from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import (
+    QColor,
+    QImage,
+    QKeyEvent,
+    QMouseEvent,
+    QPainter,
+    QPen,
+    QRegion,
+    QWheelEvent,
+)
 from PySide6.QtWidgets import QWidget
 from shiboken6 import isValid as is_qobject_valid
 
@@ -44,6 +53,15 @@ _BROWSE_VIEW_VERSION = 1
 _VIEW_MARGIN = 20.0
 _PIXEL_WORK_EPSILON = 1.0e-9
 _NATIVE_VIEWPORT_INDICATOR_MS = 1200
+_FOCUS_SETTLE_MS = 75
+_COARSE_FRAME_MAX_EDGE = 512
+_PRESENTATION_PREVIEW_MAX_EDGE = 1024
+# Whole-slide display frames remain byte-bounded below.  Keeping several exact
+# native focus planes avoids falling back to a proxy when users scrub the same
+# acquisition field back and forth across more than three focus levels.
+_DISPLAY_FRAME_CACHE_LIMIT = 8
+_DISPLAY_FRAME_CACHE_BYTES = 96 * 1024 * 1024
+_VECTOR_MEASUREMENT_TOOLS = {"manual", "snap", "continuous_manual"}
 
 
 @dataclass(frozen=True, slots=True)
@@ -51,6 +69,15 @@ class DigitalSlideBrowseView:
     center_px: Point
     zoom: float
     mode: CanvasZoomMode
+
+
+@dataclass(frozen=True, slots=True)
+class DigitalSlidePresentationState:
+    generation: int
+    focus_index: int
+    quality: str
+    pixel_exact: bool
+    coverage_rects: tuple[tuple[float, float, float, float], ...]
 
 
 class DigitalSlideCanvas(DocumentCanvas):
@@ -72,8 +99,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._viewport_origin = Point(0.0, 0.0)
         self._browse_center = Point(0.0, 0.0)
         self._browse_view_restored = False
+        self._view_generation = 0
         self._render_frame: DigitalSlideRenderFrame | None = None
         self._previous_render_frame: DigitalSlideRenderFrame | None = None
+        self._coarse_render_frame: DigitalSlideRenderFrame | None = None
+        self._presentation_preview_frame: DigitalSlideRenderFrame | None = None
+        self._presentation_preview_cache: OrderedDict[
+            int, DigitalSlideRenderFrame
+        ] = OrderedDict()
+        self._display_frame_cache: OrderedDict[
+            tuple[object, ...], DigitalSlideRenderFrame
+        ] = OrderedDict()
+        self._display_frame_cache_bytes = 0
         # Paint-only handoff during focus changes.  These frames never become
         # the authoritative ``_image`` consumed by pixel algorithms.
         self._focus_transition_frame: DigitalSlideRenderFrame | None = None
@@ -81,6 +118,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_native_rect: QRectF | None = None
         self._renderer: DigitalSlideRenderer | None = None
         self._render_request_id = 0
+        self._latest_preview_request_id = 0
+        self._latest_coarse_request_id = 0
         self._latest_display_request_id = 0
         self._latest_native_request_id = 0
         self._latest_overview_request_id = 0
@@ -92,7 +131,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._navigation_velocity = Point(0.0, 0.0)
         self._last_navigation_origin = Point(0.0, 0.0)
         self._last_navigation_at = 0.0
+        self._last_vector_input_notice_at = 0.0
         self._focus_index = 0
+        self._focus_direction = 0
         self._initial_fit_pending = False
         self._initial_fit_done = False
         self._initial_fit_attempts = 0
@@ -104,6 +145,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_timer = QTimer(self)
         self._smooth_nav_timer.setInterval(16)
         self._smooth_nav_timer.timeout.connect(self._apply_smooth_navigation)
+        self._final_render_timer = QTimer(self)
+        self._final_render_timer.setSingleShot(True)
+        self._final_render_timer.setInterval(_FOCUS_SETTLE_MS)
+        self._final_render_timer.timeout.connect(self._request_final_frame)
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._viewport_last_publish_at = 0.0
@@ -139,6 +184,12 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._renderer = None
         if renderer is not None:
             renderer.close()
+        self._final_render_timer.stop()
+        self._view_generation += 1
+        self._coarse_render_frame = None
+        self._presentation_preview_frame = None
+        self._presentation_preview_cache.clear()
+        self._clear_display_frame_cache()
         self._native_viewport_indicator_timer.stop()
         self._native_viewport_indicator_visible = False
         self._overview_debounce_timer.stop()
@@ -172,6 +223,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         else:
             focus_index = max(0, len(self._slide_manifest.focus_levels) // 2)
         self._focus_index = self._normalized_focus_index(focus_index)
+        self._focus_direction = 0
         self._browse_view_restored = False
         browse_payload = slide_meta.get("browse_view")
         try:
@@ -249,7 +301,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._native_frame_pending_key = None
         self._native_frame_ever_ready = False
         self._start_renderer()
-        self._request_display_frame()
+        self._request_presentation_preview()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         if self._browse_view_restored:
             self._initial_fit_done = True
@@ -264,6 +317,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_keys.clear()
         self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
+        self._final_render_timer.stop()
         self._overview_debounce_timer.stop()
         self._native_viewport_indicator_timer.stop()
         self._native_viewport_indicator_visible = False
@@ -279,6 +333,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_failed_focuses.clear()
         self._render_frame = None
         self._previous_render_frame = None
+        self._coarse_render_frame = None
+        self._presentation_preview_frame = None
+        self._presentation_preview_cache.clear()
+        self._clear_display_frame_cache()
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
@@ -293,6 +351,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
         self._smooth_nav_keys.clear()
         self._smooth_nav_timer.stop()
+        self._final_render_timer.stop()
         self._smooth_nav_last_at = 0.0
         self._overview_debounce_timer.stop()
         self._native_viewport_indicator_timer.stop()
@@ -300,7 +359,12 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._latest_overview_request_id += 1
         self._overview_pending = False
         self._stop_renderer()
-        self._invalidate_viewport_buffer()
+        self._view_generation += 1
+        self._latest_preview_request_id += 1
+        self._latest_coarse_request_id += 1
+        self._latest_display_request_id += 1
+        self._latest_native_request_id += 1
+        self._native_frame_pending_key = None
         super().hideEvent(event)
 
     def showEvent(self, event) -> None:
@@ -309,8 +373,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         if self._initial_fit_pending:
             self._apply_initial_fit()
         self._start_renderer()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._request_presentation_preview()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         self.request_overview()
 
@@ -333,8 +397,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         ):
             self._stop_renderer()
             self._start_renderer()
-            self._request_display_frame()
-            self._request_native_frame()
+            self._request_presentation_preview()
+            self._request_interactive_frames()
 
     def browse_view(self) -> DigitalSlideBrowseView:
         return DigitalSlideBrowseView(
@@ -381,6 +445,69 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def pixel_work_unavailable_reason(self) -> str:
         return self._pixel_work_reason
+
+    def presentation_state(self) -> DigitalSlidePresentationState:
+        frame = self._current_presentation_frame()
+        if frame is None:
+            return DigitalSlidePresentationState(
+                generation=int(self._view_generation),
+                focus_index=int(self._focus_index),
+                quality="placeholder",
+                pixel_exact=False,
+                coverage_rects=(),
+            )
+        return DigitalSlidePresentationState(
+            generation=int(frame.generation),
+            focus_index=int(frame.focus_index),
+            quality=str(frame.quality),
+            pixel_exact=bool(frame.pixel_exact),
+            coverage_rects=tuple(frame.coverage_rects),
+        )
+
+    def vector_measurement_available(self, point: Point | None = None) -> bool:
+        """Return whether a real current-focus frame can accept vector input."""
+
+        if self._slide_manifest is None or self.large_area_browse_active():
+            return False
+        frame = self._current_presentation_frame()
+        if (
+            frame is None
+            or frame.generation != self._view_generation
+            or frame.focus_index != self._focus_index
+            or frame.quality == "placeholder"
+        ):
+            return False
+        if point is None:
+            return bool(frame.coverage_rects)
+        return any(
+            left <= point.x < left + width
+            and top <= point.y < top + height
+            for left, top, width, height in frame.coverage_rects
+        )
+
+    def vector_measurement_controls_enabled(self) -> bool:
+        """Keep vector tools selectable while native-scale pixels refine.
+
+        Actual clicks remain guarded by :meth:`vector_measurement_available`.
+        Separating the stable tool-control state from point-level coverage
+        avoids flashing the toolbar on every camera/focus generation while
+        still rejecting placeholders and unresolved source areas.
+        """
+
+        return bool(
+            self._slide_manifest is not None
+            and not self.large_area_browse_active()
+        )
+
+    def _current_presentation_frame(self) -> DigitalSlideRenderFrame | None:
+        for frame in (self._render_frame, self._coarse_render_frame):
+            if (
+                frame is not None
+                and frame.generation == self._view_generation
+                and frame.focus_index == self._focus_index
+            ):
+                return frame
+        return None
 
     def large_area_browse_active(self) -> bool:
         """Return whether the camera is below the native pixel-work scale."""
@@ -431,8 +558,15 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
         self._allow_viewport_buffer_retry()
         self._start_renderer()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._presentation_preview_frame = None
+        self._presentation_preview_cache.clear()
+        self._clear_display_frame_cache()
+        self._native_frame_key = None
+        self._native_frame_pending_key = None
+        self._advance_view_generation()
+        self._request_presentation_preview()
+        self._request_interactive_frames()
+        self._update_pixel_work_state()
 
     def viewport_snapshot(self):
         snapshot = super().viewport_snapshot()
@@ -613,6 +747,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._zoom = requested
         self._zoom_mode = mode
         self._browse_center = Point(float(center.x), float(center.y))
+        self._focus_direction = 0
         self._clamp_browse_center()
         self._sync_pan_from_browse_center()
         previous_key = self._native_request_key()
@@ -622,8 +757,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
         self._persist_view_state()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._advance_view_generation()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         effective_zoom_change = bool(
             zoom_changed
@@ -701,6 +836,8 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _stop_renderer(self) -> None:
         renderer = self._renderer
         self._renderer = None
+        self._latest_preview_request_id = 0
+        self._latest_coarse_request_id = 0
         self._latest_display_request_id = 0
         self._latest_native_request_id = 0
         self._latest_overview_request_id = 0
@@ -709,12 +846,203 @@ class DigitalSlideCanvas(DocumentCanvas):
             renderer.close()
 
     def _blend_width(self) -> int:
-        if self._slide_manifest is None or not isinstance(self._slide_manifest.metadata, dict):
+        metadata = (
+            getattr(self._slide_manifest, "metadata", None)
+            if self._slide_manifest is not None
+            else None
+        )
+        if not isinstance(metadata, dict):
             return 0
         try:
-            return max(0, int(self._slide_manifest.metadata.get("blend_width", 0) or 0))
+            return max(0, int(metadata.get("blend_width", 0) or 0))
         except (TypeError, ValueError):
             return 0
+
+    def _advance_view_generation(self) -> None:
+        self._view_generation += 1
+        advance_generation = getattr(self._renderer, "advance_generation", None)
+        if callable(advance_generation):
+            advance_generation(int(self._view_generation))
+        if self._overview_enabled:
+            # Whole-slide navigator work is intentionally the lowest priority.
+            # Camera motion cancels its old generation, then this debounce
+            # retries only after interaction settles so a cancelled initial
+            # fit can never leave the navigator permanently blank.
+            self._latest_overview_request_id += 1
+            self._overview_pending = False
+            target_focus = self._overview_target_focus_index()
+            if (
+                target_focus not in self._overview_cache
+                and target_focus not in self._overview_failed_focuses
+                and self.isVisible()
+            ):
+                self._overview_debounce_timer.start()
+        if self._render_frame is not None:
+            self._previous_render_frame = self._history_frame(
+                self._render_frame
+            )
+            self._render_frame = None
+        self._coarse_render_frame = None
+        self._focus_transition_frame = None
+        self._focus_transition_image = None
+        self._focus_transition_native_rect = None
+        self._native_frame_pending_key = None
+
+    def _request_interactive_frames(self) -> None:
+        if self._restore_cached_final_frame():
+            self._update_pixel_work_state()
+            self.update()
+            return
+        if self.large_area_browse_active():
+            self._request_coarse_frame()
+            self._final_render_timer.start()
+            return
+        # At native-field scale a 512px display proxy is visibly softer than
+        # the acquisition frame and creates a moving double-image when painted
+        # over the previous exact field.  Request the single canonical LOD0
+        # frame immediately; the renderer's generation/latest-wins policy keeps
+        # continuous navigation bounded without introducing a second display
+        # composition.
+        self._final_render_timer.stop()
+        self._request_native_frame()
+
+    def _request_focus_frames(self) -> None:
+        """Schedule a focus handoff without painting native-scale proxies."""
+
+        if self._restore_cached_final_frame():
+            self._update_pixel_work_state()
+            self.update()
+            return
+        if self.large_area_browse_active():
+            self._request_presentation_preview()
+            self._request_coarse_frame()
+        # Rapid wheel input restarts this timer, so intermediate focus planes
+        # never launch full LOD0 work.  The exact old-focus handoff stays visible
+        # until the final target focus is requested.
+        self._final_render_timer.start()
+
+    def _request_presentation_preview(self) -> None:
+        if self._slide_manifest is None or not self.isVisible():
+            return
+        cached = self._presentation_preview_cache.get(int(self._focus_index))
+        if cached is not None:
+            self._presentation_preview_cache.move_to_end(int(self._focus_index))
+            record_preview_hit = getattr(
+                self._renderer,
+                "record_preview_memory_hit",
+                None,
+            )
+            if callable(record_preview_hit):
+                record_preview_hit()
+            self._presentation_preview_frame = replace(
+                cached,
+                generation=int(self._view_generation),
+            )
+            self.update()
+            return
+        self._start_renderer()
+        renderer = self._renderer
+        if renderer is None:
+            return
+        slide_width = max(1, int(self._slide_manifest.width))
+        slide_height = max(1, int(self._slide_manifest.height))
+        scale = min(
+            1.0,
+            float(_PRESENTATION_PREVIEW_MAX_EDGE)
+            / max(slide_width, slide_height),
+        )
+        self._render_request_id += 1
+        self._latest_preview_request_id = self._render_request_id
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="preview",
+                source_rect=(0.0, 0.0, float(slide_width), float(slide_height)),
+                output_size_px=(
+                    max(1, int(round(slide_width * scale))),
+                    max(1, int(round(slide_height * scale))),
+                ),
+                focus_index=int(self._focus_index),
+                device_pixel_ratio=1.0,
+                generation=int(self._view_generation),
+                quality="coarse",
+                preview_max_edge=_PRESENTATION_PREVIEW_MAX_EDGE,
+                priority=0,
+            )
+        )
+
+    def _request_coarse_frame(self) -> None:
+        if (
+            self._viewport_buffer_error_blocked
+            or self._slide_manifest is None
+            or not self.isVisible()
+        ):
+            return
+        self._start_renderer()
+        renderer = self._renderer
+        content = self._content_rect()
+        source = self._source_view_rect()
+        if renderer is None or content.isEmpty() or source.isEmpty():
+            return
+        dpr = max(1.0, float(self.devicePixelRatioF()))
+        physical_width = max(1, int(round(content.width() * dpr)))
+        physical_height = max(1, int(round(content.height() * dpr)))
+        coarse_edge = (
+            _PRESENTATION_PREVIEW_MAX_EDGE
+            if self.large_area_browse_active()
+            and self._slide_manifest is not None
+            and source.width() >= float(self._slide_manifest.width) - 1.0e-6
+            and source.height() >= float(self._slide_manifest.height) - 1.0e-6
+            else _COARSE_FRAME_MAX_EDGE
+        )
+        scale = min(
+            1.0,
+            float(coarse_edge)
+            / max(physical_width, physical_height),
+        )
+        self._render_request_id += 1
+        self._latest_coarse_request_id = self._render_request_id
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="coarse",
+                source_rect=(
+                    source.x(),
+                    source.y(),
+                    source.width(),
+                    source.height(),
+                ),
+                output_size_px=(
+                    max(1, int(round(physical_width * scale))),
+                    max(1, int(round(physical_height * scale))),
+                ),
+                focus_index=int(self._focus_index),
+                device_pixel_ratio=dpr,
+                blend_width=self._blend_width(),
+                velocity_px_per_second=(
+                    float(self._navigation_velocity.x),
+                    float(self._navigation_velocity.y),
+                ),
+                generation=int(self._view_generation),
+                quality="coarse",
+                preview_max_edge=(
+                    _PRESENTATION_PREVIEW_MAX_EDGE
+                    if coarse_edge == _PRESENTATION_PREVIEW_MAX_EDGE
+                    else 0
+                ),
+                priority=1,
+            )
+        )
+
+    def _request_final_frame(self) -> None:
+        if self._restore_cached_final_frame():
+            self._update_pixel_work_state()
+            self.update()
+            return
+        if self.large_area_browse_active():
+            self._request_display_frame()
+        else:
+            self._request_native_frame()
 
     def _request_display_frame(self) -> None:
         if (
@@ -730,6 +1058,14 @@ class DigitalSlideCanvas(DocumentCanvas):
         if renderer is None or content.isEmpty() or source.isEmpty():
             return
         dpr = max(1.0, float(self.devicePixelRatioF()))
+        contains_whole_slide = bool(
+            source.x() <= 1.0e-6
+            and source.y() <= 1.0e-6
+            and source.x() + source.width()
+            >= float(self._slide_manifest.width) - 1.0e-6
+            and source.y() + source.height()
+            >= float(self._slide_manifest.height) - 1.0e-6
+        )
         self._render_request_id += 1
         self._latest_display_request_id = self._render_request_id
         renderer.submit(
@@ -748,6 +1084,14 @@ class DigitalSlideCanvas(DocumentCanvas):
                     float(self._navigation_velocity.x),
                     float(self._navigation_velocity.y),
                 ),
+                generation=int(self._view_generation),
+                quality="final",
+                preview_max_edge=(
+                    _PRESENTATION_PREVIEW_MAX_EDGE
+                    if contains_whole_slide
+                    else 0
+                ),
+                priority=2,
             )
         )
 
@@ -789,7 +1133,280 @@ class DigitalSlideCanvas(DocumentCanvas):
                 device_pixel_ratio=1.0,
                 blend_width=self._blend_width(),
                 force_lod=0,
+                generation=int(self._view_generation),
+                quality="final",
+                priority=2,
+                focus_direction=int(self._focus_direction),
             )
+        )
+
+    def _frame_cache_key(
+        self,
+        *,
+        purpose: str,
+        focus_index: int,
+        source_rect: tuple[float, float, float, float],
+        output_size_px: tuple[int, int],
+        device_pixel_ratio: float,
+    ) -> tuple[object, ...]:
+        return (
+            str(purpose),
+            int(focus_index),
+            *(round(float(value), 4) for value in source_rect),
+            int(output_size_px[0]),
+            int(output_size_px[1]),
+            round(float(device_pixel_ratio), 4),
+            int(self._blend_width()),
+        )
+
+    def _desired_final_cache_key(self) -> tuple[object, ...] | None:
+        if self._slide_manifest is None:
+            return None
+        if not self.large_area_browse_active():
+            key = self._native_request_key()
+            return self._frame_cache_key(
+                purpose="native",
+                focus_index=self._focus_index,
+                source_rect=(
+                    float(key[0]),
+                    float(key[1]),
+                    float(self._slide_manifest.viewport_width),
+                    float(self._slide_manifest.viewport_height),
+                ),
+                output_size_px=(
+                    int(self._slide_manifest.viewport_width),
+                    int(self._slide_manifest.viewport_height),
+                ),
+                device_pixel_ratio=1.0,
+            )
+        content = self._content_rect()
+        source = self._source_view_rect()
+        if content.isEmpty() or source.isEmpty():
+            return None
+        dpr = max(1.0, float(self.devicePixelRatioF()))
+        return self._frame_cache_key(
+            purpose="display",
+            focus_index=self._focus_index,
+            source_rect=(source.x(), source.y(), source.width(), source.height()),
+            output_size_px=(
+                max(1, int(round(content.width() * dpr))),
+                max(1, int(round(content.height() * dpr))),
+            ),
+            device_pixel_ratio=dpr,
+        )
+
+    def _restore_cached_final_frame(self) -> bool:
+        key = self._desired_final_cache_key()
+        if key is None:
+            return False
+        cached = self._display_frame_cache.get(key)
+        if cached is None:
+            return False
+        self._display_frame_cache.move_to_end(key)
+        self._render_request_id += 1
+        restored = replace(
+            cached,
+            request_id=self._render_request_id,
+            generation=int(self._view_generation),
+            elapsed_ms=0.0,
+            decoded_tiles=0,
+            cache_hits=max(1, int(cached.cache_hits)),
+        )
+        record_cache_hit = getattr(
+            self._renderer,
+            "record_canvas_cache_hit",
+            None,
+        )
+        if callable(record_cache_hit):
+            record_cache_hit(
+                exact=restored.purpose == "native" and restored.pixel_exact
+            )
+        if restored.purpose == "native":
+            self._latest_native_request_id = restored.request_id
+            self._native_frame_pending_key = self._native_request_key()
+        else:
+            self._latest_display_request_id = restored.request_id
+        self._on_render_frame_ready(restored)
+        return True
+
+    def _remember_display_frame(self, frame: DigitalSlideRenderFrame) -> None:
+        if frame.quality != "final" or frame.image.isNull():
+            return
+        image_bytes = max(0, int(frame.image.sizeInBytes()))
+        if image_bytes <= 0 or image_bytes > _DISPLAY_FRAME_CACHE_BYTES:
+            return
+        key = self._frame_cache_key(
+            purpose=frame.purpose,
+            focus_index=frame.focus_index,
+            source_rect=frame.source_rect,
+            output_size_px=frame.output_size_px,
+            device_pixel_ratio=frame.device_pixel_ratio,
+        )
+        previous = self._display_frame_cache.pop(key, None)
+        if previous is not None:
+            self._display_frame_cache_bytes -= max(
+                0,
+                int(previous.image.sizeInBytes()),
+            )
+        self._display_frame_cache[key] = frame
+        self._display_frame_cache_bytes += image_bytes
+        while self._display_frame_cache and (
+            len(self._display_frame_cache) > _DISPLAY_FRAME_CACHE_LIMIT
+            or self._display_frame_cache_bytes > _DISPLAY_FRAME_CACHE_BYTES
+        ):
+            protected_keys = {key}
+            for candidate_key, candidate in reversed(
+                self._display_frame_cache.items()
+            ):
+                if (
+                    candidate.purpose == "display"
+                    and self._frame_contains_whole_slide(candidate)
+                ):
+                    protected_keys.add(candidate_key)
+                    break
+            remove_key = next(
+                (
+                    candidate_key
+                    for candidate_key in self._display_frame_cache
+                    if candidate_key not in protected_keys
+                ),
+                None,
+            )
+            if remove_key is None:
+                remove_key = next(iter(self._display_frame_cache))
+            removed = self._display_frame_cache.pop(remove_key)
+            self._display_frame_cache_bytes = max(
+                0,
+                self._display_frame_cache_bytes
+                - max(0, int(removed.image.sizeInBytes())),
+            )
+
+    def _clear_display_frame_cache(self) -> None:
+        self._display_frame_cache.clear()
+        self._display_frame_cache_bytes = 0
+
+    @staticmethod
+    def _history_frame(
+        frame: DigitalSlideRenderFrame | None,
+    ) -> DigitalSlideRenderFrame | None:
+        if (
+            frame is None
+            or frame.image.isNull()
+            or int(frame.image.sizeInBytes()) > _DISPLAY_FRAME_CACHE_BYTES
+        ):
+            return None
+        return frame
+
+    def _frame_contains_whole_slide(
+        self,
+        frame: DigitalSlideRenderFrame,
+    ) -> bool:
+        if self._slide_manifest is None:
+            return False
+        x, y, width, height = frame.source_rect
+        return bool(
+            x <= 1.0e-6
+            and y <= 1.0e-6
+            and x + width >= float(self._slide_manifest.width) - 1.0e-6
+            and y + height >= float(self._slide_manifest.height) - 1.0e-6
+        )
+
+    def _presentation_preview_from_frame(
+        self,
+        frame: DigitalSlideRenderFrame,
+    ) -> DigitalSlideRenderFrame | None:
+        """Crop FIT padding before reusing a whole-view frame as preview."""
+
+        if (
+            self._slide_manifest is None
+            or frame.image.isNull()
+            or not self._frame_contains_whole_slide(frame)
+        ):
+            return None
+        x, y, width, height = frame.source_rect
+        if width <= 0.0 or height <= 0.0:
+            return None
+        scale_x = frame.image.width() / float(width)
+        scale_y = frame.image.height() / float(height)
+        left = max(0, int(math.floor((0.0 - x) * scale_x)))
+        top = max(0, int(math.floor((0.0 - y) * scale_y)))
+        right = min(
+            frame.image.width(),
+            int(
+                math.ceil(
+                    (float(self._slide_manifest.width) - x) * scale_x
+                )
+            ),
+        )
+        bottom = min(
+            frame.image.height(),
+            int(
+                math.ceil(
+                    (float(self._slide_manifest.height) - y) * scale_y
+                )
+            ),
+        )
+        if right <= left or bottom <= top:
+            return None
+        exact_slide_frame = bool(
+            math.isclose(x, 0.0, abs_tol=1.0e-6)
+            and math.isclose(y, 0.0, abs_tol=1.0e-6)
+            and math.isclose(
+                width,
+                float(self._slide_manifest.width),
+                abs_tol=1.0e-6,
+            )
+            and math.isclose(
+                height,
+                float(self._slide_manifest.height),
+                abs_tol=1.0e-6,
+            )
+        )
+        image = (
+            QImage(frame.image)
+            if exact_slide_frame
+            else frame.image.copy(QRect(left, top, right - left, bottom - top))
+        )
+        if image.isNull():
+            return None
+        bounded_edge = min(
+            _PRESENTATION_PREVIEW_MAX_EDGE,
+            max(image.width(), image.height()),
+        )
+        scale = min(
+            1.0,
+            float(bounded_edge)
+            / max(
+                float(self._slide_manifest.width),
+                float(self._slide_manifest.height),
+                1.0,
+            ),
+        )
+        output_size = (
+            max(1, int(round(float(self._slide_manifest.width) * scale))),
+            max(1, int(round(float(self._slide_manifest.height) * scale))),
+        )
+        if image.size().toTuple() != output_size:
+            image = image.scaled(
+                output_size[0],
+                output_size[1],
+                Qt.AspectRatioMode.IgnoreAspectRatio,
+                Qt.TransformationMode.SmoothTransformation,
+            )
+        return replace(
+            frame,
+            purpose="preview",
+            source_rect=(
+                0.0,
+                0.0,
+                float(self._slide_manifest.width),
+                float(self._slide_manifest.height),
+            ),
+            output_size_px=output_size,
+            device_pixel_ratio=1.0,
+            image=image,
+            pixel_exact=False,
+            coverage_rects=(),
         )
 
     def _on_render_frame_ready(self, frame: DigitalSlideRenderFrame) -> None:
@@ -810,13 +1427,90 @@ class DigitalSlideCanvas(DocumentCanvas):
             self.overviewImageChanged.emit(frame.image)
             self.update()
             return
-        if frame.focus_index != self._focus_index:
+        if frame.purpose == "preview":
+            if (
+                frame.request_id != self._latest_preview_request_id
+                or frame.generation != self._view_generation
+                or frame.focus_index != self._focus_index
+                or frame.image.isNull()
+            ):
+                return
+            self._presentation_preview_frame = frame
+            if frame.quality != "placeholder":
+                self._presentation_preview_cache[int(frame.focus_index)] = frame
+                self._presentation_preview_cache.move_to_end(int(frame.focus_index))
+                while len(self._presentation_preview_cache) > _OVERVIEW_CACHE_LIMIT:
+                    self._presentation_preview_cache.popitem(last=False)
+                if self.large_area_browse_active():
+                    # A source/derived preview is an appropriate handoff only
+                    # while the camera is intentionally displaying an LOD.
+                    self._focus_transition_frame = None
+                    self._focus_transition_image = None
+                    self._focus_transition_native_rect = None
+            self.update()
+            return
+        if (
+            frame.focus_index != self._focus_index
+            or frame.generation != self._view_generation
+        ):
+            return
+        if frame.purpose == "coarse":
+            if frame.request_id != self._latest_coarse_request_id:
+                return
+            if (
+                self._render_frame is not None
+                and self._render_frame.generation == self._view_generation
+                and self._render_frame.quality == "final"
+            ):
+                return
+            self._coarse_render_frame = frame
+            if frame.complete and self.large_area_browse_active():
+                # Keep the old-focus visual beneath progressive snapshots so
+                # unresolved tiles do not flash as a flat loading colour.  A
+                # complete target-focus coarse frame no longer needs it.
+                self._focus_transition_frame = None
+                self._focus_transition_image = None
+                self._focus_transition_native_rect = None
+            preview = (
+                self._presentation_preview_from_frame(frame)
+                if frame.complete
+                else None
+            )
+            if preview is not None:
+                self._presentation_preview_frame = preview
+                if frame.complete:
+                    self._presentation_preview_cache[int(frame.focus_index)] = preview
+                    self._presentation_preview_cache.move_to_end(
+                        int(frame.focus_index)
+                    )
+                    while (
+                        len(self._presentation_preview_cache)
+                        > _OVERVIEW_CACHE_LIMIT
+                    ):
+                        self._presentation_preview_cache.popitem(last=False)
+            self.update()
             return
         if frame.purpose == "display":
             if frame.request_id != self._latest_display_request_id:
                 return
-            self._previous_render_frame = self._render_frame
+            self._previous_render_frame = self._history_frame(
+                self._render_frame
+            )
             self._render_frame = frame
+            self._coarse_render_frame = None
+            self._remember_display_frame(frame)
+            preview = self._presentation_preview_from_frame(frame)
+            if preview is not None:
+                self._presentation_preview_frame = preview
+                self._presentation_preview_cache[int(frame.focus_index)] = preview
+                self._presentation_preview_cache.move_to_end(
+                    int(frame.focus_index)
+                )
+                while (
+                    len(self._presentation_preview_cache)
+                    > _OVERVIEW_CACHE_LIMIT
+                ):
+                    self._presentation_preview_cache.popitem(last=False)
             self._focus_transition_frame = None
             self._focus_transition_image = None
             self._focus_transition_native_rect = None
@@ -837,6 +1531,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._native_frame_key = key
         self._native_frame_pending_key = None
         self._native_frame_ever_ready = True
+        self._previous_render_frame = self._history_frame(self._render_frame)
+        self._render_frame = frame
+        self._coarse_render_frame = None
+        self._remember_display_frame(frame)
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
@@ -852,15 +1550,13 @@ class DigitalSlideCanvas(DocumentCanvas):
                 return
         elif failure.focus_index != self._focus_index:
             return
-        expected = (
-            self._latest_native_request_id
-            if failure.purpose == "native"
-            else (
-                self._latest_overview_request_id
-                if failure.purpose == "overview"
-                else self._latest_display_request_id
-            )
-        )
+        expected = {
+            "native": self._latest_native_request_id,
+            "overview": self._latest_overview_request_id,
+            "preview": self._latest_preview_request_id,
+            "coarse": self._latest_coarse_request_id,
+            "display": self._latest_display_request_id,
+        }.get(failure.purpose, 0)
         if failure.request_id != expected:
             return
         if failure.purpose == "native":
@@ -881,9 +1577,15 @@ class DigitalSlideCanvas(DocumentCanvas):
                 ),
             )
             return
-        self._focus_transition_frame = None
-        self._focus_transition_image = None
-        self._focus_transition_native_rect = None
+        elif failure.purpose == "preview":
+            return
+        elif failure.purpose == "coarse":
+            # The exact request remains scheduled.  Preserve all active vector
+            # drafts and the last presentation while it retries/refines.
+            return
+        # A failed target-focus read must not expose the flat loading surface.
+        # Retain the paint-only handoff while the error is reported/retried;
+        # its focus/generation still cannot satisfy any input or pixel gate.
         self._viewport_buffer_error_blocked = True
         self._viewport_buffer_last_error = failure.message
         append_runtime_log(
@@ -917,8 +1619,14 @@ class DigitalSlideCanvas(DocumentCanvas):
         changed = enabled != self._pixel_work_enabled or reason != self._pixel_work_reason
         self._pixel_work_enabled = enabled
         self._pixel_work_reason = reason
-        if self._read_only != (not enabled):
-            self.set_read_only(not enabled)
+        # A missing exact native frame gates pixel algorithms, but it must not
+        # be translated into DocumentCanvas read-only: that operation destroys
+        # active line/polyline drafts.  Only the deliberate large-area mode is
+        # a destructive interaction boundary, and crossing it is already
+        # blocked while a draft exists.
+        hard_read_only = self._slide_manifest is None or self.large_area_browse_active()
+        if self._read_only != hard_read_only:
+            self.set_read_only(hard_read_only)
         if changed:
             self.pixelWorkAvailabilityChanged.emit(enabled, reason)
             self._publish_view_transform()
@@ -1053,15 +1761,25 @@ class DigitalSlideCanvas(DocumentCanvas):
                 (self._browse_center.x - old_center.x) / elapsed,
                 (self._browse_center.y - old_center.y) / elapsed,
             )
+        else:
+            # A single full-field step has no preceding timestamp, but its
+            # destination still needs forward protection immediately.  The
+            # renderer predicts 180 ms ahead, so this synthetic velocity maps
+            # exactly one first-step displacement into that guard region.
+            self._navigation_velocity = Point(
+                (self._browse_center.x - old_center.x) / 0.18,
+                (self._browse_center.y - old_center.y) / 0.18,
+            )
         self._last_navigation_at = now
         self._last_navigation_origin = Point(self._browse_center.x, self._browse_center.y)
+        self._focus_direction = 0
         self._sync_pan_from_browse_center()
         self._update_native_viewport_origin()
         if self._native_frame_key != self._native_request_key():
             self._native_frame_pending_key = None
         self._persist_view_state()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._advance_view_generation()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         self._publish_viewport_state(throttled=throttled)
         self.update()
@@ -1081,27 +1799,80 @@ class DigitalSlideCanvas(DocumentCanvas):
         focus_index = self._normalized_focus_index(focus_index)
         if focus_index == self._focus_index:
             return
-        if (
-            self._render_frame is not None
-            and self._render_frame.focus_index == self._focus_index
-        ):
-            self._focus_transition_frame = self._render_frame
-        if (
-            self._image is not None
+        self._focus_direction = 1 if focus_index > self._focus_index else -1
+        # Capture the currently painted content before advancing generation.
+        # ``_advance_view_generation()`` deliberately clears obsolete current
+        # frames, so assigning the handoff before that call would immediately
+        # discard it and expose the light loading surface for one or more
+        # paints.  The handoff remains paint-only and therefore cannot satisfy
+        # either vector coverage or exact pixel-work checks.
+        handoff_candidates = (
+            self._render_frame,
+            (
+                self._coarse_render_frame
+                if self._coarse_render_frame is not None
+                and self._coarse_render_frame.complete
+                else None
+            ),
+            (
+                self._presentation_preview_frame
+                if self._presentation_preview_frame is not None
+                and self._presentation_preview_frame.quality != "placeholder"
+                else None
+            ),
+            self._focus_transition_frame,
+            self._coarse_render_frame,
+        )
+        handoff_frame = next(
+            (
+                frame
+                for frame in handoff_candidates
+                if frame is not None and not frame.image.isNull()
+            ),
+            None,
+        )
+        handoff_image = (
+            self._image
+            if self._image is not None
             and not self._image.isNull()
             and self._native_frame_key is not None
-        ):
-            self._focus_transition_image = self._image
-            self._focus_transition_native_rect = self.native_viewport_rect()
+            else self._focus_transition_image
+        )
+        handoff_native_rect = (
+            self.native_viewport_rect()
+            if self._image is not None
+            and not self._image.isNull()
+            and self._native_frame_key is not None
+            else self._focus_transition_native_rect
+        )
+        # Install it before emitting ``focusChanged`` as connected UI slots may
+        # request an immediate repaint.  It is restored once more after the
+        # generation reset below, which intentionally clears transition state.
+        self._focus_transition_frame = handoff_frame
+        self._focus_transition_image = handoff_image
+        self._focus_transition_native_rect = handoff_native_rect
         self._focus_index = focus_index
         self.focusChanged.emit(focus_index)
-        self._render_frame = None
-        self._previous_render_frame = None
         self._native_frame_key = None
         self._native_frame_pending_key = None
         self._allow_viewport_buffer_retry()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._advance_view_generation()
+        self._focus_transition_frame = handoff_frame
+        self._focus_transition_image = handoff_image
+        self._focus_transition_native_rect = handoff_native_rect
+        if self.large_area_browse_active():
+            cached_preview = self._presentation_preview_cache.get(int(focus_index))
+            self._presentation_preview_frame = (
+                replace(cached_preview, generation=int(self._view_generation))
+                if cached_preview is not None
+                else None
+            )
+        else:
+            # Whole-slide previews are useful in large-area browsing, but at
+            # native scale they are the low-resolution overlay reported by
+            # users.  Keep the exact paint-only handoff instead.
+            self._presentation_preview_frame = None
+        self._request_focus_frames()
         self._update_pixel_work_state()
         self._publish_viewport_state(throttled=False)
         self.update()
@@ -1202,27 +1973,77 @@ class DigitalSlideCanvas(DocumentCanvas):
             float(self._slide_manifest.width) * self._zoom,
             float(self._slide_manifest.height) * self._zoom,
         )
-        if (
-            not self._overview_image.isNull()
-            and self._overview_focus_index == self._focus_index
-        ):
-            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-            painter.drawImage(full_target, self._overview_image)
-        frame = self._render_frame
-        if frame is None or frame.focus_index != self._focus_index:
-            frame = self._focus_transition_frame
+        # A target-focus loading surface prevents white slide content from
+        # flashing through the dark application workspace while the first real
+        # low-resolution frame is being decoded.  It is never measurement-valid.
+        painter.fillRect(full_target.intersected(content), QColor("#E6E6E6"))
+        painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
         target = QRectF()
-        if frame is not None:
+
+        def draw_frame(
+            frame: DigitalSlideRenderFrame | None,
+            *,
+            allow_other_focus: bool = False,
+            coverage_only: bool = False,
+        ) -> None:
+            nonlocal target
+            if (
+                frame is None
+                or (
+                    not allow_other_focus
+                    and frame.focus_index != self._focus_index
+                )
+                or frame.image.isNull()
+            ):
+                return
             x, y, width, height = frame.source_rect
             top_left = self.image_to_widget(Point(x, y))
-            target = QRectF(
+            frame_target = QRectF(
                 top_left.x(),
                 top_left.y(),
                 width * self._zoom,
                 height * self._zoom,
             )
-            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-            painter.drawImage(target, frame.image)
+            if not frame_target.intersects(content):
+                return
+            if coverage_only:
+                coverage_region = QRegion()
+                for left, top, coverage_width, coverage_height in frame.coverage_rects:
+                    coverage_top_left = self.image_to_widget(Point(left, top))
+                    coverage_target = QRectF(
+                        coverage_top_left.x(),
+                        coverage_top_left.y(),
+                        coverage_width * self._zoom,
+                        coverage_height * self._zoom,
+                    )
+                    coverage_rect = coverage_target.toAlignedRect().intersected(
+                        content.toAlignedRect()
+                    )
+                    if not coverage_rect.isEmpty():
+                        coverage_region = coverage_region.united(
+                            QRegion(coverage_rect)
+                        )
+                if coverage_region.isEmpty():
+                    return
+                painter.save()
+                painter.setClipRegion(coverage_region)
+                painter.drawImage(frame_target, frame.image)
+                painter.restore()
+            else:
+                painter.drawImage(frame_target, frame.image)
+            target = frame_target
+
+        # Retain the last real presentation until the requested focus has
+        # produced real pixels.  This frame is intentionally outside
+        # ``_current_presentation_frame()`` and cannot enable measurement or
+        # pixel algorithms; it only prevents a flat white paint between wheel
+        # input and the worker's first target-focus result.
+        transition_active = self._focus_transition_frame is not None
+        if transition_active:
+            draw_frame(
+                self._focus_transition_frame,
+                allow_other_focus=True,
+            )
         elif (
             self._focus_transition_image is not None
             and not self._focus_transition_image.isNull()
@@ -1230,23 +2051,73 @@ class DigitalSlideCanvas(DocumentCanvas):
         ):
             native = self._focus_transition_native_rect
             top_left = self.image_to_widget(Point(native.x(), native.y()))
-            target = QRectF(
+            transition_target = QRectF(
                 top_left.x(),
                 top_left.y(),
                 native.width() * self._zoom,
                 native.height() * self._zoom,
             )
-            painter.drawImage(target, self._focus_transition_image)
-        elif self._image is not None and self._native_frame_key is not None:
-            native = self.native_viewport_rect()
-            top_left = self.image_to_widget(Point(native.x(), native.y()))
-            target = QRectF(
-                top_left.x(),
-                top_left.y(),
-                native.width() * self._zoom,
-                native.height() * self._zoom,
+            if transition_target.intersects(content):
+                painter.drawImage(
+                    transition_target,
+                    self._focus_transition_image,
+                )
+                target = transition_target
+            transition_active = True
+
+        large_area = self.large_area_browse_active()
+        sharp_visual_active = bool(
+            transition_active
+            or (
+                self._previous_render_frame is not None
+                and self._previous_render_frame.focus_index == self._focus_index
+                and self._previous_render_frame.quality == "final"
             )
-            painter.drawImage(target, self._image)
+            or (
+                self._render_frame is not None
+                and self._render_frame.focus_index == self._focus_index
+                and self._render_frame.quality == "final"
+            )
+        )
+        preview = self._presentation_preview_frame
+        if (
+            (large_area or not sharp_visual_active)
+            and preview is not None
+            and preview.focus_index == self._focus_index
+            and preview.quality != "placeholder"
+        ):
+            painter.drawImage(full_target, preview.image)
+            target = full_target
+        elif (
+            (large_area or not sharp_visual_active)
+            and not self._overview_image.isNull()
+            and self._overview_focus_index == self._focus_index
+        ):
+            painter.drawImage(full_target, self._overview_image)
+            target = full_target
+
+        # Historical frames retain their true slide coordinates; they are not
+        # stretched to impersonate a destination that has not loaded yet.
+        draw_frame(self._previous_render_frame)
+        if (
+            self._render_frame is not None
+            and self._render_frame.generation != self._view_generation
+        ):
+            draw_frame(self._render_frame)
+        if large_area or not sharp_visual_active:
+            draw_frame(
+                self._coarse_render_frame,
+                coverage_only=bool(
+                    transition_active
+                    and self._coarse_render_frame is not None
+                    and not self._coarse_render_frame.complete
+                ),
+            )
+        if (
+            self._render_frame is not None
+            and self._render_frame.generation == self._view_generation
+        ):
+            draw_frame(self._render_frame)
         painter.restore()
 
         painter.save()
@@ -1309,8 +2180,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._sync_pan_from_browse_center()
         self._update_native_viewport_origin()
         self._persist_view_state()
-        self._request_display_frame()
-        self._request_native_frame()
+        self._advance_view_generation()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         self._publish_view_transform(zoom_changed=True)
         self.update()
@@ -1522,6 +2393,12 @@ class DigitalSlideCanvas(DocumentCanvas):
     def mousePressEvent(self, event: QMouseEvent) -> None:
         # A press in FIT padding must remain outside the image so it cannot
         # start a measurement or construction command.
+        if (
+            event.button() == Qt.MouseButton.LeftButton
+            and not self._pixel_pointer_event_allowed(event.position())
+        ):
+            self._notify_vector_input_waiting()
+            return
         previous = self._clamp_pointer_to_mounted_viewport
         self._clamp_pointer_to_mounted_viewport = False
         try:
@@ -1545,6 +2422,14 @@ class DigitalSlideCanvas(DocumentCanvas):
                     throttled=True,
                 )
             return
+        if (
+            self._tool_mode in _VECTOR_MEASUREMENT_TOOLS
+            and not self._pixel_work_enabled
+            and not self.vector_measurement_available(
+                self.widget_to_image(event.position())
+            )
+        ):
+            return
         # Once a pointer operation has started, dragging into the padding pins
         # the preview to the nearest mounted pixel instead of writing a global
         # coordinate belonging to an invisible slide region.
@@ -1557,6 +2442,13 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         was_panning = bool(self._panning)
+        if (
+            not was_panning
+            and event.button() == Qt.MouseButton.LeftButton
+            and not self._pixel_pointer_event_allowed(event.position())
+        ):
+            self._notify_vector_input_waiting()
+            return
         previous = self._clamp_pointer_to_mounted_viewport
         self._clamp_pointer_to_mounted_viewport = self._has_pointer_edit_operation()
         try:
@@ -1566,14 +2458,16 @@ class DigitalSlideCanvas(DocumentCanvas):
         if was_panning and not self._panning:
             self._navigation_velocity = Point(0.0, 0.0)
             self._publish_viewport_state(throttled=False)
-            self._request_display_frame()
-            self._request_native_frame()
+            self._final_render_timer.start()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         # Double-click completes paths, but padding must not contribute a new
         # point or silently clamp an otherwise invalid click onto the border.
         point = self.widget_to_image(event.position())
-        if not self._point_in_image(point):
+        if (
+            not self._point_in_image(point)
+            or not self._pixel_pointer_event_allowed(event.position())
+        ):
             return
         previous = self._clamp_pointer_to_mounted_viewport
         self._clamp_pointer_to_mounted_viewport = False
@@ -1581,6 +2475,27 @@ class DigitalSlideCanvas(DocumentCanvas):
             super().mouseDoubleClickEvent(event)
         finally:
             self._clamp_pointer_to_mounted_viewport = previous
+
+    def _pixel_pointer_event_allowed(self, position: QPointF) -> bool:
+        if self._pixel_work_enabled:
+            return True
+        if self._tool_mode not in _VECTOR_MEASUREMENT_TOOLS:
+            return False
+        point = self.widget_to_image(position)
+        return self._point_in_image(point) and self.vector_measurement_available(point)
+
+    def _notify_vector_input_waiting(self) -> None:
+        now = perf_counter()
+        if now - self._last_vector_input_notice_at < 1.0:
+            return
+        self._last_vector_input_notice_at = now
+        reason = (
+            "目标焦层尚未覆盖当前位置，请等待低分辨率图像后继续测量。"
+            if self._tool_mode in _VECTOR_MEASUREMENT_TOOLS
+            else self._pixel_work_reason
+        )
+        if reason:
+            self.browseNoticeRequested.emit(reason)
 
     def _visible_image_rect(self) -> QRectF:
         if self._image is None:
@@ -1764,8 +2679,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._request_viewport_buffer()
 
     def _request_viewport_buffer(self) -> None:
-        self._request_display_frame()
-        self._request_native_frame()
+        self._request_interactive_frames()
 
     def request_overview(self) -> None:
         """Queue the lowest-priority whole-slide preview on the slide worker."""
@@ -1812,6 +2726,10 @@ class DigitalSlideCanvas(DocumentCanvas):
                 focus_index=focus_index,
                 device_pixel_ratio=1.0,
                 blend_width=self._blend_width(),
+                generation=int(self._view_generation),
+                quality="coarse",
+                preview_max_edge=_OVERVIEW_MAX_EDGE,
+                priority=6,
             )
         )
 
@@ -1835,7 +2753,6 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._publish_view_transform(zoom_changed=zoom_changed)
 
     def _reload_viewport(self, *, throttled: bool = False) -> None:
-        self._request_display_frame()
-        self._request_native_frame()
+        self._request_interactive_frames()
         self._update_pixel_work_state()
         self._publish_viewport_state(throttled=throttled)
