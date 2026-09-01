@@ -895,7 +895,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         if self.large_area_browse_active():
             self._request_coarse_frame()
-            self._final_render_timer.start()
+            # Do not restart the settle timer at every 16 ms navigation tick.
+            # Let it expire periodically during continuous motion so current
+            # display-quality work gets a chance to replace the proxy before
+            # the user releases the key or mouse.
+            if not self._final_render_timer.isActive():
+                self._final_render_timer.start()
             return
         # At native-field scale a 512px display proxy is visibly softer than
         # the acquisition frame and creates a moving double-image when painted
@@ -2096,14 +2101,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             painter.drawImage(full_target, self._overview_image)
             target = full_target
 
-        # Historical frames retain their true slide coordinates; they are not
-        # stretched to impersonate a destination that has not loaded yet.
-        draw_frame(self._previous_render_frame)
-        if (
-            self._render_frame is not None
-            and self._render_frame.generation != self._view_generation
-        ):
-            draw_frame(self._render_frame)
+        # The current coarse frame fills newly exposed source regions first.
+        # Existing final frames are then painted above it at their true global
+        # coordinates, so continuous large-area motion cannot blur content that
+        # has already reached final display quality.
         if large_area or not sharp_visual_active:
             draw_frame(
                 self._coarse_render_frame,
@@ -2113,6 +2114,14 @@ class DigitalSlideCanvas(DocumentCanvas):
                     and not self._coarse_render_frame.complete
                 ),
             )
+        # Historical frames retain their true slide coordinates; they are not
+        # stretched to impersonate a destination that has not loaded yet.
+        draw_frame(self._previous_render_frame)
+        if (
+            self._render_frame is not None
+            and self._render_frame.generation != self._view_generation
+        ):
+            draw_frame(self._render_frame)
         if (
             self._render_frame is not None
             and self._render_frame.generation == self._view_generation

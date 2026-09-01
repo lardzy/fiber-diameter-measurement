@@ -1566,6 +1566,131 @@ def test_whole_slide_display_frame_is_reused_synchronously(
         store.close()
 
 
+def test_large_area_motion_keeps_final_frame_above_coarse_overlap() -> None:
+    _app = QApplication.instance() or QApplication([])
+    document = ImageDocument(
+        id="large-area-sharp-overlap",
+        path="/tmp/large-area-sharp-overlap.fdmslide",
+        image_size=(1000, 800),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.resize(440, 360)
+    canvas.set_document(document, _tile_image(100, 80, "#ffffff"))
+    canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        version=1,
+        width=1000,
+        height=800,
+        viewport_width=100,
+        viewport_height=80,
+        focus_levels=[0],
+    )
+    canvas._zoom = 1.0  # noqa: SLF001
+    canvas._browse_center = Point(520.0, 450.0)  # noqa: SLF001
+    canvas._sync_pan_from_browse_center()  # noqa: SLF001
+    canvas._view_generation = 2  # noqa: SLF001
+    canvas._previous_render_frame = DigitalSlideRenderFrame(  # noqa: SLF001
+        request_id=1,
+        purpose="display",
+        source_rect=(300.0, 290.0, 400.0, 320.0),
+        output_size_px=(400, 320),
+        focus_index=0,
+        device_pixel_ratio=1.0,
+        lod=1,
+        image=_tile_image(400, 320, "#D72B3F"),
+        elapsed_ms=1.0,
+        decoded_tiles=4,
+        cache_hits=0,
+        generation=1,
+        quality="final",
+    )
+    canvas._coarse_render_frame = DigitalSlideRenderFrame(  # noqa: SLF001
+        request_id=2,
+        purpose="coarse",
+        source_rect=(320.0, 290.0, 400.0, 320.0),
+        output_size_px=(200, 160),
+        focus_index=0,
+        device_pixel_ratio=1.0,
+        lod=2,
+        image=_tile_image(200, 160, "#2774C7"),
+        elapsed_ms=1.0,
+        decoded_tiles=4,
+        cache_hits=0,
+        generation=2,
+        quality="coarse",
+    )
+    try:
+        assert canvas.large_area_browse_active()
+        painted = QImage(canvas.size(), QImage.Format.Format_RGB32)
+        painted.fill(QColor("#000000"))
+        painter = QPainter(painted)
+        canvas._draw_base_image(painter)  # noqa: SLF001
+        painter.end()
+
+        overlap = canvas.image_to_widget(Point(400.0, 400.0)).toPoint()
+        newly_exposed = canvas.image_to_widget(Point(710.0, 400.0)).toPoint()
+        assert painted.pixelColor(overlap) == QColor("#D72B3F")
+        assert painted.pixelColor(newly_exposed) == QColor("#2774C7")
+    finally:
+        canvas.clear_document()
+        canvas.close()
+
+
+def test_large_area_continuous_motion_still_schedules_final_frames() -> None:
+    app = QApplication.instance() or QApplication([])
+
+    class RecordingRenderer:
+        def __init__(self) -> None:
+            self.requests: list[DigitalSlideRenderRequest] = []
+
+        def submit(self, request: DigitalSlideRenderRequest) -> None:
+            self.requests.append(request)
+
+        def close(self, *, timeout: float = 2.0) -> None:
+            del timeout
+
+    document = ImageDocument(
+        id="large-area-continuous-final",
+        path="/tmp/large-area-continuous-final.fdmslide",
+        image_size=(1000, 800),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.resize(440, 360)
+    canvas.set_document(document, _tile_image(100, 80, "#ffffff"))
+    canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        version=1,
+        width=1000,
+        height=800,
+        viewport_width=100,
+        viewport_height=80,
+        focus_levels=[0],
+    )
+    canvas._zoom = 1.0  # noqa: SLF001
+    canvas._browse_center = Point(500.0, 400.0)  # noqa: SLF001
+    canvas._sync_pan_from_browse_center()  # noqa: SLF001
+    recorder = RecordingRenderer()
+    canvas._renderer = recorder  # type: ignore[assignment]  # noqa: SLF001
+    try:
+        with patch.object(canvas, "isVisible", return_value=True):
+            deadline = monotonic() + 0.3
+            while monotonic() < deadline and not any(
+                request.purpose == "display" for request in recorder.requests
+            ):
+                # Model 50 Hz movement without ever entering a stopped state.
+                canvas._request_interactive_frames()  # noqa: SLF001
+                sleep(0.02)
+                app.processEvents()
+
+        assert any(request.purpose == "coarse" for request in recorder.requests)
+        assert any(request.purpose == "display" for request in recorder.requests)
+    finally:
+        canvas._final_render_timer.stop()  # noqa: SLF001
+        canvas._renderer = None  # noqa: SLF001
+        canvas.clear_document()
+        canvas.close()
+
+
 def test_old_project_origin_migrates_to_native_field_camera(tmp_path: Path) -> None:
     app = QApplication.instance() or QApplication([])
     store = _create_coordinate_slide(tmp_path / "migration.fdmslide")
