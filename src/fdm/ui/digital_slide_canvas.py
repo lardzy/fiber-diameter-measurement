@@ -43,6 +43,7 @@ _OVERVIEW_FOCUS_DEBOUNCE_MS = 180
 _BROWSE_VIEW_VERSION = 1
 _VIEW_MARGIN = 20.0
 _PIXEL_WORK_EPSILON = 1.0e-9
+_NATIVE_VIEWPORT_INDICATOR_MS = 1200
 
 
 @dataclass(frozen=True, slots=True)
@@ -73,6 +74,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._browse_view_restored = False
         self._render_frame: DigitalSlideRenderFrame | None = None
         self._previous_render_frame: DigitalSlideRenderFrame | None = None
+        # Paint-only handoff during focus changes.  These frames never become
+        # the authoritative ``_image`` consumed by pixel algorithms.
+        self._focus_transition_frame: DigitalSlideRenderFrame | None = None
+        self._focus_transition_image: QImage | None = None
+        self._focus_transition_native_rect: QRectF | None = None
         self._renderer: DigitalSlideRenderer | None = None
         self._render_request_id = 0
         self._latest_display_request_id = 0
@@ -111,6 +117,15 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_debounce_timer.setSingleShot(True)
         self._overview_debounce_timer.setInterval(_OVERVIEW_FOCUS_DEBOUNCE_MS)
         self._overview_debounce_timer.timeout.connect(self.request_overview)
+        self._native_viewport_indicator_visible = False
+        self._native_viewport_indicator_timer = QTimer(self)
+        self._native_viewport_indicator_timer.setSingleShot(True)
+        self._native_viewport_indicator_timer.setInterval(
+            _NATIVE_VIEWPORT_INDICATOR_MS
+        )
+        self._native_viewport_indicator_timer.timeout.connect(
+            self._hide_native_viewport_indicator
+        )
         # Pointer drags are constrained to the raster that is currently
         # mounted in the canvas.  Keep this separate from the whole-slide
         # coordinate system used by navigation and programmatic locating.
@@ -123,6 +138,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._renderer = None
         if renderer is not None:
             renderer.close()
+        self._native_viewport_indicator_timer.stop()
+        self._native_viewport_indicator_visible = False
         self._overview_debounce_timer.stop()
         self._latest_overview_request_id += 1
         self._overview_pending = False
@@ -245,6 +262,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
         self._overview_debounce_timer.stop()
+        self._native_viewport_indicator_timer.stop()
+        self._native_viewport_indicator_visible = False
         self._latest_overview_request_id += 1
         self._overview_pending = False
         self._overview_enabled = False
@@ -257,6 +276,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_failed_focuses.clear()
         self._render_frame = None
         self._previous_render_frame = None
+        self._focus_transition_frame = None
+        self._focus_transition_image = None
+        self._focus_transition_native_rect = None
         self._native_frame_key = None
         self._native_frame_pending_key = None
         self._slide_store = None
@@ -269,6 +291,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_timer.stop()
         self._smooth_nav_last_at = 0.0
         self._overview_debounce_timer.stop()
+        self._native_viewport_indicator_timer.stop()
+        self._native_viewport_indicator_visible = False
         self._latest_overview_request_id += 1
         self._overview_pending = False
         self._stop_renderer()
@@ -353,6 +377,17 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def pixel_work_unavailable_reason(self) -> str:
         return self._pixel_work_reason
+
+    def large_area_browse_active(self) -> bool:
+        """Return whether the camera is below the native pixel-work scale."""
+
+        return bool(
+            self._slide_manifest is not None
+            and self._zoom + _PIXEL_WORK_EPSILON < self._native_field_fit_zoom()
+        )
+
+    def native_viewport_indicator_visible(self) -> bool:
+        return bool(self._native_viewport_indicator_visible)
 
     def renderer_stats(self) -> DigitalSlideRendererStats | None:
         renderer = self._renderer
@@ -532,6 +567,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 mode = CanvasZoomMode(str(mode))
             except ValueError:
                 mode = CanvasZoomMode.CUSTOM
+        previous_zoom = float(self._zoom)
         minimum = self._whole_slide_fit_zoom()
         requested = max(minimum, min(40.0, float(zoom)))
         threshold = self._native_field_fit_zoom()
@@ -569,9 +605,33 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._request_display_frame()
         self._request_native_frame()
         self._update_pixel_work_state()
-        self._publish_viewport_state(throttled=False, zoom_changed=zoom_changed)
+        effective_zoom_change = bool(
+            zoom_changed
+            and not math.isclose(
+                previous_zoom,
+                requested,
+                rel_tol=1.0e-9,
+                abs_tol=1.0e-12,
+            )
+        )
+        if effective_zoom_change:
+            self._show_native_viewport_indicator()
+        self._publish_viewport_state(
+            throttled=False,
+            zoom_changed=effective_zoom_change,
+        )
         self.update()
         return True
+
+    def _show_native_viewport_indicator(self) -> None:
+        self._native_viewport_indicator_visible = True
+        self._native_viewport_indicator_timer.start()
+
+    def _hide_native_viewport_indicator(self) -> None:
+        if not self._native_viewport_indicator_visible:
+            return
+        self._native_viewport_indicator_visible = False
+        self.update()
 
     def _start_renderer(self) -> None:
         if self._renderer is not None or self._slide_store is None or self._slide_manifest is None:
@@ -737,6 +797,9 @@ class DigitalSlideCanvas(DocumentCanvas):
                 return
             self._previous_render_frame = self._render_frame
             self._render_frame = frame
+            self._focus_transition_frame = None
+            self._focus_transition_image = None
+            self._focus_transition_native_rect = None
             self._viewport_buffer_error_blocked = False
             self._viewport_buffer_last_error = ""
             self.update()
@@ -753,6 +816,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._image = frame.image
         self._native_frame_key = key
         self._native_frame_pending_key = None
+        self._focus_transition_frame = None
+        self._focus_transition_image = None
+        self._focus_transition_native_rect = None
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._update_pixel_work_state()
@@ -794,6 +860,9 @@ class DigitalSlideCanvas(DocumentCanvas):
                 ),
             )
             return
+        self._focus_transition_frame = None
+        self._focus_transition_image = None
+        self._focus_transition_native_rect = None
         self._viewport_buffer_error_blocked = True
         self._viewport_buffer_last_error = failure.message
         append_runtime_log(
@@ -991,6 +1060,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         focus_index = self._normalized_focus_index(focus_index)
         if focus_index == self._focus_index:
             return
+        if (
+            self._render_frame is not None
+            and self._render_frame.focus_index == self._focus_index
+        ):
+            self._focus_transition_frame = self._render_frame
+        if (
+            self._image is not None
+            and not self._image.isNull()
+            and self._native_frame_key is not None
+        ):
+            self._focus_transition_image = self._image
+            self._focus_transition_native_rect = self.native_viewport_rect()
         self._focus_index = focus_index
         self.focusChanged.emit(focus_index)
         self._render_frame = None
@@ -1107,8 +1188,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
             painter.drawImage(full_target, self._overview_image)
         frame = self._render_frame
+        if frame is None or frame.focus_index != self._focus_index:
+            frame = self._focus_transition_frame
         target = QRectF()
-        if frame is not None and frame.focus_index == self._focus_index:
+        if frame is not None:
             x, y, width, height = frame.source_rect
             top_left = self.image_to_widget(Point(x, y))
             target = QRectF(
@@ -1119,6 +1202,20 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
             painter.drawImage(target, frame.image)
+        elif (
+            self._focus_transition_image is not None
+            and not self._focus_transition_image.isNull()
+            and self._focus_transition_native_rect is not None
+        ):
+            native = self._focus_transition_native_rect
+            top_left = self.image_to_widget(Point(native.x(), native.y()))
+            target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                native.width() * self._zoom,
+                native.height() * self._zoom,
+            )
+            painter.drawImage(target, self._focus_transition_image)
         elif self._image is not None and self._native_frame_key is not None:
             native = self.native_viewport_rect()
             top_left = self.image_to_widget(Point(native.x(), native.y()))
@@ -1142,24 +1239,28 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def paintEvent(self, event) -> None:
         super().paintEvent(event)
-        if self._pixel_work_enabled or self._slide_manifest is None:
+        if self._slide_manifest is None:
             return
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        native = self.native_viewport_rect()
-        top_left = self.image_to_widget(Point(native.x(), native.y()))
-        native_target = QRectF(
-            top_left.x(),
-            top_left.y(),
-            native.width() * self._zoom,
-            native.height() * self._zoom,
-        )
-        pen = QPen(QColor("#F4C95D"))
-        pen.setStyle(Qt.PenStyle.DashLine)
-        pen.setWidthF(1.5)
-        painter.setPen(pen)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRect(native_target)
+        if self._native_viewport_indicator_visible:
+            native = self.native_viewport_rect()
+            top_left = self.image_to_widget(Point(native.x(), native.y()))
+            native_target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                native.width() * self._zoom,
+                native.height() * self._zoom,
+            )
+            pen = QPen(QColor("#F4C95D"))
+            pen.setStyle(Qt.PenStyle.DashLine)
+            pen.setWidthF(1.5)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawRect(native_target)
+        if self._pixel_work_enabled or not self.large_area_browse_active():
+            painter.end()
+            return
         message = self._pixel_work_reason or "放大到单视场后可测量"
         metrics = painter.fontMetrics()
         text_rect = metrics.boundingRect(message).adjusted(-10, -6, 10, 6)
@@ -1624,6 +1725,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._latest_native_request_id += 1
         self._render_frame = None
         self._previous_render_frame = None
+        self._focus_transition_frame = None
+        self._focus_transition_image = None
+        self._focus_transition_native_rect = None
         self._native_frame_pending_key = None
         self._allow_viewport_buffer_retry()
 

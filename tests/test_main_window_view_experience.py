@@ -456,6 +456,70 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertEqual(window._tool_mode, "manual")
             self.assertTrue(window.export_current_image_action.isEnabled())
 
+    def test_native_move_and_focus_do_not_suspend_or_restore_the_current_tool(
+        self,
+    ) -> None:
+        window = self._window()
+        with TemporaryDirectory() as tmp_dir:
+            slide_path = Path(tmp_dir) / "native-loading-state.fdmslide"
+            store = DigitalSlideStore.create(
+                slide_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=1200,
+                    height=900,
+                    viewport_width=200,
+                    viewport_height=150,
+                    focus_levels=[-1, 0],
+                ),
+            )
+            store.close()
+            window._add_digital_slide_document_from_path(slide_path, document=None)
+
+            canvas = window.current_canvas()
+            self.assertIsInstance(canvas, DigitalSlideCanvas)
+            assert isinstance(canvas, DigitalSlideCanvas)
+            for _ in range(200):
+                self._process_events(1)
+                if canvas.pixel_work_enabled():
+                    break
+                QTest.qWait(5)
+            self.assertTrue(canvas.pixel_work_enabled())
+
+            window.set_tool_mode("manual")
+            document = window.current_document()
+            self.assertIsNotNone(document)
+            assert document is not None
+            messages: list[str] = []
+            window.statusBar().messageChanged.connect(messages.append)
+
+            canvas.move_viewport_by(50.0, 40.0)
+            self.assertFalse(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "manual")
+            self.assertNotIn(document.id, window._digital_slide_suspended_tools)
+            for _ in range(200):
+                self._process_events(1)
+                if canvas.pixel_work_enabled():
+                    break
+                QTest.qWait(5)
+            self.assertTrue(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "manual")
+
+            canvas.set_focus_index(0 if canvas.focus_index() != 0 else 1)
+            self.assertFalse(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "manual")
+            self.assertNotIn(document.id, window._digital_slide_suspended_tools)
+            for _ in range(200):
+                self._process_events(1)
+                if canvas.pixel_work_enabled():
+                    break
+                QTest.qWait(5)
+            self.assertTrue(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "manual")
+            self.assertFalse(
+                any("已恢复此前工具" in message for message in messages)
+            )
+
     def test_low_zoom_text_and_viewport_export_use_exact_scale(self) -> None:
         window = self._window()
         document = self._mount_document(window, name="low-zoom")

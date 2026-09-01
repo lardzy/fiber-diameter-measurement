@@ -19450,24 +19450,47 @@ class MainWindow(QMainWindow):
     ) -> None:
         document = self.current_document()
         is_current = document is not None and document.id == document_id
+        canvas = self._canvases.get(document_id)
+        large_area_browse = bool(
+            isinstance(canvas, DigitalSlideCanvas)
+            and canvas.large_area_browse_active()
+        )
         if not enabled:
-            if document_id not in self._digital_slide_suspended_tools:
-                self._digital_slide_suspended_tools[document_id] = (
-                    self._tool_mode,
-                    self._overlay_tool_kind,
-                    self._construction_tool_kind,
-                )
-            if is_current:
+            # Only the actual large-area browse mode suspends the user's tool.
+            # Moving or changing focus at native scale also waits for a fresh
+            # pixel frame, but that short loading interval must not repeatedly
+            # switch to Select and then announce a tool restoration.
+            if large_area_browse:
+                if document_id not in self._digital_slide_suspended_tools:
+                    self._digital_slide_suspended_tools[document_id] = (
+                        self._tool_mode,
+                        self._overlay_tool_kind,
+                        self._construction_tool_kind,
+                    )
+                if is_current:
+                    self._digital_slide_active_suspension_document_id = document_id
+                    if self._tool_mode != "select":
+                        self.set_tool_mode("select")
+                    if reason:
+                        self.statusBar().showMessage(reason, 4000)
+            elif (
+                is_current
+                and document_id in self._digital_slide_suspended_tools
+            ):
+                # The camera has returned from the overview scale, but the
+                # exact native frame is not ready yet.  Keep the one existing
+                # suspension until that frame arrives.
                 self._digital_slide_active_suspension_document_id = document_id
-                if self._tool_mode != "select":
-                    self.set_tool_mode("select")
-            if is_current and reason:
-                self.statusBar().showMessage(reason, 4000)
         else:
             suspended = self._digital_slide_suspended_tools.pop(document_id, None)
             if self._digital_slide_active_suspension_document_id == document_id:
                 self._digital_slide_active_suspension_document_id = None
-            if is_current and suspended is not None and self._tool_mode == "select":
+            if (
+                is_current
+                and suspended is not None
+                and suspended[0] != "select"
+                and self._tool_mode == "select"
+            ):
                 mode, overlay_kind, construction_kind = suspended
                 self.set_tool_mode(
                     mode,

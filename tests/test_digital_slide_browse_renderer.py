@@ -9,7 +9,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QImage, QPainter
 from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Point
@@ -450,6 +450,81 @@ def test_browse_camera_expands_visible_field_preserves_anchor_and_gates_pixels(
         canvas.shutdown()
         if renderer is not None:
             assert not renderer.is_alive()
+        canvas.clear_document()
+        canvas.close()
+        store.close()
+
+
+def test_focus_change_keeps_a_painted_handoff_and_indicator_is_zoom_only(
+    tmp_path: Path,
+) -> None:
+    app = QApplication.instance() or QApplication([])
+    store = _create_coordinate_slide(tmp_path / "focus-handoff.fdmslide")
+    document = ImageDocument(
+        id="focus-handoff",
+        path=str(store.path),
+        image_size=(400, 320),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+    canvas.resize(440, 360)
+    canvas.set_settings(AppSettings(digital_slide_render_cache_gib=0))
+    try:
+        canvas.set_slide_document(document, store)
+        canvas.show()
+        canvas.fit_native_viewport()
+        initial_focus = canvas.focus_index()
+        target_focus = 0 if initial_focus != 0 else 1
+        _wait_for(
+            app,
+            lambda: (
+                canvas.pixel_work_enabled()
+                and canvas._render_frame is not None  # noqa: SLF001
+                and canvas._render_frame.focus_index == initial_focus  # noqa: SLF001
+            ),
+        )
+        first_frame = canvas._render_frame  # noqa: SLF001
+        assert first_frame is not None
+
+        canvas._hide_native_viewport_indicator()  # noqa: SLF001
+        canvas.set_focus_index(target_focus)
+        assert canvas._render_frame is None  # noqa: SLF001
+        assert canvas._focus_transition_frame is first_frame  # noqa: SLF001
+        assert not canvas.native_viewport_indicator_visible()
+
+        painted = QImage(canvas.size(), QImage.Format.Format_RGB32)
+        painted.fill(QColor("#000000"))
+        painter = QPainter(painted)
+        target = canvas._draw_base_image(painter)  # noqa: SLF001
+        painter.end()
+        assert not target.isEmpty()
+        center = canvas._content_rect().center().toPoint()  # noqa: SLF001
+        center_color = painted.pixelColor(center)
+        assert center_color != QColor("#000000")
+        assert center_color != QColor("#101820")
+
+        _wait_for(
+            app,
+            lambda: (
+                canvas.pixel_work_enabled()
+                and canvas._render_frame is not None  # noqa: SLF001
+                and canvas._render_frame.focus_index == target_focus  # noqa: SLF001
+            ),
+        )
+        assert canvas._focus_transition_frame is None  # noqa: SLF001
+
+        canvas._native_viewport_indicator_timer.setInterval(10)  # noqa: SLF001
+        canvas.set_view_zoom(canvas.view_zoom() * 1.1)
+        assert canvas.native_viewport_indicator_visible()
+        _wait_for(app, lambda: not canvas.native_viewport_indicator_visible())
+
+        canvas.move_viewport_by(5.0, 0.0)
+        assert not canvas.native_viewport_indicator_visible()
+        canvas.set_focus_index(initial_focus)
+        assert not canvas.native_viewport_indicator_visible()
+    finally:
+        canvas.shutdown()
         canvas.clear_document()
         canvas.close()
         store.close()
