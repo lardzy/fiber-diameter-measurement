@@ -24,6 +24,7 @@ from fdm.area_display import (
     area_derived_geometry_service,
 )
 from fdm.models import ImageDocument, Measurement, ObjectAppearanceOverride
+from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.settings import (
     AppSettings,
     MeasurementEndpointStyle,
@@ -997,15 +998,24 @@ class CanvasRenderPipelineTests(unittest.TestCase):
         )
         document.measurements = [visible, outside]
         canvas = DigitalSlideCanvas()
-        canvas.resize(320, 240)
+        canvas.resize(680, 520)
         canvas.set_document(
             document,
             QImage(320, 240, QImage.Format.Format_RGB32),
         )
-        canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=4096,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[0],
+        )
+        canvas._browse_center = Point(1160.0, 2120.0)  # noqa: SLF001
         canvas._zoom = 2.0  # noqa: SLF001
-        canvas._pan = Point(20.0, 30.0)  # noqa: SLF001
-        target = QImage(320, 240, QImage.Format.Format_ARGB32_Premultiplied)
+        canvas._sync_pan_from_browse_center()  # noqa: SLF001
+        canvas._update_native_viewport_origin()  # noqa: SLF001
+        target = QImage(680, 520, QImage.Format.Format_ARGB32_Premultiplied)
         painter = QPainter(target)
         try:
             context = canvas._paint_context()  # noqa: SLF001
@@ -1013,12 +1023,11 @@ class CanvasRenderPipelineTests(unittest.TestCase):
                 QPointF(1000.0, 2000.0)
             )
             self.assertAlmostEqual(mapped_origin.x(), 20.0)
-            self.assertAlmostEqual(mapped_origin.y(), 30.0)
-            mapped_back = context.widget_to_image_transform.map(QPointF(20.0, 30.0))
+            self.assertAlmostEqual(mapped_origin.y(), 20.0)
+            mapped_back = context.widget_to_image_transform.map(QPointF(20.0, 20.0))
             self.assertAlmostEqual(mapped_back.x(), 1000.0)
             self.assertAlmostEqual(mapped_back.y(), 2000.0)
-            self.assertGreaterEqual(context.image_rect.left(), 1000.0)
-            self.assertGreaterEqual(context.image_rect.top(), 2000.0)
+            self.assertTrue(context.image_rect.contains(QPointF(1000.0, 2000.0)))
 
             with (
                 patch.dict(
@@ -1047,7 +1056,7 @@ class CanvasRenderPipelineTests(unittest.TestCase):
             update_rect = canvas._image_rect_to_widget_update_rect(  # noqa: SLF001
                 QRectF(1010.0, 2010.0, 20.0, 10.0)
             )
-            self.assertEqual((update_rect.x(), update_rect.y()), (34, 44))
+            self.assertEqual((update_rect.x(), update_rect.y()), (34, 34))
             self.assertEqual((update_rect.width(), update_rect.height()), (52, 32))
 
             with patch.object(canvas, "update") as update:
@@ -1061,7 +1070,7 @@ class CanvasRenderPipelineTests(unittest.TestCase):
                 )
             update.assert_called_once()
             visual_rect = update.call_args.args[0]
-            self.assertEqual((visual_rect.x(), visual_rect.y()), (32, 42))
+            self.assertEqual((visual_rect.x(), visual_rect.y()), (32, 32))
             self.assertEqual((visual_rect.width(), visual_rect.height()), (56, 36))
         finally:
             painter.end()
@@ -1094,15 +1103,24 @@ class CanvasRenderPipelineTests(unittest.TestCase):
         )
         document.measurements = measurements
         canvas = DigitalSlideCanvas()
-        canvas.resize(320, 240)
+        canvas.resize(680, 520)
         canvas.set_document(
             document,
             QImage(320, 240, QImage.Format.Format_RGB32),
         )
-        canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=4096,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[0],
+        )
+        canvas._browse_center = Point(1160.0, 2120.0)  # noqa: SLF001
         canvas._zoom = 2.0  # noqa: SLF001
-        canvas._pan = Point(20.0, 30.0)  # noqa: SLF001
-        target = QImage(320, 240, QImage.Format.Format_ARGB32_Premultiplied)
+        canvas._sync_pan_from_browse_center()  # noqa: SLF001
+        canvas._update_native_viewport_origin()  # noqa: SLF001
+        target = QImage(680, 520, QImage.Format.Format_ARGB32_Premultiplied)
         painter = QPainter(target)
         try:
             context = canvas._paint_context()  # noqa: SLF001

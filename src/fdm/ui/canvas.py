@@ -4087,6 +4087,8 @@ class DocumentCanvas(QWidget):
             mode=self._zoom_mode,
             device_pixel_ratio=max(1.0, float(self.devicePixelRatioF())),
             focus_index=self._viewport_focus_index(),
+            native_viewport_rect=None,
+            pixel_work_enabled=not self._read_only,
         )
 
     def set_view_zoom(self, zoom: float) -> None:
@@ -4290,12 +4292,33 @@ class DocumentCanvas(QWidget):
             return
         paint_context = self._paint_context(QRectF(event.rect()))
 
-        target = QRectF(
+        target = self._draw_base_image(painter)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        self._draw_project_rois(painter, target)
+        self._draw_constructions(painter, paint_context)
+        self._draw_annotations(painter, paint_context)
+        self._draw_preview(painter)
+
+    def _base_image_target_rect(self) -> QRectF:
+        if self._image is None:
+            return QRectF()
+        return QRectF(
             self._pan.x,
             self._pan.y,
             self._image.width() * self._zoom,
             self._image.height() * self._zoom,
         )
+
+    def _draw_base_image(self, painter: QPainter) -> QRectF:
+        """Draw the authoritative raster and return its widget-space bounds.
+
+        Virtualized canvases override this hook so a bounded display frame can
+        remain separate from the native-pixel image used by measurement tools.
+        """
+
+        target = self._base_image_target_rect()
+        if self._image is None or target.isEmpty():
+            return target
         painter.drawImage(target, self._image)
         painter.save()
         border_pen = QPen(canvas_image_border(self.palette()))
@@ -4304,11 +4327,7 @@ class DocumentCanvas(QWidget):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRect(target)
         painter.restore()
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        self._draw_project_rois(painter, target)
-        self._draw_constructions(painter, paint_context)
-        self._draw_annotations(painter, paint_context)
-        self._draw_preview(painter)
+        return target
 
     def resizeEvent(self, event) -> None:
         old_size = event.oldSize()
@@ -6167,12 +6186,6 @@ class DocumentCanvas(QWidget):
         if widget_rect.isEmpty():
             return
 
-        target = QRectF(
-            self._pan.x,
-            self._pan.y,
-            self._image.width() * self._zoom,
-            self._image.height() * self._zoom,
-        )
         painter.save()
         try:
             painter.setClipRect(widget_rect)
@@ -6180,12 +6193,7 @@ class DocumentCanvas(QWidget):
                 widget_rect,
                 canvas_workspace_background(self.palette()),
             )
-            painter.drawImage(target, self._image)
-            border_pen = QPen(canvas_image_border(self.palette()))
-            border_pen.setWidthF(1.0)
-            painter.setPen(border_pen)
-            painter.setBrush(Qt.BrushStyle.NoBrush)
-            painter.drawRect(target)
+            self._draw_base_image(painter)
             self._draw_measurements_direct(
                 painter,
                 image_rect=image_rect,

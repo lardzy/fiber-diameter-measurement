@@ -252,7 +252,12 @@ class CanvasNavigatorWidget(QWidget):
         painter.setPen(QPen(border, 1.0))
         painter.drawRect(content)
 
-        mounted = self.map_image_rect_to_widget(snapshot.mounted_image_rect)
+        native_rect = snapshot.native_viewport_rect
+        mounted = self.map_image_rect_to_widget(
+            native_rect
+            if native_rect is not None
+            else snapshot.mounted_image_rect
+        )
         if _valid_rect(mounted):
             mounted_pen = QPen(foreground, 1.0, Qt.PenStyle.DashLine)
             mounted_pen.setCosmetic(True)
@@ -354,7 +359,10 @@ class CanvasNavigatorWidget(QWidget):
         should_show = (
             self._navigator_enabled
             and self._snapshot is not None
-            and not _full_image_is_visible(self._snapshot)
+            and (
+                self._snapshot.native_viewport_rect is not None
+                or not _full_image_is_visible(self._snapshot)
+            )
         )
         self.setVisible(should_show)
         if should_show:

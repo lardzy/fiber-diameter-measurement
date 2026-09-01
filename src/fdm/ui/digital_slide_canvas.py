@@ -1,23 +1,38 @@
 from __future__ import annotations
 
 from collections import OrderedDict
-from threading import Event, Thread
+from dataclasses import dataclass
+import math
 from time import perf_counter
 from weakref import ref
 
-from PySide6.QtCore import QPointF, QRect, QRectF, Qt, QTimer, Signal
-from PySide6.QtGui import QImage, QKeyEvent, QMouseEvent, QWheelEvent
+from PySide6.QtCore import QPointF, QRectF, Qt, QTimer, Signal
+from PySide6.QtGui import QColor, QImage, QKeyEvent, QMouseEvent, QPainter, QPen, QWheelEvent
+from PySide6.QtWidgets import QWidget
 from shiboken6 import isValid as is_qobject_valid
 
 from fdm.geometry import Point
 from fdm.models import ImageDocument
 from fdm.runtime_logging import append_runtime_log
+from fdm.services.digital_slide_renderer import (
+    DigitalSlideDerivedCache,
+    DigitalSlideRenderFailure,
+    DigitalSlideRenderFrame,
+    DigitalSlideRenderRequest,
+    DigitalSlideRenderer,
+    DigitalSlideRendererStats,
+)
 from fdm.services.digital_slide_store import (
     DIGITAL_SLIDE_OVERVIEW_MAX_EDGE,
     DigitalSlideManifest,
     DigitalSlideStore,
 )
-from fdm.ui.canvas import DocumentCanvas
+from fdm.settings import AppSettings, digital_slide_render_cache_directory
+from fdm.ui.canvas import (
+    DocumentCanvas,
+    canvas_image_border,
+    canvas_workspace_foreground,
+)
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileKey
 from fdm.ui.view_transform import CanvasZoomMode
 
@@ -25,6 +40,16 @@ from fdm.ui.view_transform import CanvasZoomMode
 _OVERVIEW_MAX_EDGE = DIGITAL_SLIDE_OVERVIEW_MAX_EDGE
 _OVERVIEW_CACHE_LIMIT = 3
 _OVERVIEW_FOCUS_DEBOUNCE_MS = 180
+_BROWSE_VIEW_VERSION = 1
+_VIEW_MARGIN = 20.0
+_PIXEL_WORK_EPSILON = 1.0e-9
+
+
+@dataclass(frozen=True, slots=True)
+class DigitalSlideBrowseView:
+    center_px: Point
+    zoom: float
+    mode: CanvasZoomMode
 
 
 class DigitalSlideCanvas(DocumentCanvas):
@@ -34,14 +59,32 @@ class DigitalSlideCanvas(DocumentCanvas):
     shiftNavigationEnabledChanged = Signal(bool)
     viewportBufferFailed = Signal(str)
     overviewImageChanged = Signal(QImage)
-    _bufferRendered = Signal(int, int, int, int, QImage, str, str)
-    _overviewRendered = Signal(int, int, QImage, str, str)
+    pixelWorkAvailabilityChanged = Signal(bool, str)
+    browseNoticeRequested = Signal(str)
+    _renderFrameReady = Signal(object)
+    _renderFrameFailed = Signal(object)
 
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self._slide_store: DigitalSlideStore | None = None
         self._slide_manifest: DigitalSlideManifest | None = None
         self._viewport_origin = Point(0.0, 0.0)
+        self._browse_center = Point(0.0, 0.0)
+        self._browse_view_restored = False
+        self._render_frame: DigitalSlideRenderFrame | None = None
+        self._previous_render_frame: DigitalSlideRenderFrame | None = None
+        self._renderer: DigitalSlideRenderer | None = None
+        self._render_request_id = 0
+        self._latest_display_request_id = 0
+        self._latest_native_request_id = 0
+        self._latest_overview_request_id = 0
+        self._native_frame_key: tuple[int, int, int] | None = None
+        self._native_frame_pending_key: tuple[int, int, int] | None = None
+        self._pixel_work_enabled = True
+        self._pixel_work_reason = ""
+        self._navigation_velocity = Point(0.0, 0.0)
+        self._last_navigation_origin = Point(0.0, 0.0)
+        self._last_navigation_at = 0.0
         self._focus_index = 0
         self._initial_fit_pending = False
         self._initial_fit_done = False
@@ -54,14 +97,6 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_timer = QTimer(self)
         self._smooth_nav_timer.setInterval(16)
         self._smooth_nav_timer.timeout.connect(self._apply_smooth_navigation)
-        self._viewport_buffer = QImage()
-        self._viewport_buffer_origin = Point(0.0, 0.0)
-        self._viewport_buffer_focus_index = -1
-        self._viewport_buffer_request_id = 0
-        self._viewport_buffer_thread: Thread | None = None
-        self._viewport_buffer_thread_request_id: int | None = None
-        self._viewport_buffer_cancel = Event()
-        self._viewport_buffer_pending = False
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._viewport_last_publish_at = 0.0
@@ -71,11 +106,6 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._dynamic_focus_overview_enabled = True
         self._overview_cache: OrderedDict[int, QImage] = OrderedDict()
         self._overview_failed_focuses: set[int] = set()
-        self._overview_request_id = 0
-        self._overview_thread: Thread | None = None
-        self._overview_thread_request_id: int | None = None
-        self._overview_thread_focus_index: int | None = None
-        self._overview_cancel = Event()
         self._overview_pending = False
         self._overview_debounce_timer = QTimer(self)
         self._overview_debounce_timer.setSingleShot(True)
@@ -85,13 +115,16 @@ class DigitalSlideCanvas(DocumentCanvas):
         # mounted in the canvas.  Keep this separate from the whole-slide
         # coordinate system used by navigation and programmatic locating.
         self._clamp_pointer_to_mounted_viewport = False
-        self._bufferRendered.connect(self._on_viewport_buffer_rendered)
-        self._overviewRendered.connect(self._on_overview_rendered)
+        self._renderFrameReady.connect(self._on_render_frame_ready)
+        self._renderFrameFailed.connect(self._on_render_frame_failed)
 
     def set_slide_document(self, document: ImageDocument, store: DigitalSlideStore) -> None:
+        renderer = self._renderer
+        self._renderer = None
+        if renderer is not None:
+            renderer.close()
         self._overview_debounce_timer.stop()
-        self._overview_cancel.set()
-        self._overview_request_id += 1
+        self._latest_overview_request_id += 1
         self._overview_pending = False
         self._overview_image = QImage()
         self._overview_focus_index = -1
@@ -104,19 +137,105 @@ class DigitalSlideCanvas(DocumentCanvas):
         slide_meta = dict(document.metadata.get("digital_slide", {})) if isinstance(document.metadata.get("digital_slide"), dict) else {}
         origin = slide_meta.get("viewport_origin")
         if isinstance(origin, (list, tuple)) and len(origin) >= 2:
-            self._viewport_origin = Point(float(origin[0]), float(origin[1]))
+            try:
+                origin_x = float(origin[0])
+                origin_y = float(origin[1])
+            except (TypeError, ValueError):
+                origin_x = 0.0
+                origin_y = 0.0
+            if math.isfinite(origin_x) and math.isfinite(origin_y):
+                self._viewport_origin = Point(origin_x, origin_y)
         if "focus_index" in slide_meta:
-            focus_index = int(slide_meta.get("focus_index", 0) or 0)
+            try:
+                focus_index = int(slide_meta.get("focus_index", 0) or 0)
+            except (TypeError, ValueError):
+                focus_index = 0
         else:
             focus_index = max(0, len(self._slide_manifest.focus_levels) // 2)
         self._focus_index = self._normalized_focus_index(focus_index)
+        self._browse_view_restored = False
+        browse_payload = slide_meta.get("browse_view")
+        try:
+            browse_version = (
+                int(browse_payload.get("version", 0) or 0)
+                if isinstance(browse_payload, dict)
+                else 0
+            )
+        except (TypeError, ValueError):
+            browse_version = 0
+        if isinstance(browse_payload, dict) and browse_version == _BROWSE_VIEW_VERSION:
+            center = browse_payload.get("center")
+            try:
+                zoom = float(browse_payload.get("zoom", 0.0) or 0.0)
+                mode = CanvasZoomMode(str(browse_payload.get("mode", CanvasZoomMode.CUSTOM.value)))
+                center_x = float(center[0])
+                center_y = float(center[1])
+            except (IndexError, TypeError, ValueError):
+                zoom = 0.0
+                mode = CanvasZoomMode.CUSTOM
+                center_x = math.nan
+                center_y = math.nan
+            if (
+                isinstance(center, (list, tuple))
+                and len(center) >= 2
+                and math.isfinite(zoom)
+                and math.isfinite(center_x)
+                and math.isfinite(center_y)
+                and zoom > 0.0
+            ):
+                self._browse_center = Point(center_x, center_y)
+                self._zoom = zoom
+                self._zoom_mode = mode
+                self._browse_view_restored = True
+        if not self._browse_view_restored:
+            self._browse_center = Point(
+                self._viewport_origin.x + self._slide_manifest.viewport_width / 2.0,
+                self._viewport_origin.y + self._slide_manifest.viewport_height / 2.0,
+            )
         self._initial_fit_done = False
         self._invalidate_viewport_buffer()
-        image = self._render_current_viewport()
+        image = QImage(
+            int(self._slide_manifest.viewport_width),
+            int(self._slide_manifest.viewport_height),
+            QImage.Format.Format_RGB32,
+        )
+        image.fill(QColor("#101820"))
         super().set_document(document, image)
+        document.image_size = (self._slide_manifest.width, self._slide_manifest.height)
+        if self._browse_view_restored:
+            browse_payload = slide_meta.get("browse_view")
+            assert isinstance(browse_payload, dict)
+            self._zoom = max(
+                self._whole_slide_fit_zoom(),
+                min(40.0, float(browse_payload.get("zoom", 1.0) or 1.0)),
+            )
+            try:
+                self._zoom_mode = CanvasZoomMode(
+                    str(browse_payload.get("mode", CanvasZoomMode.CUSTOM.value))
+                )
+            except ValueError:
+                self._zoom_mode = CanvasZoomMode.CUSTOM
+        else:
+            # ``DocumentCanvas.set_document()`` restores the legacy image zoom.
+            # Establish a native-field camera scale before clamping the derived
+            # legacy center, otherwise a small slide in a large widget can be
+            # recentered to the whole-slide midpoint before the deferred fit.
+            self._zoom = self._native_field_fit_zoom()
+            self._zoom_mode = CanvasZoomMode.NATIVE_FIELD_FIT
         self._clamp_viewport()
-        self._request_viewport_buffer()
-        self.schedule_initial_fit()
+        self._clamp_browse_center()
+        self._sync_pan_from_browse_center()
+        self._update_native_viewport_origin()
+        self._native_frame_key = None
+        self._native_frame_pending_key = None
+        self._start_renderer()
+        self._request_display_frame()
+        self._update_pixel_work_state()
+        if self._browse_view_restored:
+            self._initial_fit_done = True
+            self._publish_view_transform(zoom_changed=True)
+        else:
+            self.schedule_initial_fit()
         if self._overview_enabled and self.isVisible():
             QTimer.singleShot(0, self.request_overview)
 
@@ -126,32 +245,20 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
         self._overview_debounce_timer.stop()
-        self._overview_cancel.set()
-        self._overview_request_id += 1
+        self._latest_overview_request_id += 1
         self._overview_pending = False
         self._overview_enabled = False
         self._cancel_overlay_requests()
+        self._stop_renderer()
         self._invalidate_viewport_buffer()
-        thread = self._viewport_buffer_thread
-        if thread is not None and thread.is_alive():
-            # Tile decoding checks the token between rows. A bounded join keeps
-            # tab close responsive even if the underlying filesystem stalls;
-            # generation checks still prevent any late UI publication.
-            thread.join(timeout=2.0)
-        if thread is None or not thread.is_alive():
-            self._viewport_buffer_thread = None
-            self._viewport_buffer_thread_request_id = None
-        overview_thread = self._overview_thread
-        if overview_thread is not None and overview_thread.is_alive():
-            overview_thread.join(timeout=2.0)
-        if overview_thread is None or not overview_thread.is_alive():
-            self._overview_thread = None
-            self._overview_thread_request_id = None
-            self._overview_thread_focus_index = None
         self._overview_image = QImage()
         self._overview_focus_index = -1
         self._overview_cache.clear()
         self._overview_failed_focuses.clear()
+        self._render_frame = None
+        self._previous_render_frame = None
+        self._native_frame_key = None
+        self._native_frame_pending_key = None
         self._slide_store = None
         self._slide_manifest = None
 
@@ -162,21 +269,569 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_timer.stop()
         self._smooth_nav_last_at = 0.0
         self._overview_debounce_timer.stop()
-        self._overview_cancel.set()
+        self._latest_overview_request_id += 1
         self._overview_pending = False
+        self._stop_renderer()
         self._invalidate_viewport_buffer()
         super().hideEvent(event)
 
     def showEvent(self, event) -> None:
         super().showEvent(event)
         self._allow_viewport_buffer_retry()
-        self._request_viewport_buffer()
+        if self._initial_fit_pending:
+            self._apply_initial_fit()
+        self._start_renderer()
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
         self.request_overview()
 
     def set_image(self, image: QImage) -> None:
         self._image = image
         self._publish_view_transform()
         self.update()
+
+    def set_settings(self, settings: AppSettings) -> None:
+        previous_cache_gib = int(
+            getattr(self._settings, "digital_slide_render_cache_gib", 2) or 0
+        )
+        super().set_settings(settings)
+        current_cache_gib = int(
+            getattr(settings, "digital_slide_render_cache_gib", 2) or 0
+        )
+        if (
+            self._slide_store is not None
+            and current_cache_gib != previous_cache_gib
+        ):
+            self._stop_renderer()
+            self._start_renderer()
+            self._request_display_frame()
+            self._request_native_frame()
+
+    def browse_view(self) -> DigitalSlideBrowseView:
+        return DigitalSlideBrowseView(
+            center_px=Point(self._browse_center.x, self._browse_center.y),
+            zoom=float(self._zoom),
+            mode=self._zoom_mode,
+        )
+
+    def view_zoom(self) -> float:
+        return max(1.0e-9, min(40.0, float(self._zoom)))
+
+    def set_browse_view(self, view: DigitalSlideBrowseView) -> bool:
+        return self._apply_browse_view(
+            center=Point(float(view.center_px.x), float(view.center_px.y)),
+            zoom=float(view.zoom),
+            mode=view.mode,
+            zoom_changed=not math.isclose(float(view.zoom), self._zoom),
+        )
+
+    def visible_slide_rect(self) -> QRectF:
+        if self._slide_manifest is None:
+            return QRectF()
+        return self._source_view_rect().intersected(
+            QRectF(
+                0.0,
+                0.0,
+                float(self._slide_manifest.width),
+                float(self._slide_manifest.height),
+            )
+        )
+
+    def native_viewport_rect(self) -> QRectF:
+        if self._slide_manifest is None:
+            return QRectF()
+        return QRectF(
+            float(self._viewport_origin.x),
+            float(self._viewport_origin.y),
+            float(self._slide_manifest.viewport_width),
+            float(self._slide_manifest.viewport_height),
+        )
+
+    def pixel_work_enabled(self) -> bool:
+        return bool(self._pixel_work_enabled)
+
+    def pixel_work_unavailable_reason(self) -> str:
+        return self._pixel_work_reason
+
+    def renderer_stats(self) -> DigitalSlideRendererStats | None:
+        renderer = self._renderer
+        return renderer.stats() if renderer is not None else None
+
+    def clear_render_cache(self) -> None:
+        renderer = self._renderer
+        self._stop_renderer()
+        if renderer is not None:
+            renderer.clear_derived_cache()
+        elif self._slide_store is not None and self._slide_manifest is not None:
+            cache = DigitalSlideDerivedCache(
+                digital_slide_render_cache_directory(), byte_limit=0
+            )
+            cache.clear_fingerprint(
+                cache.source_fingerprint(
+                    self._slide_store.path,
+                    self._slide_manifest,
+                    source_identity=self._render_source_identity(),
+                )
+            )
+        self._allow_viewport_buffer_retry()
+        self._start_renderer()
+        self._request_display_frame()
+        self._request_native_frame()
+
+    def viewport_snapshot(self):
+        snapshot = super().viewport_snapshot()
+        if snapshot is None:
+            return None
+        return type(snapshot)(
+            document_id=snapshot.document_id,
+            full_image_rect=snapshot.full_image_rect,
+            mounted_image_rect=self.native_viewport_rect(),
+            visible_image_rect=self.visible_slide_rect(),
+            zoom=snapshot.zoom,
+            mode=snapshot.mode,
+            device_pixel_ratio=snapshot.device_pixel_ratio,
+            focus_index=snapshot.focus_index,
+            native_viewport_rect=self.native_viewport_rect(),
+            pixel_work_enabled=self._pixel_work_enabled,
+        )
+
+    def _content_rect(self) -> QRectF:
+        if self._slide_manifest is None:
+            return QRectF()
+        available = QRectF(
+            _VIEW_MARGIN,
+            _VIEW_MARGIN,
+            max(1.0, float(self.width()) - (_VIEW_MARGIN * 2.0)),
+            max(1.0, float(self.height()) - (_VIEW_MARGIN * 2.0)),
+        )
+        native_aspect = float(self._slide_manifest.viewport_width) / max(
+            1.0, float(self._slide_manifest.viewport_height)
+        )
+        if available.width() / max(available.height(), 1.0) > native_aspect:
+            width = available.height() * native_aspect
+            return QRectF(
+                available.center().x() - width / 2.0,
+                available.top(),
+                width,
+                available.height(),
+            )
+        height = available.width() / max(native_aspect, 1.0e-12)
+        return QRectF(
+            available.left(),
+            available.center().y() - height / 2.0,
+            available.width(),
+            height,
+        )
+
+    def _native_field_fit_zoom(self) -> float:
+        if self._slide_manifest is None:
+            return 1.0
+        content = self._content_rect()
+        return min(
+            content.width() / max(1.0, float(self._slide_manifest.viewport_width)),
+            content.height() / max(1.0, float(self._slide_manifest.viewport_height)),
+            40.0,
+        )
+
+    def _whole_slide_fit_zoom(self) -> float:
+        if self._slide_manifest is None:
+            return 1.0
+        content = self._content_rect()
+        return min(
+            40.0,
+            max(
+                1.0e-9,
+                min(
+                    content.width() / max(1.0, float(self._slide_manifest.width)),
+                    content.height() / max(1.0, float(self._slide_manifest.height)),
+                ),
+            ),
+        )
+
+    def _source_view_rect(self) -> QRectF:
+        content = self._content_rect()
+        if content.isEmpty() or self._zoom <= 0.0:
+            return QRectF()
+        width = content.width() / self._zoom
+        height = content.height() / self._zoom
+        return QRectF(
+            self._browse_center.x - width / 2.0,
+            self._browse_center.y - height / 2.0,
+            width,
+            height,
+        )
+
+    def _clamp_browse_center(self) -> None:
+        if self._slide_manifest is None:
+            return
+        source = self._source_view_rect()
+        half_width = source.width() / 2.0
+        half_height = source.height() / 2.0
+        slide_width = float(self._slide_manifest.width)
+        slide_height = float(self._slide_manifest.height)
+        center_x = (
+            slide_width / 2.0
+            if source.width() >= slide_width
+            else max(half_width, min(slide_width - half_width, self._browse_center.x))
+        )
+        center_y = (
+            slide_height / 2.0
+            if source.height() >= slide_height
+            else max(half_height, min(slide_height - half_height, self._browse_center.y))
+        )
+        self._browse_center = Point(center_x, center_y)
+
+    def _sync_pan_from_browse_center(self) -> None:
+        content = self._content_rect()
+        self._pan = Point(
+            content.center().x() - self._browse_center.x * self._zoom,
+            content.center().y() - self._browse_center.y * self._zoom,
+        )
+
+    def _update_native_viewport_origin(self) -> None:
+        if self._slide_manifest is None:
+            return
+        self._viewport_origin = Point(
+            round(
+                self._browse_center.x
+                - float(self._slide_manifest.viewport_width) / 2.0
+            ),
+            round(
+                self._browse_center.y
+                - float(self._slide_manifest.viewport_height) / 2.0
+            ),
+        )
+        self._clamp_viewport()
+
+    def _native_request_key(self) -> tuple[int, int, int]:
+        return (
+            int(round(self._viewport_origin.x)),
+            int(round(self._viewport_origin.y)),
+            int(self._focus_index),
+        )
+
+    def _apply_browse_view(
+        self,
+        *,
+        center: Point,
+        zoom: float,
+        mode: CanvasZoomMode,
+        zoom_changed: bool,
+    ) -> bool:
+        if self._slide_manifest is None:
+            return False
+        if not (
+            math.isfinite(float(center.x))
+            and math.isfinite(float(center.y))
+            and math.isfinite(float(zoom))
+        ):
+            return False
+        if not isinstance(mode, CanvasZoomMode):
+            try:
+                mode = CanvasZoomMode(str(mode))
+            except ValueError:
+                mode = CanvasZoomMode.CUSTOM
+        minimum = self._whole_slide_fit_zoom()
+        requested = max(minimum, min(40.0, float(zoom)))
+        threshold = self._native_field_fit_zoom()
+        if (
+            requested + _PIXEL_WORK_EPSILON < threshold
+            and self._zoom + _PIXEL_WORK_EPSILON >= threshold
+            and (
+                self._has_pointer_edit_operation()
+                or self.has_pending_path_drawing()
+                or self.has_magic_segment_session()
+                or self.has_reference_instance_session()
+                or self.has_fiber_quick_session()
+            )
+        ):
+            self.browseNoticeRequested.emit(
+                "当前正在绘制或编辑，请先完成或取消操作后再缩小到大范围浏览。"
+            )
+            return False
+        self._hovered_line_endpoint = None
+        self._hovered_construction_id = None
+        self._hovered_construction_handle = None
+        self._set_active_snap_candidate(None)
+        self._zoom = requested
+        self._zoom_mode = mode
+        self._browse_center = Point(float(center.x), float(center.y))
+        self._clamp_browse_center()
+        self._sync_pan_from_browse_center()
+        previous_key = self._native_request_key()
+        self._update_native_viewport_origin()
+        if self._native_request_key() != previous_key:
+            self._native_frame_pending_key = None
+        self._reset_proxy_warming()
+        self._cancel_overlay_requests()
+        self._persist_view_state()
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
+        self._publish_viewport_state(throttled=False, zoom_changed=zoom_changed)
+        self.update()
+        return True
+
+    def _start_renderer(self) -> None:
+        if self._renderer is not None or self._slide_store is None or self._slide_manifest is None:
+            return
+        canvas_ref = ref(self)
+
+        def publish_result(frame: DigitalSlideRenderFrame) -> None:
+            canvas = canvas_ref()
+            if canvas is not None and is_qobject_valid(canvas):
+                canvas._renderFrameReady.emit(frame)
+
+        def publish_failure(failure: DigitalSlideRenderFailure) -> None:
+            canvas = canvas_ref()
+            if canvas is not None and is_qobject_valid(canvas):
+                canvas._renderFrameFailed.emit(failure)
+
+        cache_gib = max(
+            0,
+            min(
+                32,
+                int(
+                    getattr(
+                        self._settings,
+                        "digital_slide_render_cache_gib",
+                        2,
+                    )
+                    or 0
+                ),
+            ),
+        )
+        self._renderer = DigitalSlideRenderer(
+            self._slide_store.path,
+            self._slide_manifest,
+            source_identity=self._render_source_identity(),
+            cache_root=digital_slide_render_cache_directory(),
+            disk_cache_bytes=cache_gib * 1024 * 1024 * 1024,
+            result_callback=publish_result,
+            failure_callback=publish_failure,
+        )
+
+    def _render_source_identity(self) -> str | None:
+        document = self._document
+        if document is None:
+            return None
+        return str(document.absolute_path or document.path or "") or None
+
+    def _stop_renderer(self) -> None:
+        renderer = self._renderer
+        self._renderer = None
+        self._latest_display_request_id = 0
+        self._latest_native_request_id = 0
+        self._latest_overview_request_id = 0
+        self._native_frame_pending_key = None
+        if renderer is not None:
+            renderer.close()
+
+    def _blend_width(self) -> int:
+        if self._slide_manifest is None or not isinstance(self._slide_manifest.metadata, dict):
+            return 0
+        try:
+            return max(0, int(self._slide_manifest.metadata.get("blend_width", 0) or 0))
+        except (TypeError, ValueError):
+            return 0
+
+    def _request_display_frame(self) -> None:
+        if (
+            self._viewport_buffer_error_blocked
+            or self._slide_manifest is None
+            or not self.isVisible()
+        ):
+            return
+        self._start_renderer()
+        renderer = self._renderer
+        content = self._content_rect()
+        source = self._source_view_rect()
+        if renderer is None or content.isEmpty() or source.isEmpty():
+            return
+        dpr = max(1.0, float(self.devicePixelRatioF()))
+        self._render_request_id += 1
+        self._latest_display_request_id = self._render_request_id
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="display",
+                source_rect=(source.x(), source.y(), source.width(), source.height()),
+                output_size_px=(
+                    max(1, int(round(content.width() * dpr))),
+                    max(1, int(round(content.height() * dpr))),
+                ),
+                focus_index=int(self._focus_index),
+                device_pixel_ratio=dpr,
+                blend_width=self._blend_width(),
+                velocity_px_per_second=(
+                    float(self._navigation_velocity.x),
+                    float(self._navigation_velocity.y),
+                ),
+            )
+        )
+
+    def _request_native_frame(self) -> None:
+        if (
+            self._viewport_buffer_error_blocked
+            or self._slide_manifest is None
+            or not self.isVisible()
+        ):
+            return
+        if self._zoom + _PIXEL_WORK_EPSILON < self._native_field_fit_zoom():
+            self._native_frame_pending_key = None
+            return
+        key = self._native_request_key()
+        if self._native_frame_key == key or self._native_frame_pending_key == key:
+            return
+        self._start_renderer()
+        renderer = self._renderer
+        if renderer is None:
+            return
+        self._render_request_id += 1
+        self._latest_native_request_id = self._render_request_id
+        self._native_frame_pending_key = key
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="native",
+                source_rect=(
+                    float(key[0]),
+                    float(key[1]),
+                    float(self._slide_manifest.viewport_width),
+                    float(self._slide_manifest.viewport_height),
+                ),
+                output_size_px=(
+                    int(self._slide_manifest.viewport_width),
+                    int(self._slide_manifest.viewport_height),
+                ),
+                focus_index=int(self._focus_index),
+                device_pixel_ratio=1.0,
+                blend_width=self._blend_width(),
+                force_lod=0,
+            )
+        )
+
+    def _on_render_frame_ready(self, frame: DigitalSlideRenderFrame) -> None:
+        if frame.purpose == "overview":
+            if frame.request_id != self._latest_overview_request_id:
+                return
+            target_focus = self._overview_target_focus_index()
+            if frame.focus_index != target_focus or frame.image.isNull():
+                return
+            self._overview_pending = False
+            self._overview_cache[target_focus] = frame.image
+            self._overview_cache.move_to_end(target_focus)
+            while len(self._overview_cache) > _OVERVIEW_CACHE_LIMIT:
+                self._overview_cache.popitem(last=False)
+            self._overview_image = frame.image
+            self._overview_focus_index = target_focus
+            self._overview_failed_focuses.discard(target_focus)
+            self.overviewImageChanged.emit(frame.image)
+            self.update()
+            return
+        if frame.focus_index != self._focus_index:
+            return
+        if frame.purpose == "display":
+            if frame.request_id != self._latest_display_request_id:
+                return
+            self._previous_render_frame = self._render_frame
+            self._render_frame = frame
+            self._viewport_buffer_error_blocked = False
+            self._viewport_buffer_last_error = ""
+            self.update()
+            return
+        if frame.request_id != self._latest_native_request_id:
+            return
+        key = (
+            int(round(frame.source_rect[0])),
+            int(round(frame.source_rect[1])),
+            int(frame.focus_index),
+        )
+        if key != self._native_request_key():
+            return
+        self._image = frame.image
+        self._native_frame_key = key
+        self._native_frame_pending_key = None
+        self._viewport_buffer_error_blocked = False
+        self._viewport_buffer_last_error = ""
+        self._update_pixel_work_state()
+        self._publish_view_transform()
+        self.update()
+
+    def _on_render_frame_failed(self, failure: DigitalSlideRenderFailure) -> None:
+        if failure.purpose == "overview":
+            if failure.focus_index != self._overview_target_focus_index():
+                return
+        elif failure.focus_index != self._focus_index:
+            return
+        expected = (
+            self._latest_native_request_id
+            if failure.purpose == "native"
+            else (
+                self._latest_overview_request_id
+                if failure.purpose == "overview"
+                else self._latest_display_request_id
+            )
+        )
+        if failure.request_id != expected:
+            return
+        if failure.purpose == "native":
+            self._native_frame_pending_key = None
+            self._native_frame_key = None
+        elif failure.purpose == "overview":
+            self._overview_pending = False
+            self._overview_failed_focuses.add(failure.focus_index)
+            self._overview_image = QImage()
+            self._overview_focus_index = -1
+            self.overviewImageChanged.emit(QImage())
+            append_runtime_log(
+                "数字切片导航缩略图读取失败",
+                (
+                    f"path={self._slide_store.path if self._slide_store is not None else ''}\n"
+                    f"request_id={failure.request_id}, focus_index={failure.focus_index}\n"
+                    f"error={failure.message}"
+                ),
+            )
+            return
+        self._viewport_buffer_error_blocked = True
+        self._viewport_buffer_last_error = failure.message
+        append_runtime_log(
+            "数字切片异步渲染失败",
+            (
+                f"path={self._slide_store.path if self._slide_store is not None else ''}\n"
+                f"request_id={failure.request_id}, purpose={failure.purpose}, "
+                f"focus_index={failure.focus_index}\nerror={failure.message}"
+            ),
+        )
+        self.viewportBufferFailed.emit(failure.message)
+        self._update_pixel_work_state()
+
+    def _update_pixel_work_state(self) -> None:
+        if self._slide_manifest is None:
+            enabled = False
+            reason = "未加载数字切片"
+        elif self._zoom + _PIXEL_WORK_EPSILON < self._native_field_fit_zoom():
+            enabled = False
+            reason = "大范围浏览模式：放大到单视场后可测量"
+        elif self._native_frame_key != self._native_request_key():
+            enabled = False
+            reason = (
+                "原生工作视场读取失败，请重试"
+                if self._viewport_buffer_error_blocked
+                else "正在加载原生工作视场，完成后可测量"
+            )
+        else:
+            enabled = True
+            reason = ""
+        changed = enabled != self._pixel_work_enabled or reason != self._pixel_work_reason
+        self._pixel_work_enabled = enabled
+        self._pixel_work_reason = reason
+        if self._read_only != (not enabled):
+            self.set_read_only(not enabled)
+        if changed:
+            self.pixelWorkAvailabilityChanged.emit(enabled, reason)
+            self._publish_view_transform()
 
     def focus_index(self) -> int:
         return self._focus_index
@@ -208,7 +863,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_enabled = enabled
         if not enabled:
             self._overview_debounce_timer.stop()
-            self._overview_cancel.set()
+            self._latest_overview_request_id += 1
             self._overview_pending = False
             return
         if self.isVisible():
@@ -224,8 +879,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         if old_target == new_target:
             return
         self._overview_debounce_timer.stop()
-        self._overview_cancel.set()
-        self._overview_request_id += 1
+        self._latest_overview_request_id += 1
         self._overview_pending = False
         cached = self._overview_cache.get(new_target)
         if cached is not None:
@@ -284,62 +938,54 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.shiftNavigationEnabledChanged.emit(enabled)
 
     def move_viewport_by(self, dx: float, dy: float, *, throttled: bool = False) -> None:
-        if dx or dy:
-            # The cached endpoint hit is expressed in global slide
-            # coordinates.  Clear it while the old viewport mapping is still
-            # active so navigation cannot move a stale highlight away from the
-            # stationary pointer.
-            self._set_hovered_line_endpoint(None)
-            self._hovered_construction_id = None
-            self._hovered_construction_handle = None
-            self._set_active_snap_candidate(None)
-            if self._construction_session is not None:
-                self._construction_session.hover_point = None
-            # A discrete navigation action is an explicit retry boundary.  A
-            # held smooth-navigation key clears the error latch only once in
-            # _begin_smooth_navigation(), so a permanent read error cannot
-            # create a new worker on every 16 ms timer tick.
-            if not self._smooth_nav_keys:
-                self._allow_viewport_buffer_retry()
-            # Overlay tiles live on the global slide grid, but their cache key
-            # also carries the exact device-pixel phase at the current
-            # viewport origin.  A pending tile from the previous origin must
-            # therefore not survive a navigation step.
-            self._cancel_overlay_requests()
-        self._viewport_origin = Point(self._viewport_origin.x + dx, self._viewport_origin.y + dy)
-        self._clamp_viewport()
-        if self._render_current_viewport_from_buffer():
-            self._publish_viewport_state(throttled=throttled)
-            self._request_viewport_buffer()
+        if self._slide_manifest is None or (not dx and not dy):
             return
-        self._reload_viewport(throttled=throttled)
-
-    def center_on_image_point(self, point: Point) -> None:
-        if self._slide_manifest is None:
-            super().center_on_image_point(point)
+        old_center = Point(self._browse_center.x, self._browse_center.y)
+        self._browse_center = Point(old_center.x + float(dx), old_center.y + float(dy))
+        self._clamp_browse_center()
+        if (
+            math.isclose(old_center.x, self._browse_center.x, abs_tol=1.0e-9)
+            and math.isclose(old_center.y, self._browse_center.y, abs_tol=1.0e-9)
+        ):
+            self._navigation_velocity = Point(0.0, 0.0)
             return
-        # Whole-slide navigation moves the global SQLite viewport without
-        # changing the local FIT/ACTUAL/CUSTOM transform.  Derive the image
-        # coordinate currently under the widget center using the base mapping,
-        # then place the requested global point at that same local coordinate.
-        local_center = DocumentCanvas.widget_to_image(
-            self,
-            QPointF(self.width() / 2.0, self.height() / 2.0),
-        )
         self._set_hovered_line_endpoint(None)
         self._hovered_construction_id = None
         self._hovered_construction_handle = None
         self._set_active_snap_candidate(None)
         if self._construction_session is not None:
             self._construction_session.hover_point = None
-        self._allow_viewport_buffer_retry()
         self._cancel_overlay_requests()
-        self._viewport_origin = Point(
-            point.x - local_center.x,
-            point.y - local_center.y,
+        now = perf_counter()
+        elapsed = max(1.0e-3, now - self._last_navigation_at) if self._last_navigation_at else 0.0
+        if elapsed > 0.0:
+            self._navigation_velocity = Point(
+                (self._browse_center.x - old_center.x) / elapsed,
+                (self._browse_center.y - old_center.y) / elapsed,
+            )
+        self._last_navigation_at = now
+        self._last_navigation_origin = Point(self._browse_center.x, self._browse_center.y)
+        self._sync_pan_from_browse_center()
+        self._update_native_viewport_origin()
+        if self._native_frame_key != self._native_request_key():
+            self._native_frame_pending_key = None
+        self._persist_view_state()
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
+        self._publish_viewport_state(throttled=throttled)
+        self.update()
+
+    def center_on_image_point(self, point: Point) -> None:
+        if self._slide_manifest is None:
+            super().center_on_image_point(point)
+            return
+        self._apply_browse_view(
+            center=Point(float(point.x), float(point.y)),
+            zoom=self._zoom,
+            mode=self._zoom_mode,
+            zoom_changed=False,
         )
-        self._clamp_viewport()
-        self._reload_viewport()
 
     def set_focus_index(self, focus_index: int) -> None:
         focus_index = self._normalized_focus_index(focus_index)
@@ -347,20 +993,36 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         self._focus_index = focus_index
         self.focusChanged.emit(focus_index)
-        self._invalidate_viewport_buffer()
-        self._reload_viewport()
+        self._render_frame = None
+        self._previous_render_frame = None
+        self._native_frame_key = None
+        self._native_frame_pending_key = None
+        self._allow_viewport_buffer_retry()
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
+        self._publish_viewport_state(throttled=False)
+        self.update()
         if not self._overview_enabled:
             self._overview_image = QImage()
             self._overview_focus_index = -1
             self.overviewImageChanged.emit(QImage())
             return
         overview_focus_index = self._overview_target_focus_index()
-        if (
-            self._overview_thread is not None
-            and self._overview_thread.is_alive()
-            and self._overview_thread_focus_index != overview_focus_index
-        ):
-            self._overview_cancel.set()
+        if not self._dynamic_focus_overview_enabled:
+            cached = self._overview_cache.get(overview_focus_index)
+            if cached is not None:
+                self._overview_cache.move_to_end(overview_focus_index)
+                self._overview_image = cached
+                self._overview_focus_index = overview_focus_index
+                self.overviewImageChanged.emit(cached)
+            elif (
+                not self._overview_pending
+                and overview_focus_index not in self._overview_failed_focuses
+            ):
+                QTimer.singleShot(0, self.request_overview)
+            return
+        self._latest_overview_request_id += 1
         cached = self._overview_cache.get(overview_focus_index)
         if cached is not None:
             self._overview_cache.move_to_end(overview_focus_index)
@@ -373,14 +1035,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_focus_index = -1
             self.overviewImageChanged.emit(QImage())
             return
-        if self._dynamic_focus_overview_enabled:
-            self._overview_debounce_timer.start()
+        self._overview_debounce_timer.start()
 
     def widget_to_image(self, position: QPointF) -> Point:
-        local = super().widget_to_image(position)
         point = Point(
-            local.x + self._viewport_origin.x,
-            local.y + self._viewport_origin.y,
+            (position.x() - self._pan.x) / max(self._zoom, 1.0e-12),
+            (position.y() - self._pan.y) / max(self._zoom, 1.0e-12),
         )
         if self._clamp_pointer_to_mounted_viewport:
             return self._clamp_to_mounted_viewport(point)
@@ -388,50 +1048,225 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def image_to_widget(self, point: Point) -> QPointF:
         return QPointF(
-            self._pan.x + ((point.x - self._viewport_origin.x) * self._zoom),
-            self._pan.y + ((point.y - self._viewport_origin.y) * self._zoom),
+            self._pan.x + (point.x * self._zoom),
+            self._pan.y + (point.y * self._zoom),
         )
 
     def _overlay_widget_origin(self) -> QPointF:
-        """Map global slide coordinates into the mounted viewport widget."""
-
-        return QPointF(
-            float(self._pan.x - (self._viewport_origin.x * self._zoom)),
-            float(self._pan.y - (self._viewport_origin.y * self._zoom)),
-        )
+        return QPointF(float(self._pan.x), float(self._pan.y))
 
     def _paint_image_bounds(self) -> QRectF:
-        """Global slide-space bounds covered by the current viewport raster."""
-
-        if self._image is None:
+        if self._slide_manifest is None:
             return QRectF()
-        bounds = QRectF(
-            float(self._viewport_origin.x),
-            float(self._viewport_origin.y),
-            float(self._image.width()),
-            float(self._image.height()),
+        return QRectF(
+            0.0,
+            0.0,
+            float(self._slide_manifest.width),
+            float(self._slide_manifest.height),
         )
-        if self._document is None:
-            return bounds
-        width, height = self._document.image_size
-        return bounds.intersected(QRectF(0.0, 0.0, float(width), float(height)))
+
+    def _exact_visible_image_rect(self) -> QRectF:
+        return self.visible_slide_rect()
+
+    def visible_source_pixel_rect(self) -> tuple[float, float, float, float] | None:
+        native = self.native_viewport_rect()
+        if native.isEmpty():
+            return None
+        return native.x(), native.y(), native.width(), native.height()
+
+    def _base_image_target_rect(self) -> QRectF:
+        frame = self._render_frame
+        if frame is None:
+            return QRectF()
+        x, y, width, height = frame.source_rect
+        top_left = self.image_to_widget(Point(x, y))
+        return QRectF(
+            top_left.x(),
+            top_left.y(),
+            width * self._zoom,
+            height * self._zoom,
+        )
+
+    def _draw_base_image(self, painter: QPainter) -> QRectF:
+        content = self._content_rect()
+        if self._slide_manifest is None or content.isEmpty():
+            return QRectF()
+        painter.save()
+        painter.setClipRect(content)
+        full_target_top_left = self.image_to_widget(Point(0.0, 0.0))
+        full_target = QRectF(
+            full_target_top_left.x(),
+            full_target_top_left.y(),
+            float(self._slide_manifest.width) * self._zoom,
+            float(self._slide_manifest.height) * self._zoom,
+        )
+        if (
+            not self._overview_image.isNull()
+            and self._overview_focus_index == self._focus_index
+        ):
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            painter.drawImage(full_target, self._overview_image)
+        frame = self._render_frame
+        target = QRectF()
+        if frame is not None and frame.focus_index == self._focus_index:
+            x, y, width, height = frame.source_rect
+            top_left = self.image_to_widget(Point(x, y))
+            target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                width * self._zoom,
+                height * self._zoom,
+            )
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            painter.drawImage(target, frame.image)
+        elif self._image is not None and self._native_frame_key is not None:
+            native = self.native_viewport_rect()
+            top_left = self.image_to_widget(Point(native.x(), native.y()))
+            target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                native.width() * self._zoom,
+                native.height() * self._zoom,
+            )
+            painter.drawImage(target, self._image)
+        painter.restore()
+
+        painter.save()
+        border_pen = QPen(canvas_image_border(self.palette()))
+        border_pen.setWidthF(1.0)
+        painter.setPen(border_pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(full_target)
+        painter.restore()
+        return target if not target.isEmpty() else full_target
+
+    def paintEvent(self, event) -> None:
+        super().paintEvent(event)
+        if self._pixel_work_enabled or self._slide_manifest is None:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        native = self.native_viewport_rect()
+        top_left = self.image_to_widget(Point(native.x(), native.y()))
+        native_target = QRectF(
+            top_left.x(),
+            top_left.y(),
+            native.width() * self._zoom,
+            native.height() * self._zoom,
+        )
+        pen = QPen(QColor("#F4C95D"))
+        pen.setStyle(Qt.PenStyle.DashLine)
+        pen.setWidthF(1.5)
+        painter.setPen(pen)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRect(native_target)
+        message = self._pixel_work_reason or "放大到单视场后可测量"
+        metrics = painter.fontMetrics()
+        text_rect = metrics.boundingRect(message).adjusted(-10, -6, 10, 6)
+        text_rect.moveCenter(
+            QPointF(self._content_rect().center().x(), self._content_rect().bottom() - 22.0).toPoint()
+        )
+        painter.setPen(Qt.PenStyle.NoPen)
+        painter.setBrush(QColor(12, 20, 28, 210))
+        painter.drawRoundedRect(QRectF(text_rect), 5.0, 5.0)
+        painter.setPen(canvas_workspace_foreground(self.palette()))
+        painter.drawText(text_rect, Qt.AlignmentFlag.AlignCenter, message)
+
+    def resizeEvent(self, event) -> None:
+        QWidget.resizeEvent(self, event)
+        if self._slide_manifest is None:
+            return
+        if self._zoom_mode is CanvasZoomMode.FIT:
+            self.fit_to_view()
+            return
+        if self._zoom_mode is CanvasZoomMode.NATIVE_FIELD_FIT:
+            self.fit_native_viewport()
+            return
+        self._zoom = max(self._whole_slide_fit_zoom(), min(40.0, self._zoom))
+        self._clamp_browse_center()
+        self._sync_pan_from_browse_center()
+        self._update_native_viewport_origin()
+        self._persist_view_state()
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
+        self._publish_view_transform(zoom_changed=True)
+        self.update()
 
     def _viewport_focus_index(self) -> int | None:
         return int(self._focus_index)
 
     def fit_to_view(self) -> None:
         self._initial_fit_pending = False
-        if self._image is None:
+        if self._slide_manifest is None:
             return
         self._initial_fit_done = True
-        super().fit_to_view()
+        self._apply_browse_view(
+            center=Point(
+                float(self._slide_manifest.width) / 2.0,
+                float(self._slide_manifest.height) / 2.0,
+            ),
+            zoom=self._whole_slide_fit_zoom(),
+            mode=CanvasZoomMode.FIT,
+            zoom_changed=True,
+        )
+
+    def fit_native_viewport(self) -> None:
+        self._initial_fit_pending = False
+        if self._slide_manifest is None:
+            return
+        self._initial_fit_done = True
+        self._apply_browse_view(
+            center=Point(self._browse_center.x, self._browse_center.y),
+            zoom=self._native_field_fit_zoom(),
+            mode=CanvasZoomMode.NATIVE_FIELD_FIT,
+            zoom_changed=True,
+        )
 
     def actual_size(self) -> None:
         self._initial_fit_pending = False
-        if self._image is None:
+        if self._slide_manifest is None:
             return
         self._initial_fit_done = True
-        super().actual_size()
+        self._apply_browse_view(
+            center=Point(self._browse_center.x, self._browse_center.y),
+            zoom=1.0,
+            mode=CanvasZoomMode.ACTUAL,
+            zoom_changed=True,
+        )
+
+    def set_view_zoom(self, zoom: float) -> None:
+        if self._slide_manifest is None:
+            return
+        self._set_zoom_at_widget_position(
+            float(zoom),
+            self._content_rect().center(),
+            mode=CanvasZoomMode.CUSTOM,
+        )
+
+    def _set_zoom_at_widget_position(
+        self,
+        zoom: float,
+        position: QPointF,
+        *,
+        mode: CanvasZoomMode,
+    ) -> None:
+        if self._slide_manifest is None:
+            return
+        anchor_before = self.widget_to_image(position)
+        old_zoom = max(self._zoom, 1.0e-12)
+        requested = max(self._whole_slide_fit_zoom(), min(40.0, float(zoom)))
+        content_center = self._content_rect().center()
+        center = Point(
+            anchor_before.x - (position.x() - content_center.x()) / requested,
+            anchor_before.y - (position.y() - content_center.y()) / requested,
+        )
+        self._apply_browse_view(
+            center=center,
+            zoom=requested,
+            mode=mode,
+            zoom_changed=not math.isclose(old_zoom, requested),
+        )
 
     def schedule_initial_fit(self) -> None:
         if self._initial_fit_done or self._initial_fit_pending:
@@ -482,8 +1317,9 @@ class DigitalSlideCanvas(DocumentCanvas):
                 or modifiers == Qt.KeyboardModifier.ShiftModifier
             )
             if shift_navigation:
-                step_x = float(self._image.width() if self._image is not None else 0)
-                step_y = float(self._image.height() if self._image is not None else 0)
+                source = self._source_view_rect()
+                step_x = float(source.width())
+                step_y = float(source.height())
             else:
                 step_x, step_y = self._navigation_step()
             if event.key() == Qt.Key.Key_Left:
@@ -511,10 +1347,10 @@ class DigitalSlideCanvas(DocumentCanvas):
                     self._smooth_nav_last_at = 0.0
                     self._publish_viewport_state(throttled=False)
                     self._request_viewport_buffer()
-                    # If the requested buffer is already available this is the
-                    # single warmable frame for the final viewport.  Otherwise
-                    # _enqueue_overlay_tiles() keeps warming suspended until
-                    # _on_viewport_buffer_rendered() publishes the exact frame.
+                    # If the requested frame is already available this is the
+                    # single warmable paint for the final viewport.  Otherwise
+                    # passive overlay warming stays suspended until the
+                    # renderer publishes that exact frame.
                     self.update()
             event.accept()
             return
@@ -526,7 +1362,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         return self._document.image_size
 
     def _point_in_image(self, point: Point) -> bool:
-        bounds = self._paint_image_bounds()
+        # Pixel-backed tools always operate on the fixed native work field,
+        # even when the browse camera currently shows a larger part of the
+        # slide.  The whole-slide bounds remain available to navigation and
+        # overlay painting, but must never admit an edit outside ``_image``.
+        bounds = self.native_viewport_rect()
         if bounds.isEmpty() or not bounds.isValid():
             return False
         return (
@@ -537,7 +1377,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _clamp_to_mounted_viewport(self, point: Point) -> Point:
         """Clamp a pointer coordinate while retaining global slide space."""
 
-        bounds = self._paint_image_bounds()
+        bounds = self.native_viewport_rect()
         if bounds.isEmpty() or not bounds.isValid():
             return point
         return Point(
@@ -568,6 +1408,21 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._clamp_pointer_to_mounted_viewport = previous
 
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        if self._panning:
+            delta = event.position() - self._last_mouse_pos
+            self._last_mouse_pos = event.position()
+            if delta.x() or delta.y():
+                if self._zoom_mode in {
+                    CanvasZoomMode.FIT,
+                    CanvasZoomMode.NATIVE_FIELD_FIT,
+                }:
+                    self._zoom_mode = CanvasZoomMode.CUSTOM
+                self.move_viewport_by(
+                    -delta.x() / max(self._zoom, 1.0e-12),
+                    -delta.y() / max(self._zoom, 1.0e-12),
+                    throttled=True,
+                )
+            return
         # Once a pointer operation has started, dragging into the padding pins
         # the preview to the nearest mounted pixel instead of writing a global
         # coordinate belonging to an invisible slide region.
@@ -579,12 +1434,18 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._clamp_pointer_to_mounted_viewport = previous
 
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
+        was_panning = bool(self._panning)
         previous = self._clamp_pointer_to_mounted_viewport
         self._clamp_pointer_to_mounted_viewport = self._has_pointer_edit_operation()
         try:
             super().mouseReleaseEvent(event)
         finally:
             self._clamp_pointer_to_mounted_viewport = previous
+        if was_panning and not self._panning:
+            self._navigation_velocity = Point(0.0, 0.0)
+            self._publish_viewport_state(throttled=False)
+            self._request_display_frame()
+            self._request_native_frame()
 
     def mouseDoubleClickEvent(self, event: QMouseEvent) -> None:
         # Double-click completes paths, but padding must not contribute a new
@@ -605,12 +1466,17 @@ class DigitalSlideCanvas(DocumentCanvas):
         return self._paint_context().image_rect
 
     def _persist_view_state(self) -> None:
-        super()._persist_view_state()
         if self._document is None:
             return
         slide_meta = dict(self._document.metadata.get("digital_slide", {})) if isinstance(self._document.metadata.get("digital_slide"), dict) else {}
         slide_meta["viewport_origin"] = [int(round(self._viewport_origin.x)), int(round(self._viewport_origin.y))]
         slide_meta["focus_index"] = int(self._focus_index)
+        slide_meta["browse_view"] = {
+            "version": _BROWSE_VIEW_VERSION,
+            "center": [float(self._browse_center.x), float(self._browse_center.y)],
+            "zoom": float(self._zoom),
+            "mode": self._zoom_mode.value,
+        }
         self._document.metadata["digital_slide"] = slide_meta
 
     def _normalized_focus_index(self, focus_index: int) -> int:
@@ -619,15 +1485,15 @@ class DigitalSlideCanvas(DocumentCanvas):
         return max(0, min(int(focus_index), max(0, len(self._slide_manifest.focus_levels) - 1)))
 
     def _navigation_step(self) -> tuple[float, float]:
-        if self._image is None:
+        source = self._source_view_rect()
+        if source.isEmpty():
             return 0.0, 0.0
-        return max(1.0, self._image.width() * 0.25), max(1.0, self._image.height() * 0.25)
+        return max(1.0, source.width() * 0.25), max(1.0, source.height() * 0.25)
 
     def _begin_smooth_navigation(self, event: QKeyEvent) -> None:
         if getattr(event, "isAutoRepeat", lambda: False)():
             return
         if not self._smooth_nav_keys:
-            self._allow_viewport_buffer_retry()
             self._cancel_overlay_requests()
         self._smooth_nav_keys.add(int(event.key()))
         modifiers = event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier
@@ -641,7 +1507,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._apply_smooth_navigation()
 
     def _apply_smooth_navigation(self) -> None:
-        if self._image is None or not self._smooth_nav_keys:
+        if self._slide_manifest is None or not self._smooth_nav_keys:
             self._smooth_nav_timer.stop()
             self._smooth_nav_last_at = 0.0
             self._smooth_nav_keyboard_shift = False
@@ -655,9 +1521,14 @@ class DigitalSlideCanvas(DocumentCanvas):
             if self._shift_navigation_enabled or self._smooth_nav_keyboard_shift
             else 1.0
         )
-        speed = 0.75 * multiplier
-        step_x = max(1.0, self._image.width() * speed * dt)
-        step_y = max(1.0, self._image.height() * speed * dt)
+        screen_speed = (
+            min(self._content_rect().width(), self._content_rect().height())
+            * 0.75
+            * multiplier
+        )
+        source_step = max(1.0, screen_speed * dt / max(self._zoom, 1.0e-12))
+        step_x = source_step
+        step_y = source_step
         dx = 0.0
         dy = 0.0
         if int(Qt.Key.Key_Left) in self._smooth_nav_keys:
@@ -669,6 +1540,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         if int(Qt.Key.Key_Down) in self._smooth_nav_keys:
             dy += step_y
         if dx or dy:
+            if dx and dy:
+                diagonal_scale = 1.0 / math.sqrt(2.0)
+                dx *= diagonal_scale
+                dy *= diagonal_scale
             self.move_viewport_by(dx, dy, throttled=True)
 
     def _apply_initial_fit(self) -> None:
@@ -678,7 +1553,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._initial_fit_attempts += 1
             QTimer.singleShot(50, self._apply_initial_fit)
             return
-        self.fit_to_view()
+        self.fit_native_viewport()
 
     def _zoom_current_viewport(self, event: QWheelEvent) -> None:
         if self._image is None:
@@ -708,12 +1583,11 @@ class DigitalSlideCanvas(DocumentCanvas):
         device-pixel phase is obsolete before completion.
         """
 
-        thread = self._viewport_buffer_thread
+        stats = self.renderer_stats()
         return bool(
             self._smooth_nav_keys
             or self._smooth_nav_timer.isActive()
-            or self._viewport_buffer_pending
-            or (thread is not None and thread.is_alive())
+            or (stats is not None and stats.pending_requests > 0)
         )
 
     def _overlay_motion_active(self) -> bool:
@@ -745,50 +1619,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             max(0.0, min(float(max_y), self._viewport_origin.y)),
         )
 
-    def _render_current_viewport(self) -> QImage:
-        if self._slide_store is None or self._slide_manifest is None:
-            return QImage()
-        self._clamp_viewport()
-        metadata = self._slide_manifest.metadata if isinstance(self._slide_manifest.metadata, dict) else {}
-        try:
-            blend_width = int(metadata.get("blend_width", 0) or 0)
-        except (TypeError, ValueError):
-            blend_width = 0
-        return self._slide_store.render_viewport(
-            x=int(round(self._viewport_origin.x)),
-            y=int(round(self._viewport_origin.y)),
-            width=self._slide_manifest.viewport_width,
-            height=self._slide_manifest.viewport_height,
-            z_index=self._focus_index,
-            blend_width=blend_width,
-        )
-
-    def _buffer_rect(self) -> QRect:
-        if self._viewport_buffer.isNull():
-            return QRect()
-        return QRect(
-            int(round(self._viewport_buffer_origin.x)),
-            int(round(self._viewport_buffer_origin.y)),
-            self._viewport_buffer.width(),
-            self._viewport_buffer.height(),
-        )
-
-    def _current_viewport_rect(self) -> QRect:
-        if self._slide_manifest is None:
-            return QRect()
-        return QRect(
-            int(round(self._viewport_origin.x)),
-            int(round(self._viewport_origin.y)),
-            int(self._slide_manifest.viewport_width),
-            int(self._slide_manifest.viewport_height),
-        )
-
     def _invalidate_viewport_buffer(self) -> None:
-        self._viewport_buffer_cancel.set()
-        self._viewport_buffer = QImage()
-        self._viewport_buffer_focus_index = -1
-        self._viewport_buffer_request_id += 1
-        self._viewport_buffer_pending = False
+        self._latest_display_request_id += 1
+        self._latest_native_request_id += 1
+        self._render_frame = None
+        self._previous_render_frame = None
+        self._native_frame_pending_key = None
         self._allow_viewport_buffer_retry()
 
     def _allow_viewport_buffer_retry(self) -> None:
@@ -802,203 +1638,18 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._allow_viewport_buffer_retry()
         self._request_viewport_buffer()
 
-    def _render_current_viewport_from_buffer(self) -> bool:
-        if self._slide_manifest is None or self._viewport_buffer.isNull():
-            return False
-        if self._viewport_buffer_focus_index != self._focus_index:
-            return False
-        viewport_rect = self._current_viewport_rect()
-        buffer_rect = self._buffer_rect()
-        if viewport_rect.isEmpty() or buffer_rect.isEmpty() or not buffer_rect.contains(viewport_rect):
-            return False
-        source_rect = QRect(
-            viewport_rect.left() - buffer_rect.left(),
-            viewport_rect.top() - buffer_rect.top(),
-            viewport_rect.width(),
-            viewport_rect.height(),
-        )
-        image = self._viewport_buffer.copy(source_rect)
-        if image.isNull():
-            return False
-        self.set_image(image)
-        return True
-
-    def _buffer_margin(self) -> tuple[int, int]:
-        if self._slide_manifest is None:
-            return 0, 0
-        return (
-            max(1, int(round(self._slide_manifest.viewport_width * 0.5))),
-            max(1, int(round(self._slide_manifest.viewport_height * 0.5))),
-        )
-
-    def _desired_buffer_rect(self) -> QRect:
-        if self._slide_manifest is None:
-            return QRect()
-        viewport = self._current_viewport_rect()
-        margin_x, margin_y = self._buffer_margin()
-        width = min(int(self._slide_manifest.width), max(viewport.width(), viewport.width() + (margin_x * 2)))
-        height = min(int(self._slide_manifest.height), max(viewport.height(), viewport.height() + (margin_y * 2)))
-        left = int(round(viewport.center().x() - (width / 2)))
-        top = int(round(viewport.center().y() - (height / 2)))
-        left = max(0, min(left, max(0, int(self._slide_manifest.width) - width)))
-        top = max(0, min(top, max(0, int(self._slide_manifest.height) - height)))
-        return QRect(left, top, width, height)
-
-    def _viewport_needs_buffer_refresh(self) -> bool:
-        if self._slide_manifest is None:
-            return False
-        viewport = self._current_viewport_rect()
-        buffer_rect = self._buffer_rect()
-        if self._viewport_buffer.isNull() or self._viewport_buffer_focus_index != self._focus_index:
-            return True
-        if not buffer_rect.contains(viewport):
-            return True
-        margin_x, margin_y = self._buffer_margin()
-        safe_rect = buffer_rect.adjusted(margin_x // 2, margin_y // 2, -(margin_x // 2), -(margin_y // 2))
-        if safe_rect.isEmpty():
-            return False
-        return not safe_rect.contains(viewport)
-
     def _request_viewport_buffer(self) -> None:
-        if self._slide_store is None or self._slide_manifest is None:
-            return
-        if not self.isVisible():
-            return
-        if self._viewport_buffer_error_blocked:
-            return
-        if self._viewport_buffer_thread is not None and self._viewport_buffer_thread.is_alive():
-            self._viewport_buffer_cancel.set()
-            self._viewport_buffer_pending = True
-            return
-        if not self._viewport_needs_buffer_refresh():
-            return
-        desired = self._desired_buffer_rect()
-        if desired.isEmpty():
-            return
-        store_path = self._slide_store.path
-        # The navigation overview may intentionally stay on the middle focus
-        # plane, but the mounted viewport must always render the actual focus
-        # selected by the user.
-        focus_index = int(self._focus_index)
-        metadata = self._slide_manifest.metadata if isinstance(self._slide_manifest.metadata, dict) else {}
-        try:
-            blend_width = int(metadata.get("blend_width", 0) or 0)
-        except (TypeError, ValueError):
-            blend_width = 0
-        self._viewport_buffer_request_id += 1
-        request_id = self._viewport_buffer_request_id
-        self._viewport_buffer_pending = False
-        cancellation = Event()
-        self._viewport_buffer_cancel = cancellation
-        canvas_ref = ref(self)
-
-        def render() -> None:
-            store: DigitalSlideStore | None = None
-            status = "ok"
-            error = ""
-            try:
-                store = DigitalSlideStore(store_path)
-                image = store.render_viewport(
-                    x=desired.left(),
-                    y=desired.top(),
-                    width=desired.width(),
-                    height=desired.height(),
-                    z_index=focus_index,
-                    blend_width=blend_width,
-                    cancellation_requested=cancellation.is_set,
-                )
-            except Exception as exc:
-                image = QImage()
-                status = "error"
-                error = f"{type(exc).__name__}: {exc}"
-            finally:
-                if store is not None:
-                    try:
-                        store.close()
-                    except Exception as exc:
-                        image = QImage()
-                        status = "error"
-                        error = f"{type(exc).__name__}: {exc}"
-            canvas = canvas_ref()
-            if canvas is None or not is_qobject_valid(canvas):
-                return
-            if cancellation.is_set():
-                image = QImage()
-                status = "cancelled"
-                error = ""
-            elif image.isNull():
-                status = "error"
-                if not error:
-                    error = "DigitalSlideStore.render_viewport returned a null image"
-            canvas._bufferRendered.emit(
-                request_id,
-                desired.left(),
-                desired.top(),
-                focus_index,
-                image,
-                status,
-                error,
-            )
-
-        thread = Thread(target=render, name=f"fdm-slide-buffer-{store_path.name}", daemon=True)
-        self._viewport_buffer_thread = thread
-        self._viewport_buffer_thread_request_id = request_id
-        thread.start()
-
-    def _on_viewport_buffer_rendered(
-        self,
-        request_id: int,
-        x: int,
-        y: int,
-        focus_index: int,
-        image: QImage,
-        status: str,
-        error: str,
-    ) -> None:
-        if request_id == self._viewport_buffer_thread_request_id:
-            self._viewport_buffer_thread = None
-            self._viewport_buffer_thread_request_id = None
-        stale = request_id != self._viewport_buffer_request_id or focus_index != self._focus_index
-        if stale:
-            thread = self._viewport_buffer_thread
-            if thread is None or not thread.is_alive():
-                self._request_viewport_buffer()
-            return
-        if status == "cancelled":
-            self._request_viewport_buffer()
-            return
-        if status != "ok" or image.isNull():
-            self._viewport_buffer_pending = False
-            self._viewport_buffer_error_blocked = True
-            self._viewport_buffer_last_error = error or "数字切片视口缓冲返回空图像"
-            store_path = self._slide_store.path if self._slide_store is not None else ""
-            details = (
-                f"path={store_path}\n"
-                f"request_id={request_id}, focus_index={focus_index}, origin=({x}, {y})\n"
-                f"error={self._viewport_buffer_last_error}"
-            )
-            append_runtime_log("数字切片视口缓冲读取失败", details)
-            self.viewportBufferFailed.emit(self._viewport_buffer_last_error)
-            return
-        self._viewport_buffer_last_error = ""
-        self._viewport_buffer = image
-        self._viewport_buffer_origin = Point(float(x), float(y))
-        self._viewport_buffer_focus_index = int(focus_index)
-        self._render_current_viewport_from_buffer()
-        self.update()
-        if self._viewport_buffer_pending or self._viewport_needs_buffer_refresh():
-            self._request_viewport_buffer()
+        self._request_display_frame()
+        self._request_native_frame()
 
     def request_overview(self) -> None:
-        """Load a small whole-slide preview for the settled focus plane."""
+        """Queue the lowest-priority whole-slide preview on the slide worker."""
 
         if (
             not self._overview_enabled
-            or self._slide_store is None
             or self._slide_manifest is None
+            or not self.isVisible()
         ):
-            return
-        if not self.isVisible():
             return
         focus_index = self._overview_target_focus_index()
         cached = self._overview_cache.get(focus_index)
@@ -1011,141 +1662,43 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         if focus_index in self._overview_failed_focuses:
             return
-
-        thread = self._overview_thread
-        if thread is not None and thread.is_alive():
-            if (
-                self._overview_thread_focus_index == focus_index
-                and not self._overview_cancel.is_set()
-            ):
-                return
-            self._overview_cancel.set()
-            self._overview_pending = True
+        self._start_renderer()
+        renderer = self._renderer
+        if renderer is None:
             return
-
-        store_path = self._slide_store.path
-        self._overview_request_id += 1
-        request_id = self._overview_request_id
-        self._overview_pending = False
-        cancellation = Event()
-        self._overview_cancel = cancellation
-        canvas_ref = ref(self)
-
-        def render() -> None:
-            store: DigitalSlideStore | None = None
-            status = "ok"
-            error = ""
-            try:
-                store = DigitalSlideStore(store_path)
-                image = store.render_overview(
-                    z_index=focus_index,
-                    maximum_edge=_OVERVIEW_MAX_EDGE,
-                    cancellation_requested=cancellation.is_set,
-                )
-            except Exception as exc:  # noqa: BLE001 - publish worker failure
-                image = QImage()
-                status = "error"
-                error = f"{type(exc).__name__}: {exc}"
-            finally:
-                if store is not None:
-                    try:
-                        store.close()
-                    except Exception as exc:  # noqa: BLE001 - report close failure
-                        image = QImage()
-                        status = "error"
-                        error = f"{type(exc).__name__}: {exc}"
-            canvas = canvas_ref()
-            if canvas is None or not is_qobject_valid(canvas):
-                return
-            if cancellation.is_set() and status == "ok":
-                image = QImage()
-                status = "cancelled"
-            elif image.isNull() and status == "ok":
-                status = "empty"
-            canvas._overviewRendered.emit(
-                request_id,
-                focus_index,
-                image,
-                status,
-                error,
+        slide_width = max(1, int(self._slide_manifest.width))
+        slide_height = max(1, int(self._slide_manifest.height))
+        scale = min(
+            1.0,
+            float(_OVERVIEW_MAX_EDGE) / max(slide_width, slide_height),
+        )
+        self._render_request_id += 1
+        self._latest_overview_request_id = self._render_request_id
+        self._overview_pending = True
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="overview",
+                source_rect=(0.0, 0.0, float(slide_width), float(slide_height)),
+                output_size_px=(
+                    max(1, int(round(slide_width * scale))),
+                    max(1, int(round(slide_height * scale))),
+                ),
+                focus_index=focus_index,
+                device_pixel_ratio=1.0,
+                blend_width=self._blend_width(),
             )
-
-        thread = Thread(
-            target=render,
-            name=f"fdm-slide-overview-{store_path.name}",
-            daemon=True,
         )
-        self._overview_thread = thread
-        self._overview_thread_request_id = request_id
-        self._overview_thread_focus_index = focus_index
-        thread.start()
 
-    def _on_overview_rendered(
+    def _publish_viewport_state(
         self,
-        request_id: int,
-        focus_index: int,
-        image: QImage,
-        status: str,
-        error: str,
+        *,
+        throttled: bool,
+        zoom_changed: bool = False,
     ) -> None:
-        if request_id == self._overview_thread_request_id:
-            self._overview_thread = None
-            self._overview_thread_request_id = None
-            self._overview_thread_focus_index = None
-
-        stale = (
-            request_id != self._overview_request_id
-            or focus_index != self._overview_target_focus_index()
-        )
-        if not stale and status == "ok" and not image.isNull():
-            self._overview_cache[focus_index] = image
-            self._overview_cache.move_to_end(focus_index)
-            while len(self._overview_cache) > _OVERVIEW_CACHE_LIMIT:
-                self._overview_cache.popitem(last=False)
-            self._overview_image = image
-            self._overview_focus_index = focus_index
-            self._overview_failed_focuses.discard(focus_index)
-            self.overviewImageChanged.emit(image)
-        elif not stale and status in {"empty", "error"}:
-            # Return to the schematic navigator rather than displaying pixels
-            # from a different focus plane, and avoid retrying the same broken
-            # plane on every tab show event.
-            self._overview_failed_focuses.add(focus_index)
-            self._overview_image = QImage()
-            self._overview_focus_index = -1
-            self.overviewImageChanged.emit(QImage())
-            if status == "error":
-                store_path = (
-                    self._slide_store.path if self._slide_store is not None else ""
-                )
-                append_runtime_log(
-                    "数字切片导航缩略图读取失败",
-                    (
-                        f"path={store_path}\n"
-                        f"request_id={request_id}, focus_index={focus_index}\n"
-                        f"error={error or 'unknown overview rendering failure'}"
-                    ),
-                )
-
-        should_retry = (
-            not self._overview_debounce_timer.isActive()
-            and (self._overview_pending or status == "cancelled")
-        )
-        self._overview_pending = False
-        if (
-            should_retry
-            and self._overview_enabled
-            and self._slide_store is not None
-            and self.isVisible()
-            and self._overview_target_focus_index() not in self._overview_cache
-            and self._overview_target_focus_index() not in self._overview_failed_focuses
-        ):
-            QTimer.singleShot(0, self.request_overview)
-
-    def _publish_viewport_state(self, *, throttled: bool) -> None:
         now = perf_counter()
         if throttled and (now - self._viewport_last_publish_at) < 0.12:
-            self._publish_view_transform()
+            self._publish_view_transform(zoom_changed=zoom_changed)
             return
         self._viewport_last_publish_at = now
         self._persist_view_state()
@@ -1154,11 +1707,10 @@ class DigitalSlideCanvas(DocumentCanvas):
             int(round(self._viewport_origin.y)),
             int(self._focus_index),
         )
-        self._publish_view_transform()
+        self._publish_view_transform(zoom_changed=zoom_changed)
 
     def _reload_viewport(self, *, throttled: bool = False) -> None:
-        image = self._render_current_viewport()
-        if not image.isNull():
-            self.set_image(image)
+        self._request_display_frame()
+        self._request_native_frame()
+        self._update_pixel_work_state()
         self._publish_viewport_state(throttled=throttled)
-        self._request_viewport_buffer()

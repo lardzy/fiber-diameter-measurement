@@ -586,9 +586,21 @@ class CanvasBenchmarkTests(unittest.TestCase):
         self.assertEqual(result["scenario"]["canvas_kind"], "digital_slide")
         slide = result["scenario"]["digital_slide"]
         self.assertTrue(slide["set_slide_document_used"])
+        self.assertEqual(slide["store_kind"], "temporary_sqlite_png_jpeg")
         self.assertNotEqual(slide["viewport_origin"], {"x": 0.0, "y": 0.0})
-        self.assertGreaterEqual(slide["store_render_calls"], 3)
         self.assertGreater(slide["viewport_buffer_requests"], 0)
+        renderer = slide["renderer"]
+        self.assertIsNotNone(renderer)
+        self.assertGreater(renderer["submitted"], 0)
+        self.assertGreater(renderer["completed"], 0)
+        self.assertEqual(renderer["pending_requests"], 0)
+        camera = slide["camera_benchmark"]
+        self.assertEqual(set(camera["zoom_levels"]), {"100", "50", "25", "whole"})
+        self.assertEqual(len(camera["directions"]), 8)
+        self.assertGreater(
+            camera["zoom_levels"]["25"]["visible_width"],
+            camera["zoom_levels"]["100"]["visible_width"],
+        )
         self.assertTrue(result["interactions"]["area_point"]["applicable"])
         self.assertEqual(result["interactions"]["area_point"]["action_count"], 1)
         self.assertIn(

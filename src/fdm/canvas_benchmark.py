@@ -25,6 +25,7 @@ import platform
 import statistics
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from typing import Callable, Sequence
@@ -68,7 +69,13 @@ from fdm.ui.canvas_overlay_cache import (
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.screen_label_sprite_cache import screen_label_sprite_cache
 from fdm.ui.view_transform import MAX_VIEW_ZOOM, MIN_VIEW_ZOOM
-from fdm.services.digital_slide_store import DigitalSlideManifest
+from fdm.services.digital_slide_store import (
+    DIGITAL_SLIDE_TILE_CODEC_JPEG,
+    DIGITAL_SLIDE_TILE_CODEC_PNG,
+    DigitalSlideManifest,
+    DigitalSlideStore,
+    DigitalSlideTile,
+)
 from fdm.version import __version__
 
 
@@ -224,14 +231,7 @@ class _BenchmarkCanvas(DocumentCanvas):
 
 
 class _BenchmarkDigitalSlideCanvas(DigitalSlideCanvas):
-    """Digital-slide canvas using a deterministic in-memory viewport raster.
-
-    The normal viewport-buffer worker reopens a SQLite path.  The benchmark
-    intentionally keeps its fixture in memory, so this subclass records buffer
-    requests without starting that filesystem worker.  All coordinate
-    transforms, viewport movement and the real ``set_slide_document`` path
-    still come from :class:`DigitalSlideCanvas`.
-    """
+    """Digital-slide canvas that records real renderer submissions."""
 
     def __init__(self, *, device_pixel_ratio: float = 1.0) -> None:
         self._benchmark_device_pixel_ratio = max(
@@ -249,12 +249,13 @@ class _BenchmarkDigitalSlideCanvas(DigitalSlideCanvas):
         self.paint_event_count += 1
         super().paintEvent(event)
 
-    def _request_viewport_buffer(self) -> None:
+    def _request_display_frame(self) -> None:
         self.viewport_buffer_request_count += 1
+        super()._request_display_frame()
 
 
 class _BenchmarkDigitalSlideStore:
-    """Small store-compatible object for the real digital-slide setup path."""
+    """Owned temporary SQLite/PNG/JPEG fixture for renderer benchmarks."""
 
     def __init__(
         self,
@@ -262,43 +263,52 @@ class _BenchmarkDigitalSlideStore:
         manifest: DigitalSlideManifest,
         fill_color: QColor,
     ) -> None:
-        self.path = BENCHMARK_OUTPUT_ROOT / "in-memory-benchmark.fdmslide"
+        self._temporary = tempfile.TemporaryDirectory(
+            prefix="fdm-canvas-benchmark-slide-"
+        )
+        self.path = Path(self._temporary.name) / "benchmark.fdmslide"
         self._manifest = manifest
-        self._fill_color = QColor(fill_color)
-        self.render_calls: list[tuple[int, int, int, int, int]] = []
+        store = DigitalSlideStore.create(self.path, manifest)
+        tile_width = max(1, int(manifest.viewport_width))
+        tile_height = max(1, int(manifest.viewport_height))
+        tile_index = 0
+        for y in range(0, int(manifest.height), tile_height):
+            for x in range(0, int(manifest.width), tile_width):
+                width = min(tile_width, int(manifest.width) - x)
+                height = min(tile_height, int(manifest.height) - y)
+                image = QImage(width, height, QImage.Format.Format_RGB32)
+                color = QColor(fill_color)
+                color.setRed((color.red() + x // max(1, tile_width) * 23) % 256)
+                color.setGreen((color.green() + y // max(1, tile_height) * 29) % 256)
+                image.fill(color)
+                codec = (
+                    DIGITAL_SLIDE_TILE_CODEC_PNG
+                    if tile_index % 2 == 0
+                    else DIGITAL_SLIDE_TILE_CODEC_JPEG
+                )
+                store.write_tile(
+                    DigitalSlideTile(
+                        z_index=0,
+                        x=x,
+                        y=y,
+                        width=width,
+                        height=height,
+                    ),
+                    image,
+                    codec=codec,
+                    quality=90,
+                    update_manifest=False,
+                )
+                tile_index += 1
+        manifest.tile_count = tile_index
+        store.write_manifest(manifest)
+        store.close()
 
     def read_manifest(self) -> DigitalSlideManifest:
         return self._manifest
 
-    def render_viewport(
-        self,
-        *,
-        x: int,
-        y: int,
-        width: int,
-        height: int,
-        z_index: int,
-        blend_width: int = 0,
-        cancellation_requested: Callable[[], bool] | None = None,
-    ) -> QImage:
-        del blend_width
-        if cancellation_requested is not None and cancellation_requested():
-            return QImage()
-        self.render_calls.append(
-            (int(x), int(y), int(width), int(height), int(z_index))
-        )
-        image = QImage(
-            max(1, int(width)),
-            max(1, int(height)),
-            QImage.Format.Format_RGB32,
-        )
-        # Vary the deterministic raster by origin so a viewport move cannot
-        # accidentally behave like an ordinary image-canvas pan.
-        color = QColor(self._fill_color)
-        color.setRed((color.red() + int(x)) % 256)
-        color.setGreen((color.green() + int(y)) % 256)
-        image.fill(color)
-        return image
+    def close(self) -> None:
+        self._temporary.cleanup()
 
 
 def _label_settings(enabled: bool) -> AppSettings:
@@ -1987,8 +1997,8 @@ def _set_benchmark_document(
     }
     manifest = DigitalSlideManifest(
         version=1,
-        width=scenario.image.width() + 512,
-        height=scenario.image.height() + 384,
+        width=scenario.image.width() * 4,
+        height=scenario.image.height() * 4,
         viewport_width=scenario.image.width(),
         viewport_height=scenario.image.height(),
         focus_levels=[0],
@@ -2010,6 +2020,106 @@ def _set_benchmark_document(
     # overlay-cache generation while the readiness probe is waiting.
     canvas._apply_initial_fit()  # noqa: SLF001
     return store
+
+
+def _wait_for_digital_slide_request(
+    app: QApplication,
+    canvas: _BenchmarkDigitalSlideCanvas,
+    request_id: int,
+    *,
+    timeout_seconds: float = 5.0,
+) -> float:
+    started = time.perf_counter()
+    deadline = started + timeout_seconds
+    while time.perf_counter() < deadline:
+        app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 10)
+        frame = canvas._render_frame  # noqa: SLF001 - benchmark probe
+        if frame is not None and frame.request_id >= request_id:
+            break
+        time.sleep(0.001)
+    return (time.perf_counter() - started) * 1000.0
+
+
+def _benchmark_digital_slide_camera(
+    app: QApplication,
+    canvas: _BenchmarkDigitalSlideCanvas,
+) -> dict[str, object]:
+    """Exercise real 100/50/25/whole-slide LODs and all eight directions."""
+
+    canvas.fit_native_viewport()
+    native_zoom = float(canvas.view_zoom())
+    zoom_phases: dict[str, object] = {}
+    for name, ratio in (("100", 1.0), ("50", 0.5), ("25", 0.25)):
+        started = time.perf_counter()
+        canvas.set_view_zoom(native_zoom * ratio)
+        input_ms = (time.perf_counter() - started) * 1000.0
+        request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
+        final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
+        frame = canvas._render_frame  # noqa: SLF001
+        visible = canvas.visible_slide_rect()
+        zoom_phases[name] = {
+            "input_ms": round(input_ms, 3),
+            "final_frame_ms": round(final_ms, 3),
+            "visible_width": float(visible.width()),
+            "visible_height": float(visible.height()),
+            "lod": int(frame.lod) if frame is not None else None,
+        }
+    started = time.perf_counter()
+    canvas.fit_to_view()
+    input_ms = (time.perf_counter() - started) * 1000.0
+    request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
+    final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
+    frame = canvas._render_frame  # noqa: SLF001
+    visible = canvas.visible_slide_rect()
+    zoom_phases["whole"] = {
+        "input_ms": round(input_ms, 3),
+        "final_frame_ms": round(final_ms, 3),
+        "visible_width": float(visible.width()),
+        "visible_height": float(visible.height()),
+        "lod": int(frame.lod) if frame is not None else None,
+    }
+
+    directions = {
+        "left": (-1.0, 0.0),
+        "right": (1.0, 0.0),
+        "up": (0.0, -1.0),
+        "down": (0.0, 1.0),
+        "up_left": (-1.0, -1.0),
+        "up_right": (1.0, -1.0),
+        "down_left": (-1.0, 1.0),
+        "down_right": (1.0, 1.0),
+    }
+    navigation: dict[str, object] = {}
+    manifest = canvas._slide_manifest  # noqa: SLF001
+    assert manifest is not None
+    for name, (unit_x, unit_y) in directions.items():
+        canvas.fit_native_viewport()
+        canvas.center_on_image_point(
+            Point(float(manifest.width) / 2.0, float(manifest.height) / 2.0)
+        )
+        source = canvas._source_view_rect()  # noqa: SLF001
+        dx = source.width() * 0.25 * unit_x
+        dy = source.height() * 0.25 * unit_y
+        if dx and dy:
+            dx /= math.sqrt(2.0)
+            dy /= math.sqrt(2.0)
+        started = time.perf_counter()
+        canvas.move_viewport_by(dx, dy)
+        input_ms = (time.perf_counter() - started) * 1000.0
+        request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
+        final_ms = _wait_for_digital_slide_request(app, canvas, request_id)
+        navigation[name] = {
+            "input_ms": round(input_ms, 3),
+            "final_frame_ms": round(final_ms, 3),
+        }
+
+    canvas.fit_native_viewport()
+    request_id = int(canvas._latest_display_request_id)  # noqa: SLF001
+    _wait_for_digital_slide_request(app, canvas, request_id)
+    return {
+        "zoom_levels": zoom_phases,
+        "directions": navigation,
+    }
 
 
 def run_benchmark(
@@ -2072,6 +2182,8 @@ def run_benchmark(
             )
         )
         canvas.resize(*canvas_size)
+        if canvas_kind == "digital_slide":
+            scenario.settings.digital_slide_render_cache_gib = 0
         canvas.set_settings(scenario.settings)
         digital_slide_store = _set_benchmark_document(
             canvas,
@@ -2089,6 +2201,21 @@ def run_benchmark(
         rss_after_setup, setup_rss_provider = _current_rss_bytes()
         if rss_provider is None:
             rss_provider = setup_rss_provider
+        if isinstance(canvas, _BenchmarkDigitalSlideCanvas):
+            canvas.show()
+            deadline = time.perf_counter() + 5.0
+            while (
+                canvas._render_frame is None  # noqa: SLF001 - benchmark probe
+                and time.perf_counter() < deadline
+            ):
+                app.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 10)
+                time.sleep(0.001)
+            digital_slide_camera_benchmark = _benchmark_digital_slide_camera(
+                app,
+                canvas,
+            )
+        else:
+            digital_slide_camera_benchmark = None
 
         try:
             with _trace_overlay_drop_reasons(canvas) as drop_reasons:
@@ -2190,21 +2317,33 @@ def run_benchmark(
                 digital_slide_payload: dict[str, object] | None = None
                 if isinstance(canvas, _BenchmarkDigitalSlideCanvas):
                     viewport_origin = canvas.viewport_origin()
+                    renderer_stats = canvas.renderer_stats()
                     digital_slide_payload = {
                         "set_slide_document_used": True,
-                        "store_kind": "deterministic_in_memory",
+                        "store_kind": "temporary_sqlite_png_jpeg",
                         "viewport_origin": {
                             "x": float(viewport_origin.x),
                             "y": float(viewport_origin.y),
                         },
-                        "store_render_calls": (
-                            len(digital_slide_store.render_calls)
-                            if digital_slide_store is not None
-                            else 0
-                        ),
                         "viewport_buffer_requests": int(
                             canvas.viewport_buffer_request_count
                         ),
+                        "renderer": (
+                            {
+                                "submitted": renderer_stats.submitted,
+                                "completed": renderer_stats.completed,
+                                "cancelled": renderer_stats.cancelled,
+                                "stale_dropped": renderer_stats.stale_dropped,
+                                "decoded_tiles": renderer_stats.decoded_tiles,
+                                "memory_hits": renderer_stats.memory_hits,
+                                "disk_hits": renderer_stats.disk_hits,
+                                "memory_bytes": renderer_stats.memory_bytes,
+                                "pending_requests": renderer_stats.pending_requests,
+                            }
+                            if renderer_stats is not None
+                            else None
+                        ),
+                        "camera_benchmark": digital_slide_camera_benchmark,
                     }
                 result: dict[str, object] = {
                     "schema_version": SCHEMA_VERSION,
@@ -2355,6 +2494,8 @@ def run_benchmark(
         finally:
             if isinstance(canvas, DigitalSlideCanvas):
                 canvas.shutdown()
+            if digital_slide_store is not None:
+                digital_slide_store.close()
             canvas.clear_document()
             canvas.close()
             canvas.deleteLater()

@@ -15,6 +15,7 @@ from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Line, Point
 from fdm.models import ImageDocument, Measurement
+from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.settings import (
     AppSettings,
     MagicSegmentToolMode,
@@ -389,7 +390,18 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
         image = QImage(320, 240, QImage.Format.Format_RGB32)
         image.fill(0)
         canvas.set_document(document, image)
-        canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=3072,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[0],
+        )
+        canvas._browse_center = Point(1160.0, 2120.0)  # noqa: SLF001
+        canvas.fit_native_viewport()
+        canvas._native_frame_key = canvas._native_request_key()  # noqa: SLF001
+        canvas._update_pixel_work_state()  # noqa: SLF001
         points = (
             Point(1040.0, 2040.0),
             Point(1200.0, 2040.0),

@@ -217,6 +217,8 @@ class CanvasViewTransformTests(unittest.TestCase):
             focus_levels=[-1, 0, 1],
         )
         canvas._viewport_origin = Point(1200.0, 900.0)  # noqa: SLF001
+        canvas._browse_center = Point(1520.0, 1140.0)  # noqa: SLF001
+        canvas._sync_pan_from_browse_center()  # noqa: SLF001
         canvas._focus_index = 2  # noqa: SLF001
         snapshots: list[CanvasViewportSnapshot] = []
         canvas.viewTransformChanged.connect(snapshots.append)
@@ -232,6 +234,7 @@ class CanvasViewTransformTests(unittest.TestCase):
             self.assertEqual(snapshot.mounted_image_rect.y(), 900.0)
             self.assertEqual(snapshot.mounted_image_rect.width(), 640.0)
             self.assertEqual(snapshot.mounted_image_rect.height(), 480.0)
+            self.assertEqual(snapshot.native_viewport_rect, snapshot.mounted_image_rect)
             self.assertGreaterEqual(snapshot.visible_image_rect.left(), 1200.0)
             self.assertGreaterEqual(snapshot.visible_image_rect.top(), 900.0)
             self.assertEqual(snapshot.focus_index, 2)
@@ -241,7 +244,7 @@ class CanvasViewTransformTests(unittest.TestCase):
             canvas.close()
             canvas.deleteLater()
 
-    def test_digital_slide_overview_center_preserves_local_zoom_mode(self) -> None:
+    def test_digital_slide_whole_fit_clamps_center_and_preserves_mode(self) -> None:
         canvas = DigitalSlideCanvas()
         canvas.resize(320, 240)
         document = ImageDocument(
@@ -264,19 +267,18 @@ class CanvasViewTransformTests(unittest.TestCase):
         try:
             canvas.fit_to_view()
             zoom_before = canvas.view_zoom()
-            with patch.object(
-                canvas,
-                "_reload_viewport",
-                side_effect=lambda: canvas._publish_viewport_state(  # noqa: SLF001
-                    throttled=False
-                ),
-            ) as reload_viewport:
+            with (
+                patch.object(canvas, "_request_display_frame") as display_request,
+                patch.object(canvas, "_request_native_frame") as native_request,
+            ):
                 canvas.center_on_image_point(Point(2000.0, 1500.0))
 
             self.assertEqual(canvas.zoom_mode(), CanvasZoomMode.FIT)
             self.assertAlmostEqual(canvas.view_zoom(), zoom_before)
-            reload_viewport.assert_called_once_with()
-            mapped = canvas.image_to_widget(Point(2000.0, 1500.0))
+            display_request.assert_called_once_with()
+            native_request.assert_called_once_with()
+            self.assertEqual(canvas.browse_view().center_px, Point(2048.0, 1536.0))
+            mapped = canvas.image_to_widget(Point(2048.0, 1536.0))
             self.assertAlmostEqual(mapped.x(), canvas.width() / 2.0)
             self.assertAlmostEqual(mapped.y(), canvas.height() / 2.0)
         finally:

@@ -855,6 +855,7 @@ class AppSettings:
     digital_slide_dynamic_focus_overview_enabled: bool = True
     digital_slide_smooth_navigation_enabled: bool = True
     digital_slide_shift_navigation_enabled: bool = False
+    digital_slide_render_cache_gib: int = 2
     digital_slide_profiles: list[DigitalSlideAcquisitionProfile] = field(default_factory=list)
     digital_slide_active_profile_id: str = ""
 
@@ -1036,6 +1037,12 @@ class AppSettings:
         )
         normalized.digital_slide_shift_navigation_enabled = bool(
             self.digital_slide_shift_navigation_enabled
+        )
+        normalized.digital_slide_render_cache_gib = self._normalize_int_range(
+            self.digital_slide_render_cache_gib,
+            default=2,
+            minimum=0,
+            maximum=32,
         )
         profiles = self._normalize_digital_slide_profiles(
             self.digital_slide_profiles,
@@ -1615,6 +1622,7 @@ class AppSettings:
             "digital_slide_dynamic_focus_overview_enabled": normalized.digital_slide_dynamic_focus_overview_enabled,
             "digital_slide_smooth_navigation_enabled": normalized.digital_slide_smooth_navigation_enabled,
             "digital_slide_shift_navigation_enabled": normalized.digital_slide_shift_navigation_enabled,
+            "digital_slide_render_cache_gib": normalized.digital_slide_render_cache_gib,
             "digital_slide_profiles": [
                 profile.to_dict()
                 for profile in normalized.digital_slide_profiles
@@ -2072,6 +2080,15 @@ class AppSettings:
                 settings.digital_slide_shift_navigation_enabled,
             )
         )
+        settings.digital_slide_render_cache_gib = cls._normalize_int_range(
+            payload.get(
+                "digital_slide_render_cache_gib",
+                settings.digital_slide_render_cache_gib,
+            ),
+            default=2,
+            minimum=0,
+            maximum=32,
+        )
         raw_profiles = payload.get("digital_slide_profiles")
         parsed_profiles: list[DigitalSlideAcquisitionProfile] = []
         if isinstance(raw_profiles, list):
@@ -2125,6 +2142,25 @@ def settings_directory() -> Path:
     if xdg_config_home:
         return Path(xdg_config_home) / "FiberDiameterMeasurement"
     return Path.home() / ".config" / "FiberDiameterMeasurement"
+
+
+def digital_slide_render_cache_directory() -> Path:
+    if sys.platform.startswith("win"):
+        base = os.environ.get("LOCALAPPDATA") or str(
+            Path.home() / "AppData" / "Local"
+        )
+        return Path(base) / "FiberDiameterMeasurement" / "Cache" / "digital-slide-render"
+    if sys.platform == "darwin":
+        return (
+            Path.home()
+            / "Library"
+            / "Caches"
+            / "FiberDiameterMeasurement"
+            / "digital-slide-render"
+        )
+    xdg_cache_home = os.environ.get("XDG_CACHE_HOME")
+    base = Path(xdg_cache_home) if xdg_cache_home else Path.home() / ".cache"
+    return base / "FiberDiameterMeasurement" / "digital-slide-render"
 
 
 def settings_file_path() -> Path:

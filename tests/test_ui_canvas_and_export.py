@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from tempfile import TemporaryDirectory
 import json
+import math
 import sys
 import time
 import unittest
@@ -2308,9 +2309,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 self.assertAlmostEqual(canvas._zoom, initial_zoom)
 
                 canvas.move_viewport_by(50, 20)
-                origin_before = canvas.viewport_origin()
-                cursor = QPointF(60, 40)
-                local_before = DocumentCanvas.widget_to_image(canvas, cursor)
+                cursor = QPointF(160, 120)
                 global_before = canvas.widget_to_image(cursor)
                 zoom_before = canvas._zoom
                 canvas.wheelEvent(
@@ -2322,13 +2321,9 @@ class CanvasAndExportTests(unittest.TestCase):
                 )
                 self.assertEqual(canvas.focus_index(), 2)
                 self.assertGreater(canvas._zoom, zoom_before)
-                self.assertEqual(canvas.viewport_origin(), origin_before)
-                local_after = DocumentCanvas.widget_to_image(canvas, cursor)
                 global_after = canvas.widget_to_image(cursor)
-                self.assertAlmostEqual(local_after.x, local_before.x)
-                self.assertAlmostEqual(local_after.y, local_before.y)
-                self.assertAlmostEqual(global_after.x, global_before.x)
-                self.assertAlmostEqual(global_after.y, global_before.y)
+                self.assertAlmostEqual(global_after.x, global_before.x, delta=1.0)
+                self.assertAlmostEqual(global_after.y, global_before.y, delta=1.0)
 
                 self.assertEqual(canvas.navigation_mode(), "smooth")
                 canvas.keyPressEvent(FakeKeyEvent(Qt.Key.Key_M))
@@ -2352,7 +2347,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas.set_navigation_mode("step")
                 before_shift_step = canvas.viewport_origin()
                 shift_step = FakeKeyEvent(
-                    Qt.Key.Key_Down,
+                    Qt.Key.Key_Right,
                     modifiers=(
                         Qt.KeyboardModifier.ShiftModifier
                         | Qt.KeyboardModifier.KeypadModifier
@@ -2361,15 +2356,35 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas.keyPressEvent(shift_step)
                 self.assertTrue(shift_step.accepted)
                 self.assertGreater(
-                    canvas.viewport_origin().y,
-                    before_shift_step.y,
+                    canvas.viewport_origin().x,
+                    before_shift_step.x,
                 )
             finally:
                 store.close()
 
     def test_digital_slide_shift_navigation_toggle_matches_shift_behavior(self) -> None:
         canvas = DigitalSlideCanvas()
-        canvas._image = QImage(200, 100, QImage.Format.Format_RGB32)  # noqa: SLF001
+        canvas.resize(240, 140)
+        document = ImageDocument(
+            id="navigation-toggle",
+            path="/tmp/navigation-toggle.fdmslide",
+            image_size=(1000, 500),
+            document_kind="digital_slide",
+        )
+        canvas.set_document(
+            document,
+            QImage(200, 100, QImage.Format.Format_RGB32),
+        )
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=1000,
+            height=500,
+            viewport_width=200,
+            viewport_height=100,
+            focus_levels=[0],
+        )
+        canvas._browse_center = Point(500.0, 250.0)  # noqa: SLF001
+        canvas.fit_native_viewport()
         try:
             canvas.set_navigation_mode("step")
             self.assertFalse(canvas.shift_navigation_enabled())
@@ -2397,7 +2412,24 @@ class CanvasAndExportTests(unittest.TestCase):
                 canvas._apply_smooth_navigation()  # noqa: SLF001
             regular_smooth_delta = move_regular.call_args.args[0]
 
+            canvas._smooth_nav_keys = {  # noqa: SLF001
+                int(Qt.Key.Key_Right),
+                int(Qt.Key.Key_Down),
+            }
+            canvas._smooth_nav_last_at = 1.0  # noqa: SLF001
+            with (
+                patch("fdm.ui.digital_slide_canvas.perf_counter", return_value=1.1),
+                patch.object(canvas, "move_viewport_by") as move_diagonal,
+            ):
+                canvas._apply_smooth_navigation()  # noqa: SLF001
+            diagonal_dx, diagonal_dy = move_diagonal.call_args.args[:2]
+            self.assertAlmostEqual(
+                math.hypot(diagonal_dx, diagonal_dy),
+                abs(regular_smooth_delta),
+            )
+
             canvas.set_shift_navigation_enabled(True)
+            canvas._smooth_nav_keys = {int(Qt.Key.Key_Right)}  # noqa: SLF001
             canvas._smooth_nav_last_at = 2.0  # noqa: SLF001
             with (
                 patch("fdm.ui.digital_slide_canvas.perf_counter", return_value=2.1),
@@ -5228,6 +5260,7 @@ class CanvasAndExportTests(unittest.TestCase):
                 view_actions,
                 [
                     window.fit_action,
+                    window.digital_slide_native_fit_action,
                     window.actual_size_action,
                     window.fullscreen_measurement_action,
                     window.digital_slide_smooth_navigation_action,

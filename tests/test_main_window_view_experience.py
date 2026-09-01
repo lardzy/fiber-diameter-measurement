@@ -352,6 +352,9 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             store.close()
             window._add_digital_slide_document_from_path(slide_path, document=None)
             self._process_events()
+            # Opening a document may persist unrelated window/session state;
+            # count only the three navigation preference transitions below.
+            self.save_mock.reset_mock()
 
             canvas = window.current_canvas()
             self.assertIsInstance(canvas, DigitalSlideCanvas)
@@ -394,6 +397,64 @@ class MainWindowViewExperienceTests(unittest.TestCase):
             self.assertFalse(window.digital_slide_smooth_navigation_action.isChecked())
 
         self.assertEqual(self.save_mock.call_count, 3)
+
+    def test_digital_slide_overview_gates_pixel_tools_and_restores_previous_tool(
+        self,
+    ) -> None:
+        window = self._window()
+        with TemporaryDirectory() as tmp_dir:
+            slide_path = Path(tmp_dir) / "pixel-work-gate.fdmslide"
+            store = DigitalSlideStore.create(
+                slide_path,
+                DigitalSlideManifest(
+                    version=1,
+                    width=1200,
+                    height=900,
+                    viewport_width=200,
+                    viewport_height=150,
+                    focus_levels=[0],
+                ),
+            )
+            store.close()
+            window._add_digital_slide_document_from_path(slide_path, document=None)
+
+            canvas = window.current_canvas()
+            self.assertIsInstance(canvas, DigitalSlideCanvas)
+            assert isinstance(canvas, DigitalSlideCanvas)
+            for _ in range(200):
+                self._process_events(1)
+                if canvas.pixel_work_enabled():
+                    break
+                QTest.qWait(5)
+            self.assertTrue(canvas.pixel_work_enabled())
+
+            window.set_tool_mode("manual")
+            self.assertEqual(window._tool_mode, "manual")
+            canvas.fit_to_view()
+
+            self.assertFalse(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "select")
+            self.assertFalse(window.export_current_image_action.isEnabled())
+            self.assertFalse(window.image_processing_workbench_action.isEnabled())
+            self.assertTrue(window.fit_action.isEnabled())
+            self.assertTrue(window.digital_slide_native_fit_action.isEnabled())
+            self.assertFalse(window._mode_actions["manual"].isEnabled())
+            self.assertTrue(window._mode_actions["select"].isEnabled())
+
+            window.set_tool_mode("construction")
+            self.assertEqual(window._tool_mode, "select")
+            canvas.move_viewport_by(180.0, 120.0)
+            canvas.fit_native_viewport()
+            self.assertFalse(canvas.pixel_work_enabled())
+
+            for _ in range(200):
+                self._process_events(1)
+                if canvas.pixel_work_enabled():
+                    break
+                QTest.qWait(5)
+            self.assertTrue(canvas.pixel_work_enabled())
+            self.assertEqual(window._tool_mode, "manual")
+            self.assertTrue(window.export_current_image_action.isEnabled())
 
     def test_low_zoom_text_and_viewport_export_use_exact_scale(self) -> None:
         window = self._window()

@@ -4,7 +4,8 @@ import os
 from pathlib import Path
 from types import SimpleNamespace
 import sys
-from time import monotonic, sleep
+from tempfile import TemporaryDirectory
+from threading import Event
 import unittest
 from unittest.mock import patch
 
@@ -12,12 +13,18 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QPoint, QPointF, Qt
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QImage
 from PySide6.QtWidgets import QApplication, QTabWidget, QWidget
 
 from fdm.construction_geometry import ConstructionEntity, FreePointDefinition
 from fdm.geometry import Line, Point
 from fdm.models import ImageDocument, Measurement
+from fdm.services.digital_slide_renderer import (
+    DigitalSlideRenderFailure,
+    DigitalSlideRenderFrame,
+    DigitalSlideRenderRequest,
+    DigitalSlideRenderer,
+)
 from fdm.services.digital_slide_store import DigitalSlideManifest
 from fdm.ui.canvas import DocumentCanvas
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
@@ -80,23 +87,17 @@ class _KeyReleaseEvent:
         self.accepted = True
 
 
-class _AliveThread:
-    @staticmethod
-    def is_alive() -> bool:
-        return True
+class _RecordingRenderer:
+    def __init__(self) -> None:
+        self.requests: list[DigitalSlideRenderRequest] = []
+        self.closed = False
 
+    def submit(self, request: DigitalSlideRenderRequest) -> None:
+        self.requests.append(request)
 
-class _FailingBufferStore:
-    def __init__(self, _path: Path) -> None:
-        pass
-
-    @staticmethod
-    def render_viewport(**_kwargs) -> QImage:
-        raise OSError("permanent tile read failure")
-
-    @staticmethod
-    def close() -> None:
-        return
+    def close(self, *, timeout: float = 2.0) -> None:
+        del timeout
+        self.closed = True
 
 
 class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
@@ -117,6 +118,19 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         image = QImage(320, 240, QImage.Format.Format_RGB32)
         image.fill(0)
         canvas.set_document(document, image)
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=4096,
+            viewport_width=320,
+            viewport_height=240,
+            focus_levels=[0],
+        )
+        canvas._browse_center = Point(160.0, 120.0)  # noqa: SLF001
+        canvas._update_native_viewport_origin()  # noqa: SLF001
+        canvas._native_frame_key = canvas._native_request_key()  # noqa: SLF001
+        canvas._sync_pan_from_browse_center()  # noqa: SLF001
+        canvas._update_pixel_work_state()  # noqa: SLF001
         return canvas
 
     def test_digital_slide_zoom_cancels_previous_exact_generation(self) -> None:
@@ -158,8 +172,12 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             enqueue.assert_not_called()
 
             canvas._smooth_nav_keys.clear()  # noqa: SLF001
-            canvas._viewport_buffer_thread = _AliveThread()  # type: ignore[assignment]  # noqa: SLF001
             with (
+                patch.object(
+                    canvas,
+                    "renderer_stats",
+                    return_value=SimpleNamespace(pending_requests=1),
+                ),
                 patch.object(canvas, "_cancel_overlay_requests") as cancel,
                 patch.object(
                     DocumentCanvas,
@@ -170,9 +188,8 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             cancel.assert_called_once_with()
             enqueue.assert_not_called()
 
-            canvas._viewport_buffer_thread = None  # noqa: SLF001
-            canvas._viewport_buffer_pending = False  # noqa: SLF001
             with (
+                patch.object(canvas, "renderer_stats", return_value=None),
                 patch.object(canvas, "_cancel_overlay_requests") as cancel,
                 patch.object(
                     DocumentCanvas,
@@ -183,7 +200,6 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             cancel.assert_not_called()
             enqueue.assert_called_once_with(keys)
         finally:
-            canvas._viewport_buffer_thread = None  # noqa: SLF001
             canvas.clear_document()
             canvas.close()
 
@@ -200,21 +216,21 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             self.app.processEvents()
             canvas._smooth_nav_keys.add(int(Qt.Key.Key_Right))  # noqa: SLF001
             canvas._smooth_nav_timer.start()  # noqa: SLF001
-            canvas._viewport_buffer_request_id = 7  # noqa: SLF001
-            cancellation = canvas._viewport_buffer_cancel  # noqa: SLF001
 
             tabs.setCurrentIndex(1)
             self.app.processEvents()
 
-            self.assertTrue(cancellation.is_set())
-            self.assertEqual(canvas._viewport_buffer_request_id, 8)  # noqa: SLF001
             self.assertFalse(canvas._smooth_nav_keys)  # noqa: SLF001
             self.assertFalse(canvas._smooth_nav_timer.isActive())  # noqa: SLF001
 
-            with patch.object(canvas, "_request_viewport_buffer") as request:
+            with (
+                patch.object(canvas, "_request_display_frame") as display_request,
+                patch.object(canvas, "_request_native_frame") as native_request,
+            ):
                 tabs.setCurrentIndex(0)
                 self.app.processEvents()
-            request.assert_called_once_with()
+            display_request.assert_called_once_with()
+            native_request.assert_called_once_with()
         finally:
             tabs.close()
             canvas.clear_document()
@@ -255,8 +271,9 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             viewport_height=240,
         )
         canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
+        canvas._browse_center = Point(1160.0, 2120.0)  # noqa: SLF001
         canvas._zoom = 2.0  # noqa: SLF001
-        canvas._pan = Point(20.0, 30.0)  # noqa: SLF001
+        canvas._sync_pan_from_browse_center()  # noqa: SLF001
         canvas._viewport_buffer_error_blocked = True  # noqa: SLF001
         measurement = Measurement(
             id="hovered-line",
@@ -279,27 +296,23 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         try:
             with (
                 patch.object(canvas, "_cancel_overlay_requests") as cancel,
-                patch.object(
-                    canvas,
-                    "_render_current_viewport_from_buffer",
-                    return_value=True,
-                ),
                 patch.object(canvas, "_publish_viewport_state"),
-                patch.object(canvas, "_request_viewport_buffer"),
+                patch.object(canvas, "_request_display_frame"),
+                patch.object(canvas, "_request_native_frame"),
             ):
                 canvas.move_viewport_by(15.0, -10.0)
 
             cancel.assert_called_once_with()
-            self.assertFalse(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
+            self.assertTrue(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
             self.assertEqual(canvas.viewport_origin(), Point(1015.0, 1990.0))
             self.assertIsNone(canvas._hovered_line_endpoint)  # noqa: SLF001
             self.assertEqual(
                 canvas.cursor().shape(),
                 Qt.CursorShape.ArrowCursor,
             )
-            mapped_origin = canvas.image_to_widget(canvas.viewport_origin())
-            self.assertAlmostEqual(mapped_origin.x(), 20.0)
-            self.assertAlmostEqual(mapped_origin.y(), 30.0)
+            mapped_center = canvas.image_to_widget(canvas.browse_view().center_px)
+            self.assertAlmostEqual(mapped_center.x(), canvas._content_rect().center().x())  # noqa: SLF001
+            self.assertAlmostEqual(mapped_center.y(), canvas._content_rect().center().y())  # noqa: SLF001
         finally:
             canvas.clear_document()
             canvas.close()
@@ -319,8 +332,19 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         canvas = DigitalSlideCanvas()
         canvas.resize(400, 400)
         canvas.set_document(document, image)
+        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+            version=1,
+            width=4096,
+            height=4096,
+            viewport_width=200,
+            viewport_height=100,
+            focus_levels=[0],
+        )
         canvas._viewport_origin = Point(1000.0, 2000.0)  # noqa: SLF001
-        canvas.fit_to_view()
+        canvas._browse_center = Point(1100.0, 2050.0)  # noqa: SLF001
+        canvas.fit_native_viewport()
+        canvas._native_frame_key = canvas._native_request_key()  # noqa: SLF001
+        canvas._update_pixel_work_state()  # noqa: SLF001
         created: list[ConstructionEntity] = []
         edited: list[ConstructionEntity] = []
         canvas.constructionCreateRequested.connect(
@@ -368,100 +392,71 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
-    def test_permanent_buffer_error_is_latched_logged_and_not_retried(self) -> None:
+    def test_current_render_error_is_latched_logged_and_published(self) -> None:
         canvas = self._canvas()
         canvas._slide_store = SimpleNamespace(path=Path("/tmp/broken.fdmslide"))  # type: ignore[assignment]  # noqa: SLF001
-        canvas._viewport_buffer_request_id = 7  # noqa: SLF001
-        canvas._viewport_buffer_thread_request_id = 7  # noqa: SLF001
-        canvas._viewport_buffer_pending = True  # noqa: SLF001
+        canvas._latest_native_request_id = 7  # noqa: SLF001
         failures: list[str] = []
         canvas.viewportBufferFailed.connect(failures.append)
         try:
-            with (
-                patch.object(canvas, "_request_viewport_buffer") as request,
-                patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log,
-            ):
-                canvas._on_viewport_buffer_rendered(  # noqa: SLF001
-                    7,
-                    100,
-                    200,
-                    0,
-                    QImage(),
-                    "error",
-                    "OSError: permanent tile read failure",
+            with patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log:
+                canvas._on_render_frame_failed(  # noqa: SLF001
+                    DigitalSlideRenderFailure(
+                        request_id=7,
+                        purpose="native",
+                        focus_index=0,
+                        message="OSError: permanent tile read failure",
+                    )
                 )
 
-            request.assert_not_called()
             log.assert_called_once()
             self.assertEqual(failures, ["OSError: permanent tile read failure"])
             self.assertTrue(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
-            self.assertFalse(canvas._viewport_buffer_pending)  # noqa: SLF001
-            self.assertIsNone(canvas._viewport_buffer_thread_request_id)  # noqa: SLF001
-
-            with (
-                patch.object(canvas, "isVisible", return_value=True),
-                patch.object(canvas, "_viewport_needs_buffer_refresh") as needs_refresh,
-            ):
-                canvas._request_viewport_buffer()  # noqa: SLF001
-            needs_refresh.assert_not_called()
+            self.assertIn("读取失败", canvas.pixel_work_unavailable_reason())
         finally:
             canvas.clear_document()
             canvas.close()
 
-    def test_cancelled_buffer_schedules_latest_request_without_error_latch(self) -> None:
+    def test_stale_render_error_does_not_replace_current_generation(self) -> None:
         canvas = self._canvas()
-        canvas._viewport_buffer_request_id = 4  # noqa: SLF001
-        canvas._viewport_buffer_thread_request_id = 4  # noqa: SLF001
+        canvas._latest_display_request_id = 5  # noqa: SLF001
+        failures: list[str] = []
+        canvas.viewportBufferFailed.connect(failures.append)
         try:
-            with (
-                patch.object(canvas, "_request_viewport_buffer") as request,
-                patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log,
-            ):
-                canvas._on_viewport_buffer_rendered(  # noqa: SLF001
-                    4,
-                    0,
-                    0,
-                    0,
-                    QImage(),
-                    "cancelled",
-                    "",
+            with patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log:
+                canvas._on_render_frame_failed(  # noqa: SLF001
+                    DigitalSlideRenderFailure(
+                        request_id=4,
+                        purpose="display",
+                        focus_index=0,
+                        message="old request failed",
+                    )
                 )
 
-            request.assert_called_once_with()
             log.assert_not_called()
+            self.assertEqual(failures, [])
             self.assertFalse(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
         finally:
             canvas.clear_document()
             canvas.close()
 
-    def test_stale_error_does_not_cancel_or_replace_newer_worker(self) -> None:
+    def test_stale_focus_error_is_ignored(self) -> None:
         canvas = self._canvas()
-        newer_thread = _AliveThread()
-        canvas._viewport_buffer_request_id = 9  # noqa: SLF001
-        canvas._viewport_buffer_thread_request_id = 9  # noqa: SLF001
-        canvas._viewport_buffer_thread = newer_thread  # type: ignore[assignment]  # noqa: SLF001
+        canvas._latest_native_request_id = 9  # noqa: SLF001
         try:
-            with (
-                patch.object(canvas, "_request_viewport_buffer") as request,
-                patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log,
-            ):
-                canvas._on_viewport_buffer_rendered(  # noqa: SLF001
-                    8,
-                    0,
-                    0,
-                    0,
-                    QImage(),
-                    "error",
-                    "old request failed",
+            with patch("fdm.ui.digital_slide_canvas.append_runtime_log") as log:
+                canvas._on_render_frame_failed(  # noqa: SLF001
+                    DigitalSlideRenderFailure(
+                        request_id=9,
+                        purpose="native",
+                        focus_index=1,
+                        message="old focus failed",
+                    )
                 )
 
-            request.assert_not_called()
             log.assert_not_called()
-            self.assertIs(canvas._viewport_buffer_thread, newer_thread)  # noqa: SLF001
             self.assertFalse(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
         finally:
-            canvas._viewport_buffer_thread = None  # noqa: SLF001
-            canvas._viewport_buffer_thread_request_id = None  # noqa: SLF001
             canvas.clear_document()
             canvas.close()
 
@@ -477,38 +472,29 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
-    def test_smooth_navigation_ticks_do_not_restart_after_permanent_error(self) -> None:
+    def test_navigation_at_boundary_does_not_enqueue_or_repaint(self) -> None:
         canvas = self._canvas()
-        canvas._slide_store = SimpleNamespace(path=Path("/tmp/broken.fdmslide"))  # type: ignore[assignment]  # noqa: SLF001
-        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
-            version=1,
-            width=4096,
-            height=4096,
-            viewport_width=320,
-            viewport_height=240,
-            focus_levels=[0],
-        )
-        canvas._smooth_nav_keys.add(int(Qt.Key.Key_Right))  # noqa: SLF001
-        canvas._viewport_buffer_error_blocked = True  # noqa: SLF001
+        canvas._browse_center = Point(160.0, 120.0)  # noqa: SLF001
+        canvas._zoom = canvas._native_field_fit_zoom()  # noqa: SLF001
         try:
             with (
-                patch.object(canvas, "_render_current_viewport_from_buffer", return_value=True),
-                patch.object(canvas, "_publish_viewport_state"),
-                patch.object(canvas, "isVisible", return_value=True),
+                patch.object(canvas, "_request_display_frame") as display_request,
+                patch.object(canvas, "_request_native_frame") as native_request,
+                patch.object(canvas, "_publish_viewport_state") as publish,
+                patch.object(canvas, "update") as update,
             ):
-                canvas.move_viewport_by(4.0, 0.0, throttled=True)
+                canvas.move_viewport_by(-40.0, -30.0, throttled=True)
 
-            self.assertTrue(canvas._viewport_buffer_error_blocked)  # noqa: SLF001
-            self.assertIsNone(canvas._viewport_buffer_thread)  # noqa: SLF001
+            display_request.assert_not_called()
+            native_request.assert_not_called()
+            publish.assert_not_called()
+            update.assert_not_called()
         finally:
-            canvas._smooth_nav_keys.clear()  # noqa: SLF001
             canvas.clear_document()
             canvas.close()
 
     def test_worker_reports_real_exception_instead_of_cancelled_result(self) -> None:
-        canvas = self._canvas()
-        canvas._slide_store = SimpleNamespace(path=Path("/tmp/broken.fdmslide"))  # type: ignore[assignment]  # noqa: SLF001
-        canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        manifest = DigitalSlideManifest(
             version=1,
             width=1024,
             height=768,
@@ -516,33 +502,53 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             viewport_height=240,
             focus_levels=[0],
         )
-        results: list[tuple] = []
-        canvas._bufferRendered.disconnect(canvas._on_viewport_buffer_rendered)  # noqa: SLF001
-        canvas._bufferRendered.connect(lambda *args: results.append(args))  # noqa: SLF001
-        try:
-            with (
-                patch.object(canvas, "isVisible", return_value=True),
-                patch("fdm.ui.digital_slide_canvas.DigitalSlideStore", _FailingBufferStore),
-            ):
-                canvas._request_viewport_buffer()  # noqa: SLF001
-                thread = canvas._viewport_buffer_thread  # noqa: SLF001
-                self.assertIsNotNone(thread)
-                thread.join(timeout=1.0)
-                deadline = monotonic() + 1.0
-                while not results and monotonic() < deadline:
-                    self.app.processEvents()
-                    sleep(0.005)
+        failures: list[DigitalSlideRenderFailure] = []
+        completed = Event()
+        with TemporaryDirectory() as temporary_directory:
+            source = Path(temporary_directory) / "missing.fdmslide"
+            renderer = DigitalSlideRenderer(
+                source,
+                manifest,
+                cache_root=Path(temporary_directory) / "cache",
+                disk_cache_bytes=0,
+                result_callback=lambda _frame: completed.set(),
+                failure_callback=lambda failure: (failures.append(failure), completed.set()),
+            )
+            try:
+                renderer.submit(
+                    DigitalSlideRenderRequest(
+                        request_id=1,
+                        purpose="display",
+                        source_rect=(0.0, 0.0, 320.0, 240.0),
+                        output_size_px=(320, 240),
+                        focus_index=0,
+                        device_pixel_ratio=1.0,
+                    )
+                )
+                self.assertTrue(completed.wait(1.0))
+                completed.clear()
+                renderer.submit(
+                    DigitalSlideRenderRequest(
+                        request_id=2,
+                        purpose="native",
+                        source_rect=(0.0, 0.0, 320.0, 240.0),
+                        output_size_px=(320, 240),
+                        focus_index=0,
+                        device_pixel_ratio=1.0,
+                        force_lod=0,
+                    )
+                )
+                self.assertTrue(completed.wait(1.0))
+                self.assertTrue(renderer.is_alive())
+            finally:
+                renderer.close()
 
-            self.assertEqual(len(results), 1)
-            self.assertEqual(results[0][5], "error")
-            self.assertIn("OSError: permanent tile read failure", results[0][6])
-        finally:
-            canvas._viewport_buffer_thread = None  # noqa: SLF001
-            canvas._viewport_buffer_thread_request_id = None  # noqa: SLF001
-            canvas.clear_document()
-            canvas.close()
+        self.assertEqual(len(failures), 2)
+        self.assertEqual(failures[0].request_id, 1)
+        self.assertEqual(failures[1].request_id, 2)
+        self.assertIn("filenotfounderror", failures[0].message.lower())
 
-    def test_static_overview_never_changes_viewport_buffer_focus(self) -> None:
+    def test_static_overview_uses_center_focus_without_changing_display_focus(self) -> None:
         canvas = self._canvas()
         canvas._slide_store = SimpleNamespace(path=Path("/tmp/focus.fdmslide"))  # type: ignore[assignment]  # noqa: SLF001
         canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
@@ -555,43 +561,29 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         )
         canvas._dynamic_focus_overview_enabled = False  # noqa: SLF001
         canvas._focus_index = 4  # noqa: SLF001
-        rendered_focus: list[int] = []
-
-        class RecordingStore:
-            def __init__(self, _path) -> None:
-                pass
-
-            def render_viewport(self, **kwargs):
-                rendered_focus.append(int(kwargs["z_index"]))
-                image = QImage(640, 480, QImage.Format.Format_RGB32)
-                image.fill(QColor("#ffffff"))
-                return image
-
-            def close(self) -> None:
-                pass
+        renderer = _RecordingRenderer()
+        canvas._renderer = renderer  # type: ignore[assignment]  # noqa: SLF001
+        canvas._overview_enabled = True  # noqa: SLF001
 
         try:
-            with (
-                patch.object(canvas, "isVisible", return_value=True),
-                patch("fdm.ui.digital_slide_canvas.DigitalSlideStore", RecordingStore),
-            ):
+            with patch.object(canvas, "isVisible", return_value=True):
                 canvas._request_viewport_buffer()  # noqa: SLF001
-                thread = canvas._viewport_buffer_thread  # noqa: SLF001
-                self.assertIsNotNone(thread)
-                thread.join(timeout=1.0)
+                canvas.request_overview()
 
             self.assertEqual(canvas._overview_target_focus_index(), 2)  # noqa: SLF001
-            self.assertEqual(rendered_focus, [4])
+            self.assertEqual(
+                [(request.purpose, request.focus_index) for request in renderer.requests],
+                [("display", 4), ("native", 4), ("overview", 2)],
+            )
         finally:
-            canvas._viewport_buffer_thread = None  # noqa: SLF001
-            canvas._viewport_buffer_thread_request_id = None  # noqa: SLF001
+            canvas._renderer = None  # noqa: SLF001
             canvas.clear_document()
             canvas.close()
 
     def test_stale_overview_never_replaces_current_focus_thumbnail(self) -> None:
         canvas = self._canvas()
         canvas._focus_index = 1  # noqa: SLF001
-        canvas._overview_request_id = 2  # noqa: SLF001
+        canvas._latest_overview_request_id = 2  # noqa: SLF001
         emitted: list[QImage] = []
         canvas.overviewImageChanged.connect(emitted.append)
         stale = QImage(32, 16, QImage.Format.Format_RGB32)
@@ -599,11 +591,39 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
         current = QImage(32, 16, QImage.Format.Format_RGB32)
         current.fill(0xFF00CC00)
         try:
-            canvas._on_overview_rendered(1, 0, stale, "ok", "")  # noqa: SLF001
+            canvas._on_render_frame_ready(  # noqa: SLF001
+                DigitalSlideRenderFrame(
+                    request_id=1,
+                    purpose="overview",
+                    source_rect=(0.0, 0.0, 4096.0, 4096.0),
+                    output_size_px=(32, 16),
+                    focus_index=0,
+                    device_pixel_ratio=1.0,
+                    lod=3,
+                    image=stale,
+                    elapsed_ms=1.0,
+                    decoded_tiles=1,
+                    cache_hits=0,
+                )
+            )
             self.assertTrue(canvas.overview_image().isNull())
             self.assertEqual(emitted, [])
 
-            canvas._on_overview_rendered(2, 1, current, "ok", "")  # noqa: SLF001
+            canvas._on_render_frame_ready(  # noqa: SLF001
+                DigitalSlideRenderFrame(
+                    request_id=2,
+                    purpose="overview",
+                    source_rect=(0.0, 0.0, 4096.0, 4096.0),
+                    output_size_px=(32, 16),
+                    focus_index=1,
+                    device_pixel_ratio=1.0,
+                    lod=3,
+                    image=current,
+                    elapsed_ms=1.0,
+                    decoded_tiles=1,
+                    cache_hits=0,
+                )
+            )
             self.assertFalse(canvas.overview_image().isNull())
             self.assertEqual(len(emitted), 1)
             self.assertGreater(
@@ -612,8 +632,16 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             )
 
             canvas._focus_index = 2  # noqa: SLF001
-            canvas._overview_request_id = 3  # noqa: SLF001
-            canvas._on_overview_rendered(3, 2, QImage(), "empty", "")  # noqa: SLF001
+            canvas._latest_overview_request_id = 3  # noqa: SLF001
+            with patch("fdm.ui.digital_slide_canvas.append_runtime_log"):
+                canvas._on_render_frame_failed(  # noqa: SLF001
+                    DigitalSlideRenderFailure(
+                        request_id=3,
+                        purpose="overview",
+                        focus_index=2,
+                        message="no overview tiles",
+                    )
+                )
             self.assertTrue(canvas.overview_image().isNull())
             self.assertEqual(len(emitted), 2)
             self.assertTrue(emitted[-1].isNull())
@@ -635,9 +663,13 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             focus_levels=[0],
         )
         try:
-            with patch.object(canvas, "isVisible", return_value=True):
+            with (
+                patch.object(canvas, "isVisible", return_value=True),
+                patch.object(canvas, "_start_renderer") as start_renderer,
+            ):
                 canvas.request_overview()
-            self.assertIsNone(canvas._overview_thread)  # noqa: SLF001
+            start_renderer.assert_not_called()
+            self.assertIsNone(canvas._renderer)  # noqa: SLF001
         finally:
             canvas.clear_document()
             canvas.close()

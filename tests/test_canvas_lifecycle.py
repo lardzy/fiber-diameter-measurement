@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 from pathlib import Path
 import sys
-from threading import Thread
 import unittest
 from unittest.mock import patch
 
@@ -260,24 +259,25 @@ class CanvasLifecycleTests(unittest.TestCase):
                 second.close()
                 cache.clear()
 
-    def test_digital_slide_shutdown_cancels_and_joins_viewport_buffer_thread(
+    def test_digital_slide_shutdown_closes_long_lived_renderer(
         self,
     ) -> None:
         canvas = DigitalSlideCanvas()
-        cancellation = canvas._viewport_buffer_cancel  # noqa: SLF001
-        thread = Thread(
-            target=lambda: cancellation.wait(5.0),
-            name="test-slide-buffer",
-            daemon=True,
-        )
-        canvas._viewport_buffer_thread = thread  # noqa: SLF001
-        thread.start()
+
+        class RecordingRenderer:
+            def __init__(self) -> None:
+                self.closed = False
+
+            def close(self) -> None:
+                self.closed = True
+
+        renderer = RecordingRenderer()
+        canvas._renderer = renderer  # type: ignore[assignment]  # noqa: SLF001
 
         canvas.shutdown()
 
-        self.assertTrue(cancellation.is_set())
-        self.assertFalse(thread.is_alive())
-        self.assertIsNone(canvas._viewport_buffer_thread)  # noqa: SLF001
+        self.assertTrue(renderer.closed)
+        self.assertIsNone(canvas._renderer)  # noqa: SLF001
         canvas.close()
 
 

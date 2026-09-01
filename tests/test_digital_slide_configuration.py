@@ -102,6 +102,28 @@ def test_legacy_settings_migrate_to_one_default_digital_slide_profile() -> None:
     assert settings.digital_slide_dynamic_focus_overview_enabled is False
 
 
+def test_digital_slide_render_cache_setting_roundtrips_and_is_bounded(
+    qapp: QApplication,
+) -> None:
+    del qapp
+    assert AppSettings.from_dict(
+        {"digital_slide_render_cache_gib": -3}
+    ).digital_slide_render_cache_gib == 0
+    assert AppSettings.from_dict(
+        {"digital_slide_render_cache_gib": 99}
+    ).digital_slide_render_cache_gib == 32
+
+    settings = AppSettings.from_dict({"digital_slide_render_cache_gib": 7})
+    assert settings.to_dict()["digital_slide_render_cache_gib"] == 7
+    dialog = SettingsDialog(settings, document=None)
+    try:
+        assert dialog._digital_slide_render_cache_spin.value() == 7
+        dialog._digital_slide_render_cache_spin.setValue(0)
+        assert dialog.app_settings().digital_slide_render_cache_gib == 0
+    finally:
+        dialog.close()
+
+
 def test_profile_roundtrip_selects_active_values_and_keeps_flat_compatibility() -> None:
     base = AppSettings().normalized_copy()
     first = _profile_with_step("lens-a", "镜头 A", 4000, fallback=base)

@@ -2271,6 +2271,7 @@ class SettingsDialog(QDialog):
             digital_slide_discard_frames=self._digital_slide_discard_frames_spin.value(),
             digital_slide_focus_wheel_step=self._digital_slide_focus_wheel_slider.value(),
             digital_slide_dynamic_focus_overview_enabled=self._digital_slide_dynamic_focus_overview_checkbox.isChecked(),
+            digital_slide_render_cache_gib=self._digital_slide_render_cache_spin.value(),
             digital_slide_smooth_navigation_enabled=self._initial_settings.digital_slide_smooth_navigation_enabled,
             digital_slide_shift_navigation_enabled=self._initial_settings.digital_slide_shift_navigation_enabled,
             digital_slide_profiles=[
@@ -3111,8 +3112,19 @@ class SettingsDialog(QDialog):
         self._digital_slide_dynamic_focus_overview_checkbox.setToolTip(
             "关闭后固定显示中间焦层；新切片也只预存该焦层的缩略图"
         )
+        self._digital_slide_render_cache_spin = NoWheelSpinBox()
+        self._digital_slide_render_cache_spin.setRange(0, 32)
+        self._digital_slide_render_cache_spin.setSuffix(" GiB")
+        self._digital_slide_render_cache_spin.setSpecialValueText("关闭")
+        self._digital_slide_render_cache_spin.setValue(
+            settings.digital_slide_render_cache_gib
+        )
+        self._digital_slide_render_cache_spin.setToolTip(
+            "数字切片缩放层级的可清理派生缓存；不会写入或修改 .fdmslide 源文件"
+        )
         browsing_form.addRow("焦层滚轮速度", wheel_row)
         browsing_form.addRow("焦层缩略图", self._digital_slide_dynamic_focus_overview_checkbox)
+        browsing_form.addRow("渲染缓存上限", self._digital_slide_render_cache_spin)
         browsing_form.addRow("快捷键", shortcuts)
 
         profile_group = QGroupBox("采集参数配置")

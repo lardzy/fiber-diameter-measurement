@@ -1822,6 +1822,10 @@ class MainWindow(QMainWindow):
         self._digital_slide_local_cache.cleanup_abandoned_once()
         self._application_key_filter_installed = False
         self._syncing_digital_slide_navigation_preferences = False
+        self._digital_slide_suspended_tools: dict[
+            str, tuple[str, str, str]
+        ] = {}
+        self._digital_slide_active_suspension_document_id: str | None = None
         self._tool_mode = "select"
         self._last_non_select_tool: str | None = None
         self._manual_tool_mode = "manual"
@@ -2446,6 +2450,9 @@ class MainWindow(QMainWindow):
         self.statusBar().addPermanentWidget(self._object_snap_status_button, 0)
         self._zoom_status_button = ViewZoomStatusButton(self.statusBar())
         self._zoom_status_button.fitRequested.connect(self.fit_current_image)
+        self._zoom_status_button.nativeFitRequested.connect(
+            self.fit_current_digital_slide_native_viewport
+        )
         self._zoom_status_button.actualRequested.connect(self.actual_size_current_image)
         self._zoom_status_button.zoomRequested.connect(self._set_current_view_zoom)
         self._zoom_status_button.customZoomRequested.connect(
@@ -2642,6 +2649,17 @@ class MainWindow(QMainWindow):
         self.fit_action.setToolTip("将整张图片适合到当前画布")
         self.fit_action.triggered.connect(self.fit_current_image)
 
+        self.digital_slide_native_fit_action = QAction("原始视场适合", self)
+        self.digital_slide_native_fit_action.setIcon(
+            themed_icon("fit", color="#F4C95D")
+        )
+        self.digital_slide_native_fit_action.setToolTip(
+            "将一个原始采集视场适合到画布；原生像素工作在该比例及以上可用"
+        )
+        self.digital_slide_native_fit_action.triggered.connect(
+            self.fit_current_digital_slide_native_viewport
+        )
+
         self.actual_size_action = QAction("原始像素", self)
         self.actual_size_action.setIcon(themed_icon("actual_size", color="#E7ECEF"))
         self.actual_size_action.setToolTip(
@@ -2745,6 +2763,12 @@ class MainWindow(QMainWindow):
 
         self.digital_slide_compression_action = QAction("压缩副本...", self)
         self.digital_slide_compression_action.triggered.connect(self.open_digital_slide_compression_dialog)
+        self.digital_slide_clear_render_cache_action = QAction(
+            "清理当前切片浏览缓存", self
+        )
+        self.digital_slide_clear_render_cache_action.triggered.connect(
+            self.clear_current_digital_slide_render_cache
+        )
 
         self.measure_workspace_action = QAction("测量分析", self)
         self.measure_workspace_action.setCheckable(True)
@@ -3309,11 +3333,15 @@ class MainWindow(QMainWindow):
         tool_menu.addSeparator()
         digital_slide_tools_menu = tool_menu.addMenu("数字切片工具")
         digital_slide_tools_menu.addAction(self.digital_slide_compression_action)
+        digital_slide_tools_menu.addAction(
+            self.digital_slide_clear_render_cache_action
+        )
         tool_menu.addSeparator()
         tool_menu.addAction(self.settings_action)
 
         view_menu = self.menuBar().addMenu("视图")
         view_menu.addAction(self.fit_action)
+        view_menu.addAction(self.digital_slide_native_fit_action)
         view_menu.addAction(self.actual_size_action)
         view_menu.addAction(self.fullscreen_measurement_action)
         view_menu.addAction(self.digital_slide_smooth_navigation_action)
@@ -4705,6 +4733,7 @@ class MainWindow(QMainWindow):
         view_controls_layout.setSpacing(2)
         for action in (
             self.fit_action,
+            self.digital_slide_native_fit_action,
             self.actual_size_action,
             self.fullscreen_measurement_action,
             self.digital_slide_smooth_navigation_action,
@@ -4761,6 +4790,7 @@ class MainWindow(QMainWindow):
         menu.addAction(self.close_all_action)
         menu.addSeparator()
         menu.addAction(self.fit_action)
+        menu.addAction(self.digital_slide_native_fit_action)
         menu.addAction(self.actual_size_action)
         menu.exec(tab_bar.mapToGlobal(position))
 
@@ -5640,6 +5670,18 @@ class MainWindow(QMainWindow):
         if is_magic_toolbar_tool_mode(mode) and "magic-segmentation" not in self._runtime_features:
             mode = "select"
         if mode not in self._mode_actions:
+            mode = "select"
+        active_canvas = self.current_canvas()
+        if (
+            mode != "select"
+            and isinstance(active_canvas, DigitalSlideCanvas)
+            and not active_canvas.pixel_work_enabled()
+        ):
+            self.statusBar().showMessage(
+                active_canvas.pixel_work_unavailable_reason()
+                or "放大到单视场并等待原生工作视场就绪后可使用该工具。",
+                4500,
+            )
             mode = "select"
         if overlay_kind in {item[0] for item in self._overlay_tool_definitions()}:
             self._overlay_tool_kind = overlay_kind
@@ -7253,6 +7295,8 @@ class MainWindow(QMainWindow):
         self,
         operation: ImageOperation | bool | None = None,
     ) -> None:
+        if not self._ensure_current_pixel_work_available("图像处理"):
+            return
         self._close_threshold_adjustment_dialog()
         if self._display_adjustment_dialog is not None:
             self._close_display_adjustment_dialog()
@@ -10562,6 +10606,8 @@ class MainWindow(QMainWindow):
         parameters: dict[str, object] | None = None,
         prompt_for_parameters: bool = True,
     ) -> None:
+        if not self._ensure_current_pixel_work_available("图像分析"):
+            return
         source_result = self._create_analysis_source_context()
         if source_result is None:
             return
@@ -14098,6 +14144,8 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         if document is None:
             QMessageBox.information(self, "导出当前图像", "请先打开一张图片。")
+            return
+        if not self._ensure_current_pixel_work_available("导出当前视场像素"):
             return
         default_dir = self._preferred_dialog_directory(
             recent_dir=self._app_settings.recent_export_dir,
@@ -19275,6 +19323,24 @@ class MainWindow(QMainWindow):
         canvas.shiftNavigationEnabledChanged.connect(
             self._on_digital_slide_shift_navigation_changed
         )
+        canvas.pixelWorkAvailabilityChanged.connect(
+            lambda enabled, reason, document_id=target_document.id: (
+                self._on_digital_slide_pixel_work_availability_changed(
+                    document_id,
+                    enabled,
+                    reason,
+                )
+            )
+        )
+        canvas.browseNoticeRequested.connect(
+            lambda message: self.statusBar().showMessage(message, 5000)
+        )
+        canvas.viewportBufferFailed.connect(
+            lambda message: self.statusBar().showMessage(
+                f"数字切片读取失败：{message}。可清理当前切片浏览缓存后重试。",
+                8000,
+            )
+        )
 
         self._remove_unresolved_placeholder_ui(target_document.id)
         insert_index = self.project_session_controller.ui_insert_index(target_document.id, self._document_order)
@@ -19298,6 +19364,11 @@ class MainWindow(QMainWindow):
         self.tab_widget.setCurrentIndex(tab_index)
         self.image_list.setCurrentRow(tab_index)
         canvas.schedule_initial_fit()
+        self._on_digital_slide_pixel_work_availability_changed(
+            target_document.id,
+            canvas.pixel_work_enabled(),
+            canvas.pixel_work_unavailable_reason(),
+        )
         self._update_ui_for_current_document()
         if interaction_path != source_path:
             self.statusBar().showMessage(
@@ -19370,6 +19441,53 @@ class MainWindow(QMainWindow):
                 5000,
             )
         self._update_magic_segment_controls()
+
+    def _on_digital_slide_pixel_work_availability_changed(
+        self,
+        document_id: str,
+        enabled: bool,
+        reason: str,
+    ) -> None:
+        document = self.current_document()
+        is_current = document is not None and document.id == document_id
+        if not enabled:
+            if document_id not in self._digital_slide_suspended_tools:
+                self._digital_slide_suspended_tools[document_id] = (
+                    self._tool_mode,
+                    self._overlay_tool_kind,
+                    self._construction_tool_kind,
+                )
+            if is_current:
+                self._digital_slide_active_suspension_document_id = document_id
+                if self._tool_mode != "select":
+                    self.set_tool_mode("select")
+            if is_current and reason:
+                self.statusBar().showMessage(reason, 4000)
+        else:
+            suspended = self._digital_slide_suspended_tools.pop(document_id, None)
+            if self._digital_slide_active_suspension_document_id == document_id:
+                self._digital_slide_active_suspension_document_id = None
+            if is_current and suspended is not None and self._tool_mode == "select":
+                mode, overlay_kind, construction_kind = suspended
+                self.set_tool_mode(
+                    mode,
+                    overlay_kind=overlay_kind,
+                    construction_kind=construction_kind,
+                )
+                self.statusBar().showMessage("原生工作视场已就绪，已恢复此前工具。", 3000)
+        if is_current:
+            self._update_action_states()
+
+    def _sync_digital_slide_pixel_work_tool(self) -> None:
+        document = self.current_document()
+        canvas = self.current_canvas()
+        if document is None or not isinstance(canvas, DigitalSlideCanvas):
+            return
+        self._on_digital_slide_pixel_work_availability_changed(
+            document.id,
+            canvas.pixel_work_enabled(),
+            canvas.pixel_work_unavailable_reason(),
+        )
 
     def _current_digital_slide_canvas(self) -> DigitalSlideCanvas | None:
         document = self.current_document()
@@ -19515,6 +19633,29 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.fit_to_view()
+
+    def fit_current_digital_slide_native_viewport(self) -> None:
+        canvas = self._current_digital_slide_canvas()
+        if canvas is not None:
+            canvas.fit_native_viewport()
+
+    def clear_current_digital_slide_render_cache(self) -> None:
+        canvas = self._current_digital_slide_canvas()
+        if canvas is None:
+            return
+        canvas.clear_render_cache()
+        self.statusBar().showMessage(
+            "已清理当前数字切片的派生浏览缓存；源 .fdmslide 未修改。",
+            4000,
+        )
+
+    def _ensure_current_pixel_work_available(self, operation: str) -> bool:
+        canvas = self.current_canvas()
+        if not isinstance(canvas, DigitalSlideCanvas) or canvas.pixel_work_enabled():
+            return True
+        reason = canvas.pixel_work_unavailable_reason() or "原生工作视场尚未就绪"
+        self.statusBar().showMessage(f"{operation}暂不可用：{reason}", 5000)
+        return False
 
     def actual_size_current_image(self) -> None:
         canvas = self.current_canvas()
@@ -20609,6 +20750,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage(f"已应用标定预设: {preset.name}", 4000)
 
     def add_fiber_group(self) -> None:
+        if not self._ensure_current_pixel_work_available("新增测量类别"):
+            return
         document = self.current_document()
         if document is None:
             return
@@ -20672,6 +20815,8 @@ class MainWindow(QMainWindow):
         self.statusBar().showMessage("已新增类别", 3000)
 
     def rename_active_group(self) -> None:
+        if not self._ensure_current_pixel_work_available("编辑测量类别"):
+            return
         document = self.current_document()
         if document is None:
             return
@@ -20897,6 +21042,8 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage("未分类已迁移到新类别", 3000)
 
     def delete_active_group(self) -> None:
+        if not self._ensure_current_pixel_work_available("删除测量类别"):
+            return
         document = self.current_document()
         if document is None:
             return
@@ -21089,6 +21236,8 @@ class MainWindow(QMainWindow):
         return document.remove_measurements(list(targets))
 
     def delete_selected_measurement(self) -> None:
+        if not self._ensure_current_pixel_work_available("编辑测量结果"):
+            return
         document = self.current_document()
         if self._tool_mode == "calibration" or document is None:
             return
@@ -21170,6 +21319,8 @@ class MainWindow(QMainWindow):
         )
 
     def delete_all_measurements(self) -> None:
+        if not self._ensure_current_pixel_work_available("编辑测量结果"):
+            return
         document = self.current_document()
         if document is None or self._tool_mode == "calibration":
             return
@@ -21215,6 +21366,8 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
 
     def delete_measurements_by_category(self) -> None:
+        if not self._ensure_current_pixel_work_available("编辑测量结果"):
+            return
         document = self.current_document()
         if document is None or self._tool_mode == "calibration":
             return
@@ -21523,6 +21676,12 @@ class MainWindow(QMainWindow):
         canvas = self._canvases.get(document_id)
         document = self.project.get_document(document_id)
         if canvas is None or document is None or not isinstance(payload, dict):
+            return
+        if isinstance(canvas, DigitalSlideCanvas) and not canvas.pixel_work_enabled():
+            self.statusBar().showMessage(
+                f"分割暂不可用：{canvas.pixel_work_unavailable_reason()}",
+                5000,
+            )
             return
         request_id = int(payload.get("request_id", 0))
         tool_mode = str(payload.get("tool_mode", self._tool_mode) or self._tool_mode)
@@ -22438,6 +22597,8 @@ class MainWindow(QMainWindow):
             self._analysis_results_center.close()
             self._analysis_results_center.set_artifacts(())
         self._canvases.clear()
+        self._digital_slide_suspended_tools.clear()
+        self._digital_slide_active_suspension_document_id = None
         for navigator in self._canvas_navigators.values():
             navigator.clear()
         self._canvas_navigators.clear()
@@ -22565,6 +22726,9 @@ class MainWindow(QMainWindow):
         self._rasters.pop(document_id, None)
         self._raster_metadata.pop(document_id, None)
         self._display_cache_transforms.pop(document_id, None)
+        self._digital_slide_suspended_tools.pop(document_id, None)
+        if self._digital_slide_active_suspension_document_id == document_id:
+            self._digital_slide_active_suspension_document_id = None
         session_asset = self._session_processed_assets.pop(document_id, None)
         if session_asset is not None:
             session_asset.unlink(missing_ok=True)
@@ -22990,10 +23154,26 @@ class MainWindow(QMainWindow):
             self._close_display_adjustment_dialog()
         self._clear_magic_segment_sessions(except_document_id=current_document.id if current_document is not None else None)
         canvas = self.current_canvas()
+        active_suspension = self._digital_slide_active_suspension_document_id
+        if (
+            not isinstance(canvas, DigitalSlideCanvas)
+            and active_suspension is not None
+            and self._tool_mode == "select"
+        ):
+            suspended = self._digital_slide_suspended_tools.get(active_suspension)
+            self._digital_slide_active_suspension_document_id = None
+            if suspended is not None:
+                mode, overlay_kind, construction_kind = suspended
+                self.set_tool_mode(
+                    mode,
+                    overlay_kind=overlay_kind,
+                    construction_kind=construction_kind,
+                )
         if canvas is not None:
             canvas.set_tool_mode(self._tool_mode, overlay_kind=self._overlay_tool_kind)
             if is_magic_segment_tool_mode(self._tool_mode):
                 self._sync_canvas_magic_subtract_input_mode(canvas)
+        self._sync_digital_slide_pixel_work_tool()
         self._update_ui_for_current_document()
 
     def _on_image_list_changed(self, row: int) -> None:
@@ -24849,6 +25029,8 @@ class MainWindow(QMainWindow):
     def _on_measurement_group_change_requested(self, measurement_id: str, target_group_id: object) -> None:
         if self._table_rebuilding:
             return
+        if not self._ensure_current_pixel_work_available("编辑测量类别"):
+            return
         document = self.current_document()
         if document is None:
             return
@@ -24991,6 +25173,11 @@ class MainWindow(QMainWindow):
         history = document.history if document is not None else None
         has_document = document is not None
         preview_active = self._preview_active
+        active_canvas = self.current_canvas()
+        pixel_work_enabled = not isinstance(active_canvas, DigitalSlideCanvas) or (
+            active_canvas.pixel_work_enabled()
+        )
+        can_pixel_work = has_document and not preview_active and pixel_work_enabled
         selection_model = self.measurement_table.selectionModel() if hasattr(self, "measurement_table") else None
         has_selected_rows = bool(selection_model and selection_model.selectedRows())
         has_selected_object = bool(
@@ -25023,8 +25210,8 @@ class MainWindow(QMainWindow):
         )
         self.close_current_action.setEnabled(has_document)
         self.close_all_action.setEnabled(bool(self.project.documents))
-        self.export_current_image_action.setEnabled(has_document and not preview_active)
-        can_process_image = has_document and not preview_active
+        self.export_current_image_action.setEnabled(can_pixel_work)
+        can_process_image = can_pixel_work
         self.image_processing_workbench_action.setEnabled(can_process_image)
         self.image_batch_processing_action.setEnabled(
             any(
@@ -25122,6 +25309,12 @@ class MainWindow(QMainWindow):
             bool(self.project.analysis_artifacts)
         )
         self.fit_action.setEnabled(has_document and not preview_active)
+        self.digital_slide_native_fit_action.setEnabled(
+            isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
+        )
+        self.digital_slide_clear_render_cache_action.setEnabled(
+            isinstance(active_canvas, DigitalSlideCanvas) and not preview_active
+        )
         self.actual_size_action.setEnabled(has_document and not preview_active)
         fullscreen_active = bool(
             self._fullscreen_controller is not None
@@ -25132,27 +25325,52 @@ class MainWindow(QMainWindow):
             or (
                 has_document
                 and not preview_active
+                and pixel_work_enabled
                 and self._workspace_mode is WorkspaceMode.MEASURE
             )
         )
         self.toggle_canvas_navigator_action.setEnabled(
             has_document and not preview_active
         )
-        self.delete_measurement_action.setEnabled(has_selected_object and not preview_active)
-        self.delete_measurement_button.setEnabled(has_selected_object and not preview_active)
+        self.delete_measurement_action.setEnabled(
+            has_selected_object and not preview_active and pixel_work_enabled
+        )
+        self.delete_measurement_button.setEnabled(
+            has_selected_object and not preview_active and pixel_work_enabled
+        )
         if self._delete_group_measurements_button is not None:
-            self._delete_group_measurements_button.setEnabled(has_measurement_groups and not preview_active)
+            self._delete_group_measurements_button.setEnabled(
+                has_measurement_groups
+                and not preview_active
+                and pixel_work_enabled
+            )
         if self._delete_all_measurements_button is not None:
-            self._delete_all_measurements_button.setEnabled(has_measurements and not preview_active)
-        self.add_group_action.setEnabled(has_document and not preview_active)
-        self.rename_group_action.setEnabled(has_editable_active_group and not preview_active)
-        self.delete_group_action.setEnabled(has_deletable_group_target and not preview_active)
+            self._delete_all_measurements_button.setEnabled(
+                has_measurements and not preview_active and pixel_work_enabled
+            )
+        self.add_group_action.setEnabled(can_pixel_work)
+        self.rename_group_action.setEnabled(
+            has_editable_active_group and not preview_active and pixel_work_enabled
+        )
+        self.delete_group_action.setEnabled(
+            has_deletable_group_target
+            and not preview_active
+            and pixel_work_enabled
+        )
         if self._add_group_button is not None:
-            self._add_group_button.setEnabled(has_document and not preview_active)
+            self._add_group_button.setEnabled(can_pixel_work)
         if self._rename_group_button is not None:
-            self._rename_group_button.setEnabled(has_editable_active_group and not preview_active)
+            self._rename_group_button.setEnabled(
+                has_editable_active_group
+                and not preview_active
+                and pixel_work_enabled
+            )
         if self.delete_group_button is not None:
-            self.delete_group_button.setEnabled(has_deletable_group_target and not preview_active)
+            self.delete_group_button.setEnabled(
+                has_deletable_group_target
+                and not preview_active
+                and pixel_work_enabled
+            )
         has_preset = bool(self._calibration_presets())
         if self._add_preset_button is not None:
             self._add_preset_button.setEnabled(True)
@@ -25163,7 +25381,12 @@ class MainWindow(QMainWindow):
         if self._import_cu_preset_button is not None:
             self._import_cu_preset_button.setEnabled(_CU_SCALE_IMPORT_ERROR is None)
         if self._apply_preset_button is not None:
-            self._apply_preset_button.setEnabled(has_document and has_preset and not preview_active)
+            self._apply_preset_button.setEnabled(
+                has_document
+                and has_preset
+                and not preview_active
+                and pixel_work_enabled
+            )
         if self._area_auto_button is not None:
             area_inference_available = "area-inference" in self._runtime_features
             self._area_auto_button.setVisible(area_inference_available)
@@ -25202,6 +25425,7 @@ class MainWindow(QMainWindow):
                 or bool(history and history.can_undo() and not undo_waiting)
             )
             and not preview_active
+            and pixel_work_enabled
         )
         self.redo_action.setEnabled(
             (
@@ -25209,6 +25433,7 @@ class MainWindow(QMainWindow):
                 or bool(history and history.can_redo() and not redo_waiting)
             )
             and not preview_active
+            and pixel_work_enabled
         )
         capture_feature_available = _CAPTURE_IMPORT_ERROR is None
         self.switch_capture_device_action.setEnabled(capture_feature_available)
@@ -25222,15 +25447,20 @@ class MainWindow(QMainWindow):
         self.optimize_capture_signal_action.setVisible(can_optimize_signal)
         self.optimize_capture_signal_action.setEnabled(can_optimize_signal and not analysis_active and not self._digital_slide_mode)
         for mode, action in self._mode_actions.items():
-            action.setEnabled(not preview_active or mode == "select")
+            action.setEnabled(
+                mode == "select"
+                or (not preview_active and pixel_work_enabled)
+            )
         if self._manual_tool_button is not None:
-            self._manual_tool_button.setEnabled(not preview_active)
+            self._manual_tool_button.setEnabled(not preview_active and pixel_work_enabled)
         if self._area_tool_button is not None:
-            self._area_tool_button.setEnabled(not preview_active)
+            self._area_tool_button.setEnabled(not preview_active and pixel_work_enabled)
         if self._magic_tool_button is not None:
             magic_available = "magic-segmentation" in self._runtime_features
             self._magic_tool_button.setVisible(magic_available)
-            self._magic_tool_button.setEnabled(magic_available and not preview_active)
+            self._magic_tool_button.setEnabled(
+                magic_available and not preview_active and pixel_work_enabled
+            )
             for mode in (
                 MagicSegmentToolMode.STANDARD,
                 MagicSegmentToolMode.REFERENCE,
@@ -25240,16 +25470,22 @@ class MainWindow(QMainWindow):
                 if action is not None:
                     action.setVisible(magic_available)
         if self._construction_tool_button is not None:
-            self._construction_tool_button.setEnabled(not preview_active)
+            self._construction_tool_button.setEnabled(
+                not preview_active and pixel_work_enabled
+            )
         if self._overlay_tool_button is not None:
-            self._overlay_tool_button.setEnabled(not preview_active)
+            self._overlay_tool_button.setEnabled(
+                not preview_active and pixel_work_enabled
+            )
         self._update_path_drawing_controls()
         self._update_magic_segment_controls()
         self._update_count_numbers_button()
         self._update_preview_analysis_controls()
         if self._measurement_tool_strip is not None:
             self._measurement_tool_strip.setConstructionContextVisible(
-                self._tool_mode == "construction" and not preview_active
+                self._tool_mode == "construction"
+                and not preview_active
+                and pixel_work_enabled
             )
         self._sync_manual_tool_button()
         self._sync_area_tool_button()

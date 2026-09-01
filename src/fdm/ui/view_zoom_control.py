@@ -18,6 +18,7 @@ class ViewZoomStatusButton(QToolButton):
     """
 
     fitRequested = Signal()
+    nativeFitRequested = Signal()
     actualRequested = Signal()
     zoomRequested = Signal(float)
     customZoomRequested = Signal()
@@ -46,6 +47,8 @@ class ViewZoomStatusButton(QToolButton):
         menu = QMenu(self)
         fit_action = menu.addAction("适合窗口")
         fit_action.triggered.connect(self.fitRequested)
+        native_fit_action = menu.addAction("原始视场适合（数字切片）")
+        native_fit_action.triggered.connect(self.nativeFitRequested)
         actual_action = menu.addAction("100% · 原始像素")
         actual_action.triggered.connect(self.actualRequested)
         menu.addSeparator()
@@ -89,7 +92,9 @@ class ViewZoomStatusButton(QToolButton):
         percentage = _format_percentage(snapshot.zoom)
         if digital_slide:
             if snapshot.mode is CanvasZoomMode.FIT:
-                label = f"视场适合 · {percentage}"
+                label = f"整片适合 · {percentage}"
+            elif snapshot.mode is CanvasZoomMode.NATIVE_FIELD_FIT:
+                label = f"原始视场适合 · {percentage}"
             elif snapshot.mode is CanvasZoomMode.ACTUAL:
                 label = "视场原始像素 · 100%"
             else:

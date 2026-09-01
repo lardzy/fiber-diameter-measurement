@@ -366,6 +366,33 @@ class DigitalSlideStore:
     def is_open(self) -> bool:
         return self._conn is not None
 
+    def set_decoded_image_cache_budget(
+        self,
+        *,
+        max_images: int,
+        max_bytes: int,
+    ) -> None:
+        """Configure the store-local decode cache.
+
+        Long-lived renderers own a shared byte-LRU and set this budget to zero
+        so the same decoded tile is not retained by two independent caches.
+        """
+
+        self._image_cache_limit = max(0, int(max_images))
+        self._image_cache_byte_limit = max(0, int(max_bytes))
+        while (
+            self._image_cache
+            and (
+                len(self._image_cache) > self._image_cache_limit
+                or self._image_cache_bytes > self._image_cache_byte_limit
+            )
+        ):
+            _, removed = self._image_cache.popitem(last=False)
+            self._image_cache_bytes = max(
+                0,
+                self._image_cache_bytes - max(0, int(removed.sizeInBytes())),
+            )
+
     @staticmethod
     def read_manifest_read_only(path: str | Path) -> DigitalSlideManifest:
         """Validate an existing slide without creating or migrating its schema."""
