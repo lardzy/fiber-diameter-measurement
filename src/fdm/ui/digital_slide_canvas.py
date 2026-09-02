@@ -61,6 +61,7 @@ _PRESENTATION_PREVIEW_MAX_EDGE = 1024
 _NATIVE_FOCUS_PREVIEW_MAX_EDGE = 1024
 _FOCUS_PREVIEW_CACHE_LIMIT = 8
 _FOCUS_PREVIEW_CACHE_BYTES = 32 * 1024 * 1024
+_NATIVE_NAVIGATION_HANDOFF_OVERLAP = 0.5
 # Whole-slide display frames remain byte-bounded below.  Keeping several exact
 # native focus planes avoids falling back to a proxy when users scrub the same
 # acquisition field back and forth across more than three focus levels.
@@ -125,6 +126,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_frame: DigitalSlideRenderFrame | None = None
         self._focus_transition_image: QImage | None = None
         self._focus_transition_native_rect: QRectF | None = None
+        self._navigation_transition_image: QImage | None = None
+        self._navigation_transition_target: QRectF | None = None
         self._renderer: DigitalSlideRenderer | None = None
         self._render_request_id = 0
         self._latest_preview_request_id = 0
@@ -201,6 +204,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._presentation_preview_cache.clear()
         self._clear_focus_preview_cache()
         self._clear_display_frame_cache()
+        self._clear_navigation_transition()
         self._native_viewport_indicator_timer.stop()
         self._native_viewport_indicator_visible = False
         self._overview_debounce_timer.stop()
@@ -352,6 +356,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
+        self._clear_navigation_transition()
         self._native_frame_key = None
         self._native_frame_pending_key = None
         self._native_frame_ever_ready = False
@@ -368,6 +373,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_debounce_timer.stop()
         self._native_viewport_indicator_timer.stop()
         self._native_viewport_indicator_visible = False
+        self._clear_navigation_transition()
         self._latest_overview_request_id += 1
         self._overview_pending = False
         self._stop_renderer()
@@ -873,6 +879,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         except (TypeError, ValueError):
             return 0
 
+    def _clear_navigation_transition(self) -> None:
+        self._navigation_transition_image = None
+        self._navigation_transition_target = None
+
     def _advance_view_generation(self) -> None:
         self._view_generation += 1
         advance_generation = getattr(self._renderer, "advance_generation", None)
@@ -901,9 +911,14 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
+        self._clear_navigation_transition()
         self._native_frame_pending_key = None
 
-    def _request_interactive_frames(self) -> None:
+    def _request_interactive_frames(
+        self,
+        *,
+        atomic_native_preview: bool = False,
+    ) -> None:
         if self._restore_cached_final_frame():
             self._final_render_timer.stop()
             self._update_pixel_work_state()
@@ -919,13 +934,15 @@ class DigitalSlideCanvas(DocumentCanvas):
                 self._final_render_timer.setInterval(_NAVIGATION_SETTLE_MS)
                 self._final_render_timer.start()
             return
-        # At native-field scale a 512px display proxy is visibly softer than
-        # the acquisition frame and creates a moving double-image when painted
-        # over the previous exact field.  Request the single canonical LOD0
-        # frame immediately; the renderer's generation/latest-wins policy keeps
-        # continuous navigation bounded without introducing a second display
-        # composition.
+        # Ordinary native-field motion requests only the canonical LOD0 frame:
+        # a continuously moving proxy would create the soft double-image that
+        # this path was introduced to avoid.  A discontinuous step is the one
+        # exception.  Its old and new fields barely overlap, so request one
+        # complete, atomic local preview before LOD0 rather than exposing the
+        # loading surface between them.
         self._final_render_timer.stop()
+        if atomic_native_preview:
+            self._request_native_focus_preview()
         self._request_native_frame()
 
     def _request_focus_frames(self) -> None:
@@ -1286,6 +1303,10 @@ class DigitalSlideCanvas(DocumentCanvas):
                 focus_index=int(self._focus_index),
                 device_pixel_ratio=1.0,
                 blend_width=self._blend_width(),
+                velocity_px_per_second=(
+                    float(self._navigation_velocity.x),
+                    float(self._navigation_velocity.y),
+                ),
                 force_lod=0,
                 generation=int(self._view_generation),
                 quality="final",
@@ -1665,15 +1686,16 @@ class DigitalSlideCanvas(DocumentCanvas):
                 and self._render_frame.quality == "final"
             ):
                 return
-            # The worker never publishes progressive focus-preview snapshots.
-            # Replace the old-focus handoff only after the complete target
-            # image is ready, so a paint can contain one focus plane but never
-            # a low-resolution overlay of two planes.
+            # The worker never publishes progressive native-preview snapshots.
+            # Replace a focus or navigation handoff only after the complete
+            # target image is ready, so one paint never mixes an unresolved LOD
+            # with the previous presentation.
             self._coarse_render_frame = frame
             self._remember_focus_preview(frame)
             self._focus_transition_frame = None
             self._focus_transition_image = None
             self._focus_transition_native_rect = None
+            self._clear_navigation_transition()
             self.update()
             return
         if frame.purpose == "coarse":
@@ -1736,6 +1758,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._focus_transition_frame = None
             self._focus_transition_image = None
             self._focus_transition_native_rect = None
+            self._clear_navigation_transition()
             self._viewport_buffer_error_blocked = False
             self._viewport_buffer_last_error = ""
             self.update()
@@ -1760,6 +1783,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
+        self._clear_navigation_transition()
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
         self._update_pixel_work_state()
@@ -1958,9 +1982,88 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._shift_navigation_enabled = enabled
         self.shiftNavigationEnabledChanged.emit(enabled)
 
+    @staticmethod
+    def _source_overlap_ratio(first: QRectF, second: QRectF) -> float:
+        if first.isEmpty() or second.isEmpty():
+            return 0.0
+        denominator = min(
+            float(first.width() * first.height()),
+            float(second.width() * second.height()),
+        )
+        if denominator <= 1.0e-9:
+            return 0.0
+        intersection = first.intersected(second)
+        if intersection.isEmpty():
+            return 0.0
+        return max(
+            0.0,
+            min(
+                1.0,
+                float(intersection.width() * intersection.height())
+                / denominator,
+            ),
+        )
+
+    def _capture_navigation_transition(
+        self,
+    ) -> tuple[QImage, QRectF] | None:
+        """Retain the current screen presentation without copying its pixels."""
+
+        content = self._content_rect()
+        for frame in (self._render_frame, self._coarse_render_frame):
+            if (
+                frame is None
+                or frame.focus_index != self._focus_index
+                or frame.image.isNull()
+                or not frame.complete
+            ):
+                continue
+            x, y, width, height = frame.source_rect
+            top_left = self.image_to_widget(Point(x, y))
+            target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                width * self._zoom,
+                height * self._zoom,
+            )
+            if target.intersects(content):
+                return QImage(frame.image), target
+        if (
+            self._navigation_transition_image is not None
+            and not self._navigation_transition_image.isNull()
+            and self._navigation_transition_target is not None
+        ):
+            return (
+                QImage(self._navigation_transition_image),
+                QRectF(self._navigation_transition_target),
+            )
+        if (
+            self._image is not None
+            and not self._image.isNull()
+            and self._native_frame_key is not None
+        ):
+            native = self.native_viewport_rect()
+            top_left = self.image_to_widget(Point(native.x(), native.y()))
+            target = QRectF(
+                top_left.x(),
+                top_left.y(),
+                native.width() * self._zoom,
+                native.height() * self._zoom,
+            )
+            if target.intersects(content):
+                return QImage(self._image), target
+        return None
+
     def move_viewport_by(self, dx: float, dy: float, *, throttled: bool = False) -> None:
         if self._slide_manifest is None or (not dx and not dy):
             return
+        previous_source = self._source_view_rect()
+        previous_handoff = self._capture_navigation_transition()
+        transition_was_active = bool(
+            self._navigation_transition_image is not None
+            and not self._navigation_transition_image.isNull()
+            and self._navigation_transition_target is not None
+        )
         old_center = Point(self._browse_center.x, self._browse_center.y)
         self._browse_center = Point(old_center.x + float(dx), old_center.y + float(dy))
         self._clamp_browse_center()
@@ -1997,12 +2100,26 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._last_navigation_origin = Point(self._browse_center.x, self._browse_center.y)
         self._focus_direction = 0
         self._sync_pan_from_browse_center()
+        current_source = self._source_view_rect()
+        use_atomic_native_preview = bool(
+            not self.large_area_browse_active()
+            and (
+                transition_was_active
+                or self._source_overlap_ratio(previous_source, current_source)
+                < _NATIVE_NAVIGATION_HANDOFF_OVERLAP
+            )
+        )
         self._update_native_viewport_origin()
         if self._native_frame_key != self._native_request_key():
             self._native_frame_pending_key = None
         self._persist_view_state()
         self._advance_view_generation()
-        self._request_interactive_frames()
+        if use_atomic_native_preview and previous_handoff is not None:
+            self._navigation_transition_image = previous_handoff[0]
+            self._navigation_transition_target = previous_handoff[1]
+        self._request_interactive_frames(
+            atomic_native_preview=use_atomic_native_preview,
+        )
         self._update_pixel_work_state()
         self._publish_viewport_state(throttled=throttled)
         self.update()
@@ -2256,17 +2373,32 @@ class DigitalSlideCanvas(DocumentCanvas):
                 painter.drawImage(frame_target, frame.image)
             target = frame_target
 
-        # Retain the last real presentation until the requested focus has
-        # produced real pixels.  This frame is intentionally outside
-        # ``_current_presentation_frame()`` and cannot enable measurement or
-        # pixel algorithms; it only prevents a flat white paint between wheel
-        # input and the worker's first target-focus result.
-        transition_active = self._focus_transition_frame is not None
-        if transition_active:
+        # A discontinuous navigation step keeps the previous screen
+        # presentation fixed until one complete target-position preview is
+        # available.  It is paint-only and cannot enable measurement or pixel
+        # algorithms.
+        transition_active = False
+        if (
+            self._navigation_transition_image is not None
+            and not self._navigation_transition_image.isNull()
+            and self._navigation_transition_target is not None
+            and self._navigation_transition_target.intersects(content)
+        ):
+            painter.drawImage(
+                self._navigation_transition_target,
+                self._navigation_transition_image,
+            )
+            target = self._navigation_transition_target
+            transition_active = True
+
+        # Focus changes retain the last real presentation until the requested
+        # focus has produced real pixels.  This is also paint-only.
+        if self._focus_transition_frame is not None:
             draw_frame(
                 self._focus_transition_frame,
                 allow_other_focus=True,
             )
+            transition_active = True
         elif (
             self._focus_transition_image is not None
             and not self._focus_transition_image.isNull()
@@ -2323,7 +2455,13 @@ class DigitalSlideCanvas(DocumentCanvas):
         # Existing final frames are then painted above it at their true global
         # coordinates, so continuous large-area motion cannot blur content that
         # has already reached final display quality.
-        if large_area or not sharp_visual_active:
+        atomic_native_preview_active = bool(
+            self._coarse_render_frame is not None
+            and self._coarse_render_frame.purpose == "focus_preview"
+            and self._coarse_render_frame.complete
+            and self._coarse_render_frame.generation == self._view_generation
+        )
+        if large_area or not sharp_visual_active or atomic_native_preview_active:
             draw_frame(
                 self._coarse_render_frame,
                 coverage_only=bool(
@@ -2892,6 +3030,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._focus_transition_frame = None
         self._focus_transition_image = None
         self._focus_transition_native_rect = None
+        self._clear_navigation_transition()
         self._native_frame_pending_key = None
         self._allow_viewport_buffer_retry()
 

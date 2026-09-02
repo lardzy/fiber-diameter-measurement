@@ -1061,7 +1061,7 @@ def test_low_resolution_vector_input_requires_current_real_coverage(
         store.close()
 
 
-def test_repeated_full_field_steps_never_expose_dark_workspace_background(
+def test_repeated_full_field_steps_never_expose_loading_surface(
     tmp_path: Path,
 ) -> None:
     app = QApplication.instance() or QApplication([])
@@ -1092,7 +1092,11 @@ def test_repeated_full_field_steps_never_expose_dark_workspace_background(
             center_color = painted.pixelColor(
                 canvas._content_rect().center().toPoint()  # noqa: SLF001
             )
-            assert center_color not in (QColor("#000000"), QColor("#101820"))
+            assert center_color not in (
+                QColor("#000000"),
+                QColor("#101820"),
+                QColor("#E6E6E6"),
+            )
         stats = canvas.renderer_stats()
         assert stats is not None
         assert stats.pending_requests <= 6
@@ -1188,6 +1192,22 @@ def test_focus_wheel_uses_atomic_previews_and_one_canonical_exact_request() -> N
         assert any(
             request.purpose == "native" for request in recorder.requests
         )
+        assert not any(
+            request.purpose == "focus_preview" for request in recorder.requests
+        )
+
+        recorder.requests.clear()
+        with patch.object(canvas, "isVisible", return_value=True):
+            canvas.move_viewport_by(100.0, 0.0)
+        assert [request.purpose for request in recorder.requests] == [
+            "focus_preview",
+            "native",
+        ]
+        assert recorder.requests[0].priority < recorder.requests[1].priority
+        assert recorder.requests[0].generation == canvas._view_generation  # noqa: SLF001
+        assert recorder.requests[1].generation == canvas._view_generation  # noqa: SLF001
+        assert recorder.requests[1].velocity_px_per_second[0] > 0.0
+        assert recorder.requests[1].velocity_px_per_second[1] == 0.0
     finally:
         canvas._renderer = None  # noqa: SLF001
         canvas.clear_document()
@@ -1346,6 +1366,149 @@ def test_native_focus_preview_replaces_handoff_atomically_before_exact() -> None
         )
         assert canvas._coarse_render_frame is None  # noqa: SLF001
         assert center_color() == QColor("#2A9D8F")
+    finally:
+        canvas._renderer = None  # noqa: SLF001
+        canvas.clear_document()
+        canvas.close()
+
+
+def test_full_field_native_step_replaces_screen_handoff_atomically() -> None:
+    _app = QApplication.instance() or QApplication([])
+
+    class RecordingRenderer:
+        def __init__(self) -> None:
+            self.requests: list[DigitalSlideRenderRequest] = []
+
+        def submit(self, request: DigitalSlideRenderRequest) -> None:
+            self.requests.append(request)
+
+        def close(self, *, timeout: float = 2.0) -> None:
+            del timeout
+
+    document = ImageDocument(
+        id="atomic-navigation-preview",
+        path="/tmp/atomic-navigation-preview.fdmslide",
+        image_size=(800, 640),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.resize(440, 360)
+    canvas.set_document(document, _tile_image(100, 80, "#D72B3F"))
+    canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        version=1,
+        width=800,
+        height=640,
+        viewport_width=100,
+        viewport_height=80,
+        focus_levels=[0],
+    )
+    canvas._browse_center = Point(250.0, 200.0)  # noqa: SLF001
+    canvas._zoom = canvas._native_field_fit_zoom()  # noqa: SLF001
+    canvas._sync_pan_from_browse_center()  # noqa: SLF001
+    canvas._update_native_viewport_origin()  # noqa: SLF001
+    old_origin = canvas.viewport_origin()
+    old_frame = DigitalSlideRenderFrame(
+        request_id=1,
+        purpose="native",
+        source_rect=(old_origin.x, old_origin.y, 100.0, 80.0),
+        output_size_px=(100, 80),
+        focus_index=0,
+        device_pixel_ratio=1.0,
+        lod=0,
+        image=_tile_image(100, 80, "#D72B3F"),
+        elapsed_ms=1.0,
+        decoded_tiles=1,
+        cache_hits=0,
+        generation=canvas._view_generation,  # noqa: SLF001
+        quality="final",
+        pixel_exact=True,
+        coverage_rects=((old_origin.x, old_origin.y, 100.0, 80.0),),
+    )
+    canvas._render_frame = old_frame  # noqa: SLF001
+    canvas._image = old_frame.image  # noqa: SLF001
+    canvas._native_frame_key = (  # noqa: SLF001
+        int(round(old_origin.x)),
+        int(round(old_origin.y)),
+        0,
+    )
+    canvas._native_frame_ever_ready = True  # noqa: SLF001
+    recorder = RecordingRenderer()
+    canvas._renderer = recorder  # type: ignore[assignment]  # noqa: SLF001
+
+    def center_color() -> QColor:
+        painted = QImage(canvas.size(), QImage.Format.Format_RGB32)
+        painted.fill(QColor("#000000"))
+        painter = QPainter(painted)
+        canvas._draw_base_image(painter)  # noqa: SLF001
+        painter.end()
+        return painted.pixelColor(
+            canvas._content_rect().center().toPoint()  # noqa: SLF001
+        )
+
+    try:
+        with patch.object(canvas, "isVisible", return_value=True):
+            canvas.move_viewport_by(100.0, 0.0)
+        assert center_color() == QColor("#D72B3F")
+        assert canvas._navigation_transition_image is not None  # noqa: SLF001
+
+        preview_request = next(
+            request
+            for request in recorder.requests
+            if request.purpose == "focus_preview"
+        )
+        new_origin = canvas.viewport_origin()
+        preview_frame = DigitalSlideRenderFrame(
+            request_id=preview_request.request_id,
+            purpose="focus_preview",
+            source_rect=preview_request.source_rect,
+            output_size_px=preview_request.output_size_px,
+            focus_index=0,
+            device_pixel_ratio=1.0,
+            lod=1,
+            image=_tile_image(*preview_request.output_size_px, "#2774C7"),
+            elapsed_ms=2.0,
+            decoded_tiles=1,
+            cache_hits=0,
+            generation=canvas._view_generation,  # noqa: SLF001
+            quality="coarse",
+            pixel_exact=False,
+            coverage_rects=((new_origin.x, new_origin.y, 100.0, 80.0),),
+            complete=False,
+        )
+        canvas._on_render_frame_ready(preview_frame)  # noqa: SLF001
+        assert canvas._navigation_transition_image is not None  # noqa: SLF001
+        assert center_color() == QColor("#D72B3F")
+
+        canvas._on_render_frame_ready(  # noqa: SLF001
+            replace(preview_frame, complete=True)
+        )
+        assert canvas._navigation_transition_image is None  # noqa: SLF001
+        assert center_color() == QColor("#2774C7")
+        assert not canvas.pixel_work_enabled()
+
+        native_request = next(
+            request for request in recorder.requests if request.purpose == "native"
+        )
+        exact_frame = DigitalSlideRenderFrame(
+            request_id=native_request.request_id,
+            purpose="native",
+            source_rect=native_request.source_rect,
+            output_size_px=native_request.output_size_px,
+            focus_index=0,
+            device_pixel_ratio=1.0,
+            lod=0,
+            image=_tile_image(100, 80, "#2A9D8F"),
+            elapsed_ms=3.0,
+            decoded_tiles=1,
+            cache_hits=1,
+            generation=canvas._view_generation,  # noqa: SLF001
+            quality="final",
+            pixel_exact=True,
+            coverage_rects=((new_origin.x, new_origin.y, 100.0, 80.0),),
+        )
+        canvas._on_render_frame_ready(exact_frame)  # noqa: SLF001
+        assert center_color() == QColor("#2A9D8F")
+        assert canvas.pixel_work_enabled()
     finally:
         canvas._renderer = None  # noqa: SLF001
         canvas.clear_document()
