@@ -53,9 +53,14 @@ _BROWSE_VIEW_VERSION = 1
 _VIEW_MARGIN = 20.0
 _PIXEL_WORK_EPSILON = 1.0e-9
 _NATIVE_VIEWPORT_INDICATOR_MS = 1200
-_FOCUS_SETTLE_MS = 75
+_NAVIGATION_SETTLE_MS = 75
+_FOCUS_SETTLE_COLD_MS = 50
+_FOCUS_SETTLE_PREVIEW_HIT_MS = 30
 _COARSE_FRAME_MAX_EDGE = 512
 _PRESENTATION_PREVIEW_MAX_EDGE = 1024
+_NATIVE_FOCUS_PREVIEW_MAX_EDGE = 1024
+_FOCUS_PREVIEW_CACHE_LIMIT = 8
+_FOCUS_PREVIEW_CACHE_BYTES = 32 * 1024 * 1024
 # Whole-slide display frames remain byte-bounded below.  Keeping several exact
 # native focus planes avoids falling back to a proxy when users scrub the same
 # acquisition field back and forth across more than three focus levels.
@@ -107,6 +112,10 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._presentation_preview_cache: OrderedDict[
             int, DigitalSlideRenderFrame
         ] = OrderedDict()
+        self._focus_preview_cache: OrderedDict[
+            tuple[object, ...], DigitalSlideRenderFrame
+        ] = OrderedDict()
+        self._focus_preview_cache_bytes = 0
         self._display_frame_cache: OrderedDict[
             tuple[object, ...], DigitalSlideRenderFrame
         ] = OrderedDict()
@@ -119,6 +128,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._renderer: DigitalSlideRenderer | None = None
         self._render_request_id = 0
         self._latest_preview_request_id = 0
+        self._latest_focus_preview_request_id = 0
         self._latest_coarse_request_id = 0
         self._latest_display_request_id = 0
         self._latest_native_request_id = 0
@@ -147,7 +157,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._smooth_nav_timer.timeout.connect(self._apply_smooth_navigation)
         self._final_render_timer = QTimer(self)
         self._final_render_timer.setSingleShot(True)
-        self._final_render_timer.setInterval(_FOCUS_SETTLE_MS)
+        self._final_render_timer.setInterval(_NAVIGATION_SETTLE_MS)
         self._final_render_timer.timeout.connect(self._request_final_frame)
         self._viewport_buffer_error_blocked = False
         self._viewport_buffer_last_error = ""
@@ -189,6 +199,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._coarse_render_frame = None
         self._presentation_preview_frame = None
         self._presentation_preview_cache.clear()
+        self._clear_focus_preview_cache()
         self._clear_display_frame_cache()
         self._native_viewport_indicator_timer.stop()
         self._native_viewport_indicator_visible = False
@@ -336,6 +347,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._coarse_render_frame = None
         self._presentation_preview_frame = None
         self._presentation_preview_cache.clear()
+        self._clear_focus_preview_cache()
         self._clear_display_frame_cache()
         self._focus_transition_frame = None
         self._focus_transition_image = None
@@ -361,6 +373,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._stop_renderer()
         self._view_generation += 1
         self._latest_preview_request_id += 1
+        self._latest_focus_preview_request_id += 1
         self._latest_coarse_request_id += 1
         self._latest_display_request_id += 1
         self._latest_native_request_id += 1
@@ -560,6 +573,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._start_renderer()
         self._presentation_preview_frame = None
         self._presentation_preview_cache.clear()
+        self._clear_focus_preview_cache()
         self._clear_display_frame_cache()
         self._native_frame_key = None
         self._native_frame_pending_key = None
@@ -837,6 +851,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         renderer = self._renderer
         self._renderer = None
         self._latest_preview_request_id = 0
+        self._latest_focus_preview_request_id = 0
         self._latest_coarse_request_id = 0
         self._latest_display_request_id = 0
         self._latest_native_request_id = 0
@@ -890,6 +905,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def _request_interactive_frames(self) -> None:
         if self._restore_cached_final_frame():
+            self._final_render_timer.stop()
             self._update_pixel_work_state()
             self.update()
             return
@@ -900,6 +916,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             # display-quality work gets a chance to replace the proxy before
             # the user releases the key or mouse.
             if not self._final_render_timer.isActive():
+                self._final_render_timer.setInterval(_NAVIGATION_SETTLE_MS)
                 self._final_render_timer.start()
             return
         # At native-field scale a 512px display proxy is visibly softer than
@@ -912,18 +929,28 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._request_native_frame()
 
     def _request_focus_frames(self) -> None:
-        """Schedule a focus handoff without painting native-scale proxies."""
+        """Schedule an atomic target-focus preview, then one exact final frame."""
 
         if self._restore_cached_final_frame():
+            self._final_render_timer.stop()
             self._update_pixel_work_state()
             self.update()
             return
         if self.large_area_browse_active():
             self._request_presentation_preview()
             self._request_coarse_frame()
+            self._final_render_timer.setInterval(_NAVIGATION_SETTLE_MS)
+        else:
+            preview_hit = self._request_native_focus_preview()
+            self._final_render_timer.setInterval(
+                _FOCUS_SETTLE_PREVIEW_HIT_MS
+                if preview_hit
+                else _FOCUS_SETTLE_COLD_MS
+            )
         # Rapid wheel input restarts this timer, so intermediate focus planes
-        # never launch full LOD0 work.  The exact old-focus handoff stays visible
-        # until the final target focus is requested.
+        # never launch full LOD0 work.  Unlike the old native-scale policy, the
+        # target plane can still replace the handoff with one complete LOD
+        # preview while input continues.
         self._final_render_timer.start()
 
     def _request_presentation_preview(self) -> None:
@@ -1039,6 +1066,128 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
         )
 
+    def _native_focus_preview_spec(
+        self,
+    ) -> tuple[
+        tuple[float, float, float, float],
+        tuple[int, int],
+    ] | None:
+        if self._slide_manifest is None:
+            return None
+        key = self._native_request_key()
+        source_width = max(1, int(self._slide_manifest.viewport_width))
+        source_height = max(1, int(self._slide_manifest.viewport_height))
+        scale = min(
+            1.0,
+            float(_NATIVE_FOCUS_PREVIEW_MAX_EDGE)
+            / max(source_width, source_height),
+        )
+        return (
+            (
+                float(key[0]),
+                float(key[1]),
+                float(source_width),
+                float(source_height),
+            ),
+            (
+                max(1, int(round(source_width * scale))),
+                max(1, int(round(source_height * scale))),
+            ),
+        )
+
+    def _focus_preview_cache_key(
+        self,
+        *,
+        focus_index: int | None = None,
+        source_rect: tuple[float, float, float, float] | None = None,
+        output_size_px: tuple[int, int] | None = None,
+    ) -> tuple[object, ...] | None:
+        spec = self._native_focus_preview_spec()
+        if spec is None:
+            return None
+        desired_source, desired_output = spec
+        return self._frame_cache_key(
+            purpose="focus_preview",
+            focus_index=(
+                int(self._focus_index)
+                if focus_index is None
+                else int(focus_index)
+            ),
+            source_rect=(
+                desired_source if source_rect is None else source_rect
+            ),
+            output_size_px=(
+                desired_output if output_size_px is None else output_size_px
+            ),
+            device_pixel_ratio=1.0,
+        )
+
+    def _restore_cached_focus_preview(self) -> bool:
+        key = self._focus_preview_cache_key()
+        if key is None:
+            return False
+        cached = self._focus_preview_cache.get(key)
+        if cached is None:
+            return False
+        self._focus_preview_cache.move_to_end(key)
+        self._render_request_id += 1
+        self._latest_focus_preview_request_id = self._render_request_id
+        record_preview_hit = getattr(
+            self._renderer,
+            "record_preview_memory_hit",
+            None,
+        )
+        if callable(record_preview_hit):
+            record_preview_hit()
+        self._on_render_frame_ready(
+            replace(
+                cached,
+                request_id=self._render_request_id,
+                generation=int(self._view_generation),
+                elapsed_ms=0.0,
+                decoded_tiles=0,
+                cache_hits=max(1, int(cached.cache_hits)),
+            )
+        )
+        return True
+
+    def _request_native_focus_preview(self) -> bool:
+        """Request one complete local LOD frame for an exact-scale focus handoff."""
+
+        if (
+            self._viewport_buffer_error_blocked
+            or self._slide_manifest is None
+            or not self.isVisible()
+            or self.large_area_browse_active()
+        ):
+            return False
+        if self._restore_cached_focus_preview():
+            return True
+        self._start_renderer()
+        renderer = self._renderer
+        spec = self._native_focus_preview_spec()
+        if renderer is None or spec is None:
+            return False
+        source_rect, output_size_px = spec
+        self._render_request_id += 1
+        self._latest_focus_preview_request_id = self._render_request_id
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=self._render_request_id,
+                purpose="focus_preview",
+                source_rect=source_rect,
+                output_size_px=output_size_px,
+                focus_index=int(self._focus_index),
+                device_pixel_ratio=1.0,
+                blend_width=self._blend_width(),
+                generation=int(self._view_generation),
+                quality="coarse",
+                priority=0,
+                focus_direction=int(self._focus_direction),
+            )
+        )
+        return False
+
     def _request_final_frame(self) -> None:
         if self._restore_cached_final_frame():
             self._update_pixel_work_state()
@@ -1140,6 +1289,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 force_lod=0,
                 generation=int(self._view_generation),
                 quality="final",
+                preview_max_edge=_NATIVE_FOCUS_PREVIEW_MAX_EDGE,
                 priority=2,
                 focus_direction=int(self._focus_direction),
             )
@@ -1286,9 +1436,50 @@ class DigitalSlideCanvas(DocumentCanvas):
                 - max(0, int(removed.image.sizeInBytes())),
             )
 
+    def _remember_focus_preview(self, frame: DigitalSlideRenderFrame) -> None:
+        if (
+            frame.purpose != "focus_preview"
+            or frame.quality == "placeholder"
+            or not frame.complete
+            or frame.image.isNull()
+        ):
+            return
+        image_bytes = max(0, int(frame.image.sizeInBytes()))
+        if image_bytes <= 0 or image_bytes > _FOCUS_PREVIEW_CACHE_BYTES:
+            return
+        key = self._focus_preview_cache_key(
+            focus_index=frame.focus_index,
+            source_rect=frame.source_rect,
+            output_size_px=frame.output_size_px,
+        )
+        if key is None:
+            return
+        previous = self._focus_preview_cache.pop(key, None)
+        if previous is not None:
+            self._focus_preview_cache_bytes -= max(
+                0,
+                int(previous.image.sizeInBytes()),
+            )
+        self._focus_preview_cache[key] = frame
+        self._focus_preview_cache_bytes += image_bytes
+        while self._focus_preview_cache and (
+            len(self._focus_preview_cache) > _FOCUS_PREVIEW_CACHE_LIMIT
+            or self._focus_preview_cache_bytes > _FOCUS_PREVIEW_CACHE_BYTES
+        ):
+            _, removed = self._focus_preview_cache.popitem(last=False)
+            self._focus_preview_cache_bytes = max(
+                0,
+                self._focus_preview_cache_bytes
+                - max(0, int(removed.image.sizeInBytes())),
+            )
+
     def _clear_display_frame_cache(self) -> None:
         self._display_frame_cache.clear()
         self._display_frame_cache_bytes = 0
+
+    def _clear_focus_preview_cache(self) -> None:
+        self._focus_preview_cache.clear()
+        self._focus_preview_cache_bytes = 0
 
     @staticmethod
     def _history_frame(
@@ -1459,6 +1650,32 @@ class DigitalSlideCanvas(DocumentCanvas):
             or frame.generation != self._view_generation
         ):
             return
+        if frame.purpose == "focus_preview":
+            if (
+                frame.request_id != self._latest_focus_preview_request_id
+                or not frame.complete
+                or frame.quality == "placeholder"
+                or frame.image.isNull()
+            ):
+                return
+            if (
+                self._render_frame is not None
+                and self._render_frame.generation == self._view_generation
+                and self._render_frame.focus_index == self._focus_index
+                and self._render_frame.quality == "final"
+            ):
+                return
+            # The worker never publishes progressive focus-preview snapshots.
+            # Replace the old-focus handoff only after the complete target
+            # image is ready, so a paint can contain one focus plane but never
+            # a low-resolution overlay of two planes.
+            self._coarse_render_frame = frame
+            self._remember_focus_preview(frame)
+            self._focus_transition_frame = None
+            self._focus_transition_image = None
+            self._focus_transition_native_rect = None
+            self.update()
+            return
         if frame.purpose == "coarse":
             if frame.request_id != self._latest_coarse_request_id:
                 return
@@ -1559,6 +1776,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             "native": self._latest_native_request_id,
             "overview": self._latest_overview_request_id,
             "preview": self._latest_preview_request_id,
+            "focus_preview": self._latest_focus_preview_request_id,
             "coarse": self._latest_coarse_request_id,
             "display": self._latest_display_request_id,
         }.get(failure.purpose, 0)
@@ -1584,7 +1802,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         elif failure.purpose == "preview":
             return
-        elif failure.purpose == "coarse":
+        elif failure.purpose in {"coarse", "focus_preview"}:
             # The exact request remains scheduled.  Preserve all active vector
             # drafts and the last presentation while it retries/refines.
             return
@@ -2668,6 +2886,7 @@ class DigitalSlideCanvas(DocumentCanvas):
     def _invalidate_viewport_buffer(self) -> None:
         self._latest_display_request_id += 1
         self._latest_native_request_id += 1
+        self._latest_focus_preview_request_id += 1
         self._render_frame = None
         self._previous_render_frame = None
         self._focus_transition_frame = None

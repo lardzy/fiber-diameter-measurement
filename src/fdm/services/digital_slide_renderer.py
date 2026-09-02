@@ -581,7 +581,7 @@ class DigitalSlideRenderer:
             self._advance_generation_locked(int(request.generation))
             if request.purpose == "preview":
                 self._latest_probe = request
-            elif request.purpose == "coarse":
+            elif request.purpose in {"coarse", "focus_preview"}:
                 self._latest_coarse = request
             elif request.purpose == "native":
                 self._latest_native = request
@@ -786,7 +786,7 @@ class DigitalSlideRenderer:
                     self._completed += 1
                     if request.purpose in {"preview", "overview"}:
                         self._last_preview_ms = float(frame.elapsed_ms)
-                    elif request.purpose == "coarse":
+                    elif request.purpose in {"coarse", "focus_preview"}:
                         self._last_coarse_ms = float(frame.elapsed_ms)
                     else:
                         self._last_final_ms = float(frame.elapsed_ms)
@@ -851,7 +851,7 @@ class DigitalSlideRenderer:
     ) -> DigitalSlideRenderRequest | None:
         if purpose == "preview":
             return self._latest_probe
-        if purpose == "coarse":
+        if purpose in {"coarse", "focus_preview"}:
             return self._latest_coarse
         if purpose == "native":
             return self._latest_native
@@ -1422,7 +1422,7 @@ class DigitalSlideRenderer:
         store: DigitalSlideStore,
         request: DigitalSlideRenderRequest,
     ) -> None:
-        """Warm a display LOD for the two focus planes nearest the stable one."""
+        """Warm preview first, then exact tiles for adjacent focus planes."""
 
         focus_count = max(1, len(self.manifest.focus_levels))
         direction = 1 if request.focus_direction > 0 else -1
@@ -1438,13 +1438,21 @@ class DigitalSlideRenderer:
         )
         if not adjacent:
             return
-        # Native interaction now paints only exact frames.  Warming another
-        # display LOD would still require a cold LOD0 decode after focus settles
-        # and would recreate the visible proxy interval this prefetch is meant
-        # to remove.
-        lod = 0
-        for focus_index in adjacent:
-            descriptors = sorted(
+        preview_edge = max(1, int(request.preview_max_edge or 1024))
+        source_width = max(1.0, float(request.source_rect[2]))
+        source_height = max(1.0, float(request.source_rect[3]))
+        preview_scale = min(
+            1.0,
+            float(preview_edge) / max(source_width, source_height),
+        )
+        preview_lod = _lod_for_scale(
+            source_width,
+            source_height,
+            max(1, int(round(source_width * preview_scale))),
+            max(1, int(round(source_height * preview_scale))),
+        )
+        descriptors_by_focus = {
+            focus_index: sorted(
                 self._descriptors_in_rect(
                     store,
                     focus_index,
@@ -1452,18 +1460,24 @@ class DigitalSlideRenderer:
                 ),
                 key=_progressive_descriptor_key,
             )
-            for descriptor in descriptors:
-                with self._condition:
-                    interrupted = (
-                        self._latest_probe is not None
-                        or self._latest_coarse is not None
-                        or self._latest_display is not None
-                        or self._latest_native is not None
-                        or self._closed
-                    )
-                if interrupted:
-                    return
-                self._tile_image(store, descriptor, lod)
+            for focus_index in adjacent
+        }
+        # A complete local preview is the first visible response to focus input.
+        # Warm its LOD for both neighbours before spending idle time on LOD0.
+        for lod in dict.fromkeys((preview_lod, 0)):
+            for focus_index in adjacent:
+                for descriptor in descriptors_by_focus[focus_index]:
+                    with self._condition:
+                        interrupted = (
+                            self._latest_probe is not None
+                            or self._latest_coarse is not None
+                            or self._latest_display is not None
+                            or self._latest_native is not None
+                            or self._closed
+                        )
+                    if interrupted:
+                        return
+                    self._tile_image(store, descriptor, lod)
 
 
 def _lod_for_scale(

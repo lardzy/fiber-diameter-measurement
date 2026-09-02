@@ -247,6 +247,71 @@ def test_renderer_uses_real_sqlite_tiles_lod_and_bounded_shared_cache(
         second_renderer.close()
 
 
+def test_renderer_completes_atomic_focus_preview_before_native_exact(
+    tmp_path: Path,
+) -> None:
+    store = _create_coordinate_slide(tmp_path / "focus-preview-order.fdmslide")
+    manifest = store.read_manifest()
+    store.close()
+    results: list[DigitalSlideRenderFrame] = []
+    failures: list[DigitalSlideRenderFailure] = []
+    renderer = DigitalSlideRenderer(
+        tmp_path / "focus-preview-order.fdmslide",
+        manifest,
+        cache_root=tmp_path / "derived-cache",
+        disk_cache_bytes=0,
+        result_callback=results.append,
+        failure_callback=failures.append,
+    )
+    source_rect = (0.0, 0.0, 100.0, 80.0)
+    try:
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=1,
+                purpose="focus_preview",
+                source_rect=source_rect,
+                output_size_px=(50, 40),
+                focus_index=1,
+                device_pixel_ratio=1.0,
+                generation=1,
+                quality="coarse",
+                priority=0,
+            )
+        )
+        renderer.submit(
+            DigitalSlideRenderRequest(
+                request_id=2,
+                purpose="native",
+                source_rect=source_rect,
+                output_size_px=(100, 80),
+                focus_index=1,
+                device_pixel_ratio=1.0,
+                force_lod=0,
+                generation=1,
+                quality="final",
+                priority=2,
+            )
+        )
+        deadline = monotonic() + 4.0
+        while len(results) < 2 and not failures and monotonic() < deadline:
+            sleep(0.005)
+
+        assert failures == []
+        assert [frame.purpose for frame in results] == [
+            "focus_preview",
+            "native",
+        ]
+        preview = results[0]
+        assert preview.complete
+        assert preview.quality == "coarse"
+        assert not preview.pixel_exact
+        assert preview.lod == 1
+        assert results[1].pixel_exact
+        assert renderer.stats().pending_requests == 0
+    finally:
+        renderer.close()
+
+
 def test_derived_cache_fingerprint_invalidates_and_shared_budget_is_strict(
     tmp_path: Path,
 ) -> None:
@@ -1038,7 +1103,7 @@ def test_repeated_full_field_steps_never_expose_dark_workspace_background(
         store.close()
 
 
-def test_focus_wheel_debounce_submits_only_one_canonical_exact_request() -> None:
+def test_focus_wheel_uses_atomic_previews_and_one_canonical_exact_request() -> None:
     app = QApplication.instance() or QApplication([])
 
     class RecordingRenderer:
@@ -1096,6 +1161,19 @@ def test_focus_wheel_debounce_submits_only_one_canonical_exact_request() -> None
         assert native_requests[0].force_lod == 0
         assert native_requests[0].focus_direction == 1
         assert not any(request.purpose == "display" for request in recorder.requests)
+        focus_preview_requests = [
+            request
+            for request in recorder.requests
+            if request.purpose == "focus_preview"
+        ]
+        assert [request.focus_index for request in focus_preview_requests] == [1, 2, 3]
+        assert all(
+            request.generation <= canvas._view_generation  # noqa: SLF001
+            for request in focus_preview_requests
+        )
+        assert focus_preview_requests[-1].generation == canvas._view_generation  # noqa: SLF001
+        assert focus_preview_requests[-1].quality == "coarse"
+        assert focus_preview_requests[-1].output_size_px == (100, 80)
         coarse_requests = [
             request for request in recorder.requests if request.purpose == "coarse"
         ]
@@ -1110,6 +1188,239 @@ def test_focus_wheel_debounce_submits_only_one_canonical_exact_request() -> None
         assert any(
             request.purpose == "native" for request in recorder.requests
         )
+    finally:
+        canvas._renderer = None  # noqa: SLF001
+        canvas.clear_document()
+        canvas.close()
+
+
+def test_native_focus_preview_replaces_handoff_atomically_before_exact() -> None:
+    _app = QApplication.instance() or QApplication([])
+
+    class RecordingRenderer:
+        def __init__(self) -> None:
+            self.requests: list[DigitalSlideRenderRequest] = []
+
+        def submit(self, request: DigitalSlideRenderRequest) -> None:
+            self.requests.append(request)
+
+        def close(self, *, timeout: float = 2.0) -> None:
+            del timeout
+
+    document = ImageDocument(
+        id="atomic-focus-preview",
+        path="/tmp/atomic-focus-preview.fdmslide",
+        image_size=(800, 640),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.resize(440, 360)
+    canvas.set_document(document, _tile_image(100, 80, "#D72B3F"))
+    canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        version=1,
+        width=800,
+        height=640,
+        viewport_width=100,
+        viewport_height=80,
+        focus_levels=[-1, 0, 1],
+    )
+    canvas._browse_center = Point(250.0, 200.0)  # noqa: SLF001
+    canvas._focus_index = 0  # noqa: SLF001
+    canvas._zoom = canvas._native_field_fit_zoom()  # noqa: SLF001
+    canvas._sync_pan_from_browse_center()  # noqa: SLF001
+    canvas._update_native_viewport_origin()  # noqa: SLF001
+    origin = canvas.viewport_origin()
+    old_frame = DigitalSlideRenderFrame(
+        request_id=1,
+        purpose="native",
+        source_rect=(origin.x, origin.y, 100.0, 80.0),
+        output_size_px=(100, 80),
+        focus_index=0,
+        device_pixel_ratio=1.0,
+        lod=0,
+        image=_tile_image(100, 80, "#D72B3F"),
+        elapsed_ms=1.0,
+        decoded_tiles=1,
+        cache_hits=0,
+        generation=canvas._view_generation,  # noqa: SLF001
+        quality="final",
+        pixel_exact=True,
+        coverage_rects=((origin.x, origin.y, 100.0, 80.0),),
+    )
+    canvas._render_frame = old_frame  # noqa: SLF001
+    canvas._image = old_frame.image  # noqa: SLF001
+    canvas._native_frame_key = (  # noqa: SLF001
+        int(round(origin.x)),
+        int(round(origin.y)),
+        0,
+    )
+    canvas._native_frame_ever_ready = True  # noqa: SLF001
+    recorder = RecordingRenderer()
+    canvas._renderer = recorder  # type: ignore[assignment]  # noqa: SLF001
+
+    def center_color() -> QColor:
+        painted = QImage(canvas.size(), QImage.Format.Format_RGB32)
+        painted.fill(QColor("#000000"))
+        painter = QPainter(painted)
+        canvas._draw_base_image(painter)  # noqa: SLF001
+        painter.end()
+        return painted.pixelColor(
+            canvas._content_rect().center().toPoint()  # noqa: SLF001
+        )
+
+    try:
+        with patch.object(canvas, "isVisible", return_value=True):
+            canvas.set_focus_index(1)
+        canvas._final_render_timer.stop()  # noqa: SLF001
+        preview_request = next(
+            request
+            for request in recorder.requests
+            if request.purpose == "focus_preview"
+        )
+        target_preview = DigitalSlideRenderFrame(
+            request_id=preview_request.request_id,
+            purpose="focus_preview",
+            source_rect=preview_request.source_rect,
+            output_size_px=preview_request.output_size_px,
+            focus_index=1,
+            device_pixel_ratio=1.0,
+            lod=1,
+            image=_tile_image(*preview_request.output_size_px, "#2774C7"),
+            elapsed_ms=2.0,
+            decoded_tiles=1,
+            cache_hits=0,
+            generation=canvas._view_generation,  # noqa: SLF001
+            quality="coarse",
+            pixel_exact=False,
+            coverage_rects=((origin.x, origin.y, 100.0, 80.0),),
+            complete=False,
+        )
+        canvas._on_render_frame_ready(target_preview)  # noqa: SLF001
+        assert canvas._coarse_render_frame is None  # noqa: SLF001
+        assert canvas._focus_transition_frame is old_frame  # noqa: SLF001
+        assert center_color() == QColor("#D72B3F")
+
+        canvas._on_render_frame_ready(  # noqa: SLF001
+            replace(target_preview, complete=True)
+        )
+        assert canvas._focus_transition_frame is None  # noqa: SLF001
+        assert canvas._coarse_render_frame is not None  # noqa: SLF001
+        assert canvas._coarse_render_frame.focus_index == 1  # noqa: SLF001
+        assert center_color() == QColor("#2774C7")
+        assert not canvas.pixel_work_enabled()
+        assert canvas.vector_measurement_available(
+            Point(origin.x + 50.0, origin.y + 40.0)
+        )
+        assert len(canvas._focus_preview_cache) == 1  # noqa: SLF001
+
+        with patch.object(canvas, "isVisible", return_value=True):
+            canvas._request_native_frame()  # noqa: SLF001
+        native_request = next(
+            request for request in recorder.requests if request.purpose == "native"
+        )
+        exact_frame = DigitalSlideRenderFrame(
+            request_id=native_request.request_id,
+            purpose="native",
+            source_rect=native_request.source_rect,
+            output_size_px=native_request.output_size_px,
+            focus_index=1,
+            device_pixel_ratio=1.0,
+            lod=0,
+            image=_tile_image(100, 80, "#2A9D8F"),
+            elapsed_ms=3.0,
+            decoded_tiles=1,
+            cache_hits=1,
+            generation=canvas._view_generation,  # noqa: SLF001
+            quality="final",
+            pixel_exact=True,
+            coverage_rects=((origin.x, origin.y, 100.0, 80.0),),
+        )
+        canvas._on_render_frame_ready(exact_frame)  # noqa: SLF001
+        assert canvas.pixel_work_enabled()
+        assert canvas._coarse_render_frame is None  # noqa: SLF001
+        assert center_color() == QColor("#2A9D8F")
+
+        # A late preview can never cover a current exact frame.
+        canvas._on_render_frame_ready(  # noqa: SLF001
+            replace(target_preview, complete=True)
+        )
+        assert canvas._coarse_render_frame is None  # noqa: SLF001
+        assert center_color() == QColor("#2A9D8F")
+    finally:
+        canvas._renderer = None  # noqa: SLF001
+        canvas.clear_document()
+        canvas.close()
+
+
+def test_native_focus_preview_cache_restores_without_worker_request() -> None:
+    class RecordingRenderer:
+        def __init__(self) -> None:
+            self.requests: list[DigitalSlideRenderRequest] = []
+            self.preview_hits = 0
+
+        def submit(self, request: DigitalSlideRenderRequest) -> None:
+            self.requests.append(request)
+
+        def record_preview_memory_hit(self) -> None:
+            self.preview_hits += 1
+
+        def close(self, *, timeout: float = 2.0) -> None:
+            del timeout
+
+    document = ImageDocument(
+        id="focus-preview-cache",
+        path="/tmp/focus-preview-cache.fdmslide",
+        image_size=(800, 640),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.resize(440, 360)
+    canvas.set_document(document, _tile_image(100, 80, "#ffffff"))
+    canvas._slide_manifest = DigitalSlideManifest(  # noqa: SLF001
+        version=1,
+        width=800,
+        height=640,
+        viewport_width=100,
+        viewport_height=80,
+        focus_levels=[-1, 0, 1],
+    )
+    canvas._browse_center = Point(250.0, 200.0)  # noqa: SLF001
+    canvas._focus_index = 1  # noqa: SLF001
+    canvas._zoom = canvas._native_field_fit_zoom()  # noqa: SLF001
+    canvas._sync_pan_from_browse_center()  # noqa: SLF001
+    canvas._update_native_viewport_origin()  # noqa: SLF001
+    origin = canvas.viewport_origin()
+    cached = DigitalSlideRenderFrame(
+        request_id=1,
+        purpose="focus_preview",
+        source_rect=(origin.x, origin.y, 100.0, 80.0),
+        output_size_px=(100, 80),
+        focus_index=1,
+        device_pixel_ratio=1.0,
+        lod=1,
+        image=_tile_image(100, 80, "#2774C7"),
+        elapsed_ms=2.0,
+        decoded_tiles=1,
+        cache_hits=0,
+        generation=1,
+        quality="coarse",
+        pixel_exact=False,
+        coverage_rects=((origin.x, origin.y, 100.0, 80.0),),
+    )
+    canvas._remember_focus_preview(cached)  # noqa: SLF001
+    recorder = RecordingRenderer()
+    canvas._renderer = recorder  # type: ignore[assignment]  # noqa: SLF001
+    canvas._view_generation = 7  # noqa: SLF001
+    try:
+        with patch.object(canvas, "isVisible", return_value=True):
+            assert canvas._request_native_focus_preview()  # noqa: SLF001
+        restored = canvas._coarse_render_frame  # noqa: SLF001
+        assert restored is not None
+        assert restored.focus_index == 1
+        assert restored.generation == 7
+        assert restored.image.cacheKey() == cached.image.cacheKey()
+        assert recorder.requests == []
+        assert recorder.preview_hits == 1
     finally:
         canvas._renderer = None  # noqa: SLF001
         canvas.clear_document()
