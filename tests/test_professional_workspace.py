@@ -670,9 +670,9 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
             [
                 window._current_measurement_summary,
                 window._object_properties_section,
-                window._statistics_section,
-                window._records_section,
                 window._calibration_section,
+                window._records_section,
+                window._statistics_section,
                 window._area_recognition_section,
             ],
         )
@@ -693,9 +693,9 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.app.processEvents()
         sections = (
             window._object_properties_section,
-            window._statistics_section,
-            window._records_section,
             window._calibration_section,
+            window._records_section,
+            window._statistics_section,
             window._area_recognition_section,
         )
 

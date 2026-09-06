@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from PySide6.QtCore import QObject, Qt, QTimer
 from PySide6.QtGui import QColor, QFontDatabase, QFontInfo, QPalette
 from PySide6.QtWidgets import QApplication, QStyleFactory, QWidget
 
@@ -9,7 +10,9 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
 _THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
 _THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
-_THEME_STYLE_REVISION = 4
+_THEME_STYLE_REVISION = 5
+_RESOLVED_THEME_PROPERTY = "fdmResolvedThemeMode"
+_BASE_STYLE_PROPERTY = "fdmBaseWidgetStyle"
 
 
 def _ensure_system_theme_snapshot(app: QApplication) -> tuple[str, QPalette]:
@@ -24,11 +27,19 @@ def _set_style_by_name(app: QApplication, style_name: str) -> None:
     token = str(style_name or "").strip()
     if not token:
         return
+    if app.style().objectName().casefold() == token.casefold():
+        app.setProperty(_BASE_STYLE_PROPERTY, token)
+        return
+    if (app.style().metaObject().className() == "QStyleSheetStyle"
+            and str(app.property(_BASE_STYLE_PROPERTY) or "").casefold() == token.casefold()):
+        return
     for candidate in QStyleFactory.keys():
         if candidate.casefold() == token.casefold():
             app.setStyle(candidate)
+            app.setProperty(_BASE_STYLE_PROPERTY, candidate)
             return
     app.setStyle(token)
+    app.setProperty(_BASE_STYLE_PROPERTY, token)
 
 
 def _set_role_color(
@@ -96,34 +107,69 @@ def build_light_palette() -> QPalette:
     return palette
 
 
+def _system_color_mode(app: QApplication) -> str:
+    scheme = app.styleHints().colorScheme()
+    if scheme == Qt.ColorScheme.Dark:
+        return AppThemeMode.DARK
+    if scheme == Qt.ColorScheme.Light:
+        return AppThemeMode.LIGHT
+    _, palette = _ensure_system_theme_snapshot(app)
+    return AppThemeMode.DARK if palette.color(QPalette.ColorRole.Window).lightness() < 128 else AppThemeMode.LIGHT
+
+
+class _SystemThemeObserver(QObject):
+    def __init__(self, app: QApplication):
+        super().__init__(app)
+        self._app = app
+        self._timer = QTimer(self)
+        self._timer.setSingleShot(True)
+        self._timer.timeout.connect(self._apply_system_colors)
+        app.styleHints().colorSchemeChanged.connect(self._scheme_changed)
+
+    def _scheme_changed(self, _scheme) -> None:
+        if self._app.property(_THEME_CACHE_PROPERTY) == AppThemeMode.SYSTEM:
+            # Qt emits colorSchemeChanged before installing the platform palette.
+            # Apply our semantic colors after that transition has completed.
+            self._timer.start(0)
+
+    def _apply_system_colors(self) -> None:
+        if self._app.property(_THEME_CACHE_PROPERTY) == AppThemeMode.SYSTEM:
+            apply_application_theme(self._app, AppThemeMode.SYSTEM)
+
+
 def apply_application_theme(app: QApplication, theme_mode: str | None) -> str:
     normalized = normalize_theme_mode(theme_mode)
+    _ensure_system_theme_snapshot(app)
+    resolved = _system_color_mode(app) if normalized == AppThemeMode.SYSTEM else normalized
+    if not hasattr(app, "_fdm_system_theme_observer"):
+        app._fdm_system_theme_observer = _SystemThemeObserver(app)
     if (
         app.property(_THEME_CACHE_PROPERTY) == normalized
+        and app.property(_RESOLVED_THEME_PROPERTY) == resolved
         and app.property(_THEME_STYLE_REVISION_PROPERTY) == _THEME_STYLE_REVISION
     ):
         # Reapplying an identical application palette broadcasts expensive
         # PaletteChange/StyleChange events to every open widget.  MainWindow
         # construction and repeated Apply presses must therefore be idempotent.
         return normalized
-    system_style_name, system_palette = _ensure_system_theme_snapshot(app)
-
-    if normalized == AppThemeMode.SYSTEM:
-        _set_style_by_name(app, system_style_name)
-        app.setPalette(QPalette(system_palette))
-    else:
-        _set_style_by_name(app, "Fusion")
-        if normalized == AppThemeMode.LIGHT:
-            app.setPalette(build_light_palette())
-        else:
-            app.setPalette(build_dark_palette())
-    system_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont)
-    resolved_family = QFontInfo(system_font).family()
-    if resolved_family:
-        system_font.setFamily(resolved_family)
-    app.setFont(system_font)
+    # Native controls can ignore palette roles and use different arrow metrics.
+    # System mode follows the OS color scheme with the same geometry as our
+    # explicit themes, including when the OS changes appearance while running.
+    _set_style_by_name(app, "Fusion")
+    app.setPalette(build_light_palette() if resolved == AppThemeMode.LIGHT else build_dark_palette())
+    if not app.property("fdmThemeFontInitialized"):
+        system_font = QFontDatabase.systemFont(QFontDatabase.SystemFont.GeneralFont)
+        resolved_family = QFontInfo(system_font).family()
+        if resolved_family:
+            system_font.setFamily(resolved_family)
+        app.setFont(system_font)
+        app.setProperty("fdmThemeFontInitialized", True)
+    # Repeating QApplication.setFont clears widget-class fonts on macOS,
+    # enlarging existing toolbar buttons even when the general font is equal.
+    # A color-scheme change must preserve those established font metrics.
     app.setStyleSheet(build_application_stylesheet())
     app.setProperty(_THEME_CACHE_PROPERTY, normalized)
+    app.setProperty(_RESOLVED_THEME_PROPERTY, resolved)
     app.setProperty(_THEME_STYLE_REVISION_PROPERTY, _THEME_STYLE_REVISION)
     return normalized
 
@@ -136,6 +182,22 @@ def build_application_stylesheet() -> str:
         QFrame#measurementContextBar, QFrame#captureTaskBar {
             background: palette(alternate-base);
             border-bottom: 1px solid palette(mid);
+        }
+        QFrame#imageNavigationGroup, QFrame#measurementCategoryGroup {
+            background: palette(base);
+            border: 1px solid palette(mid);
+            border-radius: 6px;
+        }
+        QFrame#imageNavigationGroup QComboBox,
+        QFrame#measurementCategoryGroup QComboBox {
+            border: 0; background: transparent;
+        }
+        QLabel#measurementCategoryLabel { color: palette(placeholder-text); }
+        QGroupBox#projectImages, QGroupBox#projectCategories {
+            background: transparent; border: 0;
+        }
+        QTabWidget#projectNavigationTabs::pane {
+            background: palette(window); border: 0;
         }
         QToolBar#measurementContextToolbar { padding: 0; spacing: 0; }
         QToolButton#persistentCalibrationButton[uncalibrated="true"] {
@@ -151,6 +213,9 @@ def build_application_stylesheet() -> str:
         }
         QFrame#currentMeasurementSummary {
             background: palette(base); border-bottom: 1px solid palette(mid);
+        }
+        QPushButton#currentObjectProperties:checked {
+            background: palette(alternate-base); border-color: palette(highlight);
         }
         QLabel#currentMeasurementValue { font-size: 18px; font-weight: 600; }
         QLabel#welcomeTitle { font-size: 24px; font-weight: 600; padding: 12px; }

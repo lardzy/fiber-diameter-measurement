@@ -7,19 +7,20 @@ from unittest.mock import patch
 os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 
 import pytest
-from PySide6.QtCore import QCoreApplication, QEvent, Qt
-from PySide6.QtGui import QImage
+from PySide6.QtCore import QCoreApplication, QEvent, QItemSelectionModel, QPoint, Qt
+from PySide6.QtGui import QFont, QImage, QPalette
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QLineEdit
+from PySide6.QtWidgets import QApplication, QLabel, QLineEdit, QStyle, QStyleOptionToolButton, QToolButton
 
 from fdm.geometry import Line, Point
 from fdm.models import Calibration, ImageDocument, Measurement, new_id
-from fdm.settings import AppSettings, RawRecordTemplate
+from fdm.settings import AppSettings, AppThemeMode, RawRecordTemplate
 from fdm.services.export_service import ExportImageRenderMode
 from fdm.ui.image_loader import ImageLoadRequest
 from fdm.ui.main_window import MainWindow
 from fdm.ui.canvas import AreaEditOperationMode, MagicSegmentOperationMode, MagicSegmentSubtractInputMode
 from fdm.ui.workbench_controls import CommandSearchDialog
+from fdm.ui import icons, theme
 
 
 @pytest.fixture
@@ -61,6 +62,216 @@ def mount(window, number, *, calibrated=True):
     document.add_measurement(measurement)
     window._add_loaded_document(ImageLoadRequest(path=document.path, document=document), image)
     return document
+
+
+def settle():
+    for _ in range(4):
+        QApplication.processEvents()
+
+
+@pytest.mark.parametrize("width", [1093, 1512])
+def test_legacy_toolbar_rows_recover_labels_through_project_close(window, width):
+    window.resize(width, 800)
+    window.removeToolBarBreak(window._context_toolbar)
+    legacy_state = window.saveState(2)
+    assert window.restoreState(legacy_state, 2)
+    documents = [mount(window, i) for i in range(12)]
+    window.set_tool_mode("count")
+    window._records_controller.select_measurement_id(documents[-1].measurements[0].id)
+    settle()
+    for _ in range(2):
+        tools, context = window._measure_toolbar, window._context_toolbar
+        assert window.toolBarBreak(tools)
+        assert window.toolBarBreak(context)
+        assert context.y() >= tools.geometry().bottom()
+        assert tools.width() == window.width()
+        assert not window._measurement_tool_strip._mode_buttons["count"].isCompactMode()
+        with patch.object(window, "_confirm_close_documents", return_value=True):
+            window.close_all_documents()
+        settle()
+    assert window.current_document() is None
+
+
+def test_minimum_project_width_contains_lists_headers_and_actions(window):
+    document = mount(window, 1)
+    document.create_group(label="用于验证窄栏的超长纤维类别名称", color="#446688")
+    window._populate_group_list(document)
+    window.resize(1512, 863)
+    settle()
+    window._project_dock.show()
+    window.resizeDocks([window._project_dock], [220], Qt.Orientation.Horizontal)
+    settle()
+    viewport = window._left_standard_splitter.viewport()
+    content = window._left_standard_splitter.widget()
+    assert window._project_dock.width() <= 222
+    assert content.width() == viewport.width()
+    for control in (window.image_list, window.group_list, *window._group_header_labels,
+                    window._add_group_button, window._rename_group_button, window.delete_group_button):
+        assert control.isVisible()
+        assert control.mapTo(viewport, QPoint(0, 0)).x() >= 0
+        assert control.mapTo(viewport, control.rect().bottomRight()).x() < viewport.width()
+    for index in range(window.group_list.count()):
+        item = window.group_list.itemWidget(window.group_list.item(index))
+        assert item.width() <= window.group_list.viewport().width()
+        assert item.mapTo(window.group_list.viewport(), item.rect().bottomRight()).x() < window.group_list.viewport().width()
+
+
+def test_selection_summary_reserves_height_for_empty_single_and_multiple(window):
+    document = mount(window, 1)
+    document.path = "/virtual/" + "很长的图片文件名" * 20 + ".png"
+    first = document.measurements[0]
+    second = Measurement(id=new_id("measurement"), image_id=document.id, fiber_group_id=first.fiber_group_id,
+                         mode="manual", line_px=Line(Point(20, 50), Point(100, 50)), confidence=1, status="manual")
+    document.add_measurement(second)
+    window._populate_measurement_table(document)
+    controller = window._records_controller
+    controller.select_measurement_id(None)
+    settle()
+    panel = window._current_measurement_summary
+    geometry = (panel.height(), window._statistics_section.y(), window._records_section.y())
+    for selection in ([first.id], [first.id, second.id], [], [second.id]):
+        controller.select_measurement_id(selection[0] if selection else None)
+        if len(selection) > 1:
+            index = controller.proxy_model.index(1, 0)
+            controller.selection_model.select(index, QItemSelectionModel.SelectionFlag.Select | QItemSelectionModel.SelectionFlag.Rows)
+        settle()
+        assert (panel.height(), window._statistics_section.y(), window._records_section.y()) == geometry
+        assert panel.groupCombo.isVisible()
+        assert panel.groupCombo.isEnabled() == (len(selection) == 1)
+    assert Path(document.path).name in panel.sourceLabel.toolTip()
+
+
+def test_current_object_properties_button_toggles_and_tracks_section(window):
+    mount(window, 1)
+    button = window._current_measurement_summary.editButton
+    section = window._object_properties_section
+    for expanded in (True, False, True):
+        QTest.mouseClick(button, Qt.MouseButton.LeftButton)
+        settle()
+        assert section.isExpanded() == expanded
+        assert section.isVisible() == expanded
+        assert button.isChecked() == expanded
+    section.toggleButton.click()
+    assert not button.isChecked()
+
+
+def test_inspector_count_has_one_badge_and_keeps_filter_totals(window):
+    mount(window, 1)
+    pane = window._inspector_records_pane
+    badge = window._records_section.summaryLabel
+    settle()
+    assert not pane.count_label.isVisible()
+    assert badge.text() == "1 条"
+    assert badge.width() < 90
+    pane.search_edit.setText("没有匹配的测量")
+    settle()
+    assert badge.text() == "0 / 1 条"
+    assert pane.table.model().rowCount() == 0
+    pane.search_edit.clear()
+    assert pane.table.model().rowCount() == 1
+
+
+def test_context_category_stays_adjacent_at_both_densities(window):
+    mount(window, 1)
+    window.set_tool_mode("polygon_area")
+    window._set_workbench_presentation("focus")
+    for width in (1512, 800):
+        window.resize(width, 800)
+        settle()
+        bar = window._measurement_context_bar
+        label = bar.findChild(QLabel, "measurementCategoryLabel")
+        label_right = label.mapTo(bar, label.rect().topRight()).x()
+        combo_left = bar.groups.mapTo(bar, QPoint(0, 0)).x()
+        assert 4 <= combo_left - label_right <= 12
+        for control in (bar.groups, bar.documents, bar.calibrationButton, window._area_operation_button):
+            assert bar.rect().contains(control.mapTo(bar, control.rect().bottomRight()))
+
+
+def test_object_snap_split_button_keeps_text_clear_of_menu(window):
+    button = window._object_snap_status_button
+    option = QStyleOptionToolButton()
+    button.initStyleOption(option)
+    main = button.style().subControlRect(QStyle.ComplexControl.CC_ToolButton, option,
+                                         QStyle.SubControl.SC_ToolButton, button)
+    arrow = button.style().subControlRect(QStyle.ComplexControl.CC_ToolButton, option,
+                                          QStyle.SubControl.SC_ToolButtonMenu, button)
+    assert arrow.width() >= 20
+    assert main.width() - button.fontMetrics().horizontalAdvance(button.text()) >= 12
+    before = button.isChecked()
+    QTest.mouseClick(button, Qt.MouseButton.LeftButton, pos=main.center())
+    assert button.isChecked() != before
+    assert len(button.menu().actions()) >= 7
+
+
+@pytest.mark.parametrize("fallback", [False, True])
+def test_count_and_auxiliary_point_icons_are_distinct_at_small_size(desktop_application, monkeypatch, fallback):
+    if fallback:
+        monkeypatch.setattr(icons, "qta", None)
+    count = icons.themed_icon("count", color="#556677", size=16).pixmap(16, 16).toImage()
+    point = icons.themed_icon("point", color="#556677", size=16).pixmap(16, 16).toImage()
+    assert not count.isNull()
+    assert count != point
+    assert sum(count.pixelColor(x, y).alpha() > 0 for y in range(16) for x in range(16)) > 30
+
+
+def test_system_theme_uses_stable_controls_and_tracks_appearance(window, monkeypatch):
+    app = QApplication.instance()
+    window.resize(1291, 832)
+    original = window._app_settings.theme_mode
+    color_mode = AppThemeMode.DARK
+    monkeypatch.setattr(theme, "_system_color_mode", lambda _app: color_mode)
+    try:
+        theme.apply_application_theme(app, AppThemeMode.SYSTEM)
+        settle()
+        geometry = (window._measure_toolbar.height(), window._context_toolbar.height())
+        icon_sizes = (window._file_toolbar.iconSize(), window._manual_tool_button.iconSize())
+        for color_mode, scheme, palette in (
+            (AppThemeMode.LIGHT, Qt.ColorScheme.Light, theme.build_light_palette()),
+            (AppThemeMode.DARK, Qt.ColorScheme.Dark, theme.build_dark_palette()),
+        ):
+            app.styleHints().colorSchemeChanged.emit(scheme)
+            settle()
+            assert app.property("fdmAppliedThemeMode") == AppThemeMode.SYSTEM
+            assert app.property("fdmBaseWidgetStyle").casefold() == "fusion"
+            assert app.palette().color(QPalette.ColorRole.Window) == palette.color(QPalette.ColorRole.Window)
+            assert (window._measure_toolbar.height(), window._context_toolbar.height()) == geometry
+            assert (window._file_toolbar.iconSize(), window._manual_tool_button.iconSize()) == icon_sizes
+            search = window._file_toolbar.widgetForAction(window.command_search_action)
+            assert search.isVisible()
+            assert window.rect().contains(search.mapTo(window, search.rect().bottomRight()))
+        theme.apply_application_theme(app, AppThemeMode.DARK)
+        color_mode = AppThemeMode.LIGHT
+        app.styleHints().colorSchemeChanged.emit(Qt.ColorScheme.Light)
+        settle()
+        assert app.palette().color(QPalette.ColorRole.Window) == theme.build_dark_palette().color(QPalette.ColorRole.Window)
+        with patch.object(app, "setPalette") as apply_palette:
+            theme.apply_application_theme(app, AppThemeMode.DARK)
+        apply_palette.assert_not_called()
+    finally:
+        theme.apply_application_theme(app, original)
+
+
+def test_theme_switch_preserves_widget_class_fonts(desktop_application):
+    app = desktop_application
+    theme.apply_application_theme(app, AppThemeMode.DARK)
+    original = QFont(app.font("QToolButton"))
+    compact_font = QFont(original)
+    compact_font.setPointSize(9)
+    app.setFont(compact_font, "QToolButton")
+    button = QToolButton()
+    button.setText("测量工具")
+    button.ensurePolished()
+    expected_size = button.sizeHint()
+    try:
+        for mode in (AppThemeMode.LIGHT, AppThemeMode.DARK):
+            theme.apply_application_theme(app, mode)
+            settle()
+            assert button.font().pointSize() == 9
+            assert button.sizeHint() == expected_size
+    finally:
+        button.deleteLater()
+        QCoreApplication.sendPostedEvents(None, QEvent.Type.DeferredDelete)
+        app.setFont(original, "QToolButton")
 
 
 def test_twelve_images_switch_without_losing_snap_or_calibration_state(window):

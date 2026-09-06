@@ -6,7 +6,7 @@ owned by the existing main-window controllers.
 from __future__ import annotations
 
 from PySide6.QtCore import QEvent, QSize, Qt, Signal
-from PySide6.QtGui import QAction
+from PySide6.QtGui import QAction, QPainter, QPalette
 from PySide6.QtWidgets import (
     QDialog, QDialogButtonBox, QFrame, QGridLayout, QHBoxLayout, QLabel, QLayout, QLineEdit,
     QListWidget, QListWidgetItem, QMenu, QPushButton, QSizePolicy,
@@ -24,6 +24,7 @@ def action_button(action: QAction, parent: QWidget, *, text: str | None = None) 
     button = QToolButton(parent)
     button.setDefaultAction(action)
     button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+    button.setIconSize(QSize(16, 16))
     # Clicking a workflow command must leave single-key canvas shortcuts usable.
     button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
     return button
@@ -38,13 +39,14 @@ class MeasurementContextBar(QFrame):
         self.setObjectName("measurementContextBar")
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self._grid = QGridLayout(self)
-        self._grid.setContentsMargins(8, 2, 8, 2)
+        self._grid.setContentsMargins(8, 1, 8, 1)
         self._grid.setSpacing(6)
         self._grid.setSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
-        self._navigation = QWidget(self)
+        self._navigation = QFrame(self)
+        self._navigation.setObjectName("imageNavigationGroup")
         row = QHBoxLayout(self._navigation)
-        row.setContentsMargins(0, 0, 0, 0)
-        row.setSpacing(6)
+        row.setContentsMargins(3, 0, 3, 0)
+        row.setSpacing(2)
         self.previousButton = action_button(previous, self, text="上一张")
         self.nextButton = action_button(following, self, text="下一张")
         row.addWidget(self.previousButton)
@@ -63,7 +65,14 @@ class MeasurementContextBar(QFrame):
         row = QHBoxLayout(self._editing)
         row.setContentsMargins(0, 0, 0, 0)
         row.setSpacing(6)
-        row.addWidget(QLabel("新测量归类", self))
+        category = QFrame(self._editing)
+        category.setObjectName("measurementCategoryGroup")
+        category_row = QHBoxLayout(category)
+        category_row.setContentsMargins(10, 0, 3, 0)
+        category_row.setSpacing(6)
+        label = QLabel("新测量归类", category)
+        label.setObjectName("measurementCategoryLabel")
+        category_row.addWidget(label)
         self.groups = NoWheelComboBox(self)
         self.groups.setObjectName("quickMeasurementGroup")
         self.groups.setAccessibleName("新测量归类")
@@ -73,7 +82,8 @@ class MeasurementContextBar(QFrame):
         self.groups.setMinimumWidth(95)
         self.groups.setMaximumWidth(180)
         self.groups.activated.connect(lambda index: self.groupActivated.emit(self.groups.itemData(index)))
-        row.addWidget(self.groups)
+        category_row.addWidget(self.groups)
+        row.addWidget(category)
         self.areaTools = QWidget(self)
         self.areaTools.setObjectName("quickAreaTools")
         self.areaLayout = QHBoxLayout(self.areaTools)
@@ -83,11 +93,13 @@ class MeasurementContextBar(QFrame):
         row.addWidget(self.areaTools)
         self.snapButton = action_button(snap, self)
         row.addWidget(self.snapButton)
+        row.addStretch(1)
         self.calibrationButton = QToolButton(self)
         self.calibrationButton.setObjectName("persistentCalibrationButton")
         self.calibrationButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.calibrationButton.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         self.calibrationButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+        self.calibrationButton.setIconSize(QSize(16, 16))
         self.calibrationMenu = QMenu(self.calibrationButton)
         self.calibrationButton.setMenu(self.calibrationMenu)
         self._compact = None
@@ -173,6 +185,37 @@ class WelcomePanel(QFrame):
         layout.addStretch(1)
 
 
+class FixedLineLabel(QLabel):
+    """Reserve a stable number of lines; long text remains in the tooltip."""
+
+    def __init__(self, text: str = "", parent=None, *, lines: int = 1):
+        self._lines = lines
+        super().__init__(text, parent)
+        self.setTextFormat(Qt.TextFormat.PlainText)
+        self.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.setToolTip(text)
+
+    def setText(self, text: str) -> None:
+        super().setText(text)
+        self.setToolTip(text)
+
+    def sizeHint(self) -> QSize:
+        return QSize(0, self.fontMetrics().lineSpacing() * self._lines + 2)
+
+    def minimumSizeHint(self) -> QSize:
+        return self.sizeHint()
+
+    def paintEvent(self, event) -> None:
+        painter = QPainter(self)
+        painter.setFont(self.font())
+        painter.setPen(self.palette().color(QPalette.ColorRole.WindowText))
+        rect = self.contentsRect()
+        metrics = self.fontMetrics()
+        for index, text in enumerate(self.text().splitlines()[:self._lines]):
+            line = metrics.elidedText(text, Qt.TextElideMode.ElideRight, rect.width())
+            painter.drawText(rect.left(), rect.top() + 1 + metrics.ascent() + index * metrics.lineSpacing(), line)
+
+
 class CurrentMeasurementSummary(QFrame):
     editRequested = Signal()
     groupChangeRequested = Signal(str, object)
@@ -180,35 +223,37 @@ class CurrentMeasurementSummary(QFrame):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setObjectName("currentMeasurementSummary")
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         self.measurement_id: str | None = None
         layout = QVBoxLayout(self)
         layout.setContentsMargins(10, 8, 10, 8)
         layout.setSpacing(4)
         heading = QHBoxLayout()
         heading.addWidget(QLabel("当前对象", self))
-        heading.addStretch(1)
-        edit = QPushButton("属性", self)
-        edit.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        edit.clicked.connect(self.editRequested)
-        heading.addWidget(edit)
+        self.editButton = QPushButton("属性", self)
+        self.editButton.setObjectName("currentObjectProperties")
+        self.editButton.setCheckable(True)
+        self.editButton.setToolTip("展开或收起当前对象的详细属性")
+        self.editButton.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.editButton.clicked.connect(self.editRequested)
+        heading.addWidget(self.editButton)
         layout.addLayout(heading)
-        self.valueLabel = QLabel("点击测量线或记录查看", self)
+        self.valueLabel = FixedLineLabel("未选中对象", self)
         self.valueLabel.setObjectName("currentMeasurementValue")
-        self.valueLabel.setWordWrap(True)
         layout.addWidget(self.valueLabel)
-        self.sourceLabel = QLabel(self)
-        self.sourceLabel.setWordWrap(True)
-        self.sourceLabel.setTextFormat(Qt.TextFormat.PlainText)
-        self.sourceLabel.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+        self.sourceLabel = FixedLineLabel("点击画布中的测量对象\n或在测量记录中选择", self, lines=2)
         layout.addWidget(self.sourceLabel)
         self.groupCombo = NoWheelComboBox(self)
         self.groupCombo.setAccessibleName("当前对象类别")
         self.groupCombo.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         self.groupCombo.setMinimumWidth(0)
+        self.groupCombo.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
         self.groupCombo.setSizeAdjustPolicy(NoWheelComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self.groupCombo.activated.connect(self._activate_group)
-        layout.addWidget(self.groupCombo)
-        self.groupCombo.hide()
+        self.groupCombo.currentTextChanged.connect(self.groupCombo.setToolTip)
+        heading.insertWidget(1, self.groupCombo, 1)
+        self.groupCombo.addItem("对象类别", None)
+        self.groupCombo.setEnabled(False)
 
     def _activate_group(self, index: int) -> None:
         if self.measurement_id:

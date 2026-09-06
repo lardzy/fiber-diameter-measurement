@@ -48,7 +48,8 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "select": "fa5s.mouse-pointer",
     "manual": "mdi6.vector-line",
     "continuous_manual": "mdi6.polyline",
-    "count": "mdi6.circle-small",
+    "count": "mdi6.counter",
+    "point": "mdi6.circle-small",
     "snap": "mdi6.magnet",
     "magic_segment": "fa5s.magic",
     "polygon_area": "mdi6.draw-polygon",
@@ -191,6 +192,15 @@ def _draw_continuous_manual(painter: QPainter, color: QColor, rect: QRectF) -> N
 
 
 def _draw_count(painter: QPainter, color: QColor, rect: QRectF) -> None:
+    painter.setPen(_pen(color, 1.7))
+    for fraction in (0.25, 0.42, 0.59, 0.76):
+        x = rect.left() + rect.width() * fraction
+        painter.drawLine(QPointF(x, rect.top() + rect.height() * 0.25), QPointF(x, rect.top() + rect.height() * 0.75))
+    painter.drawLine(QPointF(rect.left() + rect.width() * 0.16, rect.top() + rect.height() * 0.65),
+                     QPointF(rect.left() + rect.width() * 0.85, rect.top() + rect.height() * 0.35))
+
+
+def _draw_point(painter: QPainter, color: QColor, rect: QRectF) -> None:
     center = rect.center()
     painter.setPen(Qt.PenStyle.NoPen)
     painter.setBrush(QColor("#0B0B0B"))
@@ -525,6 +535,7 @@ _FALLBACK_BUILDERS: dict[str, Callable[[QPainter, QColor, QRectF], None]] = {
     "manual": _draw_manual,
     "continuous_manual": _draw_continuous_manual,
     "count": _draw_count,
+    "point": _draw_point,
     "snap": _draw_snap,
     "magic_segment": _draw_magic_segment,
     "polygon_area": _draw_polygon_area,

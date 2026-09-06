@@ -4483,7 +4483,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.project.documents = [current, other]
             window._populate_group_list(current)
 
-            self.assertEqual([label.text() for label in window._group_header_labels], ["颜色", "类别", "（当前/总数）"])
+            self.assertEqual([label.text() for label in window._group_header_labels], ["颜色", "类别", "本图 / 全部"])
             cotton_widget = window.group_list.itemWidget(window.group_list.item(0))
             self.assertIsInstance(cotton_widget, FiberGroupListItemWidget)
             self.assertEqual(cotton_widget.countText(), "1/2")

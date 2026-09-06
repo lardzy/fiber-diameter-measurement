@@ -516,6 +516,7 @@ from fdm.ui.view_zoom_control import ViewZoomStatusButton
 from fdm.ui.widgets import (
     CollapsibleSection,
     FiberGroupListItemWidget,
+    FiberGroupListWidget,
     FlowLayout,
     MeasurementToolStrip,
     NoWheelComboBox,
@@ -3427,6 +3428,9 @@ class MainWindow(QMainWindow):
         self._file_toolbar = file_toolbar
         file_toolbar.setStyleSheet("QToolBar { padding: 0; } QToolButton { min-height: 30px; padding: 1px 4px; }")
         file_toolbar.setContentsMargins(4, 0, 4, 0)
+        # QToolBar has separate layout margins; widget margins alone leave
+        # an extra 6 px above and below after stylesheet metrics refresh.
+        file_toolbar.layout().setContentsMargins(0, 0, 0, 0)
         for action, label in ((self.save_project_action, "保存"),
                               (self.capture_frame_action, "采集一张"),
                               (self.toggle_project_panel_action, "项目"),
@@ -3544,6 +3548,10 @@ class MainWindow(QMainWindow):
         self._context_toolbar.addWidget(self._measurement_context_bar)
         self.addToolBar(self._context_toolbar)
         self._context_toolbar.setContentsMargins(4, 0, 4, 0)
+        self._context_toolbar.layout().setContentsMargins(0, 0, 0, 0)
+        for toolbar in (file_toolbar, measure_toolbar, self._context_toolbar):
+            toolbar.setAllowedAreas(Qt.ToolBarArea.TopToolBarArea)
+            toolbar.setFloatable(False)
         self._update_count_numbers_button()
 
     def _build_measurement_tool_strip(self) -> MeasurementToolStrip:
@@ -3788,9 +3796,9 @@ class MainWindow(QMainWindow):
 
     def _construction_tool_definitions(self) -> list[tuple[str, str, str, str]]:
         return [
-            ("点", "point", "自由点", "count"),
-            ("点", "midpoint", "中点", "count"),
-            ("点", "intersection", "交点", "count"),
+            ("点", "point", "自由点", "point"),
+            ("点", "midpoint", "中点", "point"),
+            ("点", "intersection", "交点", "point"),
             ("线", "segment", "辅助线段", "manual"),
             ("线", "ray", "射线", "manual"),
             ("线", "infinite_line", "无限直线", "manual"),
@@ -4223,10 +4231,12 @@ class MainWindow(QMainWindow):
             QSizePolicy.Policy.Ignored,
         )
         standard_content = QWidget(standard_scroll)
+        standard_content.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
         standard_layout = QVBoxLayout(standard_content)
         standard_layout.setContentsMargins(8, 8, 8, 8)
         standard_layout.setSpacing(8)
-        standard_layout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
+        standard_layout.setHorizontalSizeConstraint(QLayout.SizeConstraint.SetNoConstraint)
+        standard_layout.setVerticalSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
 
         self._project_summary_label = QLabel("0 张图片 · 无缺失 · 尚未保存", standard_content)
         self._project_summary_label.setObjectName("projectSummaryLabel")
@@ -4234,35 +4244,43 @@ class MainWindow(QMainWindow):
         standard_layout.addWidget(self._project_summary_label)
 
         image_box = QGroupBox("已打开图片", standard_content)
+        image_box.setObjectName("projectImages")
         image_layout = QVBoxLayout(image_box)
+        image_layout.setContentsMargins(4, 6, 4, 4)
         self.image_list = QListWidget()
+        self.image_list.setMinimumWidth(0)
+        self.image_list.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.image_list.currentRowChanged.connect(self._on_image_list_changed)
         image_layout.addWidget(self.image_list)
 
         group_box = QGroupBox("纤维类别", standard_content)
+        group_box.setObjectName("projectCategories")
         # Images and categories share the main page; ROI tools use a separate
         # page so they cannot squeeze these two high-frequency lists.
         group_box.setMinimumHeight(180)
         image_box.setMinimumHeight(120)
         group_layout = QVBoxLayout(group_box)
+        group_layout.setContentsMargins(4, 6, 4, 4)
         header_row = QHBoxLayout()
         header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
         header_row.setSpacing(0)
         color_header = QLabel("颜色")
-        color_header.setFixedWidth(36)
+        color_header.setFixedWidth(28)
         name_header = QLabel("类别")
-        count_header = QLabel("（当前/总数）")
+        count_header = QLabel("本图 / 全部")
         count_header.setFixedWidth(FiberGroupListItemWidget.COUNT_COLUMN_WIDTH)
         count_header.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
         self._group_header_labels = [color_header, name_header, count_header]
         for label in self._group_header_labels:
             label.setFocusPolicy(Qt.FocusPolicy.NoFocus)
         header_row.addWidget(color_header)
-        header_row.addSpacing(14)
+        header_row.addSpacing(6)
         header_row.addWidget(name_header, 1)
         header_row.addWidget(count_header)
         group_layout.addLayout(header_row)
-        self.group_list = QListWidget()
+        self.group_list = FiberGroupListWidget()
+        self.group_list.setMinimumWidth(0)
+        self.group_list.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
         self.group_list.setViewMode(QListView.ViewMode.ListMode)
         self.group_list.setFlow(QListView.Flow.TopToBottom)
         self.group_list.setWrapping(False)
@@ -4270,7 +4288,7 @@ class MainWindow(QMainWindow):
         self.group_list.setMovement(QListView.Movement.Static)
         self.group_list.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
         self.group_list.setFocusPolicy(Qt.FocusPolicy.NoFocus)
-        self.group_list.setSpacing(6)
+        self.group_list.setSpacing(3)
         self.group_list.setFrameShape(QFrame.Shape.NoFrame)
         self.group_list.setViewportMargins(2, 2, 2, 2)
         self.group_list.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
@@ -4371,6 +4389,8 @@ class MainWindow(QMainWindow):
         splitter.setSizes([240, 280])
         self._project_navigation_tabs = QTabWidget(standard_content)
         self._project_navigation_tabs.setObjectName("projectNavigationTabs")
+        self._project_navigation_tabs.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Expanding)
+        self._project_navigation_tabs.setMinimumWidth(0)
         self._project_navigation_tabs.addTab(splitter, "图片与类别")
         self._project_navigation_tabs.addTab(geometry_tabs, "ROI / 辅助")
         standard_layout.addWidget(self._project_navigation_tabs, 1)
@@ -5089,6 +5109,17 @@ class MainWindow(QMainWindow):
             parent=inspector_content,
         )
         self._records_section.setContentWidget(self._inspector_records_pane)
+        # Show one quiet, bounded count beside the section title. Keep the
+        # results workspace's independent footer and filtering behavior intact.
+        self._inspector_records_pane.count_label.hide()
+        record_count = self._records_section.summaryLabel
+        record_count.setSizePolicy(QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Fixed)
+        record_count.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        record_count.setStyleSheet(
+            "QLabel { color: palette(window-text); background: palette(alternate-base);"
+            " border: 1px solid palette(mid); border-radius: 9px; padding: 2px 8px; font-size: 12px; }"
+        )
+        self._records_section.layout().itemAt(0).layout().insertStretch(1, 1)
         self._records_section.expandedChanged.connect(self._on_inspector_records_expanded)
         self._records_section.contentHeightChanged.connect(
             self._on_inspector_records_height_changed
@@ -5096,7 +5127,7 @@ class MainWindow(QMainWindow):
         self._records_controller.countsChanged.connect(
             lambda visible, total: self._records_section
             and self._records_section.setSummary(
-                f"{visible}/{total} 条" if visible != total else f"{total} 条"
+                f"{visible} / {total} 条" if visible != total else f"{total} 条"
             )
         )
         inspector_layout.addWidget(self._records_section)
@@ -5157,10 +5188,12 @@ class MainWindow(QMainWindow):
             lambda expanded: self._set_inspector_section_state("object_properties_expanded", expanded)
         )
         self._object_properties_section.expandedChanged.connect(self._object_properties_section.setVisible)
+        self._object_properties_section.expandedChanged.connect(self._current_measurement_summary.editButton.setChecked)
         self._object_properties_section.setVisible(state.object_properties_expanded)
+        self._current_measurement_summary.editButton.setChecked(state.object_properties_expanded)
         inspector_layout.insertWidget(1, self._object_properties_section)
-        inspector_layout.removeWidget(self._calibration_section)
-        inspector_layout.insertWidget(4, self._calibration_section)
+        inspector_layout.removeWidget(self._statistics_section)
+        inspector_layout.insertWidget(4, self._statistics_section)
         inspector_layout.addStretch(1)
 
         inspector_scroll = QScrollArea(container)
@@ -5954,19 +5987,24 @@ class MainWindow(QMainWindow):
         self._show_inspector_section(self._calibration_section)
 
     def _show_current_object_properties(self) -> None:
-        self._show_inspector_section(self._object_properties_section)
+        if self._object_properties_section.isExpanded():
+            self._object_properties_section.setExpanded(False)
+        else:
+            self._show_inspector_section(self._object_properties_section)
 
     def _sync_current_measurement_summary(self, document, selected_ids) -> None:
         panel = self._current_measurement_summary
         panel.measurement_id = None
-        panel.groupCombo.hide()
-        panel.sourceLabel.setText("")
+        panel.groupCombo.setEnabled(False)
+        panel.groupCombo.clear()
+        panel.groupCombo.addItem("对象类别", None)
+        panel.sourceLabel.setText("点击画布中的测量对象\n或在测量记录中选择")
         if document is None or not selected_ids:
-            panel.valueLabel.setText("点击测量线或记录查看")
+            panel.valueLabel.setText("未选中对象")
             return
         if len(selected_ids) > 1:
             panel.valueLabel.setText(f"已选择 {len(selected_ids)} 个对象")
-            panel.sourceLabel.setText("可在属性中批量编辑；结果表保留当前选择。")
+            panel.sourceLabel.setText("点击属性可批量编辑\n测量记录保留当前选择")
             return
         measurement = document.get_measurement(selected_ids[0])
         model = self._records_controller.source_model
@@ -5987,7 +6025,7 @@ class MainWindow(QMainWindow):
             panel.groupCombo.addItem(group.label, group.id)
         panel.groupCombo.setCurrentIndex(panel.groupCombo.findData(measurement.fiber_group_id))
         panel.groupCombo.blockSignals(False)
-        panel.groupCombo.show()
+        panel.groupCombo.setEnabled(True)
 
     def _install_capture_task_bar(self) -> None:
         bar = QFrame(self.centralWidget())
@@ -13356,7 +13394,7 @@ class MainWindow(QMainWindow):
             self._sync_construction_tool_button()
         if self._overlay_tool_button is not None:
             self._sync_overlay_tool_button()
-        self._update_main_command_bar_density(self.width())
+        self._schedule_main_command_bar_density_update()
 
     def _update_statusbar_aux_labels(self) -> None:
         if getattr(self, "_version_label", None) is None:
@@ -13376,13 +13414,14 @@ class MainWindow(QMainWindow):
             self._object_snap_status_button.setStyleSheet(
                 "QToolButton {"
                 f" color: {self._status_color('muted')};"
-                " padding: 1px 7px; border: 1px solid transparent;"
+                " padding: 1px 28px 1px 10px; border: 1px solid transparent;"
                 " border-radius: 5px; }"
                 "QToolButton:checked { border-color: palette(highlight);"
                 " color: palette(window-text); background: palette(alternate-base); }"
                 "QToolButton:hover {"
                 " border-color: palette(mid); background: palette(alternate-base);"
                 " }"
+                "QToolButton::menu-button { width: 20px; border-left: 1px solid palette(mid); }"
             )
 
     def _update_group_list_header_styles(self) -> None:
@@ -13541,6 +13580,8 @@ class MainWindow(QMainWindow):
         super().changeEvent(event)
         if not hasattr(self, "_version_label"):
             return
+        if event.type() in {QEvent.Type.StyleChange, QEvent.Type.FontChange}:
+            self._schedule_main_command_bar_density_update()
         if event.type() in {QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange}:
             self._update_statusbar_aux_labels()
             self._update_image_resolution_label()
@@ -13555,8 +13596,25 @@ class MainWindow(QMainWindow):
 
         if self._file_toolbar is not None:
             self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            self._file_toolbar.layout().invalidate()
             if self._file_toolbar.sizeHint().width() > int(width):
                 self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
+
+    def _schedule_main_command_bar_density_update(self) -> None:
+        if getattr(self, "_file_toolbar", None) is None:
+            return
+        timer = getattr(self, "_command_bar_density_timer", None)
+        if timer is None:
+            timer = QTimer(self)
+            timer.setSingleShot(True)
+            timer.timeout.connect(self._refresh_main_command_bar_density)
+            self._command_bar_density_timer = timer
+        # PaletteChange arrives before all stylesheet/font metrics have settled.
+        # Measure once afterward so trailing commands cannot remain clipped.
+        timer.start(0)
+
+    def _refresh_main_command_bar_density(self) -> None:
+        self._update_main_command_bar_density(self.width())
 
     def resizeEvent(self, event) -> None:
         # Change density before QMainWindow lays out its toolbars.  In the
@@ -13571,9 +13629,25 @@ class MainWindow(QMainWindow):
         self._schedule_inspector_layout_restore()
 
     def showEvent(self, event) -> None:
+        self._ensure_workbench_toolbar_rows()
         super().showEvent(event)
         if self._adaptive_layout is not None:
             self._adaptive_layout.apply_pending_layout()
+
+    def restoreState(self, state, version: int = 0) -> bool:
+        restored = super().restoreState(state, version)
+        if restored:
+            self._ensure_workbench_toolbar_rows()
+        return restored
+
+    def _ensure_workbench_toolbar_rows(self) -> None:
+        # Older saved layouts may place the new context bar beside the tools.
+        # Restore dock preferences, but always give each command row its full
+        # window width so image names cannot force tool labels into icon mode.
+        for name in ("_measure_toolbar", "_context_toolbar"):
+            toolbar = getattr(self, name, None)
+            if toolbar is not None and not self.toolBarBreak(toolbar):
+                self.insertToolBarBreak(toolbar)
 
     def _on_workspace_dock_visibility_changed(self, _visible: bool) -> None:
         if self._adaptive_layout is not None:
@@ -24671,6 +24745,7 @@ class MainWindow(QMainWindow):
         item.setData(Qt.ItemDataRole.UserRole + 1, current_count)
         item.setData(Qt.ItemDataRole.UserRole + 3, project_count)
         item.setData(Qt.ItemDataRole.UserRole + 2, label)
+        item.setToolTip(label)
         item.setSizeHint(QSize(0, FiberGroupListItemWidget.HEIGHT))
         self.group_list.addItem(item)
         widget = FiberGroupListItemWidget(

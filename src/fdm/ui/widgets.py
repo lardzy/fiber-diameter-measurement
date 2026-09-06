@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, Signal
+from PySide6.QtCore import QEvent, QPoint, QRect, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QAction, QColor, QFont, QFontMetrics, QIcon, QMouseEvent, QPainter, QPalette, QPen
 from PySide6.QtWidgets import (
     QAbstractScrollArea,
@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLabel,
     QLayout,
     QLayoutItem,
+    QListWidget,
     QMenu,
     QSizePolicy,
     QSpinBox,
@@ -276,16 +277,16 @@ class _SectionResizeHandle(QWidget):
         super().paintEvent(event)
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        grip_color = QColor(self.palette().color(QPalette.ColorRole.Highlight))
-        grip_color.setAlpha(255 if self._dragging or self.underMouse() else 190)
+        active = self._dragging or self.underMouse()
+        grip_color = QColor(self.palette().color(QPalette.ColorRole.Highlight if active else QPalette.ColorRole.Mid))
         painter.setPen(Qt.PenStyle.NoPen)
         painter.setBrush(grip_color)
-        width = min(72.0, max(40.0, self.width() * 0.24))
+        width = 40.0
         grip = QRectF(
             (self.width() - width) / 2.0,
-            (self.height() - 4.0) / 2.0,
+            (self.height() - 3.0) / 2.0,
             width,
-            4.0,
+            3.0,
         )
         painter.drawRoundedRect(grip, 2.0, 2.0)
 
@@ -440,6 +441,25 @@ class FlowLayout(QLayout):
         return max(0, used_height)
 
 
+class FiberGroupListWidget(QListWidget):
+    """Keep embedded category cards in sync with the final viewport width."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._relayout_timer = QTimer(self)
+        self._relayout_timer.setSingleShot(True)
+        self._relayout_timer.timeout.connect(self.doItemsLayout)
+
+    def viewportEvent(self, event) -> bool:
+        result = super().viewportEvent(event)
+        if event.type() == QEvent.Type.Resize and hasattr(self, "_relayout_timer"):
+            # QListView can update visualItemRect on resize while leaving
+            # setItemWidget children at their old width. Relayout once after
+            # scrollbars settle, coalescing consecutive splitter movements.
+            self._relayout_timer.start(0)
+        return result
+
+
 class FiberGroupListItemWidget(QWidget):
     HEIGHT = 38
     DOT_SIZE = 10
@@ -498,7 +518,9 @@ class FiberGroupListItemWidget(QWidget):
         return QSize(256, self.HEIGHT)
 
     def minimumSizeHint(self) -> QSize:
-        return QSize(188, self.HEIGHT)
+        # The list viewport owns the width. Labels are painted with elision;
+        # a wide minimum would crop the count badge in a narrow project dock.
+        return QSize(128, self.HEIGHT)
 
     def _resolved_colors(self) -> tuple[QColor, QColor, QColor, QColor, QColor, QColor]:
         dark_palette = _is_dark_palette(self)
@@ -593,14 +615,13 @@ class ToolStripActionButton(QToolButton):
         self.setMinimumWidth(self.COMPACT_WIDTH)
         self.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         self.setFixedHeight(self.HEIGHT)
-        self._expanded_width_hint = max(86, self._calculate_expanded_width())
 
     def _calculate_expanded_width(self) -> int:
         metrics = QFontMetrics(self.font())
         return 14 + self.ICON_SIZE + 8 + metrics.horizontalAdvance(self._full_text) + 14
 
     def expandedWidthHint(self) -> int:
-        return self._expanded_width_hint
+        return max(86, self._calculate_expanded_width())
 
     def isCompactMode(self) -> bool:
         return self._compact_mode
@@ -619,7 +640,7 @@ class ToolStripActionButton(QToolButton):
         _repolish(self)
 
     def sizeHint(self) -> QSize:
-        width = self.COMPACT_WIDTH if self._compact_mode else self._expanded_width_hint
+        width = self.COMPACT_WIDTH if self._compact_mode else self.expandedWidthHint()
         return QSize(width, self.HEIGHT)
 
     def minimumSizeHint(self) -> QSize:
