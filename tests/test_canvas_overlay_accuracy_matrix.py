@@ -222,6 +222,8 @@ def _render_cached(
     canvas: DocumentCanvas,
     cache: CanvasOverlayTileCache,
     device_pixel_ratio: float,
+    *,
+    selected_background_redraws: int = 0,
 ) -> QImage:
     with patch.dict(
         os.environ,
@@ -248,7 +250,7 @@ def _render_cached(
             new=track_direct_draw,
         ):
             frame = _frame(canvas, device_pixel_ratio)
-        assert direct_draw_count == 0
+        assert direct_draw_count == selected_background_redraws
         assert cache.stats().hits > hits_before
         return frame
 
@@ -482,6 +484,55 @@ def test_selection_round_trip_reuses_tiles_without_stale_passive_body(
                 device_pixel_ratio,
             )
             _assert_stable_frames_equivalent(deselected_direct, deselected_cached)
+            assert [measurement.to_dict() for measurement in document.measurements] == before
+        finally:
+            _dispose_canvas(canvas, cache)
+
+
+@pytest.mark.parametrize("device_pixel_ratio", [1.0, 1.5])
+@pytest.mark.parametrize("mixed_geometry", [False, True])
+def test_screen_label_modes_match_cached_render_and_restore_without_stale_labels(
+    device_pixel_ratio: float, mixed_geometry: bool,
+) -> None:
+    document = _complex_area_document()
+    if mixed_geometry:
+        document.measurements.append(Measurement(
+            id="line", image_id=document.id, fiber_group_id=None, mode="manual",
+            line_px=Line(Point(450, 350), Point(650, 350)),
+        ))
+        document.recalculate_measurements()
+    before = [measurement.to_dict() for measurement in document.measurements]
+    cache = CanvasOverlayTileCache(
+        max_entries=32, max_bytes=64 * 1024 * 1024, thread_pool=_InlineThreadPool(),
+    )
+    canvas = None
+    with patch.object(canvas_module, "canvas_overlay_tile_cache", cache):
+        try:
+            canvas = _make_canvas(document, cache, device_pixel_ratio)
+            original = _render_cached(canvas, cache, device_pixel_ratio)
+            canvas.set_screen_measurement_labels("hidden")
+            hidden = _render_direct(canvas, device_pixel_ratio)
+            _assert_stable_frames_equivalent(hidden, _render_cached(canvas, cache, device_pixel_ratio))
+            assert not np.array_equal(_pixels(original), _pixels(hidden))
+            canvas.set_screen_measurement_labels("selected")
+            assert np.array_equal(_pixels(_render_direct(canvas, device_pixel_ratio)), _pixels(hidden))
+            for selected_id in ("hole", "line" if mixed_geometry else "bow-tie", None):
+                keys = _warm_visible_tiles(canvas, cache)
+                canvas.set_selected_measurement(selected_id)
+                canvas._sync_overlay_visual_state()
+                assert all(cache.contains(key) for key in keys)
+                _assert_stable_frames_equivalent(
+                    _render_direct(canvas, device_pixel_ratio),
+                    _render_cached(
+                        canvas, cache, device_pixel_ratio,
+                        # A selected line uses the existing local background
+                        # redraw to remove its passive body beneath handles.
+                        selected_background_redraws=int(selected_id == "line"),
+                    ),
+                )
+            canvas.set_screen_measurement_labels("all")
+            restored = _render_cached(canvas, cache, device_pixel_ratio)
+            assert np.array_equal(_pixels(original), _pixels(restored))
             assert [measurement.to_dict() for measurement in document.measurements] == before
         finally:
             _dispose_canvas(canvas, cache)

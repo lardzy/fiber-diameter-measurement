@@ -951,6 +951,24 @@ def _draw_overlay_handle(painter: QPainter, point: QPointF) -> None:
     painter.drawEllipse(point, 4.2, 4.2)
 
 
+def draw_measurement_label_only(
+    painter: QPainter, document: ImageDocument, measurement: Measurement,
+    image_to_output, settings: AppSettings,
+) -> None:
+    """Paint a selected screen label without repainting translucent geometry."""
+    if measurement.measurement_kind == "count" or not _measurement_label_enabled(settings, measurement):
+        return
+    if measurement.measurement_kind == "area":
+        center = area_derived_geometry_service.centroid(measurement)
+        draw_area_measurement_label(painter, measurement, document, settings, image_to_output(center), use_sprite_cache=True)
+    elif measurement.measurement_kind == "polyline":
+        points = [image_to_output(point) for point in measurement.polyline_px]
+        draw_polyline_measurement_label(painter, measurement, document, settings, points, image_to_output, use_sprite_cache=True)
+    else:
+        line = measurement.effective_line()
+        draw_measurement_label(painter, measurement, document, settings, image_to_output(line.start), image_to_output(line.end), use_sprite_cache=True)
+
+
 def draw_measurements(
     painter: QPainter,
     document: ImageDocument,

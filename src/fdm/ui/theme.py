@@ -9,7 +9,7 @@ from fdm.settings import AppThemeMode, normalize_theme_mode
 _SYSTEM_THEME_CACHE: dict[int, tuple[str, QPalette]] = {}
 _THEME_CACHE_PROPERTY = "fdmAppliedThemeMode"
 _THEME_STYLE_REVISION_PROPERTY = "fdmThemeStyleRevision"
-_THEME_STYLE_REVISION = 3
+_THEME_STYLE_REVISION = 4
 
 
 def _ensure_system_theme_snapshot(app: QApplication) -> tuple[str, QPalette]:
@@ -83,7 +83,7 @@ def build_light_palette() -> QPalette:
     _set_role_color(palette, QPalette.ColorRole.Button, "#F3F6FA", disabled="#ECEFF3")
     _set_role_color(palette, QPalette.ColorRole.ButtonText, "#1F2933", disabled="#8A94A1")
     _set_role_color(palette, QPalette.ColorRole.BrightText, "#C62828", disabled="#C62828")
-    _set_role_color(palette, QPalette.ColorRole.Highlight, "#2A9D8F", disabled="#98D3CA")
+    _set_role_color(palette, QPalette.ColorRole.Highlight, "#197C70", disabled="#98D3CA")
     _set_role_color(palette, QPalette.ColorRole.HighlightedText, "#FFFFFF", disabled="#FFFFFF")
     _set_role_color(palette, QPalette.ColorRole.Link, "#1565C0", disabled="#1565C0")
     _set_role_color(palette, QPalette.ColorRole.LinkVisited, "#7A59A5", disabled="#7A59A5")
@@ -133,9 +133,31 @@ def build_application_stylesheet() -> str:
 
     return """
         QMainWindow, QDialog { background: palette(window); }
+        QFrame#measurementContextBar, QFrame#captureTaskBar {
+            background: palette(alternate-base);
+            border-bottom: 1px solid palette(mid);
+        }
+        QToolBar#measurementContextToolbar { padding: 0; spacing: 0; }
+        QToolButton#persistentCalibrationButton[uncalibrated="true"] {
+            background: #FFF0CD; color: #713F12;
+            border: 2px solid #B45309; font-weight: 700;
+            border-radius: 4px;
+        }
+        QToolButton#persistentCalibrationButton[uncalibrated="true"]:hover {
+            background: #FFE4A6;
+        }
+        QToolButton#quickAreaOperationButton[magicPrompt="negative"] {
+            background: #FEE2E2; color: #7F1D1D; border: 1px solid #DC2626;
+        }
+        QFrame#currentMeasurementSummary {
+            background: palette(base); border-bottom: 1px solid palette(mid);
+        }
+        QLabel#currentMeasurementValue { font-size: 18px; font-weight: 600; }
+        QLabel#welcomeTitle { font-size: 24px; font-weight: 600; padding: 12px; }
+        QLabel#welcomeHint { color: palette(window-text); padding: 12px; }
         QToolBar {
             spacing: 4px;
-            padding: 4px 6px;
+            padding: 2px 6px;
             border: 0;
             border-bottom: 1px solid palette(mid);
             background: palette(window);
@@ -152,6 +174,14 @@ def build_application_stylesheet() -> str:
             border-color: #2A9D8F;
             background: palette(highlight);
             color: palette(highlighted-text);
+        }
+        QToolButton[workspaceTab="true"]:checked {
+            background: palette(alternate-base); color: palette(window-text);
+            border: 0; border-bottom: 2px solid palette(highlight); border-radius: 2px;
+        }
+        QToolButton[panelToggle="true"]:checked {
+            background: palette(alternate-base); color: palette(window-text);
+            border: 1px solid palette(mid); border-radius: 4px;
         }
         QPushButton {
             min-height: 30px;

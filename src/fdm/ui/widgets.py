@@ -115,6 +115,7 @@ class CollapsibleSection(QFrame):
         header.setContentsMargins(0, 0, 0, 0)
         header.setSpacing(6)
         self.toggleButton = QToolButton(self)
+        self.toggleButton.setProperty("sectionHeader", True)
         self.toggleButton.setText(title)
         self.toggleButton.setCheckable(True)
         self.toggleButton.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
@@ -151,9 +152,13 @@ class CollapsibleSection(QFrame):
         self.setStyleSheet(
             "QFrame#collapsibleSection {"
             " background: palette(base);"
-            " border: 1px solid palette(mid);"
-            " border-radius: 7px;"
+            " border: none; border-bottom: 1px solid palette(mid);"
+            " border-radius: 0;"
             "}"
+            "QToolButton[sectionHeader=\"true\"], QToolButton[sectionHeader=\"true\"]:checked {"
+            " background: transparent; color: palette(window-text); border: none;"
+            " border-radius: 0; min-height: 28px; padding: 0 4px; font-weight: 600; }"
+            "QToolButton[sectionHeader=\"true\"]:hover { background: palette(alternate-base); }"
             "QLabel#collapsibleSectionSummary { color: palette(placeholder-text); }"
         )
 
@@ -570,7 +575,7 @@ class FiberGroupListItemWidget(QWidget):
 
 
 class ToolStripActionButton(QToolButton):
-    HEIGHT = 40
+    HEIGHT = 36
     COMPACT_WIDTH = 40
     ICON_SIZE = 16
 
@@ -809,7 +814,7 @@ class MeasurementToolStrip(QWidget):
         self.setMinimumWidth(0)
         self._apply_theme_styles()
         root_layout = QVBoxLayout(self)
-        root_layout.setContentsMargins(8, 8, 8, 12)
+        root_layout.setContentsMargins(6, 2, 6, 2)
         root_layout.setSpacing(6)
 
         self._top_row = QWidget(self)
@@ -909,7 +914,7 @@ class MeasurementToolStrip(QWidget):
                 border-bottom: 1px solid {strip_border};
             }}
             QToolButton[primaryTool="true"] {{
-                min-height: 38px;
+                min-height: 34px;
                 padding: 0 12px;
                 border-radius: 10px;
                 border: 1px solid transparent;
@@ -961,7 +966,7 @@ class MeasurementToolStrip(QWidget):
                 padding: 8px 2px 0 2px;
             }}
             QToolButton[contextTool="true"] {{
-                min-height: 36px;
+                min-height: 32px;
                 padding: 0 12px;
                 border-radius: 8px;
                 border: 1px solid {context_tool_border};

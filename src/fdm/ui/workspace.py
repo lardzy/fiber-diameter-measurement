@@ -344,9 +344,10 @@ class AdaptiveLayoutController(QObject):
                     document_area = getattr(self._window, "tab_widget", None)
                     combined_width = (
                         int(document_area.width()) + int(visible_side_dock.width())
-                        if isinstance(document_area, QWidget)
+                        if isinstance(document_area, QWidget) and document_area.isVisible()
                         else int(self._window.width())
                     )
+                    combined_width = min(combined_width, self._window.width())
                     maximum_width = max(
                         minimum_width,
                         combined_width - self.MINIMUM_CENTRAL_WIDTH,
@@ -386,8 +387,8 @@ class AdaptiveLayoutController(QObject):
             if self._results_dock.isVisible():
                 central = self._window.centralWidget()
                 document_area = getattr(self._window, "tab_widget", None)
-                if not isinstance(document_area, QWidget):
-                    document_area = central
+                if not isinstance(document_area, QWidget) or not document_area.isVisible():
+                    document_area = getattr(self._window, "_center_stack", central)
                 central_height = (
                     max(0, document_area.height())
                     if document_area is not None

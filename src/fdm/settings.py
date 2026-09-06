@@ -655,11 +655,11 @@ class WorkspaceLayoutSettings:
 
     version: int = 3
     project_width: int = 260
-    inspector_width: int = 380
+    inspector_width: int = 320
     results_height: int = 260
     inspector_records_height: int = 260
     statistics_expanded: bool = False
-    calibration_expanded: bool = True
+    calibration_expanded: bool = False
     records_expanded: bool = True
     area_recognition_expanded: bool = False
     object_properties_expanded: bool = False
@@ -676,7 +676,7 @@ class WorkspaceLayoutSettings:
         return WorkspaceLayoutSettings(
             version=3,
             project_width=self._extent(self.project_width, 260),
-            inspector_width=max(376, self._extent(self.inspector_width, 380)),
+            inspector_width=max(300, self._extent(self.inspector_width, 320)),
             results_height=self._extent(self.results_height, 260),
             inspector_records_height=self._extent(self.inspector_records_height, 260),
             statistics_expanded=bool(self.statistics_expanded),
@@ -710,7 +710,7 @@ class WorkspaceLayoutSettings:
             version=3,
             project_width=cls._extent(payload.get("project_width"), defaults.project_width),
             inspector_width=max(
-                376,
+                300,
                 cls._extent(payload.get("inspector_width"), defaults.inspector_width),
             ),
             results_height=cls._extent(payload.get("results_height"), defaults.results_height),

@@ -470,7 +470,7 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         defaults = WorkspaceLayoutSettings()
         self.assertEqual(window._app_settings.workspace_layout, defaults)
         self.assertFalse(window._statistics_section.isExpanded())
-        self.assertTrue(window._calibration_section.isExpanded())
+        self.assertFalse(window._calibration_section.isExpanded())
         self.assertTrue(window._records_section.isExpanded())
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
@@ -483,6 +483,8 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
             self.app.processEvents()
 
         section = window._area_recognition_section
+        window._object_properties_section.setExpanded(True)
+        self.app.processEvents()
         self.assertEqual(section.summaryLabel.text(), "")
         self.assertTrue(section.summaryLabel.isVisible())
         self.assertGreater(section.summaryLabel.width(), 40)
@@ -589,6 +591,9 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
             window.redo_action,
             window.measure_workspace_action,
             window.live_preview_action,
+            window.digital_slide_action,
+            window.export_template_action,
+            window.export_overlay_action,
             window.capture_frame_action,
             window.settings_action,
         )
@@ -601,7 +606,9 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
                 self.assertIsNotNone(extension)
                 self.assertFalse(extension.isVisible())
                 for action in critical_actions:
-                    button = toolbar.widgetForAction(action)
+                    button = toolbar.widgetForAction(action) or next(
+                        (item for item in toolbar.findChildren(QToolButton) if item.defaultAction() is action), None,
+                    )
                     self.assertIsNotNone(button, action.text())
                     self.assertTrue(button.isVisible(), action.text())
                     self.assertFalse(button.isHidden(), action.text())
@@ -617,7 +624,8 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.assertNotIn(window.close_all_action, toolbar_actions)
         more_button = window.findChild(QToolButton, "moreCommandButton")
         more_actions = set(more_button.menu().actions())
-        self.assertIn(window.digital_slide_action, more_actions)
+        self.assertNotIn(window.digital_slide_action, more_actions)
+        self.assertIn(window.digital_slide_action, [button.defaultAction() for button in window._workspace_buttons])
         self.assertIn(window.optimize_capture_signal_action, more_actions)
         self.assertIn(window.close_current_action, more_actions)
         self.assertIn(window.close_all_action, more_actions)
@@ -656,19 +664,20 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         window = self._window()
         content = window._inspector_scroll.widget()
         self.assertIs(content, window._inspector_content)
-        ordered = [content.layout().itemAt(index).widget() for index in range(5)]
+        ordered = [content.layout().itemAt(index).widget() for index in range(6)]
         self.assertEqual(
             ordered,
             [
-                window._statistics_section,
-                window._calibration_section,
-                window._records_section,
-                window._area_recognition_section,
+                window._current_measurement_summary,
                 window._object_properties_section,
+                window._statistics_section,
+                window._records_section,
+                window._calibration_section,
+                window._area_recognition_section,
             ],
         )
         self.assertFalse(window._statistics_section.isExpanded())
-        self.assertTrue(window._calibration_section.isExpanded())
+        self.assertFalse(window._calibration_section.isExpanded())
         self.assertTrue(window._records_section.isExpanded())
         self.assertFalse(window._area_recognition_section.isExpanded())
         self.assertFalse(window._object_properties_section.isExpanded())
@@ -680,12 +689,14 @@ class ProfessionalWorkspaceTests(unittest.TestCase):
         self.app.processEvents()
         content = window._inspector_content
         layout = content.layout()
+        window._object_properties_section.setExpanded(True)
+        self.app.processEvents()
         sections = (
-            window._statistics_section,
-            window._calibration_section,
-            window._records_section,
-            window._area_recognition_section,
             window._object_properties_section,
+            window._statistics_section,
+            window._records_section,
+            window._calibration_section,
+            window._area_recognition_section,
         )
 
         initial_tops = [section.y() for section in sections]

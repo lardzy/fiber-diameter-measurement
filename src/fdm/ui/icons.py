@@ -5,7 +5,7 @@ import sys
 from typing import Callable
 
 from PySide6.QtCore import QPointF, QRectF, Qt
-from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPen, QPixmap, QPolygonF
+from PySide6.QtGui import QColor, QIcon, QPainter, QPainterPath, QPalette, QPen, QPixmap, QPolygonF
 from PySide6.QtWidgets import QApplication, QStyle
 
 from fdm.settings import bundle_resource_root
@@ -38,6 +38,7 @@ QT_AWESOME_NAMES: dict[str, str] = {
     "navigator": "mdi6.map-outline",
     "export": "fa5s.file-export",
     "settings": "fa5s.cog",
+    "search": "fa5s.search",
     "statistics": "fa5s.chart-bar",
     "results": "fa5s.table",
     "model": "fa5s.microchip",
@@ -72,7 +73,9 @@ QT_AWESOME_NAMES: dict[str, str] = {
 }
 
 
-def themed_icon(name: str, *, color: str = "#F7F4EA", size: int = 18) -> QIcon:
+def themed_icon(name: str, *, color: str | None = None, size: int = 18) -> QIcon:
+    if color is None:
+        color = QApplication.palette().color(QPalette.ColorRole.WindowText).name() if QApplication.instance() else "#1F2933"
     if qta is not None:
         icon_name = QT_AWESOME_NAMES.get(name)
         if icon_name:

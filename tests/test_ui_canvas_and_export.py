@@ -2758,7 +2758,8 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(window._digital_slide_range_map._axis_hint, "X→ / Y↓")
             self.assertIsNotNone(window._digital_slide_progress_bar)
             output_box = window._digital_slide_output_path_edit.parent()
-            self.assertIs(window._digital_slide_progress_bar.parent().parent(), output_box)
+            self.assertIs(window._digital_slide_progress_bar.parent(), window._capture_task_bar)
+            self.assertIs(window._digital_slide_start_button.parent(), window._capture_task_bar)
             self.assertFalse(window._digital_slide_left_panel.isAncestorOf(output_box))
             self.assertTrue(window._digital_slide_right_panel.isAncestorOf(output_box))
             right_panel_layout = window._digital_slide_right_panel.widget().layout()
@@ -3299,7 +3300,7 @@ class CanvasAndExportTests(unittest.TestCase):
         self.assertIsNone(window._preview_document)
         self.assertIsNotNone(window._preview_canvas)
         self.assertIsNone(window._preview_canvas.document_id)
-        self.assertIs(window._center_stack.currentWidget(), window.tab_widget)
+        self.assertIs(window._center_stack.currentWidget(), window._welcome_panel)
 
     def test_live_preview_stop_requests_magic_cache_clear(self) -> None:
         window = MainWindow()
@@ -5042,7 +5043,10 @@ class CanvasAndExportTests(unittest.TestCase):
             self.assertEqual(
                 [action for action in more_button.menu().actions() if not action.isSeparator()],
                 [
-                    window.digital_slide_action,
+                    window.focus_workspace_action,
+                    window.review_workspace_action,
+                    window.fullscreen_measurement_action,
+                    window.reset_workspace_layout_action,
                     window.optimize_capture_signal_action,
                     window.close_current_action,
                     window.close_all_action,
@@ -5055,17 +5059,22 @@ class CanvasAndExportTests(unittest.TestCase):
                 [action for action in open_button.menu().actions() if not action.isSeparator()],
                 [window.open_images_action, window.open_folder_action, window.open_project_action],
             )
-            toolbar_actions = window._file_toolbar.actions()
             for action in (
                 window.save_project_action,
                 window.undo_action,
                 window.redo_action,
                 window.measure_workspace_action,
                 window.live_preview_action,
+                window.digital_slide_action,
+                window.export_template_action,
+                window.export_overlay_action,
                 window.capture_frame_action,
                 window.settings_action,
             ):
-                self.assertIn(action, toolbar_actions)
+                self.assertTrue(any(
+                    button.defaultAction() is action and button.isVisible()
+                    for button in window._file_toolbar.findChildren(QToolButton)
+                ), action.text())
         finally:
             window.close()
 
@@ -5084,7 +5093,7 @@ class CanvasAndExportTests(unittest.TestCase):
             button.mouseReleaseEvent(FakeMouseEvent(primary_point, button=Qt.MouseButton.LeftButton))
 
             self.assertEqual(triggered, ["primary"])
-            self.assertEqual(button.height(), 40)
+            self.assertEqual(button.height(), 36)
             self.assertGreaterEqual(button.menuRect().width(), 28)
         finally:
             button.close()
@@ -5270,6 +5279,12 @@ class CanvasAndExportTests(unittest.TestCase):
                     window.toggle_inspector_panel_action,
                     window.toggle_results_panel_action,
                     window.reset_workspace_layout_action,
+                    window.focus_workspace_action,
+                    window.review_workspace_action,
+                    window.previous_image_action,
+                    window.next_image_action,
+                    window.toggle_edge_snap_action,
+                    window._screen_label_menu.menuAction(),
                 ],
             )
             for action in window._mode_actions.values():
@@ -7192,7 +7207,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_stacked_context_row_has_visible_height_when_window_is_narrow(self) -> None:
-        window = MainWindow()
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
@@ -7212,7 +7228,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window.close()
 
     def test_context_prefers_stacking_before_compacting_primary_tools(self) -> None:
-        window = MainWindow()
+        with patch("fdm.ui.main_window.AppSettingsIO.load", return_value=AppSettings()):
+            window = MainWindow()
         try:
             strip = window._measurement_tool_strip
             self.assertIsInstance(strip, MeasurementToolStrip)
@@ -7294,8 +7311,9 @@ class CanvasAndExportTests(unittest.TestCase):
             # enclosing scroll area.  Assert the actual category editor
             # geometry so adding the ROI section cannot squeeze it.
             category_panel = window._left_panel_splitter.widget(1)
-            self.assertGreaterEqual(category_panel.minimumHeight(), 340)
-            self.assertGreaterEqual(category_panel.height(), 340)
+            self.assertGreaterEqual(category_panel.minimumHeight(), 180)
+            self.assertGreaterEqual(category_panel.height(), 180)
+            self.assertEqual(window._left_panel_splitter.count(), 2)
         finally:
             window.close()
 
@@ -7417,8 +7435,8 @@ class CanvasAndExportTests(unittest.TestCase):
 
             window.set_tool_mode("freehand_area")
 
-            self.assertEqual(window._area_operation_button.text(), "添加(T)")
-            self.assertEqual(window.current_canvas().current_area_edit_operation_mode(), AreaEditOperationMode.ADD)
+            self.assertEqual(window._area_operation_button.text(), "剔除(T)")
+            self.assertEqual(window.current_canvas().current_area_edit_operation_mode(), AreaEditOperationMode.SUBTRACT)
         finally:
             window._reset_workspace()
             window.close()

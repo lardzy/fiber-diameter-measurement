@@ -175,6 +175,7 @@ from fdm.ui.rendering import (
     draw_endpoint_style,
     draw_overlay_annotations,
     draw_measurements,
+    draw_measurement_label_only,
     draw_preview_scale_anchor,
     measurement_display_intersects_rect,
     measurement_display_image_bounds,
@@ -1021,6 +1022,8 @@ class DocumentCanvas(QWidget):
         self._temporary_grab_active = False
 
         self._settings = AppSettings()
+        self._screen_label_mode = "all"
+        self._screen_passive_settings = self._settings
         self._overlay_settings_signature = _measurement_overlay_settings_signature(
             self._settings
         )
@@ -1421,7 +1424,7 @@ class DocumentCanvas(QWidget):
         if mode != self._tool_mode or next_construction_kind != self._construction_tool_kind:
             self._cancel_area_drawing()
             self._cancel_line_drawing()
-            if mode in {"polygon_area", "freehand_area"}:
+            if mode in {"polygon_area", "freehand_area"} and self._tool_mode not in {"polygon_area", "freehand_area"}:
                 self._area_edit_operation_mode = AreaEditOperationMode.ADD
             if is_magic_segment_tool_mode(self._tool_mode) or not is_magic_segment_tool_mode(mode):
                 self.clear_magic_segment_session()
@@ -1448,6 +1451,7 @@ class DocumentCanvas(QWidget):
             canvas_visual_signature != self._canvas_visual_settings_signature
         )
         self._settings = settings
+        self._refresh_screen_passive_settings()
         self._sync_object_snap_settings()
         self._overlay_settings_signature = overlay_signature
         self._canvas_visual_settings_signature = canvas_visual_signature
@@ -1458,6 +1462,26 @@ class DocumentCanvas(QWidget):
             self._measurement_display_index = None
             self._measurement_display_index_signature = None
             self.update()
+
+    def set_screen_measurement_labels(self, mode: str) -> None:
+        """Change canvas labels only; application/export settings stay intact."""
+        if mode not in {"all", "selected", "hidden"} or mode == self._screen_label_mode:
+            return
+        self._screen_label_mode = mode
+        self._refresh_screen_passive_settings()
+        self._overlay_style_generation += 1
+        self._invalidate_all_overlay_tiles()
+        self.update()
+
+    def _refresh_screen_passive_settings(self) -> None:
+        if self._screen_label_mode == "all":
+            self._screen_passive_settings = self._settings
+        else:
+            self._screen_passive_settings = replace(
+                self._settings,
+                length_measurement_label_style=replace(self._settings.length_measurement_label_style, enabled=False),
+                area_measurement_label_style=replace(self._settings.area_measurement_label_style, enabled=False),
+            )
 
     def _sync_object_snap_settings(self) -> None:
         kinds: set[SnapKind] = set()
@@ -5807,6 +5831,11 @@ class DocumentCanvas(QWidget):
             )
             if area_uses_active_layer:
                 self._draw_selected_measurement_active_layer(painter, context)
+        if self._screen_label_mode == "selected":
+            selected_id = self._document.view_state.selected_measurement_id
+            selected = self._document.get_measurement(selected_id) if selected_id else None
+            if selected is not None and selected_id not in excluded_measurement_ids:
+                draw_measurement_label_only(painter, self._document, selected, self.image_to_widget, self._settings)
         draw_overlay_annotations(
             painter,
             self._document,
@@ -5964,7 +5993,7 @@ class DocumentCanvas(QWidget):
                 painter,
                 self._document,
                 image_to_output,
-                self._settings,
+                self._screen_passive_settings,
                 line_width=2.0,
                 endpoint_radius=4.0,
                 selected_measurement_id=(
@@ -6270,7 +6299,7 @@ class DocumentCanvas(QWidget):
                 painter,
                 self._document,
                 self.image_to_widget,
-                self._settings,
+                self._screen_passive_settings,
                 line_width=2.0,
                 endpoint_radius=4.0,
                 selected_measurement_id=selected_id,
@@ -6654,7 +6683,7 @@ class DocumentCanvas(QWidget):
                     command = build_passive_area_overlay_command(
                         self._document,
                         measurement,
-                        self._settings,
+                        self._screen_passive_settings,
                         zoom=key.zoom,
                         line_width=2.0,
                         show_fill=self._show_area_fill,

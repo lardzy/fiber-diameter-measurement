@@ -412,6 +412,9 @@ from fdm.ui.analysis_batch_dialog import (
     AnalysisBatchDialog,
 )
 from fdm.ui.icons import application_icon, themed_icon
+from fdm.ui.workbench_controls import (
+    CommandSearchDialog, CurrentMeasurementSummary, MeasurementContextBar, WelcomePanel, action_button,
+)
 from fdm.ui.image_loader import ImageLoadRequest, raster_document_contract_error
 from fdm.ui.display_adjustment_dialog import (
     DisplayAdjustmentAction,
@@ -1892,6 +1895,9 @@ class MainWindow(QMainWindow):
         self._zoom_status_button: ViewZoomStatusButton | None = None
         self._document_view_controls: QWidget | None = None
         self._workspace_mode = WorkspaceMode.MEASURE
+        self._workbench_presentation_state: QByteArray | None = None
+        self._workbench_presentation_mode = "standard"
+        self._screen_label_mode = "all"
         self._workspace_state_restored = False
         self._results_tabs: QTabWidget | None = None
         self._results_count_label: QLabel | None = None
@@ -2485,6 +2491,7 @@ class MainWindow(QMainWindow):
         self._inspector_dock.setAllowedAreas(Qt.DockWidgetArea.RightDockWidgetArea)
         self._inspector_dock.setPanelWidget(self._build_right_panel())
         self.addDockWidget(Qt.DockWidgetArea.RightDockWidgetArea, self._inspector_dock)
+        self._install_capture_task_bar()
 
         self._results_dock = WorkspaceDockWidget("结果", "measurementResultsDock", self)
         self._results_dock.setAllowedAreas(Qt.DockWidgetArea.BottomDockWidgetArea)
@@ -2512,7 +2519,7 @@ class MainWindow(QMainWindow):
             self,
             adaptive_layout=self._adaptive_layout,
             extra_chrome=(self._image_resolution_label, self._version_label),
-            preserved_widgets=(self._measure_toolbar, self.statusBar()),
+            preserved_widgets=(self._measure_toolbar, self._context_toolbar, self.statusBar()),
             state_version=2,
             parent=self,
         )
@@ -2526,6 +2533,25 @@ class MainWindow(QMainWindow):
         )
 
     def _create_actions(self) -> None:
+        self.previous_image_action = QAction("上一张图片", self)
+        self.previous_image_action.setShortcut("Ctrl+PgUp")
+        self.previous_image_action.triggered.connect(lambda: self._step_document(-1))
+        self.next_image_action = QAction("下一张图片", self)
+        self.next_image_action.setShortcut("Ctrl+PgDown")
+        self.next_image_action.triggered.connect(lambda: self._step_document(1))
+        self.toggle_edge_snap_action = QAction("边缘吸附", self)
+        self.toggle_edge_snap_action.setCheckable(True)
+        self.toggle_edge_snap_action.setShortcut("B")
+        self.toggle_edge_snap_action.setToolTip("切换手动线段 / 边缘吸附（B），不影响对象吸附设置")
+        self.toggle_edge_snap_action.triggered.connect(self._toggle_edge_snap)
+        self.addActions([self.previous_image_action, self.next_image_action, self.toggle_edge_snap_action])
+        # Standard magic subtraction already uses 1/2/3 for its input shape.
+        # Keep that contract and offer a conflict-free category shortcut there.
+        for number in range(1, 10):
+            action = QAction(f"切换到类别 {number}", self)
+            action.setShortcut(f"Alt+{number}")
+            action.triggered.connect(lambda _checked=False, n=number: self._activate_group_shortcut(n))
+            self.addAction(action)
         self.open_images_action = QAction("打开图片", self)
         self.open_images_action.setIcon(themed_icon("open_images", color="#D7E3FC"))
         self.open_images_action.setShortcut("Ctrl+O")
@@ -2797,9 +2823,18 @@ class MainWindow(QMainWindow):
 
         self.reset_workspace_layout_action = QAction("恢复默认布局", self)
         self.reset_workspace_layout_action.triggered.connect(self._reset_workspace_layout)
+        self.focus_workspace_action = QAction("专注画布", self)
+        self.focus_workspace_action.setCheckable(True)
+        self.focus_workspace_action.triggered.connect(lambda checked: self._set_workbench_presentation("focus" if checked else "standard"))
+        self.review_workspace_action = QAction("图像与结果复核", self)
+        self.review_workspace_action.setCheckable(True)
+        self.review_workspace_action.triggered.connect(lambda checked: self._set_workbench_presentation("review" if checked else "standard"))
 
         self.shortcuts_help_action = QAction("快捷键说明", self)
         self.shortcuts_help_action.triggered.connect(self.open_shortcut_help_dialog)
+        self.command_search_action = QAction("查找功能", self)
+        self.command_search_action.setShortcut("Ctrl+K")
+        self.command_search_action.triggered.connect(self._open_command_search)
 
         self.export_actions: list[QAction] = []
         self.export_actions.append(
@@ -2842,6 +2877,21 @@ class MainWindow(QMainWindow):
                 ),
             )
         )
+
+        self.export_template_action = QAction("导出模板", self)
+        self.export_template_action.triggered.connect(self._export_template)
+        self.export_actions.append(self.export_template_action)
+        self.export_overlay_action = self.export_actions[0]
+        self._screen_label_actions = {}
+        label_group = QActionGroup(self)
+        label_group.setExclusive(True)
+        for mode, label in (("all", "全部标签"), ("selected", "仅选中标签"), ("hidden", "隐藏标签")):
+            action = QAction(label, self)
+            action.setCheckable(True)
+            action.setChecked(mode == "all")
+            action.triggered.connect(lambda _checked=False, value=mode: self._set_screen_label_mode(value))
+            label_group.addAction(action)
+            self._screen_label_actions[mode] = action
 
         mode_group = QActionGroup(self)
         mode_group.setExclusive(True)
@@ -3354,8 +3404,17 @@ class MainWindow(QMainWindow):
         view_menu.addAction(self.toggle_results_panel_action)
         view_menu.addSeparator()
         view_menu.addAction(self.reset_workspace_layout_action)
+        view_menu.addAction(self.focus_workspace_action)
+        view_menu.addAction(self.review_workspace_action)
+        view_menu.addSeparator()
+        view_menu.addAction(self.previous_image_action)
+        view_menu.addAction(self.next_image_action)
+        view_menu.addAction(self.toggle_edge_snap_action)
+        self._screen_label_menu = view_menu.addMenu("画布标签")
+        self._screen_label_menu.addActions(list(self._screen_label_actions.values()))
 
         help_menu = self.menuBar().addMenu("帮助")
+        help_menu.addAction(self.command_search_action)
         help_menu.addAction(self.shortcuts_help_action)
 
     def _build_toolbar(self) -> None:
@@ -3366,15 +3425,29 @@ class MainWindow(QMainWindow):
         file_toolbar.setIconSize(QSize(18, 18))
         self.addToolBar(file_toolbar)
         self._file_toolbar = file_toolbar
+        file_toolbar.setStyleSheet("QToolBar { padding: 0; } QToolButton { min-height: 30px; padding: 1px 4px; }")
+        file_toolbar.setContentsMargins(4, 0, 4, 0)
+        for action, label in ((self.save_project_action, "保存"),
+                              (self.capture_frame_action, "采集一张"),
+                              (self.toggle_project_panel_action, "项目"),
+                              (self.toggle_inspector_panel_action, "属性"),
+                              (self.switch_capture_device_action, "设备"),
+                              (self.settings_action, "设置"),
+                              (self.command_search_action, "查找")):
+            action.setIconText(label)
+        self._workspace_buttons = []
+        for action, label in ((self.measure_workspace_action, "测量分析"),
+                              (self.live_preview_action, "实时采集"),
+                              (self.digital_slide_action, "数字切片")):
+            button = action_button(action, self, text=label)
+            button.setProperty("workspaceTab", True)
+            file_toolbar.addWidget(button)
+            self._workspace_buttons.append(button)
+        file_toolbar.addSeparator()
 
-        open_button = QToolButton(self)
+        open_button = action_button(self.open_images_action, self, text="打开")
         open_button.setObjectName("openCommandButton")
-        open_button.setText("打开")
-        open_button.setIcon(themed_icon("open_images", color="#D7E3FC"))
-        open_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         open_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
-        open_button.setDefaultAction(self.open_images_action)
-        open_button.setText("打开")
         open_menu = QMenu(open_button)
         open_menu.addAction(self.open_images_action)
         open_menu.addAction(self.open_folder_action)
@@ -3382,8 +3455,11 @@ class MainWindow(QMainWindow):
         open_button.setMenu(open_menu)
         file_toolbar.addWidget(open_button)
         file_toolbar.addAction(self.save_project_action)
+        file_toolbar.addWidget(action_button(self.export_template_action, self, text="导出模板"))
+        file_toolbar.addWidget(action_button(self.export_overlay_action, self, text="叠加图"))
 
         export_button = QToolButton(self)
+        self._export_command_button = export_button
         export_button.setText("导出")
         export_button.setIcon(themed_icon("export", color="#D7E3FC"))
         export_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
@@ -3401,8 +3477,6 @@ class MainWindow(QMainWindow):
         file_toolbar.addAction(self.redo_action)
         file_toolbar.addSeparator()
 
-        file_toolbar.addAction(self.measure_workspace_action)
-        file_toolbar.addAction(self.live_preview_action)
         file_toolbar.addAction(self.capture_frame_action)
 
         more_button = QToolButton(self)
@@ -3411,7 +3485,10 @@ class MainWindow(QMainWindow):
         more_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
         more_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
         more_menu = QMenu(more_button)
-        more_menu.addAction(self.digital_slide_action)
+        for action in (self.focus_workspace_action, self.review_workspace_action,
+                       self.fullscreen_measurement_action, self.reset_workspace_layout_action):
+            more_menu.addAction(action)
+        more_menu.addSeparator()
         more_menu.addAction(self.optimize_capture_signal_action)
         more_menu.addSeparator()
         more_menu.addAction(self.close_current_action)
@@ -3426,11 +3503,16 @@ class MainWindow(QMainWindow):
         file_toolbar.addAction(self.toggle_project_panel_action)
         file_toolbar.addAction(self.toggle_inspector_panel_action)
         file_toolbar.addAction(self.toggle_results_panel_action)
+        for action in (self.toggle_project_panel_action, self.toggle_inspector_panel_action, self.toggle_results_panel_action):
+            file_toolbar.widgetForAction(action).setProperty("panelToggle", True)
         file_toolbar.addAction(self.switch_capture_device_action)
         file_toolbar.addAction(self.settings_action)
+        file_toolbar.addAction(self.command_search_action)
         self._settings_command_button = file_toolbar.widgetForAction(self.settings_action)
         if self._settings_command_button is not None:
             self._settings_command_button.setObjectName("settingsCommandButton")
+        for button in file_toolbar.findChildren(QToolButton):
+            button.setMinimumHeight(32)
 
         self._measurement_tool_strip = self._build_measurement_tool_strip()
         self.addToolBarBreak(Qt.ToolBarArea.TopToolBarArea)
@@ -3440,6 +3522,28 @@ class MainWindow(QMainWindow):
         measure_toolbar.addWidget(self._measurement_tool_strip)
         self.addToolBar(Qt.ToolBarArea.TopToolBarArea, measure_toolbar)
         self._measure_toolbar = measure_toolbar
+        self._measurement_context_bar = MeasurementContextBar(
+            self.previous_image_action, self.next_image_action, self.toggle_edge_snap_action, self,
+        )
+        self._measurement_context_bar.documentActivated.connect(self._activate_document_index)
+        self._measurement_context_bar.groupActivated.connect(self._activate_quick_group)
+        self._measurement_context_bar.set_area_actions([
+            (self._mode_actions["polygon_area"], "多边形"),
+            (self._mode_actions["freehand_area"], "自由圈选"),
+            (self._mode_actions[MagicSegmentToolMode.STANDARD], "魔棒"),
+            (self._mode_actions[MagicSegmentToolMode.REFERENCE], "同类扩选"),
+        ])
+        self._area_operation_button.setObjectName("quickAreaOperationButton")
+        self._area_operation_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self._measurement_context_bar.areaLayout.addWidget(self._area_operation_button)
+        self._measurement_context_bar.calibrationMenu.aboutToShow.connect(self._populate_quick_calibration_menu)
+        self.addToolBarBreak(Qt.ToolBarArea.TopToolBarArea)
+        self._context_toolbar = QToolBar("图片与测量状态", self)
+        self._context_toolbar.setObjectName("measurementContextToolbar")
+        self._context_toolbar.setMovable(False)
+        self._context_toolbar.addWidget(self._measurement_context_bar)
+        self.addToolBar(self._context_toolbar)
+        self._context_toolbar.setContentsMargins(4, 0, 4, 0)
         self._update_count_numbers_button()
 
     def _build_measurement_tool_strip(self) -> MeasurementToolStrip:
@@ -3511,7 +3615,8 @@ class MainWindow(QMainWindow):
 
         self._magic_subtract_mode_button = QToolButton(container)
         self._magic_subtract_mode_button.setProperty("contextTool", True)
-        self._magic_subtract_mode_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._magic_subtract_mode_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
+        self._magic_subtract_mode_button.clicked.connect(self._cycle_magic_subtract_shape)
         self._magic_subtract_mode_button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextOnly)
         self._magic_subtract_mode_menu = self._build_magic_subtract_mode_menu(self._magic_subtract_mode_button)
         self._magic_subtract_mode_button.setMenu(self._magic_subtract_mode_menu)
@@ -3641,7 +3746,7 @@ class MainWindow(QMainWindow):
         self._area_operation_button.setText("添加(T)")
         self._area_operation_button.setToolTip("切换当前面积工具的添加/剔除状态（T）")
         self._area_operation_button.clicked.connect(self._cycle_area_edit_operation_mode)
-        layout.addWidget(self._area_operation_button)
+        # Installed beside the direct area tools in the measurement context bar.
 
         self._path_complete_button = QToolButton(container)
         self._path_complete_button.setProperty("contextTool", True)
@@ -4135,11 +4240,10 @@ class MainWindow(QMainWindow):
         image_layout.addWidget(self.image_list)
 
         group_box = QGroupBox("纤维类别", standard_content)
-        # The ROI manager is a third splitter child.  Keep the high-frequency
-        # category editor at its established usable height instead of letting
-        # QSplitter divide the available height equally and squeeze it.  The
-        # enclosing scroll area provides the small-screen fallback.
-        group_box.setMinimumHeight(340)
+        # Images and categories share the main page; ROI tools use a separate
+        # page so they cannot squeeze these two high-frequency lists.
+        group_box.setMinimumHeight(180)
+        image_box.setMinimumHeight(120)
         group_layout = QVBoxLayout(group_box)
         header_row = QHBoxLayout()
         header_row.setContentsMargins(14, 0, FiberGroupListItemWidget.RIGHT_MARGIN, 0)
@@ -4262,12 +4366,14 @@ class MainWindow(QMainWindow):
         splitter.setChildrenCollapsible(False)
         splitter.addWidget(image_box)
         splitter.addWidget(group_box)
-        splitter.addWidget(geometry_tabs)
         splitter.setStretchFactor(0, 1)
-        splitter.setStretchFactor(1, 2)
-        splitter.setStretchFactor(2, 1)
-        splitter.setSizes([260, 680, 260])
-        standard_layout.addWidget(splitter, 1)
+        splitter.setStretchFactor(1, 1)
+        splitter.setSizes([240, 280])
+        self._project_navigation_tabs = QTabWidget(standard_content)
+        self._project_navigation_tabs.setObjectName("projectNavigationTabs")
+        self._project_navigation_tabs.addTab(splitter, "图片与类别")
+        self._project_navigation_tabs.addTab(geometry_tabs, "ROI / 辅助")
+        standard_layout.addWidget(self._project_navigation_tabs, 1)
         standard_scroll.setWidget(standard_content)
         self._left_standard_splitter = standard_scroll
         layout.addWidget(standard_scroll, 1)
@@ -4732,6 +4838,13 @@ class MainWindow(QMainWindow):
         view_controls_layout = QHBoxLayout(view_controls)
         view_controls_layout.setContentsMargins(4, 0, 4, 0)
         view_controls_layout.setSpacing(2)
+        self._screen_labels_button = QToolButton(view_controls)
+        self._screen_labels_button.setText("标签：全部")
+        self._screen_labels_button.setToolTip("仅调整屏幕上的长度与面积标签；导出样式和计数编号仍按各自设置。")
+        self._screen_labels_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self._screen_labels_button.setMenu(self._screen_label_menu)
+        self._screen_labels_button.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        view_controls_layout.addWidget(self._screen_labels_button)
         for action in (
             self.fit_action,
             self.digital_slide_native_fit_action,
@@ -4749,6 +4862,10 @@ class MainWindow(QMainWindow):
         self._document_view_controls = view_controls
         self.tab_widget.setCornerWidget(view_controls, Qt.Corner.TopRightCorner)
         self._center_stack.addWidget(self.tab_widget)
+        self._welcome_panel = WelcomePanel(
+            self.open_images_action, self.open_project_action, self.live_preview_action,
+        )
+        self._center_stack.addWidget(self._welcome_panel)
 
         self._preview_page = QWidget()
         preview_layout = QVBoxLayout(self._preview_page)
@@ -4821,6 +4938,10 @@ class MainWindow(QMainWindow):
         inspector_layout.setVerticalSizeConstraint(
             QLayout.SizeConstraint.SetMinimumSize
         )
+        self._current_measurement_summary = CurrentMeasurementSummary(inspector_content)
+        self._current_measurement_summary.editRequested.connect(self._show_current_object_properties)
+        self._current_measurement_summary.groupChangeRequested.connect(self._on_measurement_group_change_requested)
+        inspector_layout.addWidget(self._current_measurement_summary)
 
         self._statistics_panel = MeasurementStatisticsPanel(inspector_content)
         self._statistics_panel.resultsRequested.connect(self._toggle_results_panel)
@@ -5035,14 +5156,18 @@ class MainWindow(QMainWindow):
         self._object_properties_section.expandedChanged.connect(
             lambda expanded: self._set_inspector_section_state("object_properties_expanded", expanded)
         )
-        inspector_layout.addWidget(self._object_properties_section)
+        self._object_properties_section.expandedChanged.connect(self._object_properties_section.setVisible)
+        self._object_properties_section.setVisible(state.object_properties_expanded)
+        inspector_layout.insertWidget(1, self._object_properties_section)
+        inspector_layout.removeWidget(self._calibration_section)
+        inspector_layout.insertWidget(4, self._calibration_section)
         inspector_layout.addStretch(1)
 
         inspector_scroll = QScrollArea(container)
         self._inspector_scroll = inspector_scroll
         inspector_scroll.setObjectName("measurementInspectorScroll")
         inspector_scroll.setWidgetResizable(True)
-        inspector_scroll.setMinimumWidth(360)
+        inspector_scroll.setMinimumWidth(300)
         inspector_scroll.setFrameShape(QFrame.Shape.NoFrame)
         inspector_scroll.setHorizontalScrollBarPolicy(
             Qt.ScrollBarPolicy.ScrollBarAlwaysOff
@@ -5660,6 +5785,230 @@ class MainWindow(QMainWindow):
         action.triggered.connect(lambda checked=False, preset=selection: self.export_results(preset))
         return action
 
+    def _export_template(self) -> None:
+        templates = self._app_settings.raw_record_templates
+        path = self._app_settings.last_raw_record_template_path
+        if not path and templates:
+            path = templates[0].path
+        # Reuse the existing options, scope, preflight and reconciliation path.
+        self.export_results(ExportSelection(include_excel=True, raw_record_template_path=path))
+
+    def _set_screen_label_mode(self, mode: str) -> None:
+        if mode not in self._screen_label_actions:
+            return
+        self._screen_label_mode = mode
+        self._screen_label_actions[mode].setChecked(True)
+        label = {"all": "全部", "selected": "选中", "hidden": "隐藏"}[mode]
+        self._screen_labels_button.setText(f"标签：{label}")
+        for canvas in self._canvases.values():
+            canvas.set_screen_measurement_labels(mode)
+        self._focus_current_canvas()
+
+    def _command_search_entries(self) -> list[tuple[QAction, str, str]]:
+        entries = []
+        seen = set()
+        aliases = {
+            self._mode_actions["manual"]: "直径 测径 长度",
+            self._mode_actions["snap"]: "直径 测径 磁吸 边缘",
+            self._mode_actions["polygon_area"]: "截面面积 圈选",
+            self._mode_actions["freehand_area"]: "截面面积 圈选",
+            self.export_template_action: "原始记录 报表 导出模板",
+            self.export_overlay_action: "叠加图 结果图片 导出图片",
+        }
+        def visit(menu, path):
+            for action in menu.actions():
+                if action.isSeparator() or not action.text():
+                    continue
+                if action.menu() is not None:
+                    visit(action.menu(), path + [action.text().replace("&", "")])
+                elif action not in seen and action is not self.command_search_action:
+                    seen.add(action)
+                    entries.append((action, " › ".join(path), aliases.get(action, "")))
+        visit(self.menuBar(), [])
+        return entries
+
+    def _open_command_search(self) -> None:
+        dialog = CommandSearchDialog(self._command_search_entries(), self)
+        if dialog.exec() == QDialog.DialogCode.Accepted and dialog.chosen_action is not None:
+            action = dialog.chosen_action
+            if action.isEnabled() and action.isVisible():
+                action.trigger()
+        dialog.deleteLater()
+
+    def _step_document(self, delta: int) -> None:
+        self._activate_document_index(self.tab_widget.currentIndex() + delta)
+
+    def _activate_document_index(self, index: int) -> None:
+        if self._preview_active or not 0 <= index < self.tab_widget.count():
+            return
+        self.tab_widget.setCurrentIndex(index)
+        self._focus_current_canvas()
+
+    def _toggle_edge_snap(self, checked: bool) -> None:
+        if self._tool_mode not in {"manual", "snap"} or self._preview_active:
+            self._sync_measurement_context()
+            return
+        self.set_tool_mode("snap" if checked else "manual")
+        self._focus_current_canvas()
+
+    def _activate_quick_group(self, group_id: object) -> None:
+        document = self.current_document()
+        if document is None:
+            return
+        document.set_active_group(group_id)
+        self._populate_group_list(document)
+        self._update_action_states()
+        self._schedule_statistics_refresh()
+        self._focus_current_canvas()
+
+    def _sync_measurement_context(self) -> None:
+        bar = getattr(self, "_measurement_context_bar", None)
+        if bar is None or not hasattr(self, "tab_widget"):
+            return
+        document = self.current_document()
+        available = document is not None and not self._preview_active
+        entries = [(self.tab_widget.tabText(i), self._document_order[i])
+                   for i in range(min(self.tab_widget.count(), len(self._document_order)))]
+        if not entries:
+            self._restore_workbench_presentation()
+        if getattr(self, "_quick_document_entries", None) != entries:
+            self._quick_document_entries = entries
+            bar.documents.blockSignals(True)
+            bar.documents.clear()
+            for index, (title, document_id) in enumerate(entries):
+                bar.documents.addItem(f"{index + 1}/{len(entries)}  {title}", document_id)
+            bar.documents.blockSignals(False)
+        bar.documents.setCurrentIndex(self.tab_widget.currentIndex())
+        bar.documents.setToolTip(bar.documents.currentText())
+        bar.documents.setEnabled(available)
+        self.previous_image_action.setEnabled(available and self.tab_widget.currentIndex() > 0)
+        self.next_image_action.setEnabled(available and self.tab_widget.currentIndex() < len(entries) - 1)
+        # The quick selector needs names, not project-wide measurement totals.
+        groups = [(group.display_name(), group.id) for group in document.sorted_groups()] if document else []
+        if document and document.should_show_uncategorized_entry():
+            groups.insert(0, (UNCATEGORIZED_LABEL, None))
+        if getattr(self, "_quick_group_entries", None) != groups:
+            self._quick_group_entries = groups
+            bar.groups.blockSignals(True)
+            bar.groups.clear()
+            for label, group_id in groups:
+                bar.groups.addItem(label, group_id)
+            bar.groups.blockSignals(False)
+        bar.groups.setCurrentIndex(bar.groups.findData(document.active_group_id) if document else -1)
+        bar.groups.setEnabled(available)
+        bar.groups.setToolTip("仅用于新测量，不修改已有对象。数字 1–9 切换类别；魔棒剔除时用 Alt+1–9。")
+        self.toggle_edge_snap_action.blockSignals(True)
+        self.toggle_edge_snap_action.setChecked(self._tool_mode == "snap")
+        self.toggle_edge_snap_action.blockSignals(False)
+        self.toggle_edge_snap_action.setEnabled(available and self._tool_mode in {"manual", "snap"})
+        bar.snapButton.setVisible(self._tool_mode in {"manual", "snap", "continuous_manual"})
+        bar.areaTools.setVisible(self._tool_mode in {
+            "polygon_area", "freehand_area", MagicSegmentToolMode.STANDARD, MagicSegmentToolMode.REFERENCE,
+        })
+        calibration = document.calibration if document else None
+        if calibration is not None:
+            scale = 1.0 / calibration.pixels_per_unit
+            text = f"已标定 · {scale:.6g} {calibration.unit}/px"
+            details = f"{calibration.source_label}\n{calibration.pixels_per_unit:.6g} px/{calibration.unit}"
+        elif available:
+            text = "⚠ 未标定 · 结果为 px / px²"
+            details = "当前图片尚未标定，长度为像素、面积为平方像素。点击开始标定或应用预设。"
+        else:
+            text, details = "标定 · 请先打开图片", "打开图片后确认标定，再测量真实尺寸。"
+        bar.set_calibration(text, details, missing=available and calibration is None, enabled=available)
+        if not self._preview_active:
+            self._center_stack.setCurrentWidget(self.tab_widget if entries else self._welcome_panel)
+
+    def _populate_quick_calibration_menu(self) -> None:
+        menu = self._measurement_context_bar.calibrationMenu
+        menu.clear()
+        menu.addAction(self._mode_actions["calibration"])
+        menu.addAction("标定详情与预设管理…", self._show_calibration_controls)
+        if self.preset_combo.count():
+            menu.addSeparator()
+            for index in range(self.preset_combo.count()):
+                action = menu.addAction(f"应用：{self.preset_combo.itemText(index)}")
+                action.triggered.connect(lambda _checked=False, i=index: self._apply_quick_calibration_preset(i))
+
+    def _cycle_magic_subtract_shape(self) -> None:
+        canvas = self.current_canvas()
+        if canvas is None or not is_magic_segment_tool_mode(self._tool_mode):
+            return
+        modes = (MagicSegmentSubtractInputMode.SMART, MagicSegmentSubtractInputMode.POLYGON, MagicSegmentSubtractInputMode.FREEHAND)
+        current = canvas.current_magic_subtract_input_mode()
+        self._set_magic_subtract_input_mode(modes[(modes.index(current) + 1) % len(modes)])
+        self._focus_current_canvas()
+
+    def _apply_quick_calibration_preset(self, index: int) -> None:
+        self.preset_combo.setCurrentIndex(index)
+        self.apply_selected_preset()
+        self._focus_current_canvas()
+
+    def _show_inspector_section(self, section: CollapsibleSection) -> None:
+        if not self._inspector_dock.isVisible():
+            self._toggle_inspector_panel()
+        section.setExpanded(True)
+        QTimer.singleShot(0, self, lambda: self._inspector_scroll.ensureWidgetVisible(section, 0, 0))
+
+    def _show_calibration_controls(self) -> None:
+        self._show_inspector_section(self._calibration_section)
+
+    def _show_current_object_properties(self) -> None:
+        self._show_inspector_section(self._object_properties_section)
+
+    def _sync_current_measurement_summary(self, document, selected_ids) -> None:
+        panel = self._current_measurement_summary
+        panel.measurement_id = None
+        panel.groupCombo.hide()
+        panel.sourceLabel.setText("")
+        if document is None or not selected_ids:
+            panel.valueLabel.setText("点击测量线或记录查看")
+            return
+        if len(selected_ids) > 1:
+            panel.valueLabel.setText(f"已选择 {len(selected_ids)} 个对象")
+            panel.sourceLabel.setText("可在属性中批量编辑；结果表保留当前选择。")
+            return
+        measurement = document.get_measurement(selected_ids[0])
+        model = self._records_controller.source_model
+        row = model.source_row_for_id(selected_ids[0])
+        if measurement is None or row < 0:
+            panel.valueLabel.setText("未选择测量对象")
+            return
+        value = model.index(row, MeasurementResultColumn.RESULT).data()
+        unit = model.index(row, MeasurementResultColumn.UNIT).data()
+        panel.valueLabel.setText(f"{value} {unit}")
+        panel.sourceLabel.setText(f"{self._format_measurement_kind(measurement)} · {Path(document.path).name}\n"
+                                  f"{_format_measurement_status_label(measurement.status)} · 当前图片")
+        panel.measurement_id = measurement.id
+        panel.groupCombo.blockSignals(True)
+        panel.groupCombo.clear()
+        panel.groupCombo.addItem("未分类", None)
+        for group in document.sorted_groups():
+            panel.groupCombo.addItem(group.label, group.id)
+        panel.groupCombo.setCurrentIndex(panel.groupCombo.findData(measurement.fiber_group_id))
+        panel.groupCombo.blockSignals(False)
+        panel.groupCombo.show()
+
+    def _install_capture_task_bar(self) -> None:
+        bar = QFrame(self.centralWidget())
+        bar.setObjectName("captureTaskBar")
+        layout = QGridLayout(bar)
+        layout.setContentsMargins(10, 4, 10, 4)
+        layout.setHorizontalSpacing(10)
+        layout.setVerticalSpacing(3)
+        layout.addWidget(self._digital_slide_readiness_label, 0, 0)
+        layout.addWidget(self._digital_slide_plan_summary_label, 0, 1)
+        layout.addWidget(self._digital_slide_progress_bar, 1, 0, 1, 2)
+        self._digital_slide_start_button.setText("开始采集")
+        self._digital_slide_stop_button.setText("停止采集")
+        layout.addWidget(self._digital_slide_start_button, 0, 2, 2, 1)
+        layout.addWidget(self._digital_slide_stop_button, 0, 3, 2, 1)
+        layout.setColumnStretch(0, 1)
+        layout.setColumnStretch(1, 1)
+        self.centralWidget().layout().addWidget(bar)
+        self._capture_task_bar = bar
+        bar.hide()
+
     def set_tool_mode(
         self,
         mode: str,
@@ -5742,6 +6091,7 @@ class MainWindow(QMainWindow):
                 self._construction_tool_kind
             )
         self._schedule_statistics_refresh()
+        self._sync_measurement_context()
 
     def current_document(self) -> ImageDocument | None:
         if self._preview_active:
@@ -12909,6 +13259,33 @@ class MainWindow(QMainWindow):
         return "#D7E3FC" if self._is_dark_palette() else "#51606F"
 
     def _refresh_theme_sensitive_icons(self) -> None:
+        color = self._tool_icon_color("command")
+        for name, icon_name in {
+            "open_images_action": "open_images", "open_folder_action": "open_folder",
+            "open_project_action": "open_project", "save_project_action": "save_project",
+            "export_current_image_action": "export", "export_template_action": "export",
+            "undo_action": "undo", "redo_action": "redo", "settings_action": "settings",
+            "measure_workspace_action": "select", "live_preview_action": "live_preview",
+            "digital_slide_action": "capture_frame", "capture_frame_action": "capture_frame",
+            "switch_capture_device_action": "capture_device", "toggle_project_panel_action": "open_project",
+            "toggle_inspector_panel_action": "statistics", "toggle_results_panel_action": "results",
+            "rename_group_action": "rename", "add_group_action": "add", "toggle_edge_snap_action": "snap",
+            "command_search_action": "search",
+        }.items():
+            action = getattr(self, name, None)
+            if action is not None:
+                action.setIcon(themed_icon(icon_name, color=color))
+        for action in getattr(self, "export_actions", ()):
+            action.setIcon(themed_icon("export", color=color))
+        for name, icon_name in {
+            "_export_command_button": "export", "_add_group_button": "add",
+            "_rename_group_button": "rename", "_add_preset_button": "preset_add",
+            "_edit_preset_button": "rename", "_apply_preset_button": "preset_apply",
+            "_import_cu_preset_button": "preset_import", "_area_auto_button": "area_auto",
+        }.items():
+            button = getattr(self, name, None)
+            if button is not None:
+                button.setIcon(themed_icon(icon_name, color=color))
         if not {
             "select",
             "count",
@@ -12979,6 +13356,7 @@ class MainWindow(QMainWindow):
             self._sync_construction_tool_button()
         if self._overlay_tool_button is not None:
             self._sync_overlay_tool_button()
+        self._update_main_command_bar_density(self.width())
 
     def _update_statusbar_aux_labels(self) -> None:
         if getattr(self, "_version_label", None) is None:
@@ -13000,7 +13378,8 @@ class MainWindow(QMainWindow):
                 f" color: {self._status_color('muted')};"
                 " padding: 1px 7px; border: 1px solid transparent;"
                 " border-radius: 5px; }"
-                "QToolButton:checked { border-color: #2A9D8F; }"
+                "QToolButton:checked { border-color: palette(highlight);"
+                " color: palette(window-text); background: palette(alternate-base); }"
                 "QToolButton:hover {"
                 " border-color: palette(mid); background: palette(alternate-base);"
                 " }"
@@ -13175,12 +13554,9 @@ class MainWindow(QMainWindow):
         """Keep every explicit command reachable without Qt's overflow menu."""
 
         if self._file_toolbar is not None:
-            style = (
-                Qt.ToolButtonStyle.ToolButtonIconOnly
-                if int(width) < AdaptiveLayoutController.MEDIUM_WIDTH
-                else Qt.ToolButtonStyle.ToolButtonTextBesideIcon
-            )
-            self._file_toolbar.setToolButtonStyle(style)
+            self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            if self._file_toolbar.sizeHint().width() > int(width):
+                self._file_toolbar.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonIconOnly)
 
     def resizeEvent(self, event) -> None:
         # Change density before QMainWindow lays out its toolbars.  In the
@@ -13214,29 +13590,76 @@ class MainWindow(QMainWindow):
             self.toggle_results_panel_action.blockSignals(True)
             self.toggle_results_panel_action.setChecked(self._results_dock.isVisible())
             self.toggle_results_panel_action.blockSignals(False)
+            if self._records_section is not None:
+                self._records_section.setVisible(not self._results_dock.isVisible())
 
     def _toggle_project_panel(self, _checked: bool = False) -> None:
+        show = not self._project_dock.isVisible()
+        self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
-            self._adaptive_layout.toggle_project()
+            if self._project_dock.isVisible() != show:
+                self._adaptive_layout.toggle_project()
         self._on_workspace_dock_visibility_changed(False)
 
     def _toggle_inspector_panel(self, _checked: bool = False) -> None:
+        show = not self._inspector_dock.isVisible()
+        self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
-            self._adaptive_layout.toggle_inspector()
+            if self._inspector_dock.isVisible() != show:
+                self._adaptive_layout.toggle_inspector()
         self._on_workspace_dock_visibility_changed(False)
 
     def _toggle_results_panel(self, _checked: bool = False) -> None:
+        show = not self._results_dock.isVisible()
+        self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
-            self._adaptive_layout.toggle_results()
+            if self._results_dock.isVisible() != show:
+                self._adaptive_layout.toggle_results()
         self._on_workspace_dock_visibility_changed(False)
         self._schedule_inspector_layout_restore(immediate=True)
-        QTimer.singleShot(0, self._refresh_distribution_if_visible)
+        QTimer.singleShot(0, self, self._refresh_distribution_if_visible)
 
     def _reset_workspace_layout(self) -> None:
+        self._restore_workbench_presentation()
         if self._adaptive_layout is not None:
             self._adaptive_layout.reset_defaults()
         self._restore_inspector_section_defaults()
         self.statusBar().showMessage("已恢复默认工作区布局", 3000)
+
+    def _restore_workbench_presentation(self) -> None:
+        state = self._workbench_presentation_state
+        if state is None:
+            return
+        self._workbench_presentation_state = None
+        self._workbench_presentation_mode = "standard"
+        self.restoreState(state, 2)
+        compact_changed = (self.width() < self._adaptive_layout.COMPACT_WIDTH) != self._adaptive_layout.is_compact
+        self._adaptive_layout.end_presentation_mode(reapply_layout=compact_changed)
+        for action in (self.focus_workspace_action, self.review_workspace_action):
+            action.blockSignals(True)
+            action.setChecked(False)
+            action.blockSignals(False)
+        self._on_workspace_dock_visibility_changed(False)
+
+    def _set_workbench_presentation(self, mode: str) -> None:
+        self._restore_workbench_presentation()
+        if mode == "standard" or self._preview_active or self.current_document() is None:
+            return
+        if self._fullscreen_controller.is_active:
+            self._fullscreen_controller.exit()
+        self._workbench_presentation_state = self.saveState(2)
+        self._workbench_presentation_mode = mode
+        self._adaptive_layout.begin_presentation_mode()
+        self._project_dock.hide()
+        self._inspector_dock.hide()
+        self._results_dock.setVisible(mode == "review")
+        if mode == "review":
+            self.resizeDocks([self._results_dock], [max(205, min(260, self.height() // 3))], Qt.Orientation.Vertical)
+            QTimer.singleShot(0, self, self._refresh_distribution_if_visible)
+        self.focus_workspace_action.setChecked(mode == "focus")
+        self.review_workspace_action.setChecked(mode == "review")
+        self._on_workspace_dock_visibility_changed(False)
+        self._focus_current_canvas()
 
     def _activate_measure_workspace(self, checked: bool = False) -> None:
         del checked
@@ -13260,6 +13683,8 @@ class MainWindow(QMainWindow):
             workspace = WorkspaceMode.ACQUIRE
         else:
             workspace = WorkspaceMode.MEASURE
+        if workspace is not WorkspaceMode.MEASURE:
+            self._restore_workbench_presentation()
         if (
             workspace is not WorkspaceMode.MEASURE
             and self._fullscreen_controller is not None
@@ -13267,6 +13692,13 @@ class MainWindow(QMainWindow):
         ):
             self._fullscreen_controller.exit()
         self._workspace_mode = workspace
+        self._context_toolbar.setVisible(workspace is WorkspaceMode.MEASURE)
+        self._capture_task_bar.setVisible(workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE)
+        self._project_dock.setWindowTitle("采集范围与焦层" if workspace is WorkspaceMode.DIGITAL_SLIDE_ACQUIRE else "项目与类别")
+        self._inspector_dock.setWindowTitle({
+            WorkspaceMode.MEASURE: "当前对象与测量", WorkspaceMode.ACQUIRE: "采集设置",
+            WorkspaceMode.DIGITAL_SLIDE_ACQUIRE: "样品台与采集设置",
+        }[workspace])
         self.measure_workspace_action.blockSignals(True)
         self.measure_workspace_action.setChecked(workspace is WorkspaceMode.MEASURE)
         self.measure_workspace_action.blockSignals(False)
@@ -19792,6 +20224,7 @@ class MainWindow(QMainWindow):
         if not checked:
             controller.exit()
             return
+        self._restore_workbench_presentation()
         if (
             self.current_document() is None
             or self._preview_active
@@ -22583,6 +23016,7 @@ class MainWindow(QMainWindow):
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        self._restore_workbench_presentation()
         if self._image_information_dialog is not None:
             self._image_information_dialog.close()
             self._image_information_dialog.deleteLater()
@@ -24077,6 +24511,7 @@ class MainWindow(QMainWindow):
             construction_id=construction_id,
             view_zoom=canvas.view_zoom() if canvas is not None else 1.0,
         )
+        self._sync_current_measurement_summary(document, selected_ids)
         section = self._object_properties_section
         if section is None:
             return
@@ -24388,6 +24823,7 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is not None:
             canvas.set_settings(self._app_settings)
+            canvas.set_screen_measurement_labels(self._screen_label_mode)
             canvas.set_tool_mode(
                 "select"
                 if self._preview_active and canvas is self._preview_canvas
@@ -24434,6 +24870,7 @@ class MainWindow(QMainWindow):
         label.setText(f"{mounted} 张图片 · {missing_text} · {save_state}")
 
     def _update_calibration_panel(self, document: ImageDocument | None) -> None:
+        self._sync_measurement_context()
         if self._preview_active:
             self._set_calibration_status_card(
                 title="实时预览中",
@@ -25138,6 +25575,10 @@ class MainWindow(QMainWindow):
         self._focus_current_canvas()
         return True
 
+    def _activate_group_shortcut(self, number: int) -> None:
+        if not self._preview_active and self._should_handle_group_hotkeys():
+            self._switch_active_group_by_number(number)
+
     def _create_progress_dialog(self, *, title: str, label_text: str, maximum: int) -> QProgressDialog:
         progress = QProgressDialog(label_text, "取消", 0, maximum, self)
         progress.setWindowTitle(title)
@@ -25210,9 +25651,14 @@ class MainWindow(QMainWindow):
 
     def _update_action_states(self) -> None:
         self._prune_invalid_workspace_composites()
+        self._sync_measurement_context()
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
+        self.focus_workspace_action.setEnabled(has_document)
+        self.review_workspace_action.setEnabled(has_document)
+        self.export_template_action.setEnabled(has_document)
+        self.export_overlay_action.setEnabled(has_document)
         preview_active = self._preview_active
         active_canvas = self.current_canvas()
         # A focus/move reload remains protected by the exact operation guards,
@@ -25836,7 +26282,10 @@ class MainWindow(QMainWindow):
         if self._magic_subtract_mode_button is not None:
             self._magic_subtract_mode_button.setVisible(standard_mode and operation_mode == MagicSegmentOperationMode.SUBTRACT)
             self._magic_subtract_mode_button.setText(f"剔除方式：{self._magic_subtract_input_label(subtract_input_mode)}")
-            self._magic_subtract_mode_button.setToolTip(self._magic_subtract_input_tooltip(subtract_input_mode))
+            self._magic_subtract_mode_button.setToolTip(
+                self._magic_subtract_input_tooltip(subtract_input_mode)
+                + "\n点击切换下一种；右侧箭头展开选择。1/2/3 选择剔除方式，Alt+数字切换纤维类别。"
+            )
             self._magic_subtract_mode_button.setEnabled(has_document and standard_mode and not busy)
         for mode, action in self._magic_subtract_mode_actions.items():
             action.setChecked(mode == subtract_input_mode)
@@ -26034,6 +26483,7 @@ class MainWindow(QMainWindow):
         )
         self.statusBar().showMessage(status_message, 2500)
         self._update_path_drawing_controls()
+        self._focus_current_canvas()
         return True
 
     def _cancel_active_path_drawing(self) -> bool:
@@ -27459,6 +27909,7 @@ class MainWindow(QMainWindow):
             self.statusBar().showMessage(str(exc), 8000)
             event.ignore()
             return
+        self._restore_workbench_presentation()
         self._persist_window_geometry()
         self._hide_small_object_preview()
         self._clear_prompt_segmentation_cache()
