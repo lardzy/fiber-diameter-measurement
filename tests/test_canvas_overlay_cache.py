@@ -33,6 +33,8 @@ from fdm.ui.canvas_overlay_cache import (
     OVERLAY_TILE_MAX_ENTRIES,
     AreaOverlayDrawCommand,
     AreaOverlayLabelCommand,
+    PictureOverlayDrawCommand,
+    _worker_paths,
     CanvasOverlayRenderSnapshot,
     CanvasOverlayTileCache,
     CanvasOverlayTileKey,
@@ -1057,7 +1059,12 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
             self.assertEqual(len(snapshot.area_commands), 2)
             self.assertFalse(snapshot.exact_composition)
             self.assertTrue(
-                all(command.path.fillRule() == Qt.FillRule.OddEvenFill for command in snapshot.area_commands)
+                all(
+                    command.path is None
+                    and command.raw_coordinates
+                    and _worker_paths.path(command).fillRule() == Qt.FillRule.OddEvenFill
+                    for command in snapshot.area_commands
+                )
             )
         finally:
             canvas.clear_document()
@@ -1186,11 +1193,22 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
                     )
                     snapshot = canvas._build_overlay_tile_snapshot(key)  # noqa: SLF001
                     self.assertIsNotNone(snapshot)
-                    self.assertFalse(snapshot.exact_composition)
-                    self.assertTrue(snapshot.adaptive_composition)
+                    self.assertEqual(snapshot.exact_composition, scenario == "mixed")
+                    self.assertEqual(snapshot.adaptive_composition, scenario != "mixed")
                     if scenario == "mixed":
-                        self.assertIsNotNone(snapshot.picture)
-                        self.assertFalse(snapshot.area_commands)
+                        self.assertIsNone(snapshot.picture)
+                        self.assertTrue(
+                            any(
+                                isinstance(command, PictureOverlayDrawCommand)
+                                for command in snapshot.area_commands
+                            )
+                        )
+                        self.assertTrue(
+                            any(
+                                isinstance(command, AreaOverlayDrawCommand)
+                                for command in snapshot.area_commands
+                            )
+                        )
                     else:
                         self.assertIsNone(snapshot.picture)
                         self.assertEqual(len(snapshot.area_commands), 2)
@@ -1341,11 +1359,11 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
         try:
             first_centroid = cache._area_centroids.get_or_compute(  # noqa: SLF001
                 first_command.label.centroid_key,
-                first_command.path,
+                _worker_paths.path(first_command),
             )
             replacement_centroid = cache._area_centroids.get_or_compute(  # noqa: SLF001
                 replacement_command.label.centroid_key,
-                replacement_command.path,
+                _worker_paths.path(replacement_command),
             )
             self.assertAlmostEqual(first_centroid.x(), 60.0)
             self.assertAlmostEqual(first_centroid.y(), 60.0)
@@ -1588,8 +1606,11 @@ class CanvasOverlayTileCacheTests(unittest.TestCase):
             )
             surface.fill(0)
             painter = QPainter(surface)
-            snapshot.picture.play(painter)
-            painter.end()
+            try:
+                for command in snapshot.area_commands:
+                    command.picture.play(painter)
+            finally:
+                painter.end()
             pixels = np.frombuffer(
                 surface.constBits(),
                 dtype=np.uint8,

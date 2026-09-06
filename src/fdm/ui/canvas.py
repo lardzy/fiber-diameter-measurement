@@ -131,6 +131,12 @@ from fdm.services.prompt_segmentation import (
     magic_mask_to_polygon,
     normalize_magic_draft_mask,
 )
+from fdm.services.mask_region import (
+    MaskRegion,
+    mask_region,
+    rasterize_rings_region,
+    subtract_regions,
+)
 from fdm.services.object_snap_service import (
     ObjectSnapEngine,
     ObjectSnapSettings,
@@ -159,8 +165,12 @@ from fdm.ui.canvas_overlay_cache import (
     CanvasOverlayRenderSnapshot,
     CanvasOverlayTileKey,
     canvas_overlay_tile_cache,
+    canvas_overlay_preview_cache,
+    PictureOverlayDrawCommand,
 )
 from fdm.ui.area_handle_cache import area_handle_display_cache
+from fdm.ui.draft_preview_cache import draft_preview_cache
+from fdm.ui.screen_layer_cache import screen_layer_cache
 from fdm.ui.view_transform import (
     MAX_VIEW_ZOOM,
     MIN_VIEW_ZOOM,
@@ -575,33 +585,72 @@ class MeasurementSceneIndex:
         self._entries: dict[str, MeasurementIndexEntry] = {}
         self._cells: dict[tuple[int, int], list[str]] = {}
         self._oversized_ids: list[str] = []
+        self._geometry_signatures = {}
+        self.sync(measurements, bounds_by_id=bounds_by_id)
+
+    def _remove_entry(self, measurement_id):
+        entry = self._entries.pop(measurement_id, None)
+        self._geometry_signatures.pop(measurement_id, None)
+        if entry is None:
+            return
+        if measurement_id in self._oversized_ids:
+            self._oversized_ids.remove(measurement_id)
+        else:
+            for cell in self._iter_cells_for_bounds(entry.bounds):
+                ids = self._cells.get(cell, [])
+                if measurement_id in ids:
+                    ids.remove(measurement_id)
+                if not ids:
+                    self._cells.pop(cell, None)
+
+    def sync(self, measurements, *, bounds_by_id=None):
+        """Update changed cells while preserving unaffected index entries."""
+        present = {measurement.id for measurement in measurements}
+        for measurement_id in self._entries.keys() - present:
+            self._remove_entry(measurement_id)
         count_number = 0
         for order, measurement in enumerate(measurements):
             if measurement.measurement_kind == "count":
                 count_number += 1
-            bounds = (
-                bounds_by_id.get(measurement.id)
-                if bounds_by_id is not None
-                else self._measurement_bounds(measurement)
+            number = count_number if measurement.measurement_kind == "count" else None
+            signature = (
+                id(measurement),
+                measurement.geometry_revision,
+                measurement.measurement_kind,
             )
+            previous = self._entries.get(measurement.id)
+            if bounds_by_id is not None:
+                bounds = bounds_by_id.get(measurement.id)
+            elif (
+                previous is not None and self._geometry_signatures.get(measurement.id) == signature
+            ):
+                bounds = previous.bounds
+            else:
+                bounds = self._measurement_bounds(measurement)
             if bounds is None:
+                self._remove_entry(measurement.id)
                 continue
-            entry = MeasurementIndexEntry(
-                measurement=measurement,
-                bounds=bounds,
-                order=order,
-                count_number=(
-                    count_number
-                    if measurement.measurement_kind == "count"
-                    else None
-                ),
+            if previous is not None and previous.bounds == bounds:
+                if (
+                    previous.measurement is not measurement
+                    or previous.order != order
+                    or previous.count_number != number
+                ):
+                    self._entries[measurement.id] = MeasurementIndexEntry(
+                        measurement, bounds, order, number
+                    )
+                self._geometry_signatures[measurement.id] = signature
+                continue
+            self._remove_entry(measurement.id)
+            self._entries[measurement.id] = MeasurementIndexEntry(
+                measurement, bounds, order, number
             )
-            self._entries[measurement.id] = entry
+            self._geometry_signatures[measurement.id] = signature
             if self._cell_count_for_bounds(bounds) > self._MAX_ENTRY_CELLS:
                 self._oversized_ids.append(measurement.id)
-                continue
-            for cell in self._iter_cells_for_bounds(bounds):
-                self._cells.setdefault(cell, []).append(measurement.id)
+            else:
+                for cell in self._iter_cells_for_bounds(bounds):
+                    self._cells.setdefault(cell, []).append(measurement.id)
 
     def query_point(self, point: Point, *, tolerance: float) -> list[Measurement]:
         query_bounds = (
@@ -1021,6 +1070,19 @@ class DocumentCanvas(QWidget):
         self._space_pressed = False
         self._temporary_grab_active = False
 
+        self._preview_motion_timer = QTimer(self)
+        self._preview_motion_timer.setSingleShot(True)
+        self._preview_motion_timer.setInterval(80)
+        self._preview_motion_timer.timeout.connect(self.update)
+        self._view_transform_timer = QTimer(self)
+        self._view_transform_timer.setSingleShot(True)
+        self._view_transform_timer.setInterval(16)
+        self._view_transform_timer.timeout.connect(self._flush_view_transform)
+        self._snap_status_timer = QTimer(self)
+        self._snap_status_timer.setSingleShot(True)
+        self._snap_status_timer.setInterval(16)
+        self._snap_status_timer.timeout.connect(self._flush_snap_status)
+
         self._settings = AppSettings()
         self._screen_label_mode = "all"
         self._screen_passive_settings = self._settings
@@ -1062,6 +1124,7 @@ class DocumentCanvas(QWidget):
         self._proxy_warm_timer = QTimer(self)
         self._proxy_warm_timer.setSingleShot(True)
         self._proxy_warm_timer.timeout.connect(self._run_scheduled_proxy_warm)
+        self._overlay_binding_serial = 0
         self._overlay_style_generation = 0
         self._overlay_tile_epochs: dict[tuple[float, float, int, int], int] = {}
         self._overlay_known_namespaces: set[tuple[float, float]] = set()
@@ -1089,6 +1152,20 @@ class DocumentCanvas(QWidget):
             tuple[tuple[object, ...], tuple[float, float, float, float] | None],
         ] = {}
         self._overlay_selected_measurement_id: str | None = None
+        self._overlay_preview_requested = None
+        self._overlay_preview_last = None
+        self._overlay_preview_commands = []
+        self._overlay_preview_measurements = ()
+        self._overlay_preview_counts = []
+        self._overlay_preview_position = 0
+        self._overlay_accepted_ids = set()
+        self._overlay_accepted_previews = {}
+        self._overlay_preview_frames = 0
+        self._overlay_sync_fallbacks = 0
+        self._overlay_preview_timer = QTimer(self)
+        self._overlay_preview_timer.setSingleShot(True)
+        self._overlay_preview_timer.timeout.connect(self._prepare_scene_preview)
+        canvas_overlay_preview_cache.tileReady.connect(self._on_scene_preview_ready)
         canvas_overlay_tile_cache.tileReady.connect(self._on_overlay_tile_ready)
         canvas_overlay_tile_cache.tileFailed.connect(self._on_overlay_tile_failed)
 
@@ -1246,6 +1323,9 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def set_document(self, document: ImageDocument, image: QImage) -> None:
+        self._overlay_binding_serial += 1
+        screen_layer_cache.discard(id(self))
+        draft_preview_cache.discard(id(self))
         self._clear_roi_capture(restore_tool=True)
         self._end_canvas_pan()
         canvas_overlay_tile_cache.protect(id(self), ())
@@ -1274,14 +1354,6 @@ class DocumentCanvas(QWidget):
             document.measurements
         )
         self._reset_proxy_warming()
-        if previous_document is not None and previous_document is not document:
-            canvas_overlay_tile_cache.invalidate_document(id(previous_document))
-            area_derived_geometry_service.discard_document(
-                previous_document.measurements
-            )
-            area_handle_display_cache.discard_document(
-                previous_document.measurements
-            )
         self._reset_overlay_tracking(invalidate_document=False)
         self._zoom = _bounded_view_zoom(document.view_state.zoom or 1.0)
         self._zoom_mode = CanvasZoomMode.CUSTOM
@@ -1300,6 +1372,11 @@ class DocumentCanvas(QWidget):
         self.update()
 
     def clear_document(self) -> None:
+        draft_preview_cache.discard(id(self))
+        screen_layer_cache.discard(id(self))
+        self._preview_motion_timer.stop()
+        self._view_transform_timer.stop()
+        self._snap_status_timer.stop()
         self._clear_roi_capture(restore_tool=True)
         self._end_canvas_pan()
         canvas_overlay_tile_cache.protect(id(self), ())
@@ -1349,9 +1426,22 @@ class DocumentCanvas(QWidget):
         self._project_roi_lookup = {}
         self._project_roi_paths = ()
         self._reset_proxy_warming()
+        self._overlay_preview_timer.stop()
+        self._overlay_preview_commands = []
+        self._overlay_preview_measurements = ()
+        self._overlay_preview_counts = []
+        self._overlay_preview_requested = None
+        self._overlay_preview_last = None
         if document_token is not None:
+            canvas_overlay_preview_cache.invalidate_document(document_token)
             canvas_overlay_tile_cache.invalidate_document(document_token)
         if previous_document is not None:
+            draft_preview_cache.discard(id(previous_document))
+            from fdm.ui.overlay_geometry_snapshot import overlay_geometry_snapshots
+
+            overlay_geometry_snapshots.discard_document(
+                previous_document.measurements, document_token=id(previous_document)
+            )
             area_derived_geometry_service.discard_document(
                 previous_document.measurements
             )
@@ -2678,7 +2768,7 @@ class DocumentCanvas(QWidget):
             self._construction_spatial_signature = resolution_signature
         return self._construction_spatial_index
 
-    def notify_document_visual_changed(self) -> None:
+    def notify_document_visual_changed(self, *, added_measurement_ids=()) -> None:
         """Refresh only the visual envelope changed by a model mutation.
 
         MainWindow calls this after applying a document command.  Repeated UI
@@ -2709,6 +2799,7 @@ class DocumentCanvas(QWidget):
             # tiles, so one screen-layer refresh is enough for this revision.
             self.update()
         full_invalidation, changed_bounds = self._sync_overlay_visual_state()
+        self._overlay_accepted_ids.update(added_measurement_ids)
         if full_invalidation:
             self.update()
             return
@@ -3057,9 +3148,9 @@ class DocumentCanvas(QWidget):
         }
         if not self.can_confirm_current_magic_subtract_shape():
             return result
-        self._magic_segment.confirmed_subtract_masks.append(self._clone_magic_mask(self._magic_segment.subtract_mask))
-        self._magic_segment.confirmed_subtract_polygons.append(self._clone_magic_polygon(self._magic_segment.subtract_polygon))
-        self._magic_segment.confirmed_subtract_rings.append(self._clone_magic_rings(self._magic_segment.subtract_rings))
+        self._magic_segment.confirmed_subtract_masks.append(self._magic_segment.subtract_mask)
+        self._magic_segment.confirmed_subtract_polygons.append(self._magic_segment.subtract_polygon)
+        self._magic_segment.confirmed_subtract_rings.append(self._magic_segment.subtract_rings)
         self._clear_current_magic_subtract_draft()
         self._magic_segment.pending_stage = MagicSegmentOperationMode.SUBTRACT
         self.update()
@@ -3126,6 +3217,7 @@ class DocumentCanvas(QWidget):
             draft_mask is not None
             and self._tool_mode == MagicSegmentToolMode.STANDARD
             and self._settings.magic_segment_fill_draft_holes_enabled
+            and not debug_payload.get("holes_processed")
         ):
             filled_mask = fill_magic_draft_internal_holes(draft_mask)
             selected_mask, selected_rings, selected_polygon, _stats = magic_mask_to_geometry(filled_mask)
@@ -3145,9 +3237,9 @@ class DocumentCanvas(QWidget):
         if len(draft_polygon) < 3 and not draft_rings:
             draft_polygon = []
             draft_mask = None
-        self._magic_segment.set_polygon_for_stage(stage, self._clone_magic_polygon(draft_polygon))
-        self._magic_segment.set_rings_for_stage(stage, self._clone_magic_rings(draft_rings))
-        self._magic_segment.set_mask_for_stage(stage, self._clone_magic_mask(draft_mask))
+        self._magic_segment.set_polygon_for_stage(stage, draft_polygon)
+        self._magic_segment.set_rings_for_stage(stage, draft_rings)
+        self._magic_segment.set_mask_for_stage(stage, draft_mask)
         self._magic_segment.set_debug_payload_for_stage(stage, debug_payload)
         self.update()
         self._emit_magic_segment_session_changed()
@@ -3164,6 +3256,9 @@ class DocumentCanvas(QWidget):
         self._emit_magic_segment_session_changed()
 
     def clear_magic_segment_session(self) -> None:
+        # Completed display rasters stay in the bounded LRU while an accepted
+        # object takes over. Cancelling the next draft must not erase that frame.
+        draft_preview_cache.clear_draft_geometry(id(self))
         self._magic_segment = PromptSegmentationSession()
         self.update()
         self._emit_magic_segment_session_changed()
@@ -3384,9 +3479,10 @@ class DocumentCanvas(QWidget):
         }
 
     def commit_magic_segment_preview(self) -> dict[str, object]:
+        display_preview = self._preserve_magic_display_preview()
         document_id = self._document.id if self._document is not None else None
-        primary_polygon = self._clone_magic_polygon(self._magic_segment.primary_polygon)
-        primary_mask = normalize_magic_draft_mask(self._magic_segment.primary_mask)
+        primary_polygon = self._magic_segment.primary_polygon
+        primary_mask = mask_region(self._magic_segment.primary_mask)
         primary_debug_payload = dict(self._magic_segment.primary_debug_payload)
         result: dict[str, object] = {
             "committed": False,
@@ -3398,12 +3494,27 @@ class DocumentCanvas(QWidget):
             result["reason"] = "missing_primary"
             return result
         polygon_points = primary_polygon
-        area_rings_points = self._clone_magic_rings(self._magic_segment.primary_rings)
+        area_rings_points = self._magic_segment.primary_rings
         final_mask = primary_mask.copy()
         subtract_masks = [self._clone_magic_mask(mask) for mask in self._magic_segment.confirmed_subtract_masks]
-        current_subtract_mask = normalize_magic_draft_mask(self._magic_segment.subtract_mask)
+        current_subtract_mask = mask_region(self._magic_segment.subtract_mask)
         if current_subtract_mask is not None:
             subtract_masks.append(self._clone_magic_mask(current_subtract_mask))
+        if not subtract_masks and primary_debug_payload.get("geometry_final") and area_rings_points:
+            self.clear_magic_segment_session()
+            self.lineCommitted.emit(
+                document_id,
+                "magic_segment",
+                {
+                    "measurement_kind": "area",
+                    "polygon_px": polygon_points,
+                    "area_rings_px": area_rings_points,
+                    "exact_area_px": magic_mask_area_px(primary_mask),
+                    "debug_payload": primary_debug_payload,
+                    "display_preview": display_preview,
+                },
+            )
+            return {**result, "committed": True, "hole_count": max(0, len(area_rings_points) - 1)}
         if subtract_masks:
             final_mask, stats = finalize_magic_subtraction_mask(primary_mask, subtract_masks)
             result.update(stats)
@@ -3447,6 +3558,7 @@ class DocumentCanvas(QWidget):
                 "area_rings_px": area_rings_points,
                 "exact_area_px": magic_mask_area_px(selected_mask),
                 "debug_payload": primary_debug_payload,
+                "display_preview": display_preview,
             },
         )
         result["committed"] = True
@@ -3456,6 +3568,33 @@ class DocumentCanvas(QWidget):
         if mask is None:
             return None
         return mask.copy()
+
+    def _preserve_magic_display_preview(self):
+        layers = [
+            ("confirmed-subtract", index)
+            for index in range(len(self._magic_segment.confirmed_subtract_rings))
+        ]
+        return draft_preview_cache.preserve_draft(
+            id(self), [*layers, "primary", "current-subtract"]
+        )
+
+    def take_magic_commit_snapshot(self):
+        mask = mask_region(self._magic_segment.primary_mask)
+        if mask is None or not self._magic_segment.has_primary_preview():
+            return None
+        masks = [mask_region(value) for value in self._magic_segment.confirmed_subtract_masks]
+        current = mask_region(self._magic_segment.subtract_mask)
+        if current is not None:
+            masks.append(current)
+        result = dict(
+            mask=mask,
+            subtract_masks=tuple(value for value in masks if value is not None),
+            origin=self._magic_source_origin(self._magic_segment.primary_debug_payload),
+            debug_payload=dict(self._magic_segment.primary_debug_payload),
+            display_preview=self._preserve_magic_display_preview(),
+        )
+        self.clear_magic_segment_session()
+        return result
 
     def _clone_magic_polygon(self, polygon_points: list[Point]) -> list[Point]:
         return [Point(float(point.x), float(point.y)) for point in polygon_points]
@@ -3525,27 +3664,11 @@ class DocumentCanvas(QWidget):
     ):
         if self._image is None or len(polygon_points) < 3:
             return None
-        try:
-            import numpy as np
-        except ImportError as exc:  # pragma: no cover - dependency is required by the app
-            raise RuntimeError("numpy is required for the magic segmentation tool.") from exc
-        mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
-        contour = np.array(
-            [
-                [
-                    int(clamp(round(point.x - origin_x), 0, self._image.width() - 1)),
-                    int(clamp(round(point.y - origin_y), 0, self._image.height() - 1)),
-                ]
-                for point in polygon_points
-            ],
-            dtype=np.int32,
+        return rasterize_rings_region(
+            [polygon_points],
+            extent=(self._image.height(), self._image.width()),
+            source_origin=(origin_x, origin_y),
         )
-        if contour.shape[0] < 3:
-            return None
-        cv2.fillPoly(mask, [contour], 1)
-        if not mask.any():
-            return None
-        return mask.astype(bool)
 
     def _magic_polygon_to_mask(self, polygon_points: list[Point]):
         source_payload = self._magic_segment.primary_debug_payload.get(
@@ -3652,35 +3775,12 @@ class DocumentCanvas(QWidget):
     def _area_measurement_to_mask(self, measurement: Measurement):
         if self._image is None:
             return None
-        mask = np.zeros((self._image.height(), self._image.width()), dtype=np.uint8)
-        mounted_origin = self.mounted_image_origin()
-        origin_x = int(round(mounted_origin.x))
-        origin_y = int(round(mounted_origin.y))
-
-        def contour(points: list[Point]):
-            return np.array(
-                [
-                    [
-                        int(clamp(round(point.x - origin_x), 0, self._image.width() - 1)),
-                        int(clamp(round(point.y - origin_y), 0, self._image.height() - 1)),
-                    ]
-                    for point in points
-                ],
-                dtype=np.int32,
-            )
-
-        if measurement.area_rings_px:
-            outer = measurement.area_rings_px[0]
-            if len(outer) >= 3:
-                cv2.fillPoly(mask, [contour(outer)], 1)
-            for hole in measurement.area_rings_px[1:]:
-                if len(hole) >= 3:
-                    cv2.fillPoly(mask, [contour(hole)], 0)
-        elif len(measurement.polygon_px) >= 3:
-            cv2.fillPoly(mask, [contour(measurement.polygon_px)], 1)
-        if not mask.any():
-            return None
-        return mask.astype(bool)
+        origin = self.mounted_image_origin()
+        return rasterize_rings_region(
+            measurement.area_rings_px or [measurement.polygon_px],
+            extent=(self._image.height(), self._image.width()),
+            source_origin=(round(origin.x), round(origin.y)),
+        )
 
     def _area_mask_component_count(self, mask) -> int:
         component_count, _labels = cv2.connectedComponents(np.asarray(mask, dtype=np.uint8), connectivity=8)
@@ -3708,12 +3808,13 @@ class DocumentCanvas(QWidget):
         )
         if source_mask is None or subtract_mask is None:
             return self._reject_area_subtract("剔除区域无效，未修改")
-        if not np.any(source_mask & subtract_mask):
+        result_data, intersects, _count = subtract_regions(source_mask, [subtract_mask])
+        if not intersects:
             return self._reject_area_subtract("剔除区域未与当前面积相交")
-        result_mask = source_mask & ~subtract_mask
-        if not np.any(result_mask):
+        result_mask = mask_region(result_data, origin=source_mask.origin, extent=source_mask.extent)
+        if result_mask is None:
             return self._reject_area_subtract("剔除后无剩余面积，未修改")
-        if self._area_mask_component_count(result_mask) > 1:
+        if self._area_mask_component_count(result_mask.data) > 1:
             return self._reject_area_subtract("当前版本不支持剔除后拆成多个独立区域")
         selected_mask, result_rings, result_polygon, _stats = magic_mask_to_geometry(
             result_mask,
@@ -4394,6 +4495,13 @@ class DocumentCanvas(QWidget):
         canvas_overlay_tile_cache.protect(id(self), ())
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
+        self._overlay_preview_timer.stop()
+        self._overlay_preview_commands = []
+        self._overlay_preview_measurements = ()
+        self._overlay_preview_counts = []
+        if self._overlay_preview_requested is not None:
+            canvas_overlay_preview_cache.cancel(self._overlay_preview_requested)
+        self._overlay_preview_requested = None
         super().hideEvent(event)
 
     def leaveEvent(self, event: QEvent) -> None:
@@ -4488,7 +4596,7 @@ class DocumentCanvas(QWidget):
         self._pan_drag_device_pixel_ratio = None
 
     def _overlay_motion_active(self) -> bool:
-        return self._panning
+        return self._panning or self._preview_motion_timer.isActive()
 
     def mousePressEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
@@ -4872,6 +4980,14 @@ class DocumentCanvas(QWidget):
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._image is None or self._document is None:
             return
+        if (
+            self._drawing_polygon_points
+            or self._drawing_freehand_active
+            or self._dragging_area_handle
+            or self._dragging_handle
+            or self._magic_segment.has_any_preview()
+        ):
+            self._preview_motion_timer.start()
         if self._panning:
             delta = event.position() - self._last_mouse_pos
             unsnapped = self._pan_drag_unsnapped or self._pan
@@ -5232,8 +5348,19 @@ class DocumentCanvas(QWidget):
     def mouseReleaseEvent(self, event: QMouseEvent) -> None:
         if self._document is None:
             return
+        if self._snap_status_timer.isActive():
+            self._flush_snap_status()
         if self._panning and self._pan_button == event.button():
+            # A release may carry a final position after the last move event.
+            delta = event.position() - self._last_mouse_pos
+            unsnapped = self._pan_drag_unsnapped or self._pan
+            self._pan = self._pan_at_stable_device_phase(
+                Point(unsnapped.x + delta.x(), unsnapped.y + delta.y())
+            )
+            self._persist_view_state()
             self._end_canvas_pan()
+            self._preview_motion_timer.stop()
+            self._flush_view_transform()
             if self._space_pressed and self._can_activate_temporary_grab():
                 self._temporary_grab_active = True
             elif not self._space_pressed:
@@ -5663,7 +5790,15 @@ class DocumentCanvas(QWidget):
             float(visible.height()),
         )
 
-    def _publish_view_transform(self, *, zoom_changed: bool = False) -> None:
+    def _flush_view_transform(self) -> None:
+        self._view_transform_timer.stop()
+        self._publish_view_transform(flush=True)
+
+    def _publish_view_transform(self, *, zoom_changed: bool = False, flush: bool = False) -> None:
+        if self._panning and not zoom_changed and not flush:
+            if not self._view_transform_timer.isActive():
+                self._view_transform_timer.start()
+            return
         snapshot = self.viewport_snapshot()
         if zoom_changed:
             self.viewZoomChanged.emit(self.view_zoom())
@@ -5718,7 +5853,10 @@ class DocumentCanvas(QWidget):
             len(self._document.measurements),
         )
         if self._measurement_hit_index is None or self._measurement_hit_index_revision != revision:
-            self._measurement_hit_index = MeasurementSceneIndex(self._document.measurements)
+            if self._measurement_hit_index is None:
+                self._measurement_hit_index = MeasurementSceneIndex(self._document.measurements)
+            else:
+                self._measurement_hit_index.sync(self._document.measurements)
             self._measurement_hit_index_revision = revision
         return self._measurement_hit_index
 
@@ -5753,6 +5891,21 @@ class DocumentCanvas(QWidget):
             return self._measurement_display_index
 
         raw_index = self._measurement_index()
+        presentation = (
+            stamp.calibration_state_id,
+            normalized_zoom,
+            self._canvas_visual_settings_signature,
+            tuple(
+                (group.id, group.label, group.color, group.number)
+                for group in self._document.fiber_groups
+            ),
+        )
+        previous = (
+            getattr(self, "_display_bound_fingerprints", {})
+            if getattr(self, "_display_bound_presentation", None) == presentation
+            else {}
+        )
+        current_fingerprints = {}
         image_to_scaled_output = lambda point: QPointF(
             float(point.x) * normalized_zoom,
             float(point.y) * normalized_zoom,
@@ -5767,6 +5920,18 @@ class DocumentCanvas(QWidget):
                 if raw_index is not None
                 else None
             )
+            fingerprint = self._measurement_visual_fingerprint(
+                measurement, count_number=count_number
+            )
+            current_fingerprints[measurement.id] = fingerprint
+            entry = (
+                self._measurement_display_index._entries.get(measurement.id)
+                if self._measurement_display_index is not None
+                else None
+            )
+            if previous.get(measurement.id) == fingerprint and entry is not None:
+                bounds_by_id[measurement.id] = entry.bounds
+                continue
             bounds = measurement_display_image_bounds(
                 measurement,
                 self._document,
@@ -5784,10 +5949,16 @@ class DocumentCanvas(QWidget):
                 bounds.right(),
                 bounds.bottom(),
             )
-        self._measurement_display_index = MeasurementSceneIndex(
-            self._document.measurements,
-            bounds_by_id=bounds_by_id,
-        )
+        if self._measurement_display_index is None:
+            self._measurement_display_index = MeasurementSceneIndex(
+                self._document.measurements, bounds_by_id=bounds_by_id
+            )
+        else:
+            self._measurement_display_index.sync(
+                self._document.measurements, bounds_by_id=bounds_by_id
+            )
+        self._display_bound_fingerprints = current_fingerprints
+        self._display_bound_presentation = presentation
         self._measurement_display_index_signature = signature
         return self._measurement_display_index
 
@@ -5886,7 +6057,10 @@ class DocumentCanvas(QWidget):
                     endpoint_radius=4.0,
                     count_number=index.count_number(selected_id),
                     selected=True,
-                    exact_area_label=True,
+                    # Culling needs an envelope, not the exact RAW centroid.
+                    # A newly accepted dense area has no cached moments yet;
+                    # computing them here stalls unrelated tile requests.
+                    exact_area_label=False,
                 )
                 if (
                     selected_bounds is not None
@@ -6068,7 +6242,14 @@ class DocumentCanvas(QWidget):
         # "visible" set to one tile and cancels the next asynchronous build.
         paint_keys = self._visible_overlay_tile_keys(context)
         viewport_keys = self._visible_overlay_tile_keys(self._paint_context())
-        working_keys = self._overlay_prefetch_tile_keys(viewport_keys)
+        preview_is_ready = (
+            canvas_overlay_preview_cache.contains(self._scene_preview_key())
+            if self.isVisible()
+            else True
+        )
+        working_keys = (
+            self._overlay_prefetch_tile_keys(viewport_keys) if preview_is_ready else viewport_keys
+        )
         strict_visible = set(viewport_keys)
         newly_visible = strict_visible - self._overlay_strict_visible_keys
         self._overlay_tile_failed.difference_update(newly_visible)
@@ -6102,6 +6283,24 @@ class DocumentCanvas(QWidget):
             else:
                 cached[key] = payload
         proxies_deferred = False
+        progressive = self.isVisible()
+        if progressive:
+            self._request_scene_preview()
+        if progressive and any(
+            not canvas_overlay_tile_cache.contains(key) for key in viewport_keys
+        ):
+            self._draw_scene_preview(painter, context)
+            if not canvas_overlay_preview_cache.contains(self._scene_preview_key()):
+                self._draw_pending_overlay_additions(painter, context)
+            self._redraw_selected_measurement_background(painter, context)
+            # New accepted objects remain immediately visible on the active
+            # layer. The expensive complete scene is built asynchronously.
+            self._draw_selected_measurement_active_layer(painter, context)
+            if not self._overlay_preview_timer.isActive():
+                self._enqueue_overlay_tiles(working_keys)
+            return False
+        if missing:
+            self._overlay_sync_fallbacks += 1
         if len(missing) == len(paint_keys):
             proxies_deferred = self._draw_measurements_direct(
                 painter,
@@ -6206,25 +6405,23 @@ class DocumentCanvas(QWidget):
         image_rect = bounds.image_rect
         if image_rect.isEmpty():
             return
-        widget_rect = (
-            context.image_to_widget_transform.mapRect(image_rect)
-            .adjusted(-3.0, -3.0, 3.0, 3.0)
-            .intersected(context.widget_rect)
-            .intersected(QRectF(self.rect()))
+        image_rect = image_rect.adjusted(
+            -3 / self._zoom, -3 / self._zoom, 3 / self._zoom, 3 / self._zoom
         )
+        widget_rect = context.image_to_widget_transform.mapRect(image_rect)
         if widget_rect.isEmpty():
             return
 
-        painter.save()
-        try:
-            painter.setClipRect(widget_rect)
-            painter.fillRect(
+        def restore_background(target):
+            target.save()
+            target.setClipRect(widget_rect, Qt.ClipOperation.IntersectClip)
+            target.fillRect(
                 widget_rect,
                 canvas_workspace_background(self.palette()),
             )
-            self._draw_base_image(painter)
+            self._draw_base_image(target)
             self._draw_measurements_direct(
-                painter,
+                target,
                 image_rect=image_rect,
                 image_to_output=self.image_to_widget,
                 use_sprite_cache=True,
@@ -6232,10 +6429,86 @@ class DocumentCanvas(QWidget):
                 render_selected_state=False,
                 area_geometry_mode=AREA_GEOMETRY_RAW,
             )
-        finally:
-            painter.restore()
+            target.restore()
 
-    def _draw_selected_measurement_active_layer(
+        # Committed neighbours stay stable while a control point moves. Reuse
+        # their clean background independently of the active drag geometry.
+        version = (
+            self._scene_preview_key(),
+            selected_id,
+            self._image.cacheKey(),
+            self.palette().cacheKey(),
+        )
+        if screen_layer_cache.draw(
+            painter,
+            owner=(id(self), "edit-background"),
+            version=version,
+            bounds=image_rect,
+            origin=self._overlay_widget_origin(),
+            zoom=self._zoom,
+            dpr=max(1.0, self.devicePixelRatioF()),
+            viewport=QRectF(self.rect()),
+            render=restore_background,
+        ):
+            return
+        restore_background(painter)
+
+    def _draw_selected_measurement_active_layer(self, painter, context):
+        selected = (
+            self._document.get_measurement(self._document.view_state.selected_measurement_id)
+            if self._document is not None
+            else None
+        )
+        if (
+            self.isVisible()
+            and selected is not None
+            and selected.measurement_kind == "area"
+            and self._tool_mode != "select"
+            and selected.id not in self._actively_edited_measurement_ids()
+        ):
+            self._draw_prepared_area_layer(painter, selected, selected=True)
+            return
+        measurement = (
+            self._document.get_measurement(self._document.view_state.selected_measurement_id)
+            if self._document is not None
+            else None
+        )
+        if (
+            self._overlay_motion_active()
+            and measurement is not None
+            and measurement.measurement_kind == "area"
+            and measurement.id not in self._actively_edited_measurement_ids()
+        ):
+            bounds = MeasurementSceneIndex._measurement_bounds(measurement)
+            if bounds is not None:
+                left, top, right, bottom = bounds
+                rect = QRectF(left, top, right - left, bottom - top).adjusted(
+                    -16 / self._zoom, -16 / self._zoom, 16 / self._zoom, 16 / self._zoom
+                )
+                version = (
+                    id(measurement),
+                    measurement.geometry_revision,
+                    self._overlay_style_generation,
+                    self._tool_mode,
+                    repr(measurement.appearance),
+                )
+                if screen_layer_cache.draw(
+                    painter,
+                    owner=id(self),
+                    version=version,
+                    bounds=rect,
+                    origin=self._overlay_widget_origin(),
+                    zoom=self._zoom,
+                    dpr=max(1.0, self.devicePixelRatioF()),
+                    viewport=QRectF(self.rect()),
+                    render=lambda target: self._draw_selected_measurement_active_layer_uncached(
+                        target, self._paint_context()
+                    ),
+                ):
+                    return
+        self._draw_selected_measurement_active_layer_uncached(painter, context)
+
+    def _draw_selected_measurement_active_layer_uncached(
         self,
         painter: QPainter,
         context: CanvasPaintContext,
@@ -6389,6 +6662,7 @@ class DocumentCanvas(QWidget):
             tile_x=int(tile_x),
             tile_y=int(tile_y),
             style_generation=self._overlay_style_generation,
+            content_stamp=(id(self), self._overlay_binding_serial),
             tile_epoch=self._overlay_tile_epochs.get(epoch_key, 0),
             show_area_fill=self._show_area_fill,
             device_phase_x=phase_x,
@@ -6624,160 +6898,345 @@ class DocumentCanvas(QWidget):
             # repeated snapshot construction for the same epoch.
             self._overlay_tile_failed.add(key)
 
-    def _build_overlay_tile_snapshot(
-        self,
-        key: CanvasOverlayTileKey,
-    ) -> CanvasOverlayRenderSnapshot | None:
+    def _capture_overlay_commands(self, measurements, *, zoom, dpr, count_numbers=None):
+        commands = []
+        primitives = []
+        counts = []
+
+        def record(items):
+            if not items:
+                return
+            picture = QPicture()
+            recorder = QPainter(picture)
+            try:
+                recorder.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+                recorder.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
+                draw_measurements(
+                    recorder,
+                    self._document,
+                    lambda point: QPointF(point.x * zoom, point.y * zoom),
+                    self._screen_passive_settings,
+                    line_width=2.0,
+                    endpoint_radius=4.0,
+                    selected_measurement_id=None,
+                    show_area_fill=self._show_area_fill,
+                    show_area_handles=False,
+                    measurement_sequence=tuple(items),
+                    count_numbers=count_numbers,
+                    use_sprite_cache=True,
+                    sprite_device_pixel_ratio=dpr,
+                    cull_by_geometry=False,
+                )
+            finally:
+                recorder.end()
+            commands.append(PictureOverlayDrawCommand(picture))
+
+        for measurement in measurements:
+            if measurement.measurement_kind == "count":
+                counts.append(measurement)
+            elif measurement.measurement_kind == "area":
+                record(primitives)
+                primitives.clear()
+                command = build_passive_area_overlay_command(
+                    self._document,
+                    measurement,
+                    self._screen_passive_settings,
+                    zoom=zoom,
+                    line_width=2.0,
+                    show_fill=self._show_area_fill,
+                    sprite_device_pixel_ratio=dpr,
+                )
+                if command is not None:
+                    commands.append(command)
+            else:
+                primitives.append(measurement)
+        record(primitives)
+        # Keep the existing count-marker batching and final count-label pass.
+        # An overlapping count must retain exactly the original stacking order.
+        record(counts)
+        return tuple(commands)
+
+    def _build_overlay_tile_snapshot(self, key):
         if self._document is None or not self._overlay_tile_key_is_current(key):
             return None
-        image_rect = self._overlay_tile_image_rect(key)
-        candidate_measurements, count_numbers = self._measurement_render_inputs(
-            image_rect,
+        candidates, numbers = self._measurement_render_inputs(
+            self._overlay_tile_image_rect(key),
             zoom=key.zoom,
         )
-        excluded: frozenset[str] = frozenset()
-        image_to_overlay = lambda point: QPointF(
-            float(point.x) * key.zoom,
-            float(point.y) * key.zoom,
+        commands = self._capture_overlay_commands(
+            candidates,
+            zoom=key.zoom,
+            dpr=key.device_pixel_ratio,
+            count_numbers=numbers,
         )
-        passive_candidates = [
-            measurement
-            for measurement in candidate_measurements
-            if measurement.id not in excluded
-            and measurement_display_intersects_rect(
-                measurement,
-                self._document,
-                self._settings,
-                image_to_overlay,
-                image_rect,
-                padding=measurement_geometry_cull_padding(
-                    image_to_overlay,
-                    endpoint_radius=4.0,
-                ),
-                suggested_line_width=2.0,
-                endpoint_radius=4.0,
-                count_number=(
-                    count_numbers.get(measurement.id)
-                    if count_numbers is not None
-                    else None
-                ),
-            )
-        ]
-        if not passive_candidates:
-            self._overlay_tile_request_serial += 1
-            return CanvasOverlayRenderSnapshot(
-                request_id=self._overlay_tile_request_serial,
-                key=key,
-                known_empty=True,
-            )
-        if (
-            passive_candidates
-            and all(
-                measurement.measurement_kind == "area"
-                for measurement in passive_candidates
-            )
-        ):
-            commands = []
-            with area_derived_geometry_service.path_render_pass():
-                for measurement in passive_candidates:
-                    command = build_passive_area_overlay_command(
-                        self._document,
-                        measurement,
-                        self._screen_passive_settings,
-                        zoom=key.zoom,
-                        line_width=2.0,
-                        show_fill=self._show_area_fill,
-                        sprite_device_pixel_ratio=key.device_pixel_ratio,
-                    )
-                    if command is None:
-                        commands.clear()
-                        break
-                    commands.append(command)
-            if commands:
-                self._overlay_tile_request_serial += 1
-                return CanvasOverlayRenderSnapshot(
-                    request_id=self._overlay_tile_request_serial,
-                    key=key,
-                    area_commands=tuple(commands),
-                    bleed_device_pixels=2,
-                    exact_composition=False,
-                    # Preserve the current worker-side composition guard.  If a
-                    # label overlaps its translucent area body, the worker can
-                    # record these same detached commands to QPicture without
-                    # ever serializing the large path on the UI thread.
-                    # One isolated area cannot interact with another passive
-                    # object. With two or more objects, however, result labels
-                    # may overlap even when the area bodies do not. Always run
-                    # the opaque-background equivalence probe for that case;
-                    # a numeric object-count shortcut would make dense tiles
-                    # faster at the cost of incorrect alpha composition.
-                    adaptive_composition=len(passive_candidates) > 1,
-                    composition_probe_rgba=0xFFFFFFFF,
-                )
-
-        # Mixed object kinds and defensive area-command failures retain the
-        # UI-recorded QPicture input. Area-heavy pictures are still flattened
-        # adaptively in the worker when the opaque-background probe proves the
-        # raster visually equivalent.
-        picture = QPicture()
-        picture_painter = QPainter(picture)
-        if not picture_painter.isActive():
-            return None
-        tile_size = float(OVERLAY_TILE_LOGICAL_SIZE)
-        bleed_device_pixels = 2
-        bleed = bleed_device_pixels / max(key.device_pixel_ratio, 1.0)
-        overlay_rect = QRectF(
-            key.tile_x * tile_size,
-            key.tile_y * tile_size,
-            tile_size,
-            tile_size,
-        )
-        picture_painter.setClipRect(
-            overlay_rect.adjusted(-bleed, -bleed, bleed, bleed)
-        )
-        picture_painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
-        picture_painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
-        try:
-            self._draw_measurements_direct(
-                picture_painter,
-                image_rect=image_rect,
-                image_to_output=image_to_overlay,
-                # Record complete label sprites at the tile's target DPR.
-                # The worker then replays one drawImage per label without
-                # accessing QWidget state or resampling a DPR=1 sprite.
-                use_sprite_cache=True,
-                excluded_measurement_ids=frozenset(),
-                sprite_device_pixel_ratio=key.device_pixel_ratio,
-                render_selected_state=False,
-                area_geometry_mode=AREA_GEOMETRY_RAW,
-            )
-        finally:
-            picture_painter.end()
         self._overlay_tile_request_serial += 1
-        contains_area = any(
-            measurement.measurement_kind == "area"
-            for measurement in passive_candidates
-        )
-        adaptive_picture_tile = (
-            contains_area or len(passive_candidates) > 64
-        )
         return CanvasOverlayRenderSnapshot(
             request_id=self._overlay_tile_request_serial,
             key=key,
-            picture=QPicture(picture),
-            bleed_device_pixels=bleed_device_pixels,
-            # Dense line/polyline/count and mixed area tiles benefit materially
-            # from one flattened image. The worker probes composition on an
-            # opaque background and retains the exact command stream whenever
-            # alpha rounding would become visible. Small non-area tiles remain
-            # exact because replaying them is already cheap.
-            exact_composition=not adaptive_picture_tile,
-            adaptive_composition=adaptive_picture_tile,
-            # White maximizes the observable error from flattening
-            # semi-transparent antialias/background layers.  Tiles that fail
-            # this probe retain exact commands instead of a raster.
-            composition_probe_rgba=0xFFFFFFFF,
+            area_commands=commands,
+            known_empty=not commands,
+            exact_composition=any(
+                isinstance(command, PictureOverlayDrawCommand) for command in commands
+            ),
+            adaptive_composition=len(commands) > 1
+            and all(not isinstance(command, PictureOverlayDrawCommand) for command in commands),
         )
+
+    def _scene_preview_key(self):
+        if self._document is None:
+            return None
+        width, height = self._document.image_size
+        zoom = min(1.0, 1536.0 / max(1, width, height))
+        return CanvasOverlayTileKey(
+            document_token=id(self._document),
+            document_id=self._document.id,
+            zoom=zoom,
+            device_pixel_ratio=1.0,
+            tile_x=0,
+            tile_y=0,
+            style_generation=self._overlay_style_generation,
+            tile_epoch=0,
+            show_area_fill=self._show_area_fill,
+            content_stamp=(
+                self._overlay_document_stamp,
+                self._overlay_group_signature,
+                self._overlay_calibration_signature,
+                self._canvas_visual_settings_signature,
+            ),
+        )
+
+    def _request_scene_preview(self):
+        key = self._scene_preview_key()
+        if key is None or canvas_overlay_preview_cache.contains(key):
+            return key
+        if key == self._overlay_preview_requested and (
+            self._overlay_preview_timer.isActive()
+            or self._overlay_preview_measurements
+            or canvas_overlay_preview_cache.is_pending(key)
+        ):
+            return key
+        if self._overlay_preview_requested is not None:
+            canvas_overlay_preview_cache.cancel(self._overlay_preview_requested)
+        self._overlay_preview_requested = key
+        self._overlay_preview_commands = []
+        self._overlay_preview_measurements = tuple(
+            sorted(self._document.measurements, key=lambda item: item.measurement_kind == "count")
+        )
+        self._overlay_preview_position = 0
+        self._overlay_preview_counts = []
+        self._overlay_preview_timer.start(0)
+        return key
+
+    def _prepare_scene_preview(self):
+        key = self._overlay_preview_requested
+        if key is None or key != self._scene_preview_key():
+            self._overlay_preview_commands = []
+            self._overlay_preview_measurements = ()
+            self._overlay_preview_counts = []
+            return
+        deadline = time.perf_counter() + 0.004
+        while self._overlay_preview_position < len(self._overlay_preview_measurements):
+            measurement = self._overlay_preview_measurements[self._overlay_preview_position]
+            if measurement.measurement_kind == "count":
+                self._overlay_preview_counts.append(measurement)
+            else:
+                self._overlay_preview_commands.extend(
+                    self._capture_overlay_commands((measurement,), zoom=key.zoom, dpr=1.0)
+                )
+            self._overlay_preview_position += 1
+            if time.perf_counter() >= deadline:
+                self._overlay_preview_timer.start(0)
+                return
+        # Match the renderer's complete marker pass followed by the complete
+        # count-label pass, including when two counts overlap.
+        self._overlay_preview_commands.extend(self._capture_overlay_commands(
+            self._overlay_preview_counts, zoom=key.zoom, dpr=1.0,
+            count_numbers={item.id:index+1 for index,item in enumerate(self._overlay_preview_counts)},
+        ))
+        commands = tuple(self._overlay_preview_commands)
+        self._overlay_preview_commands = []
+        self._overlay_preview_measurements = ()
+        self._overlay_preview_counts = []
+        canvas_overlay_preview_cache.request(
+            CanvasOverlayRenderSnapshot(
+                request_id=0,
+                key=key,
+                area_commands=commands,
+                known_empty=not commands,
+                logical_tile_size=max(1, int(math.ceil(max(self._document.image_size) * key.zoom))),
+                adaptive_composition=False,
+            )
+        )
+        self.update()
+
+    def _on_scene_preview_ready(self, key):
+        if key == self._scene_preview_key():
+            self._overlay_preview_last = key
+            self._overlay_accepted_ids.clear()
+            self._overlay_accepted_previews.clear()
+            self._overlay_preview_requested = None
+            canvas_overlay_preview_cache.retain_document_version(key)
+            self.update()
+
+    def _draw_prepared_area_layer(self, painter, measurement, *, selected=False):
+        from dataclasses import replace
+
+        command = build_passive_area_overlay_command(
+            self._document,
+            measurement,
+            self._screen_passive_settings,
+            zoom=self._zoom,
+            line_width=2.0,
+            show_fill=self._show_area_fill and not selected,
+            sprite_device_pixel_ratio=max(1.0, self.devicePixelRatioF()),
+        )
+        if command is None:
+            return True
+        if selected:
+            from fdm.ui.rendering import measurement_line_width
+
+            minimum = (
+                0.5
+                if measurement.appearance is not None
+                and measurement.appearance.stroke_width is not None
+                else 1.8
+            )
+            width = max(measurement_line_width(measurement, 2.0) * 1.65, minimum)
+            command = replace(
+                command, label=None, stroke_width=width, outline_width=max(width * 1.9, width + 1)
+            )
+        raw = MeasurementSceneIndex._measurement_bounds(measurement)
+        if raw is None:
+            return True
+        padding = max(16.0, command.outline_width)
+        if command.label is not None:
+            padding = max(
+                padding,
+                command.label.image.deviceIndependentSize().width(),
+                command.label.image.deviceIndependentSize().height() * 2,
+            )
+        left, top, right, bottom = raw
+        bounds = QRectF(left, top, right - left, bottom - top).adjusted(
+            -padding / self._zoom, -padding / self._zoom, padding / self._zoom, padding / self._zoom
+        )
+        version = (
+            id(measurement),
+            measurement.geometry_revision,
+            selected,
+            self._overlay_style_generation,
+            self._canvas_visual_settings_signature,
+            self._overlay_group_signature,
+            self._overlay_calibration_signature,
+            self._measurement_visual_fingerprint(measurement),
+            self._show_area_fill,
+        )
+        return draft_preview_cache.draw_prepared(
+            painter,
+            owner=id(self._document),
+            version=version,
+            command=command,
+            bounds=bounds,
+            origin=self._overlay_widget_origin(),
+            zoom=self._zoom,
+            dpr=max(1.0, self.devicePixelRatioF()),
+            viewport=QRectF(self.rect()),
+            publisher=self,
+            layer_id=(measurement.id, selected),
+        )
+
+    def _draw_pending_overlay_additions(self, painter, context):
+        for measurement in self._document.measurements:
+            if measurement.id not in self._overlay_accepted_ids:
+                continue
+            if (
+                self.isVisible()
+                and measurement.measurement_kind == "area"
+                and self._overlay_accepted_previews.get(measurement.id)
+            ):
+                ready = self._draw_prepared_area_layer(painter, measurement)
+                if not ready:
+                    draft_preview_cache.draw_preserved(
+                        painter,
+                        self._overlay_accepted_previews.get(measurement.id, ()),
+                        origin=self._overlay_widget_origin(),
+                        zoom=self._zoom,
+                    )
+                continue
+            bounds = measurement_display_image_bounds(
+                measurement, self._document, self._screen_passive_settings, self.image_to_widget
+            )
+            if bounds is None:
+                continue
+            version = (
+                self._measurement_visual_fingerprint(measurement),
+                self._canvas_visual_settings_signature,
+                self._overlay_group_signature,
+                self._show_area_fill,
+            )
+
+            def render(target):
+                draw_measurements(
+                    target,
+                    self._document,
+                    self.image_to_widget,
+                    self._screen_passive_settings,
+                    line_width=2.0,
+                    endpoint_radius=4.0,
+                    show_area_fill=self._show_area_fill,
+                    measurement_sequence=(measurement,),
+                    area_geometry_mode=AREA_GEOMETRY_RAW,
+                    use_sprite_cache=True,
+                )
+
+            if not screen_layer_cache.draw(
+                painter,
+                owner=(id(self), measurement.id),
+                version=version,
+                bounds=bounds,
+                origin=self._overlay_widget_origin(),
+                zoom=self._zoom,
+                dpr=max(1.0, self.devicePixelRatioF()),
+                viewport=QRectF(self.rect()),
+                render=render,
+            ):
+                render(painter)
+
+    def _draw_scene_preview(self, painter, context):
+        key = self._request_scene_preview()
+        payload = canvas_overlay_preview_cache.get_payload(key) if key is not None else None
+        if payload is not None:
+            self._overlay_preview_last = key
+        elif self._overlay_preview_last is not None:
+            previous = self._overlay_preview_last
+            if key is not None and previous.document_token == key.document_token:
+                # Retain one complete same-document frame until the new
+                # complete frame is ready; never publish partial worker data.
+                payload = canvas_overlay_preview_cache.get_payload(previous)
+                if payload is not None:
+                    key = previous
+        if payload is not None and payload[0] is not None:
+            image = payload[0]
+            origin = self._overlay_widget_origin()
+            target = QRectF(
+                origin.x(),
+                origin.y(),
+                image.width() * self._zoom / key.zoom,
+                image.height() * self._zoom / key.zoom,
+            )
+            painter.save()
+            painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
+            painter.drawImage(target, image)
+            painter.restore()
+        else:
+            painter.save()
+            painter.setPen(self.palette().color(QPalette.ColorRole.Text))
+            painter.drawText(
+                QRectF(12, 12, max(100, self.width() - 24), 28),
+                Qt.AlignmentFlag.AlignLeft,
+                "正在载入测量显示…",
+            )
+            painter.restore()
+        self._overlay_preview_frames += 1
 
     def _overlay_tile_key_is_current(self, key: CanvasOverlayTileKey) -> bool:
         if self._document is None:
@@ -6788,6 +7247,7 @@ class DocumentCanvas(QWidget):
             key.document_token != id(self._document)
             or key.document_id != self._document.id
             or key.style_generation != self._overlay_style_generation
+            or key.content_stamp != (id(self), self._overlay_binding_serial)
             or key.show_area_fill != self._show_area_fill
         ):
             return False
@@ -6807,6 +7267,11 @@ class DocumentCanvas(QWidget):
             current_zoom = round(float(self._zoom), 8)
             current_dpr = round(max(1.0, float(self.devicePixelRatioF())), 4)
             if key.zoom == current_zoom and key.device_pixel_ratio == current_dpr:
+                if self._overlay_preview_frames and all(
+                    canvas_overlay_tile_cache.contains(item)
+                    for item in self._visible_overlay_tile_keys(self._paint_context())
+                ):
+                    self.update()
                 self.update(
                     self._overlay_tile_widget_rect(key)
                     .adjusted(-2.0, -2.0, 2.0, 2.0)
@@ -6823,7 +7288,7 @@ class DocumentCanvas(QWidget):
         if self._overlay_tile_active == key:
             self._overlay_tile_active = None
         if self._overlay_tile_key_is_current(key):
-            # Keep rendering exact direct vectors, but do not retry a backend
+            # Keep the last complete overview on screen; do not retry a backend
             # failure on every paint for the same tile epoch.
             self._overlay_tile_failed.add(key)
         self._start_next_overlay_tile()
@@ -6853,6 +7318,8 @@ class DocumentCanvas(QWidget):
         self._overlay_area_vertex_count = 0
         self._overlay_measurement_state.clear()
         self._overlay_annotation_state.clear()
+        self._overlay_accepted_ids.clear()
+        self._overlay_accepted_previews.clear()
         self._overlay_selected_measurement_id = (
             self._document.view_state.selected_measurement_id
             if self._document is not None
@@ -6953,7 +7420,6 @@ class DocumentCanvas(QWidget):
                             max_object_font_size,
                             font_size,
                         )
-                bounds = MeasurementSceneIndex._measurement_bounds(measurement)
                 fingerprint = self._measurement_visual_fingerprint(
                     measurement,
                     count_number=(
@@ -6962,8 +7428,13 @@ class DocumentCanvas(QWidget):
                         else None
                     ),
                 )
-                current[measurement.id] = (fingerprint, bounds)
                 previous = self._overlay_measurement_state.get(measurement.id)
+                bounds = (
+                    previous[1]
+                    if previous is not None and previous[0] == fingerprint
+                    else MeasurementSceneIndex._measurement_bounds(measurement)
+                )
+                current[measurement.id] = (fingerprint, bounds)
                 if previous is None or previous[0] != fingerprint:
                     if previous is not None and previous[1] is not None:
                         changed_bounds.append(previous[1])
@@ -7044,6 +7515,11 @@ class DocumentCanvas(QWidget):
                     ).expanded(display_padding)
                     for left, top, right, bottom in changed_bounds
                 ]
+            self._overlay_recent_additions = (
+                frozenset(current.keys() - self._overlay_measurement_state.keys())
+                if self._overlay_measurement_state
+                else frozenset()
+            )
             self._overlay_measurement_state = current
             self._overlay_annotation_state = current_annotations
             self._overlay_max_object_font_size = max_object_font_size
@@ -7150,8 +7626,14 @@ class DocumentCanvas(QWidget):
             id(self._document),
             coordinates,
         )
-        self._cancel_overlay_requests()
-        self._overlay_tile_failed.clear()
+        affected = lambda key: (
+            (key.zoom, key.device_pixel_ratio, key.tile_x, key.tile_y) in coordinates
+        )
+        if self._overlay_tile_active is not None and affected(self._overlay_tile_active):
+            self._overlay_tile_active = None
+        self._overlay_tile_queue = [key for key in self._overlay_tile_queue if not affected(key)]
+        self._overlay_tile_queued = {key for key in self._overlay_tile_queued if not affected(key)}
+        self._overlay_tile_failed = {key for key in self._overlay_tile_failed if not affected(key)}
 
     def _proxy_warm_key(self) -> tuple[object, ...] | None:
         if self._document is None:
@@ -9404,9 +9886,14 @@ class DocumentCanvas(QWidget):
                 )
                 if not dirty_rect.isEmpty():
                     self.update(dirty_rect)
-        if self._document is not None:
-            self.snapCandidateChanged.emit(self._document.id, candidate)
+        if self._document is not None and not self._snap_status_timer.isActive():
+            self._snap_status_timer.start()
         return True
+
+    def _flush_snap_status(self):
+        self._snap_status_timer.stop()
+        if self._document is not None:
+            self.snapCandidateChanged.emit(self._document.id, self._active_snap_candidate)
 
     def _begin_line_drawing(self, anchor: Point, *, commit_on_second_click: bool = False) -> None:
         state = self._line_tool_strategy.begin(anchor, commit_on_second_click=commit_on_second_click)
@@ -9670,9 +10157,11 @@ class DocumentCanvas(QWidget):
     def _draw_magic_segment_preview(self, painter: QPainter) -> None:
         if self._image is None:
             return
-        for polygon_points, area_rings in zip(
-            self._magic_segment.confirmed_subtract_polygons,
-            self._magic_segment.confirmed_subtract_rings,
+        for index, (polygon_points, area_rings) in enumerate(
+            zip(
+                self._magic_segment.confirmed_subtract_polygons,
+                self._magic_segment.confirmed_subtract_rings,
+            )
         ):
             self._draw_magic_area_preview(
                 painter,
@@ -9680,6 +10169,7 @@ class DocumentCanvas(QWidget):
                 area_rings,
                 fill_color=QColor(248, 113, 113, 68),
                 stroke_color=QColor("#F87171"),
+                layer_id=("confirmed-subtract", index),
             )
         self._draw_magic_area_preview(
             painter,
@@ -9687,6 +10177,7 @@ class DocumentCanvas(QWidget):
             self._magic_segment.primary_rings,
             fill_color=QColor(52, 211, 153, 72),
             stroke_color=QColor("#34D399"),
+            layer_id="primary",
         )
         self._draw_magic_area_preview(
             painter,
@@ -9694,6 +10185,7 @@ class DocumentCanvas(QWidget):
             self._magic_segment.subtract_rings,
             fill_color=QColor(248, 113, 113, 68),
             stroke_color=QColor("#F87171"),
+            layer_id="current-subtract",
         )
 
         active_stage = self._magic_segment.active_stage
@@ -9885,30 +10377,24 @@ class DocumentCanvas(QWidget):
         *,
         fill_color: QColor,
         stroke_color: QColor,
+        layer_id=None,
     ) -> None:
-        outline_points = polygon_points if len(polygon_points) >= 3 else (area_rings[0] if area_rings else [])
-        if len(outline_points) < 3 and not area_rings:
-            return
-        preview_rings = area_rings or [outline_points]
-        path = area_rings_path(preview_rings, self.image_to_widget)
-        if self._show_area_fill:
-            painter.setBrush(fill_color)
-            painter.setPen(Qt.PenStyle.NoPen)
-            if path.elementCount() > 0:
-                painter.drawPath(path)
-            else:
-                painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in outline_points]))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.setPen(QPen(QColor("#0B0B0B"), 3.2, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        for ring in preview_rings:
-            if len(ring) < 3:
-                continue
-            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
-        painter.setPen(QPen(stroke_color, 1.8, Qt.PenStyle.DashLine, Qt.PenCapStyle.RoundCap, Qt.PenJoinStyle.RoundJoin))
-        for ring in preview_rings:
-            if len(ring) < 3:
-                continue
-            painter.drawPolygon(QPolygonF([self.image_to_widget(point) for point in ring]))
+        draft_preview_cache.draw(
+            painter,
+            owner=id(self),
+            polygon=polygon_points,
+            rings=area_rings,
+            origin=self._overlay_widget_origin(),
+            zoom=self._zoom,
+            dpr=max(1.0, float(self.devicePixelRatioF())),
+            viewport=QRectF(self.rect()),
+            fill=fill_color,
+            stroke=stroke_color,
+            show_fill=self._show_area_fill,
+            interactive=self._overlay_motion_active(),
+            publisher=self,
+            layer_id=layer_id,
+        )
 
     def _draw_magic_prompt_points(
         self,

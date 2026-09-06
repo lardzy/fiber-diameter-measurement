@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
+from array import array
 from enum import IntFlag
 import json
 import sys
@@ -667,7 +668,95 @@ def _legacy_snapshot_domains(
     return frozenset(domains)
 
 
-HistoryCommand = DocumentDeltaCommand | UndoCommand
+@dataclass(frozen=True, slots=True)
+class MeasurementInsertPayload:
+    """Lossless runtime snapshot without JSON conversion of every coordinate."""
+
+    metadata: bytes
+    polygon: bytes
+    rings: tuple[bytes, ...]
+    polyline: bytes
+
+    @staticmethod
+    def _coordinates(points):
+        return array("d", (value for point in points for value in (point.x, point.y))).tobytes()
+
+    @classmethod
+    def capture(cls, measurement):
+        metadata = replace(measurement, polygon_px=[], area_rings_px=[], polyline_px=[])
+        return cls(
+            _json_bytes(metadata.to_dict()),
+            cls._coordinates(measurement.polygon_px),
+            tuple(cls._coordinates(ring) for ring in measurement.area_rings_px),
+            cls._coordinates(measurement.polyline_px),
+        )
+
+    @staticmethod
+    def _points(payload):
+        coordinates = array("d")
+        coordinates.frombytes(payload)
+        return [
+            Point(coordinates[index], coordinates[index + 1])
+            for index in range(0, len(coordinates), 2)
+        ]
+
+    def restore(self):
+        measurement = Measurement.from_dict(_decode_json(self.metadata))
+        measurement.polygon_px = self._points(self.polygon)
+        measurement.area_rings_px = [self._points(ring) for ring in self.rings]
+        measurement.polyline_px = self._points(self.polyline)
+        return measurement
+
+    def __len__(self):
+        return (
+            len(self.metadata)
+            + len(self.polygon)
+            + len(self.polyline)
+            + sum(map(len, self.rings))
+            + 256
+        )
+
+
+@dataclass(slots=True)
+class MeasurementInsertCommand:
+    """One insertion, independent of the size of the rest of the document."""
+
+    label: str
+    payload: MeasurementInsertPayload
+    measurement_id: str
+    index: int
+    previous_selection: tuple[str | None, str | None, str | None]
+    before_stamp: DocumentStateStamp
+    after_stamp: DocumentStateStamp
+
+    @property
+    def estimated_bytes(self):
+        return len(self.payload) + 256
+
+    @property
+    def affected_domains(self):
+        return frozenset({DirtyDomain.SESSION})
+
+    def undo(self, document):
+        measurement_id, overlay_id, construction_id = self.previous_selection
+        document.remove_measurement_incremental(
+            self.measurement_id,
+            mark_dirty=False,
+            select_measurement_id=measurement_id,
+            select_overlay_id=overlay_id,
+        )
+        document.selected_construction_id = construction_id
+        document.restore_state_stamp(self.before_stamp)
+
+    def redo(self, document):
+        measurement = self.payload.restore()
+        document.insert_measurement_incremental(
+            measurement, index=self.index, mark_dirty=False, assign_active_group=False
+        )
+        document.restore_state_stamp(self.after_stamp)
+
+
+HistoryCommand = DocumentDeltaCommand | UndoCommand | MeasurementInsertCommand
 
 
 class WorkspaceHistoryBudget:
@@ -911,6 +1000,21 @@ class DocumentHistory:
             )
         )
         return True
+
+    def push_measurement_insert(
+        self, measurement, *, index, previous_selection, before_stamp, after_stamp, label="新增测量"
+    ):
+        self._append(
+            MeasurementInsertCommand(
+                label,
+                MeasurementInsertPayload.capture(measurement),
+                measurement.id,
+                index,
+                previous_selection,
+                before_stamp,
+                after_stamp,
+            )
+        )
 
     def can_undo(self) -> bool:
         return bool(self._undo_stack)

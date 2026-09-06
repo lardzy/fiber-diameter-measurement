@@ -13,7 +13,7 @@ os.environ.setdefault("QT_QPA_PLATFORM", "offscreen")
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 
 from PySide6.QtCore import QCoreApplication, QEvent
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QImage, QPalette
 from PySide6.QtWidgets import QApplication
 
 from fdm.geometry import Line, Point
@@ -294,9 +294,11 @@ def _dispose_canvas(
     cache.clear()
 
 
-@pytest.mark.parametrize("device_pixel_ratio", [1.0, 1.25, 1.5])
+@pytest.mark.parametrize("device_pixel_ratio", [1.0, 1.25, 1.5, 2.0])
+@pytest.mark.parametrize("dark", [False, True])
 def test_complex_odd_even_area_cache_matches_direct_at_supported_dpr(
     device_pixel_ratio: float,
+    dark: bool,
 ) -> None:
     document = _complex_area_document()
     cache = CanvasOverlayTileCache(
@@ -313,6 +315,10 @@ def test_complex_odd_even_area_cache_matches_direct_at_supported_dpr(
     with patch.object(canvas_module, "canvas_overlay_tile_cache", cache):
         try:
             canvas = _make_canvas(document, cache, device_pixel_ratio)
+            palette = canvas.palette()
+            palette.setColor(QPalette.ColorRole.Window, QColor("#1b2026" if dark else "#fafafa"))
+            palette.setColor(QPalette.ColorRole.WindowText, QColor("white" if dark else "black"))
+            canvas.setPalette(palette)
             direct = _render_direct(canvas, device_pixel_ratio)
             cached = _render_cached(canvas, cache, device_pixel_ratio)
 

@@ -474,6 +474,9 @@ class ProjectSessionController:
     def save_project(self, path: str | None = None) -> ProjectSaveResult:
         host = self._host
         try:
+            flush = getattr(host, "_flush_pending_measurements", None)
+            if flush is not None:
+                flush(for_snapshot=True)
             save_plan = self._build_project_save_plan(version=__version__)
         except Exception as exc:  # noqa: BLE001 - normalize snapshot failures for the UI
             host._show_project_warning("保存项目", f"无法构造项目保存计划，当前项目未改变：\n{exc}")

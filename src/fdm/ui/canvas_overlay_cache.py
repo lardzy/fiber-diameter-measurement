@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import math
 import queue
 import threading
+import time
 
 import numpy as np
 
@@ -28,11 +29,15 @@ from PySide6.QtGui import (
     QPainterPath,
     QPen,
     QPicture,
+    QPolygonF,
     QTransform,
 )
 
 from fdm.geometry import odd_even_path_moments
 
+
+_overlay_render_pool = QThreadPool()
+_overlay_render_pool.setMaxThreadCount(2)
 
 OVERLAY_TILE_LOGICAL_SIZE = 512
 OVERLAY_TILE_BLEED_DEVICE_PIXELS = 2
@@ -67,6 +72,7 @@ class CanvasOverlayTileKey:
     show_area_fill: bool
     device_phase_x: float = 0.0
     device_phase_y: float = 0.0
+    content_stamp: tuple[object, ...] = ()
 
 
 @dataclass(frozen=True, slots=True)
@@ -88,7 +94,7 @@ class AreaOverlayDrawCommand:
     maps or serializes every vertex merely to hand the command to a worker.
     """
 
-    path: QPainterPath
+    path: QPainterPath | None
     image_to_overlay: QTransform
     fill_rgba: int | None
     outline_rgba: int
@@ -96,6 +102,17 @@ class AreaOverlayDrawCommand:
     stroke_rgba: int
     stroke_width: float
     label: AreaOverlayLabelCommand | None = None
+    raw_coordinates: tuple[bytes, ...] = ()
+    geometry_key: tuple[object, ...] = ()
+    stroke_style: int = Qt.PenStyle.SolidLine.value
+    separate_fill: bool = False
+
+
+@dataclass(frozen=True, slots=True)
+class PictureOverlayDrawCommand:
+    """A detached primitive command; never contains an area contour."""
+
+    picture: QPicture
 
 
 @dataclass(frozen=True, slots=True)
@@ -112,7 +129,7 @@ class CanvasOverlayRenderSnapshot:
     request_id: int
     key: CanvasOverlayTileKey
     picture: QPicture | None = None
-    area_commands: tuple[AreaOverlayDrawCommand, ...] = ()
+    area_commands: tuple[AreaOverlayDrawCommand | PictureOverlayDrawCommand, ...] = ()
     logical_tile_size: int = OVERLAY_TILE_LOGICAL_SIZE
     bleed_device_pixels: int = OVERLAY_TILE_BLEED_DEVICE_PIXELS
     exact_composition: bool = False
@@ -213,6 +230,52 @@ class _AreaCommandCentroidCache:
             self._entries.clear()
 
 
+class _WorkerPathCache:
+    def __init__(self, max_bytes=64 * 1024 * 1024):
+        self._entries = OrderedDict()
+        self._bytes = 0
+        self._max_bytes = max_bytes
+        self._lock = threading.Lock()
+
+    def path(self, command):
+        if command.path is not None:
+            return command.path
+        with self._lock:
+            entry = self._entries.get(command.geometry_key)
+            if entry is not None and entry[0] == command.raw_coordinates:
+                self._entries.move_to_end(command.geometry_key)
+                return QPainterPath(entry[1])
+        path = QPainterPath()
+        path.setFillRule(Qt.FillRule.OddEvenFill)
+        for ring in command.raw_coordinates:
+            coordinates = np.frombuffer(ring, dtype=np.float64).reshape(-1, 2)
+            path.addPolygon(QPolygonF([QPointF(float(x), float(y)) for x, y in coordinates]))
+            path.closeSubpath()
+        size = path.elementCount() * 48 + sum(map(len, command.raw_coordinates))
+        with self._lock:
+            old = self._entries.pop(command.geometry_key, None)
+            if old is not None:
+                self._bytes -= old[2]
+            while self._entries and self._bytes + size > self._max_bytes:
+                self._bytes -= self._entries.popitem(last=False)[1][2]
+            if size <= self._max_bytes:
+                self._entries[command.geometry_key] = (
+                    command.raw_coordinates,
+                    QPainterPath(path),
+                    size,
+                )
+                self._bytes += size
+        return path
+
+    def discard_document(self, token):
+        with self._lock:
+            for key in [key for key in self._entries if key and key[0] == token]:
+                self._bytes -= self._entries.pop(key)[2]
+
+
+_worker_paths = _WorkerPathCache()
+
+
 class _TileRenderRunnable(QRunnable):
     def __init__(
         self,
@@ -221,6 +284,7 @@ class _TileRenderRunnable(QRunnable):
         request_sequence: int,
         completions: queue.SimpleQueue[_TileRenderCompletion],
         centroid_cache: _AreaCommandCentroidCache,
+        isolated_worker: bool = False,
     ) -> None:
         super().__init__()
         self.setAutoDelete(True)
@@ -229,6 +293,7 @@ class _TileRenderRunnable(QRunnable):
         self._request_sequence = int(request_sequence)
         self._completions = completions
         self._centroid_cache = centroid_cache
+        self._isolated_worker = isolated_worker
 
     @Slot()
     def run(self) -> None:
@@ -236,7 +301,12 @@ class _TileRenderRunnable(QRunnable):
             self._report(cancelled=True)
             return
         try:
-            rendered_image, rendered_picture = self._render()
+            if self._isolated_worker:
+                from fdm.ui.overlay_process_renderer import render_in_isolated_worker
+
+                rendered_image, rendered_picture = render_in_isolated_worker(self._snapshot)
+            else:
+                rendered_image, rendered_picture = self._render()
         except Exception as exc:  # pragma: no cover - defensive Qt backend path
             self._report(error=str(exc))
             return
@@ -386,13 +456,23 @@ class _TileRenderRunnable(QRunnable):
     def _draw_area_commands(
         self,
         painter: QPainter,
-        commands: tuple[AreaOverlayDrawCommand, ...],
+        commands: tuple[AreaOverlayDrawCommand | PictureOverlayDrawCommand, ...],
     ) -> None:
         """Render detached commands in original document order."""
 
         for command in commands:
             if self._cancellation.is_cancelled():
                 return
+            if isinstance(command, PictureOverlayDrawCommand):
+                command.picture.play(painter)
+                continue
+            path = _worker_paths.path(command)
+            cooperative = path.elementCount() >= 1000
+            if cooperative:
+                # Some PySide Qt paint calls retain the GIL. Yield between
+                # complex native passes so multiple tiles cannot monopolize
+                # front-end input despite being scheduled on worker threads.
+                time.sleep(0)
             painter.save()
             try:
                 painter.setWorldTransform(command.image_to_overlay, combine=True)
@@ -400,6 +480,12 @@ class _TileRenderRunnable(QRunnable):
                     painter.setBrush(QColor.fromRgba(int(command.fill_rgba)))
                 else:
                     painter.setBrush(Qt.BrushStyle.NoBrush)
+                if command.separate_fill and command.fill_rgba is not None:
+                    painter.setPen(Qt.PenStyle.NoPen)
+                    painter.drawPath(path)
+                    painter.setBrush(Qt.BrushStyle.NoBrush)
+                    if cooperative:
+                        time.sleep(0)
                 outline_pen = QPen(
                     QColor.fromRgba(int(command.outline_rgba)),
                     float(command.outline_width),
@@ -412,20 +498,24 @@ class _TileRenderRunnable(QRunnable):
                 # Fill and outer outline have the same ordering when issued
                 # together by QPainter, and this removes one full path draw
                 # from every passive area command.
-                painter.drawPath(command.path)
+                painter.drawPath(path)
+                if cooperative:
+                    time.sleep(0)
                 if self._cancellation.is_cancelled():
                     return
                 painter.setBrush(Qt.BrushStyle.NoBrush)
                 stroke_pen = QPen(
                     QColor.fromRgba(int(command.stroke_rgba)),
                     float(command.stroke_width),
-                    Qt.PenStyle.SolidLine,
+                    Qt.PenStyle(command.stroke_style),
                     Qt.PenCapStyle.RoundCap,
                     Qt.PenJoinStyle.RoundJoin,
                 )
                 stroke_pen.setCosmetic(True)
                 painter.setPen(stroke_pen)
-                painter.drawPath(command.path)
+                painter.drawPath(path)
+                if cooperative:
+                    time.sleep(0)
             finally:
                 painter.restore()
             if self._cancellation.is_cancelled():
@@ -437,8 +527,10 @@ class _TileRenderRunnable(QRunnable):
                         continue
                     centroid = self._centroid_cache.get_or_compute(
                         command.label.centroid_key,
-                        command.path,
+                        path,
                     )
+                    if cooperative:
+                        time.sleep(0)
                     center = command.image_to_overlay.map(centroid)
                     top_left = QPointF(
                         center.x() + command.label.center_offset.x(),
@@ -472,7 +564,7 @@ class _TileRenderRunnable(QRunnable):
                 snapshot.key.tile_y * tile_size,
                 tile_size,
                 tile_size,
-            ).adjusted(-bleed, -bleed, bleed, bleed)
+            )
         )
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         painter.setRenderHint(QPainter.RenderHint.TextAntialiasing, True)
@@ -527,12 +619,14 @@ class CanvasOverlayTileCache(QObject):
         max_bytes: int = OVERLAY_TILE_MAX_BYTES,
         max_pending_bytes: int = OVERLAY_TILE_MAX_PENDING_BYTES,
         thread_pool: QThreadPool | None = None,
+        isolated_worker: bool = False,
     ) -> None:
         super().__init__(parent)
         self._max_entries = max(1, int(max_entries))
         self._max_bytes = max(1, int(max_bytes))
         self._max_pending_bytes = max(1, int(max_pending_bytes))
-        self._thread_pool = thread_pool or QThreadPool.globalInstance()
+        self._thread_pool = thread_pool or _overlay_render_pool
+        self._isolated_worker = isolated_worker
         self._area_centroids = _AreaCommandCentroidCache()
         self._tiles: OrderedDict[CanvasOverlayTileKey, _CachedTile] = OrderedDict()
         self._pending: dict[CanvasOverlayTileKey, _PendingTile] = {}
@@ -683,6 +777,7 @@ class CanvasOverlayTileCache(QObject):
             request_sequence,
             self._completions,
             self._area_centroids,
+            isolated_worker=self._isolated_worker,
         )
         if not self._completion_timer.isActive():
             self._completion_timer.start()
@@ -709,10 +804,22 @@ class CanvasOverlayTileCache(QObject):
         if pending is not None:
             pending.cancellation.cancel()
 
+    def retain_document_version(self, current_key):
+        """Keep one complete overview per document in the shared preview LRU."""
+        self._require_owner_thread()
+        for key in list(self._tiles):
+            if key.document_token == current_key.document_token and key != current_key:
+                self._remove_tile(key)
+
     def invalidate_document(self, document_token: int) -> None:
         self._require_owner_thread()
         token = int(document_token)
         self._area_centroids.discard_document(token)
+        _worker_paths.discard_document(token)
+        if self._isolated_worker:
+            from fdm.ui.overlay_process_renderer import discard_document
+
+            discard_document(token)
         for key in [key for key in self._tiles if key.document_token == token]:
             self._remove_tile(key)
         for key, pending in list(self._pending.items()):
@@ -1055,10 +1162,17 @@ class CanvasOverlayTileCache(QObject):
         if snapshot.picture is not None:
             return estimated + max(1, int(snapshot.picture.size()))
         for command in snapshot.area_commands:
+            if isinstance(command, PictureOverlayDrawCommand):
+                estimated += max(1, int(command.picture.size()))
+                continue
             estimated += _PENDING_AREA_COMMAND_OVERHEAD_BYTES
             estimated += max(
                 1,
-                int(command.path.elementCount()) * _PENDING_PATH_ELEMENT_BYTES,
+                (
+                    int(command.path.elementCount()) * _PENDING_PATH_ELEMENT_BYTES
+                    if command.path is not None
+                    else sum(map(len, command.raw_coordinates)) * 4
+                ),
             )
             label = command.label
             if label is not None:
@@ -1068,13 +1182,19 @@ class CanvasOverlayTileCache(QObject):
 
     @staticmethod
     def _clone_area_command(
-        command: AreaOverlayDrawCommand,
-    ) -> AreaOverlayDrawCommand:
+        command: AreaOverlayDrawCommand | PictureOverlayDrawCommand,
+    ) -> AreaOverlayDrawCommand | PictureOverlayDrawCommand:
         """Detach the worker envelope without walking path elements."""
 
+        if isinstance(command, PictureOverlayDrawCommand):
+            return PictureOverlayDrawCommand(CanvasOverlayTileCache._clone_picture(command.picture))
         label = command.label
         return AreaOverlayDrawCommand(
-            path=QPainterPath(command.path),
+            path=QPainterPath(command.path) if command.path is not None else None,
+            raw_coordinates=command.raw_coordinates,
+            geometry_key=command.geometry_key,
+            stroke_style=command.stroke_style,
+            separate_fill=command.separate_fill,
             image_to_overlay=QTransform(command.image_to_overlay),
             fill_rgba=command.fill_rgba,
             outline_rgba=int(command.outline_rgba),
@@ -1086,11 +1206,7 @@ class CanvasOverlayTileCache(QObject):
                 if label is None
                 else AreaOverlayLabelCommand(
                     image=QImage(label.image),
-                    top_left=(
-                        QPointF(label.top_left)
-                        if label.top_left is not None
-                        else None
-                    ),
+                    top_left=(QPointF(label.top_left) if label.top_left is not None else None),
                     center_offset=QPointF(label.center_offset),
                     centroid_key=label.centroid_key,
                 )
@@ -1098,4 +1214,9 @@ class CanvasOverlayTileCache(QObject):
         )
 
 
-canvas_overlay_tile_cache = CanvasOverlayTileCache()
+canvas_overlay_tile_cache = CanvasOverlayTileCache(isolated_worker=True)
+
+# Complete display-only overviews share a global budget across open images.
+canvas_overlay_preview_cache = CanvasOverlayTileCache(
+    max_bytes=64 * 1024 * 1024, max_entries=8, isolated_worker=True
+)

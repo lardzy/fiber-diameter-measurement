@@ -65,6 +65,7 @@ from fdm.ui.canvas_overlay_cache import (
     CanvasOverlayCacheStats,
     CanvasOverlayTileKey,
     canvas_overlay_tile_cache,
+    canvas_overlay_preview_cache,
 )
 from fdm.ui.digital_slide_canvas import DigitalSlideCanvas
 from fdm.ui.screen_label_sprite_cache import screen_label_sprite_cache
@@ -1233,6 +1234,7 @@ def _reset_runtime_caches(
     """Start each benchmark with process-global display caches genuinely cold."""
 
     canvas_overlay_tile_cache.clear()
+    canvas_overlay_preview_cache.clear()
     started = time.perf_counter()
     deadline = started + (max(0, int(drain_timeout_ms)) / 1000.0)
     while (
@@ -1916,7 +1918,13 @@ def _cache_activity_delta(
 def _overlay_wait_state(canvas: DocumentCanvas) -> tuple[int, bool, bool, int]:
     queue = getattr(canvas, "_overlay_tile_queue", ())
     active = getattr(canvas, "_overlay_tile_active", None) is not None
-    scheduled = bool(getattr(canvas, "_overlay_tile_build_scheduled", False))
+    preview_timer = getattr(canvas, "_overlay_preview_timer", None)
+    preview_key = getattr(canvas, "_overlay_preview_requested", None)
+    scheduled = (
+        bool(getattr(canvas, "_overlay_tile_build_scheduled", False))
+        or bool(preview_timer is not None and preview_timer.isActive())
+        or bool(preview_key is not None and canvas_overlay_preview_cache.is_pending(preview_key))
+    )
     failed = getattr(canvas, "_overlay_tile_failed", ())
     return len(queue), active, scheduled, len(failed)
 
@@ -2160,6 +2168,7 @@ def run_benchmark(
     idle_ms: int = 500,
     device_pixel_ratio: float = 1.0,
     continuous_pan_frames: int = 12,
+    interactive_cold: bool = False,
 ) -> dict[str, object]:
     """Run a scenario and return its versioned, JSON-serializable result."""
 
@@ -2240,9 +2249,13 @@ def run_benchmark(
         else:
             digital_slide_camera_benchmark = None
 
+        if interactive_cold and not isinstance(canvas, _BenchmarkDigitalSlideCanvas):
+            canvas.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+            canvas.show()
         try:
             with _trace_overlay_drop_reasons(canvas) as drop_reasons:
                 cold_samples = [_render_frame(canvas, surface)]
+                cold_preview_frames = getattr(canvas, "_overlay_preview_frames", 0)
                 cache_after_cold = canvas_overlay_tile_cache.stats()
                 runtime_cache_after_cold = _runtime_cache_snapshot()
                 queued, active, _scheduled, _failed = _overlay_wait_state(canvas)
@@ -2408,14 +2421,18 @@ def run_benchmark(
                     },
                     "overlay_cache": {
                         "enabled": bool(overlay_cache),
+                        "interactive_cold": bool(interactive_cold),
+                        "cold_preview_frames": cold_preview_frames,
+                        "complete_preview_frames": getattr(canvas, "_overlay_preview_frames", 0),
+                        "synchronous_missing_tile_fallbacks": getattr(
+                            canvas, "_overlay_sync_fallbacks", 0
+                        ),
                         "wait": overlay_wait,
                         "tiles": {
                             "entries": int(cache_after_hot.entries),
                             "bytes": int(cache_after_hot.bytes),
                             "pending": int(cache_after_hot.pending),
-                            "pending_bytes": int(
-                                cache_after_hot.pending_bytes
-                            ),
+                            "pending_bytes": int(cache_after_hot.pending_bytes),
                         },
                         "cold_activity": _cache_activity_delta(
                             cache_before,
@@ -2441,9 +2458,7 @@ def run_benchmark(
                         "before_render": runtime_cache_before,
                         "after_cold": runtime_cache_after_cold,
                         "after_hot": runtime_cache_after_hot,
-                        "after_interactions": (
-                            runtime_cache_after_interactions
-                        ),
+                        "after_interactions": (runtime_cache_after_interactions),
                         "activity": {
                             "label_sprites": _cache_counter_delta(
                                 runtime_cache_before,
@@ -2468,12 +2483,8 @@ def run_benchmark(
                         ),
                         "draw_calls": painter_call_trace,
                         "measured_render_calls": measured_render_count,
-                        "classified_direct_frames": (
-                            classified_direct_frames
-                        ),
-                        "classified_cached_frames": (
-                            classified_cached_frames
-                        ),
+                        "classified_direct_frames": (classified_direct_frames),
+                        "classified_cached_frames": (classified_cached_frames),
                         "interaction_frames": interaction_render_count,
                         "interaction_classification": (
                             "mixed_or_direct because selection and exact zoom "
@@ -2503,8 +2514,7 @@ def run_benchmark(
                         "after_frames_bytes": rss_after_frames,
                         "delta_bytes": (
                             rss_after_frames - rss_before_build
-                            if rss_after_frames is not None
-                            and rss_before_build is not None
+                            if rss_after_frames is not None and rss_before_build is not None
                             else None
                         ),
                         "peak_bytes": peak_rss,
@@ -2681,6 +2691,11 @@ def _parser() -> argparse.ArgumentParser:
         ),
     )
     parser.add_argument(
+        "--interactive-cold",
+        action="store_true",
+        help="Measure visible UI loading/preview first frame; exact readiness is reported separately.",
+    )
+    parser.add_argument(
         "--pan-frames",
         type=int,
         default=12,
@@ -2730,6 +2745,7 @@ def main(argv: Sequence[str] | None = None) -> int:
             idle_ms=arguments.idle_ms,
             device_pixel_ratio=arguments.device_pixel_ratio,
             continuous_pan_frames=arguments.pan_frames,
+            interactive_cold=arguments.interactive_cold,
         )
         encoded = json.dumps(
             result,

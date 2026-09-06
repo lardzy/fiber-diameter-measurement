@@ -7,12 +7,15 @@ from PySide6.QtCore import QObject, Qt, Signal, Slot
 from PySide6.QtGui import QImage
 
 from fdm.geometry import Point
+from fdm.services.mask_region import MaskRegion, mask_region
+from fdm.settings import is_magic_segment_tool_mode
 from fdm.services.prompt_segmentation import (
     PromptSegmentationService,
     create_interactive_segmentation_service,
     magic_mask_area_px,
     magic_mask_to_geometry,
     resolve_interactive_segmentation_backend,
+    fill_magic_draft_internal_holes,
 )
 
 
@@ -34,6 +37,7 @@ class PromptSegmentationRequest:
     small_object_workspace_box: tuple[int, int, int, int] | None = None
     source_token: str = ""
     valid_coverage: object | None = None
+    fill_draft_holes: bool = False
 
 
 class PromptSegmentationWorker(QObject):
@@ -72,6 +76,8 @@ class PromptSegmentationWorker(QObject):
             if service is None:
                 service = create_interactive_segmentation_service(resolved_variant)
                 self._services[resolved_variant] = service
+            compact = is_magic_segment_tool_mode(request.tool_mode)
+            service.local_masks = compact
             result = service.predict_polygon(
                 image=request.image,
                 cache_key=request.cache_key,
@@ -89,13 +95,21 @@ class PromptSegmentationWorker(QObject):
             if result.mask is not None and request.valid_coverage is not None:
                 import numpy as np
 
-                mask = np.asarray(result.mask, dtype=bool)
+                region = result.mask if isinstance(result.mask, MaskRegion) else None
+                mask = region.data if region is not None else np.asarray(result.mask, dtype=bool)
                 coverage = np.asarray(request.valid_coverage, dtype=bool)
+                if region is not None:
+                    if coverage.shape != region.extent:
+                        raise RuntimeError("分割结果与有效图块覆盖尺寸不一致")
+                    x, y = region.origin
+                    coverage = coverage[y : y + mask.shape[0], x : x + mask.shape[1]]
                 if mask.shape != coverage.shape:
                     raise RuntimeError(
                         f"分割结果与有效图块覆盖尺寸不一致：{mask.shape} != {coverage.shape}。"
                     )
                 clipped = np.ascontiguousarray(mask & coverage)
+                if region is not None:
+                    clipped = mask_region(clipped, origin=region.origin, extent=region.extent)
                 selected_mask, rings, polygon, stats = magic_mask_to_geometry(
                     clipped,
                     positive_points=list(request.positive_points),
@@ -113,6 +127,16 @@ class PromptSegmentationWorker(QObject):
                     np.any(mask & ~coverage)
                 )
                 result.metadata.update(stats)
+            if compact and result.mask is not None:
+                result.mask = mask_region(result.mask)
+                if request.fill_draft_holes:
+                    result.mask, result.area_rings_px, result.polygon_px, stats = (
+                        magic_mask_to_geometry(fill_magic_draft_internal_holes(result.mask))
+                    )
+                    result.metadata.update(stats)
+                result.area_px = magic_mask_area_px(result.mask)
+                result.metadata["holes_processed"] = bool(request.fill_draft_holes)
+                result.metadata["geometry_final"] = True
             if self._is_request_cancelled(request.document_id):
                 return
             result.metadata["tool_mode"] = request.tool_mode

@@ -1548,8 +1548,9 @@ class ImageDocument:
         index: int | None = None,
         select: bool = True,
         mark_dirty: bool = True,
+        assign_active_group: bool = True,
     ) -> None:
-        if measurement.fiber_group_id is None:
+        if assign_active_group and measurement.fiber_group_id is None:
             measurement.fiber_group_id = self.active_group_id
         measurement.recalculate(self.calibration)
         if index is None or index < 0 or index >= len(self.measurements):
@@ -1710,11 +1711,13 @@ class ImageDocument:
 
     def rebuild_group_memberships(self) -> None:
         group_map = {group.id: group for group in self.fiber_groups}
+        seen = {group.id: set() for group in self.fiber_groups}
         for group in self.fiber_groups:
             group.measurement_ids = []
         for measurement in self.measurements:
             group = group_map.get(measurement.fiber_group_id or "")
-            if group is not None and measurement.id not in group.measurement_ids:
+            if group is not None and measurement.id not in seen[group.id]:
+                seen[group.id].add(measurement.id)
                 group.measurement_ids.append(measurement.id)
         self.fiber_groups.sort(key=lambda group: group.number)
 

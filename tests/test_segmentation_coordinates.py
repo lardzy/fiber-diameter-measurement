@@ -118,7 +118,7 @@ def test_prompt_worker_clips_model_mask_to_stored_slide_coverage() -> None:
     assert len(results) == 1
     result = results[0]
     assert result.mask is not None
-    assert not np.any(np.asarray(result.mask)[:, 7:])
+    assert not np.any(result.mask.to_full_mask()[:, 7:])
     assert result.metadata["coverage_clipped"] is True
     assert result.metadata["source_token"] == "source-token"
 

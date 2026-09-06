@@ -13,7 +13,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "src"))
 from PySide6.QtCore import QByteArray, QCoreApplication, QEvent, Qt
 from PySide6.QtGui import QColor, QImage, QKeyEvent
 from PySide6.QtWidgets import QApplication, QToolButton
-from PySide6.QtTest import QTest
+from PySide6.QtTest import QTest, QSignalSpy
 from shiboken6 import isValid as is_qobject_valid
 
 from fdm.geometry import Point
@@ -223,8 +223,12 @@ class MainWindowViewExperienceTests(unittest.TestCase):
         animation = window._fullscreen_hint_animation
         self.assertIsNotNone(animation)
         assert animation is not None
+        finished = QSignalSpy(animation.finished)
         animation.setDuration(1)
-        QTest.qWait(20)
+        # Qt's shared animation timer may need two display ticks before its
+        # first elapsed-time update; wait for completion rather than 20 ms.
+        if not finished.count():
+            self.assertTrue(finished.wait(250))
         self._process_events()
         self.assertIsNone(window._fullscreen_hint_label)
 

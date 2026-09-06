@@ -207,7 +207,7 @@ class CanvasOverlayStateRegressionTests(unittest.TestCase):
                 neighbour_key
             )
             self.assertIsNotNone(snapshot)
-            self.assertIsNotNone(snapshot.picture)
+            self.assertTrue(snapshot.area_commands)
             surface = QImage(
                 1024,
                 300,
@@ -215,9 +215,11 @@ class CanvasOverlayStateRegressionTests(unittest.TestCase):
             )
             surface.fill(0)
             painter = QPainter(surface)
-            assert snapshot is not None and snapshot.picture is not None
-            snapshot.picture.play(painter)
-            painter.end()
+            try:
+                for command in snapshot.area_commands:
+                    command.picture.play(painter)
+            finally:
+                painter.end()
             pixels = np.frombuffer(
                 surface.constBits(),
                 dtype=np.uint8,

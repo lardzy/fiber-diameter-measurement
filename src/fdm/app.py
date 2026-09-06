@@ -124,6 +124,9 @@ def _write_cli_output(payload: str) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
+    from multiprocessing import freeze_support
+
+    freeze_support()
     args = list(argv) if argv is not None else sys.argv
     if "--self-check" in args[1:]:
         return _run_release_self_check(json_output="--json" in args[1:])
@@ -169,6 +172,9 @@ def main(argv: list[str] | None = None) -> int:
             return 2
 
         app = QApplication(qt_args)
+        from fdm.ui.overlay_process_renderer import shutdown_overlay_renderer
+
+        app.aboutToQuit.connect(shutdown_overlay_renderer)
         app.setApplicationName(APP_NAME)
         app.setOrganizationName("Codex")
         instance_coordinator: SingleInstanceCoordinator | None = None

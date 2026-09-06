@@ -10,6 +10,7 @@ import cv2
 
 from fdm.geometry import Point, clean_ring, distance, point_in_polygon, ring_signed_area
 from fdm.runtime_logging import append_runtime_log
+from fdm.services.mask_region import MaskRegion, mask_region, subtract_regions
 from fdm.settings import (
     ComplexMagicSegmentModelVariant,
     MagicSegmentToolMode,
@@ -192,6 +193,8 @@ def resolve_magic_segment_model_variant(
 
 
 def magic_mask_area_px(mask) -> float:
+    if isinstance(mask, MaskRegion):
+        mask = mask.data
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -558,6 +561,12 @@ def _expand_mask_from_crop(crop_mask, *, crop_box: tuple[int, int, int, int], im
 
 
 def _component_bounds(mask) -> tuple[int, int, int, int] | None:
+    if isinstance(mask, MaskRegion):
+        bounds = _component_bounds(mask.data)
+        if bounds is None:
+            return None
+        x, y = mask.origin
+        return bounds[0] + x, bounds[1] + y, bounds[2] + x, bounds[3] + y
     try:
         import numpy as np
     except ImportError as exc:
@@ -635,7 +644,23 @@ def magic_mask_to_geometry(
     positive_points: list[Point] | None = None,
     negative_points: list[Point] | None = None,
     select_prompt_component: bool = True,
+    _prompt_bounds=None,
 ) -> tuple[object | None, list[list[Point]], list[Point], dict[str, object]]:
+    if isinstance(mask, MaskRegion):
+        x, y = mask.origin
+        selected, rings, polygon, stats = magic_mask_to_geometry(
+            mask.data,
+            positive_points=[Point(p.x - x, p.y - y) for p in (positive_points or [])],
+            negative_points=[Point(p.x - x, p.y - y) for p in (negative_points or [])],
+            select_prompt_component=select_prompt_component,
+            _prompt_bounds=(mask.origin, mask.extent),
+        )
+        return (
+            mask_region(selected, origin=mask.origin, extent=mask.extent),
+            [[Point(p.x + x, p.y + y) for p in ring] for ring in rings],
+            [Point(p.x + x, p.y + y) for p in polygon],
+            stats,
+        )
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -657,6 +682,7 @@ def magic_mask_to_geometry(
             normalized,
             positive_points=positive_points or [],
             negative_points=negative_points or [],
+            prompt_bounds=_prompt_bounds,
         )
         stats.update(component_stats)
     else:
@@ -675,6 +701,8 @@ def magic_mask_to_geometry(
 
 
 def normalize_magic_draft_mask(mask):
+    if isinstance(mask, MaskRegion):
+        return mask
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -688,6 +716,10 @@ def normalize_magic_draft_mask(mask):
 
 
 def fill_magic_draft_internal_holes(mask):
+    if isinstance(mask, MaskRegion):
+        return mask_region(
+            fill_magic_draft_internal_holes(mask.data), origin=mask.origin, extent=mask.extent
+        )
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -726,6 +758,22 @@ def _combined_subtraction_mask(subtract_mask):
 
 
 def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object | None, dict[str, object]]:
+    if isinstance(primary_mask, MaskRegion):
+        items = subtract_mask if isinstance(subtract_mask, (list, tuple)) else [subtract_mask]
+        result, intersection, count = subtract_regions(primary_mask, items)
+        stats = dict(
+            opened_holes=0,
+            discarded_fragments=False,
+            result_empty=False,
+            had_intersection=intersection,
+            subtract_shape_count=count,
+        )
+        if intersection and result.any():
+            result, discarded = _keep_largest_component(result)
+            stats["discarded_fragments"] = discarded
+        region = mask_region(result, origin=primary_mask.origin, extent=primary_mask.extent)
+        stats["result_empty"] = region is None
+        return region, stats
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -764,7 +812,9 @@ def finalize_magic_subtraction_mask(primary_mask, subtract_mask) -> tuple[object
     return result, stats
 
 
-def _select_prompt_component(mask, *, positive_points: list[Point], negative_points: list[Point]):
+def _select_prompt_component(
+    mask, *, positive_points: list[Point], negative_points: list[Point], prompt_bounds=None
+):
     try:
         import numpy as np
     except ImportError as exc:  # pragma: no cover - dependency is required by the app
@@ -785,10 +835,25 @@ def _select_prompt_component(mask, *, positive_points: list[Point], negative_poi
         "selected_positive_hits": 0,
         "selected_negative_hits": 0,
     }
+
+    def prompt_labels(points):
+        height, width = labels.shape
+        origin, extent = prompt_bounds or ((0, 0), (height, width))
+        ox, oy = origin
+        result = []
+        for point in points:
+            x = min(max(round(point.x + ox), 0), extent[1] - 1) - ox
+            y = min(max(round(point.y + oy), 0), extent[0] - 1) - oy
+            result.append(int(labels[y, x]) if 0 <= x < width and 0 <= y < height else 0)
+        return result
+
+    from collections import Counter
+
+    positive_labels = Counter(prompt_labels(positive_points))
+    negative_labels = Counter(prompt_labels(negative_points))
     for label in range(1, component_count):
-        component_mask = labels == label
-        positive_hits = sum(1 for point in positive_points if _mask_contains_point(component_mask, point))
-        negative_hits = sum(1 for point in negative_points if _mask_contains_point(component_mask, point))
+        positive_hits = positive_labels[label]
+        negative_hits = negative_labels[label]
         component_center = Point(float(centroids[label][0]), float(centroids[label][1]))
         center_distance = distance(component_center, prompt_centroid) if prompt_centroid is not None else 0.0
         area = float(stats[label, cv2.CC_STAT_AREA])
@@ -1290,7 +1355,13 @@ class PromptSegmentationService:
                     "small_object_enhancement_used": False,
                 },
             )
-            expanded_mask = _expand_mask_from_crop(crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w))
+            expanded_mask = (
+                mask_region(crop_result.mask, origin=crop_box[:2], extent=(image_h, image_w))
+                if getattr(self, "local_masks", False)
+                else _expand_mask_from_crop(
+                    crop_result.mask, crop_box=crop_box, image_shape=(image_h, image_w)
+                )
+            )
             selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
                 expanded_mask,
                 positive_points=positive_points,
@@ -1339,7 +1410,19 @@ class PromptSegmentationService:
                 },
             )
             if fallback_result.mask is not None:
-                expanded_mask = _expand_mask_from_crop(fallback_result.mask, crop_box=constraint_bounds, image_shape=(image_h, image_w))
+                expanded_mask = (
+                    mask_region(
+                        fallback_result.mask,
+                        origin=constraint_bounds[:2],
+                        extent=(image_h, image_w),
+                    )
+                    if getattr(self, "local_masks", False)
+                    else _expand_mask_from_crop(
+                        fallback_result.mask,
+                        crop_box=constraint_bounds,
+                        image_shape=(image_h, image_w),
+                    )
+                )
                 selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
                     expanded_mask,
                     positive_points=positive_points,
@@ -1436,7 +1519,13 @@ class PromptSegmentationService:
         for candidate in candidates:
             crop_mask = _resize_mask_to_crop(candidate.mask, crop_size=(y1 - y0, x1 - x0))
             crop_mask = _clip_crop_mask_to_box(crop_mask, crop_box=workspace_box, clip_box=roi_constraint_box)
-            expanded_mask = _expand_mask_from_crop(crop_mask, crop_box=workspace_box, image_shape=(image_h, image_w))
+            expanded_mask = (
+                mask_region(crop_mask, origin=workspace_box[:2], extent=(image_h, image_w))
+                if getattr(self, "local_masks", False)
+                else _expand_mask_from_crop(
+                    crop_mask, crop_box=workspace_box, image_shape=(image_h, image_w)
+                )
+            )
             selected_mask, area_rings, polygon, geometry_stats = magic_mask_to_geometry(
                 expanded_mask,
                 positive_points=positive_points,

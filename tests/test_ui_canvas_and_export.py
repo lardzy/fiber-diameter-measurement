@@ -7754,6 +7754,7 @@ class CanvasAndExportTests(unittest.TestCase):
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_T))
             self.assertEqual(canvas.current_magic_segment_operation_mode(), MagicSegmentOperationMode.ADD)
             window.keyPressEvent(FakeKeyEvent(Qt.Key.Key_Return))
+            window._flush_pending_measurements(document)
 
             self.assertEqual(len(document.measurements), 1)
             self.assertEqual(document.measurements[0].mode, "magic_segment")

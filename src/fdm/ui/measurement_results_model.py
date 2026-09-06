@@ -163,6 +163,8 @@ class MeasurementResultsModel(QAbstractTableModel):
         self._row_by_id: dict[str, int] = {}
         self._result_sequence_by_id: dict[str, int] = {}
         self._category_sequence_by_id: dict[str, int] = {}
+        self._sequence_totals = {}
+        self._category_totals = {}
 
     @property
     def document(self) -> ImageDocument | None:
@@ -194,9 +196,17 @@ class MeasurementResultsModel(QAbstractTableModel):
         self.beginInsertRows(QModelIndex(), row, row)
         self._measurements.append(measurement)
         self._row_by_id[measurement.id] = row
-        self._rebuild_sequences()
+        self._append_sequence(measurement)
         self.endInsertRows()
         return True
+
+    def refresh_measurements(self, measurement_ids) -> None:
+        for measurement_id in measurement_ids:
+            row = self._row_by_id.get(measurement_id)
+            if row is not None:
+                self.dataChanged.emit(
+                    self.index(row, 0), self.index(row, self.columnCount() - 1), []
+                )
 
     def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return 0 if parent.isValid() else len(self._measurements)
@@ -325,24 +335,22 @@ class MeasurementResultsModel(QAbstractTableModel):
     def _rebuild_sequences(self) -> None:
         self._result_sequence_by_id.clear()
         self._category_sequence_by_id.clear()
+        self._sequence_totals.clear()
+        self._category_totals.clear()
         document = self._document
         if document is None:
             return
-        result_sequence_by_kind: dict[str, int] = {}
-        category_sequence_by_kind_and_group: dict[tuple[str, str], int] = {}
         for measurement in self._measurements:
-            kind_key = measurement.measurement_kind or ""
-            group = document.get_group(measurement.fiber_group_id)
-            group_key = group.label if group is not None else UNCATEGORIZED_LABEL
-            result_sequence_by_kind[kind_key] = result_sequence_by_kind.get(kind_key, 0) + 1
-            category_key = (kind_key, group_key)
-            category_sequence_by_kind_and_group[category_key] = (
-                category_sequence_by_kind_and_group.get(category_key, 0) + 1
-            )
-            self._result_sequence_by_id[measurement.id] = result_sequence_by_kind[kind_key]
-            self._category_sequence_by_id[measurement.id] = (
-                category_sequence_by_kind_and_group[category_key]
-            )
+            self._append_sequence(measurement)
+
+    def _append_sequence(self, measurement):
+        kind = measurement.measurement_kind or ""
+        group = self._document.get_group(measurement.fiber_group_id)
+        category = (kind, group.label if group is not None else UNCATEGORIZED_LABEL)
+        self._sequence_totals[kind] = self._sequence_totals.get(kind, 0) + 1
+        self._category_totals[category] = self._category_totals.get(category, 0) + 1
+        self._result_sequence_by_id[measurement.id] = self._sequence_totals[kind]
+        self._category_sequence_by_id[measurement.id] = self._category_totals[category]
 
     @staticmethod
     def _display_value(

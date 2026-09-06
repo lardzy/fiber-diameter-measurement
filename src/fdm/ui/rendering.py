@@ -28,6 +28,7 @@ from fdm.area_display import (
     area_derived_geometry_service,
     area_geometry_raw,
 )
+from fdm.ui.overlay_geometry_snapshot import overlay_geometry_snapshots
 from fdm.geometry import Line, Point, direction, normal, point_to_segment_distance
 from fdm.models import (
     ImageDocument,
@@ -595,7 +596,10 @@ def _painter_visible_rect(painter: QPainter) -> QRectF | None:
         if clipped.isValid() and not clipped.isEmpty():
             return clipped
     viewport = getattr(painter, "viewport", None)
-    return QRectF(viewport()) if callable(viewport) else None
+    rect = QRectF(viewport()) if callable(viewport) else None
+    # A detached QPicture recorder has no device viewport yet. Its label
+    # sprites must be recorded in full and clipped by the eventual tile.
+    return rect if rect is not None and not rect.isEmpty() else None
 
 
 def _is_visible_to_painter(painter: QPainter, rect: QRectF, *, padding: float = 4.0) -> bool:
@@ -2038,8 +2042,8 @@ def build_passive_area_overlay_command(
 
     if measurement.measurement_kind != "area":
         return None
-    geometry = area_derived_geometry_service.raw_geometry(measurement)
-    if len(geometry.outline_points) < 3:
+    coordinates = overlay_geometry_snapshots.capture(measurement, document_token=id(document))
+    if not coordinates:
         return None
 
     color = measurement_color(document, measurement, settings)
@@ -2111,7 +2115,9 @@ def build_passive_area_overlay_command(
         )
 
     return AreaOverlayDrawCommand(
-        path=QPainterPath(geometry.path),
+        path=None,
+        raw_coordinates=coordinates,
+        geometry_key=(id(document), id(measurement), measurement.id, measurement.geometry_revision),
         image_to_overlay=QTransform.fromScale(float(zoom), float(zoom)),
         fill_rgba=fill_rgba,
         outline_rgba=int(QColor("#0B0B0B").rgba()),

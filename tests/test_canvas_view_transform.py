@@ -182,6 +182,16 @@ class CanvasViewTransformTests(unittest.TestCase):
                 Qt.KeyboardModifier.NoModifier,
             )
             canvas.mouseMoveEvent(event)
+            canvas.mouseReleaseEvent(
+                QMouseEvent(
+                    QEvent.Type.MouseButtonRelease,
+                    event.position(),
+                    event.position(),
+                    Qt.MouseButton.MiddleButton,
+                    Qt.MouseButton.NoButton,
+                    Qt.KeyboardModifier.NoModifier,
+                )
+            )
 
             self.assertGreaterEqual(len(snapshots), 3)
             self.assertTrue(

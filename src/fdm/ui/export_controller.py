@@ -63,6 +63,13 @@ class ExportController:
 
     def export_results(self, preset: ExportSelection | None = None) -> None:
         host = self._host
+        flush = getattr(host, "_flush_pending_measurements", None)
+        if flush is not None:
+            try:
+                flush(for_snapshot=True)
+            except RuntimeError as error:
+                host._show_export_warning("测量尚未完整写入", str(error))
+                return
         project_session = getattr(host, "project_session_controller", None)
         unresolved_documents = getattr(project_session, "unresolved_documents", None)
         unresolved_count = 0

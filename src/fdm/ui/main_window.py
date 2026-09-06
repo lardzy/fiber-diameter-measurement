@@ -89,7 +89,6 @@ from fdm.area_display import (
     AREA_GEOMETRY_RAW,
     area_derived_geometry_service,
     clear_area_derived_geometry_cache,
-    ensure_measurement_display_geometry,
 )
 from fdm.geometry import Line, Point, line_length
 from fdm.construction_document import make_construction_resolver
@@ -14652,6 +14651,11 @@ class MainWindow(QMainWindow):
         )
 
     def export_current_image(self) -> None:
+        try:
+            self._flush_pending_measurements(for_snapshot=True)
+        except RuntimeError as error:
+            self.statusBar().showMessage(str(error), 8000)
+            return
         document = self.current_document()
         if document is None:
             QMessageBox.information(self, "导出当前图像", "请先打开一张图片。")
@@ -22434,6 +22438,8 @@ class MainWindow(QMainWindow):
                 small_object_workspace_box=small_object_workspace_box,
                 source_token=source.cache_key,
                 valid_coverage=source.valid_coverage,
+                fill_draft_holes=bool(self._app_settings.magic_segment_fill_draft_holes_enabled)
+                and tool_mode == MagicSegmentToolMode.STANDARD,
             )
         )
         self._update_magic_segment_controls()
@@ -22610,16 +22616,26 @@ class MainWindow(QMainWindow):
                     global_rings,
                     {
                         "segmentation_roi_round": result.metadata.get("segmentation_roi_round"),
-                        "segmentation_used_full_image": result.metadata.get("segmentation_used_full_image"),
+                        "segmentation_used_full_image": result.metadata.get(
+                            "segmentation_used_full_image"
+                        ),
                         "segmentation_crop_box": result.metadata.get("segmentation_crop_box"),
                         "component_area_px": result.metadata.get("component_area_px"),
                         "reason": result.metadata.get("reason"),
-                        "small_object_enhancement_used": result.metadata.get("small_object_enhancement_used"),
+                        "small_object_enhancement_used": result.metadata.get(
+                            "small_object_enhancement_used"
+                        ),
                         "small_object_workspace_box": small_object_workspace_box,
                         "small_object_scale": result.metadata.get("small_object_scale"),
-                        "small_object_enhanced_size": result.metadata.get("small_object_enhanced_size"),
-                        "small_object_reject_reason": result.metadata.get("small_object_reject_reason"),
+                        "small_object_enhanced_size": result.metadata.get(
+                            "small_object_enhanced_size"
+                        ),
+                        "small_object_reject_reason": result.metadata.get(
+                            "small_object_reject_reason"
+                        ),
                         "segmentation_source": source_metadata,
+                        "holes_processed": result.metadata.get("holes_processed", False),
+                        "geometry_final": result.metadata.get("geometry_final", False),
                     },
                 )
                 if apply_result is None:
@@ -22783,6 +22799,11 @@ class MainWindow(QMainWindow):
     def undo_current_document(self) -> None:
         document = self.current_document()
         if document is None:
+            return
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if queue is not None and queue.cancel_last(document):
+            self.statusBar().showMessage("已撤销尚未完成的测量", 2500)
+            self._update_action_states()
             return
         self._prune_invalid_workspace_composites()
         if self._undo_workspace_composite_for(document):
@@ -23062,6 +23083,8 @@ class MainWindow(QMainWindow):
         return False
 
     def _confirm_close_documents(self, documents: list[ImageDocument]) -> bool:
+        for document in tuple(documents):
+            self._flush_pending_measurements(document)
         dirty_documents = [document for document in documents if self._document_has_unsaved_project_changes(document)]
         has_project_dirty = self._project_dirty()
         if not dirty_documents and not has_project_dirty:
@@ -23090,6 +23113,9 @@ class MainWindow(QMainWindow):
         return clicked == discard_button
 
     def _reset_workspace(self) -> None:
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if queue is not None:
+            queue.cancel_all()
         self._restore_workbench_presentation()
         if self._image_information_dialog is not None:
             self._image_information_dialog.close()
@@ -23412,6 +23438,7 @@ class MainWindow(QMainWindow):
         impact: DocumentChangeImpact = DocumentChangeImpact.SESSION,
         geometry_measurement_ids: tuple[str, ...] = (),
     ) -> bool:
+        self._flush_pending_measurements(document)
         before_stamp = document.state_stamp
         before_construction_revision = document.construction_geometry_revision
         before_construction_metadata_revision = (
@@ -23422,7 +23449,8 @@ class MainWindow(QMainWindow):
             geometry_measurement_ids=geometry_measurement_ids,
         )
         mutator()
-        document.rebuild_group_memberships()
+        if not geometry_measurement_ids:
+            document.rebuild_group_memberships()
         after = DocumentHistoryState.capture(
             document,
             geometry_measurement_ids=geometry_measurement_ids,
@@ -23461,8 +23489,70 @@ class MainWindow(QMainWindow):
             document.mark_calibration_saved()
         if changed:
             self._refresh_document_analysis_validity(document)
-        self._update_ui_for_current_document()
+        if (
+            changed
+            and geometry_measurement_ids
+            and impact == (DocumentChangeImpact.SESSION | DocumentChangeImpact.GEOMETRY)
+        ):
+            self._refresh_measurement_geometry_ui(document, geometry_measurement_ids)
+        else:
+            self._update_ui_for_current_document()
         return changed
+
+    def _refresh_measurement_geometry_ui(self, document, measurement_ids) -> None:
+        canvas = self._canvases.get(document.id)
+        if canvas is not None:
+            canvas.notify_document_visual_changed()
+        if document is not self.current_document():
+            return
+        self._records_controller.source_model.refresh_measurements(measurement_ids)
+        self._refresh_object_inspector()
+        self._schedule_statistics_refresh()
+        self._update_action_states()
+        self._show_pending_history_budget_notice()
+
+    def _flush_pending_measurements(self, document=None, *, for_snapshot=False) -> None:
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if queue is not None:
+            queue.flush(document)
+            if for_snapshot:
+                queue.raise_failures(document)
+
+    def _queue_measurement_commit(self, document, compute, *, mode, group_id) -> None:
+        from fdm.ui.measurement_commit_queue import MeasurementCommitQueue
+
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if queue is None:
+            queue = MeasurementCommitQueue(self)
+            queue.changed.connect(self._update_action_states)
+            queue.failed.connect(
+                lambda error: self.statusBar().showMessage(f"测量未写入：{error}", 6000)
+            )
+            self._measurement_commit_queue = queue
+        image = self._images.get(document.id)
+        pixel_key = (
+            image.cacheKey() if image is not None and not document.is_digital_slide() else None
+        )
+
+        def apply(payload):
+            if self.project.get_document(document.id) is not document:
+                return
+            current = self._images.get(document.id)
+            if pixel_key is not None and (current is None or current.cacheKey() != pixel_key):
+                raise ValueError("图片内容已变化，已取消过期测量")
+            if group_id is not None and document.get_group(group_id) is None:
+                raise ValueError("目标类别已删除，已取消过期测量")
+            self._on_canvas_line_committed(
+                document.id, mode, payload, target_group_id=group_id, frozen_group=True
+            )
+            if isinstance(payload, dict) and payload.get("commit_stats", {}).get(
+                "discarded_fragments"
+            ):
+                self.statusBar().showMessage(
+                    "已写入测量；结果裂成多个独立块，已按规则仅保留最大连通区域。", 5000
+                )
+
+        queue.submit(document, compute, apply)
 
     def _refresh_document_analysis_validity(
         self,
@@ -23542,35 +23632,46 @@ class MainWindow(QMainWindow):
             )
         return total_changed
 
-    def _append_new_measurement(self, document: ImageDocument, measurement: Measurement, *, label: str) -> None:
+    def _append_new_measurement(
+        self,
+        document: ImageDocument,
+        measurement: Measurement,
+        *,
+        label: str,
+        frozen_group: bool = False,
+    ) -> None:
         self._discard_workspace_composite_redo()
         before_stamp = document.state_stamp
-        before = DocumentHistoryState.capture(document)
-        document.insert_measurement_incremental(measurement)
-        after = DocumentHistoryState.capture(document)
+        selection = (
+            document.view_state.selected_measurement_id,
+            document.selected_overlay_id,
+            document.selected_construction_id,
+        )
+        index = len(document.measurements)
+        document.insert_measurement_incremental(measurement, assign_active_group=not frozen_group)
         after_stamp = document.advance_state({DirtyDomain.SESSION})
         if document.history is not None:
-            document.history.push_delta(
-                label,
-                before=before,
-                after=after,
+            document.history.push_measurement_insert(
+                measurement,
+                index=index,
+                previous_selection=selection,
                 before_stamp=before_stamp,
                 after_stamp=after_stamp,
-                impact=DocumentChangeImpact.SESSION,
+                label=label,
             )
         self._refresh_document_analysis_validity(document)
         self._refresh_measurement_append_ui(document, measurement)
 
     def _refresh_measurement_append_ui(self, document: ImageDocument, measurement: Measurement) -> None:
+        canvas = self._canvases.get(document.id)
+        if canvas is not None:
+            canvas.notify_document_visual_changed(added_measurement_ids=(measurement.id,))
         if document is not self.current_document():
             self._update_action_states()
             self._show_pending_history_budget_notice()
             return
         self._refresh_group_list_counts(document)
         self._append_measurement_table_row(document, measurement)
-        canvas = self.current_canvas()
-        if canvas is not None:
-            canvas.notify_document_visual_changed()
         self._update_action_states()
         self._schedule_statistics_refresh()
         self._refresh_object_inspector()
@@ -23585,6 +23686,8 @@ class MainWindow(QMainWindow):
         workspace_scope: bool,
         impact: DocumentChangeImpact = DocumentChangeImpact.SESSION,
     ) -> int:
+        for document in documents:
+            self._flush_pending_measurements(document)
         before_revisions = {
             document.id: (
                 document.measurement_geometry_revision,
@@ -23735,7 +23838,15 @@ class MainWindow(QMainWindow):
             self.tab_widget.setCurrentIndex(index)
             self.image_list.setCurrentRow(index)
 
-    def _on_canvas_line_committed(self, document_id: str, mode: str, payload: object) -> None:
+    def _on_canvas_line_committed(
+        self,
+        document_id: str,
+        mode: str,
+        payload: object,
+        *,
+        target_group_id=None,
+        frozen_group=False,
+    ) -> None:
         document = self.project.get_document(document_id)
         if document is None:
             return
@@ -23745,7 +23856,13 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
             return
 
-        group = document.get_group(document.active_group_id)
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if queue is not None and queue.pending(document) and not queue._publishing:
+            self._queue_measurement_commit(
+                document, lambda: payload, mode=mode, group_id=document.active_group_id
+            )
+            return
+        group = document.get_group(target_group_id if frozen_group else document.active_group_id)
         snap_result: SnapResult | None = None
         if mode == "snap":
             if not isinstance(payload, Line):
@@ -23791,8 +23908,8 @@ class MainWindow(QMainWindow):
                 status="manual" if mode != "auto_instance" else "auto_instance",
                 debug_payload=dict(payload.get("debug_payload", {})),
             )
-            if mode == "magic_segment":
-                ensure_measurement_display_geometry(measurement)
+            # RAW geometry is installed immediately; screen proxies and tile
+            # paths are prepared lazily without blocking confirmation.
         elif mode == "continuous_manual" and isinstance(payload, dict):
             measurement = Measurement(
                 id=new_id("meas"),
@@ -23852,12 +23969,19 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
             return
 
-        self._append_new_measurement(document, measurement, label="新增测量")
+        if isinstance(payload, dict) and payload.get("display_preview"):
+            canvas = self._canvases.get(document.id)
+            if canvas is not None:
+                canvas._overlay_accepted_previews[measurement.id] = payload["display_preview"]
+        self._append_new_measurement(
+            document, measurement, label="新增测量", frozen_group=frozen_group
+        )
         if snap_result is not None:
             self.statusBar().showMessage(self._edge_snap_status_message(snap_result), 4000)
         else:
             self.statusBar().showMessage("已新增测量", 2500)
-        self._focus_current_canvas()
+        if not frozen_group:
+            self._focus_current_canvas()
 
     def _digital_slide_snap_context(self, document: ImageDocument, line: Line) -> tuple[QImage, Line, Point] | None:
         canvas = self._canvases.get(document.id)
@@ -25995,6 +26119,10 @@ class MainWindow(QMainWindow):
             (
                 workspace_undo_available
                 or bool(history and history.can_undo() and not undo_waiting)
+                or bool(
+                    getattr(self, "_measurement_commit_queue", None)
+                    and self._measurement_commit_queue.pending(document)
+                )
             )
             and not preview_active
             and pixel_work_enabled
@@ -26925,6 +27053,26 @@ class MainWindow(QMainWindow):
         canvas = self.current_canvas()
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
             return False
+        session = canvas._magic_segment
+        if session.confirmed_subtract_masks or session.subtract_mask is not None:
+            from fdm.services.area_commit import finalize_area_commit
+
+            document = self.current_document()
+            snapshot = canvas.take_magic_commit_snapshot()
+            if document is None or snapshot is None:
+                return False
+            self._queue_measurement_commit(
+                document,
+                lambda: finalize_area_commit(snapshot),
+                mode="magic_segment",
+                group_id=document.active_group_id,
+            )
+            self._release_segmentation_source_session(document.id, MagicSegmentToolMode.STANDARD)
+            self._hide_small_object_preview()
+            self.statusBar().showMessage("已确认测量，可继续测量下一个对象", 2500)
+            self._update_magic_segment_controls()
+            self._focus_current_canvas()
+            return True
         commit_result = canvas.commit_magic_segment_preview()
         if canvas.document_id is not None and not canvas.has_magic_segment_session():
             self._release_segmentation_source_session(
