@@ -24,7 +24,13 @@ def _initialize_worker():
     global _application, _centroids
     import faulthandler
 
-    faulthandler.enable()
+    try:
+        faulthandler.enable()
+    except (RuntimeError, OSError, ValueError):
+        # Windowed executables have no stderr; redirected streams may also
+        # lack a file descriptor. Optional diagnostics must not abort the
+        # renderer initializer and leave every draft preview invisible.
+        pass
     from PySide6.QtGui import QGuiApplication
     from fdm.ui.canvas_overlay_cache import _AreaCommandCentroidCache
 

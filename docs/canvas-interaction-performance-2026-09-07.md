@@ -151,3 +151,13 @@ Windows 验收按原计划进行：20/50/100 对象，持续右键快速拖动�
 - 最终本轮相关回归 **207 个用例及 8 个子测试通过**。没有以性能修正修改原始图像或测量数据。
 
 本地原始结果位于 `.tmp/user-slide-legacy-grab-settle-dpr2.json`、`.tmp/user-slide-reader-grab-settle-dpr2.json`、`.tmp/user-slide-*-trace-dpr2.json` 和 `.tmp/user-slide-decoder-pixel-comparison.json`。复测工具为 `.tmp/benchmark_native_pan_regression.py`，`--slide` 强制只读挂载，`--workbench --grab-check --duration 6` 覆盖上述流程，`--legacy-decoder` 仅用于同代码对照。
+
+### Windows 安装包在按 F 前不显示魔棒草稿
+
+用户确认该问题只在 Windows 安装包中发现。安装包默认使用无控制台入口，预览子进程的 `sys.stderr` 可以为 `None`。初始化器无条件调用 `faulthandler.enable()`，会抛出 `RuntimeError: sys.stderr is None`，令进程池启动失败；重建进程池仍重复失败。确认后的测量对象走另一条显示路径，因此出现“按 F 后才看得到”的现象。
+
+现在只将故障诊断的启用作为可选步骤：没有标准错误流、流已关闭或不支持文件描述符时，继续初始化 Qt 栅格进程。保留异步草稿缓存、绘制样式、孔洞及测量计算，不回退到 UI 线程重复描边。
+
+回归通过真实 spawn 子进程模拟无控制台和错误流被重定向的两种环境；修复前两者均出现 `BrokenProcessPool`，修复后都能绘制。完整 MainWindow 测试覆盖数字切片全局原点 `(8000, 5000)` 下的主体、孔洞、当前及已确认剔除预览，并验证按 F 前无测量记录、按 F 后恰好一条记录、最终像素面积及全局几何正确。
+
+相关进程、草稿缓存、图块精度与数字切片回归共 **166 个用例及 2 个子测试通过**。另使用此前提供的实际切片、DPR 2、只读挂载，在 `(0, 0)` 和 `(8000, 5000)` 两个视场模拟无控制台子进程，草稿取样像素与直接绘制一致，未出现后台绘制错误。本次验证未重新构建或运行 Windows 安装包，安装包需要包含此修正后重新构建。
