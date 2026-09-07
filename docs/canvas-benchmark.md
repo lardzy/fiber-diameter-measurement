@@ -17,6 +17,27 @@ QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/benchmark_area_pipeline.py \
 Qt 环境下比较，省略时只测当前实现。第二条命令比较 2K/4K/8K 整图与局部
 剔除后处理，并通过真实 MainWindow 入口测量新增面积的界面安装和撤销命令成本。
 
+交互基准默认采用 `--cache auto`，执行桌面应用的自动缓存策略。需要对照时，
+显式使用 `--cache on` 或 `--cache off`。Qt 离屏后端在 QApplication 创建时
+确定；基准随后移除仅用于离屏测试的缓存禁用条件，并清理缓存强制开关，避免
+因测试环境绕开生产准入策略。应用本身的离屏默认行为不变。
+
+不足 64 个面积对象的大画布场景可使用：
+
+```bash
+QT_QPA_PLATFORM=offscreen .venv/bin/python scripts/benchmark_canvas_interaction.py \
+  --image-size 4096 --objects 60 --vertices 120 --subtracts 3 \
+  --canvas-width 3200 --canvas-height 1800 --area-radius 240 --cache auto \
+  --output .tmp/canvas-benchmark/60-areas-default.json
+```
+
+该场景增大面积的屏幕覆盖范围；不要只用缩小后十几个像素的面积测试高分辨率
+描边和填充成本。JSON 会记录画布逻辑尺寸、DPR、请求的缓存策略、实际是否
+启用缓存以及 `direct_scene_draws`（实际直接绘制调用总数，包含冷帧）。
+仅查看 `synchronous_missing_tile_fallbacks=0` 无法排除自动关闭缓存后每帧
+直接绘制的情况。直接绘制模式的 `exact_cache_ready` 为 `null`，不等待没有
+启用的精确图块，也不把它报告为缓存命中。
+
 `input_to_qimage` 终点是 QImage 渲染完成，不能等同于操作系统显示呈现。
 `interaction_dispatch` 是每帧之间的事件循环开销，必须一起检查，不能用快速鼠标
 处理掩盖慢的后台结果回调。`settle_ms` 是动作停止到当前精确缓存就绪的等待；
@@ -75,6 +96,10 @@ python -m fdm.canvas_benchmark --scenario areas_holes_300 \
 - `SCREEN_PROXY` 只是经过拓扑和偏差校验的未选中对象屏幕显示代理。代理失败、
   超出缓存预算或被禁用时直接回退 RAW，不得修改持久几何或测量结果。
 
+普通桌面画布从首个有效面积几何开始使用被动缓存，避免对象数量跨过 64 时
+才突然加速。较少的点/线测量仍直接绘制，点/线达到 64 个时沿用缓存路径。
+缓存禁用开关、全局字节预算以及离屏诊断默认值保持原有语义。
+
 画面按被动层和活动层合成。所有已提交测量对象的普通主体及标签属于被动层，
 可以在当前精确缩放级别缓存为透明图块；选中对象的高亮增量、控制点、悬停效果
 和绘制/拖动预览属于活动层。活动层保留 RAW 几何，稳定的主体、剔除块和选中
@@ -89,6 +114,10 @@ python -m fdm.canvas_benchmark --scenario areas_holes_300 \
 新确认的魔棒对象接续已经显示的草稿栅格，后台正式主体准备好后替换，避免在确认
 后第一次拖动时同步重建 RAW 路径。预览只参与显示，吸附、命中、测量和导出
 继续使用精确几何。隐藏画布的诊断/像素对照路径保留直接绘制，便于验证结果。
+
+完整预览最长边为 1536 像素，跨倍率复用时线宽、端点和文字也会暂时随位图
+放大。高倍率下可能看到短暂的粗线；当前精确图块全部完成后恢复屏幕线宽。
+这是完整预览的显示取舍，不改变测量数据；回归测试同时验证精确帧的线宽恢复。
 
 后台快照以不可变原始坐标字节和轻量绘制命令覆盖面积、直径线、折线、点和
 标签。全工作区共享一个独立 Qt 栅格进程、最多两个桥接线程，避免原生复杂描边

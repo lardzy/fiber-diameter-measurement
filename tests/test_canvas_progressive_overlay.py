@@ -1,13 +1,15 @@
 from unittest.mock import patch
+from contextlib import contextmanager
 import math
 import pytest
-from PySide6.QtCore import QRectF, Qt
+from PySide6.QtCore import QPointF, QRectF, Qt
 from PySide6.QtGui import QImage, QPainter
-from fdm.geometry import Point
+from fdm.geometry import Line, Point
+from fdm.history import DocumentHistory
 from fdm.models import ImageDocument, Measurement
 from fdm.settings import AppSettings, MeasurementLabelStyleSettings
 from fdm.ui import canvas as canvas_module
-from fdm.ui.canvas import DocumentCanvas, MeasurementSceneIndex
+from fdm.ui.canvas import CanvasZoomMode, DocumentCanvas, MeasurementSceneIndex
 from fdm.ui.canvas_overlay_cache import CanvasOverlayTileCache
 
 
@@ -104,6 +106,199 @@ def prepare_preview(canvas):
         canvas._overlay_preview_timer.stop()
         canvas._prepare_scene_preview()
     return key
+
+
+def compact_area(identity, mode="polygon_area"):
+    # A small, valid contour stays well below the old 10,000-vertex gate,
+    # including in the 100-object boundary case.
+    ring = [Point(40, 40), Point(80, 40), Point(80, 80), Point(40, 80)]
+    return Measurement(
+        id=identity,
+        image_id="scene",
+        fiber_group_id=None,
+        mode=mode,
+        measurement_kind="area",
+        polygon_px=ring,
+        area_rings_px=[ring],
+        exact_area_px=1600,
+    )
+
+
+def use_default_cache_policy(scene, monkeypatch, measurements):
+    # Keep the already-created offscreen QApplication, but exercise the same
+    # automatic admission branch as the shipped desktop app, without forcing it.
+    monkeypatch.delenv("FDM_ENABLE_CANVAS_OVERLAY_CACHE", raising=False)
+    monkeypatch.delenv("FDM_DISABLE_CANVAS_OVERLAY_CACHE", raising=False)
+    monkeypatch.delenv("QT_QPA_PLATFORM", raising=False)
+    canvas, doc, *_ = scene
+    doc.measurements = measurements
+    doc.mark_measurement_geometry_changed()
+    doc.mark_session_dirty()
+    canvas.notify_document_visual_changed()
+
+
+@contextmanager
+def record_direct_draws(canvas):
+    calls = []
+    original = canvas._draw_measurements_direct
+
+    def draw(*args, **kwargs):
+        # Do not retain painter arguments: paintEvent owns their lifetime.
+        calls.append(True)
+        return original(*args, **kwargs)
+
+    with patch.object(canvas, "_draw_measurements_direct", new=draw):
+        yield calls
+
+
+@pytest.mark.parametrize("count", [1, 20, 60, 63, 64, 100])
+@pytest.mark.parametrize("mode", ["polygon_area", "magic_segment"])
+def test_default_area_rendering_never_reverts_to_whole_scene_vectors(
+    scene, monkeypatch, count, mode
+):
+    canvas, doc, exact, preview, exact_pool, preview_pool = scene
+    use_default_cache_policy(
+        scene, monkeypatch, [compact_area(str(i), mode) for i in range(count)]
+    )
+    geometry = [item.to_dict() for item in doc.measurements]
+    with record_direct_draws(canvas) as direct:
+        # A cold frame must schedule display work instead of painting every RAW
+        # contour on the UI thread, even for the first ordinary polygon.
+        frame(canvas)
+        assert not direct
+        prepare_preview(canvas)
+        preview_pool.complete(preview)
+        assert frame(canvas).pixelColor(60, 60).red() < 250
+
+        for key in canvas._visible_overlay_tile_keys(canvas._paint_context()):
+            assert exact.request(canvas._build_overlay_tile_snapshot(key))
+        exact_pool.complete(exact)
+        assert frame(canvas).pixelColor(60, 60).red() < 250
+        canvas._panning = True
+        try:
+            for offset in (1, 20, -20):
+                canvas._pan = Point(offset, 0)
+                assert frame(canvas).pixelColor(60 + offset, 60).red() < 250
+        finally:
+            canvas._panning = False
+        assert not direct
+    assert [item.to_dict() for item in doc.measurements] == geometry
+
+
+@pytest.mark.parametrize("initial_count", [0, 63])
+def test_area_cache_survives_first_insert_undo_redo_and_reopen(
+    scene, monkeypatch, initial_count
+):
+    canvas, doc, *_ = scene
+    use_default_cache_policy(
+        scene, monkeypatch, [compact_area(str(i)) for i in range(initial_count)]
+    )
+    doc.history = DocumentHistory(owner=doc)
+    frame(canvas)
+    before_stamp = doc.state_stamp
+    added = compact_area("added")
+    doc.insert_measurement_incremental(added, select=False)
+    doc.history.push_measurement_insert(
+        added,
+        index=initial_count,
+        previous_selection=(None, None, None),
+        before_stamp=before_stamp,
+        after_stamp=doc.state_stamp,
+    )
+    canvas.notify_document_visual_changed(added_measurement_ids=(added.id,))
+    assert canvas._overlay_cache_enabled()
+    # The first accepted polygon is visible before either background cache is
+    # available. Enabling progressive rendering must not hide new measurements.
+    assert frame(canvas).pixelColor(60, 60).red() < 250
+
+    assert doc.history.undo(doc)
+    canvas.notify_document_visual_changed()
+    assert canvas._overlay_cache_enabled() == bool(initial_count)
+    if initial_count == 0:
+        assert frame(canvas).pixelColor(60, 60).red() == 255
+    assert doc.history.redo(doc)
+    doc.select_measurement(None)
+    canvas.notify_document_visual_changed(added_measurement_ids=(added.id,))
+    assert canvas._overlay_cache_enabled()
+    assert frame(canvas).pixelColor(60, 60).red() < 250
+
+    # Use persisted data to create a fresh document instance, rather than
+    # accidentally relying on runtime counters left by the original canvas.
+    restored = ImageDocument.from_dict(doc.to_dict())
+    canvas.clear_document()
+    source = QImage(1024, 768, QImage.Format.Format_RGB32)
+    source.fill(0xFFFFFFFF)
+    canvas.set_document(restored, source)
+    canvas._sync_overlay_visual_state()
+    assert canvas._overlay_cache_enabled()
+    canvas.clear_document()
+    assert not canvas._overlay_cache_enabled()
+
+
+@pytest.mark.parametrize("kind", ["line", "count"])
+def test_small_point_and_line_documents_keep_immediate_direct_rendering(
+    scene, monkeypatch, kind
+):
+    canvas, *_ = scene
+    measurements = [
+        Measurement(
+            id=str(i), image_id="scene", fiber_group_id=None, mode="manual",
+            measurement_kind=kind,
+            line_px=Line(Point(40, 60), Point(80, 60)) if kind == "line" else None,
+            point_px=Point(60, 60) if kind == "count" else None,
+        )
+        for i in range(20)
+    ]
+    use_default_cache_policy(scene, monkeypatch, measurements)
+    with record_direct_draws(canvas) as direct:
+        frame(canvas)
+        assert len(direct) == 1
+
+
+def test_zoomed_line_preview_returns_to_exact_screen_width(scene, monkeypatch):
+    import numpy as np
+
+    canvas, doc, exact, preview, exact_pool, preview_pool = scene
+    use_default_cache_policy(
+        scene, monkeypatch,
+        [
+            Measurement(
+                id=str(i), image_id="scene", fiber_group_id=None, mode="manual",
+                measurement_kind="line",
+                line_px=Line(Point(40, 60 + i * 10), Point(80, 60 + i * 10)),
+            )
+            for i in range(64)
+        ],
+    )
+    canvas.set_settings(
+        AppSettings(length_measurement_label_style=MeasurementLabelStyleSettings(enabled=False))
+    )
+    original = [item.to_dict() for item in doc.measurements]
+    prepare_preview(canvas)
+    preview_pool.complete(preview)
+    canvas._set_zoom_at_widget_position(
+        4.0, QPointF(60, 60), mode=CanvasZoomMode.CUSTOM
+    )
+    # Target-scale tiles are deliberately deferred. The complete raster may
+    # temporarily scale its strokes too, but the first line must remain visible.
+    assert frame(canvas).pixelColor(60, 60).red() < 250
+    for key in canvas._visible_overlay_tile_keys(canvas._paint_context()):
+        assert exact.request(canvas._build_overlay_tile_snapshot(key))
+    exact_pool.complete(exact)
+    precise = frame(canvas)
+    with patch.object(canvas, "_overlay_cache_enabled", return_value=False):
+        reference = frame(canvas)
+
+    def line_pixels(image):
+        pixels = np.frombuffer(image.constBits(), np.uint8).reshape(
+            image.height(), image.bytesPerLine()
+        )
+        return pixels[20:90, :image.width() * 4].reshape(70, image.width(), 4)[:, 30:90]
+
+    # Compare the full stroke envelope, not only its center pixel, so a stale
+    # magnified preview cannot pass as the settled result.
+    assert np.array_equal(line_pixels(precise), line_pixels(reference))
+    assert [item.to_dict() for item in doc.measurements] == original
 
 
 def test_visible_cold_frame_never_draws_entire_uncached_scene(scene):

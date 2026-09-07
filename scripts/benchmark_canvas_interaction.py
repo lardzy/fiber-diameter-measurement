@@ -61,13 +61,23 @@ def timed(callback):
 
 def run(args):
     app = QApplication.instance() or QApplication([])
-    os.environ["FDM_ENABLE_CANVAS_OVERLAY_CACHE"] = "1"
+    # QPA is fixed when QApplication is created. Remove only the test-platform
+    # admission guard afterwards, so --cache auto exercises the shipping policy.
+    if os.environ.get("QT_QPA_PLATFORM", "").strip().lower() == "offscreen":
+        os.environ.pop("QT_QPA_PLATFORM")
+    os.environ.pop("FDM_ENABLE_CANVAS_OVERLAY_CACHE", None)
+    os.environ.pop("FDM_DISABLE_CANVAS_OVERLAY_CACHE", None)
+    if args.cache == "on":
+        os.environ["FDM_ENABLE_CANVAS_OVERLAY_CACHE"] = "1"
+    elif args.cache == "off":
+        os.environ["FDM_DISABLE_CANVAS_OVERLAY_CACHE"] = "1"
     size = args.image_size
+    radius = args.area_radius if args.area_radius is not None else min(60, size / 30)
     doc = ImageDocument(id="interaction", path="synthetic.png", image_size=(size, size))
     for i in range(args.objects):
         x = 80 + (i % 10) * (size - 160) / 10
         y = 80 + (i // 10) * (size - 160) / 10
-        points = ring(args.vertices, x, y, min(60, size / 30))
+        points = ring(args.vertices, x, y, radius)
         doc.measurements.append(
             Measurement(
                 id=str(i),
@@ -87,14 +97,14 @@ def run(args):
     canvas_overlay_tile_cache.tileFailed.connect(lambda key, error: failures.append(error))
     draft_preview_cache._raster_cache.tileFailed.connect(lambda key, error: failures.append(error))
     canvas = DocumentCanvas()
-    canvas.resize(1024, 768)
+    canvas.resize(args.canvas_width, args.canvas_height)
     canvas.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
     canvas.set_document(doc, source)
     canvas.set_settings(
         AppSettings(area_measurement_label_style=MeasurementLabelStyleSettings(enabled=True))
     )
     canvas.set_tool_mode(MagicSegmentToolMode.STANDARD)
-    canvas._zoom = min(1, 768 / size)
+    canvas._zoom = min(1, args.canvas_width / size, args.canvas_height / size)
     canvas._pan = Point(0, 0)
     canvas.show()
     surface = QImage(canvas.size(), QImage.Format.Format_ARGB32_Premultiplied)
@@ -104,19 +114,30 @@ def run(args):
     p.drawText(0, 25, "正在载入测量显示… 100.00 px")
     p.end()
     paint = lambda: canvas.render(surface)
+    direct_draws = 0
+    direct = canvas._draw_measurements_direct
+
+    def track_direct(*args, **kwargs):
+        nonlocal direct_draws
+        direct_draws += 1
+        return direct(*args, **kwargs)
+
+    canvas._draw_measurements_direct = track_direct
     first = timed(paint)
+    cache_enabled = canvas._overlay_cache_enabled()
     deadline = time.perf_counter() + 20
     pumps = []
-    while time.perf_counter() < deadline:
+    ready = None if not cache_enabled else False
+    while cache_enabled and time.perf_counter() < deadline:
         pumps.append(timed(app.processEvents))
         current = canvas._scene_preview_key()
         keys = canvas._visible_overlay_tile_keys(canvas._paint_context())
         if canvas_overlay_preview_cache.contains(current) and all(
             canvas_overlay_tile_cache.contains(key) for key in keys
         ):
+            ready = True
             break
         time.sleep(0.001)
-    ready = time.perf_counter() < deadline
     primary = ring(args.vertices, size / 2, size / 2, min(size / 4, 256))
     session = canvas._magic_segment
     session.primary_polygon = primary
@@ -241,8 +262,9 @@ def run(args):
             time.sleep(args.frame_interval_ms / 1000)
     canvas.mouseReleaseEvent(event(QEvent.Type.MouseButtonRelease, Qt.MouseButton.NoButton))
     settle_start = time.perf_counter()
-    final_ready = False
-    while time.perf_counter() - settle_start < 20:
+    final_cache_enabled = canvas._overlay_cache_enabled()
+    final_ready = None if not final_cache_enabled else False
+    while final_cache_enabled and time.perf_counter() - settle_start < 20:
         pumps.append(timed(app.processEvents))
         keys = canvas._visible_overlay_tile_keys(canvas._paint_context())
         if (
@@ -255,6 +277,12 @@ def run(args):
     stationary = timed(paint)
     result = dict(
         image_size=size,
+        canvas_size=[canvas.width(), canvas.height()],
+        device_pixel_ratio=canvas.devicePixelRatioF(),
+        cache_policy=args.cache,
+        cache_enabled=cache_enabled,
+        direct_scene_draws=direct_draws,
+        area_radius=radius,
         objects=args.objects,
         vertices_per_object=args.vertices,
         subtracts=args.subtracts,
@@ -268,7 +296,7 @@ def run(args):
         mouse_handler=summary(handlers),
         paint=summary(paints),
         input_to_qimage=summary(combined),
-        event_loop_dispatch=summary(pumps),
+        event_loop_dispatch=summary(pumps) if pumps else None,
         interaction_dispatch=summary(dispatches),
         stationary_exact_paint_ms=stationary,
         final_exact_cache_ready=final_ready,
@@ -281,6 +309,7 @@ def run(args):
         draft_path_builds=draft_preview_cache.path_builds,
         draft_raster_builds=draft_preview_cache.raster_builds,
     )
+    canvas._draw_measurements_direct = direct
     canvas.clear_document()
     canvas.close()
     app.processEvents()
@@ -294,6 +323,10 @@ if __name__ == "__main__":
     parser.add_argument("--vertices", type=int, default=10000)
     parser.add_argument("--subtracts", type=int, default=3)
     parser.add_argument("--frames", type=int, default=90)
+    parser.add_argument("--cache", choices=("auto", "on", "off"), default="auto")
+    parser.add_argument("--canvas-width", type=int, default=1024)
+    parser.add_argument("--canvas-height", type=int, default=768)
+    parser.add_argument("--area-radius", type=float)
     parser.add_argument("--frame-interval-ms", type=float, default=16)
     parser.add_argument("--preview-baseline-ref")
     parser.add_argument("--output", type=Path, required=True)

@@ -205,7 +205,6 @@ class MagicSegmentOperationMode:
 
 
 OVERLAY_CACHE_MIN_MEASUREMENTS = 64
-OVERLAY_CACHE_MIN_AREA_VERTICES = 10_000
 _DIRECT_CONSTRUCTION_LINE_KINDS = frozenset({"segment", "ray", "infinite_line"})
 _CONSTRUCTION_LINE_ANCHOR_KINDS = _DIRECT_CONSTRUCTION_LINE_KINDS | frozenset(
     {"horizontal_line", "vertical_line"}
@@ -6222,15 +6221,15 @@ class DocumentCanvas(QWidget):
             return True
         if os.environ.get("QT_QPA_PLATFORM", "").strip().lower() == "offscreen":
             return False
-        # Object count alone badly underestimates standard-magic-wand output:
-        # one object can retain more than a thousand exact ring vertices.
-        # The cached passive pipeline therefore also turns on for geometrically
-        # dense area documents, while small ordinary documents stay direct.
+        # Area rasterization cost depends on visible fill/stroke coverage, not
+        # just vertex count. Even modest contours on a 4K canvas can make the
+        # direct path too slow. Admit areas from their first committed geometry
+        # so adding/deleting the 64th object cannot change pan performance.
+        # Keep small point/line-only documents on the immediate direct path.
         return (
             len(self._document.measurements)
             >= OVERLAY_CACHE_MIN_MEASUREMENTS
-            or self._overlay_area_vertex_count
-            >= OVERLAY_CACHE_MIN_AREA_VERTICES
+            or self._overlay_area_vertex_count > 0
         )
 
     def _draw_measurement_overlay_tiles(
