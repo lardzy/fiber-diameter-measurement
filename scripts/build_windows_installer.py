@@ -18,6 +18,7 @@ from build_support import (
     write_installer_version_include,
 )
 from build_windows_onedir import build as build_onedir
+from build_windows_onedir import run_packaged_self_check
 
 
 def _discard_failed_installer(path: Path) -> None:
@@ -181,6 +182,15 @@ def build_installer(
         for error in release_errors:
             print(f"  - {error}", file=sys.stderr)
         return 1
+
+    if not rebuild_onedir:
+        self_check_errors = run_packaged_self_check(app_dir)
+        if self_check_errors:
+            print(
+                "Packaged runtime self-check failed:\n  " + "\n  ".join(self_check_errors),
+                file=sys.stderr,
+            )
+            return 1
 
     resolved_compiler = compiler_path or find_inno_setup_compiler()
     if not resolved_compiler:

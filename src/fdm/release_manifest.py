@@ -469,6 +469,21 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
         (sys.platform.startswith("win") and getattr(sys, "frozen", False))
         or os.environ.get("FDM_SELF_CHECK_EXECUTE", "").strip() == "1"
     )
+    # Canvas rendering is a core capability, including builds that exclude
+    # inference models. Import checks alone cannot exercise the windowed
+    # spawn initializer, Qt platform plugin or serialized drawing commands.
+    if execute_runtime_probe:
+        try:
+            overlay_probe = _probe_overlay_renderer()
+            functional_checks["overlay_renderer"] = overlay_probe
+            if overlay_probe.get("ok") is not True:
+                errors.append("overlay renderer self-check returned a failure")
+        except Exception as exc:  # noqa: BLE001 - packaged process boundary
+            functional_checks["overlay_renderer"] = False
+            errors.append(f"overlay renderer self-check failed: {exc}")
+    else:
+        functional_checks["overlay_renderer"] = "skipped_non_windows"
+        warnings.append("Windows frozen overlay-renderer execution probe skipped on this host")
     if "area-inference" in features and execute_runtime_probe and not errors:
         try:
             probe_result = _probe_area_worker(root)
@@ -486,6 +501,12 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
 
     report["ok"] = not errors
     return report
+
+
+def _probe_overlay_renderer() -> dict[str, Any]:
+    from fdm.ui.overlay_render_self_check import run_overlay_render_self_check
+
+    return run_overlay_render_self_check()
 
 
 def _probe_pillow_raster_encoders() -> dict[str, Any]:

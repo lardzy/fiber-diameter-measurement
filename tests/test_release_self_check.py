@@ -107,6 +107,72 @@ def _successful_tifffile_probe() -> dict[str, object]:
 
 
 class ReleaseSelfCheckTests(unittest.TestCase):
+    def test_windows_overlay_probe_is_required_without_area_models(self) -> None:
+        for profile in ("core", "full"):
+            with self.subTest(profile=profile):
+                manifest = {
+                    "ok": True,
+                    "errors": [],
+                    "warnings": [],
+                    "profile": profile,
+                    "features": ["measurement"],
+                    "excluded_components": ["area-models"],
+                    "dependency_versions": {"torch": "test", "torchvision": "test"},
+                }
+                with (
+                    patch(
+                        "fdm.release_manifest.verify_release_manifest",
+                        return_value=manifest,
+                    ),
+                    patch(
+                        "fdm.release_manifest._validate_pe_executable",
+                        return_value=(True, ""),
+                    ),
+                    patch.object(sys, "platform", "win32"),
+                    patch.object(sys, "frozen", True, create=True),
+                    patch(
+                        "fdm.release_manifest._probe_overlay_renderer",
+                        return_value={"ok": True, "worker_stdio_none": True},
+                    ) as probe,
+                ):
+                    report = run_release_self_check(PROJECT_ROOT)
+                probe.assert_called_once_with()
+                self.assertTrue(report["ok"], report["errors"])
+                self.assertTrue(report["functional_checks"]["overlay_renderer"]["ok"])
+
+    def test_overlay_probe_errors_and_bad_pixels_fail_release_self_check(self) -> None:
+        for failure in (RuntimeError("worker startup failed"), {"ok": False}):
+            with self.subTest(failure=failure):
+                manifest = {
+                    "ok": True,
+                    "errors": [],
+                    "warnings": [],
+                    "profile": "core",
+                    "features": ["measurement"],
+                    "dependency_versions": {},
+                }
+                with (
+                    patch(
+                        "fdm.release_manifest.verify_release_manifest",
+                        return_value=manifest,
+                    ),
+                    patch(
+                        "fdm.release_manifest._validate_pe_executable",
+                        return_value=(True, ""),
+                    ),
+                    patch.dict(os.environ, {"FDM_SELF_CHECK_EXECUTE": "1"}),
+                    patch("fdm.release_manifest._probe_overlay_renderer") as probe,
+                ):
+                    if isinstance(failure, Exception):
+                        probe.side_effect = failure
+                    else:
+                        probe.return_value = failure
+                    report = run_release_self_check(PROJECT_ROOT)
+                self.assertFalse(report["ok"])
+                self.assertTrue(
+                    any("overlay renderer" in error for error in report["errors"])
+                )
+
     def test_pillow_raster_encoder_probe_exercises_all_export_formats(self) -> None:
         report = _probe_pillow_raster_encoders()
 
@@ -506,6 +572,34 @@ class ReleaseSelfCheckTests(unittest.TestCase):
             self.assertEqual(result, 0)
             self.assertTrue(payload["ok"])
             self.assertEqual(payload["build_id"], "self-check-build")
+
+    def test_app_self_check_json_includes_real_windowed_render_results(self) -> None:
+        manifest = {
+            "ok": True,
+            "errors": [],
+            "warnings": [],
+            "profile": "core",
+            "features": ["measurement"],
+            "dependency_versions": {},
+        }
+        output = StringIO()
+        with (
+            patch(
+                "fdm.release_manifest.verify_release_manifest", return_value=manifest
+            ),
+            patch(
+                "fdm.release_manifest._validate_pe_executable", return_value=(True, "")
+            ),
+            patch.dict(os.environ, {"FDM_SELF_CHECK_EXECUTE": "1"}),
+            redirect_stdout(output),
+        ):
+            result = app.main(["fdm", "--self-check", "--json"])
+
+        payload = json.loads(output.getvalue())
+        self.assertEqual(result, 0, payload["errors"])
+        overlay = payload["functional_checks"]["overlay_renderer"]
+        self.assertTrue(overlay["ok"] and overlay["worker_stdio_none"])
+        self.assertEqual(len(overlay["cases"]), 15)
 
 
 if __name__ == "__main__":

@@ -114,6 +114,14 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
         return errors
     if completed.returncode != 0 or payload.get("ok") is not True:
         return errors or [f"packaged self-check failed with exit code {completed.returncode}"]
+    checks = payload.get("functional_checks")
+    overlay = checks.get("overlay_renderer") if isinstance(checks, dict) else None
+    if (
+        not isinstance(overlay, dict)
+        or overlay.get("ok") is not True
+        or overlay.get("worker_stdio_none") is not True
+    ):
+        return ["packaged self-check did not pass the windowed overlay renderer probe"]
     return []
 
 

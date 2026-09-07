@@ -144,6 +144,45 @@ class BuildWindowsOnedirTests(unittest.TestCase):
 
                 self.assertEqual(errors, expected_errors)
 
+    def test_packaged_self_check_requires_completed_windowed_rendering(self) -> None:
+        for overlay in (
+            None,
+            "skipped_non_windows",
+            False,
+            {"ok": True},
+            {"ok": False, "worker_stdio_none": True},
+        ):
+            with self.subTest(overlay=overlay), TemporaryDirectory() as tmpdir:
+                payload = {
+                    "ok": True,
+                    "errors": [],
+                    "functional_checks": {"overlay_renderer": overlay},
+                }
+                completed = subprocess.CompletedProcess(
+                    [], 0, stdout=json.dumps(payload), stderr=""
+                )
+                with patch(
+                    "build_windows_onedir.subprocess.run", return_value=completed
+                ):
+                    errors = run_packaged_self_check(Path(tmpdir))
+                self.assertEqual(
+                    errors,
+                    [
+                        "packaged self-check did not pass the windowed overlay renderer probe"
+                    ],
+                )
+
+        with TemporaryDirectory() as tmpdir:
+            payload["functional_checks"]["overlay_renderer"] = {
+                "ok": True,
+                "worker_stdio_none": True,
+            }
+            completed = subprocess.CompletedProcess(
+                [], 0, stdout=json.dumps(payload), stderr=""
+            )
+            with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
+
     def test_build_passes_profile_to_pyinstaller_and_generates_release_manifest(self) -> None:
         with TemporaryDirectory() as tmpdir:
             root = Path(tmpdir)

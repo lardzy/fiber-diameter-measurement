@@ -340,6 +340,8 @@ python scripts/build_windows_installer.py `
 
 `src/fdm/version.py` 是版本号唯一来源；`packaging/inno-setup/version.auto.iss` 由打包脚本同步。onedir 构建会生成发布清单并自动运行打包后 `--self-check --json`，因此源码根目录缺少 `release-manifest.json` 时不应把该自检命令当作常规源码测试。
 
+打包自检会在真实 spawn 子进程中关闭标准输入输出，运行 Qt 叠加层绘制并校验像素；覆盖魔棒主体/孔洞/剔除、完整预览、混合测量图块与空图块，以及 DPR 1/1.5/2。该检查不依赖分割模型，core 和排除面积模型的安装包也必须通过；启动失败、像素不符或超时会阻止构建成功。`--reuse-onedir` 复用已有目录时同样重新执行自检，检查缺失或被跳过的旧目录不能直接打包。
+
 ## 目录结构
 
 ```text

@@ -30,6 +30,36 @@ def _prepare_installer_root(root: Path, *, version: str = "3.1.4") -> Path:
 
 
 class BuildWindowsInstallerTests(unittest.TestCase):
+    def setUp(self) -> None:
+        self._self_check_patcher = patch(
+            "build_windows_installer.run_packaged_self_check", return_value=[]
+        )
+        self._self_check = self._self_check_patcher.start()
+        self.addCleanup(self._self_check_patcher.stop)
+
+    def test_reused_onedir_must_pass_runtime_self_check_before_compilation(
+        self,
+    ) -> None:
+        with TemporaryDirectory() as tmpdir:
+            root = Path(tmpdir)
+            _prepare_installer_root(root)
+            self._self_check.return_value = ["windowed overlay renderer probe failed"]
+            with (
+                patch(
+                    "build_windows_installer.validate_installer_release",
+                    return_value=[],
+                ),
+                patch("build_windows_installer.subprocess.run") as compiler,
+            ):
+                result = build_installer(
+                    root=root, compiler_path="ISCC.exe", rebuild_onedir=False
+                )
+            self.assertEqual(result, 1)
+            self._self_check.assert_called_once_with(
+                root / "dist" / "windows" / "FiberDiameterMeasurement"
+            )
+            compiler.assert_not_called()
+
     def test_inno_script_requires_release_manifest_and_build_id(self) -> None:
         payload = (PROJECT_ROOT / "packaging" / "inno-setup" / "fdm_installer.iss").read_text(encoding="utf-8")
 
@@ -186,6 +216,7 @@ class BuildWindowsInstallerTests(unittest.TestCase):
                 exclude_content_templates=False,
                 root=root,
             )
+            self._self_check.assert_not_called()
 
     def test_installer_stops_when_onedir_prerequisite_fails(self) -> None:
         with TemporaryDirectory() as tmpdir:
