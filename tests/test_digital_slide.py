@@ -8,7 +8,7 @@ import time
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtGui import QColor, QImage
+from PySide6.QtGui import QColor, QColorSpace, QImage
 
 from fdm.models import ImageDocument
 from fdm.ui.project_session_controller import ProjectSessionController
@@ -22,6 +22,7 @@ from fdm.services.digital_slide_store import (
     DigitalSlideTile,
     compress_slide_file,
     copy_slide_file,
+    image_bytes_to_qimage,
     qimage_to_image_bytes,
 )
 from fdm.services.digital_slide_cache import (
@@ -599,6 +600,78 @@ def test_writing_a_tile_invalidates_its_prestored_focus_overview(
         assert not store.read_focus_overview(1).isNull()
     finally:
         store.close()
+
+
+@pytest.mark.parametrize("codec", ["png", "jpeg"])
+@pytest.mark.parametrize("declared_codec", ["png", "jpeg", None])
+@pytest.mark.parametrize(
+    "image_format",
+    [
+        QImage.Format.Format_RGB888,
+        QImage.Format.Format_RGBA8888,
+        QImage.Format.Format_Grayscale8,
+        QImage.Format.Format_Grayscale16,
+    ],
+)
+def test_slide_tile_reader_preserves_legacy_pixels_and_metadata(
+    codec: str, declared_codec: str | None, image_format: QImage.Format
+) -> None:
+    image = QImage(37, 23, image_format)
+    for y in range(image.height()):
+        for x in range(image.width()):
+            image.setPixelColor(
+                x,
+                y,
+                QColor(x * 7 % 256, y * 11 % 256, (x + y) * 5 % 256, (x * y) % 256),
+            )
+    image.setColorSpace(QColorSpace(QColorSpace.NamedColorSpace.SRgb))
+    image.setDotsPerMeterX(3780)
+    image.setDotsPerMeterY(7560)
+    image.setText("Description", "slide tile")
+    payload = qimage_to_image_bytes(image, codec=codec, quality=87)
+    legacy = QImage()
+    legacy.loadFromData(payload, "JPG" if declared_codec == "jpeg" else "PNG")
+    if legacy.isNull():
+        legacy.loadFromData(payload)
+
+    decoded = image_bytes_to_qimage(payload, codec=declared_codec)
+
+    assert not decoded.isNull()
+    assert decoded == legacy
+    assert decoded.format() == legacy.format()
+    assert decoded.colorSpace() == legacy.colorSpace()
+    assert (decoded.dotsPerMeterX(), decoded.dotsPerMeterY()) == (
+        legacy.dotsPerMeterX(),
+        legacy.dotsPerMeterY(),
+    )
+    assert {key: decoded.text(key) for key in decoded.textKeys()} == {
+        key: legacy.text(key) for key in legacy.textKeys()
+    }
+
+
+def test_slide_tile_reader_keeps_exif_orientation_in_source_coordinates() -> None:
+    from io import BytesIO
+    from PIL import Image
+
+    image = Image.new("RGB", (37, 23), "navy")
+    image.putpixel((0, 0), (255, 255, 255))
+    exif = Image.Exif()
+    exif[274] = 6  # Rotated camera metadata must not rotate slide coordinates.
+    output = BytesIO()
+    image.save(output, format="JPEG", exif=exif)
+    payload = output.getvalue()
+    legacy = QImage()
+    legacy.loadFromData(payload, "JPG")
+
+    decoded = image_bytes_to_qimage(payload, codec="jpeg")
+
+    assert decoded == legacy
+    assert (decoded.width(), decoded.height()) == (37, 23)
+
+
+@pytest.mark.parametrize("payload", [b"", b"invalid image", b"\x89PNG\r\n\x1a\n"])
+def test_slide_tile_reader_returns_null_for_invalid_payload(payload: bytes) -> None:
+    assert image_bytes_to_qimage(payload, codec="jpeg").isNull()
 
 
 def test_digital_slide_store_writes_and_reads_jpeg_tiles(tmp_path: Path) -> None:

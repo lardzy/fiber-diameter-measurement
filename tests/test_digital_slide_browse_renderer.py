@@ -2199,3 +2199,77 @@ def test_old_project_origin_migrates_to_native_field_camera(tmp_path: Path) -> N
         canvas.clear_document()
         canvas.close()
         store.close()
+
+
+@pytest.mark.parametrize("dpr", [1.0, 1.25, 1.5, 2.0])
+@pytest.mark.parametrize("grab", ["right", "middle", "space"])
+@pytest.mark.parametrize("release_dx", [0.0, -7.25])
+def test_native_grab_release_preserves_exact_frame_and_final_camera(
+    tmp_path: Path, dpr: float, grab: str, release_dx: float
+) -> None:
+    app = QApplication.instance() or QApplication([])
+    store = _create_coordinate_slide(tmp_path / "grab-release.fdmslide")
+    document = ImageDocument(
+        id="grab-release",
+        path=str(store.path),
+        image_size=(400, 320),
+        document_kind="digital_slide",
+    )
+    canvas = DigitalSlideCanvas()
+    canvas.setAttribute(Qt.WidgetAttribute.WA_DontShowOnScreen, True)
+    canvas.resize(440, 360)
+    button = {
+        "right": Qt.MouseButton.RightButton,
+        "middle": Qt.MouseButton.MiddleButton,
+        "space": Qt.MouseButton.LeftButton,
+    }[grab]
+
+    def frame():
+        image = QImage(canvas.size(), QImage.Format.Format_RGB32)
+        canvas.render(image)
+        return image
+
+    try:
+        with patch.object(canvas, "devicePixelRatioF", return_value=dpr):
+            canvas.set_slide_document(document, store)
+            canvas.show()
+            canvas.fit_native_viewport()
+            _wait_for(app, canvas.pixel_work_enabled)
+            canvas._hide_native_viewport_indicator()
+            canvas.set_temporary_grab_pressed(grab == "space")
+            start = canvas._content_rect().center()
+            moved = start + QPointF(-43.5, -21.25)
+            released = moved + QPointF(release_dx, 0.0)
+            canvas.mousePressEvent(_MouseEvent(start, button=button))
+            assert canvas._panning
+            canvas.mouseMoveEvent(_MouseEvent(moved, button=button))
+            _wait_for(app, canvas.pixel_work_enabled)
+            before_center = canvas.browse_view().center_px
+            before_frame = frame()
+
+            canvas.mouseReleaseEvent(_MouseEvent(released, button=button))
+            _wait_for(
+                app,
+                lambda: not canvas._final_render_timer.isActive()
+                and canvas.pixel_work_enabled(),
+            )
+            center = canvas.browse_view().center_px
+            assert center.x == pytest.approx(before_center.x - release_dx / canvas.view_zoom())
+            assert center.y == pytest.approx(before_center.y)
+            mapped = canvas.image_to_widget(center)
+            assert mapped.x() == pytest.approx(start.x())
+            assert mapped.y() == pytest.approx(start.y())
+            assert document.metadata["digital_slide"]["browse_view"]["center"] == [
+                center.x,
+                center.y,
+            ]
+            assert canvas._native_frame_key == canvas._native_request_key()
+            assert canvas._render_frame.complete and canvas._render_frame.lod == 0
+            assert not canvas._panning
+            if not release_dx:
+                assert frame() == before_frame
+    finally:
+        canvas.shutdown()
+        canvas.clear_document()
+        canvas.close()
+        store.close()

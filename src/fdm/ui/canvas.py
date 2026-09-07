@@ -4595,6 +4595,25 @@ class DocumentCanvas(QWidget):
         self._pan_drag_device_phase = None
         self._pan_drag_device_pixel_ratio = None
 
+    def _apply_pan_position(self, position: QPointF) -> None:
+        """Apply pointer motion through the canvas's authoritative camera model.
+
+        Move and release must share this path. Virtualized canvases override it
+        because their camera cannot be updated by assigning the raster pan.
+        """
+
+        delta = position - self._last_mouse_pos
+        self._last_mouse_pos = QPointF(position)
+        if not delta.x() and not delta.y():
+            return
+        unsnapped = self._pan_drag_unsnapped or self._pan
+        unsnapped = Point(unsnapped.x + delta.x(), unsnapped.y + delta.y())
+        self._pan_drag_unsnapped = unsnapped
+        self._pan = self._pan_at_stable_device_phase(unsnapped)
+        if self._zoom_mode is CanvasZoomMode.FIT:
+            self._zoom_mode = CanvasZoomMode.CUSTOM
+        self._persist_view_state()
+
     def _overlay_motion_active(self) -> bool:
         return self._panning or self._preview_motion_timer.isActive()
 
@@ -4989,18 +5008,7 @@ class DocumentCanvas(QWidget):
         ):
             self._preview_motion_timer.start()
         if self._panning:
-            delta = event.position() - self._last_mouse_pos
-            unsnapped = self._pan_drag_unsnapped or self._pan
-            unsnapped = Point(
-                unsnapped.x + delta.x(),
-                unsnapped.y + delta.y(),
-            )
-            self._pan_drag_unsnapped = unsnapped
-            self._pan = self._pan_at_stable_device_phase(unsnapped)
-            if self._zoom_mode is CanvasZoomMode.FIT:
-                self._zoom_mode = CanvasZoomMode.CUSTOM
-            self._last_mouse_pos = event.position()
-            self._persist_view_state()
+            self._apply_pan_position(event.position())
             self._publish_view_transform()
             self.update()
             return
@@ -5352,12 +5360,7 @@ class DocumentCanvas(QWidget):
             self._flush_snap_status()
         if self._panning and self._pan_button == event.button():
             # A release may carry a final position after the last move event.
-            delta = event.position() - self._last_mouse_pos
-            unsnapped = self._pan_drag_unsnapped or self._pan
-            self._pan = self._pan_at_stable_device_phase(
-                Point(unsnapped.x + delta.x(), unsnapped.y + delta.y())
-            )
-            self._persist_view_state()
+            self._apply_pan_position(event.position())
             self._end_canvas_pan()
             self._preview_motion_timer.stop()
             self._flush_view_transform()

@@ -304,13 +304,23 @@ def qimage_to_png_bytes(image: QImage) -> bytes:
 
 
 def image_bytes_to_qimage(payload: bytes, *, codec: str | None = None) -> QImage:
-    image = QImage()
     normalized_codec = normalize_tile_codec(codec)
-    image_format = "JPG" if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else "PNG"
-    image.loadFromData(payload, image_format)
-    if image.isNull():
-        image.loadFromData(payload)
-    return image
+    image_format = b"JPG" if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else b"PNG"
+    buffer = QBuffer()
+    buffer.setData(QByteArray(payload))
+    if not buffer.open(QIODevice.OpenModeFlag.ReadOnly):
+        return QImage()
+    try:
+        # QImageReader.read releases the Python GIL in PySide, whereas
+        # QImage.loadFromData can block GUI callbacks even on our worker.
+        # Keep Qt's original decoder, full resolution and default orientation.
+        image = QImageReader(buffer, image_format).read()
+        if image.isNull():
+            buffer.seek(0)
+            image = QImageReader(buffer).read()
+        return image
+    finally:
+        buffer.close()
 
 
 def png_bytes_to_qimage(payload: bytes) -> QImage:

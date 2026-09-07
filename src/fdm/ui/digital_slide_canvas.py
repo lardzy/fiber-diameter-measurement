@@ -2771,21 +2771,27 @@ class DigitalSlideCanvas(DocumentCanvas):
         finally:
             self._clamp_pointer_to_mounted_viewport = previous
 
+    def _apply_pan_position(self, position: QPointF) -> None:
+        if self._slide_manifest is None:
+            super()._apply_pan_position(position)
+            return
+        delta = position - self._last_mouse_pos
+        self._last_mouse_pos = QPointF(position)
+        if delta.x() or delta.y():
+            if self._zoom_mode in {
+                CanvasZoomMode.FIT,
+                CanvasZoomMode.NATIVE_FIELD_FIT,
+            }:
+                self._zoom_mode = CanvasZoomMode.CUSTOM
+            self.move_viewport_by(
+                -delta.x() / max(self._zoom, 1.0e-12),
+                -delta.y() / max(self._zoom, 1.0e-12),
+                throttled=True,
+            )
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         if self._panning:
-            delta = event.position() - self._last_mouse_pos
-            self._last_mouse_pos = event.position()
-            if delta.x() or delta.y():
-                if self._zoom_mode in {
-                    CanvasZoomMode.FIT,
-                    CanvasZoomMode.NATIVE_FIELD_FIT,
-                }:
-                    self._zoom_mode = CanvasZoomMode.CUSTOM
-                self.move_viewport_by(
-                    -delta.x() / max(self._zoom, 1.0e-12),
-                    -delta.y() / max(self._zoom, 1.0e-12),
-                    throttled=True,
-                )
+            self._apply_pan_position(event.position())
             return
         if (
             self._tool_mode in _VECTOR_MEASUREMENT_TOOLS

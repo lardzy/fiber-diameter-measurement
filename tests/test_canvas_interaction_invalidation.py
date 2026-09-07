@@ -885,6 +885,7 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
             canvas._panning = True  # noqa: SLF001
             canvas._pan_button = Qt.MouseButton.LeftButton  # noqa: SLF001
             canvas._last_mouse_pos = QPointF(120.0, 100.0)  # noqa: SLF001
+            before_pan = Point(canvas._pan.x, canvas._pan.y)  # noqa: SLF001
 
             with patch.object(canvas, "update") as update:
                 canvas.mouseReleaseEvent(
@@ -895,6 +896,8 @@ class CanvasInteractionInvalidationTests(unittest.TestCase):
                 )
 
             update.assert_called_once_with()
+            self.assertEqual(canvas._pan, Point(before_pan.x + 40.0, before_pan.y + 20.0))
+            self.assertEqual(document.view_state.pan, canvas._pan)
             self.assertFalse(canvas._panning)  # noqa: SLF001
             self.assertIsNone(canvas._pan_button)  # noqa: SLF001
             self.assertIsNone(canvas._pan_drag_unsnapped)  # noqa: SLF001
