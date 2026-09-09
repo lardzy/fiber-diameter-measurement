@@ -668,10 +668,10 @@ class ScreenshotAgent(QObject):
                 "queued": len(self._ipc_capture_queue),
             }
         elif command.command is CommandType.SHUTDOWN:
-            QTimer.singleShot(0, self._application.quit)
+            QTimer.singleShot(0, self._application, self._application.quit)
             return {"accepted": True, "shutting_down": True}
         elif command.command is CommandType.SHOW_SETTINGS:
-            QTimer.singleShot(0, self._show_settings_window)
+            QTimer.singleShot(0, self, self._show_settings_window)
             return {"accepted": True, "settings_window": "requested"}
         elif command.command is CommandType.UPDATE_SETTINGS:
             return self.reload_settings(command.payload)
@@ -1227,7 +1227,7 @@ class ScreenshotAgent(QObject):
             )
         dialog.accept()
         if not self._settings.enabled:
-            QTimer.singleShot(0, self._application.quit)
+            QTimer.singleShot(0, self._application, self._application.quit)
 
     def _clear_settings_window(self, dialog: QDialog) -> None:
         if self._settings_window is dialog:
@@ -1784,7 +1784,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     app.aboutToQuit.connect(instance.close)
     agent.start()
     if command.command not in {CommandType.STATUS, CommandType.PING}:
-        QTimer.singleShot(0, lambda: agent.handle_command(command))
+        QTimer.singleShot(0, agent, lambda: agent.handle_command(command))
     return int(app.exec())
 
 

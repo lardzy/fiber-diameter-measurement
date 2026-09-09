@@ -217,7 +217,7 @@ def main(argv: list[str] | None = None) -> int:
                 for request in startup_requests:
                     window.enqueue_application_open_request(request)
 
-            QTimer.singleShot(0, enqueue_startup_requests)
+            QTimer.singleShot(0, window, enqueue_startup_requests)
         exit_code = app.exec()
         if instance_coordinator is not None:
             instance_coordinator.close()

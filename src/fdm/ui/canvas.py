@@ -7143,7 +7143,7 @@ class DocumentCanvas(QWidget):
             and not self._overlay_tile_build_scheduled
         ):
             self._overlay_tile_build_scheduled = True
-            QTimer.singleShot(0, self._start_next_overlay_tile)
+            QTimer.singleShot(0, self, self._start_next_overlay_tile)
 
     def _reconcile_overlay_visible_keys(
         self,

@@ -1098,7 +1098,7 @@ class EditorCanvas(QWidget):
                     scroll.horizontalScrollBar().setValue(scroll.horizontalScrollBar().value() + delta.x())
                     scroll.verticalScrollBar().setValue(scroll.verticalScrollBar().value() + delta.y())
 
-                QTimer.singleShot(0, restore_anchor)
+                QTimer.singleShot(0, self, restore_anchor)
         self.zoomChanged.emit(self._zoom)
         del old
 

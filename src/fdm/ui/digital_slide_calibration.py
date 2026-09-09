@@ -886,7 +886,7 @@ class DigitalSlideCalibrationDialog(QDialog):
         self._focus_preview_button.setText("返回校准" if enabled else "展开预览")
         if enabled:
             self._preview.setFocus(Qt.FocusReason.ShortcutFocusReason)
-        QTimer.singleShot(0, self._refresh_preview_after_layout_change)
+        QTimer.singleShot(0, self, self._refresh_preview_after_layout_change)
 
     def _refresh_preview_after_layout_change(self) -> None:
         if self._preview.view_mode() == "fit":

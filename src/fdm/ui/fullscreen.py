@@ -173,7 +173,7 @@ class FullscreenMeasurementController(QObject):
             # the settled state on the next event-loop turn and treat an
             # external departure from full screen like an explicit exit.
             self._external_sync_pending = True
-            QTimer.singleShot(0, self._synchronize_external_window_state)
+            QTimer.singleShot(0, self, self._synchronize_external_window_state)
         return super().eventFilter(watched, event)
 
     def _synchronize_external_window_state(self) -> None:

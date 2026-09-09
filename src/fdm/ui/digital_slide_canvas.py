@@ -325,7 +325,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         else:
             self.schedule_initial_fit()
         if self._overview_enabled and self.isVisible():
-            QTimer.singleShot(0, self.request_overview)
+            QTimer.singleShot(0, self, self.request_overview)
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
@@ -1912,7 +1912,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._overview_pending = False
             return
         if self.isVisible():
-            QTimer.singleShot(0, self.request_overview)
+            QTimer.singleShot(0, self, self.request_overview)
 
     def set_dynamic_focus_overview_enabled(self, enabled: bool) -> None:
         enabled = bool(enabled)
@@ -1937,7 +1937,7 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._overview_focus_index = -1
         self.overviewImageChanged.emit(QImage())
         if self._overview_enabled and self.isVisible():
-            QTimer.singleShot(0, self.request_overview)
+            QTimer.singleShot(0, self, self.request_overview)
 
     def dynamic_focus_overview_enabled(self) -> bool:
         return self._dynamic_focus_overview_enabled
@@ -2233,7 +2233,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 not self._overview_pending
                 and overview_focus_index not in self._overview_failed_focuses
             ):
-                QTimer.singleShot(0, self.request_overview)
+                QTimer.singleShot(0, self, self.request_overview)
             return
         self._latest_overview_request_id += 1
         cached = self._overview_cache.get(overview_focus_index)
@@ -2672,7 +2672,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         self._initial_fit_pending = True
         self._initial_fit_attempts = 0
-        QTimer.singleShot(0, self._apply_initial_fit)
+        QTimer.singleShot(0, self, self._apply_initial_fit)
 
     def wheelEvent(self, event: QWheelEvent) -> None:
         if self._slide_manifest is None:
@@ -3000,7 +3000,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         if (self.width() < 120 or self.height() < 120) and self._initial_fit_attempts < 6:
             self._initial_fit_attempts += 1
-            QTimer.singleShot(50, self._apply_initial_fit)
+            QTimer.singleShot(50, self, self._apply_initial_fit)
             return
         self.fit_native_viewport()
 

@@ -124,7 +124,7 @@ def _settle_ui(milliseconds: int = 800) -> None:
     """Let deferred layout, timer and paint work finish before a review grab."""
 
     loop = QEventLoop()
-    QTimer.singleShot(max(0, int(milliseconds)), loop.quit)
+    QTimer.singleShot(max(0, int(milliseconds)), loop, loop.quit)
     loop.exec()
 
 

@@ -23,6 +23,8 @@ from PySide6.QtWidgets import (
     QWidgetItem,
 )
 
+from fdm.ui.layout_utils import detach_widget_from_layout
+
 
 def _repolish(widget: QWidget) -> None:
     style = widget.style()
@@ -164,10 +166,15 @@ class CollapsibleSection(QFrame):
         )
 
     def setContentWidget(self, widget: QWidget) -> None:
+        detach_widget_from_layout(widget)
         while self.contentLayout.count():
-            item = self.contentLayout.takeAt(0)
+            item = self.contentLayout.itemAt(0)
             old_widget = item.widget()
-            if old_widget is not None and old_widget is not widget:
+            if old_widget is None:
+                self.contentLayout.takeAt(0)
+                continue
+            self.contentLayout.removeWidget(old_widget)
+            if old_widget is not widget:
                 old_widget.setParent(None)
         self.contentLayout.addWidget(widget)
 
@@ -350,6 +357,7 @@ class FlowLayout(QLayout):
         self._items.append(item)
 
     def addWidget(self, widget: QWidget) -> None:
+        detach_widget_from_layout(widget)
         layout_parent = self.parentWidget()
         if layout_parent is not None and widget.parent() is not layout_parent:
             widget.setParent(layout_parent)
@@ -1152,30 +1160,35 @@ class MeasurementToolStrip(QWidget):
 
     def setMagicContextWidget(self, widget: QWidget) -> None:
         self._magic_context_widget = widget
+        detach_widget_from_layout(widget)
         self._context_layout.addWidget(widget)
         widget.setVisible(False)
         self._refresh_context_visibility()
 
     def setCountContextWidget(self, widget: QWidget) -> None:
         self._count_context_widget = widget
+        detach_widget_from_layout(widget)
         self._context_layout.addWidget(widget)
         widget.setVisible(False)
         self._refresh_context_visibility()
 
     def setPreviewContextWidget(self, widget: QWidget) -> None:
         self._preview_context_widget = widget
+        detach_widget_from_layout(widget)
         self._context_layout.addWidget(widget)
         widget.setVisible(False)
         self._refresh_context_visibility()
 
     def setPathContextWidget(self, widget: QWidget) -> None:
         self._path_context_widget = widget
+        detach_widget_from_layout(widget)
         self._context_layout.addWidget(widget)
         widget.setVisible(False)
         self._refresh_context_visibility()
 
     def setConstructionContextWidget(self, widget: QWidget) -> None:
         self._construction_context_widget = widget
+        detach_widget_from_layout(widget)
         self._context_layout.addWidget(widget)
         widget.setVisible(False)
         self._refresh_context_visibility()

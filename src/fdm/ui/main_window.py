@@ -411,6 +411,7 @@ from fdm.ui.analysis_batch_dialog import (
     AnalysisBatchDialog,
 )
 from fdm.ui.icons import application_icon, themed_icon
+from fdm.ui.layout_utils import detach_widget_from_layout
 from fdm.ui.workbench_controls import (
     CommandSearchDialog, CurrentMeasurementSummary, MeasurementContextBar, WelcomePanel, action_button,
 )
@@ -2276,6 +2277,7 @@ class MainWindow(QMainWindow):
         if self._runtime_capability_hint:
             QTimer.singleShot(
                 0,
+                self,
                 lambda: self.statusBar().showMessage(self._runtime_capability_hint, 10_000),
             )
         app = QApplication.instance()
@@ -2285,7 +2287,7 @@ class MainWindow(QMainWindow):
             and app is not None
             and app.platformName().casefold() != "offscreen"
         ):
-            QTimer.singleShot(0, self._start_configured_screenshot_tool)
+            QTimer.singleShot(0, self, self._start_configured_screenshot_tool)
 
     @property
     def _load_thread(self):
@@ -2528,6 +2530,7 @@ class MainWindow(QMainWindow):
         )
         QTimer.singleShot(
             0,
+            self,
             lambda: self._adaptive_layout
             and self._adaptive_layout.apply_pending_layout(),
         )
@@ -5213,7 +5216,7 @@ class MainWindow(QMainWindow):
         inspector_scroll.setWidget(inspector_content)
         self._right_standard_panel = inspector_scroll
         layout.addWidget(inspector_scroll, 1)
-        QTimer.singleShot(0, self._restore_inspector_section_sizes)
+        QTimer.singleShot(0, self, self._restore_inspector_section_sizes)
 
         self._acquisition_right_panel = self._build_acquisition_right_panel(container)
         self._acquisition_right_panel.hide()
@@ -5307,7 +5310,7 @@ class MainWindow(QMainWindow):
         for section, expanded in sections:
             if section is not None:
                 section.setExpanded(expanded)
-        QTimer.singleShot(0, self._restore_inspector_section_sizes)
+        QTimer.singleShot(0, self, self._restore_inspector_section_sizes)
 
     def _build_acquisition_right_panel(self, parent: QWidget) -> QWidget:
         scroll = QScrollArea(parent)
@@ -6027,6 +6030,14 @@ class MainWindow(QMainWindow):
         panel.groupCombo.setEnabled(True)
 
     def _install_capture_task_bar(self) -> None:
+        for widget in (
+            self._digital_slide_readiness_label,
+            self._digital_slide_plan_summary_label,
+            self._digital_slide_progress_bar,
+            self._digital_slide_start_button,
+            self._digital_slide_stop_button,
+        ):
+            detach_widget_from_layout(widget)
         bar = QFrame(self.centralWidget())
         bar.setObjectName("captureTaskBar")
         layout = QGridLayout(bar)
@@ -8138,7 +8149,7 @@ class MainWindow(QMainWindow):
         dialog.show()
         dialog.raise_()
         dialog.activateWindow()
-        QTimer.singleShot(0, dialog.request_preflight)
+        QTimer.singleShot(0, dialog, dialog.request_preflight)
 
     def _clear_image_batch_dialog(
         self,
@@ -15053,7 +15064,7 @@ class MainWindow(QMainWindow):
         self._sync_live_preview_action()
         self._update_ui_for_current_document()
         if not active:
-            QTimer.singleShot(0, self._fit_current_digital_slide_after_preview_stop)
+            QTimer.singleShot(0, self, self._fit_current_digital_slide_after_preview_stop)
 
     def _fit_current_digital_slide_after_preview_stop(self) -> None:
         if self._preview_active:
@@ -17018,7 +17029,7 @@ class MainWindow(QMainWindow):
         self._update_digital_slide_eta()
         self._set_digital_slide_timing("耗时: 等待第一步移动")
         self._sync_digital_slide_task_state()
-        QTimer.singleShot(0, self._schedule_next_digital_slide_move)
+        QTimer.singleShot(0, self, self._schedule_next_digital_slide_move)
 
     def _build_digital_slide_capture_plan(
         self,
@@ -17370,6 +17381,7 @@ class MainWindow(QMainWindow):
             self._update_digital_slide_eta()
             QTimer.singleShot(
                 50,
+                self,
                 lambda generation=session.generation, request_id=session.request_id:
                 self._retry_pending_digital_slide_write(generation, request_id),
             )
@@ -17521,6 +17533,7 @@ class MainWindow(QMainWindow):
                 if session is not None:
                     QTimer.singleShot(
                         50,
+                        self,
                         lambda generation=session.generation, request_id=session.request_id:
                         self._retry_pending_digital_slide_write(generation, request_id),
                     )
@@ -18176,7 +18189,7 @@ class MainWindow(QMainWindow):
             self.setWindowState(self.windowState() | Qt.WindowState.WindowMaximized)
         if self._adaptive_layout is not None:
             self._adaptive_layout.apply_for_width(self.width(), force=True)
-            QTimer.singleShot(0, self._adaptive_layout.restore_preferred_extents)
+            QTimer.singleShot(0, self._adaptive_layout, self._adaptive_layout.restore_preferred_extents)
 
     def _available_screens(self):
         return list(QGuiApplication.screens())
@@ -20339,8 +20352,8 @@ class MainWindow(QMainWindow):
         )
         action.blockSignals(False)
         if active:
-            QTimer.singleShot(0, self._show_fullscreen_hint)
-            QTimer.singleShot(0, self._focus_current_canvas)
+            QTimer.singleShot(0, self, self._show_fullscreen_hint)
+            QTimer.singleShot(0, self, self._focus_current_canvas)
         else:
             self._hide_fullscreen_hint(delete=True)
         self._update_action_states()
@@ -20385,8 +20398,8 @@ class MainWindow(QMainWindow):
         # Some Qt platform plugins settle the central-widget geometry one or
         # two event turns after showFullScreen(). Re-center the transient hint
         # after that layout pass so it cannot drift to the right on entry.
-        QTimer.singleShot(0, self._position_fullscreen_hint)
-        QTimer.singleShot(160, self._position_fullscreen_hint)
+        QTimer.singleShot(0, self, self._position_fullscreen_hint)
+        QTimer.singleShot(160, self, self._position_fullscreen_hint)
         self._fullscreen_hint_timer.start(3200)
 
     def _position_fullscreen_hint(self) -> None:
@@ -21057,7 +21070,7 @@ class MainWindow(QMainWindow):
             )
         if self._adaptive_layout is not None:
             self._adaptive_layout.set_layout_settings(settings.workspace_layout)
-            QTimer.singleShot(0, self._adaptive_layout.restore_preferred_extents)
+            QTimer.singleShot(0, self._adaptive_layout, self._adaptive_layout.restore_preferred_extents)
         self._restore_inspector_section_defaults()
         self._apply_theme_mode()
         self._refresh_theme_sensitive_icons()

@@ -6390,9 +6390,10 @@ class ImageProcessingWorkbench(QDialog):
             self._status_label.setText(str(exc))
             self._refresh_parameter_validation()
             return
-        QTimer.singleShot(0, self._refresh_parameter_conditions)
+        QTimer.singleShot(0, self, self._refresh_parameter_conditions)
         QTimer.singleShot(
             0,
+            self,
             self._update_specialized_parameter_data,
         )
         if self._refresh_parameter_validation():

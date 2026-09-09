@@ -175,13 +175,13 @@ class AdaptiveLayoutController(QObject):
         # Apply the saved dock widths in the same resize turn so a compact →
         # wide transition never exposes an oversized sidebar for one frame.
         self.restore_preferred_extents()
-        QTimer.singleShot(0, self._finish_window_resize)
+        QTimer.singleShot(0, self, self._finish_window_resize)
 
     def _finish_window_resize(self) -> None:
         if self.is_presentation_suspended:
             return
         self.restore_preferred_extents()
-        QTimer.singleShot(0, self._release_extent_capture)
+        QTimer.singleShot(0, self, self._release_extent_capture)
 
     def _release_extent_capture(self) -> None:
         if not self.is_presentation_suspended:
@@ -239,7 +239,7 @@ class AdaptiveLayoutController(QObject):
         # shown, so later visibilityChanged signals reflect real state.
         self._visibility_ready = True
         self._last_extent_window_size = QSize(self._window.size())
-        QTimer.singleShot(0, self.restore_preferred_extents)
+        QTimer.singleShot(0, self, self.restore_preferred_extents)
         self.layoutChanged.emit(compact)
 
     def toggle_project(self) -> None:
@@ -249,12 +249,12 @@ class AdaptiveLayoutController(QObject):
             self._project_dock.setVisible(show)
             if not show:
                 self._inspector_dock.show()
-            QTimer.singleShot(0, self.restore_preferred_extents)
+            QTimer.singleShot(0, self, self.restore_preferred_extents)
             return
         self._project_dock.setVisible(not self._project_dock.isVisible())
         self._wide_visibility["project"] = self._project_dock.isVisible()
         if self._project_dock.isVisible():
-            QTimer.singleShot(0, self.restore_preferred_extents)
+            QTimer.singleShot(0, self, self.restore_preferred_extents)
 
     def toggle_inspector(self) -> None:
         if self._compact:
@@ -263,12 +263,12 @@ class AdaptiveLayoutController(QObject):
             self._inspector_dock.setVisible(show)
             if not show:
                 self._project_dock.show()
-            QTimer.singleShot(0, self.restore_preferred_extents)
+            QTimer.singleShot(0, self, self.restore_preferred_extents)
             return
         self._inspector_dock.setVisible(not self._inspector_dock.isVisible())
         self._wide_visibility["inspector"] = self._inspector_dock.isVisible()
         if self._inspector_dock.isVisible():
-            QTimer.singleShot(0, self.restore_preferred_extents)
+            QTimer.singleShot(0, self, self.restore_preferred_extents)
 
     def toggle_results(self) -> None:
         show = not self._results_dock.isVisible()
@@ -280,7 +280,7 @@ class AdaptiveLayoutController(QObject):
         finally:
             self._applying = False
         if show:
-            QTimer.singleShot(0, self.restore_preferred_extents)
+            QTimer.singleShot(0, self, self.restore_preferred_extents)
         self.layoutChanged.emit(self._compact)
 
     def reset_defaults(self) -> None:
@@ -432,6 +432,7 @@ class AdaptiveLayoutController(QObject):
             else:
                 QTimer.singleShot(
                     0,
+                    self,
                     lambda target=dock: self._capture_pending_side_extent(target),
                 )
             return

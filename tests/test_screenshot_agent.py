@@ -624,7 +624,8 @@ def test_standalone_settings_scroll_and_disabling_quits_after_accept(
         assert dialog.result() == QDialog.DialogCode.Accepted
         single_shot.assert_called_once()
         assert single_shot.call_args.args[0] == 0
-        assert single_shot.call_args.args[1] == app.quit
+        assert single_shot.call_args.args[1] is app
+        assert single_shot.call_args.args[2] == app.quit
     finally:
         if agent._settings_window is not None:
             agent._settings_window.close()

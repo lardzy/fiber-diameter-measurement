@@ -1138,8 +1138,8 @@ class StatisticsDistributionWidget(QWidget):
         if chart_columns != self._chart_columns:
             previous_columns = self._chart_columns
             self._chart_columns = chart_columns
-            while self._cards_layout.count():
-                self._cards_layout.takeAt(0)
+            for card in self._cards:
+                self._cards_layout.removeWidget(card)
             for column in range(max(previous_columns, chart_columns)):
                 self._cards_layout.setColumnStretch(column, 0)
             for index, card in enumerate(self._cards):
@@ -1154,8 +1154,8 @@ class StatisticsDistributionWidget(QWidget):
         if control_columns != self._control_columns:
             previous_columns = self._control_columns
             self._control_columns = control_columns
-            while self._controls_layout.count():
-                self._controls_layout.takeAt(0)
+            for control in self._control_widgets:
+                self._controls_layout.removeWidget(control)
             for column in range(max(previous_columns, control_columns)):
                 self._controls_layout.setColumnStretch(column, 0)
             for index, control in enumerate(self._control_widgets):
