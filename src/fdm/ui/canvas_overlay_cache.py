@@ -870,13 +870,21 @@ class CanvasOverlayTileCache(QObject):
         self,
         document_token: int,
         coordinates: set[tuple[float, float, int, int]],
+        *,
+        preserve: Iterable[CanvasOverlayTileKey] = (),
     ) -> None:
-        """Invalidate exact zoom/DPR/tile coordinate tuples for one document."""
+        """Invalidate coordinates, optionally retaining completed display fronts.
+
+        Preserved old epochs are display-only; current keys cannot match them.
+        They remain byte-accounted LRU entries, not unbounded canvas references.
+        In-flight old epochs are cancelled even when a front is preserved.
+        """
 
         self._require_owner_thread()
         if not coordinates:
             return
         token = int(document_token)
+        preserved = frozenset(preserve)
         for key in list(self._tiles):
             coordinate = (
                 key.zoom,
@@ -884,7 +892,11 @@ class CanvasOverlayTileCache(QObject):
                 key.tile_x,
                 key.tile_y,
             )
-            if key.document_token == token and coordinate in coordinates:
+            if (
+                key.document_token == token
+                and coordinate in coordinates
+                and key not in preserved
+            ):
                 self._remove_tile(key)
         for key, pending in list(self._pending.items()):
             coordinate = (
@@ -897,6 +909,12 @@ class CanvasOverlayTileCache(QObject):
                 continue
             pending.cancellation.cancel()
             self._pending.pop(key, None)
+
+    def discard_display_fronts(self, keys: Iterable[CanvasOverlayTileKey]) -> None:
+        """Release superseded display epochs after a regional handoff."""
+        self._require_owner_thread()
+        for key in keys:
+            self._remove_tile(key)
 
     def clear(self) -> None:
         self._require_owner_thread()

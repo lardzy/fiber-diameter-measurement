@@ -21,6 +21,34 @@ class ScreenLayerCache:
         ]:
             self.bytes -= self._entries.pop(key).sizeInBytes()
 
+    def preserve(self, owner):
+        """Keep placements only; image ownership stays in the bounded LRU."""
+        return tuple(key for key in self._entries if key[0] == owner)
+
+    def discard_group(self, owner_prefix):
+        for key in list(self._entries):
+            owner = key[0]
+            if isinstance(owner, tuple) and owner[: len(owner_prefix)] == owner_prefix:
+                self.bytes -= self._entries.pop(key).sizeInBytes()
+
+    def draw_preserved(self, painter, keys, *, origin, zoom, dpr):
+        placements = []
+        for key in keys:
+            image = self._entries.get(key)
+            if image is None or key[2] != zoom or key[3] != dpr:
+                return False
+            left, top = origin.x() + key[4], origin.y() + key[5]
+            if (
+                abs(left * dpr - round(left * dpr)) > 1e-5
+                or abs(top * dpr - round(top * dpr)) > 1e-5
+            ):
+                return False
+            placements.append((key, image, QPointF(left, top)))
+        for key, image, position in placements:
+            self._entries.move_to_end(key)
+            painter.drawImage(position, image)
+        return bool(placements)
+
     def draw(self, painter, *, owner, version, bounds, origin, zoom, dpr, viewport, render):
         transform = QTransform.fromTranslate(origin.x(), origin.y())
         transform.scale(zoom, zoom)

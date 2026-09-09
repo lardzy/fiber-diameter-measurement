@@ -2300,12 +2300,53 @@ class DigitalSlideCanvas(DocumentCanvas):
             height * self._zoom,
         )
 
+    def _overlay_background_signature(self):
+        # Authoritative native pixels and the currently presented browse frame
+        # have independent lifetimes. Neither a late focus frame nor a sharper
+        # viewport may reuse a clean patch captured from an older presentation.
+        frames = (
+            self._render_frame,
+            self._previous_render_frame,
+            self._coarse_render_frame,
+            self._presentation_preview_frame,
+            self._focus_transition_frame,
+        )
+        return (
+            super()._overlay_background_signature(),
+            self._focus_index,
+            self._view_generation,
+            tuple(
+                (
+                    None
+                    if frame is None
+                    else (
+                        frame.image.cacheKey(),
+                        frame.source_rect,
+                        frame.generation,
+                        frame.focus_index,
+                    )
+                )
+                for frame in frames
+            ),
+            self._overview_image.cacheKey(),
+            (
+                self._focus_transition_image.cacheKey()
+                if self._focus_transition_image is not None
+                else None
+            ),
+            (
+                self._navigation_transition_image.cacheKey()
+                if self._navigation_transition_image is not None
+                else None
+            ),
+        )
+
     def _draw_base_image(self, painter: QPainter) -> QRectF:
         content = self._content_rect()
         if self._slide_manifest is None or content.isEmpty():
             return QRectF()
         painter.save()
-        painter.setClipRect(content)
+        painter.setClipRect(content, Qt.ClipOperation.IntersectClip)
         full_target_top_left = self.image_to_widget(Point(0.0, 0.0))
         full_target = QRectF(
             full_target_top_left.x(),
@@ -2366,7 +2407,7 @@ class DigitalSlideCanvas(DocumentCanvas):
                 if coverage_region.isEmpty():
                     return
                 painter.save()
-                painter.setClipRegion(coverage_region)
+                painter.setClipRegion(coverage_region, Qt.ClipOperation.IntersectClip)
                 painter.drawImage(frame_target, frame.image)
                 painter.restore()
             else:

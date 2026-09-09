@@ -22,6 +22,7 @@ from PySide6.QtGui import (
     QPen,
     QPicture,
     QPolygonF,
+    QRegion,
     QTransform,
     QWheelEvent,
 )
@@ -168,6 +169,7 @@ from fdm.ui.canvas_overlay_cache import (
     canvas_overlay_preview_cache,
     PictureOverlayDrawCommand,
 )
+from fdm.ui.overlay_presentation import OverlayGestureSnapshot, OverlayPresentation
 from fdm.ui.area_handle_cache import area_handle_display_cache
 from fdm.ui.draft_preview_cache import draft_preview_cache
 from fdm.ui.screen_layer_cache import screen_layer_cache
@@ -1097,6 +1099,7 @@ class DocumentCanvas(QWidget):
         self._project_rois: tuple[ProjectRoi, ...] = ()
         self._project_roi_lookup: dict[str, ProjectRoi] = {}
         self._project_roi_paths: tuple[tuple[ProjectRoi, QPainterPath], ...] = ()
+        self._project_roi_visual_revision = 0
         self._show_area_fill = True
         self._magic_segment = PromptSegmentationSession()
         self._reference_instance = ReferenceInstanceSession()
@@ -1161,9 +1164,21 @@ class DocumentCanvas(QWidget):
         self._overlay_accepted_previews = {}
         self._overlay_preview_frames = 0
         self._overlay_sync_fallbacks = 0
+        self._overlay_presentation = OverlayPresentation()
+        self._overlay_last_gesture = None
+        self._overlay_held_gesture = None
+        self._overlay_gesture_serial = 0
+        self._overlay_gesture_commit_id = None
+        self._overlay_selected_cache_id = None
+        self._overlay_paint_region = None
         self._overlay_preview_timer = QTimer(self)
         self._overlay_preview_timer.setSingleShot(True)
         self._overlay_preview_timer.timeout.connect(self._prepare_scene_preview)
+        self._overlay_preview_refresh_timer = QTimer(self)
+        self._overlay_preview_refresh_timer.setSingleShot(True)
+        self._overlay_preview_refresh_timer.timeout.connect(
+            self._refresh_scene_preview_after_edits
+        )
         canvas_overlay_preview_cache.tileReady.connect(self._on_scene_preview_ready)
         canvas_overlay_tile_cache.tileReady.connect(self._on_overlay_tile_ready)
         canvas_overlay_tile_cache.tileFailed.connect(self._on_overlay_tile_failed)
@@ -3834,7 +3849,7 @@ class DocumentCanvas(QWidget):
             origin_y,
         )
         self._cancel_area_drawing()
-        self.measurementEdited.emit(
+        self._emit_measurement_edit(
             self._document.id,
             measurement.id,
             {
@@ -3846,6 +3861,16 @@ class DocumentCanvas(QWidget):
             },
         )
         return True
+
+    def _emit_measurement_edit(self, document_id, measurement_id, payload):
+        # Only an accepted edit may transfer its last gesture raster. Cancel,
+        # undo, or a later property edit must not revive an abandoned preview.
+        self._overlay_gesture_commit_id = measurement_id
+        try:
+            self.measurementEdited.emit(document_id, measurement_id, payload)
+        finally:
+            self._overlay_gesture_commit_id = None
+            self._overlay_last_gesture = None
 
     def set_selected_measurement(self, measurement_id: str | None) -> None:
         if self._document is None:
@@ -4420,7 +4445,11 @@ class DocumentCanvas(QWidget):
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
         self._draw_project_rois(painter, target)
         self._draw_constructions(painter, paint_context)
-        self._draw_annotations(painter, paint_context)
+        self._overlay_paint_region = QRegion(event.region())
+        try:
+            self._draw_annotations(painter, paint_context)
+        finally:
+            self._overlay_paint_region = None
         self._draw_preview(painter)
 
     def _base_image_target_rect(self) -> QRectF:
@@ -4492,6 +4521,7 @@ class DocumentCanvas(QWidget):
         self._set_active_snap_candidate(None)
         self._update_cursor()
         canvas_overlay_tile_cache.protect(id(self), ())
+        self._reset_overlay_presentation()
         self._reset_proxy_warming()
         self._cancel_overlay_requests()
         self._overlay_preview_timer.stop()
@@ -4925,7 +4955,6 @@ class DocumentCanvas(QWidget):
                 self.update()
                 return
 
-
             construction_handle = self._hit_test_selected_construction_handle(
                 image_point
             )
@@ -4957,7 +4986,6 @@ class DocumentCanvas(QWidget):
             if area_measurement_id is not None:
                 self._set_object_selection(CanvasSelectionRef.measurement(area_measurement_id))
                 return
-
 
             construction_id = self._hit_test_construction(image_point)
             if construction_id is not None:
@@ -5550,7 +5578,7 @@ class DocumentCanvas(QWidget):
             if measurement is None or len(preview_polygon) < 3:
                 self.update()
                 return
-            self.measurementEdited.emit(
+            self._emit_measurement_edit(
                 self._document.id,
                 measurement_id,
                 {
@@ -5572,7 +5600,7 @@ class DocumentCanvas(QWidget):
             preview = self._drag_preview_line
             self._dragging_handle = None
             self._drag_preview_line = None
-            self.measurementEdited.emit(self._document.id, measurement_id, preview)
+            self._emit_measurement_edit(self._document.id, measurement_id, preview)
             if self._space_pressed:
                 self._temporary_grab_active = True
             self._update_line_endpoint_hover(
@@ -5978,6 +6006,14 @@ class DocumentCanvas(QWidget):
             proxies_deferred = self._draw_measurement_overlay_tiles(painter, context)
         else:
             canvas_overlay_tile_cache.protect(id(self), ())
+            if self._overlay_presentation.namespace is not None:
+                # Removing the last area can return a small line/point scene
+                # to direct painting. No pending display epoch may then hide
+                # its current labels or endpoint feedback indefinitely.
+                self._reset_overlay_presentation()
+                self._cancel_overlay_requests()
+                self._overlay_accepted_ids.clear()
+                self._overlay_accepted_previews.clear()
             selected_measurement = (
                 self._document.get_measurement(
                     self._document.view_state.selected_measurement_id
@@ -6007,7 +6043,11 @@ class DocumentCanvas(QWidget):
         if self._screen_label_mode == "selected":
             selected_id = self._document.view_state.selected_measurement_id
             selected = self._document.get_measurement(selected_id) if selected_id else None
-            if selected is not None and selected_id not in excluded_measurement_ids:
+            if (
+                selected is not None
+                and selected_id not in excluded_measurement_ids
+                and self._overlay_presentation.old_bounds(selected_id) is None
+            ):
                 draw_measurement_label_only(painter, self._document, selected, self.image_to_widget, self._settings)
         draw_overlay_annotations(
             painter,
@@ -6246,6 +6286,7 @@ class DocumentCanvas(QWidget):
         viewport_keys = self._visible_overlay_tile_keys(self._paint_context())
         preview_is_ready = (
             canvas_overlay_preview_cache.contains(self._scene_preview_key())
+            or bool(self._overlay_presentation.front)
             if self.isVisible()
             else True
         )
@@ -6253,13 +6294,52 @@ class DocumentCanvas(QWidget):
             self._overlay_prefetch_tile_keys(viewport_keys) if preview_is_ready else viewport_keys
         )
         strict_visible = set(viewport_keys)
-        newly_visible = strict_visible - self._overlay_strict_visible_keys
+        previous_positions = {
+            (key.zoom, key.device_pixel_ratio, key.tile_x, key.tile_y)
+            for key in self._overlay_strict_visible_keys
+        }
+        newly_visible = {
+            key
+            for key in strict_visible
+            if (key.zoom, key.device_pixel_ratio, key.tile_x, key.tile_y)
+            not in previous_positions
+        }
         self._overlay_tile_failed.difference_update(newly_visible)
         self._overlay_strict_visible_keys = strict_visible
         canvas_overlay_tile_cache.protect(id(self), viewport_keys)
         self._reconcile_overlay_visible_keys(working_keys)
         if not paint_keys:
             return False
+        progressive = self.isVisible()
+        if progressive:
+            paint_region = self._overlay_paint_region or QRegion(
+                context.widget_rect.toAlignedRect()
+            )
+            exposed_region = self.visibleRegion()
+            # Full viewport paints dominate panning. Avoid allocating a
+            # QRegion for every tile when the paint already covers everything.
+            paintable = None
+            if not (exposed_region - paint_region).isEmpty():
+                paintable = {
+                    (key.tile_x, key.tile_y)
+                    for key in viewport_keys
+                    if (
+                        (
+                            QRegion(
+                                self._overlay_tile_widget_rect(key)
+                                .toAlignedRect()
+                                .intersected(self.rect())
+                            )
+                            & exposed_region
+                        )
+                        - paint_region
+                    ).isEmpty()
+                }
+            ready = self._resolve_overlay_presentation(
+                viewport_keys, publish=True, paintable=paintable
+            )
+            if any(self._overlay_presentation.waits_for(key) for key in ready):
+                self._update_overlay_keys(ready)
         selected_area_ids: frozenset[str] = frozenset()
         if self._document is not None:
             selected_id = self._document.view_state.selected_measurement_id
@@ -6278,32 +6358,52 @@ class DocumentCanvas(QWidget):
             tuple[QImage | None, QPicture | None],
         ] = {}
         missing: list[CanvasOverlayTileKey] = []
+        display_keys = {}
+        waiting_region = QRegion()
         for key in paint_keys:
-            payload = canvas_overlay_tile_cache.get_payload(key)
+            display_key = (
+                self._overlay_presentation.key_for(key) if progressive else key
+            )
+            payload = (
+                canvas_overlay_tile_cache.get_payload(display_key)
+                if display_key is not None
+                else None
+            )
+            if display_key != key:
+                waiting_region |= QRegion(
+                    self._overlay_tile_raw_widget_rect(key).toAlignedRect()
+                )
             if payload is None:
                 missing.append(key)
             else:
                 cached[key] = payload
+                display_keys[key] = display_key
         proxies_deferred = False
-        progressive = self.isVisible()
         if progressive:
-            self._request_scene_preview()
-        if progressive and any(
-            not canvas_overlay_tile_cache.contains(key) for key in viewport_keys
-        ):
+            if not self._overlay_presentation.front:
+                self._request_scene_preview()
+            elif (
+                not canvas_overlay_preview_cache.contains(self._scene_preview_key())
+                and not self._overlay_preview_refresh_timer.isActive()
+                and self._overlay_preview_requested != self._scene_preview_key()
+            ):
+                self._overlay_preview_refresh_timer.start(100)
+        if progressive and missing:
+            # A local edit keeps its previous exact front until the entire
+            # affected region is ready. Only genuinely uncovered navigation
+            # regions (or evicted fronts) may use the complete scene preview.
+            uncovered = QRegion()
+            for key in missing:
+                uncovered |= QRegion(
+                    self._overlay_tile_raw_widget_rect(key).toAlignedRect()
+                )
+            painter.save()
+            painter.setClipRegion(uncovered, Qt.ClipOperation.IntersectClip)
             self._draw_scene_preview(painter, context)
-            if not canvas_overlay_preview_cache.contains(self._scene_preview_key()):
-                self._draw_pending_overlay_additions(painter, context)
-            self._redraw_selected_measurement_background(painter, context)
-            # New accepted objects remain immediately visible on the active
-            # layer. The expensive complete scene is built asynchronously.
-            self._draw_selected_measurement_active_layer(painter, context)
-            if not self._overlay_preview_timer.isActive():
-                self._enqueue_overlay_tiles(working_keys)
-            return False
-        if missing:
+            painter.restore()
+        elif missing:
             self._overlay_sync_fallbacks += 1
-        if len(missing) == len(paint_keys):
+        if not progressive and len(missing) == len(paint_keys):
             proxies_deferred = self._draw_measurements_direct(
                 painter,
                 image_rect=context.image_rect,
@@ -6312,7 +6412,7 @@ class DocumentCanvas(QWidget):
                 render_selected_state=False,
                 raw_area_measurement_ids=selected_area_ids,
             )
-        else:
+        elif not progressive:
             for key in missing:
                 target = self._overlay_tile_widget_rect(key)
                 painter.save()
@@ -6345,6 +6445,10 @@ class DocumentCanvas(QWidget):
                 continue
             if picture is None:  # pragma: no cover - cache envelope guard
                 continue
+            if picture.size() == 0:
+                continue
+            if self._draw_precise_overlay_front(painter, display_keys[key], picture):
+                continue
             target = self._overlay_tile_raw_widget_rect(key)
             painter.save()
             painter.setClipRect(target)
@@ -6354,6 +6458,11 @@ class DocumentCanvas(QWidget):
                 picture.play(painter)
             finally:
                 painter.restore()
+        if progressive and not waiting_region.isEmpty() and self._overlay_accepted_ids:
+            painter.save()
+            painter.setClipRegion(waiting_region, Qt.ClipOperation.IntersectClip)
+            self._draw_pending_overlay_additions(painter, context)
+            painter.restore()
         self._redraw_selected_measurement_background(painter, context)
         self._draw_selected_measurement_active_layer(painter, context)
         # Queue the complete visible set plus a byte-bounded one-tile guard
@@ -6361,8 +6470,151 @@ class DocumentCanvas(QWidget):
         # so a recently committed magic-wand object can finish warming while
         # the user pans and an edge tile is normally ready before it enters the
         # viewport. Cached and pending keys are filtered by the controller.
-        self._enqueue_overlay_tiles(working_keys)
+        # Local precise work must not wait behind a replacement whole-document
+        # overview. The overview remains a separate navigation fallback.
+        if (
+            self._overlay_presentation.front
+            or not self._overlay_preview_timer.isActive()
+        ):
+            self._enqueue_overlay_tiles(working_keys)
         return proxies_deferred
+
+    def _draw_precise_overlay_front(self, painter, key, picture):
+        """Retain the exact resting composition of rare command-backed tiles.
+
+        Transparent intermediate rasters can differ from direct 8-bit alpha
+        composition. Cache the result over the real underlay instead. This
+        replaces (rather than duplicates) the existing resting command replay,
+        so a retained front never repeats complex vectors on a later edit.
+        All images share the existing screen-layer byte budget.
+        """
+        tile_rect = self._overlay_tile_widget_rect(key)
+        context = self._paint_context(tile_rect)
+        # Edge tiles can later move fully into view. Capture their entire
+        # underlay, including infinite guides beyond today's viewport clip.
+        image_padding = max(16.0, 28.0 / max(self._zoom, 0.001))
+        image_rect = (
+            context.widget_to_image_transform.mapRect(tile_rect)
+            .adjusted(-image_padding, -image_padding, image_padding, image_padding)
+            .intersected(self._paint_image_bounds())
+        )
+        context = replace(context, widget_rect=tile_rect, image_rect=image_rect)
+        origin = self._overlay_widget_origin()
+        version = self._overlay_underlay_signature()
+
+        def compose(target):
+            target.setRenderHint(QPainter.RenderHint.Antialiasing, False)
+            target.fillRect(
+                context.widget_rect, canvas_workspace_background(self.palette())
+            )
+            base = self._draw_base_image(target)
+            target.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+            self._draw_project_rois(target, base)
+            self._draw_constructions(target, context)
+            target.translate(origin.x(), origin.y())
+            picture.play(target)
+
+        painter.save()
+        painter.setClipRect(
+            self._overlay_tile_raw_widget_rect(key), Qt.ClipOperation.IntersectClip
+        )
+        try:
+            return screen_layer_cache.draw(
+                painter,
+                owner=(id(self), "precise-front", key),
+                version=version,
+                bounds=self._overlay_tile_image_rect(key),
+                origin=origin,
+                zoom=self._zoom,
+                dpr=max(1.0, self.devicePixelRatioF()),
+                viewport=QRectF(self.rect()),
+                render=compose,
+            )
+        finally:
+            painter.restore()
+
+    def _reset_overlay_presentation(self):
+        self._overlay_preview_refresh_timer.stop()
+        self._overlay_last_gesture = None
+        self._overlay_held_gesture = None
+        self._overlay_selected_cache_id = None
+        self._overlay_presentation.reset()
+        self._release_overlay_fronts()
+
+    def _release_overlay_fronts(self):
+        released = self._overlay_presentation.take_released()
+        for key in released:
+            screen_layer_cache.discard((id(self), "precise-front", key))
+        canvas_overlay_tile_cache.discard_display_fronts(released)
+
+    def _resolve_overlay_presentation(self, keys, *, publish=False, paintable=None):
+        changed = self._overlay_presentation.resolve(
+            keys,
+            canvas_overlay_tile_cache.contains,
+            failed=self._overlay_tile_failed,
+            fallback_ready=canvas_overlay_preview_cache.contains(
+                self._scene_preview_key()
+            ),
+            publish=publish,
+            paintable=paintable,
+        )
+        self._release_overlay_fronts()
+        for identity in self._overlay_presentation.completed_ids:
+            self._overlay_accepted_ids.discard(identity)
+            self._overlay_accepted_previews.pop(identity, None)
+            if (
+                self._overlay_held_gesture is not None
+                and self._overlay_held_gesture[0].measurement_id == identity
+            ):
+                self._overlay_held_gesture = None
+        self._overlay_presentation.completed_ids.clear()
+        return changed
+
+    def _update_overlay_keys(self, keys):
+        dirty = QRegion()
+        for key in keys:
+            dirty |= QRegion(
+                self._overlay_tile_widget_rect(key)
+                .adjusted(-2.0, -2.0, 2.0, 2.0)
+                .toAlignedRect()
+                .intersected(self.rect())
+            )
+        if not dirty.isEmpty():
+            self.update(dirty)
+
+    def _update_scene_preview_region(self):
+        """Overview preparation must not repaint already exact display fronts."""
+        if self._document is None or not self.isVisible():
+            return
+        for key in self._visible_overlay_tile_keys(self._paint_context()):
+            front = self._overlay_presentation.key_for(key)
+            if front is None or not canvas_overlay_tile_cache.contains(front):
+                self.update(
+                    self._overlay_tile_widget_rect(key)
+                    .toAlignedRect()
+                    .intersected(self.rect())
+                )
+
+    def _overlay_background_signature(self):
+        """Pixel sources underneath a cached clean edit background."""
+        return self._image.cacheKey() if self._image is not None else None
+
+    def _overlay_underlay_signature(self):
+        constructions = None
+        if self._document is not None and self._document.construction_entities:
+            constructions = (
+                self._construction_visual_signature(),
+                self._document.selected_construction_id,
+                self._hovered_construction_id,
+                self._tool_mode,
+                repr(self._drag_construction_preview),
+            )
+        return (
+            self._overlay_background_signature(),
+            self.palette().cacheKey(),
+            self._project_roi_visual_revision,
+            constructions,
+        )
 
     def _redraw_selected_measurement_background(
         self,
@@ -6388,6 +6640,14 @@ class DocumentCanvas(QWidget):
         if measurement is None:
             return
         actively_edited = selected_id in self._actively_edited_measurement_ids()
+        if (
+            not actively_edited
+            and self._overlay_presentation.old_bounds(selected_id) is not None
+        ):
+            # A committed edit waits on its precise region. Repainting all
+            # intersecting RAW neighbours here would reintroduce a UI stall.
+            # An in-progress gesture's existing rasters bridge the handoff.
+            return
         if measurement.measurement_kind == "area" and not actively_edited:
             # The passive tile already contains the ordinary area body and
             # label.  Selection is represented by an active emphasis layer, so
@@ -6421,7 +6681,9 @@ class DocumentCanvas(QWidget):
                 widget_rect,
                 canvas_workspace_background(self.palette()),
             )
-            self._draw_base_image(target)
+            base_target = self._draw_base_image(target)
+            self._draw_project_rois(target, base_target)
+            self._draw_constructions(target, context)
             self._draw_measurements_direct(
                 target,
                 image_rect=image_rect,
@@ -6438,8 +6700,7 @@ class DocumentCanvas(QWidget):
         version = (
             self._scene_preview_key(),
             selected_id,
-            self._image.cacheKey(),
-            self.palette().cacheKey(),
+            self._overlay_underlay_signature(),
         )
         if screen_layer_cache.draw(
             painter,
@@ -6462,6 +6723,33 @@ class DocumentCanvas(QWidget):
             else None
         )
         if (
+            selected is not None
+            and self._overlay_presentation.old_bounds(selected.id) is not None
+            and selected.id not in self._actively_edited_measurement_ids()
+        ):
+            # Match selection to the still-displayed old passive generation.
+            # Accepted data already lives in the model; no new-geometry outline
+            # may appear on top of an old-geometry body while a worker is busy.
+            held = self._overlay_held_gesture
+            if held is None or not held[0].replaces_selection:
+                if self._overlay_selected_cache_id == selected.id:
+                    screen_layer_cache.draw_preserved(
+                        painter,
+                        screen_layer_cache.preserve(id(self)),
+                        origin=self._overlay_widget_origin(),
+                        zoom=self._zoom,
+                        dpr=max(1.0, self.devicePixelRatioF()),
+                    )
+                draft_preview_cache.draw_preserved(
+                    painter,
+                    draft_preview_cache.preserve_draft(
+                        id(self._document), [(selected.id, True)]
+                    ),
+                    origin=self._overlay_widget_origin(),
+                    zoom=self._zoom,
+                )
+            return
+        if (
             self.isVisible()
             and selected is not None
             and selected.measurement_kind == "area"
@@ -6476,8 +6764,7 @@ class DocumentCanvas(QWidget):
             else None
         )
         if (
-            self._overlay_motion_active()
-            and measurement is not None
+            measurement is not None
             and measurement.measurement_kind == "area"
             and measurement.id not in self._actively_edited_measurement_ids()
         ):
@@ -6493,6 +6780,8 @@ class DocumentCanvas(QWidget):
                     self._overlay_style_generation,
                     self._tool_mode,
                     repr(measurement.appearance),
+                    self._overlay_group_signature,
+                    self._canvas_visual_settings_signature,
                 )
                 if screen_layer_cache.draw(
                     painter,
@@ -6507,6 +6796,7 @@ class DocumentCanvas(QWidget):
                         target, self._paint_context()
                     ),
                 ):
+                    self._overlay_selected_cache_id = measurement.id
                     return
         self._draw_selected_measurement_active_layer_uncached(painter, context)
 
@@ -6777,6 +7067,7 @@ class DocumentCanvas(QWidget):
         self._overlay_known_namespaces.add(namespace)
         self._overlay_namespace_order.append(namespace)
         while len(self._overlay_namespace_order) > 8:
+            screen_layer_cache.discard_group((id(self), "precise-front"))
             stale = self._overlay_namespace_order.pop(0)
             self._overlay_known_namespaces.discard(stale)
             if self._document is not None:
@@ -7008,6 +7299,7 @@ class DocumentCanvas(QWidget):
         )
 
     def _request_scene_preview(self):
+        self._overlay_preview_refresh_timer.stop()
         key = self._scene_preview_key()
         if key is None or canvas_overlay_preview_cache.contains(key):
             return key
@@ -7028,6 +7320,10 @@ class DocumentCanvas(QWidget):
         self._overlay_preview_counts = []
         self._overlay_preview_timer.start(0)
         return key
+
+    def _refresh_scene_preview_after_edits(self):
+        if self._document is not None and self.isVisible():
+            self._request_scene_preview()
 
     def _prepare_scene_preview(self):
         key = self._overlay_preview_requested
@@ -7069,16 +7365,27 @@ class DocumentCanvas(QWidget):
                 adaptive_composition=False,
             )
         )
-        self.update()
+        self._update_scene_preview_region()
 
     def _on_scene_preview_ready(self, key):
         if key == self._scene_preview_key():
             self._overlay_preview_last = key
-            self._overlay_accepted_ids.clear()
-            self._overlay_accepted_previews.clear()
+            if self.isVisible():
+                self._update_overlay_keys(
+                    self._resolve_overlay_presentation(
+                        self._visible_overlay_tile_keys(self._paint_context())
+                    )
+                )
+            pending = self._overlay_presentation.pending_ids
+            self._overlay_accepted_ids.intersection_update(pending)
+            self._overlay_accepted_previews = {
+                identity: preview
+                for identity, preview in self._overlay_accepted_previews.items()
+                if identity in pending
+            }
             self._overlay_preview_requested = None
             canvas_overlay_preview_cache.retain_document_version(key)
-            self.update()
+            self._update_scene_preview_region()
 
     def _draw_prepared_area_layer(self, painter, measurement, *, selected=False):
         from dataclasses import replace
@@ -7169,8 +7476,16 @@ class DocumentCanvas(QWidget):
             )
             if bounds is None:
                 continue
+            count_number = None
+            if measurement.measurement_kind == "count":
+                index = self._measurement_index()
+                count_number = (
+                    index.count_number(measurement.id) if index is not None else None
+                )
             version = (
-                self._measurement_visual_fingerprint(measurement),
+                self._measurement_visual_fingerprint(
+                    measurement, count_number=count_number
+                ),
                 self._canvas_visual_settings_signature,
                 self._overlay_group_signature,
                 self._show_area_fill,
@@ -7186,6 +7501,11 @@ class DocumentCanvas(QWidget):
                     endpoint_radius=4.0,
                     show_area_fill=self._show_area_fill,
                     measurement_sequence=(measurement,),
+                    count_numbers=(
+                        {measurement.id: count_number}
+                        if count_number is not None
+                        else None
+                    ),
                     area_geometry_mode=AREA_GEOMETRY_RAW,
                     use_sprite_cache=True,
                 )
@@ -7269,17 +7589,16 @@ class DocumentCanvas(QWidget):
             current_zoom = round(float(self._zoom), 8)
             current_dpr = round(max(1.0, float(self.devicePixelRatioF())), 4)
             if key.zoom == current_zoom and key.device_pixel_ratio == current_dpr:
-                if self._overlay_preview_frames and all(
-                    canvas_overlay_tile_cache.contains(item)
-                    for item in self._visible_overlay_tile_keys(self._paint_context())
-                ):
-                    self.update()
-                self.update(
-                    self._overlay_tile_widget_rect(key)
-                    .adjusted(-2.0, -2.0, 2.0, 2.0)
-                    .toAlignedRect()
-                    .intersected(self.rect())
+                published = (
+                    self._resolve_overlay_presentation(
+                        self._visible_overlay_tile_keys(self._paint_context())
+                    )
+                    if self.isVisible()
+                    else []
                 )
+                if not self._overlay_presentation.waits_for(key):
+                    published.append(key)
+                self._update_overlay_keys(published)
         self._start_next_overlay_tile()
 
     def _on_overlay_tile_failed(
@@ -7293,6 +7612,13 @@ class DocumentCanvas(QWidget):
             # Keep the last complete overview on screen; do not retry a backend
             # failure on every paint for the same tile epoch.
             self._overlay_tile_failed.add(key)
+            if self.isVisible():
+                self._request_scene_preview()
+                self._update_overlay_keys(
+                    self._resolve_overlay_presentation(
+                        self._visible_overlay_tile_keys(self._paint_context())
+                    )
+                )
         self._start_next_overlay_tile()
 
     def _cancel_overlay_requests(self) -> None:
@@ -7304,6 +7630,7 @@ class DocumentCanvas(QWidget):
         self._overlay_tile_build_scheduled = False
 
     def _reset_overlay_tracking(self, *, invalidate_document: bool) -> None:
+        self._reset_overlay_presentation()
         if invalidate_document and self._document is not None:
             canvas_overlay_tile_cache.invalidate_document(id(self._document))
         self._cancel_overlay_requests()
@@ -7329,6 +7656,8 @@ class DocumentCanvas(QWidget):
         )
 
     def _invalidate_all_overlay_tiles(self) -> None:
+        screen_layer_cache.discard_group((id(self), "precise-front"))
+        self._reset_overlay_presentation()
         if self._document is not None:
             canvas_overlay_tile_cache.invalidate_document(id(self._document))
         self._cancel_overlay_requests()
@@ -7391,6 +7720,8 @@ class DocumentCanvas(QWidget):
                 tuple[tuple[object, ...], tuple[float, float, float, float] | None],
             ] = {}
             changed_bounds: list[tuple[float, float, float, float]] = []
+            changed_ids: set[str] = set()
+            previous_bounds: dict[str, tuple[float, float, float, float]] = {}
             count_number = 0
             max_object_font_size = 0.0
             area_vertex_count = 0
@@ -7438,12 +7769,16 @@ class DocumentCanvas(QWidget):
                 )
                 current[measurement.id] = (fingerprint, bounds)
                 if previous is None or previous[0] != fingerprint:
+                    changed_ids.add(measurement.id)
                     if previous is not None and previous[1] is not None:
+                        previous_bounds[measurement.id] = previous[1]
                         changed_bounds.append(previous[1])
                     if bounds is not None:
                         changed_bounds.append(bounds)
             for measurement_id, (_fingerprint, bounds) in self._overlay_measurement_state.items():
                 if measurement_id not in current and bounds is not None:
+                    changed_ids.add(measurement_id)
+                    previous_bounds[measurement_id] = bounds
                     changed_bounds.append(bounds)
             current_annotations: dict[
                 str,
@@ -7495,12 +7830,16 @@ class DocumentCanvas(QWidget):
                 previous_max_object_font_size,
                 max_object_font_size,
             )
-            if self._overlay_measurement_state:
+            if self._overlay_measurement_state or self._overlay_presentation.front:
                 if len(changed_bounds) > 96:
                     self._invalidate_all_overlay_tiles()
                     full_visual_change = True
                 else:
-                    self._invalidate_overlay_bounds(changed_bounds)
+                    self._invalidate_overlay_bounds(
+                        changed_bounds,
+                        measurement_ids=changed_ids,
+                        old_bounds=previous_bounds,
+                    )
             if not full_visual_change:
                 display_padding = (
                     self._measurement_label_padding_screen()
@@ -7527,6 +7866,16 @@ class DocumentCanvas(QWidget):
             self._overlay_max_object_font_size = max_object_font_size
             self._overlay_area_vertex_count = area_vertex_count
             self._overlay_document_stamp = document_stamp
+            gesture, self._overlay_last_gesture = self._overlay_last_gesture, None
+            self._overlay_held_gesture = None
+            if (
+                gesture is not None
+                and gesture.measurement_id == self._overlay_gesture_commit_id
+                and gesture.measurement_id in changed_ids
+                and gesture.measurement_id in current
+                and gesture.measurement_id in self._overlay_presentation.pending_ids
+            ):
+                self._overlay_held_gesture = (gesture, document_stamp)
         selected_id = self._document.view_state.selected_measurement_id
         if selected_id != self._overlay_selected_measurement_id:
             # Selection is an active-layer concern. The passive cache keeps
@@ -7600,6 +7949,9 @@ class DocumentCanvas(QWidget):
     def _invalidate_overlay_bounds(
         self,
         bounds_list: list[tuple[float, float, float, float]],
+        *,
+        measurement_ids=(),
+        old_bounds=None,
     ) -> None:
         if self._document is None or not bounds_list:
             return
@@ -7624,9 +7976,15 @@ class DocumentCanvas(QWidget):
                         coordinates.add((zoom, dpr, tile_x, tile_y))
         if not coordinates:
             return
+        preserved = self._overlay_presentation.stage(
+            coordinates, measurement_ids=measurement_ids, old_bounds=old_bounds
+        )
+        if preserved:
+            self._overlay_preview_refresh_timer.start(100)
         canvas_overlay_tile_cache.invalidate_coordinates(
             id(self._document),
             coordinates,
+            preserve=preserved,
         )
         affected = lambda key: (
             (key.zoom, key.device_pixel_ratio, key.tile_x, key.tile_y) in coordinates
@@ -7926,6 +8284,9 @@ class DocumentCanvas(QWidget):
                 painter.drawLine(self.image_to_widget(self._area_hover_point), self.image_to_widget(self._drawing_polygon_points[0]))
 
     def _rebuild_project_roi_paths(self) -> None:
+        # Publish an O(1) display version; never stringify all ROI vertices on
+        # every tile paint merely to validate an unchanged background.
+        self._project_roi_visual_revision += 1
         document_id = self.document_id
         if document_id is None:
             self._project_roi_paths = ()
@@ -8803,6 +9164,96 @@ class DocumentCanvas(QWidget):
         self._set_construction_drag_preview(preview)
 
     def _draw_preview(self, painter: QPainter) -> None:
+        if not self._overlay_presentation.front:
+            # Small direct-rendered documents and cold views have no front to
+            # bridge. Keep their lightweight original preview drawing path.
+            self._overlay_last_gesture = None
+            self._draw_preview_content(painter)
+            return
+        held = self._overlay_held_gesture
+        if held is not None:
+            gesture, stamp = held
+            if (
+                stamp == self._overlay_document_stamp
+                and gesture.measurement_id in self._overlay_presentation.pending_ids
+                and gesture.background_signature == self._overlay_underlay_signature()
+                and gesture.palette_key == self.palette().cacheKey()
+                and gesture.zoom == self._zoom
+                and gesture.device_pixel_ratio == max(1.0, self.devicePixelRatioF())
+                and not self._actively_edited_measurement_ids()
+            ):
+                screen_layer_cache.draw_preserved(
+                    painter,
+                    gesture.placements,
+                    origin=self._overlay_widget_origin(),
+                    zoom=gesture.zoom,
+                    dpr=gesture.device_pixel_ratio,
+                )
+        edited = self._actively_edited_measurement_ids()
+        identity = next(iter(edited), None)
+        if (
+            identity is None
+            and self._area_subtract_mode_active()
+            and self._drawing_polygon_points
+        ):
+            selected = self._selected_area_measurement()
+            identity = selected.id if selected is not None else None
+        state = self._overlay_measurement_state.get(identity)
+        if identity is None or state is None or state[1] is None:
+            self._draw_preview_content(painter)
+            return
+        left, top, right, bottom = state[1]
+        bounds = QRectF(left, top, max(1e-6, right - left), max(1e-6, bottom - top))
+        offset = self._drag_area_preview_offset
+        if offset is not None:
+            bounds = bounds.united(bounds.translated(offset.x, offset.y))
+        points = self._drag_area_preview_points or self._drawing_polygon_points
+        if self._drag_preview_line is not None:
+            points = [self._drag_preview_line.start, self._drag_preview_line.end]
+        preview_bounds = self._preview_display_bounds(points)
+        if preview_bounds is not None:
+            bounds = bounds.united(preview_bounds.image_rect)
+        bounds = bounds.adjusted(
+            -32 / self._zoom, -32 / self._zoom, 32 / self._zoom, 32 / self._zoom
+        )
+        self._overlay_gesture_serial += 1
+        owner = (id(self), "edit-gesture")
+        dpr = max(1.0, self.devicePixelRatioF())
+        # Paint the active layer once, as before, into a bounded reusable raster.
+        # Commit transfers only its placement keys; it does not redraw RAW
+        # neighbours or capture the whole widget in an input callback.
+        if screen_layer_cache.draw(
+            painter,
+            owner=owner,
+            version=self._overlay_gesture_serial,
+            bounds=bounds,
+            origin=self._overlay_widget_origin(),
+            zoom=self._zoom,
+            dpr=dpr,
+            viewport=QRectF(self.rect()),
+            render=self._draw_preview_content,
+        ):
+            background = (
+                screen_layer_cache.preserve((id(self), "edit-background"))
+                if edited
+                else ()
+            )
+            foreground = screen_layer_cache.preserve(owner)
+            if foreground and (not edited or background):
+                self._overlay_last_gesture = OverlayGestureSnapshot(
+                    measurement_id=identity,
+                    placements=background + foreground,
+                    background_signature=self._overlay_underlay_signature(),
+                    palette_key=self.palette().cacheKey(),
+                    zoom=self._zoom,
+                    device_pixel_ratio=dpr,
+                    replaces_selection=bool(edited),
+                )
+            return
+        self._overlay_last_gesture = None
+        self._draw_preview_content(painter)
+
+    def _draw_preview_content(self, painter: QPainter) -> None:
         preview_line = self._drag_preview_line or self._drawing_line
         if preview_line is not None:
             color = QColor("#FF7F50") if self._tool_mode == "calibration" else QColor("#F4D35E")
@@ -9040,6 +9491,11 @@ class DocumentCanvas(QWidget):
         controls: dict[tuple[str, str], tuple[Point, bool]] = {}
 
         def add_control(endpoint: tuple[str, str], *, highlighted: bool) -> None:
+            if (
+                self._overlay_presentation.old_bounds(endpoint[0]) is not None
+                and endpoint[0] not in self._actively_edited_measurement_ids()
+            ):
+                return
             point = self._line_endpoint_point(endpoint)
             if point is None:
                 return
