@@ -3045,15 +3045,58 @@ class DigitalSlideCanvas(DocumentCanvas):
             or self._overlay_navigation_is_transient()
         )
 
-    def _enqueue_overlay_tiles(self, keys: list[CanvasOverlayTileKey]) -> None:
-        """Warm passive tiles only after the viewport raster has stabilized."""
+    def _scene_preview_key(self):
+        key = super()._scene_preview_key()
+        return (
+            replace(key, content_stamp=(*key.content_stamp, "screen-space-counts"))
+            if key is not None else None
+        )
 
-        if self._overlay_navigation_is_transient():
+    def _scene_preview_measurements(self):
+        # Count markers and numbers are cosmetic screen-sized content. A
+        # 1536px whole-slide preview can magnify them hundreds of times when
+        # zooming back into a native field. Keep them out of that raster.
+        return tuple(
+            item for item in super()._scene_preview_measurements()
+            if item.measurement_kind != "count"
+        )
+
+    def _draw_scene_preview(self, painter, context):
+        from fdm.ui.rendering import draw_measurements
+
+        super()._draw_scene_preview(painter, context)
+        if self._document is None:
+            return
+        visible, numbers = self._measurement_render_inputs(context.image_rect)
+        counts = tuple(item for item in visible if item.measurement_kind == "count")
+        if not counts:
+            return
+        # The caller clips this fallback to missing tiles. Exact tiles retain
+        # their cached counts; the final count pass preserves the renderer's
+        # marker/label stacking and global numbering across categories.
+        draw_measurements(
+            painter, self._document, self.image_to_widget,
+            self._screen_passive_settings,
+            line_width=2.0, endpoint_radius=4.0,
+            show_area_fill=self._show_area_fill,
+            show_area_handles=False,
+            measurement_sequence=counts, count_numbers=numbers,
+            use_sprite_cache=True, cull_by_geometry=False,
+        )
+
+    def _enqueue_overlay_tiles(self, keys: list[CanvasOverlayTileKey]) -> None:
+        """Defer during active movement, independently of source-image I/O."""
+
+        if self._panning or self._smooth_nav_keys or self._smooth_nav_timer.isActive():
             # Cancellation is cooperative in CanvasOverlayTileCache.  Clearing
             # the local queue here also prevents a stale tile from starting
             # after the current worker acknowledges cancellation.
             self._cancel_overlay_requests()
             return
+        # LAN reads and overview prefetch may stay pending long after the
+        # camera stops. Overlays use immutable global geometry and can become
+        # precise without waiting for those pixels; underlay versions are
+        # independently checked when a newly decoded image arrives.
         super()._enqueue_overlay_tiles(keys)
 
     def _clamp_viewport(self) -> None:

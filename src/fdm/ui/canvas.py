@@ -7137,6 +7137,9 @@ class DocumentCanvas(QWidget):
             reordered_queue.append(key)
         self._overlay_tile_queue = reordered_queue
         self._overlay_tile_queued = set(reordered_queue)
+        self._schedule_next_overlay_tile()
+
+    def _schedule_next_overlay_tile(self) -> None:
         if (
             self._overlay_tile_queue
             and self._overlay_tile_active is None
@@ -7183,9 +7186,22 @@ class DocumentCanvas(QWidget):
             if snapshot is None:
                 self._overlay_tile_failed.add(key)
                 continue
-            if canvas_overlay_tile_cache.request(snapshot):
-                self._overlay_tile_active = key
+            # A fast worker may complete inside request() when it drains its
+            # completion mailbox. Publish ownership first so that callback
+            # can clear it without being overwritten by a finished job.
+            self._overlay_tile_active = key
+            try:
+                accepted = canvas_overlay_tile_cache.request(snapshot)
+            finally:
+                if (
+                    self._overlay_tile_active == key
+                    and not canvas_overlay_tile_cache.is_pending(key)
+                ):
+                    self._overlay_tile_active = None
+            if accepted:
                 return
+            if canvas_overlay_tile_cache.contains(key):
+                continue
             # Admission can be refused by the global pending-byte budget.
             # Keep drawing this tile through the exact direct path and suppress
             # repeated snapshot construction for the same epoch.
@@ -7314,12 +7330,15 @@ class DocumentCanvas(QWidget):
         self._overlay_preview_requested = key
         self._overlay_preview_commands = []
         self._overlay_preview_measurements = tuple(
-            sorted(self._document.measurements, key=lambda item: item.measurement_kind == "count")
+            sorted(self._scene_preview_measurements(), key=lambda item: item.measurement_kind == "count")
         )
         self._overlay_preview_position = 0
         self._overlay_preview_counts = []
         self._overlay_preview_timer.start(0)
         return key
+
+    def _scene_preview_measurements(self):
+        return self._document.measurements if self._document is not None else ()
 
     def _refresh_scene_preview_after_edits(self):
         if self._document is not None and self.isVisible():
@@ -7547,9 +7566,22 @@ class DocumentCanvas(QWidget):
             )
             painter.save()
             painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, True)
-            painter.drawImage(target, image)
+            # A whole-slide preview at native/high zoom can have a target
+            # hundreds of thousands of pixels wide. Bound the raster call
+            # itself, not just the painter clip, before entering Qt's native
+            # scaling code. Keep fractional source coordinates for accuracy.
+            visible = target.intersected(context.widget_rect).intersected(QRectF(self.rect()))
+            if not visible.isEmpty():
+                source_scale = key.zoom / self._zoom
+                source = QRectF(
+                    (visible.x() - target.x()) * source_scale,
+                    (visible.y() - target.y()) * source_scale,
+                    visible.width() * source_scale,
+                    visible.height() * source_scale,
+                )
+                painter.drawImage(visible, image, source)
             painter.restore()
-        else:
+        elif payload is None:
             painter.save()
             painter.setPen(self.palette().color(QPalette.ColorRole.Text))
             painter.drawText(
@@ -7599,7 +7631,9 @@ class DocumentCanvas(QWidget):
                 if not self._overlay_presentation.waits_for(key):
                     published.append(key)
                 self._update_overlay_keys(published)
-        self._start_next_overlay_tile()
+        # Always yield between tiles, even for empty/fast inline completions.
+        # Recursing here can consume a full viewport in one input callback.
+        self._schedule_next_overlay_tile()
 
     def _on_overlay_tile_failed(
         self,
@@ -7619,7 +7653,7 @@ class DocumentCanvas(QWidget):
                         self._visible_overlay_tile_keys(self._paint_context())
                     )
                 )
-        self._start_next_overlay_tile()
+        self._schedule_next_overlay_tile()
 
     def _cancel_overlay_requests(self) -> None:
         if self._overlay_tile_active is not None:

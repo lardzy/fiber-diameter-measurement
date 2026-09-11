@@ -3002,6 +3002,14 @@ class MainWindow(QMainWindow):
         self.analysis_batch_action.triggered.connect(
             self._open_analysis_batch_dialog
         )
+        # QAction ownership alone does not make its shortcut active. Keep
+        # window commands associated with the window when full screen hides
+        # their menu/toolbar widgets, while retaining Qt's editor/modal rules.
+        self.addActions([
+            action for action in self.findChildren(QAction)
+            if action.shortcuts()
+            and action.shortcutContext() == Qt.ShortcutContext.WindowShortcut
+        ])
 
     def _create_image_operation_actions(self) -> None:
         labels = {
@@ -27888,7 +27896,8 @@ class MainWindow(QMainWindow):
             event.accept()
             return
         if (
-            event.modifiers() == Qt.KeyboardModifier.NoModifier
+            (event.modifiers() & ~Qt.KeyboardModifier.KeypadModifier)
+            == Qt.KeyboardModifier.NoModifier
             and Qt.Key.Key_1 <= event.key() <= Qt.Key.Key_9
             and self._should_handle_group_hotkeys()
         ):

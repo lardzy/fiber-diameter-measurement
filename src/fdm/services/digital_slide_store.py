@@ -4,12 +4,13 @@ import json
 import sqlite3
 from collections.abc import Iterator, Mapping
 from collections import OrderedDict
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable
 
-from PySide6.QtCore import QByteArray, QBuffer, QIODevice, QPointF, QRect, QRectF, QSize, Qt
+from PySide6.QtCore import QByteArray, QBuffer, QDataStream, QIODevice, QPointF, QRect, QRectF, QSize, Qt
 from PySide6.QtGui import QColor, QImage, QImageReader, QPainter, QRegion
 
 from fdm.atomic_io import atomic_replace_file, staged_path_for
@@ -303,14 +304,27 @@ def qimage_to_png_bytes(image: QImage) -> bytes:
     return qimage_to_image_bytes(image, codec=DIGITAL_SLIDE_TILE_CODEC_PNG)
 
 
+@contextmanager
+def _native_image_input(payload: bytes) -> Iterator[QIODevice]:
+    # Let Qt create the input device in C++. A Python-created QBuffer has
+    # virtual-method trampolines (including isSequential) that reacquire the
+    # GIL while QImageReader holds its image-plugin mutex. GUI icon loading
+    # can wait on that mutex while holding the GIL: a permanent deadlock.
+    # QDataStream's byte-array constructor owns a native QBuffer, eliminating
+    # those callbacks while retaining Qt's decoder and GIL-releasing read().
+    data = QByteArray(payload)
+    stream = QDataStream(data, QIODevice.OpenModeFlag.ReadOnly)
+    buffer = stream.device()
+    try:
+        yield buffer
+    finally:
+        buffer.close()
+
+
 def image_bytes_to_qimage(payload: bytes, *, codec: str | None = None) -> QImage:
     normalized_codec = normalize_tile_codec(codec)
     image_format = b"JPG" if normalized_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else b"PNG"
-    buffer = QBuffer()
-    buffer.setData(QByteArray(payload))
-    if not buffer.open(QIODevice.OpenModeFlag.ReadOnly):
-        return QImage()
-    try:
+    with _native_image_input(payload) as buffer:
         # QImageReader.read releases the Python GIL in PySide, whereas
         # QImage.loadFromData can block GUI callbacks even on our worker.
         # Keep Qt's original decoder, full resolution and default orientation.
@@ -319,8 +333,6 @@ def image_bytes_to_qimage(payload: bytes, *, codec: str | None = None) -> QImage
             buffer.seek(0)
             image = QImageReader(buffer).read()
         return image
-    finally:
-        buffer.close()
 
 
 def png_bytes_to_qimage(payload: bytes) -> QImage:
@@ -655,16 +667,13 @@ class DigitalSlideStore:
         image_format = (
             b"JPG" if codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else b"PNG"
         )
-        buffer = QBuffer()
-        buffer.setData(QByteArray(payload))
-        if buffer.open(QIODevice.OpenModeFlag.ReadOnly):
+        with _native_image_input(payload) as buffer:
             reader = QImageReader(buffer, image_format)
             reader.setAutoTransform(True)
             reader.setScaledSize(
                 QSize(max(1, int(width)), max(1, int(height)))
             )
             image = reader.read()
-            buffer.close()
             if not image.isNull():
                 return image
         image = image_bytes_to_qimage(payload, codec=codec)

@@ -155,7 +155,7 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
             canvas.clear_document()
             canvas.close()
 
-    def test_transient_navigation_does_not_enqueue_passive_tiles(self) -> None:
+    def test_active_navigation_defers_tiles_but_source_io_does_not(self) -> None:
         canvas = self._canvas()
         keys = [object()]
         try:
@@ -185,8 +185,8 @@ class DigitalSlideOverlayLifecycleTests(unittest.TestCase):
                 ) as enqueue,
             ):
                 canvas._enqueue_overlay_tiles(keys)  # noqa: SLF001
-            cancel.assert_called_once_with()
-            enqueue.assert_not_called()
+            cancel.assert_not_called()
+            enqueue.assert_called_once_with(keys)
 
             with (
                 patch.object(canvas, "renderer_stats", return_value=None),
