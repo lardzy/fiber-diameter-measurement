@@ -1673,7 +1673,10 @@ class CanvasAndExportTests(unittest.TestCase):
         window._latest_preview_frame = preview_frame.copy()
         window._preview_frame_serial = 2
         window._slide_acquisition_frame_marker = 1
+        window._capture_manager._reset_preview_frames(1)
+        window._slide_acquisition_frame_cursor = (1, 0)
         window._slide_acquisition_wait_started_at = time.perf_counter()
+        window._capture_manager._deliver_frame_threadsafe(1, preview_frame)
         window._slide_acquisition_viewport_size = (8, 6)
         window._app_settings.digital_slide_capture_max_width = 8
 
@@ -1743,6 +1746,9 @@ class CanvasAndExportTests(unittest.TestCase):
         window._latest_preview_frame = preview_frame.copy()
         window._preview_frame_serial = 5
         window._slide_acquisition_frame_marker = 5
+        window._capture_manager._reset_preview_frames(1)
+        window._capture_manager._deliver_frame_threadsafe(1, preview_frame)
+        window._slide_acquisition_frame_cursor = window._capture_manager.preview_frame_cursor()
         window._slide_acquisition_wait_started_at = time.perf_counter()
         window._slide_acquisition_required_discard_frames = 2
         window._slide_acquisition_viewport_size = (16, 12)
@@ -1833,6 +1839,8 @@ class CanvasAndExportTests(unittest.TestCase):
             window._slide_motion.enabled = True
             window._latest_preview_frame = preview_frame.copy()
             window._preview_frame_serial = 1
+            window._capture_manager._reset_preview_frames(1)
+            window._capture_manager._deliver_frame_threadsafe(1, preview_frame)
             self.assertIsNotNone(window._digital_slide_cols_edit)
             self.assertIsNotNone(window._digital_slide_rows_edit)
             self.assertIsNotNone(window._digital_slide_z_lower_edit)

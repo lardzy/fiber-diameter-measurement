@@ -1244,6 +1244,8 @@ class MeasurementToolStrip(QWidget):
         return self._primary_tools_visible
 
     def setMagicContextVisible(self, visible: bool) -> None:
+        if self.isMagicContextVisible() == bool(visible):
+            return
         if self._magic_context_widget is not None:
             self._magic_context_widget.setVisible(bool(visible))
         self._refresh_context_visibility()
@@ -1252,6 +1254,8 @@ class MeasurementToolStrip(QWidget):
         return bool(self._magic_context_widget and not self._magic_context_widget.isHidden())
 
     def setCountContextVisible(self, visible: bool) -> None:
+        if self.isCountContextVisible() == bool(visible):
+            return
         if self._count_context_widget is not None:
             self._count_context_widget.setVisible(bool(visible))
         self._refresh_context_visibility()
@@ -1260,6 +1264,8 @@ class MeasurementToolStrip(QWidget):
         return bool(self._count_context_widget and not self._count_context_widget.isHidden())
 
     def setPreviewContextVisible(self, visible: bool) -> None:
+        if self.isPreviewContextVisible() == bool(visible):
+            return
         if self._preview_context_widget is not None:
             self._preview_context_widget.setVisible(bool(visible))
         self._refresh_context_visibility()
@@ -1268,6 +1274,8 @@ class MeasurementToolStrip(QWidget):
         return bool(self._preview_context_widget and not self._preview_context_widget.isHidden())
 
     def setPathContextVisible(self, visible: bool) -> None:
+        if self.isPathContextVisible() == bool(visible):
+            return
         if self._path_context_widget is not None:
             self._path_context_widget.setVisible(bool(visible))
         self._refresh_context_visibility()
@@ -1276,6 +1284,8 @@ class MeasurementToolStrip(QWidget):
         return bool(self._path_context_widget and not self._path_context_widget.isHidden())
 
     def setConstructionContextVisible(self, visible: bool) -> None:
+        if self.isConstructionContextVisible() == bool(visible):
+            return
         if self._construction_context_widget is not None:
             self._construction_context_widget.setVisible(bool(visible))
         self._refresh_context_visibility()
@@ -1431,6 +1441,12 @@ class MeasurementToolStrip(QWidget):
         self.updateGeometry()
 
     def _apply_context_placement(self) -> None:
+        placement = (self._context_placement, self._primary_tools_visible)
+        if getattr(self, "_applied_context_placement", None) == placement:
+            self._update_context_host_metrics()
+            self._apply_strip_height()
+            return
+        self._applied_context_placement = placement
         if self._context_placement == "hidden":
             self._top_row_layout.removeWidget(self._context_host)
             self.layout().removeWidget(self._context_host)

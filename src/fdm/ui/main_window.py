@@ -5,7 +5,9 @@ from datetime import datetime, timedelta
 from importlib import metadata as importlib_metadata
 from pathlib import Path
 from queue import Empty, Full, Queue
-from threading import Lock, Thread, current_thread
+from threading import Event, Lock, Thread, current_thread
+from collections.abc import Callable
+from typing import TypeVar
 from time import perf_counter
 import copy
 import hashlib
@@ -494,6 +496,7 @@ from fdm.ui.rendering import (
     resolve_overlay_text_layout,
 )
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
+from fdm.ui.responsive_io import ProgressCallback, run_responsive_io
 from fdm.ui.statistics_widgets import (
     DistributionRecordFilterRequest,
     MeasurementStatisticsPanel,
@@ -561,6 +564,7 @@ except ModuleNotFoundError as exc:
             self.analysisFrameReady = _SignalProxy()
             self.analysisFrameFailed = _SignalProxy()
             self.errorOccurred = _SignalProxy()
+            self.activeDeviceLost = _SignalProxy()
 
         def devices(self) -> list[CaptureDevice]:
             return []
@@ -575,6 +579,12 @@ except ModuleNotFoundError as exc:
             return False
 
         def last_frame(self) -> QImage | None:
+            return None
+
+        def preview_frame_cursor(self) -> tuple[int, int] | None:
+            return None
+
+        def latest_preview_frame(self):
             return None
 
         def preview_kind(self) -> str:
@@ -652,6 +662,8 @@ class PresetImportPlanEntry:
     action: str
     final_name: str
 
+
+SlideIOResult = TypeVar("SlideIOResult")
 
 DIGITAL_SLIDE_MAX_IMAGES = 20_000
 DIGITAL_SLIDE_MAX_ESTIMATED_BYTES = 100 * 1024**3
@@ -784,11 +796,15 @@ class DigitalSlideWriteWorker(QObject):
         with self._lock:
             if self._finish_requested or self._cancel_requested:
                 return False
-            if self._queued_bytes + image_bytes > self._max_queue_bytes:
+            # A single full-resolution frame may exceed the normal budget.
+            # Admit it only into an empty queue, never retry it forever. The
+            # queue remains bounded by max(budget, one source frame), plus the
+            # one frame currently owned by the writer.
+            if self._queued_bytes + image_bytes > max(self._max_queue_bytes, image_bytes):
                 return False
             self._queued_bytes += image_bytes
         try:
-            self._queue.put_nowait((tile, image.copy(), image_bytes))
+            self._queue.put_nowait((tile, QImage(image), image_bytes))
         except Full:
             with self._lock:
                 self._queued_bytes = max(0, self._queued_bytes - image_bytes)
@@ -2075,6 +2091,7 @@ class MainWindow(QMainWindow):
         self._preview_document: ImageDocument | None = None
         self._latest_preview_frame: QImage | None = None
         self._preview_frame_serial = 0
+        self._preview_display_signature: tuple[object, ...] | None = None
         self._last_digital_slide_focus_wheel_at = 0.0
         self._statistics_refresh_timer = QTimer(self)
         self._statistics_refresh_timer.setSingleShot(True)
@@ -2120,6 +2137,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_viewport_size: tuple[int, int] | None = None
         self._slide_acquisition_timer_phase = "idle"
         self._slide_acquisition_frame_marker = 0
+        self._slide_acquisition_frame_cursor: tuple[int, int] | None = None
         self._slide_acquisition_wait_started_at = 0.0
         self._slide_acquisition_settle_started_at = 0.0
         self._slide_acquisition_post_settle_started_at = 0.0
@@ -2149,6 +2167,7 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_active_view_rect: dict[str, int] = {}
         self._slide_acquisition_generation = 0
         self._active_slide_acquisition: DigitalSlideAcquisitionSession | None = None
+        self._slide_io_busy = False
         self._transition_in_progress = False
         self._capture_devices: list[CaptureDevice] = []
         self._microview_optimize_hints_shown: set[str] = set()
@@ -2264,6 +2283,7 @@ class MainWindow(QMainWindow):
         self._capture_manager.activeDeviceLost.connect(self._on_active_capture_device_lost)
         self._capture_manager.errorOccurred.connect(self._on_capture_error)
         self._slide_motion.statusChanged.connect(self._on_digital_slide_motion_status)
+        self._slide_motion.enabledChanged.connect(self._on_digital_slide_motor_enabled_changed)
         self._slide_motion.positionChanged.connect(self._on_digital_slide_position_changed)
         self._capture_devices = self._capture_manager.devices()
         self._refresh_preset_combo()
@@ -14965,6 +14985,11 @@ class MainWindow(QMainWindow):
         session = self._active_slide_acquisition
         if session is not None:
             session.stop_accepting(status="device_lost", reason=f"设备已断开: {device_id}")
+        if self._slide_io_busy:
+            # The caller still owns preflight/finalization. Do not recursively
+            # finalize or release its cache while the I/O worker is using it.
+            self._slide_motion.shutdown("capture device lost during slide I/O")
+            return
         if self._slide_acquisition_active():
             self._request_digital_slide_acquisition_finish(
                 status="device_lost",
@@ -15087,8 +15112,14 @@ class MainWindow(QMainWindow):
         if not isinstance(image, QImage) or image.isNull() or self._preview_canvas is None:
             return
         self._preview_frame_serial += 1
-        self._latest_preview_frame = image.copy()
+        self._latest_preview_frame = QImage(image)
         display_image = self._scaled_digital_slide_preview_image(image)
+        selected = self._selected_capture_device()
+        signature = (
+            image.width(), image.height(), display_image.width(), display_image.height(),
+            self._digital_slide_mode, selected.id if selected is not None else "",
+        )
+        presentation_changed = signature != self._preview_display_signature
         if (
             self._preview_document is None
             or self._preview_document.image_size != (display_image.width(), display_image.height())
@@ -15103,6 +15134,11 @@ class MainWindow(QMainWindow):
             self._preview_canvas.fit_to_view()
         else:
             self._preview_canvas.set_image(display_image)
+            if presentation_changed and self._digital_slide_mode:
+                self._preview_canvas.fit_to_view()
+        if not presentation_changed:
+            return
+        self._preview_display_signature = signature
         if self._preview_status_label is not None:
             selected = self._selected_capture_device()
             label = selected.name if selected is not None else "采集设备"
@@ -15119,10 +15155,12 @@ class MainWindow(QMainWindow):
                 )
             else:
                 self._image_resolution_label.setText(f"实时预览分辨率: {image.width()} x {image.height()} px")
-        self._sync_digital_slide_camera_label()
+        self._sync_digital_slide_camera_label(frame_size=(image.width(), image.height()))
         self._update_action_states()
+        self._sync_digital_slide_task_state()
 
     def _clear_preview_surface_state(self) -> None:
+        self._preview_display_signature = None
         self._preview_document = None
         self._latest_preview_frame = None
         self._preview_frame_serial = 0
@@ -15293,12 +15331,14 @@ class MainWindow(QMainWindow):
         if checked:
             self._apply_digital_slide_motion_settings()
             self._reset_digital_slide_motion_zero(axes=(AXIS_X, AXIS_Y, AXIS_Z))
-            self._refresh_digital_slide_ports(prefer_auto=True)
-            self._check_digital_slide_motion_status()
+            self._refresh_digital_slide_ports(prefer_auto=False)
+            available = self._check_digital_slide_motion_status()
             if self._app_settings.digital_slide_motor_output_enabled and not self._slide_motion.enabled:
-                ok, _message = self._slide_motion.check_available()
-                if ok and self._digital_slide_motor_enable is not None:
-                    self._digital_slide_motor_enable.setChecked(True)
+                if available:
+                    self._set_digital_slide_motor_enabled(True)
+            self._on_digital_slide_motor_enabled_changed(self._slide_motion.enabled)
+            if self._preview_canvas is not None and self._preview_document is not None:
+                self._preview_canvas.fit_to_view()
             self.statusBar().showMessage("已进入数字化切片模式", 3000)
         else:
             self._end_digital_slide_jog()
@@ -15322,8 +15362,6 @@ class MainWindow(QMainWindow):
             self._digital_slide_right_panel.setVisible(active)
         if active and self._preview_status_label is not None:
             self._preview_status_label.setText("数字化切片模式：设置范围后点击开始采集")
-        if active and self._preview_canvas is not None and self._preview_document is not None:
-            self._preview_canvas.fit_to_view()
         self._sync_workspace_mode()
 
     def _digital_slide_selected_port(self) -> str:
@@ -15342,7 +15380,7 @@ class MainWindow(QMainWindow):
         current = self._slide_motion.port or self._digital_slide_selected_port()
         preferred = current
         auto = preferred_motion_port(ports)
-        if prefer_auto or not preferred:
+        if prefer_auto or not preferred or (ports and preferred not in {item.device for item in ports}):
             preferred = auto.device if auto is not None else preferred
         if not preferred:
             preferred = "COM3"
@@ -15378,12 +15416,13 @@ class MainWindow(QMainWindow):
     def _on_digital_slide_port_changed(self) -> None:
         self._set_digital_slide_motion_port(self._digital_slide_selected_port())
 
-    def _check_digital_slide_motion_status(self) -> None:
+    def _check_digital_slide_motion_status(self) -> bool:
         self._set_digital_slide_motion_port(self._digital_slide_selected_port())
         ok, message = self._slide_motion.check_available()
         self._set_digital_slide_status(message)
         if not ok and self._digital_slide_motor_enable is not None:
             self._digital_slide_motor_enable.setChecked(False)
+        return ok
 
     def _set_digital_slide_motor_enabled(self, enabled: bool) -> None:
         try:
@@ -15395,7 +15434,20 @@ class MainWindow(QMainWindow):
                 self._digital_slide_motor_enable.blockSignals(False)
             self._slide_motion.enabled = False
             QMessageBox.warning(self, "数字化切片", f"无法启用电机输出：\n{exc}")
+        self._on_digital_slide_motor_enabled_changed(self._slide_motion.enabled)
+
+    def _on_digital_slide_motor_enabled_changed(self, enabled: bool) -> None:
+        if self._digital_slide_motor_enable is not None:
+            self._digital_slide_motor_enable.blockSignals(True)
+            self._digital_slide_motor_enable.setChecked(enabled)
+            self._digital_slide_motor_enable.blockSignals(False)
+        if not enabled:
+            # Stop held movement without firing its deferred single step.
+            self._slide_jog_request = None
+            self._slide_jog_single_shot_timer.stop()
+            self._slide_jog_timer.stop()
         self._sync_digital_slide_task_state()
+        self._sync_digital_slide_connection_summary()
 
     def _on_digital_slide_motion_status(self, message: str) -> None:
         self._set_digital_slide_status(message)
@@ -15534,7 +15586,7 @@ class MainWindow(QMainWindow):
             self._digital_slide_effective_settings(),
         )
         if target_width == frame.width() and target_height == frame.height():
-            return frame.copy(), scale
+            return QImage(frame), scale
         return (
             frame.scaled(
                 target_width,
@@ -16518,7 +16570,7 @@ class MainWindow(QMainWindow):
             source_label=calibration.source_label,
         )
 
-    def _sync_digital_slide_camera_label(self) -> None:
+    def _sync_digital_slide_camera_label(self, *, frame_size: tuple[int, int] | None = None) -> None:
         if self._digital_slide_camera_label is None:
             return
         selected = self._selected_capture_device()
@@ -16532,7 +16584,7 @@ class MainWindow(QMainWindow):
             "qt_multimedia": "Qt Multimedia",
         }.get(selected.backend_key, selected.backend_key)
         lines = [f"相机: {selected.name}", f"后端: {backend_name}"]
-        resolution = self._capture_manager.preview_resolution()
+        resolution = frame_size or self._capture_manager.preview_resolution()
         if resolution is not None:
             lines.append(f"分辨率: {resolution[0]} x {resolution[1]} px")
         else:
@@ -16666,7 +16718,8 @@ class MainWindow(QMainWindow):
     def _slide_acquisition_active(self) -> bool:
         writer = self._slide_acquisition_writer
         return bool(
-            self._slide_acquisition_store is not None
+            self._slide_io_busy
+            or self._slide_acquisition_store is not None
             or self._slide_acquisition_timer.isActive()
             or self._slide_acquisition_pending_write is not None
             or self._slide_acquisition_finishing is not None
@@ -16674,7 +16727,33 @@ class MainWindow(QMainWindow):
             or (writer is not None and writer.is_running())
         )
 
+    def _run_slide_io(
+        self,
+        label: str,
+        operation: Callable[[ProgressCallback], SlideIOResult],
+        *,
+        cancellation_event: Event | None = None,
+    ) -> SlideIOResult:
+        if self._slide_io_busy:
+            raise RuntimeError("正在处理切片文件，请稍候。")
+        self._slide_io_busy = True
+        # Dropping a pending short jog must not dispatch a motion command.
+        self._slide_jog_single_shot_timer.stop()
+        self._slide_jog_timer.stop()
+        self._slide_jog_request = None
+        self._sync_digital_slide_task_state()
+        try:
+            return run_responsive_io(
+                self, title="数字化切片", label=label, operation=operation,
+                cancellation_event=cancellation_event,
+            )
+        finally:
+            self._slide_io_busy = False
+            self._sync_digital_slide_task_state()
+
     def _start_digital_slide_acquisition(self) -> None:
+        if self._slide_acquisition_active():
+            return
         readiness = self._digital_slide_readiness()
         if readiness.blockers:
             message = readiness.blockers[0]
@@ -16688,7 +16767,14 @@ class MainWindow(QMainWindow):
             output_path = self._choose_digital_slide_output_path()
             if output_path is None:
                 return
-        if output_path.exists():
+        try:
+            output_exists = self._run_slide_io(
+                "正在检查切片输出路径…", lambda _progress: output_path.exists()
+            )
+        except OSError as exc:
+            QMessageBox.warning(self, "数字化切片", f"无法访问输出路径：\n{exc}")
+            return
+        if output_exists:
             response = QMessageBox.question(
                 self,
                 "覆盖数字化切片",
@@ -16699,6 +16785,7 @@ class MainWindow(QMainWindow):
             if response != QMessageBox.StandardButton.Yes:
                 return
         acquisition_settings = self._app_settings.normalized_copy()
+        capture_cursor = self._capture_manager.preview_frame_cursor()
         frame = self._latest_preview_frame
         if frame is None or frame.isNull():
             frame = self._capture_manager.last_frame()
@@ -16798,7 +16885,6 @@ class MainWindow(QMainWindow):
         tile_quality = self._digital_slide_storage_quality(acquisition_settings) if tile_codec == DIGITAL_SLIDE_TILE_CODEC_JPEG else None
         image_width, image_height = capture_preview.output_size
         output_path = output_path.expanduser()
-        output_path.parent.mkdir(parents=True, exist_ok=True)
         capture_plan = self._build_digital_slide_capture_plan(
             cols=cols,
             rows=rows,
@@ -16812,12 +16898,12 @@ class MainWindow(QMainWindow):
             plan=capture_plan,
             settings=acquisition_settings,
         )
-        estimated_bytes = self._estimate_digital_slide_capture_bytes(
-            frame,
-            settings=acquisition_settings,
-            codec=tile_codec,
-            quality=tile_quality,
-            image_count=len(capture_plan),
+        estimated_bytes = self._run_slide_io(
+            "正在估算采集数据量…",
+            lambda _progress: self._estimate_digital_slide_capture_bytes(
+                frame, settings=acquisition_settings, codec=tile_codec,
+                quality=tile_quality, image_count=len(capture_plan),
+            ),
         )
         if not self._confirm_digital_slide_capture_budget(
             output_path=output_path,
@@ -16826,16 +16912,18 @@ class MainWindow(QMainWindow):
             estimated_total_ms=estimated_total_ms,
         ):
             return
-        publish_path = (
-            output_path
-            if self._digital_slide_local_cache.requires_local_copy(output_path)
-            else None
-        )
-        try:
-            working_output_path = self._digital_slide_local_cache.working_output_path(
-                output_path,
-                expected_bytes=estimated_bytes,
+        def prepare_output(_progress: ProgressCallback) -> tuple[Path | None, Path]:
+            cache = self._digital_slide_local_cache
+            publish_path = output_path if cache.requires_local_copy(output_path) else None
+            working_path = cache.working_output_path(
+                output_path, expected_bytes=estimated_bytes,
                 reserve_bytes=DIGITAL_SLIDE_MIN_FREE_BYTES,
+            )
+            return publish_path, working_path
+
+        try:
+            publish_path, working_output_path = self._run_slide_io(
+                "正在准备切片暂存文件…", prepare_output,
             )
         except Exception as exc:  # noqa: BLE001 - normalize local staging failures
             QMessageBox.warning(
@@ -16843,6 +16931,17 @@ class MainWindow(QMainWindow):
                 "数字化切片",
                 f"无法准备本机切片暂存文件：\n{exc}",
             )
+            return
+        current_cursor = self._capture_manager.preview_frame_cursor()
+        if (
+            not self._preview_active or not self._slide_motion.enabled
+            or capture_cursor is None or current_cursor is None
+            or current_cursor[0] != capture_cursor[0]
+        ):
+            if publish_path is not None:
+                self._delete_slide_path(working_output_path)
+                self._digital_slide_local_cache.forget_output(working_output_path)
+            QMessageBox.warning(self, "数字化切片", "准备期间采集设备或电机连接已变化，请重新开始采集。")
             return
         self._remember_digital_slide_output_path(output_path)
         capture_max_width = self._digital_slide_capture_max_width(acquisition_settings)
@@ -17278,7 +17377,11 @@ class MainWindow(QMainWindow):
             else 0.0
         )
         self._slide_acquisition_frame_marker = self._preview_frame_serial
+        # Take the timestamp before the source watermark; arrivals between
+        # the two are conservatively excluded, never counted as discarded
+        # post-settle frames when they actually precede the timestamp.
         self._slide_acquisition_wait_started_at = perf_counter()
+        self._slide_acquisition_frame_cursor = self._capture_manager.preview_frame_cursor()
         self._slide_acquisition_required_discard_frames = (
             int(self._digital_slide_effective_settings().digital_slide_discard_frames)
         )
@@ -17304,7 +17407,20 @@ class MainWindow(QMainWindow):
         item = self._slide_acquisition_plan[self._slide_acquisition_index]
         wait_started_at = self._slide_acquisition_wait_started_at or perf_counter()
         frame_wait_ms = (perf_counter() - wait_started_at) * 1000.0
-        new_frame_count = max(0, self._preview_frame_serial - self._slide_acquisition_frame_marker)
+        cursor = self._slide_acquisition_frame_cursor
+        current_cursor = self._capture_manager.preview_frame_cursor()
+        source_frame = self._capture_manager.latest_preview_frame()
+        if (
+            cursor is None or current_cursor is None or current_cursor[0] != cursor[0]
+            or (source_frame is not None and source_frame.generation != cursor[0])
+        ):
+            self._fail_digital_slide_acquisition("采集失败：相机会话已变化，请重新开始采集")
+            return
+        new_frame_count = (
+            max(0, source_frame.sequence - cursor[1])
+            if source_frame is not None and source_frame.received_at > wait_started_at
+            else 0
+        )
         required_discard_frames = max(0, int(self._slide_acquisition_required_discard_frames))
         if new_frame_count <= required_discard_frames and frame_wait_ms < 2000.0:
             self._set_digital_slide_timing(
@@ -17319,7 +17435,7 @@ class MainWindow(QMainWindow):
         if new_frame_count <= 0:
             self._fail_digital_slide_acquisition("采集失败：等待新视场图像超时")
             return
-        frame = self._latest_preview_frame
+        frame = source_frame.image if source_frame is not None else None
         if frame is None or frame.isNull():
             self._fail_digital_slide_acquisition("采集失败：未获取到有效图像")
             return
@@ -17588,6 +17704,7 @@ class MainWindow(QMainWindow):
         self._request_digital_slide_acquisition_finish(status="failed", message=message)
 
     def _clear_digital_slide_acquisition_session(self) -> None:
+        self._slide_acquisition_frame_cursor = None
         self._slide_acquisition_store = None
         self._slide_acquisition_writer = None
         self._slide_acquisition_settings = None
@@ -17736,40 +17853,12 @@ class MainWindow(QMainWindow):
                 pass
 
     def _publish_network_digital_slide(self, source: Path, target: Path) -> None:
-        progress = QProgressDialog(
-            "正在将本机切片发布到局域网目录…",
-            "",
-            0,
-            1000,
-            self,
+        self._run_slide_io(
+            f"正在将本机切片发布到局域网目录…\n{target.name}",
+            lambda progress: self._digital_slide_local_cache.publish(
+                source, target, progress_callback=progress,
+            ),
         )
-        progress.setCancelButton(None)
-        progress.setWindowTitle("发布数字化切片")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumDuration(250)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
-
-        def update_progress(copied: int, total: int) -> None:
-            denominator = max(1, int(total))
-            progress.setValue(
-                min(1000, int(round((int(copied) / denominator) * 1000)))
-            )
-            progress.setLabelText(
-                "正在将本机切片发布到局域网目录…\n"
-                f"{target.name}\n"
-                f"{int(copied) / (1024**2):.1f} / {int(total) / (1024**2):.1f} MiB"
-            )
-            self._pump_modal_progress_events()
-
-        try:
-            self._digital_slide_local_cache.publish(
-                source,
-                target,
-                progress_callback=update_progress,
-            )
-        finally:
-            self._close_progress_dialog(progress)
 
     def _stop_digital_slide_writer(self, *, cancel: bool) -> TaskStopResult:
         writer = self._slide_acquisition_writer
@@ -17910,8 +17999,12 @@ class MainWindow(QMainWindow):
         if estimated_bytes > DIGITAL_SLIDE_MAX_ESTIMATED_BYTES:
             QMessageBox.warning(self, "数字化切片", "预计数据量超过 100 GiB 硬上限。")
             return False
+        def check_output_space(_progress: ProgressCallback) -> int:
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            return shutil.disk_usage(output_path.parent).free
+
         try:
-            free_bytes = shutil.disk_usage(output_path.parent).free
+            free_bytes = self._run_slide_io("正在检查输出磁盘空间…", check_output_space)
         except OSError as exc:
             QMessageBox.warning(self, "数字化切片", f"无法检查输出磁盘空间：\n{exc}")
             return False
@@ -19727,12 +19820,10 @@ class MainWindow(QMainWindow):
         tooltip: str | None = None,
         interaction_path_override: str | Path | None = None,
     ) -> None:
-        source_path = Path(path).expanduser().resolve()
+        source_path = Path(path).expanduser()
         try:
-            interaction_path = (
-                Path(interaction_path_override).expanduser().resolve()
-                if interaction_path_override is not None
-                else self._localize_digital_slide_source(source_path)
+            source_path, interaction_path, source_stat = self._prepare_digital_slide_source(
+                source_path, interaction_path_override=interaction_path_override,
             )
         except DigitalSlideCacheCancelled:
             self.statusBar().showMessage("已取消打开网络数字化切片。", 5000)
@@ -19805,7 +19896,10 @@ class MainWindow(QMainWindow):
             self._app_settings.digital_slide_dynamic_focus_overview_enabled
         )
         try:
-            canvas.set_slide_document(target_document, store)
+            canvas.set_slide_document(
+                target_document, store, defer_rendering=self._preview_active,
+                source_stat=source_stat, source_identity=source_path,
+            )
         except Exception as exc:
             canvas.shutdown()
             try:
@@ -19912,42 +20006,39 @@ class MainWindow(QMainWindow):
                 6000,
             )
 
-    def _localize_digital_slide_source(self, source_path: Path) -> Path:
+    def _prepare_digital_slide_source(
+        self, source_path: Path, *, interaction_path_override: str | Path | None,
+    ) -> tuple[Path, Path, tuple[int, int]]:
         cache = self._digital_slide_local_cache
-        if not cache.requires_local_copy(source_path):
-            return source_path
-        progress = QProgressDialog(
-            "正在将网络数字化切片复制到本机临时目录…",
-            "取消",
-            0,
-            1000,
-            self,
+        cancelled = Event()
+
+        def prepare(progress: ProgressCallback) -> tuple[Path, Path, tuple[int, int]]:
+            source = source_path.resolve()
+            if interaction_path_override is not None:
+                interaction = Path(interaction_path_override).expanduser().resolve()
+                try:
+                    revision = source.stat()
+                except OSError:
+                    # A successfully captured local copy remains usable if
+                    # the share disconnects immediately after publishing.
+                    revision = interaction.stat()
+            else:
+                before = source.stat()
+                interaction = cache.localize(
+                    source, progress_callback=progress,
+                    cancellation_requested=cancelled.is_set,
+                )
+                revision = source.stat()
+                if (before.st_size, before.st_mtime_ns) != (revision.st_size, revision.st_mtime_ns):
+                    raise OSError("切片文件在准备期间发生变化，请等待写入结束后重试。")
+            if cancelled.is_set():
+                raise DigitalSlideCacheCancelled("已取消打开数字化切片。")
+            return source, interaction, (int(revision.st_size), int(revision.st_mtime_ns))
+
+        return self._run_slide_io(
+            f"正在准备数字化切片的本机读取副本…\n{source_path.name}", prepare,
+            cancellation_event=cancelled if interaction_path_override is None else None,
         )
-        progress.setWindowTitle("打开网络数字化切片")
-        progress.setWindowModality(Qt.WindowModality.WindowModal)
-        progress.setMinimumDuration(250)
-        progress.setAutoClose(False)
-        progress.setAutoReset(False)
-
-        def update_progress(copied: int, total: int) -> None:
-            denominator = max(1, int(total))
-            progress.setValue(min(1000, int(round((int(copied) / denominator) * 1000))))
-            progress.setLabelText(
-                "正在将网络数字化切片复制到本机临时目录…\n"
-                f"{source_path.name}\n"
-                f"{int(copied) / (1024**2):.1f} / {int(total) / (1024**2):.1f} MiB"
-            )
-            QApplication.processEvents()
-
-        try:
-            return cache.localize(
-                source_path,
-                progress_callback=update_progress,
-                cancellation_requested=progress.wasCanceled,
-            )
-        finally:
-            progress.close()
-            progress.deleteLater()
 
     def _on_digital_slide_viewport_changed(self, x: int, y: int, focus_index: int) -> None:
         document = self.current_document()
@@ -26801,7 +26892,7 @@ class MainWindow(QMainWindow):
     def _update_preview_analysis_controls(self) -> None:
         if self._preview_analysis_widget is None or self._measurement_tool_strip is None:
             return
-        is_visible = self._preview_active
+        is_visible = self._preview_active and not self._digital_slide_mode
         self._measurement_tool_strip.setPreviewContextVisible(is_visible)
         selected = self._selected_capture_device()
         focus_supported = self._preview_analysis_supported("focus_stack")
@@ -27966,6 +28057,8 @@ class MainWindow(QMainWindow):
     ) -> AcquisitionDisposition | None:
         """Collect acquisition intent without stopping or mutating the session."""
 
+        if self._slide_io_busy:
+            return AcquisitionDisposition.CANCEL
         if not self._slide_acquisition_active():
             return None
         previous_transition_state = self._transition_in_progress
@@ -28003,6 +28096,11 @@ class MainWindow(QMainWindow):
         *,
         disposition: AcquisitionDisposition | None = None,
     ) -> TransitionResult:
+        if self._slide_io_busy:
+            return TransitionResult(
+                intent=intent, completed=False,
+                reason="正在处理切片文件，请等待当前操作完成。",
+            )
         task_results = []
         self._transition_in_progress = True
         try:

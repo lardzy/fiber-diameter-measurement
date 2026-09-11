@@ -123,6 +123,20 @@ class CaptureStopResult:
         return self.success
 
 
+@dataclass(frozen=True, slots=True)
+class PreviewFrameSnapshot:
+    """Source arrival identity, independent of GUI delivery and display rate.
+
+    Images are owned Qt value copies. Consumers must take another QImage value
+    copy before editing; acquisition can retain a snapshot across later frames.
+    """
+
+    generation: int
+    sequence: int
+    received_at: float
+    image: QImage
+
+
 def available_capture_backends() -> list[CaptureBackend]:
     return [
         OpenCVCaptureBackend(),
@@ -139,7 +153,7 @@ class CaptureSessionManager(QObject):
     analysisFrameFailed = Signal(int, str)
     errorOccurred = Signal(str)
     activeDeviceLost = Signal(str)
-    _deliverFrame = Signal(int, object)
+    _deliverFrame = Signal(int)
     _deliverError = Signal(int, str)
     _deliverAnalysisFrame = Signal(int, int, object)
     _deliverAnalysisError = Signal(int, int, str)
@@ -162,8 +176,15 @@ class CaptureSessionManager(QObject):
         self._active_capture: ActiveCapture | None = None
         self._last_frame: QImage | None = None
         self._preview_generation = 0
+        self._frame_lock = threading.Lock()
+        self._frame_generation: int | None = None
+        self._source_frame_sequence = 0
+        self._source_frame: PreviewFrameSnapshot | None = None
+        self._frame_delivery_pending = False
+        self._preview_frames_coalesced = 0
+        self._preview_frames_displayed = 0
         self._device_refresh_warnings: list[str] = []
-        self._deliverFrame.connect(self._on_frame_ready, Qt.ConnectionType.QueuedConnection)
+        self._deliverFrame.connect(self._drain_preview_frame, Qt.ConnectionType.QueuedConnection)
         self._deliverError.connect(self._on_backend_error, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisFrame.connect(self._on_analysis_frame_ready, Qt.ConnectionType.QueuedConnection)
         self._deliverAnalysisError.connect(self._on_analysis_error, Qt.ConnectionType.QueuedConnection)
@@ -186,7 +207,46 @@ class CaptureSessionManager(QObject):
         return self._active_capture is not None
 
     def last_frame(self) -> QImage | None:
-        return self._last_frame.copy() if self._last_frame is not None else None
+        snapshot = self.latest_preview_frame()
+        if snapshot is not None:
+            return snapshot.image
+        return QImage(self._last_frame) if self._last_frame is not None else None
+
+    def preview_frame_cursor(self) -> tuple[int, int] | None:
+        with self._frame_lock:
+            if self._frame_generation is None:
+                return None
+            return self._frame_generation, self._source_frame_sequence
+
+    def latest_preview_frame(self) -> PreviewFrameSnapshot | None:
+        with self._frame_lock:
+            frame = self._source_frame
+            if frame is None:
+                return None
+            return PreviewFrameSnapshot(
+                frame.generation, frame.sequence, frame.received_at, QImage(frame.image)
+            )
+
+    def preview_frame_stats(self) -> dict[str, int | float]:
+        with self._frame_lock:
+            frame = self._source_frame
+            return {
+                "received": self._source_frame_sequence,
+                "displayed": self._preview_frames_displayed,
+                "coalesced": self._preview_frames_coalesced,
+                "pending_wakeups": int(self._frame_delivery_pending),
+                "latest_frame_bytes": int(frame.image.sizeInBytes()) if frame else 0,
+                "latest_age_ms": max(0.0, (perf_counter() - frame.received_at) * 1000) if frame else 0.0,
+            }
+
+    def _reset_preview_frames(self, generation: int | None) -> None:
+        with self._frame_lock:
+            self._frame_generation = generation
+            self._source_frame_sequence = 0
+            self._source_frame = None
+            self._frame_delivery_pending = False
+            self._preview_frames_coalesced = 0
+            self._preview_frames_displayed = 0
 
     def preview_kind(self) -> str:
         if self.is_preview_active():
@@ -365,6 +425,7 @@ class CaptureSessionManager(QObject):
             preview_kind=self._active_preview_kind,
             preview_target=preview_target,
         )
+        self._reset_preview_frames(generation)
         try:
             backend.start_preview(
                 device,
@@ -373,6 +434,7 @@ class CaptureSessionManager(QObject):
                 error_callback=lambda message, _generation=generation: self._deliver_error_threadsafe(_generation, message),
             )
         except Exception as exc:  # pragma: no cover - hardware dependent
+            self._reset_preview_frames(None)
             self._active_backend = None
             self._active_device_id = ""
             self._active_preview_kind = "frame_stream"
@@ -385,6 +447,7 @@ class CaptureSessionManager(QObject):
 
     def stop_preview(self) -> CaptureStopResult:
         was_active = self.is_preview_active()
+        self._reset_preview_frames(None)
         if not self.is_preview_active():
             self._last_frame = None
             return CaptureStopResult(True, False, self._preview_generation)
@@ -446,8 +509,20 @@ class CaptureSessionManager(QObject):
             return
         if image.isNull():
             return
-        self._last_frame = image
-        self.frameReady.emit(image)
+        self._last_frame = QImage(image)
+        self.frameReady.emit(QImage(image))
+
+    @Slot(int)
+    def _drain_preview_frame(self, generation: int) -> None:
+        with self._frame_lock:
+            if generation != self._frame_generation:
+                return
+            self._frame_delivery_pending = False
+            frame = self._source_frame
+            if frame is None:
+                return
+            self._preview_frames_displayed += 1
+        self._on_frame_ready(generation, frame.image)
 
     @Slot(int, str)
     def _on_backend_error(self, generation: int, message: str) -> None:
@@ -458,7 +533,23 @@ class CaptureSessionManager(QObject):
         self.errorOccurred.emit(message)
 
     def _deliver_frame_threadsafe(self, generation: int, image: QImage) -> None:
-        self._deliverFrame.emit(generation, image)
+        if image.isNull():
+            return
+        with self._frame_lock:
+            if generation != self._frame_generation:
+                return
+            received_at = perf_counter()
+            self._source_frame_sequence += 1
+            self._source_frame = PreviewFrameSnapshot(
+                generation, self._source_frame_sequence, received_at, QImage(image)
+            )
+            if self._frame_delivery_pending:
+                self._preview_frames_coalesced += 1
+                return
+            self._frame_delivery_pending = True
+        # The queued event carries no image. A blocked GUI retains only the
+        # latest source frame, and an old session wakeup cannot drain a new one.
+        self._deliverFrame.emit(generation)
 
     def _deliver_error_threadsafe(self, generation: int, message: str) -> None:
         self._deliverError.emit(generation, message)

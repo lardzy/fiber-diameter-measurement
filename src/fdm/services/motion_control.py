@@ -124,6 +124,7 @@ def preferred_motion_port(ports: list[MotionPortInfo]) -> MotionPortInfo | None:
 class MotionController(QObject):
     statusChanged = Signal(str)
     positionChanged = Signal(object)
+    enabledChanged = Signal(bool)
 
     def __init__(self, *, port: str = "", baudrate: int = 256000, timeout: float = 0.2, parent: QObject | None = None) -> None:
         super().__init__(parent)
@@ -142,6 +143,7 @@ class MotionController(QObject):
         return str(_SERIAL_IMPORT_ERROR or "")
 
     def close(self) -> None:
+        self._set_enabled_state(False)
         if self._serial is not None:
             serial_handle = self._serial
             serial_handle.close()
@@ -150,7 +152,7 @@ class MotionController(QObject):
 
     def shutdown(self, reason: str = "shutdown") -> MotionShutdownResult:
         was_enabled = bool(self.enabled)
-        self.enabled = False
+        self._set_enabled_state(False)
         error: str | None = None
         try:
             self.close()
@@ -167,13 +169,21 @@ class MotionController(QObject):
 
     def set_enabled(self, enabled: bool) -> None:
         if enabled:
-            self._ensure_open()
-            self.enabled = True
+            try:
+                self._ensure_open()
+            except Exception:
+                self._set_enabled_state(False)
+                raise
+            self._set_enabled_state(True)
             self.statusChanged.emit("电机输出已启用")
         else:
-            self.enabled = False
             self.close()
             self.statusChanged.emit("电机输出已禁用")
+
+    def _set_enabled_state(self, enabled: bool) -> None:
+        if self.enabled != enabled:
+            self.enabled = enabled
+            self.enabledChanged.emit(enabled)
 
     def set_soft_limit(self, axis: str, value: int) -> None:
         self.soft_limits[axis] = max(0, int(value))
@@ -194,7 +204,7 @@ class MotionController(QObject):
         if self._serial is not None and self._serial.is_open:
             return True, "串口已由本程序打开"
         try:
-            probe = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
+            probe = serial.Serial(self.port, self.baudrate, timeout=self.timeout, write_timeout=self.timeout)
             probe.close()
             return True, "串口可打开"
         except Exception as exc:
@@ -211,10 +221,14 @@ class MotionController(QObject):
         if not self.enabled:
             self.statusChanged.emit(f"DRY-RUN {label or axis_name(axis)} steps={steps} frame={frame.hex(' ').upper()}")
             return False
-        self._ensure_open()
-        written = self._serial.write(frame)
-        if written != len(frame):
-            raise IOError(f"串口写入不完整: {written}/{len(frame)} bytes")
+        try:
+            self._ensure_open()
+            written = self._serial.write(frame)
+            if written != len(frame):
+                raise IOError(f"串口写入不完整: {written}/{len(frame)} bytes")
+        except Exception:
+            self.shutdown("write failed")
+            raise
         self.relative_pos[axis] = target
         self.positionChanged.emit(dict(self.relative_pos))
         self.statusChanged.emit(f"已发送 {axis_name(axis)} {delta:+d} steps")
@@ -234,5 +248,5 @@ class MotionController(QObject):
             raise ValueError("未选择串口")
         if self._serial is not None and self._serial.is_open:
             return
-        self._serial = serial.Serial(self.port, self.baudrate, timeout=self.timeout)
+        self._serial = serial.Serial(self.port, self.baudrate, timeout=self.timeout, write_timeout=self.timeout)
         self.statusChanged.emit(f"串口已打开: {self.port} @ {self.baudrate}")

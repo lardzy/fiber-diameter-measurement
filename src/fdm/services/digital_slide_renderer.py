@@ -133,9 +133,10 @@ class DigitalSlideDerivedCache:
         manifest: DigitalSlideManifest,
         *,
         source_identity: str | Path | None = None,
+        source_stat: tuple[int, int] | None = None,
     ) -> str:
         source = Path(path).expanduser()
-        identity = (
+        identity = Path(source_identity or source).expanduser() if source_stat is not None else (
             Path(source_identity).expanduser().resolve(strict=False)
             if source_identity is not None
             else source.resolve(strict=False)
@@ -144,15 +145,17 @@ class DigitalSlideDerivedCache:
         # that case use the original source's size/mtime whenever it is still
         # reachable; otherwise fall back to the actual SQLite file.  Both paths
         # retain the required identity + size + mtime invalidation tuple.
-        stat_source = identity if identity.is_file() else source
-        try:
-            stat = stat_source.stat()
-            stat_payload = (
-                int(stat.st_size),
-                int(stat.st_mtime_ns),
-            )
-        except OSError:
-            stat_payload = (0, 0)
+        if source_stat is not None:
+            # The opener already checked the canonical source in its I/O
+            # worker. Reuse that revision without another SMB round trip.
+            stat_payload = source_stat
+        else:
+            stat_source = identity if identity.is_file() else source
+            try:
+                stat = stat_source.stat()
+                stat_payload = (int(stat.st_size), int(stat.st_mtime_ns))
+            except OSError:
+                stat_payload = (0, 0)
         manifest_payload = json.dumps(
             manifest.to_dict(),
             ensure_ascii=False,
@@ -509,6 +512,7 @@ class DigitalSlideRenderer:
         manifest: DigitalSlideManifest,
         *,
         source_identity: str | Path | None = None,
+        source_stat: tuple[int, int] | None = None,
         cache_root: str | Path,
         disk_cache_bytes: int,
         result_callback: Callable[[DigitalSlideRenderFrame], None],
@@ -527,6 +531,7 @@ class DigitalSlideRenderer:
             self.source_path,
             manifest,
             source_identity=source_identity,
+            source_stat=source_stat,
         )
         self._cache_writer = _DerivedCacheWriter(
             self._derived_cache,

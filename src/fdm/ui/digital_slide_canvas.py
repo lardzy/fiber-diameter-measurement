@@ -192,7 +192,16 @@ class DigitalSlideCanvas(DocumentCanvas):
         self._renderFrameReady.connect(self._on_render_frame_ready)
         self._renderFrameFailed.connect(self._on_render_frame_failed)
 
-    def set_slide_document(self, document: ImageDocument, store: DigitalSlideStore) -> None:
+    def set_slide_document(
+        self, document: ImageDocument, store: DigitalSlideStore, *,
+        defer_rendering: bool = False,
+        source_stat: tuple[int, int] | None = None,
+        source_identity: str | Path | None = None,
+    ) -> None:
+        self._render_source_stat = source_stat
+        self._render_source_identity_override = str(source_identity) if source_identity is not None else None
+        defer_rendering = bool(defer_rendering and not self.isVisible())
+        self._deferred_slide_document = (document, store) if defer_rendering else None
         renderer = self._renderer
         self._renderer = None
         if renderer is not None:
@@ -280,6 +289,12 @@ class DigitalSlideCanvas(DocumentCanvas):
             )
         self._initial_fit_done = False
         self._invalidate_viewport_buffer()
+        if defer_rendering:
+            # Preserve focus/origin for save and export, but a never-viewed
+            # acquisition tab needs neither a raster nor a renderer thread.
+            self._document = document
+            self._image = None
+            return
         image = QImage(
             int(self._slide_manifest.viewport_width),
             int(self._slide_manifest.viewport_height),
@@ -329,6 +344,7 @@ class DigitalSlideCanvas(DocumentCanvas):
 
     def shutdown(self) -> None:
         """Detach long-lived slide resources before the Qt widget is deleted."""
+        self._deferred_slide_document = None
         self._smooth_nav_keys.clear()
         self._smooth_nav_keyboard_shift = False
         self._smooth_nav_timer.stop()
@@ -387,6 +403,12 @@ class DigitalSlideCanvas(DocumentCanvas):
         super().hideEvent(event)
 
     def showEvent(self, event) -> None:
+        deferred = getattr(self, "_deferred_slide_document", None)
+        if deferred is not None:
+            self.set_slide_document(
+                *deferred, source_stat=self._render_source_stat,
+                source_identity=self._render_source_identity_override,
+            )
         super().showEvent(event)
         self._allow_viewport_buffer_retry()
         if self._initial_fit_pending:
@@ -809,6 +831,8 @@ class DigitalSlideCanvas(DocumentCanvas):
         self.update()
 
     def _start_renderer(self) -> None:
+        if getattr(self, "_deferred_slide_document", None) is not None:
+            return
         if self._renderer is not None or self._slide_store is None or self._slide_manifest is None:
             return
         canvas_ref = ref(self)
@@ -841,6 +865,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             self._slide_store.path,
             self._slide_manifest,
             source_identity=self._render_source_identity(),
+            source_stat=getattr(self, "_render_source_stat", None),
             cache_root=digital_slide_render_cache_directory(),
             disk_cache_bytes=cache_gib * 1024 * 1024 * 1024,
             result_callback=publish_result,
@@ -848,6 +873,9 @@ class DigitalSlideCanvas(DocumentCanvas):
         )
 
     def _render_source_identity(self) -> str | None:
+        prepared = getattr(self, "_render_source_identity_override", None)
+        if prepared is not None:
+            return prepared
         document = self._document
         if document is None:
             return None
