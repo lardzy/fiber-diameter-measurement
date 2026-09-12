@@ -2368,6 +2368,11 @@ class CanvasAndExportTests(unittest.TestCase):
                     before_shift_step.x,
                 )
             finally:
+                # Stop asynchronous readers before closing their source and
+                # removing the temporary database, as MainWindow does.
+                canvas.shutdown()
+                canvas.close()
+                canvas.deleteLater()
                 store.close()
 
     def test_digital_slide_shift_navigation_toggle_matches_shift_behavior(self) -> None:

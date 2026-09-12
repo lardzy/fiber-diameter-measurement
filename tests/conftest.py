@@ -46,7 +46,14 @@ def dispose_closed_main_windows(desktop_application):
 
 @pytest.fixture(autouse=True)
 def isolated_desktop_profile(tmp_path, monkeypatch):
-    from fdm import screenshot_settings, settings
+    from fdm import runtime_logging, screenshot_settings, settings
+    from threading import enumerate as threads
 
     monkeypatch.setattr(settings, "settings_file_path", lambda: tmp_path / "settings.json")
     monkeypatch.setattr(screenshot_settings, "screenshot_settings_file_path", lambda: tmp_path / "screenshot-settings.json")
+    monkeypatch.setattr(runtime_logging, "runtime_log_path", lambda: tmp_path / "startup.log")
+    yield
+    # Finish diagnostics before restoring the real user's log location.
+    for thread in threads():
+        if thread.name.startswith("fdm-slide-diagnostic-"):
+            thread.join(timeout=1)

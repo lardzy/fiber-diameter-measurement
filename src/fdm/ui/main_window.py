@@ -497,6 +497,7 @@ from fdm.ui.rendering import (
 )
 from fdm.ui.theme import apply_application_theme, refresh_widget_theme
 from fdm.ui.responsive_io import ProgressCallback, run_responsive_io
+from fdm.operation_diagnostics import diagnose_operation, operation_phase
 from fdm.ui.statistics_widgets import (
     DistributionRecordFilterRequest,
     MeasurementStatisticsPanel,
@@ -19806,6 +19807,7 @@ class MainWindow(QMainWindow):
         self._apply_open_view_mode(canvas, restored_view_state=restored_view_state)
         self._update_ui_for_current_document()
 
+    @diagnose_operation("digital-slide-document-install/v2")
     def _add_digital_slide_document_from_path(
         self,
         path: str | Path,
@@ -19818,6 +19820,7 @@ class MainWindow(QMainWindow):
         interaction_path_override: str | Path | None = None,
     ) -> None:
         source_path = Path(path).expanduser()
+        operation_phase(f"source.prepare: source={source_path}, local={interaction_path_override}")
         try:
             source_path, interaction_path, source_stat = self._prepare_digital_slide_source(
                 source_path, interaction_path_override=interaction_path_override,
@@ -19832,13 +19835,16 @@ class MainWindow(QMainWindow):
                 f"无法准备数字化切片的本机读取副本：\n{source_path}\n\n{exc}",
             )
             return
+        operation_phase(f"local.open_store: {interaction_path}")
         store = DigitalSlideStore(interaction_path)
         try:
+            operation_phase(f"local.read_manifest: {interaction_path}")
             manifest = store.read_manifest()
         except Exception as exc:
             store.close()
             QMessageBox.warning(self, "打开数字化切片", f"无法读取数字化切片：\n{source_path}\n\n{exc}")
             return
+        operation_phase("document.initialize")
         target_document = document or ImageDocument(
             id=new_id("slide"),
             path=document_path or str(source_path),
@@ -19880,6 +19886,7 @@ class MainWindow(QMainWindow):
         target_document.mark_session_saved()
         target_document.mark_calibration_saved()
 
+        operation_phase("canvas.create")
         canvas = DigitalSlideCanvas()
         canvas.set_navigation_mode(
             "smooth"
@@ -19893,6 +19900,7 @@ class MainWindow(QMainWindow):
             self._app_settings.digital_slide_dynamic_focus_overview_enabled
         )
         try:
+            operation_phase(f"canvas.set_slide_document: defer_rendering={self._preview_active}")
             canvas.set_slide_document(
                 target_document, store, defer_rendering=self._preview_active,
                 source_stat=source_stat, source_identity=source_path,
@@ -19910,6 +19918,7 @@ class MainWindow(QMainWindow):
                 f"无法初始化数字化切片视图：\n{source_path}\n\n{exc}",
             )
             return
+        operation_phase("canvas.settings_and_signals")
         canvas.set_settings(self._app_settings)
         canvas.set_tool_mode(
             self._tool_mode,
@@ -19969,6 +19978,7 @@ class MainWindow(QMainWindow):
             )
         )
 
+        operation_phase("document.register_and_navigator")
         self._remove_unresolved_placeholder_ui(target_document.id)
         insert_index = self.project_session_controller.ui_insert_index(target_document.id, self._document_order)
         self.project.documents.insert(insert_index, target_document)
@@ -19981,6 +19991,7 @@ class MainWindow(QMainWindow):
             source_image=None,
         )
 
+        operation_phase("document.install_tab")
         tab_index = self.tab_widget.insertTab(insert_index, canvas, self._document_display_name(target_document))
         self.tab_widget.setTabToolTip(tab_index, tooltip or str(source_path))
         list_item = QListWidgetItem(self._document_display_name(target_document))
@@ -19996,7 +20007,9 @@ class MainWindow(QMainWindow):
             canvas.pixel_work_enabled(),
             canvas.pixel_work_unavailable_reason(),
         )
+        operation_phase("document.refresh_ui")
         self._update_ui_for_current_document()
+        operation_phase("document.ready")
         if interaction_path != source_path:
             self.statusBar().showMessage(
                 f"已从本机临时副本打开网络切片：{source_path.name}",
@@ -20018,15 +20031,21 @@ class MainWindow(QMainWindow):
                 # for SMB and cannot be rescued by an OSError fallback until
                 # the OS call returns. No remote I/O is needed for this handoff.
                 source = source_path.absolute()
+                operation_phase(f"local.resolve: {interaction_path_override}")
                 interaction = Path(interaction_path_override).expanduser().resolve()
+                operation_phase(f"local.stat: {interaction}")
                 revision = interaction.stat()
             else:
+                operation_phase(f"source.resolve: {source_path}")
                 source = source_path.resolve()
+                operation_phase(f"source.stat_before: {source}")
                 before = source.stat()
+                operation_phase("source.localize")
                 interaction = cache.localize(
                     source, progress_callback=progress,
                     cancellation_requested=cancelled.is_set,
                 )
+                operation_phase("source.stat_after")
                 revision = source.stat()
                 if (before.st_size, before.st_mtime_ns) != (revision.st_size, revision.st_mtime_ns):
                     raise OSError("切片文件在准备期间发生变化，请等待写入结束后重试。")

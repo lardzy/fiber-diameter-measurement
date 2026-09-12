@@ -8,7 +8,7 @@ from types import SimpleNamespace
 from unittest.mock import patch
 
 import pytest
-from PySide6.QtCore import QTimer, Qt
+from PySide6.QtCore import QEventLoop, QTimer, Qt
 from PySide6.QtGui import QColor, QImage
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication, QMessageBox, QProgressDialog
@@ -568,6 +568,87 @@ def test_continuous_captures_publish_without_starting_hidden_renderers(workspace
     finally:
         stop.set()
         producer.join(2)
+
+
+@pytest.mark.parametrize("status, button_text", [("ready", "关闭"), ("interrupted", "查看切片")])
+def test_finished_loader_stays_hidden_during_real_completion_dialog(
+    workspace, tmp_path, monkeypatch, status, button_text,
+):
+    window, camera = workspace
+    target = tmp_path / "network" / "清水.fdmslide"
+    cache = DigitalSlideSessionCache(
+        root=tmp_path / "read-cache", output_staging_root=tmp_path / "staging",
+        network_path_predicate=lambda path: Path(path) == target,
+    )
+    window._digital_slide_local_cache = cache
+    local = cache.working_output_path(target)
+    store = DigitalSlideStore.create(local, DigitalSlideManifest(1, 64, 48, 64, 48, [0]))
+    store.write_tile(DigitalSlideTile(0, 0, 0, 64, 48), image("blue"))
+    window._slide_acquisition_store = store
+    window._slide_acquisition_path = local
+    window._slide_acquisition_publish_path = target
+    window._slide_acquisition_document_path = str(target)
+    # Previous tests replaced this modal with a no-op and missed the loader's
+    # delayed forceShow while deferred deletion waited in this nested loop.
+    monkeypatch.setattr(
+        window, "_show_digital_slide_completion_dialog",
+        MainWindow._show_digital_slide_completion_dialog.__get__(window),
+    )
+    observed = []
+    completion_seen = False
+    monitor = QTimer(window)
+
+    def check_completion():
+        nonlocal completion_seen
+        camera.send(image())
+        for box in window.findChildren(QMessageBox):
+            if not box.isVisible() or box.text() != "capture complete":
+                continue
+            observed.append((
+                any(dialog.isVisible() for dialog in window.findChildren(QProgressDialog)),
+                QApplication.activeModalWidget() is box,
+            ))
+            if not completion_seen:
+                completion_seen = True
+                button = next(button for button in box.buttons() if button.text() == button_text)
+                # Keep the actual modal open past the loader's 250 ms delay.
+                QTimer.singleShot(400, box, button.click)
+
+    monitor.timeout.connect(check_completion)
+    monitor.start(10)
+    loop = QEventLoop(window)
+    errors = []
+
+    def finish_capture():
+        try:
+            window._finish_digital_slide_acquisition(status=status, message="capture complete")
+        except BaseException as exc:
+            errors.append(exc)
+        finally:
+            loop.quit()
+
+    QTimer.singleShot(0, window, finish_capture)
+    try:
+        loop.exec()
+        assert not errors, errors
+        assert completion_seen and len(observed) > 1
+        assert all(not loader_visible and modal_active for loader_visible, modal_active in observed), observed
+        assert not window._slide_acquisition_active()
+        assert DigitalSlideStore.read_manifest_read_only(target).tile_count == 1
+        assert len(window.project.documents) == 1
+        canvas = window._canvases[window.project.documents[0].id]
+        if button_text == "关闭":
+            assert window._preview_active
+            assert canvas._renderer is None and canvas._image is None
+        else:
+            assert not window._preview_active
+            deadline = perf_counter() + 5
+            while not canvas.pixel_work_enabled() and perf_counter() < deadline:
+                QTest.qWait(10)
+            assert canvas.pixel_work_enabled()
+    finally:
+        monitor.stop()
+        loop.deleteLater()
 
 
 def test_device_loss_during_output_preparation_prevents_capture(workspace, tmp_path, monkeypatch):
