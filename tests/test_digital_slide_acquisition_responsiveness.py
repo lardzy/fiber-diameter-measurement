@@ -410,6 +410,114 @@ def test_network_preflight_and_publication_do_io_outside_gui(workspace, tmp_path
     assert published and published[0] != main_thread
 
 
+def test_captured_slide_preparation_never_revisits_published_source(workspace, tmp_path, monkeypatch):
+    window, _camera = workspace
+    target = tmp_path / "network" / "清水.fdmslide"
+    local = tmp_path / "capture.fdmslide"
+    DigitalSlideStore.create(local, DigitalSlideManifest(1, 64, 48, 64, 48, [0])).close()
+    local_stat = local.stat()
+    original_resolve = Path.resolve
+    original_stat = Path.stat
+    network_calls = []
+
+    def guard(method):
+        def guarded(path, *args, **kwargs):
+            if path == target:
+                network_calls.append(method.__name__)
+                raise AssertionError("published network source must not be queried again")
+            return method(path, *args, **kwargs)
+        return guarded
+
+    monkeypatch.setattr(Path, "resolve", guard(original_resolve))
+    monkeypatch.setattr(Path, "stat", guard(original_stat))
+    source, interaction, revision = window._prepare_digital_slide_source(
+        target, interaction_path_override=local,
+    )
+    assert source == target
+    assert interaction == original_resolve(local)
+    assert revision == (local_stat.st_size, local_stat.st_mtime_ns)
+    assert network_calls == []
+    assert not window._slide_io_busy
+
+
+@pytest.mark.parametrize("status", ["ready", "interrupted"])
+def test_published_capture_completes_and_views_without_reopening_share(
+    workspace, tmp_path, monkeypatch, status,
+):
+    window, _camera = workspace
+    target = tmp_path / "network" / "清水.fdmslide"
+    cache = DigitalSlideSessionCache(
+        root=tmp_path / "read-cache", output_staging_root=tmp_path / "staging",
+        network_path_predicate=lambda path: Path(path) == target,
+    )
+    window._digital_slide_local_cache = cache
+    local = cache.working_output_path(target)
+    store = DigitalSlideStore.create(local, DigitalSlideManifest(1, 64, 48, 64, 48, [0]))
+    store.write_tile(DigitalSlideTile(0, 0, 0, 64, 48), image("blue"))
+    store.close()
+    window._slide_acquisition_store = store
+    window._slide_acquisition_path = local
+    window._slide_acquisition_publish_path = target
+    window._slide_acquisition_document_path = str(target)
+    completed = []
+    published = Event()
+    network_calls = []
+    publish = cache.publish
+
+    def publish_then_disconnect(*args, **kwargs):
+        result = publish(*args, **kwargs)
+        published.set()
+        return result
+
+    def guard(method):
+        def guarded(path, *args, **kwargs):
+            if published.is_set() and (path == target.parent or target.parent in path.parents):
+                network_calls.append((method.__name__, str(path)))
+                raise AssertionError("share stopped responding after successful publication")
+            return method(path, *args, **kwargs)
+        return guarded
+
+    with monkeypatch.context() as guarded_share:
+        guarded_share.setattr(cache, "publish", publish_then_disconnect)
+        guarded_share.setattr(cache, "localize", lambda *args, **kwargs: pytest.fail("capture copied back from share"))
+        guarded_share.setattr(window, "_show_digital_slide_completion_dialog", lambda **result: completed.append(result))
+        for method_name in ("stat", "resolve", "open"):
+            guarded_share.setattr(Path, method_name, guard(getattr(Path, method_name)))
+        window._finish_digital_slide_acquisition(status=status, message="complete")
+        assert published.is_set()
+        assert len(completed) == 1
+        assert completed[0]["path"] == target
+        assert completed[0]["status"] == status
+        assert not window._slide_io_busy
+        assert not window._slide_acquisition_active()
+        assert window._digital_slide_motor_enable.isChecked()
+        assert window._preview_active
+        assert len(window.project.documents) == 1
+        document = window.project.documents[0]
+        assert Path(document.path) == target
+        assert Path(document.absolute_path) == target
+        canvas = window._canvases[document.id]
+        assert canvas._renderer is None and canvas._image is None
+        assert window._slide_stores[document.id].path == local.resolve()
+
+        # The completion dialog's "view" action must use this existing local
+        # document as well, even if the share no longer answers metadata I/O.
+        window.stop_live_preview()
+        window._digital_slide_mode = False
+        window._sync_digital_slide_mode_ui()
+        window._focus_digital_slide_path(target)
+        deadline = perf_counter() + 5
+        while not canvas.pixel_work_enabled() and perf_counter() < deadline:
+            QTest.qWait(10)
+        assert window.current_document() is document
+        assert canvas.pixel_work_enabled()
+        viewport = canvas._slide_store.render_viewport(x=0, y=0, width=64, height=48, z_index=0)
+        assert viewport.pixelColor(0, 0) == QColor("blue")
+        assert network_calls == []
+    assert DigitalSlideStore.read_manifest_read_only(target).tile_count == 1
+    assert local.is_file()
+
+
 def test_continuous_captures_publish_without_starting_hidden_renderers(workspace, tmp_path, monkeypatch):
     window, camera = workspace
     target_dir = tmp_path / "network"

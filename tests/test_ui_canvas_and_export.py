@@ -2666,7 +2666,9 @@ class CanvasAndExportTests(unittest.TestCase):
             document = window.current_document()
             self.assertIsNotNone(document)
             assert document is not None
-            self.assertEqual(Path(document.path), network_target.resolve())
+            # Keep the selected output path without resolving the published
+            # share again; only the actual local read path is canonicalized.
+            self.assertEqual(Path(document.path), network_target.absolute())
             self.assertEqual(
                 window._slide_stores[document.id].path,
                 working_path.resolve(),

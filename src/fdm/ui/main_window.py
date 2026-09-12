@@ -18137,23 +18137,20 @@ class MainWindow(QMainWindow):
             self._focus_digital_slide_path(path)
 
     def _focus_digital_slide_path(self, path: Path) -> None:
-        target = str(path)
-        try:
-            target_resolved = str(path.resolve())
-        except OSError:
-            target_resolved = target
+        # The completion dialog targets an already mounted document. Comparing
+        # its recorded paths must not resolve/stat the share again on the GUI
+        # thread; the captured local snapshot is enough to start viewing.
+        target = path.expanduser().absolute()
         for document in self.project.documents:
-            candidates = {str(document.path)}
-            try:
-                candidates.add(str(Path(document.path).resolve()))
-            except OSError:
-                pass
+            candidates = {Path(document.path).expanduser().absolute()}
+            if document.absolute_path:
+                candidates.add(Path(document.absolute_path).expanduser().absolute())
             slide_meta = document.metadata.get("digital_slide") if isinstance(document.metadata, dict) else None
             if isinstance(slide_meta, dict):
                 working_path = slide_meta.get("working_path")
                 if working_path:
-                    candidates.add(str(working_path))
-            if target in candidates or target_resolved in candidates:
+                    candidates.add(Path(working_path).expanduser().absolute())
+            if target in candidates:
                 self._set_current_document(document.id)
                 return
 
@@ -20013,16 +20010,18 @@ class MainWindow(QMainWindow):
         cancelled = Event()
 
         def prepare(progress: ProgressCallback) -> tuple[Path, Path, tuple[int, int]]:
-            source = source_path.resolve()
             if interaction_path_override is not None:
+                # Publication already flushed and atomically installed this
+                # local capture. Keep the target as the document identity, but
+                # derive the render revision from the bytes we will actually
+                # read. Even resolve()/stat() on the share may wait indefinitely
+                # for SMB and cannot be rescued by an OSError fallback until
+                # the OS call returns. No remote I/O is needed for this handoff.
+                source = source_path.absolute()
                 interaction = Path(interaction_path_override).expanduser().resolve()
-                try:
-                    revision = source.stat()
-                except OSError:
-                    # A successfully captured local copy remains usable if
-                    # the share disconnects immediately after publishing.
-                    revision = interaction.stat()
+                revision = interaction.stat()
             else:
+                source = source_path.resolve()
                 before = source.stat()
                 interaction = cache.localize(
                     source, progress_callback=progress,
@@ -20035,8 +20034,13 @@ class MainWindow(QMainWindow):
                 raise DigitalSlideCacheCancelled("已取消打开数字化切片。")
             return source, interaction, (int(revision.st_size), int(revision.st_mtime_ns))
 
+        label = (
+            "正在加载已采集的数字化切片…"
+            if interaction_path_override is not None
+            else "正在准备数字化切片的本机读取副本…"
+        )
         return self._run_slide_io(
-            f"正在准备数字化切片的本机读取副本…\n{source_path.name}", prepare,
+            f"{label}\n{source_path.name}", prepare,
             cancellation_event=cancelled if interaction_path_override is None else None,
         )
 
