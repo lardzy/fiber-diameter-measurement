@@ -11,6 +11,7 @@ from PySide6.QtWidgets import QAbstractItemDelegate, QComboBox, QStyledItemDeleg
 
 from fdm.area_display import area_derived_geometry_service
 from fdm.models import ImageDocument, Measurement, UNCATEGORIZED_LABEL
+from fdm.services.slide_measurement_quality import quality_label
 from fdm.services.measurement_statistics import MeasurementStatisticsService
 from fdm.ui.widgets import MeasurementGroupComboBox
 
@@ -381,7 +382,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         if column is MeasurementResultColumn.CONFIDENCE:
             return "手工" if measurement.mode in _MANUAL_MODES else f"{measurement.confidence:.2f}"
         if column is MeasurementResultColumn.STATUS:
-            return format_measurement_status(measurement.status)
+            return (quality_label(measurement) or format_measurement_status(measurement.status))
         if column is MeasurementResultColumn.CREATED_AT:
             return _format_created_at(measurement.created_at)
         return measurement.id
@@ -414,7 +415,7 @@ class MeasurementResultsModel(QAbstractTableModel):
         if column is MeasurementResultColumn.CONFIDENCE:
             return measurement.confidence
         if column is MeasurementResultColumn.STATUS:
-            return format_measurement_status(measurement.status).casefold()
+            return (quality_label(measurement) or format_measurement_status(measurement.status)).casefold()
         if column is MeasurementResultColumn.CREATED_AT:
             return _created_at_sort_value(measurement.created_at)
         return measurement.id.casefold()
@@ -476,7 +477,7 @@ class MeasurementResultsProxyModel(QSortFilterProxyModel):
                     group_filter_label,
                     format_measurement_kind(measurement),
                     format_measurement_mode(measurement.mode),
-                    format_measurement_status(measurement.status),
+                    (quality_label(measurement) or format_measurement_status(measurement.status)),
                     measurement.id,
                     measurement.id.split("_")[-1],
                 )

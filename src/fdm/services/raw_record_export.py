@@ -169,6 +169,10 @@ def write_raw_record_template(
             input_suffix=template_path.suffix.lower(),
             output_suffix=target_path.suffix.lower(),
         )
+        from fdm.services.slide_measurement_quality import quality_rows
+        stitch_rows = quality_rows(documents)
+        if stitch_rows:
+            _append_stitch_quality_sheet(modified_entries, stitch_rows)
         _remove_calc_chain(modified_entries)
         modified_entries["xl/workbook.xml"] = _updated_workbook_calc_xml_text(modified_entries["xl/workbook.xml"])
     except KeyError as exc:
@@ -191,6 +195,9 @@ def write_raw_record_template(
                 if info.filename not in modified_entries:
                     continue
                 output_archive.writestr(info, modified_entries[info.filename])
+            for name, data in modified_entries.items():
+                if name not in entry_data:
+                    output_archive.writestr(name, data)
         _validate_ooxml_package(
             temp_name,
             original_entries=entry_data,
@@ -206,6 +213,44 @@ def write_raw_record_template(
                 pass
         raise
     return target_path
+
+
+def _append_stitch_quality_sheet(entries, rows):
+    """Add a sheet without reserializing any original cells/drawings/macros."""
+    workbook = ET.fromstring(entries["xl/workbook.xml"])
+    sheets = workbook.find(f"{{{SPREADSHEET_NS}}}sheets")
+    if sheets is None:
+        raise RawRecordTemplateExportError("模板缺少工作表列表")
+    names = {sheet.get("name") for sheet in sheets}
+    name, suffix = "拼接质量说明", 1
+    while name in names:
+        name = f"拼接质量说明{suffix}"
+        suffix += 1
+    number = max([int(sheet.get("sheetId", "0")) for sheet in sheets] + [0]) + 1
+    path = f"xl/worksheets/fdm_stitch_{number}.xml"
+    while path in entries:
+        number += 1
+        path = f"xl/worksheets/fdm_stitch_{number}.xml"
+    rels = ET.fromstring(entries["xl/_rels/workbook.xml.rels"])
+    rel_id = f"fdmStitch{number}"
+    existing = {item.get("Id") for item in rels}
+    while rel_id in existing:
+        rel_id += "x"
+    ET.SubElement(sheets, f"{{{SPREADSHEET_NS}}}sheet", {"name": name, "sheetId": str(number), f"{{{OFFICE_REL_NS}}}id": rel_id})
+    ET.SubElement(rels, f"{{{PACKAGE_REL_NS}}}Relationship", {"Id": rel_id, "Type": f"{OFFICE_REL_NS}/worksheet", "Target": path.removeprefix("xl/")})
+    types = ET.fromstring(entries["[Content_Types].xml"])
+    ET.SubElement(types, f"{{{CONTENT_TYPES_NS}}}Override", {"PartName": "/" + path, "ContentType": "application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"})
+    worksheet = ET.Element(f"{{{SPREADSHEET_NS}}}worksheet")
+    data = ET.SubElement(worksheet, f"{{{SPREADSHEET_NS}}}sheetData")
+    headers = list(rows[0])
+    for index, values in enumerate([headers] + [[row.get(key, "") for key in headers] for row in rows], 1):
+        row = ET.SubElement(data, f"{{{SPREADSHEET_NS}}}row", {"r": str(index)})
+        for col, value in enumerate(values, 1):
+            cell = ET.SubElement(row, f"{{{SPREADSHEET_NS}}}c", {"r": f"{get_column_letter(col)}{index}"})
+            _write_cell_value(cell, value)
+    for key, tree in (("xl/workbook.xml", workbook), ("xl/_rels/workbook.xml.rels", rels), ("[Content_Types].xml", types), (path, worksheet)):
+        original_namespaces = _register_namespaces_from_xml(entries[key]) if key in entries else {}
+        entries[key] = _preserve_compatibility_namespace_declarations(ET.tostring(tree, encoding="utf-8", xml_declaration=True), original_namespaces)
 
 
 def _same_path(left: Path, right: Path) -> bool:

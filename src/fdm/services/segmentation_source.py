@@ -40,6 +40,8 @@ class SegmentationSourceSnapshot:
     source_identity: str
     source_version: str
     valid_coverage: np.ndarray | None
+    unverified_seams: np.ndarray | None = None
+    layout_id: str = ""
 
     def __post_init__(self) -> None:
         image = QImage(self.image)
@@ -57,6 +59,13 @@ class SegmentationSourceSnapshot:
             frozen_coverage.setflags(write=False)
             object.__setattr__(self, "valid_coverage", frozen_coverage)
 
+        if self.unverified_seams is not None:
+            seams = np.array(self.unverified_seams, dtype=bool, copy=True)
+            if seams.shape != (image.height(), image.width()):
+                raise ValueError("接缝掩码尺寸不匹配")
+            seams.setflags(write=False)
+            object.__setattr__(self, "unverified_seams", seams)
+
     @property
     def width(self) -> int:
         return int(self.image.width())
@@ -70,7 +79,7 @@ class SegmentationSourceSnapshot:
         focus = "image" if self.focus_index is None else f"z{self.focus_index}"
         return (
             f"{self.document_id}:{self.source_kind}:{self.source_identity}:"
-            f"{self.source_version}:{focus}:"
+            f"{self.source_version}:{self.layout_id}:{focus}:"
             f"{int(round(self.origin_px.x))},{int(round(self.origin_px.y))}:"
             f"{self.width}x{self.height}:{int(self.image.cacheKey())}"
         )
@@ -128,6 +137,7 @@ class SegmentationSourceSnapshot:
     def source_metadata(self) -> dict[str, object]:
         return {
             "schema_version": 1,
+            "layout_id": self.layout_id,
             "kind": self.source_kind,
             "identity": self.source_identity,
             "version": self.source_version,
@@ -213,6 +223,13 @@ def digital_slide_segmentation_snapshot(
     )
     if not bool(coverage.any()):
         raise ValueError("当前焦层与视野没有可用于分割的有效图块。")
+    seams = None
+    layout_id = ""
+    if store.raster_source is not None:
+        region = store.raster_source.read_region(int(focus_index), (x, y, width, height), pixels=False)
+        seams = region.unverified_seams
+        coverage = coverage & ~seams
+        layout_id = store.stitch_layout.layout_id
     version = _qimage_content_version(image)
     return SegmentationSourceSnapshot(
         document_id=document.id,
@@ -223,4 +240,6 @@ def digital_slide_segmentation_snapshot(
         source_identity=str(Path(store.path)),
         source_version=version,
         valid_coverage=coverage,
+        unverified_seams=seams,
+        layout_id=layout_id,
     )

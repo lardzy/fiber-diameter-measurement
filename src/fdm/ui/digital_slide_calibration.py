@@ -1257,6 +1257,33 @@ class DigitalSlideCalibrationDialog(QDialog):
             if response != QMessageBox.StandardButton.Yes:
                 return
             values[stage_key] = int(estimate.suggested_stage_step)
+        # A changed motor step must use a newly computed pixel stride.
+        pixel_key = f"digital_slide_{estimate.axis}_pixel_stride"
+        if stage_key in values and estimate.pixels_per_step is not None:
+            values[pixel_key] = max(1, round(abs(int(values[stage_key])) * estimate.pixels_per_step))
+        from fdm.services.slide_capture_geometry import calibration_signature
+        signature = calibration_signature(self._settings, estimate.target_frame_size)
+        profile = dict(self._settings.digital_slide_xy_calibration)
+        if profile.get("signature") != signature:
+            profile = {"signature": signature}
+        session = getattr(self, "_session", None)
+        if session is not None:
+            capture_size = session.manifest.metadata.get("source_frame_size")
+            if isinstance(capture_size, (list, tuple)) and len(capture_size) == 2:
+                profile["capture_frame_size"] = list(capture_size)
+        primary = float(estimate.pixels_per_step or 0)
+        profile[estimate.axis] = {
+            "pixels_per_step": primary,
+            "cross_per_step": primary * estimate.cross_axis_drift_px / max(estimate.primary_stride_px, 1e-9),
+            "uncertainty_px": max(2.0, estimate.directional_difference_px, estimate.repeatability_px),
+            "directional_difference_px": estimate.directional_difference_px,
+            "repeatability_px": estimate.repeatability_px,
+            "directional_samples": [list(sample) for sample in estimate.directional_samples],
+            "reliable": estimate.can_apply_stage_step,
+            "accepted_count": estimate.accepted_count,
+        }
+        profile.pop("applied_vectors", None)
+        values["digital_slide_xy_calibration"] = profile
         self._applied_values = values
         self.accept()
 

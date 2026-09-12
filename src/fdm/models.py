@@ -50,6 +50,7 @@ UNCATEGORIZED_LABEL = "未分类"
 UNCATEGORIZED_COLOR = "#98A2B3"
 
 PROJECT_SCHEMA_VERSION = 2
+STITCH_PROJECT_SCHEMA_VERSION = 3
 PROJECT_MIN_READER_VERSION = 2
 SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
     {
@@ -57,6 +58,7 @@ SUPPORTED_PROJECT_REQUIRED_FEATURES = frozenset(
         "analysis-artifacts/v2",
         "construction-geometry/v1",
         "project-rois/v1",
+        "slide-stitch-layout/v1",
     }
 )
 
@@ -597,6 +599,7 @@ class Measurement:
     display_polygon_px: list[Point] = field(default_factory=list, repr=False)
     display_area_rings_px: list[list[Point]] = field(default_factory=list, repr=False)
     display_bounds_px: tuple[float, float, float, float] | None = field(default=None, repr=False)
+    source_context: dict[str, Any] = field(default_factory=dict)
     _geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
 
     @property
@@ -802,6 +805,8 @@ class Measurement:
             "created_at": self.created_at,
             "debug_payload": _json_safe_debug_payload(self.debug_payload),
         }
+        if self.source_context:
+            payload["source_context"] = _json_safe_debug_payload(self.source_context)
         if self.appearance is not None and not self.appearance.is_empty():
             payload["appearance"] = self.appearance.to_dict()
         return payload
@@ -857,6 +862,7 @@ class Measurement:
             created_at=str(payload.get("created_at", utc_now_iso())),
             debug_payload=_json_safe_debug_payload(payload.get("debug_payload", {})),
             appearance=_appearance_from_payload(payload.get("appearance")),
+            source_context=_json_safe_debug_payload(payload.get("source_context", {})),
         )
 
 
@@ -1187,6 +1193,7 @@ class ImageDocument:
         compare=False,
     )
     _next_state_id: int = field(default=1, init=False, repr=False, compare=False)
+    _stitch_quality_runtime: Any = field(default=None, init=False, repr=False, compare=False)
     _measurement_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
     _construction_geometry_revision: int = field(default=0, init=False, repr=False, compare=False)
     _construction_metadata_revision: int = field(default=0, init=False, repr=False, compare=False)
@@ -1373,6 +1380,10 @@ class ImageDocument:
 
     def mark_measurement_geometry_changed(self) -> None:
         self._measurement_geometry_revision += 1
+        if self.metadata.get("stitch_layout"):
+            from fdm.services.slide_measurement_quality import annotate_measurement
+            for measurement in self.measurements:
+                annotate_measurement(self, measurement)
 
     def get_construction_entity(
         self,
@@ -2331,6 +2342,8 @@ class ProjectState:
         """Return declared features plus those required by persisted content."""
 
         features = list(self.required_features)
+        if any(document.metadata.get("stitch_layout") for document in self.documents):
+            features.append("slide-stitch-layout/v1")
         if self.project_rois:
             features.append("project-rois/v1")
         if self.analysis_artifacts:
@@ -2510,8 +2523,8 @@ class ProjectState:
             seen_template_labels.add(token)
             serialized_templates.append(template.to_dict())
         payload = {
-            "project_schema_version": PROJECT_SCHEMA_VERSION,
-            "min_reader_version": PROJECT_MIN_READER_VERSION,
+            "project_schema_version": 3 if "slide-stitch-layout/v1" in self.effective_required_features() else 2,
+            "min_reader_version": 3 if "slide-stitch-layout/v1" in self.effective_required_features() else PROJECT_MIN_READER_VERSION,
             "required_features": list(self.effective_required_features()),
             "version": self.version,
             "documents": [document.to_dict() for document in self.documents],
@@ -2537,6 +2550,10 @@ class ProjectState:
     def from_dict(cls, payload: dict[str, Any]) -> "ProjectState":
         if not isinstance(payload, dict):
             raise TypeError("ProjectState 必须是对象")
+        if any(isinstance(item, dict) and isinstance(item.get("metadata"), dict) and item["metadata"].get("stitch_layout") for item in payload.get("documents", [])):
+            if (int(payload.get("project_schema_version", 1)) < 3 or int(payload.get("min_reader_version", 1)) < 3
+                    or "slide-stitch-layout/v1" not in payload.get("required_features", [])):
+                raise ValueError("拼接修复项目缺少最低读取版本约束")
         compatibility = _project_compatibility_from_payload(payload)
         seen_template_labels: set[str] = set()
         project_group_templates: list[ProjectGroupTemplate] = []
@@ -2804,7 +2821,8 @@ def _project_compatibility_from_payload(
         raise TypeError("project_schema_version 必须是整数")
     if raw_schema_version < 1:
         raise ValueError("project_schema_version 不能小于 1")
-    if raw_schema_version > PROJECT_SCHEMA_VERSION:
+    reader_schema = STITCH_PROJECT_SCHEMA_VERSION if "slide-stitch-layout/v1" in payload.get("required_features", []) else PROJECT_SCHEMA_VERSION
+    if raw_schema_version > reader_schema:
         raise ValueError(
             "项目格式版本过新，当前程序不支持: "
             f"{raw_schema_version} > {PROJECT_SCHEMA_VERSION}"
@@ -2815,7 +2833,7 @@ def _project_compatibility_from_payload(
         raise TypeError("min_reader_version 必须是整数")
     if raw_min_reader < 1:
         raise ValueError("min_reader_version 不能小于 1")
-    if raw_min_reader > PROJECT_SCHEMA_VERSION:
+    if raw_min_reader > reader_schema:
         raise ValueError(
             "项目要求更高版本的读取器: "
             f"{raw_min_reader} > {PROJECT_SCHEMA_VERSION}"

@@ -83,6 +83,7 @@ class DigitalSlideRenderFrame:
     pixel_exact: bool = False
     coverage_rects: tuple[tuple[float, float, float, float], ...] = ()
     complete: bool = True
+    sampling: str = "native-source"
 
 
 @dataclass(frozen=True, slots=True)
@@ -401,9 +402,11 @@ class _DerivedCacheWriter:
         fingerprint: str,
         *,
         byte_limit: int = 64 * 1024 * 1024,
+        tile_fingerprint: str | None = None,
     ) -> None:
         self._cache = cache
         self._fingerprint = fingerprint
+        self._tile_fingerprint = tile_fingerprint or fingerprint
         self._byte_limit = max(1, int(byte_limit))
         self._condition = Condition()
         self._pending: OrderedDict[tuple[object, ...], tuple[QImage, int]] = (
@@ -495,7 +498,7 @@ class _DerivedCacheWriter:
                 )
             else:
                 self._cache.store(
-                    self._fingerprint,
+                    self._tile_fingerprint,
                     image,
                     focus_index=int(key[1]),
                     tile_id=int(key[2]),
@@ -518,9 +521,11 @@ class DigitalSlideRenderer:
         result_callback: Callable[[DigitalSlideRenderFrame], None],
         failure_callback: Callable[[DigitalSlideRenderFailure], None],
         memory_cache_bytes: int = _DEFAULT_MEMORY_CACHE_BYTES,
+        stitch_layout=None,
     ) -> None:
         self.source_path = Path(source_path)
         self.manifest = manifest
+        self.stitch_layout = stitch_layout
         self._result_callback = result_callback
         self._failure_callback = failure_callback
         self._derived_cache = DigitalSlideDerivedCache(
@@ -533,9 +538,13 @@ class DigitalSlideRenderer:
             source_identity=source_identity,
             source_stat=source_stat,
         )
+        self._tile_fingerprint = stitch_layout.source_digest if stitch_layout is not None else self._fingerprint
+        if stitch_layout is not None:
+            self._fingerprint = stitch_layout.layout_id
         self._cache_writer = _DerivedCacheWriter(
             self._derived_cache,
             self._fingerprint,
+            tile_fingerprint=self._tile_fingerprint,
         )
         self._memory_cache_limit = max(1, int(memory_cache_bytes))
         self._memory_cache: OrderedDict[tuple[int, int, int], QImage] = OrderedDict()
@@ -906,6 +915,9 @@ class DigitalSlideRenderer:
     ) -> tuple[DigitalSlideTileDescriptor, ...]:
         x, y, width, height = rect
         self._descriptor_queries += 1
+        if self.stitch_layout is not None:
+            from fdm.services.slide_raster import SlideRasterSource
+            return tuple(SlideRasterSource(self.stitch_layout, lambda _tile: QImage()).tiles_in_rect(focus_index, rect))
         return tuple(
             store.list_tile_descriptors_in_rect(
                 z_index=int(focus_index),
@@ -925,6 +937,26 @@ class DigitalSlideRenderer:
         x, y, width, height = request.source_rect
         output_width = max(1, int(request.output_size_px[0]))
         output_height = max(1, int(request.output_size_px[1]))
+        if self.stitch_layout is not None:
+            from fdm.services.slide_raster import SlideRasterSource
+            lod = max(0, int(request.force_lod)) if request.force_lod is not None else self._lod_with_hysteresis(request, source_width=width, source_height=height, output_width=output_width, output_height=output_height)
+            before = self._decoded_tiles
+            hits = self._memory_hits + self._disk_hits
+            raster = SlideRasterSource(self.stitch_layout, lambda tile: self._tile_image(store, tile, lod))
+            try:
+                region = raster.read_region(request.focus_index, request.source_rect,
+                    output_size=(output_width, output_height), cancelled=lambda: self._should_cancel(request))
+            except InterruptedError:
+                return None
+            coverage = tuple((max(t.x, x), max(t.y, y), min(t.x + t.width, x + width) - max(t.x, x),
+                min(t.y + t.height, y + height) - max(t.y, y))
+                for t in raster.tiles_in_rect(request.focus_index, request.source_rect))
+            return DigitalSlideRenderFrame(request.request_id, request.purpose, request.source_rect,
+                request.output_size_px, request.focus_index, request.device_pixel_ratio, lod, region.image,
+                (monotonic() - started) * 1000, self._decoded_tiles - before,
+                self._memory_hits + self._disk_hits - hits, generation=request.generation,
+                quality=request.quality, pixel_exact=request.purpose == "native" and lod == 0,
+                coverage_rects=coverage, sampling=self.stitch_layout.sampling)
         if request.purpose in {"preview", "overview"}:
             preview_edge = max(
                 1,
@@ -1280,7 +1312,7 @@ class DigitalSlideRenderer:
             return cached
         if lod > 0:
             cached = self._derived_cache.load(
-                self._fingerprint,
+                self._tile_fingerprint,
                 focus_index=descriptor.z_index,
                 tile_id=descriptor.tile_id,
                 lod=lod,

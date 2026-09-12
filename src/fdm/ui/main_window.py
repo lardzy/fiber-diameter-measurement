@@ -702,6 +702,7 @@ class DigitalSlideCapturePlanPreview:
     overshoot: dict[str, int]
     blockers: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
+    calibrated_output_size: tuple[int, int] | None = None
 
     @property
     def image_count(self) -> int:
@@ -709,6 +710,8 @@ class DigitalSlideCapturePlanPreview:
 
     @property
     def output_size(self) -> tuple[int, int]:
+        if self.calibrated_output_size is not None:
+            return self.calibrated_output_size
         return (
             self.viewport_width_px + (max(0, self.cols - 1) * self.pixel_stride_x),
             self.viewport_height_px + (max(0, self.rows - 1) * self.pixel_stride_y),
@@ -2814,6 +2817,12 @@ class MainWindow(QMainWindow):
 
         self.digital_slide_compression_action = QAction("压缩副本...", self)
         self.digital_slide_compression_action.triggered.connect(self.open_digital_slide_compression_dialog)
+        self.digital_slide_stitch_action = QAction("检查并修复拼接…", self)
+        self.digital_slide_stitch_action.triggered.connect(self._start_current_slide_stitching)
+        self.digital_slide_stitch_cancel_action = QAction("暂停拼接检查", self)
+        self.digital_slide_stitch_cancel_action.triggered.connect(self._pause_slide_stitching)
+        self.digital_slide_stitch_open_action = QAction("打开已有拼接修复版本", self)
+        self.digital_slide_stitch_open_action.triggered.connect(self._open_current_slide_stitch_layout)
         self.digital_slide_clear_render_cache_action = QAction(
             "清理当前切片浏览缓存", self
         )
@@ -3415,6 +3424,10 @@ class MainWindow(QMainWindow):
         screenshot_menu.addAction(self.screenshot_preferences_action)
         tool_menu.addSeparator()
         digital_slide_tools_menu = tool_menu.addMenu("数字切片工具")
+        digital_slide_tools_menu.addAction(self.digital_slide_stitch_action)
+        digital_slide_tools_menu.addAction(self.digital_slide_stitch_open_action)
+        digital_slide_tools_menu.addAction(self.digital_slide_stitch_cancel_action)
+        digital_slide_tools_menu.addSeparator()
         digital_slide_tools_menu.addAction(self.digital_slide_compression_action)
         digital_slide_tools_menu.addAction(
             self.digital_slide_clear_render_cache_action
@@ -6046,8 +6059,9 @@ class MainWindow(QMainWindow):
         value = model.index(row, MeasurementResultColumn.RESULT).data()
         unit = model.index(row, MeasurementResultColumn.UNIT).data()
         panel.valueLabel.setText(f"{value} {unit}")
+        from fdm.services.slide_measurement_quality import quality_label
         panel.sourceLabel.setText(f"{self._format_measurement_kind(measurement)} · {Path(document.path).name}\n"
-                                  f"{_format_measurement_status_label(measurement.status)} · 当前图片")
+                                  f"{quality_label(measurement) or _format_measurement_status_label(measurement.status)} · 当前图片")
         panel.measurement_id = measurement.id
         panel.groupCombo.blockSignals(True)
         panel.groupCombo.clear()
@@ -14052,7 +14066,11 @@ class MainWindow(QMainWindow):
     def _document_display_name(self, document: ImageDocument) -> str:
         token = str(document.path or "").strip()
         if token:
-            return Path(token).name or token
+            label = Path(token).name or token
+            if document.metadata.get("stitch_layout"):
+                repaired = any(p.get("accepted") for p in document.metadata["stitch_layout"].get("pairs", ()))
+                return f"{label} · {'拼接修复' if repaired else '拼接检查'}"
+            return label
         return document.id
 
     def _document_tooltip(self, document: ImageDocument, *, project_path: str | Path | None = None) -> str:
@@ -15947,6 +15965,17 @@ class MainWindow(QMainWindow):
 
     def _digital_slide_view_map_size(self, settings: AppSettings | None = None) -> tuple[int, int]:
         active_settings = settings or self._app_settings
+        profile = active_settings.digital_slide_xy_calibration
+        signature = profile.get("signature", {})
+        from fdm.services.slide_capture_geometry import calibration_signature
+        size = signature.get("size", [])
+        if (len(size) == 2 and signature == calibration_signature(active_settings, size)
+                and all(profile.get(axis, {}).get("reliable") for axis in ("x", "y"))):
+            try:
+                return (max(1, round(size[0] / float(profile["x"]["pixels_per_step"]))),
+                        max(1, round(size[1] / float(profile["y"]["pixels_per_step"]))))
+            except (ValueError, TypeError, ZeroDivisionError):
+                pass
         width = abs(int(active_settings.digital_slide_x_stage_step))
         height = abs(int(active_settings.digital_slide_y_stage_step))
         return max(1, width), max(1, height)
@@ -16057,12 +16086,13 @@ class MainWindow(QMainWindow):
                     spinbox.blockSignals(False)
         self._sync_digital_slide_task_state()
 
-    def _update_digital_slide_region_counts_from_bounds(self) -> None:
+    def _update_digital_slide_region_counts_from_bounds(self, settings: AppSettings | None = None) -> None:
         if not {"left", "right", "top", "bottom"}.issubset(self._digital_slide_region_bounds):
             return
-        view_width, view_height = self._digital_slide_view_map_size()
-        stride_x = max(1, view_width)
-        stride_y = max(1, view_height)
+        active_settings = settings or self._digital_slide_effective_settings()
+        view_width, view_height = self._digital_slide_view_map_size(active_settings)
+        stride_x = max(1, abs(active_settings.digital_slide_x_stage_step))
+        stride_y = max(1, abs(active_settings.digital_slide_y_stage_step))
         bounds = self._normalize_digital_slide_bounds(self._digital_slide_region_bounds)
         width = max(0, int(bounds["right"]) - int(bounds["left"]))
         height = max(0, int(bounds["bottom"]) - int(bounds["top"]))
@@ -16222,6 +16252,9 @@ class MainWindow(QMainWindow):
             blockers.append(
                 f"采集计划包含 {image_count} 张，超过 {DIGITAL_SLIDE_MAX_IMAGES} 张硬上限。"
             )
+        from fdm.services.slide_capture_geometry import calibrated_plan_coordinates
+        corners = [{"col": c, "row": r} for c in (0, max(0, cols - 1)) for r in (0, max(0, rows - 1))]
+        calibrated_size = calibrated_plan_coordinates(corners, settings, (viewport_width_px, viewport_height_px))
         return DigitalSlideCapturePlanPreview(
             range_mode=range_mode,
             origin_stage_x=int(origin_x),
@@ -16241,11 +16274,13 @@ class MainWindow(QMainWindow):
             overshoot=overshoot,
             blockers=tuple(dict.fromkeys(blockers)),
             warnings=tuple(dict.fromkeys(warnings)),
+            calibrated_output_size=calibrated_size,
         )
 
     def _digital_slide_readiness(self) -> DigitalSlideReadiness:
         blockers: list[str] = []
         warnings: list[str] = []
+        stitch_notes: list[str] = []
         settings = self._digital_slide_effective_settings().normalized_copy()
         frame = self._latest_preview_frame
         if frame is None or frame.isNull():
@@ -16300,6 +16335,23 @@ class MainWindow(QMainWindow):
                 frame.height(),
                 settings,
             )
+        from fdm.services.slide_capture_geometry import calibrated_capture_settings
+        try:
+            settings = calibrated_capture_settings(settings, (view_width, view_height),
+                source_frame_size=(frame.width(), frame.height()) if frame is not None and not frame.isNull() else None)
+        except ValueError as exc:
+            blockers.append(str(exc))
+        if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            self._update_digital_slide_region_counts_from_bounds(settings)
+            cols = self._parse_optional_int_edit(self._digital_slide_cols_edit)
+            rows = self._parse_optional_int_edit(self._digital_slide_rows_edit)
+        if settings.digital_slide_stitch_enabled and not settings.digital_slide_xy_calibration.get("applied_vectors"):
+            stitch_notes.append("真实重叠未联动校准，将保守检查")
+        backlash = settings.digital_slide_z_backlash_steps
+        if settings.digital_slide_stitch_enabled and not backlash and len(focus_levels or ()) > 1:
+            stitch_notes.append("Z 回差未校准，仅核对命令焦层")
+        if backlash and z_lower is not None and int(settings.digital_slide_z_soft_limit) > 0 and z_lower - backlash < -int(settings.digital_slide_z_soft_limit):
+            blockers.append("统一 Z 接近所需的回差行程超出软限位，请调整采集范围。")
         overlap = int(settings.digital_slide_overlap_percent) / 100.0
         auto_pixel_stride_x = max(1, int(round(view_width * (1.0 - overlap))))
         auto_pixel_stride_y = max(1, int(round(view_height * (1.0 - overlap))))
@@ -16342,8 +16394,12 @@ class MainWindow(QMainWindow):
             )
 
         has_path = self._digital_slide_output_path() is not None
+        if stitch_notes:
+            # Stitch eligibility is independent of capture readiness. Keep the
+            # primary status actionable (missing path, blocked, or ready).
+            summary += "\n拼接检查：" + "；".join(stitch_notes)
         if not has_path:
-            warnings.append("尚未选择输出路径。")
+            warnings.insert(0, "尚未选择输出路径。")
         return DigitalSlideReadiness(
             blockers=tuple(dict.fromkeys(blockers)),
             warnings=tuple(dict.fromkeys(warnings)),
@@ -16799,6 +16855,14 @@ class MainWindow(QMainWindow):
             source_height,
             acquisition_settings,
         )
+        from fdm.services.slide_capture_geometry import calibrated_capture_settings
+        previous_stride_settings = acquisition_settings
+        try:
+            acquisition_settings = calibrated_capture_settings(acquisition_settings, (view_width, view_height),
+                source_frame_size=(source_width, source_height))
+        except ValueError as exc:
+            QMessageBox.warning(self, "采集校准", str(exc))
+            return
         z_lower = self._parse_optional_int_edit(self._digital_slide_z_lower_edit)
         z_upper = self._parse_optional_int_edit(self._digital_slide_z_upper_edit)
         if z_lower is None or z_upper is None:
@@ -16836,6 +16900,8 @@ class MainWindow(QMainWindow):
         if not focus_levels:
             QMessageBox.warning(self, "数字化切片", "请先设置有效的 Z 采集范围。")
             return
+        if self._digital_slide_range_mode == DIGITAL_SLIDE_RANGE_MODE_BOUNDARY:
+            self._update_digital_slide_region_counts_from_bounds(acquisition_settings)
         cols = self._parse_optional_int_edit(self._digital_slide_cols_edit)
         rows = self._parse_optional_int_edit(self._digital_slide_rows_edit)
         if cols is None or rows is None or cols <= 0 or rows <= 0:
@@ -16895,6 +16961,10 @@ class MainWindow(QMainWindow):
             plan_preview=capture_preview,
             settings=acquisition_settings,
         )
+        from fdm.services.slide_capture_geometry import calibrated_plan_coordinates
+        corrected_size = calibrated_plan_coordinates(capture_plan, acquisition_settings, (view_width, view_height))
+        if corrected_size is not None:
+            image_width, image_height = corrected_size
         estimated_total_ms = self._estimate_digital_slide_total_ms(
             plan=capture_plan,
             settings=acquisition_settings,
@@ -16906,6 +16976,41 @@ class MainWindow(QMainWindow):
                 quality=tile_quality, image_count=len(capture_plan),
             ),
         )
+        self._digital_slide_capture_overlap_budget_note = ""
+        if previous_stride_settings.digital_slide_pixel_stride_mode == "calibrated_overlap":
+            previous_cols, previous_rows = cols, rows
+            if capture_preview.requested_map_bounds:
+                bounds = capture_preview.requested_map_bounds
+                stage_width, stage_height = self._digital_slide_view_map_size(previous_stride_settings)
+                previous_cols = 1 + math.ceil(max(0, bounds["right"] - bounds["left"] - stage_width) /
+                    max(1, abs(previous_stride_settings.digital_slide_x_stage_step)))
+                previous_rows = 1 + math.ceil(max(0, bounds["bottom"] - bounds["top"] - stage_height) /
+                    max(1, abs(previous_stride_settings.digital_slide_y_stage_step)))
+            valid_previous_plan = (previous_cols * previous_rows * len(focus_levels) <= DIGITAL_SLIDE_MAX_IMAGES
+                and (previous_cols <= 1 or previous_stride_settings.digital_slide_x_stage_step != 0)
+                and (previous_rows <= 1 or previous_stride_settings.digital_slide_y_stage_step != 0))
+            if not valid_previous_plan:
+                note = "校准联动真实重叠；原电机步距没有可执行的同范围计划，差额无法估算"
+            else:
+                previous_preview = self._build_digital_slide_plan_preview(settings=previous_stride_settings,
+                    cols=previous_cols, rows=previous_rows, focus_count=len(focus_levels),
+                    viewport_width_px=view_width, viewport_height_px=view_height,
+                    pixel_stride_x=pixel_stride_x, pixel_stride_y=pixel_stride_y)
+                previous_plan = self._build_digital_slide_capture_plan(cols=previous_cols, rows=previous_rows,
+                    focus_levels=focus_levels, pixel_stride_x=pixel_stride_x, pixel_stride_y=pixel_stride_y,
+                    plan_preview=previous_preview, settings=previous_stride_settings)
+                previous_ms = self._estimate_digital_slide_total_ms(plan=previous_plan, settings=previous_stride_settings)
+                extra_images = len(capture_plan) - len(previous_plan)
+                extra_bytes = estimated_bytes * extra_images / max(1, len(capture_plan))
+                extra_seconds = round((estimated_total_ms - previous_ms) / 1000)
+                note = (f"校准联动目标重叠 {acquisition_settings.digital_slide_overlap_percent}% · 相对原电机步距："
+                    f"图像 {extra_images:+d} 张，预计容量 {extra_bytes / 1024**2:+.1f} MiB，耗时 {extra_seconds:+d} 秒")
+            if not capture_preview.requested_map_bounds:
+                note += "；固定行列，覆盖范围随步距变化"
+            self._digital_slide_capture_overlap_budget_note = note
+            if self._digital_slide_plan_summary_label is not None:
+                self._digital_slide_plan_summary_label.setText(note +
+                    f"\n本次预计 {estimated_bytes / 1024**2:.1f} MiB · {self._format_duration_ms(estimated_total_ms)}")
         if not self._confirm_digital_slide_capture_budget(
             output_path=output_path,
             image_count=len(capture_plan),
@@ -16968,6 +17073,12 @@ class MainWindow(QMainWindow):
             focus_levels=focus_levels,
             status="capturing",
             metadata={
+                "capture_session_id": new_id("slide-source"),
+                "position_kind": "motor-command",
+                "focus_basis": "session-command-origin",
+                "z_approach": "positive" if acquisition_settings.digital_slide_z_backlash_steps else "uncalibrated",
+                "z_backlash_steps": acquisition_settings.digital_slide_z_backlash_steps,
+                "xy_calibration": acquisition_settings.digital_slide_xy_calibration,
                 "columns": cols,
                 "rows": rows,
                 "overlap": overlap,
@@ -17061,6 +17172,9 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_settings = acquisition_settings
         self._slide_acquisition_writer = writer
         self._slide_acquisition_path = working_output_path
+        stitch_controller = getattr(self, "_stitch_controller", None)
+        if stitch_controller is not None:
+            stitch_controller.resume(str(Path(working_output_path).absolute()))
         self._slide_acquisition_publish_path = publish_path
         self._active_slide_acquisition = session
         writer.tileWritten.connect(
@@ -17091,6 +17205,7 @@ class MainWindow(QMainWindow):
             }
         }
         self._slide_acquisition_plan = capture_plan
+        self._slide_z_preapproached_index = -1
         self._slide_acquisition_index = 0
         self._slide_acquisition_finishing = None
         self._slide_acquisition_discard_message = None
@@ -17221,6 +17336,21 @@ class MainWindow(QMainWindow):
             target_x = int(item["stage_x"])
             target_y = int(item["stage_y"])
             target_z = int(item["focus_z"])
+            backlash = int(self._digital_slide_effective_settings().digital_slide_z_backlash_steps)
+            if (backlash and int(item["z_index"]) == 0
+                    and getattr(self, "_slide_z_preapproached_index", -1) != self._slide_acquisition_index):
+                approach_z = target_z - backlash
+                limit = int(self._digital_slide_effective_settings().digital_slide_z_soft_limit)
+                if limit > 0 and abs(approach_z) > limit:
+                    self._fail_digital_slide_acquisition("Z 回差接近位置超出软限位")
+                    return
+                if current_z != approach_z and not self._slide_motion.move_to(AXIS_Z, approach_z, label="采集 Z 同向接近"):
+                    self._fail_digital_slide_acquisition("Z 回差接近移动失败")
+                    return
+                self._slide_z_preapproached_index = self._slide_acquisition_index
+                self._slide_acquisition_timer_phase = "z_approach"
+                self._slide_acquisition_timer.start(max(1, self._digital_slide_effective_settings().digital_slide_z_settle_ms))
+                return
             self._slide_acquisition_xy_moved = current_x != target_x or current_y != target_y
             self._slide_acquisition_z_moved = current_z != target_z
             if current_x != target_x and not self._slide_motion.move_to(AXIS_X, target_x, label="自动采集 X"):
@@ -17265,6 +17395,9 @@ class MainWindow(QMainWindow):
         self._slide_acquisition_timer.start(max(0, self._slide_acquisition_settle_wait_ms))
 
     def _on_slide_acquisition_timer_timeout(self) -> None:
+        if self._slide_acquisition_timer_phase == "z_approach":
+            self._schedule_next_digital_slide_move()
+            return
         if self._slide_acquisition_timer_phase == "settle":
             self._begin_digital_slide_post_settle_wait()
             return
@@ -17596,6 +17729,11 @@ class MainWindow(QMainWindow):
             return
         self._slide_acquisition_last_write_ms = float(write_ms)
         self._set_digital_slide_timing(f"耗时: 写入 {write_ms:.0f} ms | 已写入 {count} 张")
+        levels = max(1, self._slide_acquisition_focus_level_count)
+        if (self._slide_acquisition_path is not None and count % (levels * 4) == 0
+                and bool(getattr(self._digital_slide_effective_settings(), "digital_slide_stitch_enabled", False))):
+            self._queue_slide_stitching(self._slide_acquisition_path, final=False,
+                publish_target=str(self._slide_acquisition_publish_path or self._slide_acquisition_path))
 
     def _on_digital_slide_writer_failed(
         self,
@@ -17730,6 +17868,7 @@ class MainWindow(QMainWindow):
         publish_path = self._slide_acquisition_publish_path
         relative_path = self._slide_acquisition_document_path
         metadata = dict(self._slide_acquisition_metadata)
+        stitch_enabled = bool(getattr(self._digital_slide_effective_settings(), "digital_slide_stitch_enabled", False))
         elapsed_ms = (
             (perf_counter() - self._slide_acquisition_started_at) * 1000.0
             if self._slide_acquisition_started_at > 0
@@ -17801,6 +17940,10 @@ class MainWindow(QMainWindow):
             interaction_path_override=interaction_path_override,
         )
         self._slide_acquisition_index = tile_count
+        if stitch_enabled:
+            captured = self.current_document()
+            self._queue_slide_stitching(path, final=True,
+                document_id=captured.id if captured is not None else "", publish_target=str(document_source_path))
         publish_note = "，已发布到局域网目录" if publish_succeeded else ""
         self._set_digital_slide_progress(
             f"{completion_message}，已生成 {tile_count} 张采集图像{publish_note}。"
@@ -17821,6 +17964,9 @@ class MainWindow(QMainWindow):
     def _discard_digital_slide_acquisition(self, *, message: str) -> None:
         store = self._slide_acquisition_store
         path = self._slide_acquisition_path
+        controller = getattr(self, "_stitch_controller", None)
+        if controller is not None and path is not None:
+            controller.cancel(str(Path(path).absolute()))
         if store is not None:
             try:
                 store.close()
@@ -17929,6 +18075,9 @@ class MainWindow(QMainWindow):
         frame_wait_ms = 60.0 * (int(settings.digital_slide_discard_frames) + 1)
         per_tile_processing_ms = 80.0
         for item in plan:
+            if settings.digital_slide_z_backlash_steps and item.get("z_index") == 0:
+                total_ms += settings.digital_slide_z_settle_ms
+                previous_z = int(item["focus_z"]) - settings.digital_slide_z_backlash_steps
             xy_moved = previous_x != int(item["stage_x"]) or previous_y != int(item["stage_y"])
             z_moved = previous_z != int(item["focus_z"])
             settle_ms = max(
@@ -18031,6 +18180,7 @@ class MainWindow(QMainWindow):
                 f"预计采集 {image_count} 张\n"
                 f"预计数据量 {estimated_bytes / (1024**3):.2f} GiB\n"
                 f"预计耗时 {self._format_duration_ms(estimated_total_ms)}\n\n"
+                f"{getattr(self, '_digital_slide_capture_overlap_budget_note', '')}\n"
                 "是否继续？"
             ),
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
@@ -19838,6 +19988,13 @@ class MainWindow(QMainWindow):
         operation_phase(f"local.open_store: {interaction_path}")
         store = DigitalSlideStore(interaction_path)
         try:
+            layout_payload = (document.metadata if document is not None else (metadata or {})).get("stitch_layout")
+            if layout_payload:
+                from fdm.services.slide_layout import SlideLayoutSnapshot, validate_source
+                layout = SlideLayoutSnapshot.from_dict(layout_payload)
+                self._run_slide_io("正在验证拼接版本与原始切片…",
+                    lambda _progress: validate_source(interaction_path, layout))
+                store.set_stitch_layout(layout)
             operation_phase(f"local.read_manifest: {interaction_path}")
             manifest = store.read_manifest()
         except Exception as exc:
@@ -20015,6 +20172,128 @@ class MainWindow(QMainWindow):
                 f"已从本机临时副本打开网络切片：{source_path.name}",
                 6000,
             )
+
+    def _slide_stitch_controller(self):
+        controller = getattr(self, "_stitch_controller", None)
+        if controller is None:
+            from fdm.ui.slide_stitching_worker import SlideStitchingController
+            controller = SlideStitchingController(self)
+            controller.progress.connect(self._on_slide_stitch_progress)
+            controller.finished.connect(self._on_slide_stitch_finished)
+            controller.failed.connect(self._on_slide_stitch_failed)
+            self._stitch_controller = controller
+        return controller
+
+    def _queue_slide_stitching(self, path, *, final=True, document_id="", publish_target="", open_when_ready=False):
+        from fdm.services.slide_layout import local_result_path
+        from fdm.ui.slide_stitching_worker import StitchJob
+        local = str(Path(path).absolute())
+        identity = str(publish_target or local)
+        result = str(local_result_path(identity))
+        controller = self._slide_stitch_controller()
+        if open_when_ready:
+            controller.resume(local)
+        controller.submit(StitchJob(local, local, result,
+            result + ".checkpoint", final=final, document_id=document_id, publish_target=identity, open_when_ready=open_when_ready))
+
+    def _start_current_slide_stitching(self):
+        document = self.current_document()
+        store = self._slide_stores.get(document.id) if document is not None else None
+        if store is None:
+            self.statusBar().showMessage("请先打开数字切片。", 5000)
+            return
+        self._queue_slide_stitching(store.path, document_id=document.id,
+            publish_target=document.absolute_path or document.path, open_when_ready=True)
+        self.statusBar().showMessage("已开始后台拼接检查，可继续浏览；原始视场和已有测量保持原布局。", 8000)
+
+    def _pause_slide_stitching(self):
+        controller = getattr(self, "_stitch_controller", None)
+        path = self._slide_acquisition_path
+        if controller is None and path is not None:
+            controller = self._slide_stitch_controller()
+        if controller is not None:
+            controller.pause((str(Path(path).absolute()),) if path is not None else ())
+        self.statusBar().showMessage("已请求暂停拼接检查；再次检查会复用已完成的证据。", 6000)
+
+    def _on_slide_stitch_progress(self, job, done, total):
+        self.statusBar().showMessage(f"拼接检查：{Path(job.source).name} · {done}/{total} 处接缝", 1500)
+
+    def _on_slide_stitch_failed(self, job, message):
+        self.statusBar().showMessage(f"拼接检查未完成：{message}。原始切片可继续使用。", 10000)
+
+    def _on_slide_stitch_finished(self, job, layout):
+        self.statusBar().showMessage(f"拼接检查完成：{layout.summary()}；可通过“打开已有拼接修复版本”查看。", 12000)
+        if job.publish_target:
+            from fdm.services.slide_layout import sidecar_path
+            from fdm.ui.slide_stitching_publication import publish_sidecar
+            target = sidecar_path(job.publish_target)
+            if str(Path(job.result).absolute()) != str(target.absolute()):
+                publish_sidecar(self, Path(job.result), target)
+        document = self.current_document()
+        canvas = self.current_canvas()
+        queue = getattr(self, "_measurement_commit_queue", None)
+        if (job.open_when_ready and document is not None and document.id == job.document_id
+                and not document.measurements and not document.overlay_annotations and not document.construction_entities
+                and canvas is not None and not canvas.has_pending_path_drawing()
+                and not canvas.has_magic_segment_session() and not canvas.has_fiber_quick_session()
+                and not canvas.has_reference_instance_session() and not getattr(canvas, "_panning", False)
+                and getattr(canvas, "_drawing_overlay_start", None) is None
+                and not any(key[0] == document.id for key in self._fiber_quick_background_jobs)
+                and not any(key[0] == document.id for key in self._prompt_request_sources)
+                and not (queue and queue.pending(document))):
+            self._open_current_slide_stitch_layout()
+        # Background capture and active measurement sessions never change tabs/layouts.
+
+    def _open_current_slide_stitch_layout(self):
+        from fdm.services.slide_layout import load_layout, sidecar_path, validate_source, local_result_path
+        document = self.current_document()
+        store = self._slide_stores.get(document.id) if document is not None else None
+        if store is None:
+            self.statusBar().showMessage("请先打开数字切片。", 5000)
+            return
+        def read(_progress):
+            original = document.absolute_path or document.path
+            local = local_result_path(original)
+            candidate = local if local.is_file() else sidecar_path(original)
+            layout = load_layout(candidate)
+            validate_source(store.path, layout)
+            return layout
+        try:
+            layout = self._run_slide_io("正在读取并核对拼接修复版本…", read)
+        except Exception as exc:
+            self.statusBar().showMessage(f"拼接修复版本不可用：{exc}", 10000)
+            return
+        # A wholly rejected layout still provides a useful independent checked
+        # view: keep nominal positions, show failed seams and constrain automatic
+        # recognition. Returning to an unannotated raw view would lose that guard.
+        for existing in self.project.documents:
+            if existing.metadata.get("stitch_layout", {}).get("layout_id") == layout.layout_id:
+                if existing.id in self._document_order:
+                    self.tab_widget.setCurrentIndex(self._document_order.index(existing.id))
+                return
+        import copy
+        target_id = new_id("slide")
+        groups = copy.deepcopy(document.fiber_groups)
+        group_ids = {}
+        for group in groups:
+            old_id = group.id
+            group.id = new_id("group")
+            group_ids[old_id] = group.id
+            group.image_id = target_id
+            group.measurement_ids = []
+        target = ImageDocument(id=target_id, path=document.path,
+            image_size=(layout.width, layout.height), source_type=document.source_type,
+            absolute_path=document.absolute_path, document_kind=DOCUMENT_KIND_DIGITAL_SLIDE,
+            calibration=copy.deepcopy(document.calibration), fiber_groups=groups,
+            active_group_id=group_ids.get(document.active_group_id),
+            metadata={"stitch_layout": layout.to_dict(), "stitch_parent_document_id": document.id,
+                "digital_slide": {"focus_index": self._canvases[document.id].focus_index()}})
+        self._add_digital_slide_document_from_path(document.absolute_path or document.path,
+            document=target, interaction_path_override=store.path)
+        if self.project.get_document(target.id) is not None:
+            target.mark_session_dirty()
+            label = "修复视图" if layout.accepted_count else "检查视图（视场未移动）"
+            self.statusBar().showMessage(f"已打开独立{label}：{layout.summary()}。旧测量保留在原视图。", 10000)
 
     def _prepare_digital_slide_source(
         self, source_path: Path, *, interaction_path_override: str | Path | None,
@@ -22351,7 +22630,9 @@ class MainWindow(QMainWindow):
         result: PromptSegmentationResult,
     ) -> dict[str, object]:
         metadata = source.source_metadata()
+        metadata["seam_truncated"] = bool(result.metadata.get("seam_truncated"))
         metadata["boundary_truncated"] = bool(
+            result.metadata.get("seam_truncated") or
             result.metadata.get("coverage_clipped")
             or result.metadata.get("segmentation_crop_touches_boundary")
         )
@@ -22573,6 +22854,7 @@ class MainWindow(QMainWindow):
                 small_object_workspace_box=small_object_workspace_box,
                 source_token=source.cache_key,
                 valid_coverage=source.valid_coverage,
+                unverified_seams=source.unverified_seams,
                 fill_draft_holes=bool(self._app_settings.magic_segment_fill_draft_holes_enabled)
                 and tool_mode == MagicSegmentToolMode.STANDARD,
             )
@@ -22787,6 +23069,8 @@ class MainWindow(QMainWindow):
             if apply_result is None:
                 self._update_magic_segment_controls()
                 return
+            if source_metadata.get("seam_truncated"):
+                self.statusBar().showMessage("识别区域被未验证接缝截断，结果不完整；请在单视场内识别或使用手动测量。", 12000)
             fallback_message = str(result.metadata.get("model_fallback_message", "")).strip()
             if fallback_message:
                 self.statusBar().showMessage(fallback_message, 5000)
@@ -22832,6 +23116,10 @@ class MainWindow(QMainWindow):
                 self._update_magic_segment_controls()
                 return
             if apply_result.get("has_preview"):
+                if canvas._fiber_quick.debug_payload.get("segmentation_source", {}).get("seam_truncated"):
+                    self.statusBar().showMessage("快速测径结果不完整：目标碰到未验证接缝，不能自动确认。请在单视场内识别或手动测量。", 10000)
+                    self._update_magic_segment_controls()
+                    return
                 if bool(canvas._fiber_quick.commit_pending):  # noqa: SLF001
                     commit_result = canvas.commit_fiber_quick_preview()
                     if bool(commit_result.get("committed", False)):
@@ -24114,7 +24402,9 @@ class MainWindow(QMainWindow):
         if snap_result is not None:
             self.statusBar().showMessage(self._edge_snap_status_message(snap_result), 4000)
         else:
-            self.statusBar().showMessage("已新增测量", 2500)
+            from fdm.services.slide_measurement_quality import quality_label
+            note = quality_label(measurement)
+            self.statusBar().showMessage("已新增测量" + (f" · {note}" if note else ""), 5000 if note else 2500)
         if not frozen_group:
             self._focus_current_canvas()
 
@@ -25989,6 +26279,9 @@ class MainWindow(QMainWindow):
         document = self.current_document()
         history = document.history if document is not None else None
         has_document = document is not None
+        stitch_available = bool(document and document.is_digital_slide() and not self._slide_acquisition_active())
+        self.digital_slide_stitch_action.setEnabled(stitch_available)
+        self.digital_slide_stitch_open_action.setEnabled(stitch_available)
         self.focus_workspace_action.setEnabled(has_document)
         self.review_workspace_action.setEnabled(has_document)
         self.export_template_action.setEnabled(has_document)
@@ -27189,6 +27482,9 @@ class MainWindow(QMainWindow):
         if canvas is None or not is_magic_segment_tool_mode(self._tool_mode) or canvas.is_magic_segment_busy():
             return False
         session = canvas._magic_segment
+        if session.primary_debug_payload.get("segmentation_source", {}).get("seam_truncated"):
+            self.statusBar().showMessage("结果不完整：自动识别不能跨未验证接缝；可改用手动测量。", 8000)
+            return False
         if session.confirmed_subtract_masks or session.subtract_mask is not None:
             from fdm.services.area_commit import finalize_area_commit
 
@@ -27220,6 +27516,8 @@ class MainWindow(QMainWindow):
             messages.append("已创建魔棒分割面积")
         elif bool(commit_result.get("result_empty", False)):
             messages.append("剔除后无剩余区域")
+        elif str(commit_result.get("reason", "")) == "unverified_seam":
+            self.statusBar().showMessage("结果不完整：自动识别不能跨未验证接缝。可继续补点或改用手动测量。", 8000)
         elif str(commit_result.get("reason", "")) == "missing_primary":
             messages.append("请先完成第一个形状草稿")
         if bool(commit_result.get("discarded_fragments", False)):
@@ -27320,7 +27618,7 @@ class MainWindow(QMainWindow):
             self._focus_current_canvas()
             return False
         commit_result = canvas.commit_fiber_quick_preview()
-        if canvas.document_id is not None:
+        if canvas.document_id is not None and (commit_result.get("committed") or commit_result.get("pending")):
             self._release_segmentation_source_session(
                 canvas.document_id,
                 MagicSegmentToolMode.FIBER_QUICK,
@@ -27334,6 +27632,8 @@ class MainWindow(QMainWindow):
             if isinstance(snapshot, dict):
                 self._enqueue_fiber_quick_background_job(canvas.document_id, snapshot)
             self.statusBar().showMessage("已确认当前分割，直径线计算完成后将自动写入。", 3000)
+        elif commit_result.get("reason") == "unverified_seam":
+            self.statusBar().showMessage("快速测径结果不完整：自动识别不能跨未验证接缝，可改用手动测量。", 8000)
         else:
             self.statusBar().showMessage("当前没有可确认的快速测径结果。", 3000)
         self._update_magic_segment_controls()
@@ -27828,6 +28128,16 @@ class MainWindow(QMainWindow):
                 image_origin=viewport_origin,
             )
 
+        if document.metadata.get("stitch_layout"):
+            from fdm.services.slide_measurement_quality import quality_rows
+            records = quality_rows([document])
+            warnings = [row for row in records if "未验证" in str(row["拼接质量"]) and row["拼接质量"] != "几何范围未跨未验证接缝"]
+            note = "拼接修复视图 · " + ("接缝未验证；详见测量记录" if warnings else "测量布局已固定")
+            painter.setPen(QColor("#FFFFFF"))
+            painter.fillRect(QRectF(0, max(0, image.height() - 32), image.width(), 32), QColor(24, 32, 40, 220))
+            painter.drawText(QRectF(10, max(0, image.height() - 32), image.width() - 20, 32), Qt.AlignmentFlag.AlignVCenter, note)
+            image.setText("fdm.stitch.layout", str(document.metadata["stitch_layout"]["layout_id"]))
+            image.setText("fdm.stitch.measurements", json.dumps(records, ensure_ascii=False, allow_nan=False))
         painter.end()
         if not image.save(str(output_path)):
             raise OSError(f"无法写入导出文件：{output_path}")
@@ -28269,6 +28579,14 @@ class MainWindow(QMainWindow):
         if not self._close_analysis_batch_dialog(wait=True):
             event.ignore()
             return
+        controller = getattr(self, "_stitch_controller", None)
+        if controller is not None:
+            controller.shutdown()
+            self._stitch_controller = None
+        publisher = getattr(self, "_stitch_publisher", None)
+        if publisher is not None:
+            publisher.shutdown()
+            self._stitch_publisher = None
         try:
             self._close_document_slide_stores()
         except RuntimeError as exc:

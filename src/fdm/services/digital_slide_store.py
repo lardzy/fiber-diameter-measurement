@@ -349,6 +349,14 @@ class DigitalSlideStore:
         self._image_cache_limit = 64
         self._image_cache_byte_limit = 256 * 1024 * 1024
         self._image_cache_bytes = 0
+        self.stitch_layout = None
+        self.raster_source = None
+
+    def set_stitch_layout(self, layout) -> None:
+        """Attach an already validated immutable layout; never write it to tiles."""
+        from fdm.services.slide_raster import SlideRasterSource
+        self.stitch_layout = layout
+        self.raster_source = SlideRasterSource(layout, lambda tile: self.read_tile_image(tile.tile_id)) if layout else None
 
     def __enter__(self) -> "DigitalSlideStore":
         self.open()
@@ -543,6 +551,9 @@ class DigitalSlideStore:
             raise ValueError(f"数字化切片缺少 manifest: {self.path}")
         manifest = DigitalSlideManifest.from_dict(json.loads(str(row["value"])))
         manifest.tile_count = self.tile_count()
+        if self.stitch_layout is not None:
+            manifest.width, manifest.height = self.stitch_layout.width, self.stitch_layout.height
+            manifest.metadata["stitch_layout_id"] = self.stitch_layout.layout_id
         return manifest
 
     def list_tile_descriptors(self, *, z_index: int) -> list[DigitalSlideTileDescriptor]:
@@ -900,6 +911,10 @@ class DigitalSlideStore:
 
         import numpy as np
 
+        if self.raster_source is not None:
+            region = self.raster_source.read_region(z_index, (x, y, width, height), pixels=False)
+            return region.coverage
+
         width = max(1, int(width))
         height = max(1, int(height))
         x = int(x)
@@ -976,6 +991,9 @@ class DigitalSlideStore:
         blend_width: int = 0,
         cancellation_requested: Callable[[], bool] | None = None,
     ) -> QImage:
+        if self.raster_source is not None:
+            return self.raster_source.read_region(z_index, (x, y, width, height),
+                cancelled=cancellation_requested or (lambda: False)).image
         output = QImage(max(1, int(width)), max(1, int(height)), QImage.Format.Format_RGB32)
         output.fill(QColor("#101820"))
         painter = QPainter(output)

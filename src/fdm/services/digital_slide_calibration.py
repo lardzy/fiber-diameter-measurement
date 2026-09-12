@@ -58,6 +58,8 @@ class DigitalSlideCalibrationEstimate:
     target_frame_size: tuple[int, int]
     directional_difference_px: float = 0.0
     warnings: tuple[str, ...] = ()
+    repeatability_px: float = 0.0
+    directional_samples: tuple[tuple[int, int, float, float], ...] = ()
 
     @property
     def can_apply_pixel_stride(self) -> bool:
@@ -76,6 +78,7 @@ class DigitalSlideCalibrationEstimate:
             and self.accepted_count >= 2
             and self.confidence >= 0.12
             and self.directional_difference_px <= max(2.0, self.primary_stride_px * 0.05)
+            and self.repeatability_px <= max(2.0, self.primary_stride_px * 0.05)
         )
 
 
@@ -176,6 +179,8 @@ class DigitalSlideCalibrationSession:
                     if axis == CALIBRATION_AXIS_X
                     else candidate.y - reference.y
                 )
+                if reference.focus_z != candidate.focus_z or reference.z_index != candidate.z_index:
+                    continue
                 if primary_delta <= 0:
                     continue
                 pairs.append(DigitalSlideCalibrationPair(reference, candidate, axis))
@@ -283,6 +288,10 @@ class DigitalSlideCalibrationSession:
             suggested_stage_step = -magnitude if int(current_stage_step) < 0 else magnitude
 
         directional_difference = 0.0
+        repeatability = max(abs(value * primary_scale - primary_stride) for value in primary_values)
+        directional_samples = tuple((direction, len(values), float(median(values)) * primary_scale,
+            max(abs(value - median(values)) for value in values) * primary_scale)
+            for direction, values in sorted(direction_groups.items()))
         if len(direction_groups) > 1:
             medians = [float(median(group)) * primary_scale for group in direction_groups.values()]
             directional_difference = max(medians) - min(medians)
@@ -311,6 +320,8 @@ class DigitalSlideCalibrationSession:
             target_frame_size=(target_width, target_height),
             directional_difference_px=directional_difference,
             warnings=tuple(warnings),
+            repeatability_px=repeatability,
+            directional_samples=directional_samples,
         )
 
 

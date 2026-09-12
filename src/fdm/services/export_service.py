@@ -434,6 +434,8 @@ class ExportService:
         image_rows = self.build_image_summary_rows(target_documents)
         fiber_rows = self.build_fiber_rows(target_documents)
         measurement_rows = self.build_measurement_rows(target_documents)
+        from fdm.services.slide_measurement_quality import quality_rows
+        stitch_rows = quality_rows(target_documents)
         meta_rows = self.build_export_meta_rows(project, target_documents)
         completed_steps = 0
         total_steps = len(planned_outputs)
@@ -495,6 +497,8 @@ class ExportService:
                 SHEET_FIBER_DETAILS: fiber_rows,
                 SHEET_EXPORT_META: meta_rows,
             }
+            if stitch_rows:
+                workbook_sheets["拼接质量说明"] = stitch_rows
             if raw_record_template is not None:
                 xlsx_path = write_raw_record_template(
                     raw_record_template,
@@ -913,12 +917,14 @@ class ExportService:
         return rows
 
     def build_measurement_rows(self, documents: list[ImageDocument]) -> list[dict[str, object]]:
+        from fdm.services.slide_measurement_quality import annotate_measurement, quality_label
         rows: list[dict[str, object]] = []
         result_sequence_by_kind: dict[str, int] = {}
         category_sequence_by_kind_and_group: dict[tuple[str, str], int] = {}
         for document in documents:
             group_lookup = {group.id: group for group in document.fiber_groups}
             for measurement in document.measurements:
+                annotate_measurement(document, measurement)
                 group = group_lookup.get(measurement.fiber_group_id or "")
                 kind_key = measurement.measurement_kind or ""
                 group_key = group.label if group is not None else UNCATEGORIZED_LABEL
@@ -934,7 +940,7 @@ class ExportService:
                         ("单位", measurement.display_unit(document.calibration)),
                         ("标尺信息", self._format_calibration_info(document)),
                         ("模式", self._format_measurement_mode(measurement.mode)),
-                        ("状态", self._format_measurement_status(measurement.status)),
+                        ("状态", quality_label(measurement) or self._format_measurement_status(measurement.status)),
                         ("置信度", round(measurement.confidence, 4)),
                         ("纤维结果序号", result_sequence_by_kind[kind_key]),
                         ("纤维类别结果序号", category_sequence_by_kind_and_group[category_key]),

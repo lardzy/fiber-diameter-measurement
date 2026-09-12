@@ -870,6 +870,7 @@ class DigitalSlideCanvas(DocumentCanvas):
             disk_cache_bytes=cache_gib * 1024 * 1024 * 1024,
             result_callback=publish_result,
             failure_callback=publish_failure,
+            stitch_layout=getattr(self._slide_store, "stitch_layout", None),
         )
 
     def _render_source_identity(self) -> str | None:
@@ -2552,6 +2553,18 @@ class DigitalSlideCanvas(DocumentCanvas):
             and self._render_frame.generation == self._view_generation
         ):
             draw_frame(self._render_frame)
+        if self._slide_store is not None and getattr(self._slide_store, "raster_source", None) is not None:
+            # Screen-sized strokes remain readable at every zoom; no cached giant labels.
+            pen = QPen(QColor("#E9A23B"))
+            pen.setWidthF(1.0)
+            pen.setStyle(Qt.PenStyle.DashLine)
+            painter.setPen(pen)
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            for x, y, width, height in self._slide_store.raster_source.unverified_regions(self._focus_index):
+                top_left = self.image_to_widget(Point(x, y))
+                band = QRectF(top_left.x(), top_left.y(), width * self._zoom, height * self._zoom)
+                if band.intersects(content):
+                    painter.drawRect(band.intersected(content))
         painter.restore()
 
         painter.save()
@@ -2569,6 +2582,17 @@ class DigitalSlideCanvas(DocumentCanvas):
             return
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing, True)
+        if self._slide_store is not None and getattr(self._slide_store, "stitch_layout", None) is not None:
+            unsafe = bool(self._slide_store.raster_source.unverified_regions(self._focus_index))
+            label = "拼接检查视图 · 橙色虚线处接缝未验证" if unsafe else "拼接修复视图 · 布局已固定"
+            metrics = painter.fontMetrics()
+            area = metrics.boundingRect(label).adjusted(-8, -5, 8, 5)
+            area.moveTopLeft((self._content_rect().topLeft() + QPointF(12, 12)).toPoint())
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(24, 32, 40, 225))
+            painter.drawRoundedRect(QRectF(area), 5, 5)
+            painter.setPen(QColor("#F4C95D" if unsafe else "#76D7C4"))
+            painter.drawText(area, Qt.AlignmentFlag.AlignCenter, label)
         if self._native_viewport_indicator_visible:
             native = self.native_viewport_rect()
             top_left = self.image_to_widget(Point(native.x(), native.y()))

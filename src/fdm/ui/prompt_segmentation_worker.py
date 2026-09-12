@@ -38,6 +38,7 @@ class PromptSegmentationRequest:
     source_token: str = ""
     valid_coverage: object | None = None
     fill_draft_holes: bool = False
+    unverified_seams: object | None = None
 
 
 class PromptSegmentationWorker(QObject):
@@ -107,6 +108,14 @@ class PromptSegmentationWorker(QObject):
                     raise RuntimeError(
                         f"分割结果与有效图块覆盖尺寸不一致：{mask.shape} != {coverage.shape}。"
                     )
+                if request.unverified_seams is not None:
+                    import cv2
+                    seams = np.asarray(request.unverified_seams, dtype=bool)
+                    if region is not None:
+                        seams = seams[y:y + mask.shape[0], x:x + mask.shape[1]]
+                    # Also detect a result terminating immediately next to a barrier.
+                    near = cv2.dilate(seams.astype(np.uint8), np.ones((5, 5), np.uint8)).astype(bool)
+                    result.metadata["seam_truncated"] = bool(np.any(mask & near))
                 clipped = np.ascontiguousarray(mask & coverage)
                 if region is not None:
                     clipped = mask_region(clipped, origin=region.origin, extent=region.extent)
@@ -129,13 +138,14 @@ class PromptSegmentationWorker(QObject):
                 result.metadata.update(stats)
             if compact and result.mask is not None:
                 result.mask = mask_region(result.mask)
-                if request.fill_draft_holes:
+                fill_holes = bool(request.fill_draft_holes and not result.metadata.get("seam_truncated"))
+                if fill_holes:
                     result.mask, result.area_rings_px, result.polygon_px, stats = (
                         magic_mask_to_geometry(fill_magic_draft_internal_holes(result.mask))
                     )
                     result.metadata.update(stats)
                 result.area_px = magic_mask_area_px(result.mask)
-                result.metadata["holes_processed"] = bool(request.fill_draft_holes)
+                result.metadata["holes_processed"] = fill_holes
                 result.metadata["geometry_final"] = True
             if self._is_request_cancelled(request.document_id):
                 return

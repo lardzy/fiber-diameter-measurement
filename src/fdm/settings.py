@@ -181,6 +181,9 @@ DIGITAL_SLIDE_PROFILE_FIELDS = (
     "digital_slide_y_stage_step",
     "digital_slide_reverse_x_axis",
     "digital_slide_reverse_y_axis",
+    "digital_slide_stitch_enabled",
+    "digital_slide_xy_calibration",
+    "digital_slide_z_backlash_steps",
     "digital_slide_overlap_percent",
     "digital_slide_pixel_stride_mode",
     "digital_slide_x_pixel_stride",
@@ -840,6 +843,9 @@ class AppSettings:
     digital_slide_y_stage_step: int = 5000
     digital_slide_reverse_x_axis: bool = False
     digital_slide_reverse_y_axis: bool = False
+    digital_slide_stitch_enabled: bool = True
+    digital_slide_xy_calibration: dict[str, object] = field(default_factory=dict)
+    digital_slide_z_backlash_steps: int = 0
     digital_slide_overlap_percent: int = 0
     digital_slide_pixel_stride_mode: str = "auto_overlap"
     digital_slide_x_pixel_stride: int = 1280
@@ -1012,6 +1018,9 @@ class AppSettings:
         normalized.digital_slide_y_stage_step = self._normalize_signed_int_range(self.digital_slide_y_stage_step, default=5000, minimum=-10_000_000, maximum=10_000_000)
         normalized.digital_slide_reverse_x_axis = bool(self.digital_slide_reverse_x_axis)
         normalized.digital_slide_reverse_y_axis = bool(self.digital_slide_reverse_y_axis)
+        normalized.digital_slide_stitch_enabled = bool(self.digital_slide_stitch_enabled)
+        normalized.digital_slide_xy_calibration = dict(self.digital_slide_xy_calibration) if isinstance(self.digital_slide_xy_calibration, dict) else {}
+        normalized.digital_slide_z_backlash_steps = self._normalize_int_range(self.digital_slide_z_backlash_steps, default=0, minimum=0, maximum=100_000)
         normalized.digital_slide_overlap_percent = self._normalize_int_range(self.digital_slide_overlap_percent, default=0, minimum=0, maximum=90)
         normalized.digital_slide_pixel_stride_mode = self._normalize_digital_slide_pixel_stride_mode(self.digital_slide_pixel_stride_mode)
         normalized.digital_slide_x_pixel_stride = self._normalize_int_range(self.digital_slide_x_pixel_stride, default=1280, minimum=1, maximum=100_000)
@@ -1111,6 +1120,9 @@ class AppSettings:
             "digital_slide_y_stage_step": cls._normalize_signed_int_range(item("digital_slide_y_stage_step"), default=5000, minimum=-10_000_000, maximum=10_000_000),
             "digital_slide_reverse_x_axis": bool(item("digital_slide_reverse_x_axis")),
             "digital_slide_reverse_y_axis": bool(item("digital_slide_reverse_y_axis")),
+            "digital_slide_stitch_enabled": bool(item("digital_slide_stitch_enabled")),
+            "digital_slide_xy_calibration": dict(item("digital_slide_xy_calibration")) if isinstance(item("digital_slide_xy_calibration"), dict) else {},
+            "digital_slide_z_backlash_steps": cls._normalize_int_range(item("digital_slide_z_backlash_steps"), default=0, minimum=0, maximum=100_000),
             "digital_slide_overlap_percent": cls._normalize_int_range(item("digital_slide_overlap_percent"), default=0, minimum=0, maximum=90),
             "digital_slide_pixel_stride_mode": cls._normalize_digital_slide_pixel_stride_mode(item("digital_slide_pixel_stride_mode")),
             "digital_slide_x_pixel_stride": cls._normalize_int_range(item("digital_slide_x_pixel_stride"), default=1280, minimum=1, maximum=100_000),
@@ -1502,7 +1514,7 @@ class AppSettings:
     @staticmethod
     def _normalize_digital_slide_pixel_stride_mode(value: str | None) -> str:
         token = str(value or "").strip()
-        if token in {"auto_overlap", "manual_pixels"}:
+        if token in {"auto_overlap", "manual_pixels", "calibrated_overlap"}:
             return token
         return "auto_overlap"
 
@@ -1607,6 +1619,9 @@ class AppSettings:
             "digital_slide_y_stage_step": normalized.digital_slide_y_stage_step,
             "digital_slide_reverse_x_axis": normalized.digital_slide_reverse_x_axis,
             "digital_slide_reverse_y_axis": normalized.digital_slide_reverse_y_axis,
+            "digital_slide_stitch_enabled": normalized.digital_slide_stitch_enabled,
+            "digital_slide_xy_calibration": normalized.digital_slide_xy_calibration,
+            "digital_slide_z_backlash_steps": normalized.digital_slide_z_backlash_steps,
             "digital_slide_overlap_percent": normalized.digital_slide_overlap_percent,
             "digital_slide_pixel_stride_mode": normalized.digital_slide_pixel_stride_mode,
             "digital_slide_x_pixel_stride": normalized.digital_slide_x_pixel_stride,
@@ -1993,6 +2008,9 @@ class AppSettings:
         settings.digital_slide_reverse_y_axis = bool(
             payload.get("digital_slide_reverse_y_axis", settings.digital_slide_reverse_y_axis)
         )
+        settings.digital_slide_stitch_enabled = bool(payload.get("digital_slide_stitch_enabled", True))
+        settings.digital_slide_xy_calibration = dict(payload.get("digital_slide_xy_calibration", {})) if isinstance(payload.get("digital_slide_xy_calibration"), dict) else {}
+        settings.digital_slide_z_backlash_steps = cls._normalize_int_range(payload.get("digital_slide_z_backlash_steps", 0), default=0, minimum=0, maximum=100_000)
         settings.digital_slide_overlap_percent = cls._normalize_int_range(
             payload.get("digital_slide_overlap_percent", settings.digital_slide_overlap_percent),
             default=0,

@@ -3441,6 +3441,8 @@ class DocumentCanvas(QWidget):
         self._emit_magic_segment_session_changed()
 
     def commit_fiber_quick_preview(self) -> dict[str, object]:
+        if self._fiber_quick.debug_payload.get("segmentation_source", {}).get("seam_truncated"):
+            return {"committed": False, "reason": "unverified_seam"}
         document_id = self._document.id if self._document is not None else None
         preview_line = self._fiber_quick.preview_line
         if preview_line is None and self._fiber_quick.has_shape_preview():
@@ -3493,6 +3495,8 @@ class DocumentCanvas(QWidget):
         }
 
     def commit_magic_segment_preview(self) -> dict[str, object]:
+        if self._magic_segment.primary_debug_payload.get("segmentation_source", {}).get("seam_truncated"):
+            return {"committed": False, "reason": "unverified_seam"}
         display_preview = self._preserve_magic_display_preview()
         document_id = self._document.id if self._document is not None else None
         primary_polygon = self._magic_segment.primary_polygon
@@ -3593,6 +3597,8 @@ class DocumentCanvas(QWidget):
         )
 
     def take_magic_commit_snapshot(self):
+        if self._magic_segment.primary_debug_payload.get("segmentation_source", {}).get("seam_truncated"):
+            return None
         mask = mask_region(self._magic_segment.primary_mask)
         if mask is None or not self._magic_segment.has_primary_preview():
             return None

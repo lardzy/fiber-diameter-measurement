@@ -2262,6 +2262,9 @@ class SettingsDialog(QDialog):
             digital_slide_y_stage_step=self._digital_slide_y_stage_step_spin.value(),
             digital_slide_reverse_x_axis=self._digital_slide_reverse_x_axis_checkbox.isChecked(),
             digital_slide_reverse_y_axis=self._digital_slide_reverse_y_axis_checkbox.isChecked(),
+            digital_slide_stitch_enabled=self._digital_slide_stitch_checkbox.isChecked(),
+            digital_slide_xy_calibration=dict(self._digital_slide_xy_calibration),
+            digital_slide_z_backlash_steps=self._digital_slide_z_backlash_spin.value(),
             digital_slide_overlap_percent=self._digital_slide_overlap_spin.value(),
             digital_slide_pixel_stride_mode=self._digital_slide_pixel_stride_mode_combo.currentData(),
             digital_slide_x_pixel_stride=self._digital_slide_x_pixel_stride_spin.value(),
@@ -2945,6 +2948,15 @@ class SettingsDialog(QDialog):
         self._digital_slide_capture_codec_combo.currentIndexChanged.connect(self._sync_digital_slide_capture_quality_visibility)
         quality_layout.addWidget(self._digital_slide_capture_quality_slider, 1)
         quality_layout.addWidget(self._digital_slide_capture_quality_label)
+        self._digital_slide_xy_calibration = dict(settings.digital_slide_xy_calibration)
+        self._digital_slide_stitch_checkbox = QCheckBox("采集时后台检查拼接")
+        self._digital_slide_stitch_checkbox.setChecked(settings.digital_slide_stitch_enabled)
+        self._digital_slide_stitch_checkbox.setToolTip("不影响原始切片保存；修复完成后可单独打开修复版本。")
+        self._digital_slide_z_backlash_spin = NoWheelSpinBox()
+        self._digital_slide_z_backlash_spin.setRange(0, 100_000)
+        self._digital_slide_z_backlash_spin.setSuffix(" steps")
+        self._digital_slide_z_backlash_spin.setValue(settings.digital_slide_z_backlash_steps)
+        self._digital_slide_z_backlash_spin.setToolTip("仅填写实测回差行程；0 表示尚未校准。非零时从较小 Z 命令位置统一接近各焦层，受软限位约束。")
         self._digital_slide_overlap_spin = NoWheelSpinBox()
         self._digital_slide_overlap_spin.setRange(0, 90)
         self._digital_slide_overlap_spin.setSuffix(" %")
@@ -2957,7 +2969,12 @@ class SettingsDialog(QDialog):
         capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
         capture_form.addRow("默认存储格式", self._digital_slide_capture_codec_combo)
         capture_form.addRow("JPEG 质量", quality_row)
-        capture_form.addRow("视场重叠", self._digital_slide_overlap_spin)
+        capture_form.addRow("拼接检查", self._digital_slide_stitch_checkbox)
+        capture_form.addRow("目标重叠（建议 20%）", self._digital_slide_overlap_spin)
+        capture_form.addRow("实测 Z 回差行程", self._digital_slide_z_backlash_spin)
+        stitch_note = QLabel("真实重叠需先完成 X、Y 校准，并选择“校准联动”。旧模式仅调整图像排布，不会增加实际重叠。更换物镜、相机或样品台后请重新校准。")
+        stitch_note.setWordWrap(True)
+        capture_form.addRow(stitch_note)
         capture_form.addRow("重叠融合宽度", self._digital_slide_blend_width_spin)
         self._sync_digital_slide_capture_quality_visibility()
 
@@ -3026,11 +3043,13 @@ class SettingsDialog(QDialog):
         self._digital_slide_y_stage_step_spin.setSuffix(" steps")
         self._digital_slide_y_stage_step_spin.setValue(settings.digital_slide_y_stage_step)
         self._digital_slide_pixel_stride_mode_combo = NoWheelComboBox()
-        self._digital_slide_pixel_stride_mode_combo.addItem("按视场重叠自动", "auto_overlap")
+        self._digital_slide_pixel_stride_mode_combo.addItem("名义重叠排布（不改变电机步距）", "auto_overlap")
+        self._digital_slide_pixel_stride_mode_combo.addItem("校准联动真实重叠", "calibrated_overlap")
         self._digital_slide_pixel_stride_mode_combo.addItem("手动像素步距", "manual_pixels")
         self._digital_slide_pixel_stride_mode_combo.setCurrentIndex(
             max(0, self._digital_slide_pixel_stride_mode_combo.findData(settings.digital_slide_pixel_stride_mode))
         )
+        self._digital_slide_pixel_stride_mode_combo.activated.connect(self._on_digital_slide_stride_mode_activated)
         self._digital_slide_x_pixel_stride_spin = NoWheelSpinBox()
         self._digital_slide_x_pixel_stride_spin.setRange(1, 100_000)
         self._digital_slide_x_pixel_stride_spin.setSuffix(" px")
@@ -3202,6 +3221,10 @@ class SettingsDialog(QDialog):
             group.setEnabled(not locked)
         return self._wrap_settings_page(page)
 
+    def _on_digital_slide_stride_mode_activated(self, _index: int) -> None:
+        if self._digital_slide_pixel_stride_mode_combo.currentData() == "calibrated_overlap" and self._digital_slide_overlap_spin.value() == 0:
+            self._digital_slide_overlap_spin.setValue(20)
+
     def _current_digital_slide_profile_values(self) -> dict[str, object]:
         return {
             "digital_slide_preview_max_width": int(self._digital_slide_preview_width_combo.currentData() or 0),
@@ -3219,6 +3242,9 @@ class SettingsDialog(QDialog):
             "digital_slide_y_stage_step": self._digital_slide_y_stage_step_spin.value(),
             "digital_slide_reverse_x_axis": self._digital_slide_reverse_x_axis_checkbox.isChecked(),
             "digital_slide_reverse_y_axis": self._digital_slide_reverse_y_axis_checkbox.isChecked(),
+            "digital_slide_stitch_enabled": self._digital_slide_stitch_checkbox.isChecked(),
+            "digital_slide_xy_calibration": dict(self._digital_slide_xy_calibration),
+            "digital_slide_z_backlash_steps": self._digital_slide_z_backlash_spin.value(),
             "digital_slide_overlap_percent": self._digital_slide_overlap_spin.value(),
             "digital_slide_pixel_stride_mode": str(self._digital_slide_pixel_stride_mode_combo.currentData()),
             "digital_slide_x_pixel_stride": self._digital_slide_x_pixel_stride_spin.value(),
@@ -3266,6 +3292,9 @@ class SettingsDialog(QDialog):
         self._digital_slide_y_stage_step_spin.setValue(int(values["digital_slide_y_stage_step"]))
         self._digital_slide_reverse_x_axis_checkbox.setChecked(bool(values["digital_slide_reverse_x_axis"]))
         self._digital_slide_reverse_y_axis_checkbox.setChecked(bool(values["digital_slide_reverse_y_axis"]))
+        self._digital_slide_stitch_checkbox.setChecked(bool(values.get("digital_slide_stitch_enabled", True)))
+        self._digital_slide_xy_calibration = dict(values.get("digital_slide_xy_calibration", {}))
+        self._digital_slide_z_backlash_spin.setValue(int(values.get("digital_slide_z_backlash_steps", 0)))
         self._digital_slide_overlap_spin.setValue(int(values["digital_slide_overlap_percent"]))
         self._set_combo_data(self._digital_slide_pixel_stride_mode_combo, str(values["digital_slide_pixel_stride_mode"]))
         self._digital_slide_x_pixel_stride_spin.setValue(int(values["digital_slide_x_pixel_stride"]))
