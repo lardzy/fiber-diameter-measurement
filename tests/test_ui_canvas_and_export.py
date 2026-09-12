@@ -9634,7 +9634,7 @@ class CanvasAndExportTests(unittest.TestCase):
             )
             self.assertEqual(
                 self._group_titles_in_tab(dialog, 4),
-                ["采集参数配置", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集参数配置", "拼接与采集步距", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertEqual(dialog._digital_slide_preview_width_combo.currentData(), 1280)
             self.assertEqual(dialog._digital_slide_capture_width_combo.currentData(), 1600)
@@ -9676,7 +9676,7 @@ class CanvasAndExportTests(unittest.TestCase):
             groups = [group for group in content.findChildren(QGroupBox) if group.title()]
             self.assertEqual(
                 [group.title() for group in groups],
-                ["采集参数配置", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
+                ["采集参数配置", "拼接与采集步距", "采集与预览", "运动控制", "高级采集", "浏览与快捷键"],
             )
             self.assertTrue(any(isinstance(label, QLabel) and "参数已锁定" in label.text() for label in content.findChildren(QLabel)))
             self.assertTrue(groups)

@@ -1733,7 +1733,7 @@ class SettingsDialog(QDialog):
         ("标注与比例尺", "比例尺和图形标注默认样式", "比例尺 叠加 文字 图形 矩形 圆形 箭头 线条"),
         ("图像与智能分析", "景深合成、魔棒和快速测径", "图像 景深 合成 锐化 魔棒 EdgeSAM ROI 快速测径"),
         ("面积识别", "面积模型、权重和推理设备", "面积 模型 权重 Python CPU CUDA 推理"),
-        ("采集与数字切片", "预览、运动控制和切片参数", "采集 预览 数字化切片 电机 运动 焦层"),
+        ("采集与数字切片", "真实重叠、步距校准与采集参数", "采集 预览 数字化切片 电机 运动 焦层 拼接 重叠 XY 校准 回差 磁盘 缓存"),
         ("截图工具", "常驻截图、全局快捷键和 CU 系列实时预览", "截图 常驻 托盘 快捷键 开机启动 CU 系列 CU-5 CU-6 Microview 窗口 区域"),
         ("导出与模板", "原始记录模板和导出规则", "导出 原始记录 模板 规则 Excel 工作表"),
     )
@@ -1745,6 +1745,7 @@ class SettingsDialog(QDialog):
         document: ImageDocument | None,
         digital_slide_locked: bool = False,
         digital_slide_source_path: str | Path | None = None,
+        digital_slide_frame_size: tuple[int, int] | None = None,
         screenshot_settings: ScreenshotSettings | None = None,
         parent=None,
     ) -> None:
@@ -1758,6 +1759,9 @@ class SettingsDialog(QDialog):
         self._preferred_size_applied = False
         self._initial_settings = replace(settings)
         self._document = document
+        self._digital_slide_locked = digital_slide_locked
+        self._digital_slide_frame_size = digital_slide_frame_size
+        self._digital_slide_guidance_ready = False
         self._digital_slide_source_path = (
             Path(digital_slide_source_path).expanduser()
             if digital_slide_source_path
@@ -1945,6 +1949,13 @@ class SettingsDialog(QDialog):
             QLabel#settingsPageDescription, QLabel#settingsSearchEmpty {
                 color: palette(placeholder-text);
             }
+            QFrame#slideCalibrationCard {
+                background: palette(alternate-base);
+                border: 1px solid palette(mid);
+                border-radius: 6px;
+            }
+            QLabel[settingsHint="true"] { color: palette(placeholder-text); }
+            QLabel#slideCalibrationStatus { font-weight: 600; }
             QListWidget#settingsNavigation {
                 border: none;
                 background: transparent;
@@ -2081,6 +2092,8 @@ class SettingsDialog(QDialog):
         page = self._settings_pages.currentWidget()
         if page is None:
             return
+        if page_index == 5 and self._digital_slide_locked:
+            return
         defaults_dialog = SettingsDialog(
             AppSettings(),
             document=self._document,
@@ -2091,6 +2104,8 @@ class SettingsDialog(QDialog):
         try:
             default_page = defaults_dialog._settings_pages.widget(page_index)
             for name, target in vars(self).items():
+                if page_index == 5 and name == "_digital_slide_profile_combo":
+                    continue
                 source = vars(defaults_dialog).get(name)
                 if not isinstance(target, QWidget) or not isinstance(source, QWidget):
                     continue
@@ -2106,6 +2121,8 @@ class SettingsDialog(QDialog):
             elif page_index == 3:
                 self._offline_segmentation_engine_packs_draft = []
                 self._update_offline_engine_summary()
+            elif page_index == 5:
+                self._load_digital_slide_profile_values(defaults_dialog._current_digital_slide_profile_values())
             elif page_index == 6:
                 self._screenshot_settings_widget.restore_defaults()
             elif page_index == 7:
@@ -2908,8 +2925,18 @@ class SettingsDialog(QDialog):
             locked_hint.setStyleSheet("font-weight: 700; color: #B45309;")
             layout.addWidget(locked_hint)
 
+        def hint(text: str = "", *, secondary: bool = True) -> QLabel:
+            label = QLabel(text)
+            label.setTextFormat(Qt.TextFormat.PlainText)
+            label.setWordWrap(True)
+            label.setMinimumWidth(0)
+            label.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Preferred)
+            label.setProperty("settingsHint", secondary)
+            return label
+
         capture_group = QGroupBox("采集与预览")
         capture_form = QFormLayout(capture_group)
+        self._digital_slide_capture_form = capture_form
         capture_form.setFieldGrowthPolicy(
             QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow
         )
@@ -2926,21 +2953,24 @@ class SettingsDialog(QDialog):
             current=settings.digital_slide_capture_max_width,
             options=(1600, 2400, 3200),
         )
+        self._digital_slide_preview_width_combo.setToolTip("建议 1280 px。只控制实时预览，不决定永久保存的图像细节。")
+        self._digital_slide_capture_width_combo.setToolTip("决定永久保存的图像细节。正式测量先以原始尺寸为参考验证，再选择较小尺寸；改变后需核对 XY 校准。")
         self._digital_slide_capture_codec_combo = NoWheelComboBox()
         self._digital_slide_capture_codec_combo.addItem("PNG 无损", DIGITAL_SLIDE_TILE_CODEC_PNG)
         self._digital_slide_capture_codec_combo.addItem("JPEG 压缩", DIGITAL_SLIDE_TILE_CODEC_JPEG)
         codec_index = self._digital_slide_capture_codec_combo.findData(normalize_tile_codec(settings.digital_slide_capture_tile_codec))
         self._digital_slide_capture_codec_combo.setCurrentIndex(codec_index if codec_index >= 0 else 0)
         quality_row = QWidget()
+        self._digital_slide_capture_quality_row = quality_row
         quality_layout = QHBoxLayout(quality_row)
         quality_layout.setContentsMargins(0, 0, 0, 0)
         self._digital_slide_capture_quality_slider = NoWheelSlider(Qt.Orientation.Horizontal)
         self._digital_slide_capture_quality_slider.setRange(70, 95)
         self._digital_slide_capture_quality_slider.setValue(normalize_jpeg_quality(settings.digital_slide_capture_jpeg_quality))
         self._digital_slide_capture_quality_label = QLabel()
-        self._digital_slide_capture_quality_label.setMinimumWidth(72)
+        self._digital_slide_capture_quality_label.setMinimumWidth(32)
         self._digital_slide_capture_quality_label.setSizePolicy(
-            QSizePolicy.Policy.Ignored,
+            QSizePolicy.Policy.Minimum,
             QSizePolicy.Policy.Preferred,
         )
         self._digital_slide_capture_quality_label.setAlignment(Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter)
@@ -2956,6 +2986,7 @@ class SettingsDialog(QDialog):
         self._digital_slide_z_backlash_spin.setRange(0, 100_000)
         self._digital_slide_z_backlash_spin.setSuffix(" steps")
         self._digital_slide_z_backlash_spin.setValue(settings.digital_slide_z_backlash_steps)
+        self._digital_slide_z_backlash_spin.setSpecialValueText("0 · 未启用补偿")
         self._digital_slide_z_backlash_spin.setToolTip("仅填写实测回差行程；0 表示尚未校准。非零时从较小 Z 命令位置统一接近各焦层，受软限位约束。")
         self._digital_slide_overlap_spin = NoWheelSpinBox()
         self._digital_slide_overlap_spin.setRange(0, 90)
@@ -2965,17 +2996,12 @@ class SettingsDialog(QDialog):
         self._digital_slide_blend_width_spin.setRange(0, 10000)
         self._digital_slide_blend_width_spin.setSuffix(" px")
         self._digital_slide_blend_width_spin.setValue(settings.digital_slide_blend_width)
+        self._digital_slide_blend_width_spin.setToolTip("建议 0 px。只影响原始布局的显示融合；拼接修复测量视图使用固定单源像素，不使用此值。")
         capture_form.addRow("预览最大宽度", self._digital_slide_preview_width_combo)
         capture_form.addRow("采集最大宽度", self._digital_slide_capture_width_combo)
         capture_form.addRow("默认存储格式", self._digital_slide_capture_codec_combo)
         capture_form.addRow("JPEG 质量", quality_row)
-        capture_form.addRow("拼接检查", self._digital_slide_stitch_checkbox)
-        capture_form.addRow("目标重叠（建议 20%）", self._digital_slide_overlap_spin)
-        capture_form.addRow("实测 Z 回差行程", self._digital_slide_z_backlash_spin)
-        stitch_note = QLabel("真实重叠需先完成 X、Y 校准，并选择“校准联动”。旧模式仅调整图像排布，不会增加实际重叠。更换物镜、相机或样品台后请重新校准。")
-        stitch_note.setWordWrap(True)
-        capture_form.addRow(stitch_note)
-        capture_form.addRow("重叠融合宽度", self._digital_slide_blend_width_spin)
+        capture_form.addRow(hint("测量优先 PNG 无损。需节省容量时，可用 JPEG 95 与无损样本比较后确定；预览尺寸与保存尺寸分别设置。"))
         self._sync_digital_slide_capture_quality_visibility()
 
         motion_group = QGroupBox("运动控制")
@@ -3019,8 +3045,8 @@ class SettingsDialog(QDialog):
         self._digital_slide_reverse_y_axis_checkbox.setChecked(settings.digital_slide_reverse_y_axis)
         motion_form.addRow("XY 软限位", self._digital_slide_xy_soft_limit_spin)
         motion_form.addRow("Z 软限位", self._digital_slide_z_soft_limit_spin)
-        motion_form.addRow("XY 步距", self._digital_slide_xy_jog_step_spin)
-        motion_form.addRow("对焦步距", self._digital_slide_z_jog_step_spin)
+        motion_form.addRow("XY 手动移动步距", self._digital_slide_xy_jog_step_spin)
+        motion_form.addRow("手动对焦步距", self._digital_slide_z_jog_step_spin)
         motion_form.addRow("长按速度", self._digital_slide_jog_rate_spin)
         motion_form.addRow("坐标方向", self._digital_slide_reverse_x_axis_checkbox)
         motion_form.addRow("", self._digital_slide_reverse_y_axis_checkbox)
@@ -3058,6 +3084,37 @@ class SettingsDialog(QDialog):
         self._digital_slide_y_pixel_stride_spin.setRange(1, 100_000)
         self._digital_slide_y_pixel_stride_spin.setSuffix(" px")
         self._digital_slide_y_pixel_stride_spin.setValue(settings.digital_slide_y_pixel_stride)
+        stitch_group = QGroupBox("拼接与采集步距")
+        self._digital_slide_stitch_form = stitch_form = QFormLayout(stitch_group)
+        stitch_form.setFieldGrowthPolicy(QFormLayout.FieldGrowthPolicy.AllNonFixedFieldsGrow)
+        stitch_form.setRowWrapPolicy(QFormLayout.RowWrapPolicy.WrapLongRows)
+        self._digital_slide_overlap_label = QLabel()
+        stitch_form.addRow("采集步距模式", self._digital_slide_pixel_stride_mode_combo)
+        stitch_form.addRow(self._digital_slide_overlap_label, self._digital_slide_overlap_spin)
+        self._digital_slide_mode_note = hint(secondary=False)
+        stitch_form.addRow(self._digital_slide_mode_note)
+        calibration_card = QFrame()
+        calibration_card.setObjectName("slideCalibrationCard")
+        calibration_layout = QVBoxLayout(calibration_card)
+        calibration_layout.setContentsMargins(10, 8, 10, 8)
+        calibration_layout.setSpacing(4)
+        self._digital_slide_calibration_status = hint(secondary=False)
+        self._digital_slide_calibration_status.setObjectName("slideCalibrationStatus")
+        self._digital_slide_calibration_context = hint()
+        self._digital_slide_calibration_button = QPushButton("打开 XY 步距校准…")
+        self._digital_slide_calibration_button.clicked.connect(self._open_digital_slide_calibration_assistant)
+        for widget in (self._digital_slide_calibration_status, self._digital_slide_calibration_context, self._digital_slide_calibration_button):
+            calibration_layout.addWidget(widget)
+        stitch_form.addRow(calibration_card)
+        self._digital_slide_step_summary = hint(secondary=False)
+        stitch_form.addRow(self._digital_slide_step_summary)
+        stitch_form.addRow("X 采集电机步距", self._digital_slide_x_stage_step_spin)
+        stitch_form.addRow("Y 采集电机步距", self._digital_slide_y_stage_step_spin)
+        stitch_form.addRow("X 图像排布间距", self._digital_slide_x_pixel_stride_spin)
+        stitch_form.addRow("Y 图像排布间距", self._digital_slide_y_pixel_stride_spin)
+        stitch_form.addRow("拼接检查", self._digital_slide_stitch_checkbox)
+        stitch_form.addRow(hint("XY 步距校准用于控制实际重叠；画布的 μm/px 尺寸标定用于测量单位，两者分别设置。"))
+        self._digital_slide_overlap_spin.setToolTip("校准联动时建议 20%。自动配准要求扣除定位余量后仍有至少 10% 且 64 个保存像素的公共条带。")
         self._digital_slide_xy_settle_spin = NoWheelSpinBox()
         self._digital_slide_xy_settle_spin.setRange(0, 10_000)
         self._digital_slide_xy_settle_spin.setSuffix(" ms")
@@ -3088,18 +3145,21 @@ class SettingsDialog(QDialog):
         self._digital_slide_discard_frames_spin.setRange(0, 20)
         self._digital_slide_discard_frames_spin.setSuffix(" 帧")
         self._digital_slide_discard_frames_spin.setValue(settings.digital_slide_discard_frames)
-        advanced_form.addRow("X 自动采集步距", self._digital_slide_x_stage_step_spin)
-        advanced_form.addRow("Y 自动采集步距", self._digital_slide_y_stage_step_spin)
-        advanced_form.addRow("像素步距模式", self._digital_slide_pixel_stride_mode_combo)
-        advanced_form.addRow("X 像素步距", self._digital_slide_x_pixel_stride_spin)
-        advanced_form.addRow("Y 像素步距", self._digital_slide_y_pixel_stride_spin)
-        advanced_form.addRow("XY 停稳等待", self._digital_slide_xy_settle_spin)
-        advanced_form.addRow("XY 停稳后等待", self._digital_slide_xy_post_settle_spin)
-        advanced_form.addRow("Z 停稳等待", self._digital_slide_z_settle_spin)
-        advanced_form.addRow("Z 停稳后等待", self._digital_slide_z_post_settle_spin)
-        advanced_form.addRow("Z 采集步距", self._digital_slide_z_capture_step_spin)
+        self._digital_slide_wait_summary = hint(secondary=False)
+        self._digital_slide_wait_summary.setToolTip("这里显示单独移动 XY 或 Z 时的等待总和。同时移动时，两阶段分别采用较长的等待，再检查新帧。")
+        advanced_form.addRow(self._digital_slide_wait_summary)
+        advanced_form.addRow("XY 运动后等待", self._digital_slide_xy_settle_spin)
+        advanced_form.addRow("XY 额外稳定等待", self._digital_slide_xy_post_settle_spin)
+        advanced_form.addRow("Z 运动后等待", self._digital_slide_z_settle_spin)
+        advanced_form.addRow("Z 额外稳定等待", self._digital_slide_z_post_settle_spin)
+        advanced_form.addRow("相邻采集焦层步距", self._digital_slide_z_capture_step_spin)
+        self._digital_slide_z_capture_step_spin.setToolTip("电机命令步数，不是 μm。按物镜、样品厚度和实际清晰度确定，没有通用推荐步数。")
+        advanced_form.addRow("实测 Z 回差行程", self._digital_slide_z_backlash_spin)
         advanced_form.addRow("首张额外等待", self._digital_slide_first_tile_extra_wait_spin)
         advanced_form.addRow("丢弃帧数", self._digital_slide_discard_frames_spin)
+        self._digital_slide_discard_frames_spin.setToolTip("建议保留 2 帧；等待结束后丢弃新到达帧，再取后续新帧。不要仅为提速直接清零。")
+        self._digital_slide_first_tile_extra_wait_spin.setToolTip("建议先保留 3000 ms。仅任务首张发生移动时额外等待，不是每张都等待。")
+        advanced_form.addRow(hint("等待建议起点：XY 200＋100 ms，Z 80＋40 ms，丢弃 2 帧。按设备实测调整；Z 回差未实测请保持 0，不能据此认定设备无回差。"))
 
         browsing_group = QGroupBox("浏览与快捷键")
         browsing_form = QFormLayout(browsing_group)
@@ -3143,11 +3203,14 @@ class SettingsDialog(QDialog):
             settings.digital_slide_render_cache_gib
         )
         self._digital_slide_render_cache_spin.setToolTip(
-            "数字切片缩放层级的可清理派生缓存；不会写入或修改 .fdmslide 源文件"
+            "本机磁盘上的缩放层级缓存，不是内存或显存上限。默认 2 GiB；多片反复浏览且 SSD 空间充足时可试 4–8 GiB。不会修改源文件。"
         )
         browsing_form.addRow("焦层滚轮速度", wheel_row)
         browsing_form.addRow("焦层缩略图", self._digital_slide_dynamic_focus_overview_checkbox)
-        browsing_form.addRow("渲染缓存上限", self._digital_slide_render_cache_spin)
+        browsing_form.addRow("本机磁盘渲染缓存", self._digital_slide_render_cache_spin)
+        browsing_form.addRow(hint("默认 2 GiB；这是可清理的显示缓存，不包含采集原片和局域网读取副本。"))
+        browsing_form.addRow("原始布局融合宽度", self._digital_slide_blend_width_spin)
+        browsing_form.addRow(hint("融合宽度建议 0 px；仅用于原始布局显示，修复测量视图不使用。"))
         browsing_form.addRow("快捷键", shortcuts)
 
         profile_group = QGroupBox("采集参数配置")
@@ -3158,6 +3221,9 @@ class SettingsDialog(QDialog):
         profile_hint.setWordWrap(True)
         profile_layout.addWidget(profile_hint)
         self._digital_slide_profile_combo = NoWheelComboBox(profile_group)
+        self._digital_slide_profile_combo.setMinimumWidth(0)
+        self._digital_slide_profile_combo.setMinimumContentsLength(12)
+        self._digital_slide_profile_combo.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToMinimumContentsLengthWithIcon)
         self._digital_slide_profile_combo.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
@@ -3178,48 +3244,85 @@ class SettingsDialog(QDialog):
                 QSizePolicy.Policy.Expanding,
                 QSizePolicy.Policy.Fixed,
             )
-            profile_actions.addWidget(button, index // 2, index % 2)
+            profile_actions.addWidget(button, index // 3, index % 3)
         profile_layout.addLayout(profile_actions)
-        exchange_actions = QGridLayout()
-        exchange_actions.setHorizontalSpacing(6)
-        exchange_actions.setVerticalSpacing(6)
         import_button = QPushButton("导入 JSON", profile_group)
         import_button.clicked.connect(self._import_digital_slide_profile)
         export_button = QPushButton("导出 JSON", profile_group)
         export_button.setToolTip("导出当前选中的配置")
         export_button.clicked.connect(self._export_digital_slide_profile)
-        self._digital_slide_calibration_button = QPushButton("打开校准辅助…", profile_group)
-        self._digital_slide_calibration_button.clicked.connect(
-            self._open_digital_slide_calibration_assistant
-        )
         for button in (
             import_button,
             export_button,
-            self._digital_slide_calibration_button,
         ):
             button.setMinimumWidth(0)
             button.setSizePolicy(
                 QSizePolicy.Policy.Expanding,
                 QSizePolicy.Policy.Fixed,
             )
-        exchange_actions.addWidget(import_button, 0, 0)
-        exchange_actions.addWidget(export_button, 0, 1)
-        exchange_actions.addWidget(self._digital_slide_calibration_button, 1, 0, 1, 2)
-        profile_layout.addLayout(exchange_actions)
+        profile_actions.addWidget(import_button, 1, 1)
+        profile_actions.addWidget(export_button, 1, 2)
         self._populate_digital_slide_profile_combo()
         self._digital_slide_profile_combo.currentIndexChanged.connect(
             self._on_digital_slide_profile_changed
         )
 
         layout.addWidget(profile_group)
+        layout.addWidget(stitch_group)
         layout.addWidget(capture_group)
         layout.addWidget(motion_group)
         layout.addWidget(advanced_group)
         layout.addWidget(browsing_group)
         layout.addStretch(1)
-        for group in (profile_group, capture_group, motion_group, advanced_group, browsing_group):
+        for group in (profile_group, stitch_group, capture_group, motion_group, advanced_group, browsing_group):
             group.setEnabled(not locked)
+        for control in (
+            self._digital_slide_capture_width_combo, self._digital_slide_pixel_stride_mode_combo,
+        ):
+            control.currentIndexChanged.connect(self._sync_digital_slide_guidance)
+        for control in (
+            self._digital_slide_overlap_spin, self._digital_slide_x_stage_step_spin,
+            self._digital_slide_y_stage_step_spin, self._digital_slide_x_pixel_stride_spin,
+            self._digital_slide_y_pixel_stride_spin, self._digital_slide_xy_settle_spin,
+            self._digital_slide_xy_post_settle_spin, self._digital_slide_z_settle_spin,
+            self._digital_slide_z_post_settle_spin,
+        ):
+            control.valueChanged.connect(self._sync_digital_slide_guidance)
+        self._digital_slide_reverse_x_axis_checkbox.toggled.connect(self._sync_digital_slide_guidance)
+        self._digital_slide_reverse_y_axis_checkbox.toggled.connect(self._sync_digital_slide_guidance)
+        self._digital_slide_guidance_ready = True
+        self._sync_digital_slide_guidance()
         return self._wrap_settings_page(page)
+
+    def _sync_digital_slide_guidance(self, *_args) -> None:
+        if not self._digital_slide_guidance_ready or self._digital_slide_profile_switching:
+            return
+        from fdm.ui.digital_slide_settings import capture_settings_guidance
+        self._digital_slide_profile_combo.setToolTip(self._digital_slide_profile_combo.currentText())
+        # Keep the draft's manual values intact; these results never write back
+        # into controls or run profile normalization over computed motor steps.
+        settings = replace(self._initial_settings, **self._current_digital_slide_profile_values(),
+            digital_slide_active_profile_id=self._digital_slide_active_profile_id)
+        mode = settings.digital_slide_pixel_stride_mode
+        linked, manual = mode == "calibrated_overlap", mode == "manual_pixels"
+        self._digital_slide_overlap_label.setText("目标采集重叠" if linked else "排布重叠")
+        self._digital_slide_stitch_form.setRowVisible(self._digital_slide_overlap_spin, not manual)
+        self._digital_slide_overlap_spin.setEnabled(not manual)
+        for control in (self._digital_slide_x_stage_step_spin, self._digital_slide_y_stage_step_spin):
+            self._digital_slide_stitch_form.setRowVisible(control, not linked)
+            control.setEnabled(not linked)
+        for control in (self._digital_slide_x_pixel_stride_spin, self._digital_slide_y_pixel_stride_spin):
+            self._digital_slide_stitch_form.setRowVisible(control, manual)
+            control.setEnabled(manual)
+        guidance = capture_settings_guidance(settings, self._digital_slide_frame_size)
+        self._digital_slide_calibration_status.setText(guidance.calibration)
+        self._digital_slide_calibration_context.setText(guidance.context)
+        self._digital_slide_step_summary.setText(guidance.result)
+        self._digital_slide_mode_note.setText(guidance.notice)
+        self._digital_slide_wait_summary.setText(
+            f"单轴移动后等待：XY {settings.digital_slide_xy_settle_ms + settings.digital_slide_xy_post_settle_ms} ms"
+            f" · Z {settings.digital_slide_z_settle_ms + settings.digital_slide_z_post_settle_ms} ms。等待后再检查新帧。"
+        )
 
     def _on_digital_slide_stride_mode_activated(self, _index: int) -> None:
         if self._digital_slide_pixel_stride_mode_combo.currentData() == "calibrated_overlap" and self._digital_slide_overlap_spin.value() == 0:
@@ -3277,6 +3380,12 @@ class SettingsDialog(QDialog):
             combo.setCurrentIndex(index)
 
     def _load_digital_slide_profile_values(self, values: dict[str, object]) -> None:
+        self._digital_slide_profile_switching = True
+        for combo, key in ((self._digital_slide_preview_width_combo, "digital_slide_preview_max_width"),
+                           (self._digital_slide_capture_width_combo, "digital_slide_capture_max_width")):
+            width = int(values[key])
+            if combo.findData(width) < 0:
+                combo.addItem(f"{width} px" if width else "原始尺寸", width)
         self._set_combo_data(self._digital_slide_preview_width_combo, int(values["digital_slide_preview_max_width"]))
         self._set_combo_data(self._digital_slide_capture_width_combo, int(values["digital_slide_capture_max_width"]))
         self._set_combo_data(self._digital_slide_capture_codec_combo, normalize_tile_codec(values["digital_slide_capture_tile_codec"]))
@@ -3307,6 +3416,8 @@ class SettingsDialog(QDialog):
         self._digital_slide_first_tile_extra_wait_spin.setValue(int(values["digital_slide_first_tile_extra_wait_ms"]))
         self._digital_slide_discard_frames_spin.setValue(int(values["digital_slide_discard_frames"]))
         self._sync_digital_slide_capture_quality_visibility()
+        self._digital_slide_profile_switching = False
+        self._sync_digital_slide_guidance()
 
     def _populate_digital_slide_profile_combo(self) -> None:
         combo = self._digital_slide_profile_combo
@@ -3321,6 +3432,7 @@ class SettingsDialog(QDialog):
             self._digital_slide_active_profile_id = str(combo.currentData())
         combo.blockSignals(False)
         self._digital_slide_profile_switching = False
+        self._sync_digital_slide_guidance()
 
     def _on_digital_slide_profile_changed(self, _index: int) -> None:
         if self._digital_slide_profile_switching:
@@ -3533,6 +3645,8 @@ class SettingsDialog(QDialog):
         for width in options:
             combo.addItem(f"{width} px", int(width))
         combo.addItem("原始尺寸", 0)
+        if int(current) > 0 and combo.findData(int(current)) < 0:
+            combo.addItem(f"{int(current)} px", int(current))
         index = combo.findData(int(current))
         combo.setCurrentIndex(index if index >= 0 else 0)
 
@@ -3540,10 +3654,12 @@ class SettingsDialog(QDialog):
         return _digital_slide_quality_label_text(value)
 
     def _update_digital_slide_capture_quality_label(self, value: int) -> None:
-        self._digital_slide_capture_quality_label.setText(self._digital_slide_quality_label_text(value))
+        self._digital_slide_capture_quality_label.setText(str(normalize_jpeg_quality(value)))
+        self._digital_slide_capture_quality_label.setToolTip(self._digital_slide_quality_label_text(value))
 
     def _sync_digital_slide_capture_quality_visibility(self) -> None:
         is_jpeg = normalize_tile_codec(self._digital_slide_capture_codec_combo.currentData()) == DIGITAL_SLIDE_TILE_CODEC_JPEG
+        self._digital_slide_capture_form.setRowVisible(self._digital_slide_capture_quality_row, is_jpeg)
         self._digital_slide_capture_quality_slider.setEnabled(is_jpeg)
         self._digital_slide_capture_quality_label.setEnabled(is_jpeg)
         self._update_digital_slide_capture_quality_label(self._digital_slide_capture_quality_slider.value())

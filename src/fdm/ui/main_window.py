@@ -15590,13 +15590,8 @@ class MainWindow(QMainWindow):
         source_height: int,
         settings: AppSettings | None = None,
     ) -> tuple[int, int, float]:
-        source_width = max(1, int(source_width))
-        source_height = max(1, int(source_height))
-        max_width = self._digital_slide_capture_max_width(settings)
-        if max_width is None or source_width <= max_width:
-            return source_width, source_height, 1.0
-        scale = max_width / source_width
-        return max(1, int(max_width)), max(1, int(source_height * scale)), scale
+        from fdm.services.slide_capture_geometry import scaled_capture_size
+        return scaled_capture_size(source_width, source_height, self._digital_slide_capture_max_width(settings))
 
     def _scale_digital_slide_frame(self, frame: QImage) -> tuple[QImage, float]:
         target_width, target_height, scale = self._digital_slide_scaled_size(
@@ -20905,6 +20900,9 @@ class MainWindow(QMainWindow):
             document=current_document,
             digital_slide_locked=self._slide_acquisition_active(),
             digital_slide_source_path=digital_slide_source_path,
+            digital_slide_frame_size=(self._latest_preview_frame.width(), self._latest_preview_frame.height())
+            if self._preview_active and self._latest_preview_frame is not None and not self._latest_preview_frame.isNull()
+            else None,
             screenshot_settings=self._screenshot_settings,
             parent=self,
         )

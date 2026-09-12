@@ -5,6 +5,15 @@ from dataclasses import replace
 import math
 
 
+def scaled_capture_size(source_width: int, source_height: int, max_width: int | None) -> tuple[int, int, float]:
+    """Use the same saved-pixel dimensions in planning and settings guidance."""
+    source_width, source_height = max(1, int(source_width)), max(1, int(source_height))
+    if not max_width or source_width <= max_width:
+        return source_width, source_height, 1.0
+    scale = max_width / source_width
+    return int(max_width), max(1, int(source_height * scale)), scale
+
+
 def calibration_signature(settings, frame_size):
     return {
         "camera": settings.selected_capture_device_id,
