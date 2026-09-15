@@ -28,6 +28,7 @@ from build_support import (
 _DISTRIBUTION_NAMES_BY_MODULE = {
     "PIL": "Pillow",
     "cv2": "opencv-python",
+    "skimage": "scikit-image",
 }
 
 
@@ -122,6 +123,16 @@ def run_packaged_self_check(app_dir: Path) -> list[str]:
         or overlay.get("worker_stdio_none") is not True
     ):
         return ["packaged self-check did not pass the windowed overlay renderer probe"]
+    geometry = checks.get("fiber_quick_geometry")
+    if (
+        not isinstance(geometry, dict)
+        or geometry.get("ok") is not True
+        or geometry.get("backend") != "skimage_zhang"
+        or geometry.get("geometry_revision") != 3
+        or not geometry.get("backend_version")
+        or geometry.get("compiled_extension") is not True
+    ):
+        return ["packaged self-check did not pass the compiled quick diameter probe"]
     return []
 
 

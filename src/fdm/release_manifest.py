@@ -252,6 +252,86 @@ def verify_release_manifest(
     return result
 
 
+def _probe_fiber_quick_geometry() -> dict[str, Any]:
+    """Execute the shipped Cython kernel and representative geometry, without models."""
+    from importlib.machinery import EXTENSION_SUFFIXES
+    from importlib.metadata import version
+
+    import cv2
+    import numpy as np
+    from skimage.morphology import _skeletonize_various_cy
+
+    from fdm.geometry import distance
+    from fdm.services.fiber_quick_geometry import (
+        FIBER_QUICK_SKELETON_BACKEND,
+        FIBER_QUICK_GEOMETRY_REVISION,
+        FiberQuickDiameterGeometryService,
+        FiberQuickGeometryError,
+        _compute_skeleton,
+        prepare_fiber_quick_geometry_backend,
+    )
+
+    prepare_fiber_quick_geometry_backend()
+    compiled = any(str(_skeletonize_various_cy.__file__).endswith(suffix) for suffix in EXTENSION_SUFFIXES)
+    straight = np.zeros((120, 200), np.uint8)
+    straight[40:80, 30:170] = 1
+    diagonal = np.zeros((220, 260), np.uint8)
+    cv2.line(diagonal, (40, 50), (215, 170), 1, 24)
+    cross = np.zeros((220, 220), np.uint8)
+    cross[20:201, 90:131] = 1
+    cross[90:131, 20:201] = 1
+    ys, xs = np.mgrid[:160, :160]
+    theta = np.deg2rad(25.0)
+    along = (xs - 80) * np.cos(theta) + (ys - 80) * np.sin(theta)
+    across = -(xs - 80) * np.sin(theta) + (ys - 80) * np.cos(theta)
+    short_fiber = (abs(along) < 10) & (abs(across) < 8)
+    near_border = np.zeros((120, 200), np.uint8)
+    near_border[2:42, 30:170] = 1
+    skeleton = _compute_skeleton(straight)
+    components = cv2.connectedComponents(skeleton.astype(np.uint8), connectivity=8)[0] - 1
+    connectivity_ok = components == 1 and int(skeleton.sum()) > 50
+    service = FiberQuickDiameterGeometryService()
+    cases: dict[str, Any] = {}
+    for name, mask, lower, upper in (
+        ("straight", straight, 37.0, 41.0),
+        ("diagonal", diagonal, 22.0, 28.0),
+        ("cross", cross, 38.0, 43.0),
+        ("short_fiber", short_fiber, 14.0, 18.0),
+        ("near_border", near_border, 37.0, 41.0),
+    ):
+        result = service.measure_from_mask(mask)
+        width = distance(result.line_px.start, result.line_px.end) if result.line_px is not None else 0.0
+        cases[name] = {"ok": lower <= width <= upper, "width_px": width, "geometry_ms": result.debug_payload["geometry_ms"]}
+    for name, correction in (("extended", 3.5), ("shrunk", -3.5)):
+        result = service.measure_from_mask(straight, line_extension_px=correction)
+        width = distance(result.line_px.start, result.line_px.end) if result.line_px is not None else 0.0
+        expected = cases["straight"]["width_px"] + correction * 2.0
+        cases[name] = {
+            "ok": abs(width - expected) < 1e-6,
+            "width_px": width,
+            "correction_per_endpoint_px": correction,
+            "geometry_ms": result.debug_payload["geometry_ms"],
+        }
+    clipped = np.zeros((120, 200), np.uint8)
+    clipped[20:100, :20] = 1
+    try:
+        service.measure_from_mask(clipped)
+    except FiberQuickGeometryError as exc:
+        clipping_check = {"ok": exc.code == "incomplete_boundary", "failure_code": exc.code}
+    else:
+        clipping_check = {"ok": False}
+    return {
+        "ok": compiled and connectivity_ok and clipping_check["ok"] and all(item["ok"] for item in cases.values()),
+        "backend": FIBER_QUICK_SKELETON_BACKEND,
+        "geometry_revision": FIBER_QUICK_GEOMETRY_REVISION,
+        "backend_version": version("scikit-image"),
+        "compiled_extension": compiled,
+        "skeleton_connected": connectivity_ok,
+        "cases": cases,
+        "incomplete_boundary_rejection": clipping_check,
+    }
+
+
 def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]:
     root = Path(app_root or release_root())
     report = verify_release_manifest(root)
@@ -288,6 +368,16 @@ def run_release_self_check(app_root: str | Path | None = None) -> dict[str, Any]
     functional_checks["core_measurement"] = measurement_ok
     if not measurement_ok and not any("core measurement" in str(item) for item in errors):
         errors.append("core measurement self-check returned an unexpected value")
+
+    try:
+        geometry_probe = _probe_fiber_quick_geometry()
+    except Exception as exc:  # noqa: BLE001 - includes missing frozen native modules
+        functional_checks["fiber_quick_geometry"] = {"ok": False}
+        errors.append(f"quick diameter self-check failed: {exc}")
+    else:
+        functional_checks["fiber_quick_geometry"] = geometry_probe
+        if geometry_probe.get("ok") is not True:
+            errors.append("compiled quick diameter self-check returned a failure")
 
     try:
         from fdm.application_launch import SingleInstanceCoordinator

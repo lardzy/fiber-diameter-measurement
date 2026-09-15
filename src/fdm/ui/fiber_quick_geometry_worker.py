@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+import json
 from threading import Lock
+from time import perf_counter
 
 from PySide6.QtCore import QObject, Qt, Signal, Slot
 
@@ -9,7 +11,10 @@ from fdm.geometry import Point
 from fdm.services.fiber_quick_geometry import (
     DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS,
     FiberQuickDiameterGeometryService,
+    FiberQuickGeometryError,
+    prepare_fiber_quick_geometry_backend,
 )
+from fdm.runtime_logging import append_runtime_log
 
 
 @dataclass(slots=True)
@@ -24,9 +29,11 @@ class FiberQuickGeometryRequest:
     edge_trim_enabled: bool = True
     line_extension_px: float = 0.0
     timeout_ms: float = DEFAULT_FIBER_QUICK_GEOMETRY_TIMEOUT_MS
+    queued_at: float = field(default_factory=perf_counter)
 
 
 class FiberQuickGeometryWorker(QObject):
+    warmupRequested = Signal()
     requested = Signal(object)
     succeeded = Signal(str, int, object)
     failed = Signal(str, int, str)
@@ -39,6 +46,14 @@ class FiberQuickGeometryWorker(QObject):
         self._cancelled_documents: set[str] = set()
         self._lock = Lock()
         self.requested.connect(self.measure, Qt.ConnectionType.QueuedConnection)
+        self.warmupRequested.connect(self.warmup, Qt.ConnectionType.QueuedConnection)
+
+    @Slot()
+    def warmup(self) -> None:
+        try:
+            prepare_fiber_quick_geometry_backend()
+        except Exception as exc:  # noqa: BLE001 - the actual request reports the failure
+            append_runtime_log("Quick diameter warmup failed", str(exc))
 
     def register_request(self, document_id: str, request_id: int) -> None:
         with self._lock:
@@ -59,6 +74,7 @@ class FiberQuickGeometryWorker(QObject):
 
     @Slot(object)
     def measure(self, request: FiberQuickGeometryRequest) -> None:
+        started_at = perf_counter()
         if self._is_request_stale(request.document_id, request.request_id):
             return
         try:
@@ -75,8 +91,20 @@ class FiberQuickGeometryWorker(QObject):
             )
             if self._is_request_stale(request.document_id, request.request_id):
                 return
+            result.debug_payload["geometry_queue_ms"] = max(0.0, (started_at - request.queued_at) * 1000.0)
             self.succeeded.emit(request.document_id, request.request_id, result)
         except Exception as exc:  # noqa: BLE001
             if self._is_request_stale(request.document_id, request.request_id):
                 return
+            details = dict(exc.debug_payload) if isinstance(exc, FiberQuickGeometryError) else {}
+            details.update(
+                document_id=request.document_id,
+                request_id=request.request_id,
+                error=str(exc),
+                geometry_queue_ms=max(0.0, (started_at - request.queued_at) * 1000.0),
+            )
+            append_runtime_log(
+                "Quick diameter failed",
+                json.dumps(details, ensure_ascii=False, allow_nan=False),
+            )
             self.failed.emit(request.document_id, request.request_id, str(exc))

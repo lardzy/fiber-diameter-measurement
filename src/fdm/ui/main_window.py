@@ -6147,6 +6147,8 @@ class MainWindow(QMainWindow):
         if mode != "select":
             self._last_non_select_tool = mode
         self._tool_mode = mode
+        if is_fiber_quick_tool_mode(mode):
+            self._ensure_fiber_quick_geometry_worker()
         for canvas in self._canvases.values():
             canvas.set_tool_mode(
                 mode,

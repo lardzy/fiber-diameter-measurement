@@ -63,7 +63,11 @@ class BuildWindowsOnedirTests(unittest.TestCase):
         self.assertIn("FDM_EXCLUDED_COMPONENTS", spec_payload)
         self.assertIn("collect_private_content_template_datas", spec_payload)
         self.assertIn("resolve_runtime_profile", spec_payload)
-        self.assertIn('("tifffile", "openpyxl", "et_xmlfile")', spec_payload)
+        self.assertEqual(spec_payload.count('hookspath=[str(project_root / "packaging" / "pyinstaller" / "hooks")]'), 3)
+        hook_payload = (PROJECT_ROOT / "packaging" / "pyinstaller" / "hooks" / "hook-fdm.services.fiber_quick_geometry.py").read_text(encoding="utf-8")
+        self.assertIn('"scikit-image", "scipy", "lazy-loader"', hook_payload)
+        self.assertIn('hiddenimports = ["skimage.morphology"]', hook_payload)
+        self.assertIn('includes=["**/*.pyi"]', hook_payload)
         self.assertIn("copy_metadata(distribution_name)", spec_payload)
         self.assertIn('collection_packages.add("et_xmlfile")', spec_payload)
 
@@ -109,6 +113,10 @@ class BuildWindowsOnedirTests(unittest.TestCase):
             profile_mock.assert_not_called()
             run_mock.assert_not_called()
             self._dependency_mock.assert_called_once_with("full", root=root)
+
+    def test_dependency_probe_reports_the_scikit_image_distribution_name(self) -> None:
+        with patch("build_windows_onedir.importlib.util.find_spec", side_effect=lambda name: None if name == "skimage" else object()):
+            self.assertEqual(check_windows_build_dependencies("core", root=PROJECT_ROOT), ["scikit-image"])
 
     def test_installer_displays_the_project_license_before_installation(self) -> None:
         installer_payload = (
@@ -177,11 +185,36 @@ class BuildWindowsOnedirTests(unittest.TestCase):
                 "ok": True,
                 "worker_stdio_none": True,
             }
+            payload["functional_checks"]["fiber_quick_geometry"] = {
+                "ok": True,
+                "backend": "skimage_zhang",
+                "geometry_revision": 3,
+                "backend_version": "0.26.0",
+                "compiled_extension": True,
+            }
             completed = subprocess.CompletedProcess(
                 [], 0, stdout=json.dumps(payload), stderr=""
             )
             with patch("build_windows_onedir.subprocess.run", return_value=completed):
                 self.assertEqual(run_packaged_self_check(Path(tmpdir)), [])
+
+    def test_packaged_self_check_rejects_missing_or_noncompiled_diameter_probe(self) -> None:
+        for geometry in (
+            None,
+            {"ok": False},
+            {"ok": True, "backend": "python"},
+            {"ok": True, "backend": "skimage_zhang", "backend_version": "0.26.0", "compiled_extension": False},
+            {"ok": True, "backend": "skimage_zhang", "backend_version": "0.26.0", "compiled_extension": True, "geometry_revision": 1},
+            {"ok": True, "backend": "skimage_zhang", "backend_version": "0.26.0", "compiled_extension": True, "geometry_revision": 2},
+        ):
+            with self.subTest(geometry=geometry), TemporaryDirectory() as tmpdir:
+                payload = {"ok": True, "errors": [], "functional_checks": {
+                    "overlay_renderer": {"ok": True, "worker_stdio_none": True},
+                    "fiber_quick_geometry": geometry,
+                }}
+                completed = subprocess.CompletedProcess([], 0, stdout=json.dumps(payload), stderr="")
+                with patch("build_windows_onedir.subprocess.run", return_value=completed):
+                    self.assertEqual(run_packaged_self_check(Path(tmpdir)), ["packaged self-check did not pass the compiled quick diameter probe"])
 
     def test_build_passes_profile_to_pyinstaller_and_generates_release_manifest(self) -> None:
         with TemporaryDirectory() as tmpdir:

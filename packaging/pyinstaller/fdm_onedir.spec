@@ -77,6 +77,9 @@ hiddenimports = [
 
 required_packages = set(resolved_profile.required_python_modules)
 collection_packages = set(required_packages)
+# The diameter service hook collects lazy imports and package metadata; upstream
+# hooks trace Cython extensions and native DLLs. Avoid optional plugins/tests.
+collection_packages.difference_update({"skimage", "scipy"})
 if "openpyxl" in required_packages:
     # openpyxl imports this distribution lazily while reading/writing workbooks.
     collection_packages.add("et_xmlfile")
@@ -144,7 +147,7 @@ main_analysis = Analysis(
     binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=[str(project_root / "packaging" / "pyinstaller" / "hooks")],
     hooksconfig={},
     runtime_hooks=[],
     excludes=["matplotlib", "pytest", "IPython", "jupyter"],
@@ -157,7 +160,7 @@ worker_analysis = Analysis(
     binaries=binaries,
     datas=[],
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=[str(project_root / "packaging" / "pyinstaller" / "hooks")],
     hooksconfig={},
     runtime_hooks=[],
     excludes=["matplotlib", "pytest", "IPython", "jupyter"],
@@ -170,7 +173,7 @@ screenshot_analysis = Analysis(
     binaries=binaries,
     datas=[],
     hiddenimports=hiddenimports,
-    hookspath=[],
+    hookspath=[str(project_root / "packaging" / "pyinstaller" / "hooks")],
     hooksconfig={},
     runtime_hooks=[],
     excludes=["matplotlib", "pytest", "IPython", "jupyter"],

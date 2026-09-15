@@ -1,0 +1,103 @@
+{
+  "geometry_revision": 2,
+  "source_sha256": "2262042cb4eae2558b3d924e0f63287519193ce4bb0dae57ce8a0f1794181192",
+  "robustness": {
+    "before": 36,
+    "after": 58,
+    "total": 63,
+    "max_width_error_px": 2.000000000000014,
+    "max_direction_error_deg": 3.9864337352533488,
+    "previously_successful_now_rejected": []
+  },
+  "short_crosses": {
+    "success": 25,
+    "total": 30,
+    "max_width_error_px": 2.000000000000014,
+    "max_direction_error_deg": 8.319456811234515
+  },
+  "tests_related": {
+    "passed": 122,
+    "subtests_passed": 217
+  },
+  "tests_ui": {
+    "passed": 8,
+    "deselected": 282
+  },
+  "known_json_contract_failure": [
+    {
+      "file": "src/fdm/ui/contour_comparison_dialog.py",
+      "unchanged_from_head": true,
+      "missing_allow_nan_false": [
+        957
+      ]
+    },
+    {
+      "file": "src/fdm/services/contour_comparison.py",
+      "unchanged_from_head": true,
+      "missing_allow_nan_false": [
+        480,
+        480,
+        480
+      ]
+    },
+    {
+      "file": "scripts/benchmark_contour_comparison.py",
+      "unchanged_from_head": true,
+      "missing_allow_nan_false": [
+        68,
+        66
+      ]
+    }
+  ],
+  "frozen_probe": {
+    "ok": true,
+    "backend": "skimage_zhang",
+    "geometry_revision": 2,
+    "backend_version": "0.26.0",
+    "compiled_extension": true,
+    "skeleton_connected": true,
+    "cases": {
+      "straight": {
+        "ok": true,
+        "width_px": 39.0,
+        "geometry_ms": 28.241624997463077
+      },
+      "diagonal": {
+        "ok": true,
+        "width_px": 24.000000000000007,
+        "geometry_ms": 27.373374992748722
+      },
+      "cross": {
+        "ok": true,
+        "width_px": 40.0,
+        "geometry_ms": 33.2312090031337
+      },
+      "short_fiber": {
+        "ok": true,
+        "width_px": 14.999999999999998,
+        "geometry_ms": 6.190917018102482
+      },
+      "near_border": {
+        "ok": true,
+        "width_px": 39.0,
+        "geometry_ms": 20.939832989824936
+      }
+    },
+    "incomplete_boundary_rejection": {
+      "ok": true,
+      "failure_code": "incomplete_boundary"
+    },
+    "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+    "frozen": true,
+    "extension_in_bundle": true,
+    "extension": "/private/tmp/fdm-quick-geometry-robust-frozen-20260915/dist/fdm-quick-geometry-probe/_internal/skimage/morphology/_skeletonize_various_cy.cpython-313-darwin.so",
+    "stdio_none": true
+  },
+  "frozen_repeat_process_ms": 2797.017125005368,
+  "first_frozen_startup_note": "Delayed for minutes before geometry; process sample shows dyld mapping/signature-related fcntl during Qt library import. No system policy changed. Second full process run completed in the recorded time.",
+  "windows_full_installer_built_and_installed": false,
+  "checks": {
+    "uv_lock_check": true,
+    "git_diff_check": true
+  }
+}

@@ -1,0 +1,141 @@
+190 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+225 INFO: PyInstaller: 6.19.0, contrib hooks: 2026.3
+226 INFO: Python: 3.13.12 (conda)
+257 INFO: Platform: macOS-26.6.2-arm64-arm-64bit-Mach-O
+257 INFO: Python environment: /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv
+270 INFO: Removing temporary files and cleaning cache in /Users/lishuyang/Library/Application Support/pyinstaller
+401 INFO: Module search paths (PYTHONPATH):
+['/Users/lishuyang/PycharmProjects/fiber-diameter-measurement',
+ '/opt/miniconda3/lib/python313.zip',
+ '/opt/miniconda3/lib/python3.13',
+ '/opt/miniconda3/lib/python3.13/lib-dynload',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/research/quick-diameter-2026-09-15',
+ '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/src']
+147 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+1015 INFO: checking Analysis
+1016 INFO: Building Analysis because Analysis-00.toc is non existent
+1016 INFO: Looking for Python shared library...
+1016 INFO: Using Python shared library: /opt/miniconda3/lib/libpython3.13.dylib
+1016 INFO: Running Analysis Analysis-00.toc
+1017 INFO: Target bytecode optimization level: 0
+1017 INFO: Initializing module dependency graph...
+1019 INFO: Initializing module graph hook caches...
+1039 INFO: Analyzing modules for base_library.zip ...
+133 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+135 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+128 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+2470 INFO: Processing standard module hook 'hook-encodings.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+128 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+7647 INFO: Processing standard module hook 'hook-pickle.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+10187 INFO: Processing standard module hook 'hook-heapq.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11211 INFO: Caching module dependency graph...
+11299 INFO: Analyzing /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/docs/research/quick-diameter-2026-09-15/frozen_probe.py
+11386 INFO: Processing standard module hook 'hook-platform.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11472 INFO: Processing standard module hook 'hook-xml.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11570 INFO: Processing standard module hook 'hook-sysconfig.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11607 INFO: Processing standard module hook 'hook-_osx_support.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11618 INFO: Processing standard module hook 'hook-_ctypes.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+11796 INFO: Processing standard module hook 'hook-cv2.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+133 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+12738 INFO: Processing standard module hook 'hook-numpy.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+14014 INFO: Processing standard module hook 'hook-difflib.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+14570 INFO: Processing standard module hook 'hook-multiprocessing.util.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+21257 INFO: Processing pre-safe-import-module hook 'hook-typing_extensions.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+21263 INFO: SetuptoolsInfo: initializing cached setuptools info...
+285 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+24643 INFO: Processing standard module hook 'hook-skimage.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+24730 INFO: Processing pre-safe-import-module hook 'hook-packaging.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_safe_import_module'
+25038 INFO: Processing standard module hook 'hook-skimage.morphology.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+25371 INFO: Processing standard module hook 'hook-scipy.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+133 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+27634 INFO: Processing standard module hook 'hook-scipy.special._ufuncs.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+28051 INFO: Processing standard module hook 'hook-scipy.linalg.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+95353 INFO: Processing standard module hook 'hook-scipy.spatial._ckdtree.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+95684 INFO: Processing standard module hook 'hook-scipy.spatial.transform.rotation.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+96178 INFO: Processing standard module hook 'hook-scipy.stats._stats.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+96433 INFO: Processing standard module hook 'hook-scipy.sparse.csgraph.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+96753 INFO: Processing standard module hook 'hook-scipy.special._ellip_harm_2.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+96770 INFO: Processing standard module hook 'hook-skimage.draw.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+22 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+96945 INFO: Processing standard module hook 'hook-skimage.exposure.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+22 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+97123 INFO: Processing standard module hook 'hook-skimage.measure.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+22 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+97291 INFO: Processing standard module hook 'hook-skimage.filters.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+22 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+97687 INFO: Processing standard module hook 'hook-PySide6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+97770 INFO: Processing standard module hook 'hook-shiboken6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+97848 INFO: Processing standard module hook 'hook-PySide6.QtNetwork.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+98304 INFO: Processing standard module hook 'hook-PySide6.QtCore.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+98773 INFO: Processing standard module hook 'hook-PySide6.QtGui.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+98984 INFO: Processing standard module hook 'hook-fdm.services.fiber_quick_geometry.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/packaging/pyinstaller/hooks'
+99518 INFO: Processing standard module hook 'hook-PIL.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+99566 INFO: Processing standard module hook 'hook-PIL.Image.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+23 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+99698 INFO: Processing standard module hook 'hook-xml.etree.cElementTree.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+99782 INFO: Processing standard module hook 'hook-PIL.ImageFilter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+100408 INFO: Processing standard module hook 'hook-xml.dom.domreg.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+100490 INFO: Processing pre-find-module-path hook 'hook-tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_find_module_path'
+100491 INFO: TclTkInfo: initializing cached Tcl/Tk info...
+100590 INFO: Processing standard module hook 'hook-_tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+100745 INFO: Processing standard module hook 'hook-openpyxl.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+101333 INFO: Processing module hooks (post-graph stage)...
+101599 INFO: Processing standard module hook 'hook-skimage.transform.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+24 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+101782 INFO: Processing standard module hook 'hook-skimage.restoration.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+25 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+101963 INFO: Processing standard module hook 'hook-skimage.feature.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+24 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+102247 INFO: Processing standard module hook 'hook-skimage.color.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+24 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+102498 INFO: Processing standard module hook 'hook-skimage.metrics.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/_pyinstaller_hooks_contrib/stdhooks'
+23 WARNING: Assuming this is not an Anaconda environment or an additional venv/pipenv/... environment manager is being used on top, because the conda-meta folder /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/conda-meta does not exist.
+102721 WARNING: Hidden import "scipy._lib.array_api_compat.numpy.fft" not found!
+102725 WARNING: Hidden import "scipy.special._cdflib" not found!
+102725 INFO: Processing standard module hook 'hook-_tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+102853 INFO: Processing standard module hook 'hook-PIL.SpiderImagePlugin.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+102903 INFO: Processing standard module hook 'hook-PySide6.QtDBus.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+103002 INFO: Performing binary vs. data reclassification (481 entries)
+103036 INFO: Looking for ctypes DLLs
+103097 INFO: Analyzing run-time hooks ...
+103099 INFO: Including run-time hook 'pyi_rth_inspect.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+103100 INFO: Including run-time hook 'pyi_rth_pkgutil.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+103101 INFO: Including run-time hook 'pyi_rth_multiprocessing.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+103102 INFO: Including run-time hook 'pyi_rth__tkinter.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+103102 INFO: Including run-time hook 'pyi_rth_pyside6.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/rthooks'
+103103 INFO: Processing pre-find-module-path hook 'hook-_pyi_rth_utils.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks/pre_find_module_path'
+103104 INFO: Processing standard module hook 'hook-_pyi_rth_utils.py' from '/Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/hooks'
+103116 INFO: Creating base_library.zip...
+103126 INFO: Looking for dynamic libraries
+103735 INFO: Warnings written to /tmp/fdm-quick-geometry-robust-frozen-20260915/build/frozen_probe/warn-frozen_probe.txt
+103760 INFO: Graph cross-reference written to /tmp/fdm-quick-geometry-robust-frozen-20260915/build/frozen_probe/xref-frozen_probe.html
+103952 INFO: checking PYZ
+103952 INFO: Building PYZ because PYZ-00.toc is non existent
+103952 INFO: Building PYZ (ZlibArchive) /tmp/fdm-quick-geometry-robust-frozen-20260915/build/frozen_probe/PYZ-00.pyz
+104804 INFO: Building PYZ (ZlibArchive) /tmp/fdm-quick-geometry-robust-frozen-20260915/build/frozen_probe/PYZ-00.pyz completed successfully.
+104813 INFO: EXE target arch: arm64
+104813 INFO: Code signing identity: None
+104813 INFO: checking PKG
+104813 INFO: Building PKG because PKG-00.toc is non existent
+104813 INFO: Building PKG (CArchive) fdm-quick-geometry-probe.pkg
+104823 INFO: Building PKG (CArchive) fdm-quick-geometry-probe.pkg completed successfully.
+104823 INFO: Bootloader /Users/lishuyang/PycharmProjects/fiber-diameter-measurement/.venv/lib/python3.13/site-packages/PyInstaller/bootloader/Darwin-64bit/run
+104823 INFO: checking EXE
+104823 INFO: Building EXE because EXE-00.toc is non existent
+104823 INFO: Building EXE from EXE-00.toc
+104823 INFO: Copying bootloader EXE to /tmp/fdm-quick-geometry-robust-frozen-20260915/build/frozen_probe/fdm-quick-geometry-probe
+104824 INFO: Converting EXE to target arch (arm64)
+104845 INFO: Removing signature(s) from EXE
+104860 INFO: Modifying Mach-O image UUID(s) in EXE
+104867 INFO: Appending PKG archive to EXE
+104869 INFO: Fixing EXE headers for code signing
+104871 INFO: Rewriting the executable's macOS SDK version (15.5.0) to match the SDK version of the Python library (12.1.0) in order to avoid inconsistent behavior and potential UI issues in the frozen application.
+104872 INFO: Re-signing the EXE
+104898 INFO: Building EXE from EXE-00.toc completed successfully.
+104902 INFO: checking COLLECT
+104902 INFO: Building COLLECT because COLLECT-00.toc is non existent
+104902 INFO: Building COLLECT COLLECT-00.toc
+119782 INFO: Building COLLECT COLLECT-00.toc completed successfully.
+119788 INFO: Build complete! The results are available in: /tmp/fdm-quick-geometry-robust-frozen-20260915/dist

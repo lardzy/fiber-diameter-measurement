@@ -2672,6 +2672,13 @@ class SettingsDialog(QDialog):
         self._fiber_quick_line_extension_spin.setSingleStep(0.5)
         self._fiber_quick_line_extension_spin.setValue(settings.fiber_quick_line_extension_px)
         self._fiber_quick_line_extension_spin.setSuffix(" px")
+        extension_hint_text = (
+            "按原图像素对直径线两端各修正：正值向外延长，负值向内收缩，0 不修正。"
+            "例如 +2 px 使总直径增加 4 px；收缩后最短保留 2 px。应用于后续生成的测径结果。"
+        )
+        self._fiber_quick_line_extension_spin.setToolTip(extension_hint_text)
+        extension_hint = QLabel(extension_hint_text)
+        extension_hint.setWordWrap(True)
         magic_hint = QLabel("标准魔棒与同类扩选都会复用这里的 EdgeSAM / EdgeSAM-3x 设置；若缺失高精度模型文件，运行时会自动回退到标准模型。")
         magic_hint.setWordWrap(True)
         fill_holes_hint = QLabel("开启后，标准魔棒的主体与剔除形状草稿都会先填充内部孔洞；同类扩选不受此开关影响。")
@@ -2692,6 +2699,7 @@ class SettingsDialog(QDialog):
         magic_segment_form.addRow("", self._fiber_quick_roi_checkbox)
         magic_segment_form.addRow("", self._fiber_quick_edge_trim_checkbox)
         magic_segment_form.addRow("快速测径扩展像素", self._fiber_quick_line_extension_spin)
+        magic_segment_form.addRow("", extension_hint)
         magic_segment_form.addRow("", fill_holes_hint)
         magic_segment_form.addRow("", roi_hint)
         magic_segment_form.addRow("", small_object_hint)

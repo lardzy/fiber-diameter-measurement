@@ -43,6 +43,10 @@ Fiber Diameter Measurement（FDM）是一款离线桌面软件，用于把显微
 
 标准魔棒与同类扩选使用本地 EdgeSAM / EdgeSAM-3x ONNX 模型。快速测径会先分割目标，再异步计算代表直径线；面积自动识别则通过隔离 worker 和已配置的权重批量生成实例。
 
+快速测径在进入工具时后台预热编译版骨架组件，并排除交叉及端帽干扰。短纤维和靠近边框的完整截面增加了恢复判断，失败时提示具体原因。实现与验证范围见 [最新稳定性调整记录](docs/quick-diameter-robustness-2026-09-15.md) 和 [首轮提速记录](docs/quick-diameter-implementation-2026-09-15.md)。
+
+“快速测径扩展像素”按原图像素对两端各做修正，例如 `+2 px` 使总直径增加 `4 px`，负值用于收缩。应用设置后生成的新结果使用该数值，详见 [像素修正说明](docs/quick-diameter-pixel-correction-2026-09-15.md)。
+
 ## 项目级 ROI、图像处理与批处理
 
 项目 ROI 与普通面积测量分开管理，可使用矩形、椭圆、多边形或自由形状，也可以从已有面积对象创建。ROI 支持名称、分组、颜色、显示/锁定状态，以及并集、交集、差集和异或组合；处理和分析都可以把 ROI 作为明确的输入范围。
@@ -299,6 +303,8 @@ python -m fdm.ui_snapshot --scenario measurement --theme dark --width 1600 --hei
 python -m pip install -e ".[area-infer,packaging]"
 python scripts/build_windows_onedir.py
 ```
+
+使用锁定依赖可执行 `uv sync --frozen --extra area-infer --extra packaging`。测径依赖的 scikit-image / SciPy 由专用 PyInstaller 钩子收集；构建后的 `--self-check --json` 必须通过编译后端和实际测宽检查，安装器复用已有 onedir 时同样检查。
 
 公开 checkout 通常不含私有面积模型和原始记录模板，应显式生成公开 onedir：
 

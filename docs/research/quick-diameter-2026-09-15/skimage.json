@@ -1,0 +1,894 @@
+{
+  "backend": "skimage",
+  "versions": {
+    "numpy": "2.4.3",
+    "opencv-python": "4.13.0.92",
+    "scikit-image": "0.26.0",
+    "scipy": "1.18.1"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "python": "3.13.12",
+  "cv2_threads": 18,
+  "cold_optional_import_ms": 10391.051915998105,
+  "repeats": 3,
+  "timeout_ms": 3000,
+  "scope": "geometry only; existing mask + precomputed preview; no UI or segmentation",
+  "cases": [
+    {
+      "name": "small_rectangle",
+      "shape": [
+        120,
+        160
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 2.0552920177578926,
+          "error": null,
+          "width_px": 49.00000038551169,
+          "stages_ms": {
+            "_prepare_target_mask": 0.5326250102370977,
+            "_trim_border_connected_region": 0.03137500607408583,
+            "_crop_mask_roi": 0.07829099195078015,
+            "_resize_mask_for_geometry": 0.002749991836026311,
+            "_compute_skeleton": 0.32558300881646574,
+            "_branch_points": 0.06554200081154704,
+            "_end_points": 0.04604097921401262,
+            "_border_forbidden_zone": 0.011083000572398305,
+            "_select_candidate_points": 0.060874997870996594,
+            "_estimate_tangent": 0.2868330047931522,
+            "_measure_candidate_line": 0.14508399181067944
+          },
+          "skeleton": {
+            "shape": [
+              74,
+              84
+            ],
+            "pixels": 13,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 2,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 3000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 1.9872919947374612,
+            "roi_size": [
+              84,
+              74
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 1.0584999981801957,
+          "error": null,
+          "width_px": 49.00000038551169,
+          "stages_ms": {
+            "_prepare_target_mask": 0.19562500528991222,
+            "_trim_border_connected_region": 0.04495802568271756,
+            "_crop_mask_roi": 0.06516699795611203,
+            "_resize_mask_for_geometry": 0.0024579931050539017,
+            "_compute_skeleton": 0.21554200793616474,
+            "_branch_points": 0.053625000873580575,
+            "_end_points": 0.041417020838707685,
+            "_border_forbidden_zone": 0.007791997632011771,
+            "_select_candidate_points": 0.042333005694672465,
+            "_estimate_tangent": 0.10712497169151902,
+            "_measure_candidate_line": 0.1152500044554472
+          },
+          "skeleton": {
+            "shape": [
+              74,
+              84
+            ],
+            "pixels": 13,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 2,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 3000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 1.048292004270479,
+            "roi_size": [
+              84,
+              74
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 0.8480419928673655,
+          "error": null,
+          "width_px": 49.00000038551169,
+          "stages_ms": {
+            "_prepare_target_mask": 0.18458301201462746,
+            "_trim_border_connected_region": 0.012790987966582179,
+            "_crop_mask_roi": 0.05470801261253655,
+            "_resize_mask_for_geometry": 0.0007919734343886375,
+            "_compute_skeleton": 0.18283299868926406,
+            "_branch_points": 0.032499985536560416,
+            "_end_points": 0.03283401019871235,
+            "_border_forbidden_zone": 0.00554099096916616,
+            "_select_candidate_points": 0.03554200520738959,
+            "_estimate_tangent": 0.07920898497104645,
+            "_measure_candidate_line": 0.11604200699366629
+          },
+          "skeleton": {
+            "shape": [
+              74,
+              84
+            ],
+            "pixels": 13,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 2,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 3000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 0.8412500028498471,
+            "roi_size": [
+              84,
+              74
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 1.0584999981801957,
+      "success_count": 3
+    },
+    {
+      "name": "horizontal_60px",
+      "shape": [
+        768,
+        1024
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 9.696167020592839,
+          "error": null,
+          "width_px": 59.0,
+          "stages_ms": {
+            "_prepare_target_mask": 1.6388329968322068,
+            "_trim_border_connected_region": 0.232374994084239,
+            "_crop_mask_roi": 1.8330000166315585,
+            "_resize_mask_for_geometry": 0.06525000208057463,
+            "_compute_skeleton": 1.2688330025412142,
+            "_branch_points": 0.1608339953236282,
+            "_end_points": 0.14258301234804094,
+            "_border_forbidden_zone": 0.008791015716269612,
+            "_select_candidate_points": 0.27029099874198437,
+            "_estimate_tangent": 0.6800410628784448,
+            "_measure_candidate_line": 0.9752080368343741
+          },
+          "skeleton": {
+            "shape": [
+              65,
+              640
+            ],
+            "pixels": 578,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 16,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 48000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 9.532666008453816,
+            "roi_size": [
+              640,
+              65
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 9.120000002440065,
+          "error": null,
+          "width_px": 59.0,
+          "stages_ms": {
+            "_prepare_target_mask": 1.384583010803908,
+            "_trim_border_connected_region": 0.12058301945216954,
+            "_crop_mask_roi": 1.7617920238990337,
+            "_resize_mask_for_geometry": 0.04983300459571183,
+            "_compute_skeleton": 1.2598749890457839,
+            "_branch_points": 0.17750001279637218,
+            "_end_points": 0.15733399777673185,
+            "_border_forbidden_zone": 0.012541015166789293,
+            "_select_candidate_points": 0.27391701587475836,
+            "_estimate_tangent": 0.6779999530408531,
+            "_measure_candidate_line": 1.002208999125287
+          },
+          "skeleton": {
+            "shape": [
+              65,
+              640
+            ],
+            "pixels": 578,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 16,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 48000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 8.924916997784749,
+            "roi_size": [
+              640,
+              65
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 9.925167018081993,
+          "error": null,
+          "width_px": 59.0,
+          "stages_ms": {
+            "_prepare_target_mask": 1.7959160031750798,
+            "_trim_border_connected_region": 0.17795799067243934,
+            "_crop_mask_roi": 1.8381249974481761,
+            "_resize_mask_for_geometry": 0.03516601282171905,
+            "_compute_skeleton": 1.327625010162592,
+            "_branch_points": 0.17458299407735467,
+            "_end_points": 0.16687499010004103,
+            "_border_forbidden_zone": 0.011790980352088809,
+            "_select_candidate_points": 0.3088329976890236,
+            "_estimate_tangent": 0.738000962883234,
+            "_measure_candidate_line": 1.0383319749962538
+          },
+          "skeleton": {
+            "shape": [
+              65,
+              640
+            ],
+            "pixels": 578,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 16,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 48000,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 9.785208007087931,
+            "roi_size": [
+              640,
+              65
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 9.696167020592839,
+      "success_count": 3
+    },
+    {
+      "name": "diagonal_40px",
+      "shape": [
+        768,
+        1024
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 14.995833014836535,
+          "error": null,
+          "width_px": 39.99999997284547,
+          "stages_ms": {
+            "_prepare_target_mask": 2.1925419860053807,
+            "_trim_border_connected_region": 0.11937497765757143,
+            "_crop_mask_roi": 1.77650002297014,
+            "_resize_mask_for_geometry": 0.06112499977461994,
+            "_compute_skeleton": 4.127249994780868,
+            "_branch_points": 1.0540829971432686,
+            "_end_points": 0.8229590021073818,
+            "_border_forbidden_zone": 0.01937500201165676,
+            "_select_candidate_points": 0.904916989384219,
+            "_estimate_tangent": 0.6404589803423733,
+            "_measure_candidate_line": 0.5750390118919313
+          },
+          "skeleton": {
+            "shape": [
+              422,
+              640
+            ],
+            "pixels": 584,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 33868,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 14.823542005615309,
+            "roi_size": [
+              640,
+              422
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 14.419291983358562,
+          "error": null,
+          "width_px": 39.99999997284547,
+          "stages_ms": {
+            "_prepare_target_mask": 1.5070420049596578,
+            "_trim_border_connected_region": 0.20216699340380728,
+            "_crop_mask_roi": 1.8144159985240549,
+            "_resize_mask_for_geometry": 0.06212500738911331,
+            "_compute_skeleton": 4.010750009911135,
+            "_branch_points": 0.9203329973388463,
+            "_end_points": 0.8512919885106385,
+            "_border_forbidden_zone": 0.024666980607435107,
+            "_select_candidate_points": 0.9130000253207982,
+            "_estimate_tangent": 0.6710410234518349,
+            "_measure_candidate_line": 0.6389590271282941
+          },
+          "skeleton": {
+            "shape": [
+              422,
+              640
+            ],
+            "pixels": 584,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 33868,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 14.167333021759987,
+            "roi_size": [
+              640,
+              422
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 14.867499994579703,
+          "error": null,
+          "width_px": 39.99999997284547,
+          "stages_ms": {
+            "_prepare_target_mask": 1.7035839846357703,
+            "_trim_border_connected_region": 0.2364999963901937,
+            "_crop_mask_roi": 1.8765410059131682,
+            "_resize_mask_for_geometry": 0.07254097727127373,
+            "_compute_skeleton": 4.311124997911975,
+            "_branch_points": 0.9552499977871776,
+            "_end_points": 0.8182499732356519,
+            "_border_forbidden_zone": 0.015792000340297818,
+            "_select_candidate_points": 0.9034999820869416,
+            "_estimate_tangent": 0.6138339813333005,
+            "_measure_candidate_line": 0.6024160247761756
+          },
+          "skeleton": {
+            "shape": [
+              422,
+              640
+            ],
+            "pixels": 584,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 33868,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 14.651999983470887,
+            "roi_size": [
+              640,
+              422
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 14.867499994579703,
+      "success_count": 3
+    },
+    {
+      "name": "diagonal_120px",
+      "shape": [
+        1536,
+        2048
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 35.15599999809638,
+          "error": null,
+          "width_px": 120.99999647147867,
+          "stages_ms": {
+            "_prepare_target_mask": 6.8387909850571305,
+            "_trim_border_connected_region": 0.7794589910190552,
+            "_crop_mask_roi": 7.854583993321285,
+            "_resize_mask_for_geometry": 0.24049999774433672,
+            "_compute_skeleton": 5.235208023805171,
+            "_branch_points": 0.8933749923016876,
+            "_end_points": 0.8561249997001141,
+            "_border_forbidden_zone": 0.016709003830328584,
+            "_select_candidate_points": 0.9061250020749867,
+            "_estimate_tangent": 0.9107490186579525,
+            "_measure_candidate_line": 1.5160420152824372
+          },
+          "skeleton": {
+            "shape": [
+              424,
+              640
+            ],
+            "pixels": 588,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 211247,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 34.495500003686175,
+            "roi_size": [
+              640,
+              424
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 10,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 33.37708400795236,
+          "error": null,
+          "width_px": 120.99999647147867,
+          "stages_ms": {
+            "_prepare_target_mask": 5.534916010219604,
+            "_trim_border_connected_region": 0.7531250012107193,
+            "_crop_mask_roi": 7.473417004803196,
+            "_resize_mask_for_geometry": 0.21070902585051954,
+            "_compute_skeleton": 5.038333998527378,
+            "_branch_points": 0.932041002670303,
+            "_end_points": 0.8412919996771961,
+            "_border_forbidden_zone": 0.016083999071270227,
+            "_select_candidate_points": 0.9228749840985984,
+            "_estimate_tangent": 0.8193340036086738,
+            "_measure_candidate_line": 1.3992081221658736
+          },
+          "skeleton": {
+            "shape": [
+              424,
+              640
+            ],
+            "pixels": 588,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 211247,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 32.4507080076728,
+            "roi_size": [
+              640,
+              424
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 10,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 33.75741699710488,
+          "error": null,
+          "width_px": 120.99999647147867,
+          "stages_ms": {
+            "_prepare_target_mask": 5.7688749802764505,
+            "_trim_border_connected_region": 0.6382089923135936,
+            "_crop_mask_roi": 7.576042000437155,
+            "_resize_mask_for_geometry": 0.321083003655076,
+            "_compute_skeleton": 5.261250014882535,
+            "_branch_points": 0.8830419974401593,
+            "_end_points": 0.857082981383428,
+            "_border_forbidden_zone": 0.01750001683831215,
+            "_select_candidate_points": 0.9126249933615327,
+            "_estimate_tangent": 0.856749975355342,
+            "_measure_candidate_line": 1.4941240369807929
+          },
+          "skeleton": {
+            "shape": [
+              424,
+              640
+            ],
+            "pixels": 588,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 0,
+            "end_point_count": 2,
+            "component_area_px": 211247,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 33.04991699405946,
+            "roi_size": [
+              640,
+              424
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 10,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 33.75741699710488,
+      "success_count": 3
+    },
+    {
+      "name": "curved_48px",
+      "shape": [
+        768,
+        1024
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 13.361417019041255,
+          "error": null,
+          "width_px": 47.99999944770675,
+          "stages_ms": {
+            "_prepare_target_mask": 1.5517080028075725,
+            "_trim_border_connected_region": 0.2910830080509186,
+            "_crop_mask_roi": 1.8322080140933394,
+            "_resize_mask_for_geometry": 0.06887500057928264,
+            "_compute_skeleton": 3.700166998896748,
+            "_branch_points": 0.6815000087954104,
+            "_end_points": 0.5912080232519656,
+            "_border_forbidden_zone": 0.012833013897761703,
+            "_select_candidate_points": 0.803167000412941,
+            "_estimate_tangent": 0.5973740189801902,
+            "_measure_candidate_line": 0.640292972093448
+          },
+          "skeleton": {
+            "shape": [
+              294,
+              640
+            ],
+            "pixels": 650,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 3,
+            "end_point_count": 3,
+            "component_area_px": 50151,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 13.150040991604328,
+            "roi_size": [
+              640,
+              294
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 13.029082998400554,
+          "error": null,
+          "width_px": 47.99999944770675,
+          "stages_ms": {
+            "_prepare_target_mask": 1.578833005623892,
+            "_trim_border_connected_region": 0.13120900257490575,
+            "_crop_mask_roi": 1.822874997742474,
+            "_resize_mask_for_geometry": 0.06554200081154704,
+            "_compute_skeleton": 3.5937909851782024,
+            "_branch_points": 0.6395420059561729,
+            "_end_points": 0.5870420136488974,
+            "_border_forbidden_zone": 0.011957978131249547,
+            "_select_candidate_points": 0.7005830120760947,
+            "_estimate_tangent": 0.5877870426047593,
+            "_measure_candidate_line": 0.6754609930794686
+          },
+          "skeleton": {
+            "shape": [
+              294,
+              640
+            ],
+            "pixels": 650,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 3,
+            "end_point_count": 3,
+            "component_area_px": 50151,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 12.846750003518537,
+            "roi_size": [
+              640,
+              294
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 12.782291014445946,
+          "error": null,
+          "width_px": 47.99999944770675,
+          "stages_ms": {
+            "_prepare_target_mask": 1.52824999531731,
+            "_trim_border_connected_region": 0.12541699106805027,
+            "_crop_mask_roi": 1.9219160021748394,
+            "_resize_mask_for_geometry": 0.05295901792123914,
+            "_compute_skeleton": 3.497500001685694,
+            "_branch_points": 0.5788340058643371,
+            "_end_points": 0.5675000138580799,
+            "_border_forbidden_zone": 0.028040987672284245,
+            "_select_candidate_points": 0.6645829998888075,
+            "_estimate_tangent": 0.5796680343337357,
+            "_measure_candidate_line": 0.6858751003164798
+          },
+          "skeleton": {
+            "shape": [
+              294,
+              640
+            ],
+            "pixels": 650,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 3,
+            "end_point_count": 3,
+            "component_area_px": 50151,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 12.6453330158256,
+            "roi_size": [
+              640,
+              294
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 5,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 13.029082998400554,
+      "success_count": 3
+    },
+    {
+      "name": "cross_fixture",
+      "shape": [
+        220,
+        220
+      ],
+      "runs": [
+        {
+          "elapsed_ms": 5.560999998124316,
+          "error": null,
+          "width_px": 180.0,
+          "stages_ms": {
+            "_prepare_target_mask": 0.577667000470683,
+            "_trim_border_connected_region": 0.2843750116880983,
+            "_crop_mask_roi": 0.14033401384949684,
+            "_resize_mask_for_geometry": 0.007916009053587914,
+            "_compute_skeleton": 1.0029580153059214,
+            "_branch_points": 0.15291699673980474,
+            "_end_points": 0.14099999680183828,
+            "_border_forbidden_zone": 0.006749993190169334,
+            "_select_candidate_points": 0.19254200742579997,
+            "_estimate_tangent": 0.838957930682227,
+            "_measure_candidate_line": 1.9012930570170283
+          },
+          "skeleton": {
+            "shape": [
+              205,
+              205
+            ],
+            "pixels": 284,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 5,
+            "end_point_count": 4,
+            "component_area_px": 13161,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 5.520125007024035,
+            "roi_size": [
+              205,
+              205
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 5.540207988815382,
+          "error": null,
+          "width_px": 180.0,
+          "stages_ms": {
+            "_prepare_target_mask": 0.3878749848809093,
+            "_trim_border_connected_region": 0.18070798250846565,
+            "_crop_mask_roi": 0.13533301535062492,
+            "_resize_mask_for_geometry": 0.0038750004023313522,
+            "_compute_skeleton": 0.9980000031646341,
+            "_branch_points": 0.1656660169828683,
+            "_end_points": 0.1519579964224249,
+            "_border_forbidden_zone": 0.00999998883344233,
+            "_select_candidate_points": 0.19975000759586692,
+            "_estimate_tangent": 0.8962100255303085,
+            "_measure_candidate_line": 1.9705840095411986
+          },
+          "skeleton": {
+            "shape": [
+              205,
+              205
+            ],
+            "pixels": 284,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 5,
+            "end_point_count": 4,
+            "component_area_px": 13161,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 5.394666979555041,
+            "roi_size": [
+              205,
+              205
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        },
+        {
+          "elapsed_ms": 5.4709579853806645,
+          "error": null,
+          "width_px": 180.0,
+          "stages_ms": {
+            "_prepare_target_mask": 0.2923749852925539,
+            "_trim_border_connected_region": 0.10199999087490141,
+            "_crop_mask_roi": 0.13562501408159733,
+            "_resize_mask_for_geometry": 0.0032500247471034527,
+            "_compute_skeleton": 1.1142499861307442,
+            "_branch_points": 0.16604101983830333,
+            "_end_points": 0.17162499716505408,
+            "_border_forbidden_zone": 0.009750016033649445,
+            "_select_candidate_points": 0.1958749780897051,
+            "_estimate_tangent": 0.9049150685314089,
+            "_measure_candidate_line": 2.006583905313164
+          },
+          "skeleton": {
+            "shape": [
+              205,
+              205
+            ],
+            "pixels": 284,
+            "components": 1
+          },
+          "debug": {
+            "candidate_count": 12,
+            "branch_point_count": 5,
+            "end_point_count": 4,
+            "component_area_px": 13161,
+            "opened_holes": 0,
+            "segmentation_roi_round": null,
+            "segmentation_used_full_image": null,
+            "geometry_ms": 5.41412501479499,
+            "roi_size": [
+              205,
+              205
+            ],
+            "border_forbidden_seed_count": 0,
+            "edge_trim_enabled": true,
+            "edge_trim_pixels": 0,
+            "edge_trim_band_px": 4,
+            "line_extension_px": 0.0
+          }
+        }
+      ],
+      "median_ms": 5.540207988815382,
+      "success_count": 3
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+........                                                                 [100%]
+============================= slowest 5 durations ==============================
+1.32s call     tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_close_event_stops_idle_prompt_reference_and_fiber_quick_threads
+0.50s call     tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_fiber_quick_can_confirm_shape_before_geometry_finishes
+0.17s call     tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_fiber_quick_shortcuts_toggle_prompt_commit_and_cancel
+0.16s call     tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_fiber_quick_prompt_success_dispatches_async_geometry_worker
+0.15s call     tests/test_ui_canvas_and_export.py::CanvasAndExportTests::test_fiber_quick_request_uses_prompt_segmentation_worker
+8 passed, 282 deselected in 6.19s

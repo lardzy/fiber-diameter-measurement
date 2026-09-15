@@ -515,6 +515,27 @@ class BackgroundTaskControllerTests(unittest.TestCase):
         self.assertTrue(host.area_callback_threads)
         self.assertTrue(all(thread is app.thread() for thread in host.area_callback_threads))
 
+    def test_diameter_backends_warm_once_on_their_worker_threads(self) -> None:
+        app = _app()
+        host = _BackgroundHost()
+        manager = ThreadTaskManager(parent=app)
+        controller = BackgroundTaskController(host, manager)
+        warmed_threads = []
+        try:
+            with patch(
+                "fdm.ui.fiber_quick_geometry_worker.prepare_fiber_quick_geometry_backend",
+                side_effect=lambda: warmed_threads.append(QThread.currentThread()),
+            ):
+                preview = controller.ensure_fiber_quick_geometry_worker()
+                commit = controller.ensure_fiber_quick_commit_geometry_worker()
+                self.assertIs(preview, controller.ensure_fiber_quick_geometry_worker())
+                self.assertIs(commit, controller.ensure_fiber_quick_commit_geometry_worker())
+                _spin_until(lambda: len(warmed_threads) == 2)
+                self.assertCountEqual(warmed_threads, [preview.thread(), commit.thread()])
+                self.assertTrue(all(thread is not app.thread() for thread in warmed_threads))
+        finally:
+            controller.shutdown_all(document_ids=[], commit_document_ids=[])
+
     def test_persistent_workers_are_ensured_and_shutdown(self) -> None:
         host = _BackgroundHost()
         manager = ThreadTaskManager(parent=_app())

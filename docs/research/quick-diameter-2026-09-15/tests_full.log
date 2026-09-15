@@ -1,0 +1,97 @@
+................................................................. [  2%]
+........................................................................ [  4%]
+................................................................. [  7%]
+..................................................F................ [  9%]
+............... [  9%]
+................................................................. [ 12%]
+........................................................................ [ 14%]
+.............................................................. [ 16%]
+........................................................................ [ 19%]
+.............................................................. [ 21%]
+.................................................... [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 28%]
+........................................................................ [ 31%]
+........................................................................ [ 33%]
+........................................................................ [ 36%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+................................................................. [ 43%]
+......................................................................................................................... [ 47%]
+........................................................................ [ 50%]
+.................................................................................................. [ 53%]
+............................................... [ 55%]
+.................................................................. [ 57%]
+........................................................................ [ 60%]
+........................................................................................................................ [ 64%]
+................................................................................................................ [ 68%]
+........................................................................ [ 70%]
+...................................................................... [ 73%]
+........................................................... [ 75%]
+.................................................................. [ 77%]
+........................................................................ [ 80%]
+........................................................................ [ 82%]
+........................................................................ [ 85%]
+................................................................ [ 87%]
+........................................................................ [ 90%]
+............................................................ [ 92%]
+........................................................................ [ 94%]
+.............................................................................................................................. [ 99%]
+.......................                                                  [100%]
+=================================== FAILURES ===================================
+___ test_production_json_serialization_explicitly_rejects_non_finite_values ____
+
+    def test_production_json_serialization_explicitly_rejects_non_finite_values() -> None:
+        project_root = Path(__file__).resolve().parents[1]
+        paths = [
+            *(project_root / "src" / "fdm").rglob("*.py"),
+            *(project_root / "runtime" / "area-infer" / "app").rglob("*.py"),
+            *(project_root / "scripts").glob("*.py"),
+        ]
+        missing_contract: list[str] = []
+        for path in paths:
+            tree = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
+            for call in (
+                node
+                for node in ast.walk(tree)
+                if isinstance(node, ast.Call)
+                and isinstance(node.func, ast.Attribute)
+                and isinstance(node.func.value, ast.Name)
+                and node.func.value.id == "json"
+                and node.func.attr in {"dump", "dumps"}
+            ):
+                allow_nan = next(
+                    (keyword.value for keyword in call.keywords if keyword.arg == "allow_nan"),
+                    None,
+                )
+                if not (
+                    isinstance(allow_nan, ast.Constant)
+                    and allow_nan.value is False
+                ):
+                    relative = path.relative_to(project_root).as_posix()
+                    missing_contract.append(f"{relative}:{call.lineno}")
+
+>       assert missing_contract == []
+E       AssertionError: assert ['src/fdm/ui/...arison.py:66'] == []
+E
+E         Left contains 6 more items, first extra item: 'src/fdm/ui/contour_comparison_dialog.py:957'
+E         Use -v to get more diff
+
+tests/test_atomic_io.py:49: AssertionError
+============================= slowest 10 durations =============================
+91.75s call     tests/test_workbench_workflows.py::test_system_theme_uses_stable_controls_and_tracks_appearance
+43.36s call     tests/test_workbench_workflows.py::test_theme_switch_preserves_widget_class_fonts
+4.30s call     tests/test_digital_slide_acquisition_responsiveness.py::test_continuous_captures_publish_without_starting_hidden_renderers
+3.51s call     tests/test_overlay_render_self_check.py::test_probe_times_out_and_reaps_a_stuck_worker
+2.60s call     tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_checked_split_tool_icon_uses_readable_theme_foreground
+2.35s call     tests/test_contour_comparison_ui.py::test_axis_and_calibration_from_either_shared_pane_and_independent_undo
+2.23s call     tests/test_contour_comparison_ui.py::test_save_reopen_and_exports_are_consistent_snapshots
+2.17s call     tests/test_contour_comparison_ui.py::test_wand_click_prompt_refinement_and_manual_edit_invalidate_only_that_source
+2.05s call     tests/test_contour_comparison_ui.py::test_manual_brush_and_polygon_keep_native_geometry_and_undo_redo
+1.87s call     tests/test_professional_workspace.py::ProfessionalWorkspaceTests::test_collapsible_section_without_summary_keeps_title_left_aligned
+=========================== short test summary info ============================
+FAILED tests/test_atomic_io.py::test_production_json_serialization_explicitly_rejects_non_finite_values
+1 failed, 2845 passed, 1497 subtests passed in 388.79s (0:06:28)
+This plugin does not support setParent!
+This plugin does not support setParent!
+This plugin does not support setParent!

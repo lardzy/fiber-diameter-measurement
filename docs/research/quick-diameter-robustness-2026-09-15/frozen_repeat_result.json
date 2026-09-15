@@ -1,0 +1,45 @@
+{
+  "ok": true,
+  "backend": "skimage_zhang",
+  "geometry_revision": 2,
+  "backend_version": "0.26.0",
+  "compiled_extension": true,
+  "skeleton_connected": true,
+  "cases": {
+    "straight": {
+      "ok": true,
+      "width_px": 39.0,
+      "geometry_ms": 24.273708986584097
+    },
+    "diagonal": {
+      "ok": true,
+      "width_px": 24.000000000000007,
+      "geometry_ms": 28.469457989558578
+    },
+    "cross": {
+      "ok": true,
+      "width_px": 40.0,
+      "geometry_ms": 33.62795797875151
+    },
+    "short_fiber": {
+      "ok": true,
+      "width_px": 14.999999999999998,
+      "geometry_ms": 6.536790984682739
+    },
+    "near_border": {
+      "ok": true,
+      "width_px": 39.0,
+      "geometry_ms": 19.72495802328922
+    }
+  },
+  "incomplete_boundary_rejection": {
+    "ok": true,
+    "failure_code": "incomplete_boundary"
+  },
+  "platform": "macOS-26.6.2-arm64-arm-64bit-Mach-O",
+  "frozen": true,
+  "extension_in_bundle": true,
+  "extension": "/private/tmp/fdm-quick-geometry-robust-frozen-20260915/dist/fdm-quick-geometry-probe/_internal/skimage/morphology/_skeletonize_various_cy.cpython-313-darwin.so",
+  "stdio_none": true,
+  "probe_process_elapsed_ms": 2797.017125005368
+}
