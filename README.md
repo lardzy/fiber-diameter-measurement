@@ -91,6 +91,8 @@ Fiber Diameter Measurement（FDM）是一款离线桌面软件，用于把显微
 
 ![可筛选、复核和导出的分析结果中心](docs/readme-assets/analysis-results-center.png)
 
+**前后轮廓对比**通过“分析 → 前后轮廓对比…”打开，用于固定俯拍的衣物等物体处理前后外形检查。支持自动识别、标准魔棒补点与排除背景、画笔／多边形修边及撤销重做；以共同中线和参考高度计算左右外缘、内侧腿缝边界、上下端及投影面积变化。结果在原照片上标出前后边界和变化值，点击样品与表格可双向定位。支持毫米标定、独立保存 `.fdmcompare`、Excel 数据及带位置标注的叠加图导出。未标定结果明确使用像素；形状差异不直接解释为材料应变。[操作、参数和验证说明](docs/garment-contour-comparison.md)。
+
 ## 实时采集与数字化切片
 
 实时采集支持 OpenCV、Qt Multimedia 通用 USB 相机，以及 Windows 下的 Microview 设备链路。可用能力取决于当前后端、驱动与设备状态：
@@ -160,6 +162,7 @@ CU 系列专用模式不会启动第二个 Microview 实例，也不会访问或
 | `sample.assets/processed/` | 图像处理生成的无损派生图片 |
 | `sample.assets/slides/` | 项目内数字化切片 |
 | `sample.assets/analysis/` | 大型分析表格、曲线、标签图或掩膜等校验资产 |
+| `sample.fdmcompare` | 独立的前后轮廓对比，内嵌照片、原分辨率修正掩膜、中线和标定；从对比工作区打开 |
 
 普通打开的原始图片通常仍由项目引用，不会自动全部复制进资产目录。移动或备份项目时，应同时保留 `.fdmproj`、同名 `.assets` 目录和仍被引用的外部原图。
 

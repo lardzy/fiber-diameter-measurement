@@ -385,6 +385,7 @@ from fdm.ui.analysis_results_center import (
     AnalysisLocateRequest,
     AnalysisResultsCenter,
 )
+from fdm.ui.contour_comparison_dialog import ContourComparisonDialog
 from fdm.ui.analysis_parameters_dialog import (
     AnalysisParametersDialog,
     ProfilePreviewContext,
@@ -1818,6 +1819,7 @@ class MainWindow(QMainWindow):
         self._session_processed_assets: dict[str, Path] = {}
         self._cleanup_abandoned_processed_sessions()
         self._analysis_results_center: AnalysisResultsCenter | None = None
+        self._contour_comparison_dialog: ContourComparisonDialog | None = None
         self._analysis_run_contexts: dict[str, ImageAnalysisRunContext] = {}
         self._analysis_batch_dialog: AnalysisBatchDialog | None = None
         self._analysis_batch_run_context: AnalysisBatchRunContext | None = None
@@ -3023,6 +3025,11 @@ class MainWindow(QMainWindow):
         self.analysis_batch_action.triggered.connect(
             self._open_analysis_batch_dialog
         )
+        self.contour_comparison_action = QAction("前后轮廓对比…", self)
+        self.contour_comparison_action.setToolTip(
+            "比较衣物等物体处理前后相对中线的尺寸变化；自动识别轮廓、手动修正和导出"
+        )
+        self.contour_comparison_action.triggered.connect(self._open_contour_comparison)
         # QAction ownership alone does not make its shortcut active. Keep
         # window commands associated with the window when full screen hides
         # their menu/toolbar widgets, while retaining Qt's editor/modal rules.
@@ -3377,6 +3384,8 @@ class MainWindow(QMainWindow):
                 )
 
         analysis_menu = self.menuBar().addMenu("分析")
+        analysis_menu.addAction(self.contour_comparison_action)
+        analysis_menu.addSeparator()
         for tool in (
             AnalysisTool.SHAPE,
             AnalysisTool.INTENSITY,
@@ -6185,6 +6194,64 @@ class MainWindow(QMainWindow):
         if document is None:
             return None
         return self._canvases.get(document.id)
+
+    def _open_contour_comparison(self) -> None:
+        dialog = self._contour_comparison_dialog
+        if dialog is None:
+            dialog = ContourComparisonDialog(
+                self,
+                available_images=self._contour_comparison_sources,
+                source_loader=self._contour_comparison_source_loader,
+                wand_model_variant=self._app_settings.magic_segment_model_variant,
+            )
+            self._contour_comparison_dialog = dialog
+            dialog.destroyed.connect(
+                lambda _object=None, target=dialog: (
+                    setattr(self, "_contour_comparison_dialog", None)
+                    if self._contour_comparison_dialog is target else None
+                )
+            )
+        dialog.show()
+        dialog.raise_()
+        dialog.activateWindow()
+
+    def _contour_comparison_sources(self) -> list[tuple[str, str]]:
+        return [
+            (document.id, self._document_display_name(document))
+            for document in self.project.documents
+            if not document.is_digital_slide() and document.id in self._rasters
+        ]
+
+    def _contour_comparison_source_loader(self, document_id: str):
+        document = self.project.get_document(document_id)
+        plane = self._rasters.get(document_id)
+        if document is None or document.is_digital_slide() or plane is None:
+            raise ValueError("图片已关闭或不是普通图片，请重新选择。")
+        from fdm.services.contour_comparison import MAX_PIXELS
+        if plane.width * plane.height > MAX_PIXELS:
+            raise ValueError("轮廓对比单图最多支持 3600 万像素。")
+        label = self._document_display_name(document)
+        path = str(document.absolute_path or document.path)
+        calibration = document.calibration
+        unit_to_mm = {"mm": 1.0, "um": .001, "µm": .001, "μm": .001, "cm": 10.0, "m": 1000.0}
+        scale = (
+            unit_to_mm[calibration.unit] / calibration.pixels_per_unit
+            if calibration is not None and calibration.unit in unit_to_mm else None
+        )
+
+        def load(token):
+            import numpy as np
+            from fdm.services.contour_comparison import frame_from_rgba
+
+            token.raise_if_cancelled()
+            # RasterPlane owns immutable native pixel bytes. This conversion
+            # uses the identity display transform, independent of canvas zoom,
+            # measurement overlays and subsequent edits/closure of the tab.
+            image = raster_plane_to_qimage(plane).convertToFormat(QImage.Format.Format_RGBA8888)
+            pixels = np.frombuffer(image.constBits(), dtype=np.uint8).reshape(image.height(), image.bytesPerLine())[:, :image.width() * 4].reshape(image.height(), image.width(), 4)
+            return frame_from_rgba(pixels, label, source_path=path, mm_per_pixel=scale, token=token)
+
+        return load
 
     def _show_current_image_information(self) -> None:
         document = self.current_document()
@@ -28243,6 +28310,10 @@ class MainWindow(QMainWindow):
         return results
 
     def closeEvent(self, event: QCloseEvent) -> None:
+        if self._contour_comparison_dialog is not None:
+            if not self._contour_comparison_dialog.close():
+                event.ignore()
+                return
         intent = TransitionIntent.CLOSE_WINDOW
         disposition = self._preflight_acquisition_disposition(intent)
         if disposition == AcquisitionDisposition.CANCEL:
