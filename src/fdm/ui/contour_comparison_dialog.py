@@ -5,13 +5,14 @@ from dataclasses import replace
 import math
 import json
 
-from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt, QTimer
-from PySide6.QtGui import QAction, QCloseEvent, QImage, QKeySequence, QPainter
+from PySide6.QtCore import QAbstractTableModel, QEvent, QModelIndex, QSize, Qt, QTimer
+from PySide6.QtGui import QAction, QCloseEvent, QImage, QKeySequence, QPainter, QPalette
 from PySide6.QtWidgets import (
-    QAbstractItemView, QApplication, QButtonGroup, QCheckBox, QDialog,
+    QAbstractItemView, QApplication, QButtonGroup, QDialog,
     QFileDialog, QFrame, QHBoxLayout, QHeaderView, QInputDialog,
     QLabel, QMenu, QMessageBox, QPushButton, QScrollArea, QSplitter,
-    QTableView, QTabWidget, QToolButton, QVBoxLayout, QWidget,
+    QTableView, QTabWidget, QToolButton, QVBoxLayout, QWidget, QWidgetAction,
+    QStackedWidget, QSlider, QSizePolicy,
 )
 
 from fdm.services.contour_comparison import (
@@ -23,6 +24,8 @@ from fdm.ui.contour_comparison_canvas import (
     prepare_presentation,
 )
 from fdm.ui.contour_comparison_tasks import ContourTaskController
+from fdm.ui.contour_comparison_widgets import ElidedLabel, MetricCard, WorkspaceCheckBox, WORKSPACE_STYLE
+from fdm.ui.icons import themed_icon
 from fdm.ui.widgets import NoWheelComboBox, NoWheelDoubleSpinBox, NoWheelSpinBox
 
 
@@ -49,6 +52,8 @@ class _ProfileTableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.ItemDataRole.DisplayRole):
         if role == Qt.ItemDataRole.DisplayRole and orientation == Qt.Orientation.Horizontal:
             return self.headers[section] + (f" ({self.result.unit})" if self.result is not None and section == 0 else "")
+        if role == Qt.ItemDataRole.ToolTipRole and orientation == Qt.Orientation.Horizontal:
+            return "所有距离使用同一单位。左右变化：正值向外伸展，负值向内收缩；跨度包含腿缝等空隙。"
         return super().headerData(section, orientation, role)
 
     def data(self, index, role=Qt.ItemDataRole.DisplayRole):
@@ -56,6 +61,10 @@ class _ProfileTableModel(QAbstractTableModel):
             return None
         if role == Qt.ItemDataRole.TextAlignmentRole and index.column() < 10:
             return Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter
+        if role == Qt.ItemDataRole.ToolTipRole:
+            row = self.result.sections[index.row()]
+            value = getattr(row, self.fields[index.column()])
+            return f"{self.headers[index.column()]}：{'无对应轮廓' if value is None else value} {self.result.unit if index.column() < 10 else ''}\n{row.status}"
         if role == Qt.ItemDataRole.DisplayRole:
             value = getattr(self.result.sections[index.row()], self.fields[index.column()])
             if index.column() == 10:
@@ -122,13 +131,16 @@ class ContourComparisonDialog(QDialog):
         return button
 
     def _build_ui(self):
+        self.setObjectName("contourWorkspace")
+        self.setStyleSheet(WORKSPACE_STYLE)
+        self._icon_buttons = []
         root = QVBoxLayout(self)
-        root.setContentsMargins(14, 12, 14, 12)
-        root.setSpacing(9)
+        root.setContentsMargins(14, 12, 14, 10)
+        root.setSpacing(8)
         top = QHBoxLayout()
         title = QLabel("前后轮廓对比")
         font = title.font()
-        font.setPointSize(font.pointSize() + 4)
+        font.setPointSizeF(font.pointSizeF() + 5)
         font.setBold(True)
         title.setFont(font)
         top.addWidget(title)
@@ -137,91 +149,106 @@ class ContourComparisonDialog(QDialog):
         self.save_button = self._button("保存对比…", self._save, top)
         self.export_button = self._button("导出数据…", self._export, top)
         self.overlay_export_button = self._button("导出叠加图…", self._export_overlay, top)
+        for button, icon in ((self.open_session_button, "open_project"), (self.save_button, "save_project"), (self.export_button, "results"), (self.overlay_export_button, "export")):
+            self._add_icon(button, icon)
         root.addLayout(top)
-        self.explanation = QLabel("同一中线、同一参考高度：正值向外伸展，负值向内收缩。外形差异包含摆放影响，不等同于材料应变。")
-        self.explanation.setWordWrap(True)
+        self.explanation = ElidedLabel("识别前后轮廓，沿同一参考中线比较外形变化。可随时修正，结果自动更新。")
+        self.explanation.setProperty("muted", True)
         root.addWidget(self.explanation)
 
-        controls = QHBoxLayout()
-        self.same_capture = QCheckBox("固定机位：共用中线和标定")
+        reference = QFrame()
+        self.reference_bar = reference
+        reference.setObjectName("comparisonReference")
+        controls = QHBoxLayout(reference)
+        controls.setContentsMargins(10, 4, 10, 4)
+        controls.setSpacing(10)
+        controls.addWidget(QLabel("测量基准"))
+        self.same_capture = WorkspaceCheckBox("共用中线和标定")
         self.same_capture.setChecked(True)
-        self.same_capture.setToolTip("适用于前后照片分辨率、相机位置、焦距、裁切和拍摄平面均相同。第一点是固定参考高度，不能分别对齐衣物新的上端。")
+        self.same_capture.setToolTip("固定机位且分辨率、焦距、裁切、拍摄平面相同时可共用。取消后可分别设置；不会清除现有中线。重新勾选以处理前为准。第一点必须对应同一固定参考高度。")
         self.same_capture.toggled.connect(self._shared_changed)
         controls.addWidget(self.same_capture)
-        controls.addStretch()
-        controls.addWidget(QLabel("沿中线每隔"))
+        self.reference_hint = ElidedLabel("固定机位 · 两张同步设置")
+        self.reference_hint.setProperty("muted", True)
+        controls.addWidget(self.reference_hint, 1)
+        controls.addWidget(QLabel("截线间隔"))
         self.step = NoWheelDoubleSpinBox()
         self.step.setDecimals(3)
         self.step.setRange(.01, 10000)
         self.step.setValue(10)
         self.step.setSuffix(" px")
-        self.step.setToolTip("截线之间的距离。不是测量精度，也不是材料应变的空间分辨率。")
+        self.step.setFixedWidth(116)
+        self.step.setToolTip("沿中线每隔此距离测一条截线。不是测量精度；间隔更密不代表更准确。")
         self.step.valueChanged.connect(self._step_changed)
         controls.addWidget(self.step)
-        controls.addWidget(QLabel("取一条截线"))
+        root.addWidget(reference)
 
         self.tabs = QTabWidget()
+        self.quality_badge = QToolButton()
+        self.quality_badge.setProperty("badge", True)
+        self.quality_badge.clicked.connect(self._locate_reference)
+        self.tabs.setCornerWidget(self.quality_badge)
         edit_page = QWidget()
         edit_layout = QVBoxLayout(edit_page)
-        edit_layout.setContentsMargins(4, 8, 4, 4)
+        edit_layout.setContentsMargins(0, 8, 0, 0)
         edit_layout.setSpacing(7)
-        edit_layout.addLayout(controls)
-        tool_scroll = QScrollArea()
-        tool_scroll.setWidgetResizable(True)
-        tool_scroll.setFrameShape(QFrame.Shape.NoFrame)
-        tool_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        tool_scroll.setFixedHeight(52)
-        tool_widget = QWidget()
+        tool_widget = QFrame()
+        tool_widget.setObjectName("comparisonToolbar")
         toolbar = QHBoxLayout(tool_widget)
-        toolbar.setContentsMargins(0, 0, 0, 4)
-        toolbar.setSpacing(5)
+        toolbar.setContentsMargins(6, 4, 6, 4)
+        toolbar.setSpacing(2)
         self.tool_group = QButtonGroup(self)
         self.tool_group.setExclusive(True)
         self.tools = {}
-        for mode, text, tip in (
-            ("browse", "查看", "滚轮缩放，按住右键拖动；点击图片选择修正对象"),
-            ("wand", "魔棒", "点击目标，可连续补点；Alt＋点击排除背景。自动应用，可撤销；Esc 结束点选"),
-            ("brush_add", "补画", "按住左键补入衣物区域"),
-            ("brush_remove", "剔除", "按住左键剔除背景或腿缝"),
-            ("polygon_add", "圈入", "逐点圈入区域，Enter 或双击完成"),
-            ("polygon_remove", "圈除", "逐点剔除区域，Enter 或双击完成"),
-            ("axis", "设中线", "先点共同参考高度的原点，再沿中线向下点第二点；第二点只决定方向"),
-            ("calibrate", "标定", "在与衣物同一平面的标尺上点两端，再输入实际距离"),
-            ("roi", "框选识别", "拖框包含整个目标及少量背景，重新自动识别；可撤销"),
-        ):
+        definitions = (
+            ("browse", "查看", "select", "滚轮缩放，右键拖动；点击任一照片即可切换编辑对象"),
+            ("wand", "魔棒", "magic_segment", "点击目标，连续补点；Alt＋点击排除背景。完成后自动应用，Esc 结束点选"),
+            ("brush_add", "补画", "freehand_area", "按住左键补入选区；[ / ] 调整画笔，X 切换补画与剔除"),
+            ("brush_remove", "剔除", "mask_erase", "按住左键剔除选区；[ / ] 调整画笔，X 切换补画与剔除"),
+            ("polygon_add", "圈入", "polygon_area", "逐点圈入，Enter 或双击完成；Backspace 退回一点，X 切换圈入与圈除"),
+            ("polygon_remove", "圈除", "polygon_subtract", "逐点剔除，Enter 或双击完成；Backspace 退回一点，X 切换圈入与圈除"),
+            ("roi", "框选识别", "area_auto", "拖框包含整个目标及少量背景，重新自动识别；可撤销"),
+            ("axis", "设中线", "manual", "先点固定参考高度的原点，再沿中线向下点第二点；不能分别追随衣物新的上端"),
+            ("calibrate", "标定", "calibration", "在与衣物同一平面的标尺上点两端，再输入实际距离（mm）"),
+        )
+        for mode, text, icon, tip in definitions:
+            if mode in ("axis",):
+                divider = QFrame()
+                divider.setFrameShape(QFrame.Shape.VLine)
+                toolbar.addWidget(divider)
             button = QToolButton()
             button.setText(text)
-            button.setToolTip(tip)
+            shortcut = {"browse": "V", "wand": "W", "brush_add": "B", "brush_remove": "E", "polygon_add": "P"}.get(mode)
+            button.setToolTip(tip + (f" · 快捷键 {shortcut}" if shortcut else ""))
+            button.setAccessibleName(text)
             button.setCheckable(True)
-            button.setMinimumHeight(32)
+            button.setToolButtonStyle(Qt.ToolButtonStyle.ToolButtonTextBesideIcon)
+            self._add_icon(button, icon)
             self.tool_group.addButton(button)
             button.clicked.connect(lambda _checked=False, selected=mode: self._set_mode(selected))
             toolbar.addWidget(button)
             self.tools[mode] = button
-        self.tools["browse"].setChecked(True)
-        toolbar.addWidget(QLabel("半径"))
-        self.brush = NoWheelSpinBox()
-        self.brush.setRange(1, 500)
-        self.brush.setValue(8)
-        self.brush.setSuffix(" px")
-        self.brush.setFixedWidth(91)
-        self.brush.valueChanged.connect(self._brush_changed)
-        toolbar.addWidget(self.brush)
+        toolbar.addStretch()
         self.undo_button = self._button("撤销", self.undo, toolbar)
         self.redo_button = self._button("重做", self.redo, toolbar)
-        toolbar.addStretch()
-        tool_scroll.setWidget(tool_widget)
-        edit_layout.addWidget(tool_scroll)
-        self.tool_hint = QLabel("选择照片后修正。滚轮缩放 · 右键拖动 · 多边形按 Enter 完成 · Esc 取消当前修正")
-        self.tool_hint.setWordWrap(True)
-        hint_row = QHBoxLayout()
-        hint_row.addWidget(self.tool_hint, 1)
-        self.coverage_visible = QCheckBox("显示覆盖")
-        self.coverage_visible.setChecked(True)
-        self.coverage_visible.setToolTip("取消勾选可对照原照片纹理；不会改变参与计算的轮廓")
-        self.coverage_visible.toggled.connect(self._coverage_changed)
-        hint_row.addWidget(self.coverage_visible)
-        edit_layout.addLayout(hint_row)
+        self.undo_button.setToolTip("撤销上一次修正（Ctrl+Z / ⌘Z）")
+        self.redo_button.setToolTip("恢复已撤销的修正（Ctrl+Shift+Z / ⌘⇧Z）")
+        edit_layout.addWidget(tool_widget)
+
+        context = QFrame()
+        context.setObjectName("comparisonContext")
+        context_layout = QVBoxLayout(context)
+        context_layout.setContentsMargins(10, 3, 10, 5)
+        context_layout.setSpacing(2)
+        # A stable two-line area prevents tool changes from moving either photo.
+        self.tool_options = QStackedWidget()
+        self.tool_options.setSizePolicy(QSizePolicy.Policy.Ignored, QSizePolicy.Policy.Fixed)
+        self.default_options = QWidget()
+        default_row = QHBoxLayout(self.default_options)
+        default_row.setContentsMargins(0, 0, 0, 0)
+        self.mode_caption = ElidedLabel()
+        default_row.addWidget(self.mode_caption, 1)
+        self.tool_options.addWidget(self.default_options)
         self.wand_options = QWidget()
         wand_row = QHBoxLayout(self.wand_options)
         wand_row.setContentsMargins(0, 0, 0, 0)
@@ -229,27 +256,61 @@ class ContourComparisonDialog(QDialog):
         self.wand_operation = NoWheelComboBox()
         for label, value in (("替换轮廓", "replace"), ("补入轮廓", "add"), ("剔除区域", "remove")):
             self.wand_operation.addItem(label, value)
-        self.wand_operation.setToolTip("替换：重新选整个物体；补入／剔除：只修改所选区域。连续补点始终基于本次点选前的轮廓。")
-        self.wand_operation.currentIndexChanged.connect(lambda: self._reset_wand(all_sources=True))
+        self.wand_operation.setToolTip("替换：重新选择整个物体。补入／剔除：只修改所选区域，连续点选基于本次开始前的轮廓。")
+        self.wand_operation.currentIndexChanged.connect(self._wand_operation_changed)
         wand_row.addWidget(self.wand_operation)
-        self.wand_negative = QCheckBox("点选排除背景")
-        self.wand_negative.setToolTip("也可按住 Alt 点击背景；右键仍用于拖动画布。剔除区域模式下，此处指不需要剔除的区域。")
+        self.wand_negative = WorkspaceCheckBox("点选排除背景")
+        self.wand_negative.setToolTip("或按住 Alt 点击；右键仍拖动画布。剔除模式中，负点指不需要剔除的部分。")
         wand_row.addWidget(self.wand_negative)
         self.wand_reset_button = self._button("重新选点", self._reset_wand, wand_row)
         wand_row.addStretch()
-        self.wand_options.hide()
-        edit_layout.addWidget(self.wand_options)
+        self.tool_options.addWidget(self.wand_options)
+        self.brush_options = QWidget()
+        brush_row = QHBoxLayout(self.brush_options)
+        brush_row.setContentsMargins(0, 0, 0, 0)
+        brush_row.addWidget(QLabel("画笔半径"))
+        self.brush = NoWheelSpinBox()
+        self.brush.setRange(1, 500)
+        self.brush.setValue(8)
+        self.brush.setSuffix(" px")
+        self.brush.setFixedWidth(100)
+        self.brush.valueChanged.connect(self._brush_changed)
+        brush_row.addWidget(self.brush)
+        brush_tip = ElidedLabel("原图像素 · [ 缩小 / ] 放大 · X 切换补画与剔除")
+        brush_tip.setProperty("muted", True)
+        brush_row.addWidget(brush_tip, 1)
+        self.tool_options.addWidget(self.brush_options)
+        options_row = QHBoxLayout()
+        options_row.addWidget(self.tool_options, 1)
+        self.coverage_visible = WorkspaceCheckBox("显示覆盖")
+        self.coverage_visible.setChecked(True)
+        self.coverage_visible.setToolTip("只切换选区填色；轮廓、原图和计算范围不变。")
+        self.coverage_visible.toggled.connect(self._coverage_changed)
+        options_row.addWidget(self.coverage_visible)
+        context_layout.addLayout(options_row)
+        self.tool_hint = ElidedLabel()
+        self.tool_hint.setProperty("muted", True)
+        context_layout.addWidget(self.tool_hint)
+        edit_layout.addWidget(context)
+
         self.image_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.canvases, self.name_labels, self.scale_labels, self.import_buttons, self.auto_buttons = [], [], [], [], []
+        self.image_panels, self.active_labels, self.axis_labels, self.source_labels = [], [], [], []
         for index, (text, color) in enumerate((("处理前", BEFORE_COLOR), ("处理后", AFTER_COLOR))):
-            panel = QWidget()
+            panel = QFrame()
+            panel.setObjectName("comparisonImagePanel")
             panel_layout = QVBoxLayout(panel)
-            panel_layout.setContentsMargins(2, 0, 2, 0)
+            panel_layout.setContentsMargins(9, 8, 9, 7)
+            panel_layout.setSpacing(5)
             header = QHBoxLayout()
-            label = QLabel(text)
-            label.setStyleSheet(f"color: {color.name()}; font-weight: bold;")
+            label = QLabel(("●  " if index == 0 else "■  ") + text)
+            label.setStyleSheet(f"color: {color.name()}; font-weight: 600;")
+            self.source_labels.append(label)
             header.addWidget(label)
-            header.addStretch()
+            active_label = ElidedLabel()
+            active_label.setProperty("muted", True)
+            header.addWidget(active_label, 1)
+            self.active_labels.append(active_label)
             import_button = QToolButton()
             import_button.setText("导入照片")
             import_button.setPopupMode(QToolButton.ToolButtonPopupMode.MenuButtonPopup)
@@ -269,35 +330,57 @@ class ContourComparisonDialog(QDialog):
             auto.setMenu(auto_menu)
             header.addWidget(auto)
             self.auto_buttons.append(auto)
-            self._button("适合窗口", lambda _checked=False, i=index: self.canvases[i].fit(), header)
+            fit = QToolButton()
+            fit.setText("适合窗口")
+            fit.setToolTip("适合窗口（F）")
+            self._add_icon(fit, "fit")
+            fit.clicked.connect(lambda _checked=False, i=index: self.canvases[i].fit())
+            header.addWidget(fit)
             panel_layout.addLayout(header)
-            name_label = QLabel("尚未导入")
-            name_label.setMinimumWidth(0)
-            name_label.setWordWrap(True)
-            name_label.setMaximumHeight(38)
+            name_label = ElidedLabel("尚未导入照片")
+            name_label.setProperty("muted", True)
             panel_layout.addWidget(name_label)
             self.name_labels.append(name_label)
             canvas = ContourImageCanvas(color)
+            canvas.set_source_title(text)
+            canvas.import_requested.connect(lambda i=index: self._import_file(i))
             canvas.activated.connect(lambda i=index: self._activate(i))
             canvas.gesture.connect(lambda mode, points, i=index: self._gesture(i, mode, points))
             canvas.wand_finished.connect(lambda i=index: self._end_wand(i))
+            canvas.tool_requested.connect(self._set_mode)
+            canvas.brush_adjusted.connect(lambda delta: self.brush.setValue(self.brush.value() + delta))
             panel_layout.addWidget(canvas, 1)
             self.canvases.append(canvas)
-            scale_label = QLabel("未标定 · 结果只能使用像素")
-            scale_label.setWordWrap(True)
-            panel_layout.addWidget(scale_label)
+            footer = QHBoxLayout()
+            scale_label = ElidedLabel("未标定 · 仅像素")
+            footer.addWidget(scale_label, 1)
             self.scale_labels.append(scale_label)
+            axis_label = QLabel("中线待设置")
+            axis_label.setProperty("muted", True)
+            footer.addWidget(axis_label)
+            self.axis_labels.append(axis_label)
+            panel_layout.addLayout(footer)
+            self.image_panels.append(panel)
             self.image_splitter.addWidget(panel)
         self.image_splitter.setChildrenCollapsible(False)
         edit_layout.addWidget(self.image_splitter, 1)
-        self.tabs.addTab(edit_page, "① 照片与轮廓")
+        self.tabs.addTab(edit_page, "照片与轮廓")
 
         result_page = QWidget()
         result_layout = QVBoxLayout(result_page)
-        result_layout.setContentsMargins(4, 8, 4, 4)
-        self.summary_label = QLabel("导入前后照片后自动计算。")
-        self.summary_label.setWordWrap(True)
+        result_layout.setContentsMargins(0, 8, 0, 0)
+        result_layout.setSpacing(7)
+        self.summary_label = ElidedLabel("当前选区 · 导入前后照片后自动计算")
+        self.summary_label.setProperty("muted", True)
         result_layout.addWidget(self.summary_label)
+        metrics = QHBoxLayout()
+        metrics.setSpacing(8)
+        self.metrics = {}
+        for key, title, description in (("length", "纵向总长变化", "下端到上端的投影长度"), ("top", "上端变化", "相对固定零高度 · 向外为正"), ("bottom", "下端变化", "相对固定零高度 · 向外为正"), ("area", "投影面积变化", "当前选区 · 不等同材料应变")):
+            card = MetricCard(title, description)
+            metrics.addWidget(card, 1)
+            self.metrics[key] = card
+        result_layout.addLayout(metrics)
         result_tools = QHBoxLayout()
         result_tools.addWidget(QLabel("底图"))
         self.result_background = NoWheelComboBox()
@@ -306,80 +389,233 @@ class ContourComparisonDialog(QDialog):
         result_tools.addWidget(self.result_background)
         self.result_fit_button = self._button("适合窗口", lambda: self.overlay.fit(), result_tools)
         result_tools.addStretch()
-        result_tools.addWidget(QLabel("参考高度"))
+        result_tools.addWidget(QLabel("定位高度"))
         self.section_height = NoWheelDoubleSpinBox()
         self.section_height.setDecimals(3)
-        self.section_height.setMinimumWidth(112)
+        self.section_height.setFixedWidth(124)
         self.section_height.valueChanged.connect(self._select_height)
         result_tools.addWidget(self.section_height)
         self.previous_section = self._button("上一处", lambda: self._step_section(-1), result_tools)
         self.next_section = self._button("下一处", lambda: self._step_section(1), result_tools)
-        self.more_columns = QCheckBox("详细数据")
-        self.more_columns.toggled.connect(self._show_more_columns)
-        result_tools.addWidget(self.more_columns)
+        self.records_visible = WorkspaceCheckBox("显示记录")
+        self.records_visible.setChecked(True)
+        result_tools.addWidget(self.records_visible)
         result_layout.addLayout(result_tools)
-        split = QSplitter(Qt.Orientation.Horizontal)
+        self.result_splitter = QSplitter(Qt.Orientation.Horizontal)
         self.overlay = ContourOverlayCanvas()
-        self.overlay.setMinimumWidth(320)
+        self.overlay.setMinimumWidth(300)
         self.overlay.height_selected.connect(self._select_height)
+        self.overlay.section_stepped.connect(self._step_section)
         self.result_background.currentIndexChanged.connect(lambda: self.overlay.set_background(self.result_background.currentData()))
-        split.addWidget(self.overlay)
+        self.result_splitter.addWidget(self.overlay)
+        self.records_panel = QFrame()
+        self.records_panel.setObjectName("comparisonRecords")
+        records = QVBoxLayout(self.records_panel)
+        records.setContentsMargins(1, 6, 1, 0)
+        records.setSpacing(4)
+        record_header = QHBoxLayout()
+        record_header.setContentsMargins(9, 0, 9, 0)
+        self.record_count = QLabel("逐高度记录")
+        record_header.addWidget(self.record_count)
+        record_header.addStretch()
+        self.more_columns = WorkspaceCheckBox("详细数据")
+        self.more_columns.toggled.connect(self._show_more_columns)
+        record_header.addWidget(self.more_columns)
+        records.addLayout(record_header)
+        interval_row = QHBoxLayout()
+        interval_row.setContentsMargins(9, 0, 9, 0)
+        interval_row.addWidget(QLabel("截线间隔"))
+        self.result_step = NoWheelDoubleSpinBox()
+        self.result_step.setDecimals(3)
+        self.result_step.setRange(.01, 10000)
+        self.result_step.setValue(self.step.value())
+        self.result_step.setFixedWidth(116)
+        self.result_step.setToolTip(self.step.toolTip())
+        self.result_step.valueChanged.connect(self.step.setValue)
+        interval_row.addWidget(self.result_step)
+        interval_row.addStretch()
+        records.addLayout(interval_row)
         self.table = QTableView()
         self.table_model = _ProfileTableModel(self)
         self.table.setModel(self.table_model)
         self.table.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setShowGrid(False)
+        self.table.setAlternatingRowColors(True)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
-        self.table.horizontalHeader().setDefaultSectionSize(76)
+        self.table.horizontalHeader().setDefaultSectionSize(78)
+        self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setColumnWidth(10, 180)
         self.table.setMinimumWidth(280)
         self.table.verticalHeader().setVisible(False)
+        self.table.verticalHeader().setDefaultSectionSize(30)
         self.table.selectionModel().selectionChanged.connect(self._select_section)
-        split.addWidget(self.table)
-        split.setStretchFactor(0, 3)
-        split.setStretchFactor(1, 2)
-        split.setChildrenCollapsible(False)
-        split.setSizes([640, 440])
-        result_layout.addWidget(split, 1)
-        self.section_label = QLabel("点击样品或记录定位。左右变化对应图上外缘标记，外缘跨度包含腿缝；详细数据与分段交集可导出。")
-        self.section_label.setWordWrap(True)
+        records.addWidget(self.table, 1)
+        self.result_splitter.addWidget(self.records_panel)
+        self.result_splitter.setStretchFactor(0, 3)
+        self.result_splitter.setStretchFactor(1, 2)
+        self.result_splitter.setChildrenCollapsible(False)
+        self.result_splitter.setSizes([720, 460])
+        self.records_visible.toggled.connect(self.records_panel.setVisible)
+        result_layout.addWidget(self.result_splitter, 1)
+        locator = QHBoxLayout()
+        locator.addWidget(QLabel("上端"))
+        self.section_slider = QSlider(Qt.Orientation.Horizontal)
+        self.section_slider.setToolTip("连续浏览已计算的高度；不更改采样间隔或测量数据")
+        self.section_slider.valueChanged.connect(self._select_section_index)
+        locator.addWidget(self.section_slider, 1)
+        locator.addWidget(QLabel("下端"))
+        self.position_label = QLabel("— / —")
+        locator.addWidget(self.position_label)
+        result_layout.addLayout(locator)
+        self.section_label = ElidedLabel("点击样品或记录，查看这一高度的左右外缘变化。")
         result_layout.addWidget(self.section_label)
-        self.tabs.addTab(result_page, "② 变化结果")
-        self.tabs.currentChanged.connect(lambda index: self.explanation.setVisible(index == 0))
+        self.tabs.addTab(result_page, "变化结果")
+        self.tabs.currentChanged.connect(self._page_changed)
         root.addWidget(self.tabs, 1)
 
-        self.warning_label = QLabel("中线为自动建议。请使用固定台面上的参考位置；标尺与衣物应处于同一平面，前后铺放一致。")
-        self.warning_label.setWordWrap(True)
-        root.addWidget(self.warning_label)
+        notice = QHBoxLayout()
+        self.warning_label = ElidedLabel("请先导入前后照片；照片应完整包含样品和同平面标尺。")
+        self.warning_label.setProperty("muted", True)
+        notice.addWidget(self.warning_label, 1)
+        self.notes_button = QToolButton()
+        self.notes_button.setText("测量说明")
+        self.notes_button.setPopupMode(QToolButton.ToolButtonPopupMode.InstantPopup)
+        self.notes_menu = QMenu(self.notes_button)
+        self.notes_menu.aboutToShow.connect(self._populate_notes)
+        self.notes_button.setMenu(self.notes_menu)
+        notice.addWidget(self.notes_button)
+        root.addLayout(notice)
         bottom = QHBoxLayout()
-        self.status = QLabel("准备就绪 · 原照片和现有测量保持独立")
-        self.status.setWordWrap(True)
+        self.status = ElidedLabel("准备就绪 · 滚轮缩放 · 右键拖动")
         bottom.addWidget(self.status, 1)
         self.cancel_button = self._button("取消计算", self._tasks.cancel, bottom)
         self.cancel_button.hide()
-        self._button("关闭", self.close, bottom)
+        close_button = self._button("关闭", self.close, bottom)
+        close_button.setAutoDefault(False)
         root.addLayout(bottom)
+        # Enter completes polygons, never an accidentally focused default button.
+        for button in self.findChildren(QPushButton):
+            button.setAutoDefault(False)
         for standard, callback in ((QKeySequence.StandardKey.Undo, self.undo), (QKeySequence.StandardKey.Redo, self.redo), (QKeySequence.StandardKey.Save, self._save)):
             action = QAction(self)
             action.setShortcuts(QKeySequence.keyBindings(standard))
             action.triggered.connect(callback)
             self.addAction(action)
+        self._set_mode("browse")
         self._activate(0)
+        self._refresh_labels()
         self._show_more_columns(False)
+
+    def _add_icon(self, button, name):
+        self._refresh_icon(button, name)
+        button.setIconSize(QSize(16, 16))
+        self._icon_buttons.append((button, name))
+        if button.isCheckable():
+            button.toggled.connect(lambda: self._refresh_icon(button, name))
+
+    def _refresh_icon(self, button, name):
+        role = QPalette.ColorRole.HighlightedText if button.isChecked() else QPalette.ColorRole.WindowText
+        button.setIcon(themed_icon(name, color=self.palette().color(role).name()))
+
+    def changeEvent(self, event):
+        super().changeEvent(event)
+        if event.type() in (QEvent.Type.PaletteChange, QEvent.Type.ApplicationPaletteChange):
+            for button, name in getattr(self, "_icon_buttons", ()):
+                self._refresh_icon(button, name)
+            if hasattr(self, "quality_badge") and hasattr(self, "scale_labels"):
+                self._refresh_labels()
+
+    def _populate_notes(self):
+        self.notes_menu.clear()
+        label = QLabel("测量说明\n\n" + self.warning_label.text() + "\n\n同高度外形差异包含摆放影响，不代表同一材料点的应变。原图、原分辨率轮廓和标定参与计算；屏幕缩放不影响数值。")
+        label.setTextFormat(Qt.TextFormat.PlainText)
+        label.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        label.setWordWrap(True)
+        width = min(460, max(260, self.width() - 80))
+        label.setFixedWidth(width)
+        label.setContentsMargins(14, 12, 14, 12)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(label)
+        scroll.setFrameShape(QFrame.Shape.NoFrame)
+        scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setFixedSize(width + 22, min(max(160, label.heightForWidth(width) + 8), max(180, self.height() - 200)))
+        action = QWidgetAction(self.notes_menu)
+        action.setDefaultWidget(scroll)
+        self.notes_menu.addAction(action)
+
+    def _locate_reference(self):
+        self.tabs.setCurrentIndex(0)
+        loaded = [i for i, frame in enumerate(self.frames) if frame is not None]
+        if not loaded:
+            self.status.setText("点击处理前／处理后画布中的按钮导入照片。")
+            return
+        if len(loaded) == 1:
+            self._import_file(1 - loaded[0])
+            return
+        index = next((i for i in loaded if self.frames[i].mm_per_pixel is None), None)
+        if index is not None:
+            self._activate(index)
+            self._set_mode("calibrate")
+        else:
+            index = next((i for i in loaded if not self.frames[i].axis_confirmed), self.active)
+            self._activate(index)
+            self._set_mode("axis")
+        self.canvases[index].setFocus()
+
+    def _wand_operation_changed(self):
+        self._reset_wand(all_sources=True)
+        removing = self.wand_operation.currentData() == "remove"
+        self.wand_negative.setText("点选保留部分" if removing else "点选排除背景")
+
+    def _select_section_index(self, index):
+        if self.result is not None and 0 <= index < len(self.result.sections):
+            self._select_height(self.result.sections[index].height)
+
+    def _page_changed(self, index):
+        self.reference_bar.setVisible(index == 0)
+        self.explanation.setVisible(index == 0 and self.height() >= 760)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        compact = event.size().height() < 760
+        for card in getattr(self, "metrics", {}).values():
+            card.description.setVisible(not compact)
+        if hasattr(self, "tabs"):
+            self.explanation.setVisible(not compact and self.tabs.currentIndex() == 0)
 
     def _activate(self, index):
         self.active = index
         for i, canvas in enumerate(self.canvases):
             canvas.selected = i == index
             canvas.update()
+            self.active_labels[i].setText("正在编辑" if i == index else "点击编辑")
+            panel = self.image_panels[i]
+            if panel.property("active") != (i == index):
+                panel.setProperty("active", i == index)
+                panel.style().unpolish(panel)
+                panel.style().polish(panel)
+                panel.update()
 
     def _set_mode(self, mode):
+        if self._tasks.busy:
+            return
         self.tools[mode].setChecked(True)
         for canvas in self.canvases:
             canvas.set_mode(mode)
-        self.tool_hint.setText(self.tools[mode].toolTip() + (" · 右键拖动" if mode == "wand" else " · 右键拖动 · Esc 取消"))
-        self.wand_options.setVisible(mode == "wand")
+        self.tool_hint.setText(self.tools[mode].toolTip())
+        self.tool_options.setCurrentWidget(self.wand_options if mode == "wand" else self.brush_options if mode.startswith("brush") else self.default_options)
+        captions = {
+            "browse": "点击照片切换编辑对象 · 滚轮缩放 · 右键拖动 · F 适合窗口",
+            "axis": "两点设置：① 固定零高度　② 沿中线向下",
+            "calibrate": "两点标定：① 标尺起点　② 标尺终点 → 输入实际毫米",
+            "polygon_add": "圈入选区 · Enter 完成 · Backspace 退回一点 · Esc 取消",
+            "polygon_remove": "圈除选区 · Enter 完成 · Backspace 退回一点 · Esc 取消",
+            "roi": "框住整个目标，留少量背景 · 松开鼠标后重新识别",
+        }
+        self.mode_caption.setText(captions.get(mode, ""))
 
     def _reset_wand(self, *args, all_sources=False):
         for i in (range(2) if all_sources else (self.active,)):
@@ -403,7 +639,7 @@ class ContourComparisonDialog(QDialog):
         positive, excluded = session["positive"], session["negative"]
         if negative or self.wand_negative.isChecked():
             if not positive:
-                self.status.setText("请先取消“点选排除背景”，在要识别的区域内点一下，再排除背景。")
+                self.status.setText(f"请先取消“{self.wand_negative.text()}”，在要识别的区域内点一下，再添加排除点。")
                 return
             excluded += (point,)
         else:
@@ -503,7 +739,15 @@ class ContourComparisonDialog(QDialog):
         self.overlay.clear()
         self.table_model.set_result(None)
         self.summary_label.setText("正在等待两张有效轮廓与一致标定…")
+        for card in self.metrics.values():
+            card.set_value("—")
+        self.record_count.setText("逐高度记录")
+        self.position_label.setText("— / —")
         self.step.setSuffix(" mm" if all(f is not None and f.mm_per_pixel is not None for f in self.frames) else " px")
+        self.result_step.blockSignals(True)
+        self.result_step.setValue(self.step.value())
+        self.result_step.setSuffix(self.step.suffix())
+        self.result_step.blockSignals(False)
         self.setWindowTitle("前后轮廓对比" + (" *" if self.dirty else ""))
         self._trim_history()
         self._refresh_labels()
@@ -513,24 +757,44 @@ class ContourComparisonDialog(QDialog):
 
     def _refresh_labels(self):
         warnings = []
+        dark = self.palette().color(QPalette.ColorRole.Window).lightness() < 128
+        warning_color = "#F3BF70" if dark else "#935500"
+        for label, color in zip(self.source_labels, ("#51c4dd", "#ffb571") if dark else ("#006f86", "#a84e02")):
+            label.setStyleSheet(f"color: {color}; font-weight: 600;")
         for i, frame in enumerate(self.frames):
             if frame is None:
-                self.name_labels[i].setText("尚未导入")
-                self.scale_labels[i].setText("未标定 · 结果只能使用像素")
+                self.name_labels[i].setText("导入后自动提取轮廓，可继续手动修正")
+                self.scale_labels[i].setText("尚未导入")
+                self.scale_labels[i].setStyleSheet("")
+                self.axis_labels[i].setText("中线待设置")
                 continue
             self.name_labels[i].setText(frame.label)
             self.name_labels[i].setToolTip(frame.source_path or frame.label)
             if frame.mm_per_pixel is None:
-                self.scale_labels[i].setText("未标定 · px / px²（不能作为毫米）")
-                self.scale_labels[i].setStyleSheet("color: #cc7130; font-weight: bold;")
+                self.scale_labels[i].setText("未标定 · 仅 px / px²")
+                self.scale_labels[i].setStyleSheet(f"color: {warning_color}; font-weight: 600;")
             else:
-                self.scale_labels[i].setText(f"已标定 · {frame.mm_per_pixel:.6g} mm/px · 原点 ({frame.axis.origin[0]:.1f}, {frame.axis.origin[1]:.1f})")
+                self.scale_labels[i].setText(f"已标定 · {frame.mm_per_pixel:.6g} mm/px")
                 self.scale_labels[i].setStyleSheet("")
+            self.scale_labels[i].setToolTip(f"{self.scale_labels[i].text()} · 原点 ({frame.axis.origin[0]:.1f}, {frame.axis.origin[1]:.1f})")
+            self.axis_labels[i].setText("中线已设置" if frame.axis_confirmed else "中线待设置")
             warnings.extend(frame.warnings)
-        message = "请复核中线与轮廓；参考高度不能分别追随处理前后衣物的上端。"
+        self.reference_hint.setText("固定机位 · 两张同步设置" if self.same_capture.isChecked() else "分别设置 · 两图须对应同一零高度")
+        loaded = [f for f in self.frames if f is not None]
+        calibrated = len(loaded) == 2 and all(f.mm_per_pixel is not None for f in loaded)
+        confirmed = calibrated and all(f.axis_confirmed for f in loaded)
+        badge = "导入前后照片" if not loaded else "未标定 · 仅像素" if not calibrated else "mm · 中线待设置" if not confirmed else "mm · 中线已设置"
+        if len(loaded) == 1:
+            badge = "待导入处理后照片" if self.frames[1] is None else "待导入处理前照片"
+        if len(loaded) == 2 and sum(f.mm_per_pixel is not None for f in loaded) == 1:
+            badge = "标定不一致 · 待设置"
+        self.quality_badge.setText(badge)
+        self.quality_badge.setToolTip("点击定位到需要设置的照片和工具。共用设置只适用于相同机位、尺寸及拍摄平面。")
+        self.quality_badge.setStyleSheet(f"color: {warning_color};" if loaded and not confirmed else "")
+        message = "请复核中线与轮廓；两图的零高度必须对应同一固定参考位置。"
         if warnings:
             message += " " + " ".join(dict.fromkeys(warnings))
-        self.warning_label.setText(message)
+        self.warning_label.setText(" ".join(self.result.warnings) if self.result else message)
 
     def _update_controls(self):
         busy = self._tasks.busy
@@ -539,9 +803,10 @@ class ContourComparisonDialog(QDialog):
         for i, button in enumerate(self.auto_buttons):
             button.setEnabled(not busy and self.frames[i] is not None)
         for button in self.tools.values():
-            button.setEnabled(not busy)
+            button.setEnabled(not busy and any(f is not None for f in self.frames))
         for canvas in self.canvases:
             canvas.editing_enabled = not busy
+            canvas.import_button.setEnabled(not busy)
         self.open_session_button.setEnabled(not busy)
         self.save_button.setEnabled(not busy and any(f is not None for f in self.frames))
         ready = not busy and self.result is not None and self._result_revision == self._revision
@@ -551,10 +816,13 @@ class ContourComparisonDialog(QDialog):
         self.redo_button.setEnabled(not busy and bool(self._redo))
         self.same_capture.setEnabled(not busy)
         self.step.setEnabled(not busy)
+        self.result_step.setEnabled(not busy)
         self.brush.setEnabled(not busy)
         self.wand_options.setEnabled(not busy)
+        self.quality_badge.setEnabled(not busy)
         has_result = self.result is not None
         self.section_height.setEnabled(has_result)
+        self.section_slider.setEnabled(has_result)
         self.previous_section.setEnabled(has_result and self.table.currentIndex().row() > 0)
         self.next_section.setEnabled(has_result and self.table.currentIndex().row() < len(self.result.sections)-1)
 
@@ -653,6 +921,7 @@ class ContourComparisonDialog(QDialog):
             return
         path = self._choose_file(title="选择处理前照片" if index == 0 else "选择处理后照片", filters="照片 (*.png *.jpg *.jpeg *.tif *.tiff *.bmp *.webp);;所有文件 (*)")
         if path:
+            self._activate(index)
             self._replace_frame(index, lambda token: load_frame(path, token=token), "读取照片并提取轮廓")
 
     def _import_source(self, index, key):
@@ -660,6 +929,7 @@ class ContourComparisonDialog(QDialog):
             return
         try:
             loader = self.source_loader(key)
+            self._activate(index)
             self._replace_frame(index, loader, "读取图片快照并提取轮廓")
         except Exception as exc:
             QMessageBox.warning(self, "无法导入图片", str(exc))
@@ -668,6 +938,7 @@ class ContourComparisonDialog(QDialog):
         frame = self.frames[index]
         if frame is None or self._tasks.busy:
             return
+        self._activate(index)
         def work(token):
             mask, warnings = automatic_mask(frame.rgba, method=method, roi=roi, token=token)
             return replace(frame, mask=mask, warnings=warnings, edited=True)
@@ -811,7 +1082,11 @@ class ContourComparisonDialog(QDialog):
         s = result.summary
         clipped = any("截断" in warning for warning in result.warnings)
         prefix = "当前选区（可能截断）" if clipped else "当前选区"
-        self.summary_label.setText(f"{prefix}：上端 {s['上端向外变化']:+.3f} {result.unit}　下端 {s['下端向外变化']:+.3f} {result.unit}　纵向总长 {s['纵向总长变化']:+.3f} {result.unit}　投影面积 {s['投影面积变化率 (%)']:+.2f}%")
+        self.summary_label.setText(f"{prefix} · 处理后 − 处理前 · 下方截线定位局部变化")
+        for name, key in (("length", "纵向总长变化"), ("top", "上端向外变化"), ("bottom", "下端向外变化")):
+            self.metrics[name].set_value(f"{self._number(s[key], True)} {result.unit}")
+        self.metrics["area"].set_value(f"{s['投影面积变化率 (%)']:+.2f}%")
+        self.record_count.setText(f"逐高度记录 · {len(result.sections)} 条")
         self.table_model.set_result(result)
         self.warning_label.setText(" ".join(result.warnings))
         self.section_height.blockSignals(True)
@@ -819,14 +1094,21 @@ class ContourComparisonDialog(QDialog):
         self.section_height.setSingleStep(result.step)
         self.section_height.setSuffix(" " + result.unit)
         self.section_height.blockSignals(False)
+        self.section_slider.blockSignals(True)
+        self.section_slider.setRange(0, len(result.sections) - 1)
+        self.section_slider.blockSignals(False)
         height = self._selected_height
         if height is None:
             height = result.sections[len(result.sections)//2].height
         self._select_height(height)
 
     def _show_more_columns(self, visible):
-        for column in range(4, 10):
+        for column in range(4, 11):
             self.table.setColumnHidden(column, not visible)
+        header = self.table.horizontalHeader()
+        header.setStretchLastSection(visible)
+        for column in range(4):
+            header.setSectionResizeMode(column, QHeaderView.ResizeMode.Interactive if visible else QHeaderView.ResizeMode.Stretch)
 
     def _select_height(self, height):
         if self.result is None:
@@ -852,6 +1134,10 @@ class ContourComparisonDialog(QDialog):
         self.section_height.blockSignals(True)
         self.section_height.setValue(row.height)
         self.section_height.blockSignals(False)
+        self.section_slider.blockSignals(True)
+        self.section_slider.setValue(i)
+        self.section_slider.blockSignals(False)
+        self.position_label.setText(f"{i+1} / {len(self.result.sections)}")
         detail = "；".join(f"第 {i+1} 段左右边界 {self._number(left, True)} / {self._number(right, True)}" for i, (left, right) in enumerate(row.boundary_changes[:6])) if len(row.boundary_changes) > 1 else ""
         if len(row.boundary_changes) > 6:
             detail += "；更多分段见导出数据。"

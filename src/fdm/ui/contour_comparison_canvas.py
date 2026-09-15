@@ -8,7 +8,7 @@ import cv2
 import numpy as np
 from PySide6.QtCore import QPointF, QRectF, Qt, Signal
 from PySide6.QtGui import QColor, QImage, QPainter, QPainterPath, QPalette, QPen, QPolygonF, QTransform
-from PySide6.QtWidgets import QWidget
+from PySide6.QtWidgets import QLabel, QPushButton, QVBoxLayout, QWidget
 
 from fdm.services.contour_comparison import ContourFrame
 
@@ -58,6 +58,8 @@ class _PanZoomCanvas(QWidget):
         self.zoom = 1.0
         self.offset = QPointF()
         self._pan = None
+        self._pan_button = None
+        self._space_pan = False
         self._auto_fit = True
         self.setMinimumSize(180, 220)
         self.setMouseTracking(True)
@@ -99,8 +101,10 @@ class _PanZoomCanvas(QWidget):
 
     def mousePressEvent(self, event):
         self.setFocus()
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+        left_pan = event.button() == Qt.MouseButton.LeftButton and (self._space_pan or getattr(self, "mode", None) == "browse")
+        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton) or left_pan:
             self._pan = event.position()
+            self._pan_button = event.button()
             self.setCursor(Qt.CursorShape.ClosedHandCursor)
             event.accept()
 
@@ -112,16 +116,47 @@ class _PanZoomCanvas(QWidget):
             self.update()
 
     def mouseReleaseEvent(self, event):
-        if event.button() in (Qt.MouseButton.RightButton, Qt.MouseButton.MiddleButton):
+        if event.button() == self._pan_button:
             self._pan = None
+            self._pan_button = None
             self.unsetCursor()
             event.accept()
+
+    def focusOutEvent(self, event):
+        self._space_pan = False
+        self._pan = None
+        self._pan_button = None
+        self.unsetCursor()
+        super().focusOutEvent(event)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pan = True
+            self.setCursor(Qt.CursorShape.OpenHandCursor)
+            event.accept()
+        elif event.key() == Qt.Key.Key_F and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            self.fit()
+            event.accept()
+        else:
+            super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key.Key_Space and not event.isAutoRepeat():
+            self._space_pan = False
+            if self._pan is None:
+                self.unsetCursor()
+            event.accept()
+        else:
+            super().keyReleaseEvent(event)
 
 
 class ContourImageCanvas(_PanZoomCanvas):
     activated = Signal()
     gesture = Signal(str, object)
     wand_finished = Signal()
+    import_requested = Signal()
+    tool_requested = Signal(str)
+    brush_adjusted = Signal(int)
 
     def __init__(self, color=BEFORE_COLOR, parent=None):
         super().__init__(parent)
@@ -141,7 +176,35 @@ class ContourImageCanvas(_PanZoomCanvas):
         self._dragging = False
         self.selected = False
         self.wand_prompts = ()
+        empty_layout = QVBoxLayout(self)
+        empty_layout.addStretch()
+        self.empty_panel = QWidget()
+        empty = QVBoxLayout(self.empty_panel)
+        empty.setSpacing(9)
+        self.empty_title = QLabel("导入照片")
+        self.empty_title.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        font = self.empty_title.font()
+        font.setPointSizeF(font.pointSizeF() + 4)
+        font.setBold(True)
+        self.empty_title.setFont(font)
+        empty.addWidget(self.empty_title)
+        self.import_button = QPushButton("选择照片…")
+        self.import_button.setProperty("primary", True)
+        self.import_button.setAutoDefault(False)
+        self.import_button.clicked.connect(self.import_requested)
+        empty.addWidget(self.import_button, 0, Qt.AlignmentFlag.AlignHCenter)
+        tip = QLabel("导入后自动提取轮廓，再用魔棒或手动修边")
+        tip.setWordWrap(True)
+        tip.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        tip.setProperty("muted", True)
+        empty.addWidget(tip)
+        empty_layout.addWidget(self.empty_panel)
+        empty_layout.addStretch()
         self.setToolTip("滚轮缩放 · 右键拖动 · Esc 取消当前修正 · 多边形按 Enter 完成")
+
+    def set_source_title(self, title):
+        self.empty_title.setText(title)
+        self.import_button.setText("导入" + title + "照片…")
 
     def content_rect(self):
         if self.frame is None:
@@ -153,6 +216,7 @@ class ContourImageCanvas(_PanZoomCanvas):
         self.cancel_gesture()
         previous = self.presentation
         self.frame, self.presentation = frame, presentation
+        self.empty_panel.setVisible(frame is None)
         if presentation is not previous:
             self.path = contour_path(presentation) if presentation else QPainterPath()
         if reset_view:
@@ -182,8 +246,6 @@ class ContourImageCanvas(_PanZoomCanvas):
         painter = QPainter(self)
         painter.fillRect(self.rect(), self.palette().brush(QPalette.ColorRole.Base))
         if self.frame is None:
-            painter.setPen(self.palette().color(QPalette.ColorRole.PlaceholderText))
-            painter.drawText(self.rect().adjusted(14, 14, -14, -14), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, "导入照片后自动提取轮廓\n也可使用已打开的图片")
             return
         painter.setRenderHint(QPainter.RenderHint.SmoothPixmapTransform, self.zoom < 1)
         painter.setTransform(self.transform())
@@ -230,6 +292,17 @@ class ContourImageCanvas(_PanZoomCanvas):
             painter.setPen(pen)
             painter.drawEllipse(self.hover, self.radius, self.radius)
         painter.resetTransform()
+        # Label the fixed reference origin, not the changing garment's top.
+        origin_screen = self.transform().map(o)
+        if self.rect().adjusted(8, 8, -8, -8).contains(origin_screen.toPoint()):
+            label = "零高度 · 已设置" if self.frame.axis_confirmed else "建议中线 · 待设置"
+            label_width = painter.fontMetrics().horizontalAdvance(label) + 16
+            rect = QRectF(max(5, min(self.width()-label_width-5, origin_screen.x()+10)), max(5, origin_screen.y()-26), label_width, 21)
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.setBrush(QColor(31, 38, 47, 225))
+            painter.drawRoundedRect(rect, 4, 4)
+            painter.setPen(QColor("#fff0b4"))
+            painter.drawText(rect, Qt.AlignmentFlag.AlignCenter, label)
         if self.mode == "wand":
             for point, positive in self.wand_prompts:
                 position = self.transform().map(QPointF(*point))
@@ -241,13 +314,14 @@ class ContourImageCanvas(_PanZoomCanvas):
                     painter.drawLine(position + QPointF(0, -3), position + QPointF(0, 3))
             painter.setBrush(Qt.BrushStyle.NoBrush)
         if self.selected:
+            painter.setBrush(Qt.BrushStyle.NoBrush)
             painter.setPen(QPen(self.color, 2))
             painter.drawRect(self.rect().adjusted(1, 1, -1, -1))
 
     def mousePressEvent(self, event):
         self.activated.emit()
         super().mousePressEvent(event)
-        if event.button() != Qt.MouseButton.LeftButton or self.frame is None or not self.editing_enabled:
+        if self._pan is not None or event.button() != Qt.MouseButton.LeftButton or self.frame is None or not self.editing_enabled:
             return
         p = self.to_content(event.position())
         if not self.content_rect().contains(p):
@@ -279,8 +353,9 @@ class ContourImageCanvas(_PanZoomCanvas):
         self.update()
 
     def mouseReleaseEvent(self, event):
+        was_panning = self._pan is not None
         super().mouseReleaseEvent(event)
-        if event.button() == Qt.MouseButton.LeftButton and self._dragging:
+        if not was_panning and event.button() == Qt.MouseButton.LeftButton and self._dragging:
             p = self.to_content(event.position())
             if self.mode == "roi":
                 self.points = [self.points[0], p]
@@ -302,6 +377,21 @@ class ContourImageCanvas(_PanZoomCanvas):
             if len(self.points) >= 3:
                 self._finish()
             event.accept()
+        elif event.key() == Qt.Key.Key_Backspace and self.mode.startswith("polygon") and self.points:
+            self.points.pop()
+            self.update()
+            event.accept()
+        elif self.editing_enabled and not self.points and event.modifiers() == Qt.KeyboardModifier.NoModifier and event.key() in (Qt.Key.Key_V, Qt.Key.Key_W, Qt.Key.Key_B, Qt.Key.Key_E, Qt.Key.Key_P, Qt.Key.Key_X):
+            modes = {Qt.Key.Key_V: "browse", Qt.Key.Key_W: "wand", Qt.Key.Key_B: "brush_add", Qt.Key.Key_E: "brush_remove", Qt.Key.Key_P: "polygon_add"}
+            mode = modes.get(event.key())
+            if event.key() == Qt.Key.Key_X:
+                mode = {"brush_add": "brush_remove", "brush_remove": "brush_add", "polygon_add": "polygon_remove", "polygon_remove": "polygon_add"}.get(self.mode)
+            if mode:
+                self.tool_requested.emit(mode)
+            event.accept()
+        elif self.editing_enabled and self.mode.startswith("brush") and not self.points and event.key() in (Qt.Key.Key_BracketLeft, Qt.Key.Key_BracketRight):
+            self.brush_adjusted.emit(max(1, round(self.radius * .2)) * (-1 if event.key() == Qt.Key.Key_BracketLeft else 1))
+            event.accept()
         else:
             super().keyPressEvent(event)
 
@@ -314,6 +404,7 @@ class ContourImageCanvas(_PanZoomCanvas):
 class ContourOverlayCanvas(_PanZoomCanvas):
     """A common-axis photo overlay; annotations use measured native crossings."""
     height_selected = Signal(float)
+    section_stepped = Signal(int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -325,6 +416,7 @@ class ContourOverlayCanvas(_PanZoomCanvas):
         self.section = None
         self.unit = "px"
         self.background = "before"
+        self._source_geometry = None
         self.setToolTip("点击样品选择对应高度 · 滚轮缩放 · 右键拖动 · 蓝色圆点为处理前，橙色方点为处理后")
 
     def content_rect(self):
@@ -334,13 +426,19 @@ class ContourOverlayCanvas(_PanZoomCanvas):
             bounds = bounds.united(transform.mapRect(QRectF(0, 0, image.width(), image.height())))
         return bounds
 
+    @staticmethod
+    def _plot_layout(size):
+        # Preserve a useful specimen area on small laptop windows, while the
+        # same two callouts remain readable and never cover the fitted photo.
+        return (30, 88) if size.height() < 360 else (38, 120)
+
     def fit(self):
         bounds = self.content_rect()
         if bounds.width() <= 0 or bounds.height() <= 0:
             return
         # A separate lower band holds location-linked values, never covers the
         # specimen when fitted. All labels/markers retain their screen size.
-        top, bottom = 42, 120
+        top, bottom = self._plot_layout(self.size())
         self.zoom = max(.00001, min((self.width() - 40) / bounds.width(), (self.height() - top - bottom - 20) / bounds.height()))
         self.offset = QPointF(self.width() / 2 - bounds.center().x() * self.zoom, top + (self.height() - top - bottom) / 2 - bounds.center().y() * self.zoom)
         self._auto_fit = True
@@ -356,6 +454,9 @@ class ContourOverlayCanvas(_PanZoomCanvas):
             self.update()
 
     def set_comparison(self, frames, presentations, result):
+        source_geometry = tuple((id(f.rgba), f.axis, f.scale) for f in frames)
+        reset_view = self._auto_fit or source_geometry != self._source_geometry
+        self._source_geometry = source_geometry
         self.paths = [contour_path(p, f) for f, p in zip(frames, presentations)]
         self.rasters = []
         self.photos = []
@@ -370,7 +471,10 @@ class ContourOverlayCanvas(_PanZoomCanvas):
         self.height_line = None
         self.section = None
         self.unit = result.unit
-        self.fit()
+        if reset_view:
+            self.fit()
+        else:
+            self.update()
 
     def set_section(self, section):
         self.section = section
@@ -387,11 +491,19 @@ class ContourOverlayCanvas(_PanZoomCanvas):
 
     def mousePressEvent(self, event):
         super().mousePressEvent(event)
-        if event.button() == Qt.MouseButton.LeftButton and self.paths and 38 <= event.position().y() < self.height() - 120:
+        top, bottom = self._plot_layout(self.size())
+        if self._pan is None and event.button() == Qt.MouseButton.LeftButton and self.paths and top <= event.position().y() < self.height() - bottom:
             height = self.to_content(event.position()).y()
             if self.bounds.top() <= height <= self.bounds.bottom():
                 self.height_selected.emit(height)
                 event.accept()
+
+    def keyPressEvent(self, event):
+        if self.paths and event.key() in (Qt.Key.Key_Up, Qt.Key.Key_Down) and event.modifiers() == Qt.KeyboardModifier.NoModifier:
+            self.section_stepped.emit(-1 if event.key() == Qt.Key.Key_Up else 1)
+            event.accept()
+        else:
+            super().keyPressEvent(event)
 
     @staticmethod
     def _number(value):
@@ -448,15 +560,16 @@ class ContourOverlayCanvas(_PanZoomCanvas):
 
     def _paint_callouts(self, painter, size, plot):
         row = self.section
+        _, bottom = self._plot_layout(size)
         if row is None:
             painter.setPen(QColor("#536473"))
-            painter.drawText(QRectF(12, size.height()-105, size.width()-24, 75), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, "点击样品或表格，定位同一高度的前后边界。")
+            painter.drawText(QRectF(12, size.height()-bottom+10, size.width()-24, bottom-30), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, "点击样品或表格，定位同一高度的前后边界。")
             return
         font = painter.font()
         gap, margin = 10, 10
         width = (size.width() - 2*margin - gap) / 2
         for side in (0, 1):
-            card = QRectF(margin + side*(width+gap), size.height()-110, width, 82)
+            card = QRectF(margin + side*(width+gap), size.height()-bottom+10, width, bottom-38)
             # A leader links each card to its visible specimen edge. Leaders
             # are clipped to the plot so panning cannot paint over the legend.
             points = []
@@ -478,18 +591,19 @@ class ContourOverlayCanvas(_PanZoomCanvas):
             painter.drawRoundedRect(card, 7, 7)
             painter.setPen(QColor("#34495d"))
             title = "左外缘" if side == 0 else "右外缘"
-            painter.drawText(card.adjusted(10, 5, -8, -57), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
+            compact = bottom < 120
+            painter.drawText(QRectF(card.left()+10, card.top()+(0 if compact else 3), card.width()-18, 16 if compact else 18), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, title)
             change = row.left_change if side == 0 else row.right_change
             bold = painter.font()
             bold.setBold(True)
             painter.setFont(bold)
             painter.setPen(QColor("#80388c"))
-            painter.drawText(card.adjusted(10, 26, -8, -32), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.change_text(change, self.unit))
+            painter.drawText(QRectF(card.left()+10, card.top()+(16 if compact else 26), card.width()-18, 18 if compact else 22), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, self.change_text(change, self.unit))
             painter.setFont(font)
             before = row.left_before if side == 0 else row.right_before
             after = row.left_after if side == 0 else row.right_after
             painter.setPen(QColor("#566b7b"))
-            painter.drawText(card.adjusted(10, 50, -8, -4), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter | Qt.TextFlag.TextWordWrap, f"距中线：{self._number(before)} → {self._number(after)} {self.unit}")
+            painter.drawText(QRectF(card.left()+10, card.top()+(32 if compact else 52), card.width()-18, 18 if compact else 23), Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter, f"距中线：{self._number(before)} → {self._number(after)} {self.unit}")
         painter.setPen(QColor("#566b7b"))
         painter.drawText(QRectF(10, size.height()-24, size.width()-20, 20), Qt.AlignmentFlag.AlignCenter, f"参考高度 {self._number(row.height)} {self.unit} · 位置按真实比例，变化未放大")
 
@@ -499,7 +613,8 @@ class ContourOverlayCanvas(_PanZoomCanvas):
             painter.setPen(QColor("#536473"))
             painter.drawText(QRectF(12, 12, size.width() - 24, size.height() - 24), Qt.AlignmentFlag.AlignCenter | Qt.TextFlag.TextWordWrap, "导入前后照片，完成轮廓与标定后显示对比")
             return
-        plot = QRectF(0, 38, size.width(), max(1, size.height()-158))
+        top, bottom = self._plot_layout(size)
+        plot = QRectF(0, top, size.width(), max(1, size.height()-top-bottom))
         painter.save()
         painter.setClipRect(plot)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
@@ -536,14 +651,15 @@ class ContourOverlayCanvas(_PanZoomCanvas):
         self._paint_section(painter, plot)
         painter.restore()
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        self._marker(painter, QPointF(18, 20), True)
+        legend_y = top / 2
+        self._marker(painter, QPointF(18, legend_y), True)
         painter.setPen(QColor("#176b82"))
-        painter.drawText(29, 24, "处理前")
-        self._marker(painter, QPointF(103, 20), False)
+        painter.drawText(QPointF(29, legend_y+4), "处理前")
+        self._marker(painter, QPointF(103, legend_y), False)
         painter.setPen(QColor("#9a4c0b"))
-        painter.drawText(114, 24, "处理后")
+        painter.drawText(QPointF(114, legend_y+4), "处理后")
         painter.setPen(QColor("#566b7b"))
-        painter.drawText(QRectF(180, 8, max(0, size.width()-190), 25), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, "点击样品定位")
+        painter.drawText(QRectF(180, 0, max(0, size.width()-190), top), Qt.AlignmentFlag.AlignRight | Qt.AlignmentFlag.AlignVCenter, "点击样品定位")
         self._paint_callouts(painter, size, plot)
 
     def paintEvent(self, event):

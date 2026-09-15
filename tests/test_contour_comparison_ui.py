@@ -11,7 +11,7 @@ import pytest
 from shiboken6 import isValid
 from PySide6.QtCore import QPoint, QPointF, Qt
 from PySide6.QtTest import QTest
-from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QPushButton
 
 from fdm.services.contour_comparison import ContourAxis, ContourFrame, frame_from_rgba, load_comparison
 from fdm.ui.contour_comparison_dialog import ContourComparisonDialog
@@ -561,3 +561,182 @@ def test_pending_comparison_does_not_start_inside_calibration_prompt(app, dialog
     settle(app, dialog)
     assert dialog.result is not None and dialog.frames[0].mm_per_pixel == .2
     assert dialog._result_revision == dialog._revision
+
+
+def test_empty_photo_buttons_cancel_without_hiding_workspace(app, dialog):
+    for i, canvas in enumerate(dialog.canvases):
+        assert canvas.import_button.isVisible()
+        with patch.object(QFileDialog, "getOpenFileName", return_value=("", "")) as choose:
+            QTest.mouseClick(canvas.import_button, Qt.MouseButton.LeftButton)
+        assert choose.call_count == 1
+        assert ("处理前" if i == 0 else "处理后") in choose.call_args.kwargs.get("caption", choose.call_args.args[1])
+        assert dialog.isVisible() and not dialog.dirty
+        assert dialog.frames == [None, None]
+    populate(app, dialog)
+    assert all(not canvas.import_button.isVisible() for canvas in dialog.canvases)
+
+
+@pytest.mark.parametrize("size", [(860, 640), (1280, 880)])
+@pytest.mark.parametrize("theme", ["light", "dark", "system"])
+def test_switching_tools_never_moves_photos_or_clips_toolbar(app, dialog, size, theme):
+    from fdm.ui.theme import apply_application_theme
+    apply_application_theme(app, theme)
+    populate(app, dialog)
+    dialog.resize(*size)
+    app.processEvents()
+    baseline = [canvas.geometry() for canvas in dialog.canvases]
+    for mode in dialog.tools:
+        dialog._set_mode(mode)
+        app.processEvents()
+        assert [canvas.geometry() for canvas in dialog.canvases] == baseline, mode
+        for button in dialog.tools.values():
+            assert button.isVisible() and button.width() >= button.sizeHint().width(), (theme, size, mode, button.text())
+            assert dialog.rect().contains(button.mapTo(dialog, button.rect().bottomRight()))
+    # Filename and quality notices must not resize or move either photo.
+    for label in dialog.name_labels:
+        label.setText("非常长的中文照片文件名称" * 50)
+    dialog.warning_label.setText("轮廓需要复核。" * 80)
+    app.processEvents()
+    assert [canvas.geometry() for canvas in dialog.canvases] == baseline
+    assert (dialog.width(), dialog.height()) == size
+
+
+def test_active_photo_highlight_does_not_tint_its_image(app, dialog):
+    populate(app, dialog)
+    canvas = dialog.canvases[0]
+    p = canvas.transform().map(QPointF(60, 60)).toPoint()
+    dialog._activate(0)
+    selected = canvas.grab().toImage()
+    dialog._activate(1)
+    other = canvas.grab().toImage()
+    # Selection is a border/text change; the specimen's displayed pixel must
+    # not inherit the reference-label painter's dark background brush.
+    assert selected.pixelColor(p) == other.pixelColor(p)
+    assert "正在编辑" in dialog.active_labels[1].text()
+
+
+def test_canvas_shortcuts_and_temporary_pan_keep_geometry_intact(app, dialog):
+    populate(app, dialog)
+    canvas = dialog.canvases[1]
+    original = dialog.frames[1].mask
+    QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=QPoint(60, 60))
+    QTest.keyClick(canvas, Qt.Key.Key_B)
+    assert dialog.tools["brush_add"].isChecked()
+    QTest.keyClick(canvas, Qt.Key.Key_X)
+    assert dialog.tools["brush_remove"].isChecked()
+    radius = dialog.brush.value()
+    QTest.keyClick(canvas, Qt.Key.Key_BracketRight)
+    assert dialog.brush.value() > radius
+    old_offset = QPointF(canvas.offset)
+    QTest.keyPress(canvas, Qt.Key.Key_Space)
+    QTest.mousePress(canvas, Qt.MouseButton.LeftButton, pos=QPoint(100, 100))
+    QTest.mouseMove(canvas, QPoint(130, 125))
+    QTest.mouseRelease(canvas, Qt.MouseButton.LeftButton, pos=QPoint(130, 125))
+    QTest.keyRelease(canvas, Qt.Key.Key_Space)
+    assert canvas.offset != old_offset and not canvas.has_gesture()
+    assert dialog.frames[1].mask is original and not dialog._tasks.busy
+    QTest.keyClick(canvas, Qt.Key.Key_F)
+    QTest.keyClick(canvas, Qt.Key.Key_P)
+    for point in ((60, 50), (65, 70)):
+        QTest.mouseClick(canvas, Qt.MouseButton.LeftButton, pos=canvas.transform().map(QPointF(*point)).toPoint())
+    assert len(canvas.points) == 2
+    QTest.keyClick(canvas, Qt.Key.Key_Backspace)
+    assert len(canvas.points) == 1
+    # A shortcut must not silently switch/discard an unfinished polygon.
+    QTest.keyClick(canvas, Qt.Key.Key_X)
+    assert len(canvas.points) == 1 and canvas.mode == "polygon_add"
+    QTest.keyClick(canvas, Qt.Key.Key_Escape)
+    assert dialog.frames[1].mask is original
+
+
+def test_result_locator_and_sampling_stay_linked_without_editing_geometry(app, dialog):
+    populate(app, dialog)
+    dialog.tabs.setCurrentIndex(1)
+    app.processEvents()
+    frames = tuple(dialog.frames)
+    result = dialog.result
+    dialog.dirty = False
+    dialog.section_slider.setValue(2)
+    assert dialog.overlay.section is result.sections[2]
+    assert dialog.table.currentIndex().row() == 2
+    assert dialog.section_height.value() == result.sections[2].height
+    assert dialog.position_label.text() == f"3 / {len(result.sections)}"
+    QTest.keyClick(dialog.overlay, Qt.Key.Key_Down)
+    assert dialog.section_slider.value() == 3
+    dialog.records_visible.setChecked(False)
+    dialog.result_background.setCurrentIndex(1)
+    dialog.coverage_visible.setChecked(False)
+    assert dialog.result is result and not dialog.dirty
+    assert not dialog.records_panel.isVisible()
+    dialog.records_visible.setChecked(True)
+    dialog.result_step.setValue(5)
+    settle(app, dialog)
+    assert dialog.result.step == dialog.step.value() == 5
+    assert dialog.result_step.suffix() == " mm"
+    assert all(old is new for old, new in zip(frames, dialog.frames))
+    dialog.undo()
+    settle(app, dialog)
+    assert dialog.step.value() == dialog.result_step.value() == 10
+
+
+def test_reference_badge_locates_missing_calibration_and_independent_axis(app, dialog):
+    for i in range(2):
+        dialog._replace_frame(i, lambda token, i=i: replace(sample(str(i)), mm_per_pixel=None), "load")
+        settle(app, dialog)
+    dialog.tabs.setCurrentIndex(1)
+    dialog.quality_badge.click()
+    assert dialog.tabs.currentIndex() == 0 and dialog.tools["calibrate"].isChecked()
+    assert dialog.active == 0 and "仅像素" in dialog.quality_badge.text()
+    dialog.same_capture.setChecked(False)
+    settle(app, dialog)
+    dialog._set_geometry(0, mm_per_pixel=.5)
+    settle(app, dialog)
+    assert "不一致" in dialog.quality_badge.text()
+    dialog.quality_badge.click()
+    assert dialog.active == 1
+    dialog._set_geometry(1, mm_per_pixel=.5)
+    settle(app, dialog)
+    dialog.quality_badge.click()
+    assert dialog.tools["axis"].isChecked()
+    first_axis = dialog.frames[0].axis
+    dialog._gesture(1, "axis", [(102, 20), (102, 200)])
+    settle(app, dialog)
+    assert dialog.frames[0].axis == first_axis
+    assert dialog.frames[1].axis.origin == (102, 20)
+    assert "分别设置" in dialog.reference_hint.text()
+
+
+def test_outline_edit_preserves_manually_positioned_result_view(app, dialog):
+    populate(app, dialog)
+    dialog.overlay.zoom = 2
+    dialog.overlay.offset = QPointF(80, 90)
+    dialog.overlay._auto_fit = False
+    dialog._gesture(1, "polygon_remove", [(140, 60), (150, 60), (150, 80), (140, 80)])
+    settle(app, dialog)
+    assert dialog.overlay.zoom == 2 and dialog.overlay.offset == QPointF(80, 90)
+    # A different coordinate frame must be fitted anew, not silently aligned
+    # using an old viewport expressed in another reference system.
+    dialog._set_geometry(0, axis=ContourAxis((105, 20), (105, 200)))
+    settle(app, dialog)
+    assert dialog.overlay._auto_fit
+
+
+def test_narrow_results_keep_photo_space_and_show_unavailable_values(app, dialog):
+    populate(app, dialog)
+    frame = dialog.frames[1]
+    mask = frame.mask.copy()
+    mask[:80] = False
+    dialog._replace_frame(1, lambda token: replace(frame, mask=mask), "edit")
+    settle(app, dialog)
+    dialog.resize(860, 640)
+    dialog.tabs.setCurrentIndex(1)
+    app.processEvents()
+    dialog.section_slider.setValue(0)
+    assert dialog.table_model.data(dialog.table_model.index(0, 1)) == "—"
+    assert "仅处理前" in dialog.table_model.data(dialog.table_model.index(0, 1), Qt.ItemDataRole.ToolTipRole)
+    top, bottom = dialog.overlay._plot_layout(dialog.overlay.size())
+    assert dialog.overlay.height() - top - bottom >= 120
+    assert all(not card.description.isVisible() for card in dialog.metrics.values())
+    assert dialog.table.horizontalScrollBar().maximum() == 0
+    # The dialog's default buttons must not consume polygon Enter gestures.
+    assert not any(button.isDefault() for button in dialog.findChildren(QPushButton))
